@@ -2,7 +2,8 @@
 GO
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_ByTransID_Advance]
-	@TransID BIGINT
+	@TransID	BIGINT,
+	@UserId		INT			= NULL
 AS
 
 /*
@@ -38,6 +39,7 @@ AS
 		- 20160119@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160203@Kos: Support AllBet [#Redmine: 50257]
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160623@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 */
 
@@ -138,7 +140,8 @@ BEGIN
 	DECLARE @WinlostDate	SMALLDATETIME, 
 			@MoveBetsDay	SMALLDATETIME, 
 			@BalanceUpDay	SMALLDATETIME, 
-			@bettype		INT
+			@bettype		INT,
+			@CustId			INT
 	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
 
 	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
@@ -146,11 +149,27 @@ BEGIN
 
 	SELECT @MoveBetsDay = MoveBetsDay, @BalanceUpDay = BalanceUpDay FROM @tmp
 
+	DECLARE @DeniedSite TABLE (
+		SiteId			INT,
+		Site			NVARCHAR(50),
+		SpecialGroup	TINYINT)
+
+	DECLARE @Sql VARCHAR(500)
+
+	SET @Sql = 'SELECT * 
+				FROM OPENQUERY(DBPOLICY,
+					''SELECT siteid, site, SpecialGroup
+					FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + CAST(@Userid AS VARCHAR(50)) + ''''')'')'
+
+	INSERT INTO @DeniedSite
+	EXEC (@Sql)
+
 	-- FROM translog
 	SELECT TOP 1 
 		@WinlostDate 	= bt.winlostdate
 		, @bettype 		= bt.gameID 
 		, @refno 		= bt.translogid
+		, @CustId		= bt.custid
 	FROM dbo.translog AS bt WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sp ON bt.gameID = sp.bettype
 	WHERE bt.translogid = @transid 
@@ -163,6 +182,7 @@ BEGIN
 			@WinlostDate	= bt.winlostdate
 			, @bettype 		= bt.bettype 
 			, @refno 		= bt.refno
+			, @CustId		= bt.custid
 		FROM dbo.bettrans AS bt WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON bt.bettype = sp.bettype
 		WHERE bt.transid 	= @transid 
@@ -175,6 +195,7 @@ BEGIN
 			@WinlostDate 	= bt.winlostdate
 			, @bettype 		= bt.bettype 
 			, @refno 		= bt.refno
+			, @CustId		= bt.custid
 		FROM dbo.bettrans14 AS bt WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON bt.bettype = sp.bettype
 		WHERE bt.transid 	= @transid 
@@ -187,12 +208,21 @@ BEGIN
 			@WinlostDate 	= bt.winlostdate
 			, @bettype 		= bt.bettype 
 			, @refno 		= bt.refno
+			, @CustId		= bt.custid
 		FROM DBARC.bodb_archive.dbo.bettrans_bk AS bt WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON bt.bettype = sp.bettype
 		WHERE bt.transid 	= @transid 
 	END
 	
-	IF(@WinlostDate IS NULL) GOTO OutputResult;
+	IF @WinlostDate IS NULL
+		OR EXISTS ( SELECT 1
+					FROM dbo.customer AS c WITH (NOLOCK)
+						INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
+						WHERE c.custid = @CustId
+							AND a.site IN (SELECT Site FROM @DeniedSite))
+	BEGIN
+		GOTO OutputResult;
+	END
 
 	-- Bettrans
 	IF @WinlostDate > @MoveBetsDay
