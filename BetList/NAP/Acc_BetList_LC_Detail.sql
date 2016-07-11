@@ -24,6 +24,7 @@ AS
 		- 20151012@Kos: Support AG Casino Single Wallet
 		- 20160215@Kos: Support AllBet [#Redmine: 50864]
 		- 20160309@Kos: Support paging
+		- 20160704@Kos: Include Void/Rejected detail ticket in TransType = 1 [Redmine: #59366]
 
 	Parameters:
 		- @TransType
@@ -36,13 +37,17 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
+	-- Get Sport Bettype Matrix --
+	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 4
-
-	DELETE FROM @SportBettype
-	WHERE ProductID NOT IN (11, 21)	-- Support AG Casino, AllBet only
+	SELECT ProductID, BetType, EventType
+	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (11, 21)	-- Support AG Casino, AllBet only
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
 
@@ -64,7 +69,9 @@ BEGIN
 		SELECT 111 UNION ALL
 		SELECT 112 UNION ALL
 		SELECT 113 UNION ALL
-		SELECT 103
+		SELECT 103 UNION ALL
+		SELECT 101 UNION ALL
+		SELECT 102
 	END
 	ELSE IF @TransType = 2
 	BEGIN
@@ -254,6 +261,7 @@ BEGIN
 
 	DROP TABLE #Data
 END
+
 
 GRANT	VIEW DEFINITION	ON	Acc_BetList_LC_Detail	TO	vnteam
 GRANT	EXECUTE	ON	Acc_BetList_LC_Detail	TO	bodbExtAccNet

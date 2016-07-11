@@ -26,6 +26,7 @@ AS
 		- 20160304@Kos: Add MatchCode column
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160426@Kos: Support paging
+		- 20160704@Kos: Include Void/Rejected detail ticket in TransType = 1 [Redmine: #59366]
 
 	Parameters:
 		- @TransType
@@ -38,14 +39,18 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+	-- Get Sport Bettype Matrix --
+	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
-
-	DELETE FROM @SportBettype
-	WHERE ProductID NOT IN (6, 17, 22)	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge
-		OR (ProductID = 6 AND SubProduct = '')
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (17, 22)					-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge
+		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
 
@@ -67,7 +72,9 @@ BEGIN
 		SELECT 111 UNION ALL
 		SELECT 112 UNION ALL
 		SELECT 113 UNION ALL
-		SELECT 103
+		SELECT 103 UNION ALL
+		SELECT 101 UNION ALL
+		SELECT 102
 	END
 	ELSE IF @TransType = 2
 	BEGIN
