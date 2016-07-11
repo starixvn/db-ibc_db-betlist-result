@@ -37,6 +37,7 @@ AS
 		- 20151216@Kos: Exclude Cockfighting ticket [#Redmine: 48850]
 		- 20160119@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160203@Kos: Support AllBet [#Redmine: 50257]
+		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 */
 
 BEGIN
@@ -481,7 +482,7 @@ BEGIN
 				b.swinlost,
 				'' AS showtime,
 				b.winlostdate,
-				b.BetCheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
 				0 AS OddsSpread
 			FROM dbo.bettrans b WITH(NOLOCK)
@@ -1149,7 +1150,7 @@ BEGIN
 				b.swinlost,
 				'' AS showtime,
 				b.winlostdate,
-				b.BetCheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
 				0 AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH(NOLOCK)
@@ -1757,7 +1758,7 @@ BEGIN
 				b.swinlost,
 				'' AS showtime,
 				b.winlostdate,
-				b.BetCheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
 				0 AS OddsSpread
 			FROM DBARC.bodb_archive.dbo.bettrans_bk b WITH(NOLOCK)

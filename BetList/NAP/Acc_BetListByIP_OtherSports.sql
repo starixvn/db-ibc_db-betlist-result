@@ -69,6 +69,7 @@ AS
 		- 20160129@Kos: Support RNG Casino Single Wallet yesterday running ticket
 		- 20160215@Kos: Support AllBet [#Redmine: 50864]
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
+		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -360,6 +361,10 @@ BEGIN
 								FROM dbo.bettransm14 b WITH (NOLOCK)
 									INNER JOIN dbo.match14 m WITH (NOLOCK) ON b.matchid = m.MatchID
 								WHERE m.sporttype <> 1)
+				AND b.refno NOT IN (SELECT RefNo 
+									FROM dbo.bettransm14 b WITH (NOLOCK)
+										INNER JOIN dbo.match14 m WITH (NOLOCK) ON b.matchid = m.MatchID
+									WHERE m.sporttype = 1)
 			UNION ALL 
 			SELECT 
 				0 finalhomescore,
@@ -381,8 +386,8 @@ BEGIN
 				0 homeid, 
 				0 awayid,
 				ISNULL(b.checktime,'') checktime,
-				0 hdp1,
-				0 hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.modds,
 				0 finalodds,
@@ -413,7 +418,7 @@ BEGIN
 				b.swinlost,
 				b.betfrom,
 				b.winlostdate,
-				b.betcheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
 				0 AS OddsSpread
 			FROM dbo.bettrans14 b WITH (NOLOCK) 
@@ -426,7 +431,10 @@ BEGIN
 								FROM dbo.bettransm14 b WITH (NOLOCK)
 									INNER JOIN dbo.match14 m WITH (NOLOCK) ON b.matchid = m.MatchID
 								WHERE m.sporttype <> 1)
-
+				AND b.refno NOT IN (SELECT RefNo
+									FROM dbo.bettransm14 b WITH (NOLOCK)
+										INNER JOIN dbo.match14 m WITH (NOLOCK) ON b.matchid = m.MatchID
+									WHERE m.sporttype = 1)
 			UNION ALL
 			SELECT 
 				match.finalhomescore,
@@ -564,7 +572,10 @@ BEGIN
 								FROM bettransm b WITH (NOLOCK)
 									INNER JOIN match m WITH (NOLOCK) ON b.matchid = m.matchid
 								WHERE m.sporttype <> 1 )
-
+				AND b.refno NOT IN (SELECT RefNo 
+									FROM bettransm b WITH (NOLOCK)
+										INNER JOIN match m WITH (NOLOCK) ON b.matchid = m.matchid
+									WHERE m.sporttype = 1 )
 			UNION ALL
 			SELECT
 				0 finalhomescore,
@@ -586,8 +597,9 @@ BEGIN
 				0 homeid,
 				0 awayid,
 				ISNULL(b.checktime, '') checktime,
-				0 hdp1, 0 hdp2,
-				b.odds,   
+				b.hdp1,
+				b.hdp2,
+				b.odds,
 				b.modds,
 				0 finalodds,
 				0 finalodds2,
@@ -617,7 +629,7 @@ BEGIN
 				b.swinlost,
 				b.betfrom,
 				b.winlostdate,
-				b.betcheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
 				0 AS OddsSpread
 			FROM dbo.bettrans b WITH (NOLOCK)
@@ -630,7 +642,10 @@ BEGIN
 								FROM dbo.bettransm b WITH (NOLOCK)
 									INNER JOIN dbo.match m WITH (NOLOCK) ON b.matchid = m.matchid
 								WHERE m.sporttype <> 1 )
-
+				AND b.refno NOT IN (SELECT RefNo 
+									FROM dbo.bettransm b WITH (NOLOCK)
+										INNER JOIN dbo.match m WITH (NOLOCK) ON b.matchid = m.matchid
+									WHERE m.sporttype = 1 )
 			-- OUTRIGHT
 			UNION ALL
 			SELECT

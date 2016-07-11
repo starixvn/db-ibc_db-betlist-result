@@ -1,79 +1,111 @@
 ﻿ALTER PROCEDURE [dbo].[Acc_BetsSelBetCheckM_All]
-	@refno		BIGINT,
+	@TransId	BIGINT,
+	@RefNo		BIGINT,
 	@Language	NVARCHAR(2) = 'E'
 AS
 
 /*
 	Created by: Henry
 	Date: 2009-12-05
-	Task: Get info of Mix Parlay Bets 
+	Task: Get info of Mix Parlay Bets
 	DB: DBAGE.BODB02
 	Original: Acc_BetsSelBetCheckM
 	
-	Revisions: 
+	Revisions:
 		- 20101007@Henry: Change column transid from INT to BIGINT
 		- 20110513@Lukas: re-arrange bettype
 		- 20110928@Johnson: get column statusid to mark void sub-ticket
 		- 20120629@Sophia: Remove function f_GetOddsByBettype, f_ShowOddsByBettype,f_GetChoice for odds, Oddstype, betteam
-		- 20130121@Dan: change linked server DB06 to DBARC		
+		- 20130121@Dan: change linked server DB06 to DBARC
 		- 20141006@Sophia: get Betcheck
 		- 20151210@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160119@Kos: Return transdesc to support PH All In One 1.2 [#Redmine: 50897]
+		- 20160407@Kos: Add TransId param, support Combo Parlay [#Redmine: 55282]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @BetListMP TABLE (
-		TransID			BIGINT,
-		Bettype			INT,
-		HomeID			INT,
-		AwayID			INT, 
-		hdp1			SMALLMONEY, 
-		hdp2			SMALLMONEY,
-		Odds			MONEY, 
-		Betteam			NVARCHAR(20),
-		statusid		INT,
-		Livehomescore	SMALLINT,
-		Liveawayscore	SMALLINT,
-		Liveindicator	BIT,
-		LeagueID		INT,
-		Sporttype		SMALLINT,
-		isNeutral		BIT,
-		matchid			INT,
-		matchcode		NVARCHAR(50),
+		TransId			BIGINT,
+		BetType			INT,
+		Stake			MONEY,
+		Currency		NVARCHAR(50),
+		HomeId			INT,
+		AwayId			INT,
+		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
+		Odds			MONEY,
+		BetTeam			NVARCHAR(20),
+		StatusId		INT,
+		LiveHomeScore	SMALLINT,
+		LiveAwayScore	SMALLINT,
+		LiveIndicator	BIT,
+		LeagueId		INT,
+		SportType		SMALLINT,
+		IsNeutral		BIT,
+		MatchId			INT,
+		MatchCode		NVARCHAR(50),
 		BetCheck		NVARCHAR(50),
-		transdesc		NVARCHAR(200)
+		TransDesc		NVARCHAR(200)
 	)
 
+	-- Get currency name
+	DECLARE @CurrencyName NVARCHAR(50)
+
+	SELECT @CurrencyName = ex.currency
+	FROM dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+	WHERE b.transid = @TransId
+
+	IF @CurrencyName IS NULL
+	BEGIN
+		SELECT @CurrencyName = ex.currency
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+		WHERE b.transid = @TransId
+
+		IF @CurrencyName IS NULL
+		BEGIN
+			SELECT @CurrencyName = ex.currency
+			FROM DBACC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+			WHERE b.transid = @TransId
+		END
+	END
+
+	-- Get parlay selection detail
 	IF EXISTS(SELECT 1 FROM bettransm WITH (NOLOCK) WHERE refno = @refno)
 	BEGIN
 		INSERT INTO @BetListMP
 		SELECT
-			bettrans.transid,
-			bettrans.bettype,
-			match.homeid,
-			match.awayid,
-			bettrans.hdp1,
-			bettrans.hdp2,
-			bettrans.odds,
-			bettrans.betteam,
-			bettrans.statusid,
-			bettrans.livehomescore,
-			bettrans.liveawayscore,
-			bettrans.liveindicator,
-			match.leagueid,
-			match.sporttype,
-			match.isNeutral,
-			match.matchid,
-			match.matchcode,
-			bettrans.BetCheck,
-			bettrans.transdesc
+			b.transid,
+			b.bettype,
+			b.stake,
+			@CurrencyName AS Currency,
+			m.homeid,
+			m.awayid,
+			b.hdp1,
+			b.hdp2,
+			b.odds,
+			b.betteam,
+			b.statusid,
+			b.livehomescore,
+			b.liveawayscore,
+			b.liveindicator,
+			m.leagueid,
+			m.sporttype,
+			m.isNeutral,
+			m.matchid,
+			m.matchcode,
+			b.BetCheck,
+			b.transdesc
 		FROM 
 			(SELECT
-				matchid,
-				Bettype,
 				transid,
+				bettype,
+				stake,
+				matchid,
 				hdp1,
 				hdp2,
 				odds,
@@ -82,41 +114,44 @@ BEGIN
 				livehomescore,
 				liveawayscore,
 				liveindicator,
-				BetCheck,
+				betcheck,
 				transdesc
-			FROM dbo.BettransM WITH (NOLOCK)
-			WHERE refno = @refno ) AS bettrans
-		INNER JOIN dbo.match WITH (NOLOCK) ON bettrans.matchid = match.matchid
+			FROM dbo.bettransm WITH (NOLOCK)
+			WHERE refno = @refno ) AS b
+		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
 	IF EXISTS(SELECT 1 FROM bettransm14 WITH (NOLOCK) WHERE refno = @refno)
 	BEGIN
 		INSERT INTO @BetListMP
 		SELECT
-			bettrans.transid,
-			bettrans.bettype,
-			match.homeid,
-			match.awayid,
-			bettrans.hdp1,
-			bettrans.hdp2,
-			bettrans.odds,
-			bettrans.betteam,
-			bettrans.statusid,
-			bettrans.livehomescore,
-			bettrans.liveawayscore,
-			bettrans.liveindicator,
-			match.leagueid,
-			match.sporttype,
-			match.isNeutral,
-			match.matchid,
-			match.matchcode ,
-			bettrans.BetCheck,
-			bettrans.transdesc
+			b.transid,
+			b.bettype,
+			b.stake,
+			@CurrencyName AS Currency,
+			m.homeid,
+			m.awayid,
+			b.hdp1,
+			b.hdp2,
+			b.odds,
+			b.betteam,
+			b.statusid,
+			b.livehomescore,
+			b.liveawayscore,
+			b.liveindicator,
+			m.leagueid,
+			m.sporttype,
+			m.isNeutral,
+			m.matchid,
+			m.matchcode,
+			b.BetCheck,
+			b.transdesc
 		FROM 
 			(SELECT
-				matchid,
-				Bettype,
 				transid,
+				bettype,
+				stake,
+				matchid,
 				hdp1,
 				hdp2,
 				odds,
@@ -125,41 +160,44 @@ BEGIN
 				livehomescore,
 				liveawayscore,
 				liveindicator,
-				BetCheck,
+				betcheck,
 				transdesc
-			FROM dbo.BettransM14 WITH (NOLOCK)
-			WHERE refno = @refno) AS bettrans
-		INNER JOIN dbo.match14 AS match WITH (NOLOCK) ON bettrans.matchid = match.matchid
+			FROM dbo.bettransm14 WITH (NOLOCK)
+			WHERE refno = @refno) AS b
+		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
 	IF EXISTS(SELECT 1 FROM DBARC.bodb_archive.dbo.BettransM WITH (NOLOCK) WHERE refno = @refno)
 	BEGIN
 		INSERT INTO @BetListMP
-		SELECT 
-			bettrans.transid, 
-			bettrans.bettype,
-			match.homeid,
-			match.awayid,
-			bettrans.hdp1, 
-			bettrans.hdp2, 
-			bettrans.odds, 
-			bettrans.betteam,
-			bettrans.statusid,
-			bettrans.livehomescore, 
-			bettrans.liveawayscore, 
-			bettrans.liveindicator, 
-			match.leagueid,
-			match.sporttype,
-			match.isNeutral,
-			match.matchid,
-			match.matchcode,
-			bettrans.BetCheck,
-			bettrans.transdesc
+		SELECT
+			b.transid,
+			b.bettype,
+			b.stake,
+			@CurrencyName AS Currency,
+			m.homeid,
+			m.awayid,
+			b.hdp1,
+			b.hdp2,
+			b.odds,
+			b.betteam,
+			b.statusid,
+			b.livehomescore,
+			b.liveawayscore,
+			b.liveindicator,
+			m.leagueid,
+			m.sporttype,
+			m.isNeutral,
+			m.matchid,
+			m.matchcode,
+			b.BetCheck,
+			b.transdesc
 		FROM 
 			(SELECT
-				matchid,
-				Bettype,
 				transid,
+				bettype,
+				stake,
+				matchid,
 				hdp1,
 				hdp2,
 				odds,
@@ -168,11 +206,11 @@ BEGIN
 				livehomescore,
 				liveawayscore,
 				liveindicator,
-				BetCheck,
+				betcheck,
 				transdesc
-			FROM DBARC.bodb_archive.dbo.BettransM WITH (NOLOCK)
-			WHERE refno = @refno) AS bettrans
-		INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS match WITH (NOLOCK) ON bettrans.matchid = match.matchid
+			FROM DBARC.bodb_archive.dbo.bettransm WITH (NOLOCK)
+			WHERE refno = @refno) AS b
+		INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
 	SELECT * FROM @BetListMP

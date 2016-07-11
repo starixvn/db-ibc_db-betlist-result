@@ -93,6 +93,7 @@ AS
 		- 20160215@Kos: Support AllBet [#Redmine: 50864]
 		- 20160328@Kos: Support Grand Prize ticket which status is Expired
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
+		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 
 	Param's Explanation:
 		+ @transtype: 
@@ -398,8 +399,8 @@ BEGIN
 			b.transdate,
 			0,
 			29,
-			0,
-			0,
+			b.hdp1,
+			b.hdp2,
 			b.odds,
 			b.modds,
 			0 AS finalodds,
@@ -439,7 +440,7 @@ BEGIN
 			mwinlost,
 			swinlost,
 			b.winlostdate,
-			b.BetCheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc,
 			0 AS OddsSpread
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -1363,8 +1364,8 @@ BEGIN
 			b.transdate,
 			0,
 			29,
-			0,
-			0,
+			b.hdp1,
+			b.hdp2,
 			b.odds,
 			b.modds,
 			0 AS finalodds,
@@ -1404,7 +1405,7 @@ BEGIN
 			mwinlost,
 			swinlost,
 			b.winlostdate,
-			b.BetCheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc,
 			0 AS OddsSpread
 		FROM dbo.bettrans AS b WITH (NOLOCK)

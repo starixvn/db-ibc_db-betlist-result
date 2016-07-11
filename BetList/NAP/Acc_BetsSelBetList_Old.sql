@@ -67,6 +67,7 @@ AS
 		- 20160125@Kos: Fix Colossus Bet result issue
 		- 20160204@Kos: Support AllBet [#Redmine: 50864]
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
+		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 */
 
 BEGIN
@@ -370,7 +371,7 @@ BEGIN
 				b.swinlost,
 				'' AS showtime,
 				b.winlostdate,
-				b.BetCheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
 				0 AS OddsSpread
 			FROM dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
@@ -946,6 +947,7 @@ BEGIN
 	DROP TABLE #BetListDetailData;
 	DROP TABLE #SportBettype
 END
+
 
 
 

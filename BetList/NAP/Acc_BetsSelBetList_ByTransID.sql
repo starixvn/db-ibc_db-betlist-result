@@ -77,6 +77,7 @@ AS
 		- 20160204@Kos: Support AllBet [#Redmine: 50864]
 		- 20160307@Kos: Hotfix Missing choice of Gold Deluxe [#Redmine: 53506]
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
+		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160606@Kos: Unable to search Gold Deluxe ticket [#Redmine: 58852]
 */
 
@@ -3471,7 +3472,7 @@ BEGIN
 		END
 
 		-- System parlay
-		IF @refno IS NOT NULL
+		IF @refno IS NOT NULL AND @bettype = 29
 		BEGIN
 			-- bettrans
 			INSERT INTO @Data
@@ -3533,7 +3534,7 @@ BEGIN
 				b.swinlost,
 				'' AS showtime,
 				b.winlostdate,
-				b.BetCheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
 				0 AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK)
@@ -3603,7 +3604,7 @@ BEGIN
 				b.swinlost,
 				'' AS showtime,
 				b.winlostdate,
-				b.BetCheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
 				0 AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -3673,7 +3674,7 @@ BEGIN
 				b.swinlost,
 				'' AS showtime,
 				b.winlostdate,
-				b.BetCheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
 				0 AS OddsSpread
 			FROM DBARC.bodb_archive.dbo.bettrans_bk b WITH(NOLOCK)
