@@ -79,6 +79,7 @@ AS
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160606@Kos: Unable to search Gold Deluxe ticket [#Redmine: 58852]
+		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 */
 
 BEGIN
@@ -180,13 +181,18 @@ BEGIN
 	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
 	EXEC Age_SelBalanceUpDay
 
+	SELECT @MoveBetsDay = MoveBetsDay, @BalanceUpDay = BalanceUpDay FROM @tmp
+
 	----Get Sport Bettype Matrix------
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
-	INSERT INTO @SportBettype
-	EXEC dbo.Acc_SportBettypeMatrix_Sel @mode = 5
+	DECLARE @IsTest BIT = 0
 
-	SELECT @MoveBetsDay = MoveBetsDay, @BalanceUpDay = BalanceUpDay FROM @tmp
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 
 	-- FROM translog
 	SELECT TOP 1 

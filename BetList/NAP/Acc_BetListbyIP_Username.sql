@@ -22,6 +22,7 @@ AS
 	- 20150715@Edward: Support for Micro Gaming
 	- 20150831@Kos: Support for Colossus Bet
 	- 20151216@Kos: Support for Cockfighting
+	- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 */
 
  BEGIN
@@ -30,8 +31,13 @@ AS
 	----Get Sport Bettype Matrix------
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
 
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
 	INSERT INTO @SportBettype
-	EXEC dbo.Acc_SportBettypeMatrix_Sel @mode = 4
+	SELECT ProductID, BetType, EventType
+	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @min_date	SMALLDATETIME, 
 			@max_date	SMALLDATETIME,

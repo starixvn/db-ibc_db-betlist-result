@@ -70,6 +70,7 @@ AS
 		- 20160215@Kos: Support AllBet [#Redmine: 50864]
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Fix bug not showing summary tickets if have only Void/Reject detail tickets [#Redmine: 61651]
 
 	Param's Explanation:
@@ -82,8 +83,13 @@ BEGIN
 	----Get Sport Bettype Matrix------
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
 	INSERT INTO @SportBettype
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @Data TABLE (
 		finalhomescore	INT,

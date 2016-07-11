@@ -68,6 +68,7 @@ AS
 		- 20160204@Kos: Support AllBet [#Redmine: 50864]
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 */
 
 BEGIN
@@ -153,17 +154,17 @@ BEGIN
 		TransDesc		VARCHAR(300)
 	)
 
-	----Get Sport Bettype Matrix------
+	-- Get Sport Bettype Matrix --
 	CREATE TABLE #SportBettype (ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
-	INSERT INTO #SportBettype
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
+	DECLARE @IsTest BIT = 0
 
-	IF @tempBettype <> 0
-	BEGIN
-		DELETE #SportBettype
-		WHERE Bettype <> @tempBettype
-	END
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO #SportBettype
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE @tempBettype = 0 OR BetType = @tempBettype
 
 	IF EXISTS(SELECT TOP 1 1 FROM #SportBettype s WHERE ProductID IN (1, 3, 4, 5))
 	BEGIN

@@ -38,6 +38,7 @@ AS
 		- 20160119@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160203@Kos: Support AllBet [#Redmine: 50257]
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 */
 
 BEGIN
@@ -46,14 +47,15 @@ BEGIN
 	----Get Sport Bettype Matrix------
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
 
-	INSERT INTO @SportBettype
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 4
+	DECLARE @IsTest BIT = 0
 
-	-- exclude CS, BG, GD, KN, MG, MGC LC, MGC RNG, AG, CB, CF tickets
-	DELETE sp
-	FROM @SportBettype sp
-	WHERE sp.productid NOT IN (1, 2, 3, 4, 5, 9, 14)
-		OR sp.bettype BETWEEN 801 AND 899
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (1, 2, 3, 4, 5, 9, 14)
+		AND BetType NOT BETWEEN 801 AND 899
 	
 	DECLARE @refno BIGINT
 
