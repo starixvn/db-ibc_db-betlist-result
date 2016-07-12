@@ -95,6 +95,7 @@ AS
 		- 20151214@Kos: Support Cockfighting [#Redmine: 48850]
 		- 20160215@Kos: Support AllBet [#Redmine: 50864]
 		- 20160401@Kos: Support Voidbridge [#Redmine: 54643]
+		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
 */
 
 BEGIN
@@ -109,9 +110,14 @@ BEGIN
 	FROM bodb02.dbo.All_f_TransStatus (1) stt
 
 	-- Gather BettypeMatrix
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
 	INSERT INTO @BettypeMatrix
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
-	
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+
 	-- ADD exception bettype for pending funds tickets
 	;WITH CteExtBettype (ProductID, Bettype, EventType)
 	AS (
@@ -119,16 +125,6 @@ BEGIN
 		SELECT 6, 23001, 0
 		UNION ALL
 		SELECT 6, 23002, 0
-		--@ShowP2P
-		UNION ALL
-		SELECT 9, 23101, 0
-		UNION ALL
-		SELECT 9, 23101, 0
-		--@ShowBI
-		UNION ALL
-		SELECT 7, 23201, 0
-		UNION ALL
-		SELECT 7, 23202, 0
 	)
 	INSERT INTO @BettypeMatrix
 	SELECT ProductID, Bettype, EventType, '' AS SubProduct

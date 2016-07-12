@@ -2,13 +2,14 @@ USE bodb02
 GO
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossByBettypeMatch_MAg]
-	@MatchID 			INT
-	, @custid 			INT			= NULL
-	, @username 		VARCHAR(50)	= NULL
-	, @bettype 			INT
-	, @Language 		VARCHAR(2)	= 'E'
-	, @liveindicator 	INT			= 0
+	@MatchId			INT
+	, @CustId			INT			= NULL
+	, @Username			VARCHAR(50)	= NULL
+	, @BetType			INT
+	, @Language			VARCHAR(2)	= 'E'
+	, @LiveIndicator	INT			= 0
 AS
+
 /*
 	Created: 
 	Task : Betlist
@@ -42,40 +43,43 @@ AS
 		- 20150826@Kos: Add OddsSpread column to support Myanmar Odds
 		- 20150903@Bobby: Correct data type of sport bet type matrix for avoiding SQL data conversion
 		- 20150910@Bobby: Enhance performence for SP core. Apply TVP for input parameters
+		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
 */
+
 BEGIN
 	SET NOCOUNT ON;
-	
-	DECLARE	 @TransStatus 	[dbo].[TVP_BetTicketStatus]
+
+	DECLARE	 @TransStatus	[dbo].[TVP_BetTicketStatus]
 		, @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]
-	
+
 	-- Gather Ticket status
 	INSERT INTO @TransStatus
 	SELECT StatusId
-	FROM bodb02.dbo.All_f_TransStatus (1) stt	
+	FROM bodb02.dbo.All_f_TransStatus (1) stt
 	WHERE statusid IN (111, 112, 113)
-		
+
 	-- Gather BettypeMatrix
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
 	INSERT INTO @BettypeMatrix
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode=5
-	
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+
 	;WITH CteBettype (bettype)
 	AS (
 		SELECT bt.bettype
-		FROM @BettypeMatrix bt
-			LEFT JOIN (SELECT Bettype, GroupTypeId 
-				FROM [dbo].[f_GroupBettype]()
-			) AS  f 
-			ON f.bettype 		= bt.bettype	
-		WHERE bt.bettype		= @bettype 
-			OR f.GroupTypeId 	= @bettype
+		FROM @BettypeMatrix AS bt
+			LEFT JOIN (SELECT Bettype, GroupTypeId FROM [dbo].[f_GroupBettype]()) AS f ON f.bettype = bt.bettype
+		WHERE bt.bettype = @BetType OR f.GroupTypeId = @BetType
 	)
+
 	DELETE bt
-	FROM @BettypeMatrix bt
-		LEFT JOIN CteBettype ct 
-		ON bt.bettype = ct.bettype
+	FROM @BettypeMatrix AS bt
+		LEFT JOIN CteBettype AS ct ON bt.bettype = ct.bettype
 	WHERE ct.bettype IS NULL
-		
+
 	EXEC [bodb02].[dbo].[Age_CoreBetList_SMAEventBettype_SelBetTicket]
 		@CustId 			= @CustId
 		,@username			= @username
@@ -88,13 +92,13 @@ BEGIN
 		, @ColumnOutput		= 'sporttype,
 								username,
 								bettype,
-								leagueID,		
+								leagueID,
 								transid,
 								matchcode,
 								homeID,
 								awayID,
-								hdp1, 
-								hdp2, 
+								hdp1,
+								hdp2,
 								odds,
 								modds,
 								status,
@@ -106,21 +110,21 @@ BEGIN
 								swinlost,
 								playercomm,
 								comm,
-								acomm ,
+								acomm,
 								scomm,
 								transdate,
 								winlostdate,
 								betteam,
 								apositiontaking,
 								mpositiontaking,
-								spositiontaking,	
+								spositiontaking,
 								Adiscount,
 								Mdiscount,
-								Sdiscount,	
+								Sdiscount,
 								liveindicator,
 								livehomescore,
 								liveawayscore,
-								matchid, 
+								matchid,
 								IP,
 								betstatus,
 								IsNeutral,
@@ -133,9 +137,11 @@ BEGIN
 								transdesc,
 								OddsSpread'
 	;
-	
+
 	RETURN;
 END
+
+
 
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossByBettypeMatch_MAg] TO [bodbDownlineNet]
