@@ -34,11 +34,13 @@ BEGIN
 	DECLARE @RefNo		BIGINT,
 		@CurrencyName	NVARCHAR(50),
 		@minMatchdate	DATETIME,
-		@maxMatchdate	DATETIME
+		@maxMatchdate	DATETIME,
+		@WhTicket		TINYINT		-- 1: bettrans, 2: bettrans14, 3: bettrans_bk
 
 	-- Check if @transid in bettrans
 	SELECT @RefNo = b.refno,
-		@CurrencyName = ex.currency
+		@CurrencyName = ex.currency,
+		@WhTicket = 1
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 	WHERE transid = @TransId
@@ -48,7 +50,8 @@ BEGIN
 	IF @RefNo IS NULL
 	BEGIN
 		SELECT @RefNo = b.refno,
-			@CurrencyName = ex.currency
+			@CurrencyName = ex.currency,
+			@WhTicket = 2
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 		WHERE transid = @TransId
@@ -58,8 +61,9 @@ BEGIN
 
 	IF @RefNo IS NULL
 	BEGIN
-		SELECT @RefNo = refno,
-			@CurrencyName = ex.currency
+		SELECT @RefNo = b.refno,
+			@CurrencyName = ex.currency,
+			@WhTicket = 3
 		FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 		WHERE transid = @TransId
@@ -273,7 +277,7 @@ BEGIN
 	FROM @parlay_base
 
 	-- Get bettrans and BetParlayResult data
-	IF @minMatchDate < @BalanceUpDay	-- get data from bettrans_bk
+	IF @WhTicket = 3	-- bettrans_bk
 	BEGIN
 		INSERT INTO @tmpBettrans
 		SELECT
@@ -320,10 +324,8 @@ BEGIN
 			END AS Bitmap
 		FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH(NOLOCK) 
 		WHERE custid = @custid
-			AND refno = @RefNo
-			AND matchid = 29
+			AND transid = @TransId
 			AND bettype = 29
-			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
 
 		INSERT INTO @tmpResults (
 			WinLostDate,
@@ -342,8 +344,7 @@ BEGIN
 		FROM DBARC.bodb_Archive.dbo.betparlayresult AS b WITH (NOLOCK)
 		WHERE refno = @RefNo
 	END
-
-	IF @minMatchdate <= @MoveBetDay		-- get data from bettrans14
+	ELSE IF @WhTicket = 2		-- bettrans14
 	BEGIN
 		INSERT INTO @tmpBettrans
 		SELECT
@@ -390,13 +391,10 @@ BEGIN
 			END AS Bitmap
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		WHERE custid = @custid
-			AND refno = @RefNo
-			AND matchid = 29
+			AND transid = @TransId
 			AND bettype = 29
-			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
 	END
-
-	IF @maxMatchdate > @MoveBetDay  --- get data from bettrans
+	ELSE IF @WhTicket = 1		-- bettrans
 	BEGIN
 		INSERT INTO @tmpBettrans
 		SELECT
@@ -440,10 +438,8 @@ BEGIN
 			END AS Bitmap
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE custid = @custid
-			AND refno = @RefNo
-			AND matchid = 29
+			AND transid = @TransId
 			AND bettype = 29
-			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
 	END
 	
 	INSERT INTO @tmpResults (
@@ -465,7 +461,7 @@ BEGIN
 
 	IF NOT EXISTS (SELECT TOP 1 1 FROM @tmpResults)
 	BEGIN
-		DECLARE @betParlayResult TABLE  (
+		DECLARE @betParlayResult TABLE (
 			RefNo		BIGINT,
 			Serial		INT,
 			WinLostDate SMALLDATETIME,
@@ -690,6 +686,7 @@ BEGIN
 
 	SELECT * FROM @tmpMatch
 END
+
 
 
 
