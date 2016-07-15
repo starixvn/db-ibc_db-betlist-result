@@ -92,6 +92,7 @@ AS
 		- 20160216@Kos: Support yesterday running ticket [Redmine: #52277]
 		- 20160405@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160412@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation:
@@ -181,11 +182,16 @@ BEGIN
 	DECLARE @TempFromDate DATETIME
 	DECLARE @TempToDate DATETIME
 
-	----Get Sport Bettype Matrix------
+	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
 	INSERT INTO @SportBettype
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 
 	DELETE FROM @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
@@ -194,8 +200,7 @@ BEGIN
 		DELETE @SportBettype WHERE ProductID = 1 AND Bettype IN (901, 902, 903)
 	END
 
-	DELETE sbt
-	FROM @SportBettype sbt
+	DELETE FROM @SportBettype
 	WHERE (ProductID	= CASE WHEN @ShowSB	= 0 AND @ShowBA = 0 THEN 1 END AND Bettype NOT IN (901, 902, 903))
 		OR ProductID	= CASE WHEN @ShowRB	= 0		THEN 2 END
 		OR ProductID	= CASE WHEN @ShowNG	= 0		THEN 3 END
@@ -208,8 +213,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowMGCLC = 0	THEN 13 END
 		OR ProductID	= CASE WHEN @ShowMGCRNG = 0	THEN 17 END
 		OR ProductID	= CASE WHEN @ShowVB = 0		THEN 22 END
-		OR (ProductID 	> 8 AND ProductID NOT IN (11, 13, 17, 22))
-			-- not suport for LIC system
+		OR (ProductID 	> 8 AND ProductID NOT IN (11, 13, 17, 22))	-- not suport for LIC system
 
 	IF @tdate > @MoveBetsDay
 	BEGIN
