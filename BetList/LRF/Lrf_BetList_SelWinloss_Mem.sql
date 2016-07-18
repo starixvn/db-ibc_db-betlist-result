@@ -20,7 +20,6 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinloss_Mem]
 	@ShowLC				BIT			= 0,
 	@ShowVS				BIT			= 0,
 	@ShowCS				BIT			= 0,	-- RNG Casino
-	@ShowBG				BIT			= 0,	-- Bingo 
 	@ShowKN				BIT			= 0,	-- Keno
 	@ShowMGCLC			BIT			= 0,	-- Microgaming Live Casino
 	@ShowMGCRNG			BIT			= 0,	-- Microgaming RNG Casino
@@ -92,7 +91,7 @@ AS
 		- 20160216@Kos: Support yesterday running ticket [Redmine: #52277]
 		- 20160405@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160412@Kos: Support Combo Parlay [#Redmine: 55282]
-		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
+		- 20160714@Kos: Remove Bingo code and change to use inline function for SportBettypeMatrix	
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation:
@@ -150,33 +149,33 @@ BEGIN
 	)
 
 	DECLARE @TempBetList AS TABLE (
-		TransID			BIGINT,
-		BetID			BIGINT,
-		Bettype			INT,
-		hdp1			SMALLMONEY,
-		hdp2			SMALLMONEY,
+		TransId			BIGINT,
+		BetId			BIGINT,
+		BetType			INT,
+		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
 		Modds			MONEY,
 		OddsType		TINYINT,
 		Odds			MONEY,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
-		Betteam			NVARCHAR(20),
+		BetTeam			NVARCHAR(20),
 		Status			NVARCHAR(10),
-		RefNO			BIGINT,
-		Transdate		DATETIME,
-		Winlostdate		DATETIME,
-		Winlost			MONEY,
+		RefNo			BIGINT,
+		TransDate		DATETIME,
+		WinLostDate		DATETIME,
+		WinLost			MONEY,
 		LicenseeWL		MONEY,
-		comm			MONEY,
-		playercomm		MONEY,
-		Liveindicator	BIT,
-		Livehomescore	SMALLINT,
-		Liveawayscore	SMALLINT,
-		IP				NVARCHAR(50),
-		currency		INT,
-		MatchID			INT,
-		betcheck		NVARCHAR(50),
-		transdesc		NVARCHAR(300)
+		Comm			MONEY,
+		PlayerComm		MONEY,
+		LiveIndicator	BIT,
+		LiveHomeScore	SMALLINT,
+		LiveAwayScore	SMALLINT,
+		Ip				NVARCHAR(50),
+		Currency		INT,
+		MatchId			INT,
+		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(300)
 	)
 
 	DECLARE @TempFromDate DATETIME
@@ -192,6 +191,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 22)
 
 	DELETE FROM @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
@@ -207,13 +207,11 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowLC	= 0		THEN 4 END
 		OR ProductID	= CASE WHEN @ShowVS	= 0		THEN 5 END
 		OR ProductID	= CASE WHEN @ShowCS	= 0		THEN 6 END
-		OR ProductID	= CASE WHEN @ShowBG	= 0		THEN 7 END
 		OR ProductID	= CASE WHEN @ShowKN	= 0		THEN 8 END
 		OR ProductID	= CASE WHEN @ShowAGC = 0	THEN 11 END
 		OR ProductID	= CASE WHEN @ShowMGCLC = 0	THEN 13 END
 		OR ProductID	= CASE WHEN @ShowMGCRNG = 0	THEN 17 END
 		OR ProductID	= CASE WHEN @ShowVB = 0		THEN 22 END
-		OR (ProductID 	> 8 AND ProductID NOT IN (11, 13, 17, 22))	-- not suport for LIC system
 
 	IF @tdate > @MoveBetsDay
 	BEGIN
@@ -806,14 +804,13 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- RNG Casino, Bingo, Microgaming Live Casino
-		IF @ShowCS = 1 OR @ShowBG = 1 OR @ShowMGCLC = 1
+		-- RNG Casino, Microgaming Live Casino
+		IF @ShowCS = 1 OR @ShowMGCLC = 1
 		BEGIN
 			INSERT INTO @BetListByDateMem
 			SELECT
 				CASE
 					WHEN sbt.ProductID = 6 THEN 251
-					WHEN sbt.ProductID = 7 THEN 252
 					WHEN sbt.ProductID = 13 THEN 203
 				END AS Sporttype,
 				b.transid,
@@ -841,7 +838,7 @@ BEGIN
 				b.IP,
 				0 AS LeagueID,
 				CASE
-					WHEN sbt.ProductID IN (6, 7) THEN b.bettype
+					WHEN sbt.ProductID = 6 THEN b.bettype
 					ELSE 0
 				END AS MatchID,
 				'' AS MatchCode,
@@ -866,7 +863,7 @@ BEGIN
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.custid = @custid 
 				AND (@currencyID = 0 OR b.currency = @currencyID )
-				AND (sbt.ProductID IN (7, 13) 
+				AND (sbt.ProductID = 13
 					OR (sbt.ProductID = 6 AND sbt.SubProduct = ''))
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -1852,15 +1849,14 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- RNG Casino, Bingo, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Voidbridge
-		IF @ShowCS = 1 OR @ShowBG = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowVB = 1
+		-- RNG Casino, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Voidbridge
+		IF @ShowCS = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowVB = 1
 		BEGIN
 			INSERT INTO @BetListByDateMem
 			SELECT
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN 251
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.matchid
-					WHEN sbt.ProductID = 7 THEN 252
 					WHEN sbt.ProductID = 11 THEN 250
 					WHEN sbt.ProductID = 13 THEN 203
 					WHEN sbt.ProductID = 17 THEN 205
@@ -1871,34 +1867,28 @@ BEGIN
 				b.Bettype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.hdp1
-					WHEN sbt.ProductID = 7 THEN b.hdp1
 					ELSE 0
 				END AS hdp1,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.hdp2
-					WHEN sbt.ProductID = 7 THEN b.hdp2
 					ELSE 0
 				END AS hdp2,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.modds
-					WHEN sbt.ProductID = 7 THEN b.modds
 					ELSE 0
 				END AS modds,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.oddstype
-					WHEN sbt.ProductID = 7 THEN b.oddstype
 					ELSE 0
 				END AS Oddstype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-					WHEN sbt.ProductID = 7 THEN b.Odds
 					ELSE 0
 				END AS Odds,
 				b.stake,
 				b.actual_stake,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN ISNULL(b.betteam, '')
-					WHEN sbt.ProductID = 7 THEN ISNULL(b.betteam, '')
 					ELSE ''
 				END AS Betteam,
 				b.status,
@@ -1916,7 +1906,6 @@ BEGIN
 				0 AS LeagueID,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.bettype
-					WHEN sbt.ProductID = 7 THEN b.bettype
 					ELSE 0
 				END AS MatchID,
 				'' AS MatchCode,
@@ -1945,7 +1934,7 @@ BEGIN
 				b.winlostdate BETWEEN @BalanceUpDay AND @tdate 
 				AND b.custid = @custid 
 				AND (@currencyID = 0 OR b.currency = @currencyID)
-				AND sbt.ProductID IN (6, 7, 11, 13, 17, 22)
+				AND sbt.ProductID IN (6, 11, 13, 17, 22)
 				AND b.statusID IN (111, 112, 113)
 		END
 
@@ -2659,15 +2648,14 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- RNG Casino, Bingo, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Voidbridge
-		IF @ShowCS = 1 OR @ShowBG = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowVB = 1
+		-- RNG Casino, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Voidbridge
+		IF @ShowCS = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowVB = 1
 		BEGIN
 			INSERT INTO @BetListByDateMem
 			SELECT
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN 251
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.matchid
-					WHEN sbt.ProductID = 7 THEN 252
 					WHEN sbt.ProductID = 11 THEN 250
 					WHEN sbt.ProductID = 13 THEN 203
 					WHEN sbt.ProductID = 17 THEN 205
@@ -2678,34 +2666,28 @@ BEGIN
 				b.bettype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.hdp1
-					WHEN sbt.ProductID = 7 THEN b.hdp1
 					ELSE 0
 				END AS hdp1,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.hdp2
-					WHEN sbt.ProductID = 7 THEN b.hdp2
 					ELSE 0
 				END AS hdp2,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.modds
-					WHEN sbt.ProductID = 7 THEN b.modds
 					ELSE 0
 				END AS modds,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.oddstype
-					WHEN sbt.ProductID = 7 THEN b.oddstype
 					ELSE 0
 				END AS Oddstype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-					WHEN sbt.ProductID = 7 THEN b.Odds
 					ELSE 0
 				END AS Odds,
 				b.stake,
 				b.actual_stake,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN ISNULL(b.betteam, '')
-					WHEN sbt.ProductID = 7 THEN ISNULL(b.betteam, '')
 					ELSE ''
 				END AS Betteam,
 				b.status,
@@ -2723,7 +2705,6 @@ BEGIN
 				0 AS LeagueID,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.bettype
-					WHEN sbt.ProductID = 7 THEN b.bettype
 					ELSE 0
 				END AS MatchID,
 				'' AS MatchCode,
@@ -2752,7 +2733,7 @@ BEGIN
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
 				AND (@currencyID = 0 OR b.currency = @currencyID) 
-				AND sbt.ProductID IN (6, 7, 11, 13, 17, 22)
+				AND sbt.ProductID IN (6, 11, 13, 17, 22)
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
 		END
@@ -2766,21 +2747,21 @@ BEGIN
 				b.TransID,
 				ISNULL(b.BetID, 0),
 				b.Bettype,
-				b.hdp1, 
+				b.hdp1,
 				b.hdp2,
 				modds,
-				0 AS OddsType, 
-				b.Odds, 
+				0 AS OddsType,
+				b.Odds,
 				b.stake,
 				b.actual_stake,
 				'' AS Betteam,
 				b.Status,
 				b.refno,
-				b.Transdate,	
+				b.Transdate,
 				b.winlostdate,
 				(b.winlost-actual_stake),
 				awinlost,
-				b.comm,	
+				b.comm,
 				b.playercomm,
 				0 AS LiveIndicator,
 				b.LiveHomescore,
@@ -3222,13 +3203,12 @@ BEGIN
 		@ShowLC			 = 1,
 		@ShowVS			 = 1,
 		@ShowCS			 = 1,
-		@ShowBG			 = 1,
 		@ShowMGCLC		 = 1,
 		@ShowMGCRNG		 = 1,
 		@ShowAGC		 = 1,
 		@ShowVB			 = 1
 	*/
-END 
+END
 
 
 

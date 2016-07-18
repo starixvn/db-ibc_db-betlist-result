@@ -45,7 +45,6 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByDate_Mem]
 	@ShowLC				BIT				= 0,
 	@ShowVS				BIT				= 0,
 	@ShowCS				BIT				= 0,	-- RNG Casino
-	@ShowBG				BIT				= 0,
 	@ShowKN				BIT				= 0,
 	@ShowMGCLC			BIT				= 0,	-- Microgaming Live Casino
 	@ShowMGCRNG			BIT				= 0,	-- Microgaming RNG Casino
@@ -107,6 +106,7 @@ AS
 		- 20160316@Kos: Exclude Void/Reject tickets [Redmine: #43921]
 		- 20160405@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 
@@ -116,8 +116,13 @@ BEGIN
 	----Get Sport Bettype Matrix------
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
 	INSERT INTO @SportBettype
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 
 	DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
@@ -126,21 +131,19 @@ BEGIN
 		DELETE @SportBettype WHERE ProductID = 1 AND Bettype IN (901, 902, 903)
 	END
 
-	DELETE sbt
-	FROM @SportBettype sbt
+	DELETE FROM @SportBettype
 	WHERE (ProductID	= CASE WHEN @ShowSB	= 0 AND @ShowBA = 0 THEN 1 END AND Bettype NOT IN (901, 902, 903))
 		OR ProductID	= CASE WHEN @ShowRB	= 0		THEN 2 END
 		OR ProductID	= CASE WHEN @ShowNG	= 0		THEN 3 END
 		OR ProductID	= CASE WHEN @ShowLC	= 0		THEN 4 END
 		OR ProductID	= CASE WHEN @ShowVS	= 0		THEN 5 END
 		OR ProductID	= CASE WHEN @ShowCS	= 0		THEN 6 END
-		OR ProductID	= CASE WHEN @ShowBG	= 0		THEN 7 END
 		OR ProductID	= CASE WHEN @ShowKN	= 0		THEN 8 END
 		OR ProductID	= CASE WHEN @ShowAGC = 0	THEN 11 END
 		OR ProductID	= CASE WHEN @ShowMGCLC = 0	THEN 13 END
 		OR ProductID	= CASE WHEN @ShowMGCRNG = 0	THEN 17 END
 		OR ProductID	= CASE WHEN @ShowVB	 = 0	THEN 22 END
-		OR (ProductID > 8 AND ProductID NOT IN (11, 13, 17, 22)) -- not suport for LIC system
+		OR (ProductID > 6 AND ProductID NOT IN (8, 11, 13, 17, 22)) -- not suport for LIC system
 
 	DECLARE @UserName		NVARCHAR(20)
 		, @Recommend		INT
@@ -157,8 +160,8 @@ BEGIN
 
 	SELECT @BetEffectiveDate = '2014-09-01'
 
-	SELECT @UserName = UserName, 
-		@Recommend = Recommend 
+	SELECT @UserName = UserName,
+		@Recommend = Recommend
 	FROM dbo.custinfo AS c WITH (NOLOCK)
 		INNER JOIN #Currency AS cy ON c.Currency = cy.CurrencyID
 	WHERE CustID = @CustID
@@ -166,79 +169,85 @@ BEGIN
 	DROP TABLE #currency
 	-----------------------------------------
 	CREATE TABLE #BetListByDateMem (
-		Sporttype		SMALLINT,
+		SportType		SMALLINT,
 		Username		NVARCHAR(20),
-		TransID			BIGINT,
-		BetID			BIGINT,
-		Bettype			SMALLINT,
-		hdp1			SMALLMONEY,
-		hdp2			SMALLMONEY,
+		TransId			BIGINT,
+		BetId			BIGINT,
+		BetType			SMALLINT,
+		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
 		OddsType		TINYINT,
 		Odds			MONEY,
-		modds			MONEY,
+		Modds			MONEY,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
-		Betteam			NVARCHAR(20),
+		BetTeam			NVARCHAR(20),
 		Status			NVARCHAR(10),
-		RefNO			BIGINT,
-		Transdate		DATETIME,
-		Winlostdate		DATETIME,
-		Winlost			MONEY,
-		BetEffective	MONEY,
-		licenseeWL		MONEY,
-		comm			MONEY,
-		playercomm		MONEY,
-		Liveindicator	BIT,
-		Livehomescore	SMALLINT,
-		Liveawayscore	SMALLINT,
-		IP				NVARCHAR(15),
-		LeagueID		INT,
-		MatchID			INT,
-		MatchCode		NVARCHAR(50),
-		Race			NVARCHAR(20),
-		HomeID			INT,
-		AwayID			INT,
-		Betstatus		NVARCHAR(50),
-		isNeutral		BIT,
-		currency		SMALLINT,
-		showtime		NVARCHAR(50), -- table - shoe - hand of Live Casino
-		betcheck		NVARCHAR(50),
-		transdesc		NVARCHAR(300)
-	)
-
-	CREATE TABLE  #TempBetList (
-		TransID			BIGINT,
-		BetID			BIGINT,
-		Bettype			INT,
-		hdp1			SMALLMONEY,
-		hdp2			SMALLMONEY,
-		OddsType		TINYINT,
-		Odds			MONEY,
-		modds			MONEY,
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		Betteam			NVARCHAR(20),
-		Status			NVARCHAR(10),
-		RefNO			BIGINT,
-		Transdate		DATETIME,
-		Winlostdate		DATETIME,
-		Winlost			MONEY,
+		RefNo			BIGINT,
+		TransDate		DATETIME,
+		WinLostDate		DATETIME,
+		WinLost			MONEY,
 		BetEffective	MONEY,
 		LicenseeWL		MONEY,
-		comm			MONEY,
-		playercomm 		MONEY,
-		Liveindicator	BIT,
-		Livehomescore	SMALLINT,
-		Liveawayscore	SMALLINT,
-		IP				NVARCHAR(50),
-		currency		INT,
-		MatchID			INT,
-		betcheck		NVARCHAR(50),
-		transdesc		NVARCHAR(300)
+		Comm			MONEY,
+		PlayerComm		MONEY,
+		LiveIndicator	BIT,
+		LiveHomeScore	SMALLINT,
+		LiveAwayScore	SMALLINT,
+		Ip				NVARCHAR(15),
+		LeagueId		INT,
+		MatchId			INT,
+		MatchCode		NVARCHAR(50),
+		Race			NVARCHAR(20),
+		HomeId			INT,
+		AwayId			INT,
+		BetStatus		NVARCHAR(50),
+		IsNeutral		BIT,
+		Currency		SMALLINT,
+		ShowTime		NVARCHAR(50), -- table - shoe - hand of Live Casino
+		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(300)
+	)
+
+	CREATE TABLE #TempBetList (
+		TransId			BIGINT,
+		BetId			BIGINT,
+		BetType			INT,
+		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
+		OddsType		TINYINT,
+		Odds			MONEY,
+		Modds			MONEY,
+		Stake			MONEY,
+		Actual_Stake	MONEY,
+		BetTeam			NVARCHAR(20),
+		Status			NVARCHAR(10),
+		RefNo			BIGINT,
+		TransDate		DATETIME,
+		WinLostDate		DATETIME,
+		WinLost			MONEY,
+		BetEffective	MONEY,
+		LicenseeWL		MONEY,
+		Comm			MONEY,
+		PlayerComm 		MONEY,
+		LiveIndicator	BIT,
+		LiveHomeScore	SMALLINT,
+		LiveAwayScore	SMALLINT,
+		Ip				NVARCHAR(50),
+		Currency		INT,
+		MatchId			INT,
+		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(300)
 	)
 
 	DECLARE @TempFromDate DATETIME
 	DECLARE @TempToDate DATETIME
+
+	DECLARE @Yesterday SMALLDATETIME
+	DECLARE @Today DATETIME
+
+	SET @Yesterday = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
+	SET @Today = DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
 
 	IF @Todate > @MoveBetsDay
 	BEGIN
@@ -250,13 +259,13 @@ BEGIN
 		-- BA tickets
 		INSERT INTO #TempBetList
 		SELECT
-			b.TransID,
-			ISNULL(b.BetID,0),
+			b.transid,
+			ISNULL(b.betid, 0),
 			b.bettype,
 			b.hdp1,
 			b.hdp2,
 			b.oddstype,
-			b.Odds,
+			b.odds,
 			b.modds,
 			b.stake,
 			b.actual_stake,
@@ -270,12 +279,12 @@ BEGIN
 			0 AS LicenseeWL,
 			b.comm,
 			b.playercomm,
-			b.Liveindicator,
-			b.Livehomescore,
-			b.Liveawayscore,
-			b.IP,
+			b.liveindicator,
+			b.livehomescore,
+			b.liveawayscore,
+			b.ip,
 			b.currency,
-			b.MatchID,
+			b.matchid,
 			b.betcheck,
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM
@@ -293,44 +302,44 @@ BEGIN
 			-- Sportsbook
 			INSERT INTO #BetListByDateMem
 			SELECT
-				m.Sporttype,
+				m.sporttype,
 				@Username,
-				b.TransID,
-				b.BetID,
-				b.Bettype,
-				b.hdp1, 
-				b.hdp2,
+				b.TransId,
+				b.BetId,
+				b.BetType,
+				b.Hdp1,
+				b.Hdp2,
 				b.OddsType,
 				b.Odds,
-				b.modds,
-				b.stake,
-				b.actual_stake,
-				b.betteam,
-				b.status,
-				b.refno,
-				b.Transdate,
-				b.winlostdate,
-				b.winlost,
+				b.Modds,
+				b.Stake,
+				b.Actual_Stake,
+				b.BetTeam,
+				b.Status,
+				b.RefNo,
+				b.TransDate,
+				b.WinLostDate,
+				b.WinLost,
 				b.BetEffective,
 				b.LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.Liveindicator,
-				b.Livehomescore,
-				b.Liveawayscore,
-				b.IP,
-				m.LeagueID,
-				m.MatchID,
-				m.MatchCode,
+				b.Comm,
+				b.PlayerComm,
+				b.LiveIndicator,
+				b.LiveHomeScore,
+				b.LiveAwayScore,
+				b.Ip,
+				m.leagueid,
+				m.matchid,
+				m.matchcode,
 				'' AS Race,
-				m.HomeID,
-				m.AwayID,
-				m.Betstatus,
+				m.homeid,
+				m.awayid,
+				m.betstatus,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
-				b.currency,
+				b.Currency,
 				'' AS ShowTime,
-				b.betcheck,
-				b.transdesc
+				b.BetCheck,
+				b.TransDesc
 			FROM
 				#TempBetList AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -341,7 +350,7 @@ BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
 				l.sporttype,
-				@Username, 
+				@Username,
 				b.TransID,
 				b.BetID,
 				b.Bettype,
@@ -389,17 +398,17 @@ BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
 				0, --Sporttype
-				@Username, 
+				@Username,
 				b.TransID,
 				b.BetID,
 				b.bettype,
-				b.hdp1, 
-				b.hdp2, 
-				0 AS OddsType, 
-				b.Odds, 
+				b.hdp1,
+				b.hdp2,
+				0 AS OddsType,
+				b.Odds,
 				b.modds,
 				b.stake,
-				b.actual_stake, 
+				b.actual_stake,
 				b.betteam,
 				b.Status,
 				b.refno,
@@ -439,38 +448,38 @@ BEGIN
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
-				m.Sporttype, 
-				@Username, 
-				b.TransID,
-				ISNULL(b.BetID,0),
+				m.Sporttype,
+				@Username,
+				b.transid,
+				ISNULL(b.betid,0),
 				b.Bettype,
-				b.hdp1, 
+				b.hdp1,
 				b.hdp2,
 				b.OddsType,
 				b.Odds,
 				b.modds,
 				b.stake,
-				b.actual_stake, 
+				b.actual_stake,
 				b.betteam,
 				b.status,
 				b.refno,
-				b.Transdate,
+				b.transdate,
 				b.winlostdate,
 				(b.winlost-actual_stake),
 				ABS(b.winlost-actual_stake),
 				- (b.winlost-b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
-				b.Liveindicator,
-				b.Livehomescore,
-				b.Liveawayscore,
-				b.IP,
-				m.LeagueID,
-				m.MatchID,
-				m.MatchCode,
+				b.liveindicator,
+				b.livehomescore,
+				b.liveawayscore,
+				b.ip,
+				m.leagueid,
+				m.matchid,
+				m.matchcode,
 				'' AS Race,
-				m.HomeID,
-				m.AwayID,
+				m.homeid,
+				m.awayid,
 				m.Betstatus,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.currency,
@@ -607,14 +616,14 @@ BEGIN
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
-				m.Sporttype, 
-				@Username, 
-				b.TransID,
+				m.sporttype,
+				@Username,
+				b.transid,
 				ISNULL(ob.bettype,0),
-				b.Bettype,
+				b.bettype,
 				b.hdp1,
 				b.hdp2,
-				b.OddsType,
+				b.oddstype,
 				ob.Odds,
 				b.modds,
 				ob.stake,
@@ -629,17 +638,17 @@ BEGIN
 				- (b.winlost-b.actual_stake) AS LicenseeWL,
 				CASE WHEN b.bettype = 903 THEN b.awinlost ELSE b.comm END AS comm,
 				b.playercomm,
-				b.Liveindicator,
-				b.Livehomescore,
-				b.Liveawayscore,
-				b.IP,
-				m.LeagueID,
-				m.MatchID,
-				m.MatchCode,
+				b.liveindicator,
+				b.livehomescore,
+				b.liveawayscore,
+				b.ip,
+				m.leagueid,
+				m.matchid,
+				m.matchcode,
 				'' AS Race,
-				m.HomeID,
-				m.AwayID,
-				m.Betstatus,
+				m.homeid,
+				m.awayid,
+				m.betstatus,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.currency,
 				'' AS ShowTime,
@@ -651,13 +660,13 @@ BEGIN
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype sbt ON b.Bettype = sbt.Bettype
 			WHERE
-				b.winlostdate BETWEEN @TempFromDate AND @todate 
+				b.winlostdate BETWEEN @TempFromDate AND @todate
 				AND b.recommend = @Recommend --to improve performance
-				AND b.matchid > 0 
-				AND b.custid = @custid 
-				AND sbt.ProductID = 1 
-				AND sbt.EventType = 1 
-				AND b.bettype IN (901, 902, 903) 
+				AND b.matchid > 0
+				AND b.custid = @custid
+				AND sbt.ProductID = 1
+				AND sbt.EventType = 1
+				AND b.bettype IN (901, 902, 903)
 				AND b.statusID IN (111, 112, 113)
 		END
 
@@ -667,7 +676,7 @@ BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
 				l.sporttype,
-				@Username, 
+				@Username,
 				b.TransID,
 				ISNULL(b.BetID,0),
 				b.Bettype,
@@ -712,8 +721,8 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @todate 
 				AND b.recommend = @Recommend 
-				AND b.custid = @custid 
-				AND sbt.ProductID = 2 
+				AND b.custid = @custid
+				AND sbt.ProductID = 2
 				AND b.statusID IN (111, 112, 113)
 		END
 
@@ -722,11 +731,11 @@ BEGIN
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
-				m.Sporttype,
+				m.sporttype,
 				@Username,
-				b.TransID,
+				b.transid,
 				ISNULL(b.BetID,0),
-				b.Bettype,
+				b.bettype,
 				CONVERT(FLOAT, b.hdp1) AS hdp1,
 				CONVERT(FLOAT, b.hdp2) AS hdp2,
 				b.Oddstype,
@@ -737,17 +746,17 @@ BEGIN
 				b.betteam,
 				b.status,
 				b.refno,
-				b.Transdate,
+				b.transdate,
 				b.winlostdate,
 				(b.winlost-actual_stake),
 				ABS(b.winlost-actual_stake),
 				- (b.winlost-b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
-				b.Liveindicator,
-				b.Livehomescore,
-				b.Liveawayscore,
-				b.IP,
+				b.liveindicator,
+				b.livehomescore,
+				b.liveawayscore,
+				b.ip,
 				m.leagueid,
 				m.matchid,
 				m.matchcode,
@@ -779,8 +788,8 @@ BEGIN
 			SELECT
 				m.Sporttype,
 				@Username,
-				b.TransID,
-				ISNULL(b.BetID,0),
+				b.transid,
+				ISNULL(b.betid,0),
 				b.Bettype,
 				CONVERT(FLOAT, b.hdp1) AS hdp1, 
 				CONVERT(FLOAT, b.hdp2) AS hdp2,
@@ -792,17 +801,17 @@ BEGIN
 				b.betteam,
 				b.status,
 				b.refno,
-				b.Transdate,
+				b.transdate,
 				b.winlostdate,
 				(b.winlost-actual_stake),
 				ABS(b.winlost-actual_stake),
 				- (b.winlost-b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
-				b.Liveindicator,
-				b.Livehomescore,
-				b.Liveawayscore,
-				b.IP,
+				b.liveindicator,
+				b.livehomescore,
+				b.liveawayscore,
+				b.ip,
 				m.LeagueID,
 				m.MatchID,
 				m.MatchCode,
@@ -882,29 +891,28 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- RNG Casino, Bingo. Microgaming Live Casino
-		IF @ShowCS = 1 OR @ShowBG = 1 OR @ShowMGCLC = 1
+		-- RNG Casino, Microgaming Live Casino
+		IF @ShowCS = 1 OR @ShowMGCLC = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
 				CASE
 					WHEN sbt.ProductID = 6 THEN 251
-					WHEN sbt.ProductID = 7 THEN 252
 					WHEN sbt.ProductID = 13 THEN 203
 				END AS Sporttype,
 				@Username,
-				b.TransID,
-				ISNULL(b.BetID, 0),
-				b.Bettype,
+				b.transid,
+				ISNULL(b.betid, 0),
+				b.bettype,
 				CONVERT(FLOAT, b.hdp1) AS hdp1,
 				CONVERT(FLOAT, b.hdp2) AS hdp2,
-				b.Oddstype,
-				b.Odds,
+				b.oddstype,
+				b.odds,
 				b.modds,
 				b.stake,
 				b.actual_stake,
 				CASE
-					WHEN sbt.ProductID IN (6, 7) THEN b.Betteam
+					WHEN sbt.ProductID = 6 THEN b.Betteam
 					ELSE ''
 				END AS Betteam,
 				b.status,
@@ -922,7 +930,7 @@ BEGIN
 				b.IP,
 				0 AS LeagueID,
 				CASE
-					WHEN sbt.ProductID IN (6, 7) THEN b.bettype
+					WHEN sbt.ProductID = 6 THEN b.bettype
 					ELSE 0
 				END AS MatchID,
 				'' AS MatchCode,
@@ -945,7 +953,7 @@ BEGIN
 				b.winlostdate BETWEEN @TempFromDate AND @todate
 				AND b.recommend = @Recommend --to improve performance
 				AND b.custid = @CustID 
-				AND (sbt.ProductID IN (7, 13)
+				AND (sbt.ProductID = 13
 					OR (sbt.ProductID = 6 AND sbt.SubProduct = ''))
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -1061,15 +1069,14 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @todate 
-				AND b.winlostdate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
+				AND b.winlostdate < @Yesterday
 				AND b.recommend = @Recommend --to improve performance
 				AND b.custid = @CustID 
 				AND (sbt.ProductID IN (17, 22)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 				AND b.statusID IN (111, 112, 113)
 
-			IF @todate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)				-- yesterday
-				AND @TempFromDate <= DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)	-- today
+			IF @todate >= @Yesterday AND @TempFromDate <= @Today
 			BEGIN
 				-- Today settled ticket
 				INSERT INTO #BetListByDateMem
@@ -1128,8 +1135,7 @@ BEGIN
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				WHERE b.winlostdate BETWEEN @TempFromDate AND @todate
-					AND b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) 
-						AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
+					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND b.custid = @custid 
 					AND (@currencyID = 0 OR b.currency = @currencyID) 
 					AND (sbt.ProductID IN (17, 22)
@@ -1137,12 +1143,12 @@ BEGIN
 					AND brng.statusID <> 0
 				GROUP BY
 					b.transid,
-					ISNULL(b.BetID, 0),
-					b.Bettype,
+					ISNULL(b.betid, 0),
+					b.bettype,
 					b.refno,
 					b.transdate,
 					b.winlostdate,
-					b.IP,
+					b.ip,
 					b.currency,
 					b.matchid,
 					b.transdesc,
@@ -1156,7 +1162,7 @@ BEGIN
 			-- AG Casino (up to yesterday settled ticket)
 			INSERT INTO #BetListByDateMem
 			SELECT
-				250 AS Sporttype, 
+				250 AS Sporttype,
 				@Username, 
 				b.TransID,
 				ISNULL(b.BetID, 0),
@@ -1199,14 +1205,13 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @todate 
-				AND b.winlostdate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
+				AND b.winlostdate < @Yesterday
 				AND b.recommend = @Recommend --to improve performance
 				AND b.custid = @CustID 
 				AND sbt.ProductID = 11
 				AND b.statusID IN (111, 112, 113)
 
-			IF @todate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)				-- yesterday
-				AND @TempFromDate <= DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)	-- today
+			IF @todate >= @Yesterday AND @TempFromDate <= @Today
 			BEGIN
 				-- Today settled ticket
 				INSERT INTO #BetListByDateMem
@@ -1258,8 +1263,7 @@ BEGIN
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 					INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				WHERE b.winlostdate BETWEEN @TempFromDate AND @todate
-					AND b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) 
-						AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
+					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND b.custid = @custid 
 					AND (@currencyID = 0 OR b.currency = @currencyID) 
 					AND sbt.ProductID = 11
@@ -1288,16 +1292,16 @@ BEGIN
 			SELECT @BalanceUpDay=@FromDate
 
 		DELETE FROM #TempBetList
-		
+
 		-- BA tickets
 		INSERT INTO #TempBetList
 		SELECT
-			b.TransID,
-			ISNULL(b.BetID,0),
-			b.Bettype,
-			b.hdp1, 
-			b.hdp2, 
-			b.Oddstype,
+			b.transid,
+			ISNULL(b.betid, 0),
+			b.bettype,
+			b.hdp1,
+			b.hdp2,
+			b.oddstype,
 			b.odds,
 			b.modds,
 			b.stake,
@@ -1305,17 +1309,17 @@ BEGIN
 			b.betteam,
 			b.status,
 			b.refno,
-			b.Transdate,
+			b.transdate,
 			b.winlostdate,
 			(b.winlost-actual_stake),
 			ABS(b.winlost-actual_stake),
 			0 AS LicenseeWL,
 			b.comm,
 			b.playercomm,
-			b.Liveindicator,
-			b.Livehomescore,
-			b.Liveawayscore,
-			b.IP,
+			b.liveindicator,
+			b.livehomescore,
+			b.liveawayscore,
+			b.ip,
 			b.currency,
 			b.matchid,
 			b.betcheck,
@@ -1375,8 +1379,8 @@ BEGIN
 				b.transdesc
 			FROM
 				#TempBetList b
-				INNER JOIN dbo.MATCH14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN @SportBettype sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.ProductID = 1 AND sbt.EventType = 1
 		
 			-- Outright
@@ -1387,7 +1391,7 @@ BEGIN
 				b.TransID,
 				b.BetID,
 				b.Bettype,
-				CONVERT(FLOAT, b.hdp1) AS hdp1, 
+				CONVERT(FLOAT, b.hdp1) AS hdp1,
 				CONVERT(FLOAT, b.hdp2) AS hdp2,
 				0 AS OddsType, 
 				b.Odds, 
@@ -1422,12 +1426,12 @@ BEGIN
 				'' AS transdesc
 			FROM
 				#TempBetList b
-				INNER JOIN dbo.Outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
+				INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 				INNER JOIN @SportBettype sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.ProductID = 1 AND sbt.EventType = 2
 
-			-- Mix Parlay +  Combination Mixed Parlay
+			-- Mix Parlay + Combination Mixed Parlay
 			INSERT INTO #BetListByDateMem
 			SELECT
 				0, --Sporttype
@@ -1531,7 +1535,7 @@ BEGIN
 				AND b.matchid > 0 
 				AND sbt.ProductID = 1 
 				AND sbt.EventType = 1 
-				AND b.bettype NOT IN (901,902,903) 
+				AND b.bettype NOT IN (901, 902, 903) 
 				AND b.statusID IN (111, 112, 113)
 				AND b.transid NOT IN (SELECT Transid FROM #TempBetList) 
 
@@ -1613,8 +1617,8 @@ BEGIN
 				- (b.winlost-b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
-				0 AS LiveIndicator, 
-				b.LiveHomescore, 
+				0 AS LiveIndicator,
+				b.LiveHomescore,
 				b.LiveAwayscore,
 				b.IP,
 				m.LeagueID,
@@ -1710,9 +1714,9 @@ BEGIN
 			SELECT
 				l.sporttype,
 				@Username, 
-				b.TransID,
-				ISNULL(b.BetID,0),
-				b.Bettype,
+				b.transid,
+				ISNULL(b.betid,0),
+				b.bettype,
 				b.hdp1,
 				b.hdp2,
 				0 AS OddsType,
@@ -1730,8 +1734,8 @@ BEGIN
 				b.awinlost,
 				b.comm,
 				b.playercomm,
-				0 AS LiveIndicator, 
-				b.LiveHomescore, 
+				0 AS LiveIndicator,
+				b.LiveHomescore,
 				b.LiveAwayscore,
 				b.IP,
 				m.LeagueID,
@@ -1923,15 +1927,14 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- RNG Casino, Bingo, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, Voidbridge
-		IF @ShowCS = 1 OR @ShowBG = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1  OR @ShowVB = 1
+		-- RNG Casino, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, Voidbridge
+		IF @ShowCS = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1  OR @ShowVB = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN 251
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.matchid
-					WHEN sbt.ProductID = 7 THEN 252
 					WHEN sbt.ProductID = 11 THEN 250
 					WHEN sbt.ProductID = 13 THEN 203
 					WHEN sbt.ProductID = 17 THEN 205
@@ -1943,34 +1946,28 @@ BEGIN
 				b.Bettype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.hdp1
-					WHEN sbt.ProductID = 7 THEN b.hdp1
 					ELSE 0
 				END AS hdp1,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.hdp2
-					WHEN sbt.ProductID = 7 THEN b.hdp2
 					ELSE 0
 				END AS hdp2,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.oddstype
-					WHEN sbt.ProductID = 7 THEN b.oddstype
 					ELSE 0
 				END AS Oddstype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-					WHEN sbt.ProductID = 7 THEN b.Odds
 					ELSE 0
 				END AS Odds,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.modds
-					WHEN sbt.ProductID = 7 THEN b.modds
 					ELSE 0
 				END AS modds,
 				b.stake,
 				b.actual_stake,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Betteam
-					WHEN sbt.ProductID = 7 THEN b.Betteam
 					ELSE ''
 				END AS Betteam,
 				b.status,
@@ -1982,14 +1979,13 @@ BEGIN
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
-				b.Liveindicator,
-				b.Livehomescore,
-				b.Liveawayscore,
-				b.IP,
+				b.liveindicator,
+				b.livehomescore,
+				b.liveawayscore,
+				b.ip,
 				0 AS LeagueID,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.bettype
-					WHEN sbt.ProductID = 7 THEN b.bettype
 					ELSE 0
 				END AS MatchID,
 				'' AS MatchCode,
@@ -2016,7 +2012,7 @@ BEGIN
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 				AND b.recommend = @Recommend --to improve performance
 				AND b.custid = @CustID 
-				AND sbt.ProductID IN (6, 7, 11, 13, 17, 22)
+				AND sbt.ProductID IN (6, 11, 13, 17, 22)
 				AND b.statusID IN (111, 112, 113)
 		END
 
@@ -2084,7 +2080,7 @@ BEGIN
 			SET @TempToDate = @todate
 
 		DELETE FROM #TempBetList
-		
+
 		-- BA tickets
 		INSERT INTO #TempBetList
 		SELECT
@@ -2170,8 +2166,8 @@ BEGIN
 				b.betcheck,
 				b.transdesc
 			FROM
-				#TempBetList b
-				INNER JOIN bodb_archive.dbo.MATCH_BK AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				#TempBetList AS b
+				INNER JOIN bodb_Archive.dbo.MATCH_BK AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.ProductID = 1 AND sbt.EventType = 1
 		
@@ -2179,12 +2175,12 @@ BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
 				l.sporttype,
-				@Username, 
+				@Username,
 				b.TransID,
 				b.BetID,
 				b.Bettype,
-				CONVERT(FLOAT, b.hdp1) AS hdp1, 
-				CONVERT(FLOAT, b.hdp2) AS hdp2, 
+				CONVERT(FLOAT, b.hdp1) AS hdp1,
+				CONVERT(FLOAT, b.hdp2) AS hdp2,
 				0 AS OddsType, 
 				b.Odds, 
 				b.modds,
@@ -2200,8 +2196,8 @@ BEGIN
 				b.LicenseeWL,
 				b.comm,
 				b.playercomm,
-				0 AS LiveIndicator, 
-				b.LiveHomescore, 
+				0 AS LiveIndicator,
+				b.LiveHomescore,
 				b.LiveAwayscore,
 				b.IP,
 				m.LeagueID,
@@ -2265,7 +2261,7 @@ BEGIN
 				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc
 			FROM
-				#TempBetList b
+				#TempBetList AS b
 				INNER JOIN @SportBettype sbt ON b.Bettype = sbt.Bettype
 			WHERE
 				sbt.ProductID = 1 
@@ -2380,7 +2376,7 @@ BEGIN
 				AND b.recommend = @Recommend 
 				AND sbt.ProductID = 1 
 				AND sbt.EventType = 0 
-				AND b.matchid IN (0,9,29) --should not remove 0 in Archive
+				AND b.matchid IN (0, 9, 29) --should not remove 0 in Archive
 				AND b.statusID IN (111, 112, 113)
 				AND b.transid NOT IN (SELECT Transid FROM #TempBetList)
 
@@ -2719,15 +2715,14 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- RNG Casino, Bingo, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Voidbridge
-		IF @ShowCS = 1 OR @ShowBG = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowVB = 1
+		-- RNG Casino, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Voidbridge
+		IF @ShowCS = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowVB = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN 251
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.matchid
-					WHEN sbt.ProductID = 7 THEN 252
 					WHEN sbt.ProductID = 11 THEN 250
 					WHEN sbt.ProductID = 13 THEN 203
 					WHEN sbt.ProductID = 17 THEN 205
@@ -2739,34 +2734,28 @@ BEGIN
 				b.Bettype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.hdp1
-					WHEN sbt.ProductID = 7 THEN b.hdp1
 					ELSE 0
 				END AS hdp1,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.hdp2
-					WHEN sbt.ProductID = 7 THEN b.hdp2
 					ELSE 0
 				END AS hdp2,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.oddstype
-					WHEN sbt.ProductID = 7 THEN b.oddstype
 					ELSE 0
 				END AS Oddstype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-					WHEN sbt.ProductID = 7 THEN b.Odds
 					ELSE 0
 				END AS Odds,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.modds
-					WHEN sbt.ProductID = 7 THEN b.modds
 					ELSE 0
 				END AS modds,
 				b.stake,
 				b.actual_stake,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Betteam
-					WHEN sbt.ProductID = 7 THEN b.Betteam
 					ELSE ''
 				END AS Betteam,
 				b.status,
@@ -2785,7 +2774,6 @@ BEGIN
 				0 AS LeagueID,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.bettype
-					WHEN sbt.ProductID = 7 THEN b.bettype
 					ELSE 0
 				END AS MatchID,
 				'' AS MatchCode,
@@ -2812,7 +2800,7 @@ BEGIN
 				b.winlostdate BETWEEN @fromdate AND @TempToDate 
 				AND b.custid = @CustID 
 				AND b.recommend = @Recommend 
-				AND sbt.ProductID IN (6, 7, 11, 13, 17, 22)
+				AND sbt.ProductID IN (6, 11, 13, 17, 22)
 				AND sbt.EventType = 0 
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -2893,9 +2881,6 @@ BEGIN
 		@RowStart = @PageSize * @PageIndex + 1,
 		@RowEnd = @RowStart + @PageSize - 1
 
-	DECLARE @Today SMALLDATETIME 
-	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
-
 	CREATE NONCLUSTERED INDEX IDX_Index_betlist ON #BetListByDateMem (Currency)
 
 	IF @CurrencyID <> 0
@@ -2908,70 +2893,70 @@ BEGIN
 	FROM Lrf_f_GetExchangeDaily(@FromDate,@ToDate)
 	WHERE exchangeid IN (SELECT DISTINCT Currency FROM #BetListByDateMem)
 
-	UPDATE #BetListByDateMem 
+	UPDATE #BetListByDateMem
 	SET BetEffective = 0
 	WHERE winlostdate < @BetEffectiveDate
 		OR status NOT IN ('LOSE','WON')
 
-	SELECT 
+	SELECT
 		@TotalRows = COUNT(transid),
-		@SumWinlost = SUM(ISNULL(winlost,0)),
-		@SumBetEffective = SUM(ISNULL(BetEffective,0)),
-		@SumLicenseeWL = SUM(ISNULL(licenseeWL,0)),
-		@SumComm = SUM(ISNULL(comm,0)),
-		@SumPlayerComm = SUM(ISNULL(playercomm,0)),
+		@SumWinlost			= SUM(ISNULL(b.WinLost, 0)),
+		@SumBetEffective	= SUM(ISNULL(b.BetEffective, 0)),
+		@SumLicenseeWL		= SUM(ISNULL(b.LicenseeWL, 0)),
+		@SumComm			= SUM(ISNULL(b.Comm, 0)),
+		@SumPlayerComm		= SUM(ISNULL(b.PlayerComm, 0)),
 		--USD
-		@SumWinlostUSD = SUM(ISNULL(winlost*e.USD,0)),
-		@SumBetEffectiveUSD = SUM(ISNULL(BetEffective*e.USD,0)),
-		@SumLicenseeWLUSD = SUM(ISNULL(LicenseeWL*e.USD,0)),
-		@SumCommUSD = SUM(ISNULL(comm*e.USD,0)),
-		@SumPlayerCommUSD = SUM(ISNULL(playercomm*e.USD,0)),
+		@SumWinlostUSD		= SUM(ISNULL(b.WinLost		* e.USD, 0)),
+		@SumBetEffectiveUSD	= SUM(ISNULL(b.BetEffective	* e.USD, 0)),
+		@SumLicenseeWLUSD	= SUM(ISNULL(b.LicenseeWL	* e.USD, 0)),
+		@SumCommUSD			= SUM(ISNULL(b.Comm			* e.USD, 0)),
+		@SumPlayerCommUSD	= SUM(ISNULL(b.PlayerComm	* e.USD, 0)),
 		--EUR
-		@SumWinlostEUR = SUM(ISNULL(winlost*e.EUR,0)),
-		@SumBetEffectiveEUR = SUM(ISNULL(BetEffective*e.EUR,0)),
-		@SumLicenseeWLEUR = SUM(ISNULL(LicenseeWL*e.EUR,0)),
-		@SumCommEUR = SUM(ISNULL(comm*e.EUR,0)),
-		@SumPlayerCommEUR = SUM(ISNULL(playercomm*e.EUR,0)),
+		@SumWinlostEUR		= SUM(ISNULL(b.WinLost		* e.EUR, 0)),
+		@SumBetEffectiveEUR	= SUM(ISNULL(b.BetEffective	* e.EUR, 0)),
+		@SumLicenseeWLEUR	= SUM(ISNULL(b.LicenseeWL	* e.EUR, 0)),
+		@SumCommEUR			= SUM(ISNULL(b.Comm			* e.EUR, 0)),
+		@SumPlayerCommEUR	= SUM(ISNULL(b.PlayerComm	* e.EUR, 0)),
 		--GBP
-		@SumWinlostGBP = SUM(ISNULL(winlost*e.GBP,0)),
-		@SumBetEffectiveGBP = SUM(ISNULL(BetEffective*e.GBP,0)),
-		@SumLicenseeWLGBP = SUM(ISNULL(LicenseeWL*e.GBP,0)),
-		@SumCommGBP = SUM(ISNULL(comm*e.GBP,0)),
-		@SumPlayerCommGBP = SUM(ISNULL(playercomm*e.GBP,0))
+		@SumWinlostGBP		= SUM(ISNULL(b.WinLost		* e.GBP, 0)),
+		@SumBetEffectiveGBP	= SUM(ISNULL(b.BetEffective	* e.GBP, 0)),
+		@SumLicenseeWLGBP	= SUM(ISNULL(b.LicenseeWL	* e.GBP, 0)),
+		@SumCommGBP			= SUM(ISNULL(b.Comm			* e.GBP, 0)),
+		@SumPlayerCommGBP	= SUM(ISNULL(b.PlayerComm	* e.GBP, 0))
 	FROM #BetListByDateMem b
 		INNER JOIN #TempExchange e 
-		ON e.ExchangeDate = (CASE WHEN b.winlostdate <= @Today THEN b.winlostdate ELSE @Today END) AND e.exchangeid = b.currency
+			ON e.ExchangeDate = (CASE WHEN b.winlostdate <= @Today THEN b.winlostdate ELSE @Today END) AND e.exchangeid = b.currency
 
-	SELECT A.* 
+	SELECT A.*
 	FROM
 	(
 		SELECT
-			ROW_NUMBER() OVER(ORDER BY b.TransID) AS RowNum,
+			ROW_NUMBER() OVER(ORDER BY b.TransId) AS RowNum,
 			b.*,
 			--USD
-			Stake			* e.USD AS StakeUSD,
-			Actual_Stake	* e.USD AS Actual_StakeUSD,
-			Winlost			* e.USD AS WinlostUSD,
-			BetEffective	* e.USD AS BetEffectiveUSD,
-			licenseeWL		* e.USD AS licenseeWLUSD,
-			comm			* e.USD AS commUSD,
-			playercomm		* e.USD AS PlayerCommUSD,
+			b.Stake			* e.USD AS StakeUSD,
+			b.Actual_Stake	* e.USD AS Actual_StakeUSD,
+			b.WinLost		* e.USD AS WinLostUSD,
+			b.BetEffective	* e.USD AS BetEffectiveUSD,
+			b.LicenseeWL	* e.USD AS LicenseeWLUSD,
+			b.Comm			* e.USD AS CommUSD,
+			b.PlayerComm	* e.USD AS PlayerCommUSD,
 			--EUR
-			Stake			* e.EUR AS StakeEUR,
-			Actual_Stake	* e.EUR AS Actual_StakeEUR,
-			Winlost			* e.EUR AS WinlostEUR,
-			BetEffective	* e.EUR AS BetEffectiveEUR,
-			licenseeWL		* e.EUR AS licenseeWLEUR,
-			comm			* e.EUR AS commEUR,
-			playercomm		* e.EUR AS PlayerCommEUR,
+			b.Stake			* e.EUR AS StakeEUR,
+			b.Actual_Stake	* e.EUR AS Actual_StakeEUR,
+			b.WinLost		* e.EUR AS WinLostEUR,
+			b.BetEffective	* e.EUR AS BetEffectiveEUR,
+			b.LicenseeWL	* e.EUR AS LicenseeWLEUR,
+			b.Comm			* e.EUR AS CommEUR,
+			b.PlayerComm	* e.EUR AS PlayerCommEUR,
 			--GBP
-			Stake			* e.GBP AS StakeGBP,
-			Actual_Stake	* e.GBP AS Actual_StakeGBP,
-			Winlost			* e.GBP AS WinlostGBP,
-			BetEffective	* e.GBP AS BetEffectiveGBP,
-			licenseeWL		* e.GBP AS licenseeWLGBP,
-			comm			* e.GBP AS commGBP,
-			playercomm		* e.GBP AS PlayerCommGBP
+			b.Stake			* e.GBP AS StakeGBP,
+			b.Actual_Stake	* e.GBP AS Actual_StakeGBP,
+			b.WinLost		* e.GBP AS WinLostGBP,
+			b.BetEffective	* e.GBP AS BetEffectiveGBP,
+			b.LicenseeWL	* e.GBP AS LicenseeWLGBP,
+			b.Comm			* e.GBP AS CommGBP,
+			b.PlayerComm	* e.GBP AS PlayerCommGBP
 		FROM #BetListByDateMem AS b
 			INNER JOIN #TempExchange AS e
 			ON e.ExchangeDate = (CASE WHEN b.winlostdate <= @Today THEN b.winlostdate ELSE @Today END) AND e.exchangeid = b.currency
@@ -3010,10 +2995,10 @@ BEGIN
 			FROM dbo.bettransm AS bm WITH (NOLOCK)
 				INNER JOIN #BetListByDateMem AS b ON bm.refno = b.transid
 				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-				INNER JOIN @SportBettype AS sbt ON Bm.bettype = sbt.bettype
+				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.bettype
 			WHERE sbt.ProductID = 2 AND sbt.EventType = 2
 		END
-		
+
 		IF @Fromdate <= @MoveBetsDay
 		BEGIN
 			INSERT INTO @BettransDetail
@@ -3063,7 +3048,7 @@ BEGIN
 		IF @Todate > @MoveBetsDay
 		BEGIN
 			INSERT INTO @BettransDetail
-			SELECT 
+			SELECT
 				bg.refno,
 				bg.odds,
 				bg.stake,
@@ -3080,7 +3065,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.bettype
 			WHERE sbt.ProductID = 4
 		END
-		
+
 		IF @Fromdate <= @MoveBetsDay
 		BEGIN
 			INSERT INTO @BettransDetail
