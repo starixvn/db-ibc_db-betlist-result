@@ -30,6 +30,7 @@ AS
 		- 20160125@Kos: Fix Colossus Bet result issue
 		- 20160217@Kos: Support AllBet [Redmine: #50864]
 		- 20160401@Kos: Support Voidbridge [#Redmine: 54643]
+		- 20160411@Kos: Support Combo Parlay [Redmine: #55282]
 	
 	Param's Explanation:
 	
@@ -156,6 +157,7 @@ BEGIN
 		, CASE 
 			WHEN c.ProductID IN ( 9, 12 ) AND b.bettype IN ( 1000, 1701, 1702 ) THEN b.betcheck 
 			WHEN c.ProductID = 19 THEN b.betcheck
+			WHEN b.bettype = 29 THEN ISNULL(b.betcheck, '')
 			ELSE ''
 		END	AS betcheck
 		, CASE WHEN b.comstatus = '1' THEN '1' 
