@@ -70,6 +70,7 @@ AS
 		- 20151228@Kos: Support RNG Casino Single Wallet
 		- 20160202@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160406@Kos: Support Voidbridge [#Redmine: 54925]
+		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 
 	Param's Explanation: 
 		+ @transtype:
@@ -372,8 +373,8 @@ BEGIN
 			b.refno,
 			0,
 			0,
-			0,
-			0,
+			b.hdp1,
+			b.hdp2,
 			b.modds,
 			0 AS OddsType,
 			b.odds,
@@ -401,7 +402,7 @@ BEGIN
 			CONVERT(BIT,0) AS IsNeutral,
 			b.currency,
 			'' AS ShowTime,
-			'' AS betcheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc
 		FROM
 			bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
@@ -779,6 +780,7 @@ BEGIN
 
 	DROP TABLE #TempExchange
 END
+
 
 
 

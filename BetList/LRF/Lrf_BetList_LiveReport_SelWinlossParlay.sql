@@ -1,23 +1,23 @@
 ﻿ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossParlay]
-	@LicenseeID		INT ,
+	@LicenseeID		INT,
 	@UserID			INT,
-	@CurrencyID		INT = 0,
-	@Bettype		INT = 9,
-	@ShowBA			BIT = 0,
-	@ShowSB			BIT = 0,
+	@CurrencyID		INT				= 0,
+	@Bettype		INT				= 9,
+	@ShowBA			BIT				= 0,
+	@ShowSB			BIT				= 0,
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
-	@PageSize		INT=1000,
-	@PageIndex		INT=1,
-	@Sort			VARCHAR(20) = 'Transid DESC',
-	@Liveindicator	INT = 1	
+	@PageSize		INT				= 1000,
+	@PageIndex		INT				= 1,
+	@Sort			VARCHAR(20)		= 'Transid DESC',
+	@Liveindicator	INT				= 1
 AS
 
 /*
 	Created: Henry@20120111
-	Task : Betlist for Parlay
-	DB: DB052.bodb02
+	Task: Betlist for Parlay
+	DB: DBEXT.bodb02
 	Original: [Age_BetList_SelWinlossParlay_Ag]
 	Revisions:
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
@@ -27,15 +27,16 @@ AS
 		- 20121004@Jim: replace @currency input param by @currencyID
 		- 20130305@Jim: remove Grand total row in the result data
 		- 20130404@Jim: set default @ShowBA=0
-		- 20130514@Jim:Restrict permission of Licensee Users by currency
+		- 20130514@Jim: Restrict permission of Licensee Users by currency
 		- 20130625@Jim: Support to view currency UUS
 		- 20140520@Hannah: Sort betlist
 		- 20140602@Hannah: Separate Live/ Non - Live data in Live Report
 		- 20141111@Winnie: Change from LicenseeCust to f_SelLicenseeCust
 		- 20150126@Winnie: Add base currency GBP 
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
+		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 
-	Param's Explanation: 
+	Param's Explanation:
 		@Liveindicator : indicate that whether the report will get live data or not
 			+ 0: Non - Live data only
 			+ 1: Live data only
@@ -45,72 +46,74 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT  currencyID,LicenseeID into #currency
-	FROM  dbo.Lrf_f_GetCurrencybyUser(@licenseeID,@userID,1)-- System is default=1 (LRF)
-	WHERE @CurrencyID=0  OR (@CurrencyID<>0 AND CurrencyID=@CurrencyID)
+	SELECT currencyID,
+		LicenseeID
+	INTO #Currency
+	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
+	WHERE @CurrencyID = 0 OR (@CurrencyID <> 0 AND CurrencyID = @CurrencyID)
 
 	DECLARE @TempAg AS TABLE (custid INT)
 
-	INSERT  INTO @TempAg ( CustId)
-	SELECT  DISTINCT CustID  
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) lc --WITH ( NOLOCK )  
-			INNER JOIN #currency c ON c.LicenseeID=lc.LicenseeID AND c.CurrencyID=lc.Currency
-	-- WHERE   lc.Currency <> 20
+	INSERT INTO @TempAg
+	SELECT DISTINCT CustID
+	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
+		INNER JOIN #Currency AS c ON c.LicenseeID = lc.LicenseeID AND c.CurrencyID = lc.Currency
 
-	CREATE TABLE #AgWinlossMP
-	(
-		username NVARCHAR(50),
-		custid INT,
-		bettype SMALLINT,		
-		refno NVARCHAR(50),		
-		transid BIGINT,	
-		BetID BIGINT,
-		hdp1 SMALLMONEY,
-		hdp2 SMALLMONEY,
-		odds MONEY,
-		modds MONEY,
-		status NVARCHAR(50),
-		Stake MONEY, 
+	CREATE TABLE #AgWinlossMP (
+		username		NVARCHAR(50),
+		custid			INT,
+		bettype			SMALLINT,
+		refno			NVARCHAR(50),
+		transid			BIGINT,
+		BetID			BIGINT,
+		hdp1			SMALLMONEY,
+		hdp2			SMALLMONEY,
+		odds			MONEY,
+		modds			MONEY,
+		status			NVARCHAR(50),
+		Stake			MONEY,
 		Actual_Stake	MONEY,
-		winlost MONEY,
-		licenseeWL MONEY,
-		comm MONEY,
-		playercomm MONEY,
-		transdate DATETIME,
-		winlostdate DATETIME,
-		betteam NVARCHAR(25),
-		liveindicator BIT,
-		livehomescore SMALLINT,
-		liveawayscore SMALLINT,
-		IP VARCHAR(30),
-		isNeutral BIT,
-		currency SMALLINT,
-		isBA INT	
+		winlost			MONEY,
+		licenseeWL		MONEY,
+		comm			MONEY,
+		playercomm		MONEY,
+		transdate		DATETIME,
+		winlostdate		DATETIME,
+		betteam			NVARCHAR(25),
+		liveindicator	BIT,
+		livehomescore	SMALLINT,
+		liveawayscore	SMALLINT,
+		IP				VARCHAR(30),
+		isNeutral		BIT,
+		currency		SMALLINT,
+		BetCheck		NVARCHAR(50),
+		isBA			INT
 	)
 
 	IF @Todate > @MoveBetsDay
 	BEGIN
 		IF @ShowBA = 1
 		BEGIN
-			INSERT INTO #AgWinlossMP 
+			INSERT INTO #AgWinlossMP
 			SELECT
 				b.username,
 				b.custid,
-				b.bettype,		
-				CONVERT(NVARCHAR,b.refno),		
-				CASE WHEN bettype <> 29 THEN b.transid
-					ELSE CASE WHEN ISNULL(b.BetID,0)=0 THEN b.transid ELSE betid END
-					END AS transid,		
-				ISNULL(b.BetID,0),
+				b.bettype,
+				CONVERT(NVARCHAR,b.refno),
+				CASE
+					WHEN b.bettype <> 29 THEN b.transid
+					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
+				END AS transid,
+				ISNULL(b.betid, 0),
 				b.hdp1,
 				b.hdp2,
 				b.odds,
 				b.modds,
 				b.status,
 				b.stake,
-				b.actual_stake, 
+				b.actual_stake,
 				(b.winlost-actual_stake),
-				0 AS LicenseeWL ,
+				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -119,47 +122,49 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.IP,
+				b.ip,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.currency,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				1 AS isBA
-			FROM
-				bettrans b WITH (NOLOCK) 
+			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)	AND
-				((@CurrencyID=0 AND currency IN (SELECT currencyId FROM #currency))   OR (@CurrencyID<>0 AND Currency=@CurrencyID)) AND  
-				b.Winlostdate>=@FromDate AND
-				b.Winlostdate<=@ToDate AND
-				b.Bettype=@BetType AND
-				b.matchid = @BetType AND
-				b.tpositiontaking=0 AND
-				b.statusID IN (111,112,113) AND
-				((@Liveindicator = 0 AND b.livehomescore = 0)
-				OR (@Liveindicator = 1 AND b.livehomescore = 1)
-				OR (@Liveindicator = 2))		
+				b.recommend IN (SELECT custid FROM @TempAg)
+				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #Currency))
+					OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
+				AND b.winlostdate >= @FromDate
+				AND b.winlostdate <= @ToDate
+				AND b.bettype = @BetType
+				AND b.matchid = @BetType
+				AND b.tpositiontaking = 0
+				AND b.statusID IN (111, 112, 113)
+				AND ((@Liveindicator = 0 AND b.livehomescore = 0)
+					OR (@Liveindicator = 1 AND b.livehomescore = 1)
+					OR (@Liveindicator = 2))
 		END
 
 		IF @ShowSB = 1
 		BEGIN
-			INSERT INTO #AgWinlossMP 
+			INSERT INTO #AgWinlossMP
 			SELECT
 				b.username,
 				b.custid,
-				b.bettype,		
-				CONVERT(NVARCHAR,b.refno),		
-				CASE WHEN bettype <> 29 THEN b.transid
-					ELSE CASE WHEN ISNULL(b.BetID,0)=0 THEN b.transid ELSE betid END
-					END AS transid,	
-				ISNULL(b.BetID,0),
+				b.bettype,
+				CONVERT(NVARCHAR, b.refno),
+				CASE
+					WHEN b.bettype <> 29 THEN b.transid
+					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
+				END AS transid,
+				ISNULL(b.betid, 0),
 				b.hdp1,
 				b.hdp2,
 				b.odds,
 				b.modds,
 				b.status,
 				b.stake,
-				b.actual_stake, 
-				(b.winlost-actual_stake),
-				 -(b.winlost-b.actual_stake) AS LicenseeWL ,
+				b.actual_stake,
+				(b.winlost - actual_stake),
+				 -(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -168,24 +173,25 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.IP,
+				b.ip,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.currency,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				0 AS isBA
-			FROM
-				bettrans b WITH (NOLOCK)
+			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)	AND
-				((@CurrencyID=0 AND currency IN (SELECT currencyId FROM #currency))   OR (@CurrencyID<>0 AND Currency=@CurrencyID)) AND
-				b.Winlostdate>=@FromDate AND
-				b.Winlostdate<=@ToDate AND
-				b.Bettype = @Bettype AND
-				b.matchid = @Bettype AND
-				b.tpositiontaking<>0 AND
-				b.statusID IN (111,112,113) AND
-				((@Liveindicator = 0 AND b.livehomescore = 0)
-				OR (@Liveindicator = 1 AND b.livehomescore = 1)
-				OR (@Liveindicator = 2))
+				b.recommend IN (SELECT custid FROM @TempAg)
+				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #Currency))
+					OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
+				AND b.winlostdate >= @FromDate
+				AND b.winlostdate <= @ToDate
+				AND b.bettype = @Bettype
+				AND b.matchid = @Bettype
+				AND b.tpositiontaking <> 0
+				AND b.statusID IN (111, 112, 113)
+				AND ((@Liveindicator = 0 AND b.livehomescore = 0)
+					OR (@Liveindicator = 1 AND b.livehomescore = 1)
+					OR (@Liveindicator = 2))
 		END
 	END
 
@@ -193,25 +199,26 @@ BEGIN
 	BEGIN
 		IF @ShowBA = 1
 		BEGIN
-			INSERT INTO #AgWinlossMP 
+			INSERT INTO #AgWinlossMP
 			SELECT
 				b.username,
 				b.custid,
-				b.bettype,		
-				CONVERT(NVARCHAR,b.refno),		
-				CASE WHEN bettype <> 29 THEN b.transid
-					ELSE CASE WHEN ISNULL(b.BetID,0)=0 THEN b.transid ELSE betid END
-					END AS transid,	
-				ISNULL(b.BetID,0),
+				b.bettype,
+				CONVERT(NVARCHAR, b.refno),
+				CASE
+					WHEN b.bettype <> 29 THEN b.transid
+					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
+				END AS transid,
+				ISNULL(b.betid, 0),
 				b.hdp1,
 				b.hdp2,
 				b.odds,
 				b.modds,
 				b.status,
 				b.stake,
-				b.actual_stake, 
+				b.actual_stake,
 				(b.winlost-actual_stake),
-				0 AS LicenseeWL ,
+				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -220,47 +227,49 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.IP,
+				b.ip,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.currency,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				1 AS IsBA
-			FROM
-				bettrans14 b WITH (NOLOCK) 
+			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)	AND
-				((@CurrencyID=0 AND currency IN (SELECT currencyId FROM #currency))   OR (@CurrencyID<>0 AND Currency=@CurrencyID)) AND  
-				b.Winlostdate>=@FromDate AND
-				b.Winlostdate<=@ToDate AND
-				b.Bettype=@BetType AND
-				b.matchid = @BetType AND
-				b.tpositiontaking=0 AND
-				b.statusID IN (111,112,113) AND
-				((@Liveindicator = 0 AND b.livehomescore = 0)
-				OR (@Liveindicator = 1 AND b.livehomescore = 1)
-				OR (@Liveindicator = 2))		
-		END	
+				b.recommend IN (SELECT custid FROM @TempAg)
+				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #Currency))
+					OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
+				AND b.winlostdate >= @FromDate
+				AND b.winlostdate <= @ToDate
+				AND b.bettype = @BetType
+				AND b.matchid = @BetType
+				AND b.tpositiontaking = 0
+				AND b.statusID IN (111, 112, 113)
+				AND ((@Liveindicator = 0 AND b.livehomescore = 0)
+					OR (@Liveindicator = 1 AND b.livehomescore = 1)
+					OR (@Liveindicator = 2))
+		END
 
 		IF @ShowSB = 1
 		BEGIN
-			INSERT INTO #AgWinlossMP 
+			INSERT INTO #AgWinlossMP
 			SELECT
 				b.username,
 				b.custid,
-				b.bettype,		
-				CONVERT(NVARCHAR,b.refno),		
-				CASE WHEN bettype <> 29 THEN b.transid
-					ELSE CASE WHEN ISNULL(b.BetID,0)=0 THEN b.transid ELSE betid END
-					END AS transid,		
-				ISNULL(b.BetID,0),
+				b.bettype,
+				CONVERT(NVARCHAR, b.refno),
+				CASE
+					WHEN b.bettype <> 29 THEN b.transid
+					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
+				END AS transid,
+				ISNULL(b.betid, 0),
 				b.hdp1,
 				b.hdp2,
 				b.odds,
 				b.modds,
 				b.status,
 				b.stake,
-				b.actual_stake, 
-				(b.winlost-actual_stake),
-				 -(b.winlost-b.actual_stake) AS LicenseeWL ,
+				b.actual_stake,
+				(b.winlost - actual_stake),
+				 -(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -269,45 +278,50 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.IP,
+				b.ip,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.currency,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				0 AS IsBA
-			FROM
-				bettrans14 b WITH (NOLOCK) 		
+			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)	AND
-				((@CurrencyID=0 AND currency IN (SELECT currencyId FROM #currency))   OR (@CurrencyID<>0 AND Currency=@CurrencyID)) AND
-				b.Winlostdate>=@FromDate AND
-				b.Winlostdate<=@ToDate AND
-				b.Bettype = @Bettype AND
-				b.matchid = @Bettype AND
-				b.tpositiontaking<>0 AND
-				b.statusID IN (111,112,113) AND
-				((@Liveindicator = 0 AND b.livehomescore = 0)
-				OR (@Liveindicator = 1 AND b.livehomescore = 1)
-				OR (@Liveindicator = 2))		
-		END		
+				b.recommend IN (SELECT custid FROM @TempAg)
+				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #Currency))
+					OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
+				AND b.winlostdate >= @FromDate
+				AND b.winlostdate <= @ToDate
+				AND b.bettype = @Bettype
+				AND b.matchid = @Bettype
+				AND b.tpositiontaking <> 0
+				AND b.statusID IN (111, 112, 113)
+				AND ((@Liveindicator = 0 AND b.livehomescore = 0)
+					OR (@Liveindicator = 1 AND b.livehomescore = 1)
+					OR (@Liveindicator = 2))
+		END
 	END
 
-	DECLARE @RowStart INT, @RowEnd INT  
-	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1
+	DECLARE @RowStart INT,
+		@RowEnd INT
+
+	SELECT @PageIndex = @PageIndex - 1,
+		@RowStart = @PageSize * @PageIndex + 1,
+		@RowEnd = @RowStart + @PageSize - 1
 
 	CREATE NONCLUSTERED INDEX IDX_Index_Ag ON #AgWinlossMP (Currency)
 
-	SELECT * INTO #TempExchange 
-	FROM Lrf_f_GetExchangeDaily(@FromDate,@ToDate)
+	SELECT * INTO #TempExchange
+	FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)
 	WHERE exchangeid IN (SELECT DISTINCT Currency FROM #AgWinlossMP)
 
 	DECLARE @sql NVARCHAR(2500)
-	DECLARE @SortTemp VARCHAR(250) 
+	DECLARE @SortTemp VARCHAR(250)
 
-	IF (@Sort LIKE '%USD%') OR (@Sort LIKE '%EUR%') OR (@Sort LIKE '%GBP%')
+	IF @Sort LIKE '%USD%' OR @Sort LIKE '%EUR%' OR @Sort LIKE '%GBP%'
 	BEGIN
 		DECLARE @charindex INT
+
 		SELECT @charindex = CHARINDEX( ' ', @Sort, 1)
-	
-		SELECT @SortTemp = substring (@Sort, 1, @charindex - 4) + '*e.'+SUBSTRING(@Sort, @charindex - 3,4) + SUBSTRING(@Sort, @charindex + 1, LEN(@Sort))
+		SELECT @SortTemp = SUBSTRING(@Sort, 1, @charindex - 4) + '*e.' + SUBSTRING(@Sort, @charindex - 3, 4) + SUBSTRING(@Sort, @charindex + 1, LEN(@Sort))
 	END
 	ELSE
 	BEGIN
@@ -315,13 +329,13 @@ BEGIN
 	END
 
 	SELECT @sql = 
-	'SELECT A.* ,'''' betstatus, '''' matchcode, 0 homeid, 0 awayid, 0 leagueid, 0 matchid, 0 sporttype
+	'SELECT A.*,'''' betstatus, '''' matchcode, 0 homeid, 0 awayid, 0 leagueid, 0 matchid, 0 sporttype
 	FROM
 	(
-		SELECT  
-				ROW_NUMBER() over(ORDER BY '+@SortTemp +') AS RowNum,
-				b.* ,
-				SUBSTRING(c.username2,  CHARINDEX(''$'',c.username2)+1, len(c.username2)-CHARINDEX(''$'',c.username2)) AS nickname,
+		SELECT
+				ROW_NUMBER() OVER(ORDER BY ' + @SortTemp + ') AS RowNum,
+				b.*,
+				SUBSTRING(c.username2,  CHARINDEX(''$'',c.username2)+1, LEN(c.username2)-CHARINDEX(''$'',c.username2)) AS nickname,
 				--USD
 				stake * e.USD stakeUSD,
 				actual_stake * e.USD actual_stakeUSD,
@@ -343,18 +357,17 @@ BEGIN
 				LicenseeWL * e.GBP LicenseeWLGBP,
 				comm * e.GBP commGBP,
 				playercomm*e.GBP playercommGBP
-			
-		FROM #AgWinlossMP b
-			INNER JOIN customer c WITH(NOLOCK) ON c.custid=b.custid
-			INNER JOIN #TempExchange e ON b.currency=e.exchangeID AND b.winlostdate=e.exchangeDate
-	) A WHERE A.RowNum BETWEEN '+CAST(@RowStart AS VARCHAR(50))+' AND '+CAST(@RowEnd AS VARCHAR(50))
+		FROM #AgWinlossMP AS b
+			INNER JOIN dbo.Customer AS c WITH(NOLOCK) ON c.custid = b.custid
+			INNER JOIN #TempExchange e ON b.currency = e.exchangeID AND b.winlostdate = e.exchangeDate
+	) A WHERE A.RowNum BETWEEN ' + CAST(@RowStart AS VARCHAR(50)) + ' AND ' + CAST(@RowEnd AS VARCHAR(50))
 	+' ORDER BY A.RowNum'
 
 	EXEC (@sql)
 
 	DROP TABLE #AgWinlossMP
-	DROP TABLE #TempExchange 
-	DROP TABLE #currency 
+	DROP TABLE #TempExchange
+	DROP TABLE #Currency
 END
 
 

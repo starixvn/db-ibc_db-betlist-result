@@ -72,6 +72,7 @@ AS
 		- 20160202@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160216@Kos: Support yesterday running ticket [Redmine: #52277]
 		- 20160406@Kos: Support Voidbridge [#Redmine: 54925]
+		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 */
 BEGIN
 
@@ -368,8 +369,8 @@ BEGIN
 			'' AS Race,
 			0 AS homeID,
 			0 AS awayID,
-			0 AS hdp1,
-			0 AS hdp2,
+			b.hdp1, 
+			b.hdp2, 
 			b.odds,
 			b.modds,
 			b.status,
@@ -389,7 +390,7 @@ BEGIN
 			b.playercomm,
 			'' As ShowTime,
 			0 AS matchid,
-			'' AS betcheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc
 		FROM 
 			#TempBATicket AS b 
@@ -516,8 +517,8 @@ BEGIN
 			'' AS Race,
 			0 AS homeID,
 			0 AS awayID,
-			0 AS hdp1,
-			0 AS hdp2,
+			b.hdp1, 
+			b.hdp2, 
 			b.odds,
 			b.modds,
 			b.status,
@@ -537,7 +538,7 @@ BEGIN
 			b.playercomm,
 			'' AS ShowTime,
 			0 AS matchid,
-			'' AS betcheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc
 		FROM 
 			dbo.bettrans b WITH (NOLOCK)

@@ -91,6 +91,7 @@ AS
 		- 20160201@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160216@Kos: Support yesterday running ticket [Redmine: #52277]
 		- 20160405@Kos: Support Voidbridge [#Redmine: 54925]
+		- 20160412@Kos: Support Combo Parlay [#Redmine: 55282]
 
 	Param's Explanation:
 		+ @drawfilter: 'No Draw' filter is supportted
@@ -391,7 +392,7 @@ BEGIN
 				0,
 				b.currency,
 				'' AS ShowTime,
-				'' AS betcheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc
 			FROM
 				@TempBetList b
@@ -556,7 +557,7 @@ BEGIN
 				0,
 				b.currency,
 				'' AS ShowTime,
-				'' AS betcheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
@@ -1436,7 +1437,7 @@ BEGIN
 				0,
 				b.currency,
 				'' AS ShowTime,
-				'' AS betcheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc
 			FROM
 				@TempBetList AS b
@@ -1547,7 +1548,7 @@ BEGIN
 				0,
 				b.currency,
 				'' AS ShowTime,
-				'' AS betcheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
@@ -2242,7 +2243,7 @@ BEGIN
 				0,
 				b.currency,
 				'' AS ShowTime,
-				'' AS betcheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc
 			FROM
 				@TempBetList AS b
@@ -2409,7 +2410,7 @@ BEGIN
 				0,
 				b.currency,
 				'' AS ShowTime,
-				'' AS betcheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc
 			FROM
 				bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)

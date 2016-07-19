@@ -99,6 +99,7 @@ AS
 		- 20160202@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160216@Kos: Support yesterday running ticket [Redmine: #52277]
 		- 20160406@Kos: Support Voidbridge [#Redmine: 54925]
+		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 */
 
 BEGIN
@@ -294,7 +295,7 @@ BEGIN
 			@UserName AS UserName,
 			m.sporttype,
 			b.bettype,
-			'' AS refno,
+			b.refno,
 			b.transid,
 			b.BetID,
 			m.matchcode,
@@ -341,7 +342,7 @@ BEGIN
 			@UserName,
 			l.sporttype,
 			b.bettype,
-			'' AS refno,
+			b.refno,
 			b.transid,
 			b.BetID,
 			m.matchcode,
@@ -425,7 +426,7 @@ BEGIN
 			0 AS OddsType,
 			b.currency,
 			'' AS ShowTime,
-			'' AS betcheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc
 		FROM 
 			#TempBATicket AS b
@@ -443,7 +444,7 @@ BEGIN
 			@UserName AS UserName,
 			m.sporttype,
 			b.bettype,
-			'' AS refno,
+			b.refno,
 			b.transid,
 			ISNULL(b.BetID,0),
 			m.matchcode,
@@ -502,7 +503,7 @@ BEGIN
 			@UserName,
 			l.sporttype,
 			b.bettype,
-			'' AS refno,
+			b.refno,
 			b.transid,
 			ISNULL(b.BetID,0),
 			m.matchcode,
@@ -589,7 +590,7 @@ BEGIN
 			0 AS OddsType,
 			b.currency,
 			'' AS ShowTime,
-			'' AS betcheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc
 		FROM 
 			dbo.bettrans AS b WITH (NOLOCK)
@@ -685,7 +686,7 @@ BEGIN
 			@UserName,
 			151 AS sporttype,
 			b.bettype,
-			'' AS refno,
+			b.refno,
 			b.transid,
 			ISNULL(b.BetID,0),
 			m.matchcode,
@@ -744,7 +745,7 @@ BEGIN
 			@UserName AS UserName,
 			m.sporttype,
 			b.bettype,
-			CASE WHEN b.bettype BETWEEN 1101 AND 1199 THEN CONVERT(NVARCHAR(20),b.refno) ELSE '' END AS refno,
+			b.refno,
 			b.transid,
 			ISNULL(b.BetID,0),
 			m.matchcode,

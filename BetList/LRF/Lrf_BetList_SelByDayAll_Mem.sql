@@ -73,6 +73,7 @@ AS
 		- 20160202@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160216@Kos: Support yesterday running ticket [Redmine: #52277]
 		- 20160406@Kos: Support Voidbridge [#Redmine: 54925]
+		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 
 	Param's Explanation: 
 		+ @transtype:
@@ -537,8 +538,8 @@ BEGIN
 			b.refno,
 			0,
 			0,
-			0,
-			0,
+			b.hdp1,
+			b.hdp2,
 			b.modds,
 			0 AS OddsType,
 			b.odds,
@@ -563,9 +564,9 @@ BEGIN
 			b.Username,
 			CONVERT(BIT,0) AS IsNeutral,
 			b.currency,
-			'' AS ShowTime
-			,'' AS betcheck
-			,'' AS transdesc
+			'' AS ShowTime,
+			ISNULL(b.betcheck, '') AS BetCheck,
+			'' AS transdesc
 		FROM 
 			dbo.bettrans14 b WITH (NOLOCK)
 			INNER JOIN @SportBettype sbt ON b.bettype = sbt.bettype
@@ -1112,8 +1113,8 @@ BEGIN
 			b.refno,
 			0,
 			0,
-			0,
-			0,
+			b.hdp1,
+			b.hdp2,
 			b.modds,
 			0 AS OddsType,
 			b.odds,
@@ -1143,9 +1144,9 @@ BEGIN
 			b.Username,
 			CONVERT(BIT,0) AS IsNeutral,
 			b.currency,
-			'' AS ShowTime
-			,'' AS betcheck
-			,'' AS transdesc
+			'' AS ShowTime,
+			ISNULL(b.betcheck, '') AS BetCheck,
+			'' AS transdesc
 		FROM 
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype

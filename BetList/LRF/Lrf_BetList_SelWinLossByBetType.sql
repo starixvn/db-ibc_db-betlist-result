@@ -44,6 +44,7 @@ AS
 	DB: DBEXT.bodb02
 	Original:
 	Revisions:
+		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160531@Kos: Add sorting function [#Redmine: 58491]
 
 	Parameters:
@@ -590,7 +591,7 @@ BEGIN
 				b.comm,
 				b.playercomm,
 				'' AS Race,
-				'' AS BetCheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS TransDesc
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
@@ -948,7 +949,7 @@ BEGIN
 				b.comm,
 				b.playercomm,
 				'' AS Race,
-				'' AS BetCheck,
+				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS TransDesc
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
