@@ -52,6 +52,7 @@ AS
 		- 20150903@Bobby: Correct data type of sport bet type matrix for avoiding SQL data conversion
 		- 20150910@Bobby: Enhance performance for SP core. Apply TVP for input parameters
 		- 20151125@Kos: Support new bet type (410) for Total Bet of Double Chance
+		- 20170721@Kos: Use inline function for SportBettypeMatrix and include bet type 427, 431, 433 [Redmine: #53153]
 */
 
 BEGIN
@@ -60,18 +61,22 @@ BEGIN
 	DECLARE	 @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]
 
 	-- Gather BettypeMatrix
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
 	INSERT INTO @BettypeMatrix
-	SELECT DISTINCT productid, bettype, eventtype, subproduct
-	FROM bodb02.dbo.SportBettypeMatrix b WITH(NOLOCK)
-	WHERE ((@bettype	= 6 	AND b.bettype IN(6, 126)) 
-		OR (@bettype	= 14 	and b.bettype IN(14, 127)) 
-		OR (@bettype	= 24 	and b.bettype IN(24, 151, 186, 410)) 
-		OR (@bettype	= 26 	and b.bettype IN(26, 145, 146, 170, 188)) 
-		OR (@bettype	= 1 	AND b.bettype IN(1, 301))		-- Support Myanmar Odds
-		OR (@bettype	= 3 	AND b.bettype IN(3, 302))		-- Support Myanmar Odds
-		OR (@bettype	= 7 	AND b.bettype IN(7, 303))		-- Support Myanmar Odds
-		OR (@bettype	= 8 	AND b.bettype IN(8, 304))		-- Support Myanmar Odds
-		OR b.bettype = @bettype )
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ((@bettype	= 6 	AND BetType IN(6, 126))
+		OR (@bettype	= 14 	and BetType IN(14, 127))
+		OR (@bettype	= 24 	and BetType IN(24, 151, 186, 410, 431))
+		OR (@bettype	= 26 	and BetType IN(26, 145, 146, 170, 188, 427, 433))
+		OR (@bettype	= 1 	AND BetType IN(1, 301))		-- Support Myanmar Odds
+		OR (@bettype	= 3 	AND BetType IN(3, 302))		-- Support Myanmar Odds
+		OR (@bettype	= 7 	AND BetType IN(7, 303))		-- Support Myanmar Odds
+		OR (@bettype	= 8 	AND BetType IN(8, 304))		-- Support Myanmar Odds
+		OR BetType = @bettype )
 
 	EXEC [dbo].[Age_CoreBetList_Running_SelBetTicket]
 		@CustId 			= @CustId
