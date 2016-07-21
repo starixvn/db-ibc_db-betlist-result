@@ -10,7 +10,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Age_TotalBets_Sel430_SAg]
-	@custid		INT,
+	@CustId		INT,
 	@Language	VARCHAR(2) = 'E'
 AS
 
@@ -28,7 +28,7 @@ AS
 		- 20140611@Dom: Add new bettype ht correct score 152
 		- 20150407@Cody: Integrate new 60 bet types from BetRadar [Redmine: #32734]
 		- 20151203@Kos: Include bet type 405 2H Correct Score [Redmine: #47959]
-		- 20160123@Kos: Include bet type 413 Correct Score (aos) and [414] 1H Correct Score (aos) [Redmine: #50897]
+		- 20170721@Kos: Include bet type 416 Half Time/Full Time Correct Score (own) [Redmine: #53153]
 */
 
 BEGIN
@@ -75,7 +75,7 @@ BEGIN
  	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	WHERE b.SRecommend = @custid
-		AND b.bettype IN (4, 30, 152, 165, 166, 405, 413, 414)
+		AND b.bettype IN (4, 30, 152, 165, 166, 405, 413, 414, 416)
 		AND b.statusID IN (0, 1)
 	ORDER BY b.status, b.transid
 END
