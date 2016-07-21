@@ -2,18 +2,18 @@
 GO 
 
 ALTER PROCEDURE [dbo].[Acc_BetListByDayAll]
-	@custid		INT,
-	@fromdate	SMALLDATETIME,
-	@language	NVARCHAR(2)		= 'en',
-	@transid	BIGINT			= 0,
-	@transtype	INT				= 0
+	@CustId		INT,
+	@FromDate	SMALLDATETIME,
+	@Language	NVARCHAR(2)		= 'en',
+	@TransId	BIGINT			= 0,
+	@TransType	INT				= 0
 AS
 
 /*
 	Created by: [Creator]
 	Date: 2008
-	Task: Bet list by date 
-	DB: DBAGE.BODB02 
+	Task: Bet list by date
+	DB: DBAGE.BODB02
 	
 	Revisions:
 		- 20081218@PhuongNguyen: Get Isneutral from Match
@@ -154,85 +154,85 @@ BEGIN
 
 	DECLARE @Data TABLE (
 		SportType		INT,
-		leagueid		INT,
-		homeid			INT,
-		awayid			INT,
-		matchcode		NVARCHAR(50),
-		race			NVARCHAR(50),	--phuong.nguyen, add new field for Horse Racing race
-		eventdate		DATETIME,		--phuong.nguyen, get eventdate
-		virtualrate		FLOAT,			-- in case OpenToe, it's currency2's exchange rate 
-		isShowOTExRate	BIT,			-- Show OpenTote currency2's exchange rate or not 
-		sdiscount		DECIMAL (9, 8),
-		adiscount		DECIMAL (9, 8),
-		discount		DECIMAL (9, 8),
-		settletime		DATETIME,
-		matchid			INT,
-		transid			BIGINT,
-		betid			BIGINT,
-		refno			BIGINT,
-		transdate		DATETIME,
+		LeagueId		INT,
+		HomeId			INT,
+		AwayId			INT,
+		MatchCode		NVARCHAR(50),
+		Race			NVARCHAR(50),	--phuong.nguyen, add new field for Horse Racing race
+		EventDate		DATETIME,		--phuong.nguyen, get eventdate
+		VirtualRate		FLOAT,			-- in case OpenToe, it's currency2's exchange rate 
+		IsShowOTExRate	BIT,			-- Show OpenTote currency2's exchange rate or not 
+		SDiscount		DECIMAL (9, 8),
+		ADiscount		DECIMAL (9, 8),
+		Discount		DECIMAL (9, 8),
+		SettleTime		DATETIME,
+		MatchId			INT,
+		TransId			BIGINT,
+		BetId			BIGINT,
+		RefNo			BIGINT,
+		TransDate		DATETIME,
 		OddsId			INT,
-		bettype			SMALLINT,
-		hdp1			SMALLMONEY,
-		hdp2			SMALLMONEY,
-		odds			MONEY,
-		modds			MONEY,
-		finalodds		MONEY,
-		finalodds2		MONEY,
-		oddstype		INT,
-		betteam			NVARCHAR(50),
-		status			NVARCHAR(50),
-		betstatus		NVARCHAR(50),
-		comstatus		NVARCHAR(50),
-		stake			MONEY,
-		actual_stake	MONEY,
-		winlost			MONEY,
-		commission		MONEY,
-		livehomescore	INT,
-		liveawayscore	INT,
-		liveindicator	BIT,
-		finalhomescore	INT,
-		finalawayscore	INT,
-		hthomescore		INT,
-		htawayscore		INT,
+		BetType			SMALLINT,
+		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
+		Odds			MONEY,
+		MOdds			MONEY,
+		FinalOdds		MONEY,
+		FinalOdds2		MONEY,
+		OddsType		INT,
+		BetTeam			NVARCHAR(50),
+		Status			NVARCHAR(50),
+		BetStatus		NVARCHAR(50),
+		ComStatus		NVARCHAR(50),
+		Stake			MONEY,
+		Actual_Stake	MONEY,
+		WinLost			MONEY,
+		Commission		MONEY,
+		LiveHomeScore	INT,
+		LiveAwayScore	INT,
+		LiveIndicator	BIT,
+		FinalHomeScore	INT,
+		FinalAwayScore	INT,
+		HtHomeScore		INT,
+		HtAwayScore		INT,
 		Creator			VARCHAR(50),
-		ip				NVARCHAR(15),
+		Ip				NVARCHAR(15),
 		Username		VARCHAR(50),
 		IsNeutral		BIT,
-		showtime		NVARCHAR(50),
-		spositiontaking SMALLMONEY,
-		mpositiontaking SMALLMONEY,
-		apositiontaking SMALLMONEY,
-		spositiontaking2 SMALLMONEY,
-		mpositiontaking2 SMALLMONEY,
-		apositiontaking2 SMALLMONEY,
-		betfrom			NVARCHAR(1),
-		scomm			MONEY,
-		acomm			MONEY,
-		comm			MONEY,
-		awinlost		MONEY,
-		mwinlost		MONEY,
-		swinlost		MONEY,
-		winlostdate		SMALLDATETIME,
+		ShowTime		NVARCHAR(50),
+		SPositionTaking SMALLMONEY,
+		MPositionTaking SMALLMONEY,
+		APositionTaking SMALLMONEY,
+		SPositionTaking2 SMALLMONEY,
+		MPositionTaking2 SMALLMONEY,
+		APositionTaking2 SMALLMONEY,
+		BetFrom			NVARCHAR(1),
+		SComm			MONEY,
+		AComm			MONEY,
+		Comm			MONEY,
+		AWinLost		MONEY,
+		MWinLost		MONEY,
+		SWinLost		MONEY,
+		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
-		transdesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(300),
 		OddsSpread		SMALLMONEY
 	);
 
 	DECLARE @DetailData TABLE (
-		refno			NVARCHAR(50),
-		odds			MONEY,
-		stake			MONEY,
-		status			NVARCHAR(50),
-		apositiontaking SMALLMONEY,
-		mpositiontaking SMALLMONEY,
-		spositiontaking SMALLMONEY,
-		bettype			SMALLINT,
-		betteam			NVARCHAR(50),
+		RefNo			NVARCHAR(50),
+		Odds			MONEY,
+		Stake			MONEY,
+		Status			NVARCHAR(50),
+		APositionTaking SMALLMONEY,
+		MPositionTaking SMALLMONEY,
+		SPositionTaking SMALLMONEY,
+		BetType			SMALLINT,
+		BetTeam			NVARCHAR(50),
 		TransDesc		VARCHAR(300)
 	)
 
-	IF EXISTS (SELECT 1 FROM match14 WITH (NOLOCK) WHERE eventdate = @fromdate)
+	IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE eventdate = @fromdate)
 	BEGIN
 		-- single bet
 		INSERT INTO @Data
@@ -311,7 +311,7 @@ BEGIN
 
 		-- Mixed parlay
 		INSERT INTO @Data
-		SELECT 
+		SELECT
 			0,
 			0,
 			0,
@@ -354,7 +354,7 @@ BEGIN
 			0,
 			0,
 			0,
-			b.CREATOR,
+			b.creator,
 			b.ip,
 			b.Username,
 			CONVERT (BIT, 0) AS IsNeutral,
@@ -502,7 +502,7 @@ BEGIN
 			0,
 			0,
 			0,
-			b.CREATOR,
+			b.creator,
 			b.ip,
 			b.Username,
 			CONVERT (BIT, 0) AS IsNeutral,
@@ -623,7 +623,7 @@ BEGIN
 		IF @transtype <> 4
 		BEGIN
 			INSERT INTO @Data
-			SELECT 
+			SELECT
 				CASE
 					WHEN s.ProductID = 6 AND s.SubProduct = '' THEN 251
 					WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.matchid
@@ -668,7 +668,7 @@ BEGIN
 				0 AS modds,
 				0 AS finalodds,
 				0 AS finalodds2,
-				CASE 
+				CASE
 					WHEN s.ProductID = 19 THEN b.oddstype
 					ELSE 0 
 				END AS oddstype,
@@ -687,7 +687,7 @@ BEGIN
 				0 AS finalawayscore,
 				0 AS hthomescore,
 				0 AS htawayscore,
-				b.CREATOR,
+				b.creator,
 				b.ip,
 				b.Username,
 				0 AS IsNeutral,
@@ -781,8 +781,8 @@ BEGIN
 			0 AS mpositiontaking2,-- unuse in this report
 			0 AS apositiontaking2,-- unuse in this report
 			b.betfrom,
-			0 AS scomm, -- unuse in this report
-			0 AS acomm, -- unuse in this report
+			0 AS scomm,	-- unuse in this report
+			0 AS acomm,	-- unuse in this report
 			0 AS comm,	-- unuse in this report
 			b.awinlost,
 			b.mwinlost,
@@ -3067,6 +3067,7 @@ BEGIN
 	SELECT * FROM @DetailData
 	RETURN 
 END
+
 
 
 

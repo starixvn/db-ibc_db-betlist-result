@@ -4,8 +4,8 @@ GO
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_Old]
 	@FromDate	DATETIME,
 	@ToDate		DATETIME,
-	@CustID		INT,
-	@Bettype	INT = 0
+	@CustId		INT,
+	@BetType	INT = 0
 AS
 
 /*
@@ -242,12 +242,12 @@ BEGIN
 		IF EXISTS(SELECT TOP 1 1 FROM #SportBettype s WHERE ProductID = 1 AND Bettype = 9)
 		BEGIN
 			INSERT INTO #BetListData
-			SELECT 
+			SELECT
 				9 bettype,
 				b.transid,
 				ISNULL(b.betid, 0),
 				b.refno,
-				'' matchcode,
+				'' AS matchcode,
 				'' AS race,
 				'' AS eventdate,
 				0,
@@ -257,12 +257,12 @@ BEGIN
 				discount,
 				0 AS homeid,
 				0 AS awayid,
-				'' settleTime,
+				'' AS settleTime,
 				b.hdp1,
 				b.hdp2,
 				b.odds,
-				0 finalodds,
-				0 finalodds2,
+				0 AS finalodds,
+				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
@@ -273,10 +273,10 @@ BEGIN
 				b.spositiontaking,
 				b.mpositiontaking,
 				b.apositiontaking,
-				0 spositiontaking2,
-				0 mpositiontaking2,
-				0 apositiontaking2,
-				0 liveindicator,
+				0 AS spositiontaking2,
+				0 AS mpositiontaking2,
+				0 AS apositiontaking2,
+				0 AS liveindicator,
 				b.modds,
 				b.custid,
 				b.livehomescore,
@@ -290,7 +290,7 @@ BEGIN
 				0 matchid,
 				CONVERT(BIT,0) AS IsNeutral,
 				0 AS allowdelete,
-				(b.winlost - b.actual_stake) winlost,
+				(b.winlost - b.actual_stake) AS winlost,
 				b.playercomm AS commission,
 				(b.scomm - b.acomm) AS scomm,
 				(b.acomm - b.comm) AS acomm,
@@ -386,12 +386,12 @@ BEGIN
 		IF EXISTS(SELECT TOP 1 1 FROM #SportBettype s WHERE ProductID = 1 AND Bettype = 10)
 		BEGIN
 			INSERT INTO #BetListData
-			SELECT 
+			SELECT
 				b.bettype,
 				b.transid,
 				ISNULL(b.betid, 0),
 				b.refno,
-				odds.matchcode, 
+				odds.matchcode,
 				odds.groupmatch AS race,
 				odds.eventdate,
 				0,
@@ -711,8 +711,8 @@ BEGIN
 					f.mpositiontaking mpositiontaking2,
 					f.spositiontaking spositiontaking2,
 					f.finalodds finalodds2
-				FROM dbo.bettransm t WITH (NOLOCK)
-					INNER JOIN dbo.bettransm f WITH (NOLOCK) ON t.refno = f.refno
+				FROM dbo.bettransm AS t WITH (NOLOCK)
+					INNER JOIN dbo.bettransm AS f WITH (NOLOCK) ON t.refno = f.refno
 				WHERE t.refno = b.transid
 					AND t.bettype IN (31,41)
 					AND f.bettype IN (32,42)
@@ -800,8 +800,8 @@ BEGIN
 					f.apositiontaking apositiontaking2,
 					f.mpositiontaking mpositiontaking2,
 					f.spositiontaking spositiontaking2
-				FROM dbo.bettransm t WITH (NOLOCK)
-					INNER JOIN dbo.bettransm f WITH (NOLOCK) ON t.refno = f.refno
+				FROM dbo.bettransm AS t WITH (NOLOCK)
+					INNER JOIN dbo.bettransm AS f WITH (NOLOCK) ON t.refno = f.refno
 				WHERE t.refno = b.refno
 					AND t.bettype = 1231 
 					AND f.bettype = 1232 
@@ -901,44 +901,46 @@ BEGIN
 	END
 	
 	SELECT * 
-	FROM #BetListData 
+	FROM #BetListData
 	ORDER BY transid
 
 	IF EXISTS (	SELECT TOP 1 1 
-				FROM #SportBettype sp 
-					INNER JOIN #BetListData d ON d.bettype = sp.bettype 
+				FROM #SportBettype AS sp
+					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype 
 				WHERE ProductID IN (4, 12))
 	BEGIN
 		INSERT INTO #BetListDetailData
-		SELECT 
-			BG.refno,
-			BG.odds,
-			BG.stake,
-			BG.status,
-			BG.apositiontaking,
-			BG.mpositiontaking,
-			BG.spositiontaking,
-			BG.bettype,
-			BG.betteam,
-			BG.TransDesc
-		FROM dbo.bettransg BG WITH (NOLOCK)
-			INNER JOIN #SportBettype sp ON BG.bettype = sp.bettype AND sp.Productid IN (4)
-			INNER JOIN #BetListData B ON (BG.refno = B.refno AND BG.CustID = B.CustID AND sp.Productid IN (4))
+		SELECT
+			bg.refno,
+			bg.odds,
+			bg.stake,
+			bg.status,
+			bg.apositiontaking,
+			bg.mpositiontaking,
+			bg.spositiontaking,
+			bg.bettype,
+			bg.betteam,
+			bg.TransDesc
+		FROM dbo.bettransg AS bg WITH (NOLOCK)
+			INNER JOIN #SportBettype AS sp ON bg.bettype = sp.bettype
+			INNER JOIN #BetListData AS b ON bg.refno = b.refno AND bg.CustID = b.custid
+		WHERE sp.Productid = 4
 		UNION ALL
-		SELECT 
-			BG.refno,
-			BG.odds,
-			BG.stake,
-			BG.status,
-			BG.apositiontaking,
-			BG.mpositiontaking,
-			BG.spositiontaking,
-			BG.bettype,
-			BG.betteam,
-			BG.TransDesc
-		FROM dbo.bettransg BG WITH (NOLOCK)
-			INNER JOIN #SportBettype sp ON BG.bettype = sp.bettype AND sp.Productid IN (12)
-			INNER JOIN #BetListData B ON (BG.refno = B.transid AND BG.CustID = B.CustID AND sp.Productid IN (12))
+		SELECT
+			bg.refno,
+			bg.odds,
+			bg.stake,
+			bg.status,
+			bg.apositiontaking,
+			bg.mpositiontaking,
+			bg.spositiontaking,
+			bg.bettype,
+			bg.betteam,
+			bg.TransDesc
+		FROM dbo.bettransg AS bg WITH (NOLOCK)
+			INNER JOIN #SportBettype AS sp ON bg.bettype = sp.bettype
+			INNER JOIN #BetListData AS b ON bg.refno = B.transid AND bg.custid = b.custid
+		WHERE sp.Productid = 12
 	END 
 
 	SELECT * FROM #BetListDetailData
@@ -948,6 +950,7 @@ BEGIN
 	DROP TABLE #BetListDetailData;
 	DROP TABLE #SportBettype
 END
+
 
 
 

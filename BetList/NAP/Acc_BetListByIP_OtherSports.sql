@@ -2,9 +2,9 @@
 GO
 
 ALTER PROCEDURE [dbo].[Acc_BetListByIP_OtherSports]
-	@custid		INT,
-	@ip			VARCHAR(15),
-	@fromdate	DATETIME
+	@CustId		INT,
+	@Ip			VARCHAR(15),
+	@FromDate	DATETIME
 AS
 
 /*
