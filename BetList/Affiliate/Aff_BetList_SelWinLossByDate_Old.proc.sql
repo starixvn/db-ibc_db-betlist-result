@@ -32,8 +32,9 @@ Revisions:
 	20141222@Bobby.Nguyen: Checking status ID for archiving betlist
 	20150217@Bobby.Nguyen: Apply sport type matrix table
 	20150415@Bobby.Nguyen: Support for new 60 bettypes betradar
-	20160425@Bobby.Nguyen: #56136 - Support Combo Parlay
 	20160308@Bobby.Nguyen: #50200 - Implement LIC core bet list for Affiliate site and offer new products
+	20160425@Bobby.Nguyen: #56136 - Support Combo Parlay
+	20160715@Bobby.Nguyen: #60971 - Fixbug - missing TransStatus param
 	
 Param's Explanation: 
 	- @CustID: 		Customer/Player ID
@@ -96,6 +97,7 @@ BEGIN
 	, @FromDate			= @FromDate
 	, @ToDate 			= @ToDate
 	, @BettypeMatrix	= @BettypeMatrix
+	, @TransStatus		= @TransStatus
 	/*, @ColumnOutput		= 'Sporttype,
 							Username, 
 							TransID,
