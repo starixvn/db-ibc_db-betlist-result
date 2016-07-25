@@ -12,6 +12,7 @@ AS
 	Original: Acc_BetsSelBetList_ByTransID_Advance
 	
 	Revisions:
+		- 20170725@Kos: Use inline function for SportBettypeMatrix
 */
 
 BEGIN
@@ -20,8 +21,13 @@ BEGIN
 	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
 	INSERT INTO @SportBettype
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 
 	-- Support Sportsbook, Horse Racing, Number Game, Virtual Sports only
 	DELETE @SportBettype
@@ -29,65 +35,65 @@ BEGIN
 		OR SubProduct IN ('BT-Sold', 'BT-Bought', 'BT-Comm')	-- Don't support BetTrade
 
 	DECLARE @Data TABLE (
-		username		NVARCHAR(50),
-		bettype			INT,
-		transid			BIGINT,
-		betid			BIGINT,
-		refno			NVARCHAR(50),
-		matchcode		NVARCHAR(50),
-		race			NVARCHAR(20),
-		eventdate		SMALLDATETIME,
-		virtualrate		FLOAT,
-		isShowOTExRate	BIT,
-		sdiscount		SMALLMONEY,
-		adiscount		SMALLMONEY,
-		discount		SMALLMONEY,
-		homeid			INT,
-		awayid			INT,
-		settleTime		DATETIME,
-		hdp1			SMALLMONEY,
-		hdp2			SMALLMONEY,
-		odds			MONEY,
-		finalodds		MONEY,
-		finalodds2		MONEY,
+		Username		NVARCHAR(50),
+		BetType			INT,
+		TransId			BIGINT,
+		BetId			BIGINT,
+		RefNo			NVARCHAR(50),
+		MatchCode		NVARCHAR(50),
+		Race			NVARCHAR(20),
+		EventDate		SMALLDATETIME,
+		VirtualRate		FLOAT,
+		IsShowOTExRate	BIT,
+		SDiscount		SMALLMONEY,
+		ADiscount		SMALLMONEY,
+		Discount		SMALLMONEY,
+		HomeId			INT,
+		AwayId			INT,
+		SettleTime		DATETIME,
+		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
+		Odds			MONEY,
+		FinalOdds		MONEY,
+		FinalOdds2		MONEY,
 		OddsType		TINYINT,
-		status			NVARCHAR(50),
-		comstatus		NVARCHAR(50),
-		stake			MONEY,
-		actual_stake	MONEY,
-		transdate		DATETIME,
-		betteam			NVARCHAR(50),
-		spositiontaking SMALLMONEY,
-		mpositiontaking SMALLMONEY,
-		apositiontaking SMALLMONEY,
-		spositiontaking2 SMALLMONEY,
-		mpositiontaking2 SMALLMONEY,
-		apositiontaking2 SMALLMONEY,
-		liveindicator	BIT,
-		modds			MONEY,
-		custid			INT,
-		livehomescore	INT,
-		liveawayscore	INT,
-		finalhomescore	INT,
-		finalawayscore	INT,
-		leagueid		INT,
-		sporttype		SMALLINT,
-		ip				NVARCHAR(15),
-		betfrom			NVARCHAR (1),
-		matchid			INT,
-		isNeutral		BIT,
-		winlost			MONEY,
-		commission		MONEY,
-		scomm			MONEY,
-		acomm			MONEY,
-		comm			MONEY,
-		awinlost		MONEY,
-		mwinlost		MONEY,
-		swinlost		MONEY,
-		showtime		NVARCHAR(50),
-		winlostdate		SMALLDATETIME,
+		Status			NVARCHAR(50),
+		ComStatus		NVARCHAR(50),
+		Stake			MONEY,
+		Actual_Stake	MONEY,
+		TransDate		DATETIME,
+		BetTeam			NVARCHAR(50),
+		SPositionTaking SMALLMONEY,
+		MPositionTaking SMALLMONEY,
+		APositionTaking SMALLMONEY,
+		SPositionTaking2 SMALLMONEY,
+		MPositionTaking2 SMALLMONEY,
+		APositionTaking2 SMALLMONEY,
+		LiveIndicator	BIT,
+		MOdds			MONEY,
+		CustId			INT,
+		LiveHomeScore	INT,
+		LiveAwayScore	INT,
+		FinalHomeScore	INT,
+		FinalAwayScore	INT,
+		LeagueId		INT,
+		SportType		SMALLINT,
+		Ip				NVARCHAR(15),
+		BetFrom			NVARCHAR (1),
+		MatchId			INT,
+		IsNeutral		BIT,
+		WinLost			MONEY,
+		Commission		MONEY,
+		SComm			MONEY,
+		AComm			MONEY,
+		Comm			MONEY,
+		AWinLost		MONEY,
+		MWinLost		MONEY,
+		SWinLost		MONEY,
+		ShowTime		NVARCHAR(50),
+		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
-		transdesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(300),
 		OddsSpread		SMALLMONEY
 	)
 
@@ -102,7 +108,7 @@ BEGIN
 	IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE EventType = 1 AND Bettype = @BetType)
 	BEGIN
 		INSERT INTO @Data
-		SELECT 
+		SELECT
 			b.username,
 			b.bettype,
 			b.transid,
@@ -440,8 +446,8 @@ BEGIN
 			b.ip,
 			b.betfrom,
 			b.matchid,
-			CONVERT(BIT,0) AS IsNeutral,
-			(b.winlost-b.actual_stake) AS winlost,
+			CONVERT(BIT, 0) AS IsNeutral,
+			(b.winlost - b.actual_stake) AS winlost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -471,7 +477,7 @@ BEGIN
 					f.finalodds finalodds2
 				FROM dbo.bettransm AS t WITH (NOLOCK)
 					INNER JOIN dbo.bettransm AS f WITH (NOLOCK) ON t.refno = f.refno 
-				WHERE t.bettype IN (31,41) AND f.bettype IN (32,42)
+				WHERE t.bettype IN (31, 41) AND f.bettype IN (32, 42)
 			) bm ON b.transid = bm.refno
 		WHERE s.ProductID = 2 AND b.transid = @TransId
 	END
@@ -527,8 +533,8 @@ BEGIN
 			b.ip,
 			b.betfrom,
 			b.matchid,
-			CONVERT (BIT, 0) AS IsNeutral,
-			(b.winlost-b.actual_stake) AS winlost,
+			CONVERT(BIT, 0) AS IsNeutral,
+			(b.winlost - b.actual_stake) AS winlost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
