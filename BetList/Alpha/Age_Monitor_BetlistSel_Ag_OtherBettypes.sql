@@ -1,16 +1,10 @@
 USE [bodb02]
 GO
-/****** Object:  StoredProcedure [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes]    Script Date: 8/27/2015 3:59:56 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 ALTER PROCEDURE [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes]
 	@CustId			INT,
 	@TransId		BIGINT	= 0,
 	@LimitRowCount	INT		= 20
-WITH RECOMPILE
 AS
 
 /*
@@ -28,6 +22,7 @@ AS
 		- 20150826@Kos: Add column OddsSpread to support Myanmar Odds and exclude Myanmar Odds bet types
 		- 20160104@Kos: Support Sportsbook only and use SportBetTypeMatrix
 		- 20160125@Kos: Support PH All In One 1.2 [Redmine: #50897]
+		- 20160623@Percy: Remove WITH recompile [RedmineID: #58288]
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
 
 	Parameter's Explanation:
@@ -94,8 +89,6 @@ BEGIN
 		AND b.bettype NOT BETWEEN 801 AND 806		-- Exclude Metric Gaming
 	ORDER BY b.transid DESC
 END
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes] TO [bodbDownlineNet]

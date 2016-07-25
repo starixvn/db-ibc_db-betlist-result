@@ -1,26 +1,21 @@
 ﻿USE [bodb02]
 GO
-/****** Object:  StoredProcedure [dbo].[Age_Monitor_BetlistSel_Ag_OU]    Script Date: 8/27/2015 4:21:32 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 ALTER PROCEDURE [dbo].[Age_Monitor_BetlistSel_Ag_OU]
 	@custid			INT, 
 	@transid		BIGINT	= 0,
 	@LimitRowCount	INT		= 20 
-WITH RECOMPILE
 AS
 
 /*	
 	Created	: Johnson
 	Task: Monitor lastest bets list( all bettypes and bettype over/under)
 	Date: 28/06/2011
-	DB: DB053.BODB02
+	DB: DBAGE.BODB02
 	Revision:
 		- 20111122@Sophia: Add Checktime and SecAcceptFlag to show status waiting or running
 		- 20150826@Kos: Add column OddsSpread to support Myanmar Odds
+		- 20160623@Percy: Remove WITH recompile [RedmineID: #58288]
 	
 	Parameter's Explanation:
 		- @custid : agent's ID
@@ -68,10 +63,6 @@ BEGIN
 		AND bettype IN (3, 8, 302, 304)
 	ORDER BY b.transid DESC
 END
-
-
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_OU] TO [bodbDownlineNet]

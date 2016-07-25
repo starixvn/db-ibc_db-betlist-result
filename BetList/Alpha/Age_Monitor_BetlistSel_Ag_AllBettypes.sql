@@ -1,18 +1,10 @@
 ﻿USE [bodb02]
 GO
-/****** Object:  StoredProcedure [dbo].[Age_Monitor_BetlistSel_Ag_AllBettypes]    Script Date: 04/21/2016 04:37:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Age_Monitor_BetlistSel_Ag_AllBettypes    Script Date: 3/10/2016 11:14:13 PM ******/
-/****** Object:  Stored Procedure dbo.Age_Monitor_BetlistSel_Ag_AllBettypes    Script Date: 3/9/2016 10:34:23 ******/
 
 ALTER PROCEDURE [dbo].[Age_Monitor_BetlistSel_Ag_AllBettypes]
 	@custid			INT,
 	@transid		BIGINT	= 0,
 	@LimitRowCount	INT		= 20 
---WITH RECOMPILE
 AS
 
 /*
@@ -32,6 +24,7 @@ AS
 		- 20160104@Kos: Support Sportsbook only
 		- 20160125@Kos: Support PH All In One 1.2 [Redmine: #50897]
 		- 20160308@Francis: Change to use inline function instead of table variable to enhance performance
+		- 20160623@Percy: Remove WITH recompile [RedmineID: #58288]
 	Parameter's Explanation:
 		- @custid : agent's ID
 		- @transid: lastest transid 
@@ -41,25 +34,9 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @isTest BIT,@SQL NVARCHAR(100) = OBJECT_NAME(@@PROCID)
+	DECLARE @isTest BIT
 
-	IF  (@SQL like '%_xtest%' OR @SQL like '%_xpre%' OR @SQL like '%_UAT1%' OR @SQL like '%_UAT2%' OR @SQL like '%_UAT3%' OR @SQL like '%_UAT4%')
-	BEGIN
-		SELECT @isTest = 1
-	END
-	ELSE
-	BEGIN
-		SELECT @isTest = 0
-	END
-
-	--DECLARE @SportBettype TABLE (ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
-
-	--INSERT INTO @SportBettype
-	--			EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 4
-
-	---- Only support Sportsbook
-	--DELETE FROM @SportBettype
-	--WHERE ProductID <> 1
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	SELECT TOP(@LimitRowCount)
 		b.custid,
@@ -96,7 +73,6 @@ BEGIN
 		ISNULL(b.transdesc, '') AS transdesc,
 		ISNULL(b.oddsspread, 0) AS OddsSpread
 	FROM dbo.bettrans AS b WITH (NOLOCK)
-		--INNER JOIN @SportBettype AS s ON b.bettype = s.BetType
 		INNER JOIN dbo.f_SportBettypeMatrix_Sel_Mode4(1, 0, 0, 2, '', '', @IsTest) s ON b.bettype = s.Bettype
 	WHERE b.recommend = @custid 
 		AND b.transid > @transid
