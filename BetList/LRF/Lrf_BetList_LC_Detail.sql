@@ -37,6 +37,18 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
+	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	-- Support AG Casino Single Wallet, AllBet
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (11, 21)
+
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
 
 	IF @TransType = 0
@@ -112,6 +124,7 @@ BEGIN
 			blc.ip,
 			blc.transdesc
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 		WHERE blc.custid = @CustId 
 			AND blc.RefNo = @RefNo
 			AND blc.statusID IN (SELECT statusId FROM @tmpStatus)
@@ -136,6 +149,7 @@ BEGIN
 			blc.ip,
 			blc.transdesc
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
 	END
 	ELSE IF EXISTS ( SELECT 1 FROM DBARC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK) WHERE transid = @RefNo )
@@ -158,6 +172,7 @@ BEGIN
 			blc.ip,
 			blc.transdesc
 		FROM DBARC.bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
 	END
 
