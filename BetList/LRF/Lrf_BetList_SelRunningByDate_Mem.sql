@@ -21,6 +21,7 @@
 	@ShowMGCLC	BIT			= 0,	-- Microgaming Live Casino
 	@ShowMGCRNG	BIT			= 0,	-- Microgaming RNG Casino
 	@ShowAGC	BIT			= 0,	-- AG Casino
+	@ShowAB		BIT			= 0,	-- AllBet
 	@ShowVB		BIT			= 0,	-- Voidbridge
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
@@ -73,6 +74,7 @@ AS
 		- 20160406@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160714@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
+		- 20160727@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 BEGIN
@@ -147,8 +149,9 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowAGC = 0	THEN 11 END
 		OR ProductID	= CASE WHEN @ShowMGCLC = 0	THEN 13 END
 		OR ProductID	= CASE WHEN @ShowMGCRNG = 0	THEN 17 END
+		OR ProductID	= CASE WHEN @ShowAB = 0		THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB = 0		THEN 22 END
-		OR (ProductID > 8 AND ProductID NOT IN (11, 13, 17, 22)) -- not suport for LIC system
+		OR (ProductID > 8 AND ProductID NOT IN (11, 13, 17, 21, 22)) -- not suport for LIC system
 		OR ProductID = 7
 	-- end filer bettypes by sporttype
 
@@ -930,13 +933,16 @@ BEGIN
 			sbt.ProductID
 	END
 
-	-- AG Casino
-	IF @ShowAGC = 1
+	-- AG Casino, AllBet
+	IF @ShowAGC = 1 OR @ShowAB = 1
 	BEGIN
 		-- Yesterday and today running ticket
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
-			250 AS sporttype,
+			CASE
+				WHEN sbt.ProductID = 11 THEN 250
+				WHEN sbt.ProductID = 21 THEN 211
+			END AS Sporttype,
 			@Username AS UserName,
 			b.bettype,
 			0 AS leagueID,
@@ -978,7 +984,7 @@ BEGIN
 			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.winlostdate BETWEEN @Yesterday AND @Today		-- yesterday and today
 			AND b.custid = @CustID
-			AND sbt.ProductID = 11
+			AND sbt.ProductID IN (11, 21)
 			AND sbt.EventType = 0
 			AND blc.statusID = 0
 		GROUP BY
@@ -990,7 +996,8 @@ BEGIN
 			b.discount,
 			b.winlostdate,
 			b.ip,
-			b.currency
+			b.currency,
+			sbt.ProductID
 	END
 
 	-- check for filtering by currency

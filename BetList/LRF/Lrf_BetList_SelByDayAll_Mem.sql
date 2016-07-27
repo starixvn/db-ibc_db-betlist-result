@@ -75,6 +75,7 @@ AS
 		- 20160406@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160718@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
+		- 20160727@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation: 
@@ -219,7 +220,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 22) -- not suport for LIC system
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 21, 22) -- not suport for LIC system
 
 	DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
@@ -635,7 +636,7 @@ BEGIN
 			AND sbt.EventType = 2
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Voidbridge
+		-- Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet, Voidbridge
 		IF @transtype = 1 OR @transtype = 2
 		BEGIN
 			INSERT INTO @Data 
@@ -644,6 +645,7 @@ BEGIN
 					WHEN sbt.ProductID = 11 THEN 250
 					WHEN sbt.ProductID = 13 THEN 203
 					WHEN sbt.ProductID = 17 THEN 205
+					WHEN sbt.ProductID = 21 THEN 211
 					WHEN sbt.ProductID = 22 THEN 212
 				END AS sporttype,
 				0 AS leagueid,
@@ -700,7 +702,7 @@ BEGIN
 			WHERE
 				b.custid = @custid
 				AND b.winlostdate = @fromdate 
-				AND sbt.ProductID IN (11, 13, 17, 22)
+				AND sbt.ProductID IN (11, 13, 17, 21, 22)
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 				AND @transtype <> 4
@@ -1619,14 +1621,17 @@ BEGIN
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 
-		-- AG Casino
+		-- AG Casino, AllBet
 		IF @transtype = 1
 		BEGIN
 			IF @fromdate < @yesterday	-- not yesterday and today settled ticket
 			BEGIN
 				INSERT INTO @Data 
 				SELECT
-					250 AS sporttype,
+					CASE
+						WHEN sbt.ProductID = 11 THEN 250
+						WHEN sbt.ProductID = 21 THEN 211
+					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
 					0 AS awayID,
@@ -1675,7 +1680,7 @@ BEGIN
 				WHERE
 					b.custid = @custid
 					AND b.winlostdate = @fromdate 
-					AND sbt.ProductID = 11
+					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 			END
@@ -1683,7 +1688,10 @@ BEGIN
 			BEGIN
 				INSERT INTO @Data 
 				SELECT
-					250 AS sporttype,
+					CASE
+						WHEN sbt.ProductID = 11 THEN 250
+						WHEN sbt.ProductID = 21 THEN 211
+					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
 					0 AS awayID,
@@ -1737,7 +1745,7 @@ BEGIN
 				WHERE
 					b.custid = @custid
 					AND b.winlostdate = @fromdate 
-					AND sbt.ProductID = 11
+					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
 					AND blc.statusID IN (SELECT [statusID] FROM @tmpStatus)
 				GROUP BY
@@ -1749,7 +1757,8 @@ BEGIN
 					b.discount,
 					b.IP,
 					b.Username,
-					b.currency
+					b.currency,
+					sbt.ProductID
 			END
 		END
 		ELSE IF @transtype = 3
@@ -1758,7 +1767,10 @@ BEGIN
 			BEGIN
 				INSERT INTO @Data 
 				SELECT
-					250 AS sporttype,
+					CASE
+						WHEN sbt.ProductID = 11 THEN 250
+						WHEN sbt.ProductID = 21 THEN 211
+					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
 					0 AS awayID,
@@ -1808,7 +1820,7 @@ BEGIN
 				WHERE
 					b.custid = @custid
 					AND b.winlostdate = @fromdate 
-					AND sbt.ProductID = 11
+					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
 					AND blc.statusID IN (SELECT [statusID] FROM @tmpStatus)
 				GROUP BY
@@ -1819,7 +1831,8 @@ BEGIN
 					b.refno,
 					b.IP,
 					b.Username,
-					b.currency
+					b.currency,
+					sbt.ProductID
 			END
 		END
 

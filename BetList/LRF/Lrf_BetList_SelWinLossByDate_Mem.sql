@@ -45,10 +45,11 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByDate_Mem]
 	@ShowLC				BIT				= 0,
 	@ShowVS				BIT				= 0,
 	@ShowCS				BIT				= 0,	-- RNG Casino
-	@ShowKN				BIT				= 0,
+	@ShowKN				BIT				= 0,	-- Keno
 	@ShowMGCLC			BIT				= 0,	-- Microgaming Live Casino
 	@ShowMGCRNG			BIT				= 0,	-- Microgaming RNG Casino
-	@ShowAGC			BIT				= 0,
+	@ShowAGC			BIT				= 0,	-- AG Casino Single Wallet
+	@ShowAB				BIT				= 0,	-- AllBet
 	@ShowVB				BIT				= 0,	-- Voidbridge
 	@ShowBT				BIT				= 0		-- Bet Trade
 AS
@@ -107,6 +108,7 @@ AS
 		- 20160405@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
+		- 20160726@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 
@@ -142,8 +144,9 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowAGC = 0	THEN 11 END
 		OR ProductID	= CASE WHEN @ShowMGCLC = 0	THEN 13 END
 		OR ProductID	= CASE WHEN @ShowMGCRNG = 0	THEN 17 END
+		OR ProductID	= CASE WHEN @ShowAB	 = 0	THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB	 = 0	THEN 22 END
-		OR (ProductID > 6 AND ProductID NOT IN (8, 11, 13, 17, 22)) -- not suport for LIC system
+		OR (ProductID > 8 AND ProductID NOT IN (11, 13, 17, 21, 22)) -- not suport for LIC system
 
 	DECLARE @UserName		NVARCHAR(20)
 		, @Recommend		INT
@@ -1156,13 +1159,16 @@ BEGIN
 			END
 		END
 
-		-- AG Casino
-		IF @ShowAGC = 1
+		-- AG Casino, AllBet
+		IF @ShowAGC = 1 OR @ShowAB = 1
 		BEGIN
-			-- AG Casino (up to yesterday settled ticket)
+			-- Up to yesterday settled ticket
 			INSERT INTO #BetListByDateMem
 			SELECT
-				250 AS Sporttype,
+				CASE
+					WHEN sbt.ProductID = 11 THEN 250
+					WHEN sbt.ProductID = 21 THEN 211
+				END AS Sporttype,
 				@Username, 
 				b.TransID,
 				ISNULL(b.BetID, 0),
@@ -1208,7 +1214,7 @@ BEGIN
 				AND b.winlostdate < @Yesterday
 				AND b.recommend = @Recommend --to improve performance
 				AND b.custid = @CustID 
-				AND sbt.ProductID = 11
+				AND sbt.ProductID IN (11, 21)
 				AND b.statusID IN (111, 112, 113)
 
 			IF @todate >= @Yesterday AND @TempFromDate <= @Today
@@ -1216,7 +1222,10 @@ BEGIN
 				-- Today settled ticket
 				INSERT INTO #BetListByDateMem
 				SELECT
-					250 AS Sporttype,
+					CASE
+						WHEN sbt.ProductID = 11 THEN 250
+						WHEN sbt.ProductID = 21 THEN 211
+					END AS Sporttype,
 					@Username, 
 					b.transid,
 					ISNULL(b.BetID, 0),
@@ -1266,7 +1275,7 @@ BEGIN
 					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND b.custid = @custid 
 					AND (@currencyID = 0 OR b.currency = @currencyID) 
-					AND sbt.ProductID = 11
+					AND sbt.ProductID IN (11, 21)
 					AND blc.statusID <> 0
 				GROUP BY
 					b.transid,
@@ -1276,7 +1285,8 @@ BEGIN
 					b.transdate,
 					b.winlostdate,
 					b.IP,
-					b.currency
+					b.currency,
+					sbt.ProductID
 			END
 		END
 	END
@@ -1927,8 +1937,8 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- RNG Casino, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, Voidbridge
-		IF @ShowCS = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1  OR @ShowVB = 1
+		-- RNG Casino, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, AllBet, Voidbridge
+		IF @ShowCS = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
@@ -1938,6 +1948,7 @@ BEGIN
 					WHEN sbt.ProductID = 11 THEN 250
 					WHEN sbt.ProductID = 13 THEN 203
 					WHEN sbt.ProductID = 17 THEN 205
+					WHEN sbt.ProductID = 21 THEN 211
 					WHEN sbt.ProductID = 22 THEN 212
 				END AS Sporttype,
 				@Username, 
@@ -2012,7 +2023,7 @@ BEGIN
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 				AND b.recommend = @Recommend --to improve performance
 				AND b.custid = @CustID 
-				AND sbt.ProductID IN (6, 11, 13, 17, 22)
+				AND sbt.ProductID IN (6, 11, 13, 17, 21, 22)
 				AND b.statusID IN (111, 112, 113)
 		END
 
@@ -2715,8 +2726,8 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- RNG Casino, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Voidbridge
-		IF @ShowCS = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowVB = 1
+		-- RNG Casino, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet, Voidbridge
+		IF @ShowCS = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
@@ -2726,6 +2737,7 @@ BEGIN
 					WHEN sbt.ProductID = 11 THEN 250
 					WHEN sbt.ProductID = 13 THEN 203
 					WHEN sbt.ProductID = 17 THEN 205
+					WHEN sbt.ProductID = 21 THEN 211
 					WHEN sbt.ProductID = 22 THEN 212
 				END AS Sporttype,
 				@Username, 
@@ -2800,7 +2812,7 @@ BEGIN
 				b.winlostdate BETWEEN @fromdate AND @TempToDate 
 				AND b.custid = @CustID 
 				AND b.recommend = @Recommend 
-				AND sbt.ProductID IN (6, 11, 13, 17, 22)
+				AND sbt.ProductID IN (6, 11, 13, 17, 21, 22)
 				AND sbt.EventType = 0 
 				AND b.statusID IN (111, 112, 113)
 		END

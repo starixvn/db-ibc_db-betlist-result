@@ -23,11 +23,13 @@ AS
 	Original:
 	Revisions:
 		- 20160530@Kos: Add ORDER BY statement to correct ticket order [Redmine: #58448]
+		- 20160727@Kos: Include Void/Rejected detail tickets view drilldown WON/LOSE/DRAW summary tickets
+					- Change to use inline function for SportBetTypeMatrix
 
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
-			+ 1 : DRAW/WON/LOSE/Refund
+			+ 1 : DRAW/WON/LOSE/Void/Reject/Refund
 			+ 2 : Reject/Void
 			+ 3 : Running/Waiting
 */
@@ -40,33 +42,35 @@ BEGIN
 	IF @TransType = 0
 	BEGIN
 		INSERT INTO @tmpStatus
-		SELECT 111 UNION ALL 
-		SELECT 112 UNION ALL 
+		SELECT 111 UNION ALL
+		SELECT 112 UNION ALL
 		SELECT 113 UNION ALL
-		SELECT 101 UNION ALL 
-		SELECT 102 UNION ALL 
-		SELECT 103 UNION ALL 
-		SELECT 0 UNION ALL 
+		SELECT 101 UNION ALL
+		SELECT 102 UNION ALL
+		SELECT 103 UNION ALL
+		SELECT 0 UNION ALL
 		SELECT 1
 	END
 	ELSE IF @TransType = 1
 	BEGIN
 		INSERT INTO @tmpStatus
-		SELECT 111 UNION ALL 
-		SELECT 112 UNION ALL 
-		SELECT 113 UNION ALL 
+		SELECT 111 UNION ALL
+		SELECT 112 UNION ALL
+		SELECT 113 UNION ALL
+		SELECT 101 UNION ALL
+		SELECT 102 UNION ALL
 		SELECT 103
 	END
 	ELSE IF @TransType = 2
 	BEGIN
 		INSERT INTO @tmpStatus
-		SELECT 101 UNION ALL 
+		SELECT 101 UNION ALL
 		SELECT 102
 	END 
 	ELSE IF @TransType = 3
 	BEGIN
 		INSERT INTO @tmpStatus(statusId)
-		SELECT 0 UNION ALL 
+		SELECT 0 UNION ALL
 		SELECT 1
 	END
 
@@ -180,7 +184,7 @@ BEGIN
 		@Todate = MAX(WinLostDate) 
 	FROM @tmpBettransLC
 
-	SELECT 
+	SELECT
 		TransId,
 		SportType,
 		BetType,

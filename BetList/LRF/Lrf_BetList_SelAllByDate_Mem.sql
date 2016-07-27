@@ -27,6 +27,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelAllByDate_Mem]
 	@ShowMGCLC			BIT = 0, -- Microgaming Live Casino
 	@ShowMGCRNG			BIT = 0, -- Microgaming RNG Casino
 	@ShowAGC			BIT = 0, -- AG Casino
+	@ShowAB				BIT = 0, -- AllBet
 	@ShowVB				BIT = 0, -- Voidbridge
 	@ShowBT				BIT = 0, -- Bet Trade
 	-- output info
@@ -100,6 +101,7 @@ AS
 		- 20160406@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160714@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
+		- 20160727@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 
@@ -243,8 +245,9 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowAGC	= 0 THEN 11 END
 		OR ProductID	= CASE WHEN @ShowMGCLC	= 0 THEN 13 END
 		OR ProductID	= CASE WHEN @ShowMGCRNG	= 0 THEN 17 END
+		OR ProductID	= CASE WHEN @ShowAB		= 0 THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB		= 0 THEN 22 END
-		OR (ProductID > 8 AND ProductID NOT IN (11, 13, 17, 22)) -- not suport for LIC system
+		OR (ProductID > 8 AND sbt.ProductID NOT IN (11, 13, 17, 21, 22)) -- not suport for LIC system
 		OR ProductID = 7
 	-- end filer bettypes by sporttype
 
@@ -1346,14 +1349,17 @@ BEGIN
 			sbt.ProductID
 	END
 
-	-- AG Casino
-	IF @ShowAGC = 1
+	-- AG Casino, AllBet
+	IF @ShowAGC = 1 OR @ShowAB = 1
 	BEGIN
-		-- AG Casino (up to yesterday settled ticket)
+		-- Up to yesterday settled ticket
 		INSERT INTO #BetListSelAllByDateMem
 		SELECT 
 			@UserName AS UserName,
-			250 AS sporttype,
+			CASE
+				WHEN sbt.ProductID = 11 THEN 250
+				WHEN sbt.ProductID = 21 THEN 211
+			END AS Sporttype,
 			b.bettype,
 			b.refno,
 			b.transid,
@@ -1396,7 +1402,7 @@ BEGIN
 		WHERE
 			b.CustID = @CustID
 			AND b.recommend = @Recommend
-			AND sbt.ProductID = 11
+			AND sbt.ProductID IN (11, 21)
 			AND sbt.EventType = 0
 			AND b.transdate >= @FromDate AND b.transdate <= @ToDate 
 			AND b.winlostdate < @Yesterday	-- not yesterday and today summary ticket
@@ -1406,7 +1412,10 @@ BEGIN
 		INSERT INTO #BetListSelAllByDateMem
 		SELECT 
 			@UserName AS UserName,
-			250 AS sporttype,
+			CASE
+				WHEN sbt.ProductID = 11 THEN 250
+				WHEN sbt.ProductID = 21 THEN 211
+			END AS Sporttype,
 			b.bettype,
 			b.refno,
 			b.transid,
@@ -1450,7 +1459,7 @@ BEGIN
 		WHERE
 			b.CustID = @CustID
 			AND b.recommend = @Recommend
-			AND sbt.ProductID = 11
+			AND sbt.ProductID IN (11, 21)
 			AND sbt.EventType = 0
 			AND b.transdate >= @FromDate AND b.transdate <= @ToDate 
 			AND b.winlostdate BETWEEN @Yesterday AND @Today		-- yesterday and today
@@ -1463,13 +1472,17 @@ BEGIN
 			b.transdate,
 			b.winlostdate,
 			b.ip,
-			b.currency
+			b.currency,
+			sbt.ProductID
 
 		-- Today settled ticket
 		INSERT INTO #BetListSelAllByDateMem
 		SELECT 
 			@UserName AS UserName,
-			250 AS sporttype,
+			CASE
+				WHEN sbt.ProductID = 11 THEN 250
+				WHEN sbt.ProductID = 21 THEN 211
+			END AS Sporttype,
 			b.bettype,
 			b.refno,
 			b.transid,
@@ -1531,7 +1544,8 @@ BEGIN
 			b.transdate,
 			b.winlostdate,
 			b.IP,
-			b.currency
+			b.currency,
+			sbt.ProductID
 	END
 
 	CREATE NONCLUSTERED INDEX IDX_Index_betlist ON #BetListSelAllByDateMem(Currency)

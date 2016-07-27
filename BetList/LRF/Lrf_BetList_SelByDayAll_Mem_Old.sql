@@ -72,6 +72,7 @@ AS
 		- 20160406@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160718@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
+		- 20160727@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation: 
@@ -164,7 +165,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 22)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 21, 22)
 
 	DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
@@ -479,7 +480,7 @@ BEGIN
 			AND sbt.ProductID IN (1, 2)
 			AND sbt.EventType = 2
 
-		-- RNG Casino, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, Voidbridge
+		-- RNG Casino, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, AllBet, Voidbridge
 		INSERT INTO @Data 
 		SELECT
 			CASE
@@ -488,6 +489,7 @@ BEGIN
 				WHEN sbt.ProductID = 11 THEN 250
 				WHEN sbt.ProductID = 13 THEN 203
 				WHEN sbt.ProductID = 17 THEN 205
+				WHEN sbt.ProductID = 21 THEN 211
 				WHEN sbt.ProductID = 22 THEN 212
 			END AS SportType,
 			0 AS leagueid,
@@ -575,7 +577,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE b.custid = @custid
 			AND b.winlostdate = @fromdate
-			AND sbt.ProductID IN (6, 11, 13, 17, 22)
+			AND sbt.ProductID IN (6, 11, 13, 17, 21, 22)
 			AND sbt.EventType = 0
 	END
 	ELSE IF @transtype = 4
@@ -771,6 +773,7 @@ BEGIN
 
 	DROP TABLE #TempExchange
 END
+
 
 
 
