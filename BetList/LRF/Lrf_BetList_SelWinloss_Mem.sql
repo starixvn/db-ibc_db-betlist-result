@@ -92,6 +92,7 @@ AS
 		- 20160216@Kos: Support yesterday running ticket [Redmine: #52277]
 		- 20160405@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160412@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation:
 		+ @drawfilter: 'No Draw' filter is supportted
@@ -185,6 +186,8 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
+
+	DELETE FROM @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
 	IF @ShowBT = 0
 	BEGIN

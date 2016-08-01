@@ -73,6 +73,7 @@ AS
 		- 20160216@Kos: Support yesterday running ticket [Redmine: #52277]
 		- 20160406@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 BEGIN
 
@@ -127,7 +128,7 @@ BEGIN
 	
 	-- Don't support BetTrade
 	DELETE @SportBettype 
-	WHERE ProductID = 1 AND Bettype IN (901, 902, 903)
+	WHERE ProductID = 1 AND Bettype IN (901, 902, 903, 904)
 
 	-- Don't support RNG Casino old bet type (71)
 	DELETE @SportBettype
@@ -1133,6 +1134,7 @@ BEGIN
 
 	DROP TABLE #BetListSelRunningByDateMem
 END
+
 
 
 

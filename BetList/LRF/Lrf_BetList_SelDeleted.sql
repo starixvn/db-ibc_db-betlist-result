@@ -46,6 +46,7 @@ AS
 		- 20150609@Edward : Support BetTrade
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160201@Kos: Support PH All In One 1.2 [#Redmine: 50897]
+		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation:
 		+ @CustID: AgentID
@@ -62,6 +63,9 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 4
+
+	DELETE FROM @SportBettype
+	WHERE ProductID = 1 AND Bettype = 904
 
 	SELECT currencyID,
 		LicenseeID 
@@ -451,6 +455,7 @@ BEGIN
 	DROP TABLE #TempExchange
 	DROP TABLE #Data
 END
+
 
 
 GO

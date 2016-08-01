@@ -28,6 +28,7 @@ AS
 		 - 20150409@Winnie: Apply spottype bettype matrix 
 		 - 20150514@Winnie: fix bug
 		 - 20150609@Edward : Support BetTrade
+		 - 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 */ 
 SET NOCOUNT ON
 
@@ -40,7 +41,7 @@ DECLARE @SportBettype TABLE(ProductID INT,Bettype INT,EventType INT)
 INSERT INTO @SportBettype
 EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode=4
 
-DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 903
+DELETE @SportBettype WHERE ProductID = 1 AND Bettype IN (903, 904)
 ------------
 
 DECLARE @TempAg AS TABLE (custid INT,Currency INT)

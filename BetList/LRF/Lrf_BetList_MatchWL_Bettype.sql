@@ -74,6 +74,7 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160201@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
+		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation: 
 */
@@ -110,7 +111,7 @@ BEGIN
 	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 4
 
 	DELETE @SportBettype
-	WHERE ProductID = 1 AND Bettype IN (901, 902, 903)
+	WHERE ProductID = 1 AND Bettype IN (901, 902, 903, 904)
 
 	DELETE @SportBettype
 	WHERE ProductID		= CASE WHEN @ShowSB	= 0 AND @ShowBA = 0 THEN 1 END

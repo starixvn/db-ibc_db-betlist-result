@@ -71,6 +71,7 @@ AS
 		- 20160202@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160406@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation: 
 		+ @transtype:
@@ -158,6 +159,8 @@ BEGIN
 	
 	INSERT INTO @SportBettype
 	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
+
+	DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
 	DELETE @SportBettype
 	WHERE ProductID > 8 -- not suport for affiliate system

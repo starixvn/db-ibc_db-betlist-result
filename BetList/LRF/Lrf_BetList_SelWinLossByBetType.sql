@@ -42,6 +42,7 @@ AS
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160531@Kos: Add sorting function [#Redmine: 58491]
 		- 20160721@Percy: Enhance Performance - using index recommend on bettrans/bettrans14 [RedmineID: #60770]
+		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Parameters:
 */
@@ -66,7 +67,7 @@ BEGIN
 	/*
 	DELETE FROM @SportBettype
 	WHERE ProductID NOT IN (1, 2, 3, 4, 5, 8)
-		OR (ProductID = 1 AND Bettype IN (901, 902, 903))
+		OR (ProductID = 1 AND Bettype IN (901, 902, 903, 904))
 	*/
 
 	-- Licensee type

@@ -43,6 +43,7 @@ AS
 		- 20150608@Edward: Exclude 3 transactions SOLD/BOUGHT/BetTrade Commission of BetTrade
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160201@Kos: Support PH All In One 1.2 [#Redmine: 50897]
+		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation: 
 		- @CustID : Customer Number
@@ -82,7 +83,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 4 ,@ProductID = 1
 
-	DELETE @SportBettype WHERE ProductID = 1 AND Bettype IN (901, 902, 903)
+	DELETE @SportBettype WHERE ProductID = 1 AND Bettype IN (901, 902, 903, 904)
 	-------
 	DECLARE @TempAg AS TABLE (custid INT)
 

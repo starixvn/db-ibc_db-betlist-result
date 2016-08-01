@@ -48,6 +48,7 @@ AS
 		- 20150922@Kos: Don't support Microgaming anymore
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160201@Kos: Support PH All In One 1.2 [#Redmine: 50897]
+		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation: 
 		@Liveindicator : indicate that whether the report will get live data or not
@@ -64,7 +65,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 4
 
-	DELETE @SportBettype WHERE ProductID = 1 AND Bettype IN (901, 902, 903)
+	DELETE @SportBettype WHERE ProductID = 1 AND Bettype IN (901, 902, 903, 904)
 	--DECLARE @bettype AS TABLE (bettype INT)
 
 	--IF @ShowLC = 1

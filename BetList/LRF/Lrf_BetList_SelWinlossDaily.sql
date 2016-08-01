@@ -95,6 +95,7 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20151225@Kos: Don't support RNG Casino [Redmine: #48958]
 		- 20160201@Kos: Support PH All In One 1.2 [#Redmine: 50897]
+		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation: 
 */
@@ -238,7 +239,7 @@ BEGIN
 		EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5, @ProductID = 1
  
 		DELETE #SportBettype 
-		WHERE ProductID = 1 AND Bettype IN (901, 902, 903)
+		WHERE ProductID = 1 AND Bettype IN (901, 902, 903, 904)
 	END
 
 	-- Number Game

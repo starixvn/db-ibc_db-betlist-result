@@ -107,6 +107,7 @@ AS
 		- 20160316@Kos: Exclude Void/Reject tickets [Redmine: #43921]
 		- 20160405@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 
 BEGIN
@@ -117,6 +118,8 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
+
+	DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
 	IF @ShowBT = 0
 	BEGIN
