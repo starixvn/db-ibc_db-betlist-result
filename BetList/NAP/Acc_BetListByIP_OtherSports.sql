@@ -70,6 +70,7 @@ AS
 		- 20160215@Kos: Support AllBet [#Redmine: 50864]
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160801@Kos: Fix bug not showing summary tickets if have only Void/Reject detail tickets [#Redmine: 61651]
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -1783,7 +1784,7 @@ BEGIN
 				AND @fromdate = DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- today
 				AND (s.ProductId IN (17, 22)
 					OR (s.ProductId = 6 AND s.SubProduct <> ''))
-				AND brng.statusID = 0
+				AND brng.statusID IN (0, 1)
 			GROUP BY
 				b.transid,
 				ISNULL(b.BetID, 0),
@@ -1878,7 +1879,7 @@ BEGIN
 				AND @fromdate = DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- today
 				AND (s.ProductId IN (17, 22)
 					OR (s.ProductId = 6 AND s.SubProduct <> ''))
-				AND brng.statusID IN (111, 112, 113, 103)
+				AND brng.statusID NOT IN (0, 1)
 			GROUP BY
 				b.transid,
 				ISNULL(b.BetID, 0),
@@ -2032,7 +2033,7 @@ BEGIN
 				AND @fromdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
 				AND s.ProductID IN (11, 21)
-				AND blc.statusID = 0
+				AND blc.statusID IN (0, 1)
 			GROUP BY
 				b.transid,
 				ISNULL(b.BetID, 0),
@@ -2121,7 +2122,7 @@ BEGIN
 				AND @fromdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
 				AND s.ProductID IN (11, 21)
-				AND blc.statusID IN (111, 112, 113, 103)
+				AND blc.statusID NOT IN (0, 1)
 			GROUP BY
 				b.transid,
 				ISNULL(b.BetID, 0),

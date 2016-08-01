@@ -94,6 +94,7 @@ AS
 		- 20160328@Kos: Support Grand Prize ticket which status is Expired
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160801@Kos: Fix bug not showing summary tickets if have only Void/Reject detail tickets [#Redmine: 61651]
 
 	Param's Explanation:
 		+ @transtype: 
@@ -2246,7 +2247,7 @@ BEGIN
 				AND b.winlostdate = @fromdate
 				AND (s.ProductId IN (17, 22)
 					OR (s.ProductId = 6 AND s.SubProduct <> ''))
-				AND brng.statusID IN (SELECT [statusID] FROM @tmpStatus)
+				AND brng.statusID NOT IN (0, 1)
 			GROUP BY
 				b.transid,
 				ISNULL(b.BetID, 0),
@@ -2350,7 +2351,7 @@ BEGIN
 				AND b.winlostdate = @fromdate
 				AND (s.ProductId IN (17, 22)
 					OR (s.ProductId = 6 AND s.SubProduct <> ''))
-				AND brng.statusID IN (SELECT [statusID] FROM @tmpStatus)
+				AND brng.statusID IN (0, 1)
 			GROUP BY
 				b.transid,
 				ISNULL(b.BetID, 0),
@@ -2534,7 +2535,7 @@ BEGIN
 			WHERE b.custid = @custid
 				AND b.winlostdate = @fromdate
 				AND s.ProductID IN (11, 21)
-				AND blc.statusID IN (SELECT [statusID] FROM @tmpStatus)
+				AND blc.statusID NOT IN (0, 1)
 			GROUP BY
 				b.transid,
 				ISNULL(b.BetID, 0),
@@ -2631,7 +2632,7 @@ BEGIN
 			WHERE b.custid = @custid
 				AND b.winlostdate = @fromdate
 				AND s.ProductID IN (11, 21)
-				AND blc.statusID IN (SELECT [statusID] FROM @tmpStatus)
+				AND blc.statusID IN (0, 1)
 			GROUP BY
 				b.transid,
 				ISNULL(b.BetID, 0),
@@ -3060,6 +3061,7 @@ BEGIN
 	SELECT * FROM @DetailData
 	RETURN 
 END
+
 
 
 
