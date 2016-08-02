@@ -1,0 +1,106 @@
+USE [UnitTest_Kos]
+GO
+/****** Object:  StoredProcedure [_Acc_BetListCB_Details].[Test_BetTrans14]    Script Date: 1/10/2017 9:13:20 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER PROCEDURE [_Acc_BetListCB_Details].[Test_BetTrans14]
+AS
+BEGIN
+	-- Arrange
+	DECLARE @Data TABLE (
+		TransId		BIGINT,
+		TransDate	DATETIME,
+		BetType		INT,
+		Sold		SMALLMONEY,
+		WinLost		MONEY,
+		StatusId	TINYINT,
+		Status		NVARCHAR(10),
+		SDiscount	SMALLMONEY,
+		ADiscount	SMALLMONEY,
+		Discount	SMALLMONEY,
+		SComm		MONEY,
+		AComm		MONEY,
+		Comm		MONEY,
+		OddsSpread	MONEY
+	)
+
+	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
+
+	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
+	EXEC bodb02.dbo.Age_SelBalanceUpDay
+
+	DECLARE @MoveBetsDay SMALLDATETIME,
+		@BalanceUpDay SMALLDATETIME
+
+	SELECT @MoveBetsDay = MoveBetsDay, 
+		@BalanceUpDay = BalanceUpDay
+	FROM @tmp
+
+	IF @BalanceUpDay IS NULL
+		SET @BalanceUpDay = @MoveBetsDay
+
+	DECLARE @TransId			BIGINT,
+		@RefNo					BIGINT,
+		@CustId					INT,
+		@ExpectedNumOfSubTicket	TINYINT
+
+	SELECT TOP 1
+		@TransId = b.transid,
+		@RefNo = b.refno,
+		@CustId = b.custid
+	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
+	WHERE b.bettype = 18000
+		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
+
+	SELECT @ExpectedNumOfSubTicket = COUNT(*)
+	FROM
+		(
+			SELECT b.transid
+			FROM bodb02.dbo.bettransm AS b WITH (NOLOCK)
+			WHERE b.refno = @RefNo
+				AND b.bettype BETWEEN 18001 AND 18006
+
+			UNION
+
+			SELECT b.transid
+			FROM bodb02.dbo.bettransm14 AS b WITH (NOLOCK)
+			WHERE b.refno = @RefNo
+				AND b.bettype BETWEEN 18001 AND 18006
+
+			UNION
+
+			SELECT b.transid
+			FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
+			WHERE b.refno = @RefNo
+				AND b.bettype BETWEEN 18001 AND 18006
+		) AS tmp
+
+	IF @TransId IS NOT NULL
+	BEGIN
+		-- Act
+		DECLARE @Command NVARCHAR(MAX)
+
+		SET @Command = 'EXEC bodb02.dbo.[Acc_BetListCB_Details] 
+							@RefNo = ' + CONVERT(VARCHAR, @RefNo) + ',
+							@CustId = ' + CONVERT(VARCHAR, @CustId)
+
+		INSERT @Data
+		EXEC sp_executesql @Command
+
+		DECLARE @NumOfSubTicket	TINYINT
+
+		SELECT @NumOfSubTicket = COUNT(*)
+		FROM @Data
+
+		-- Assert
+		EXEC tSQLt.AssertEquals @ExpectedNumOfSubTicket, @NumOfSubTicket, @Command
+	END
+	ELSE
+	BEGIN
+		EXEC tSQLt.Fail 'No available test data'
+	END
+
+END;

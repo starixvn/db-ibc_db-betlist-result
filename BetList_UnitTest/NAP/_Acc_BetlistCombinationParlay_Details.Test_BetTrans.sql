@@ -1,0 +1,91 @@
+USE [UnitTest_Kos]
+GO
+/****** Object:  StoredProcedure [_Acc_BetlistCombinationParlay_Details].[Test_BetTrans]    Script Date: 8/2/2016 1:49:38 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER PROCEDURE [_Acc_BetlistCombinationParlay_Details].[Test_BetTrans]
+AS
+BEGIN
+	-- Arrange
+	DECLARE @Data TABLE (
+		WinLostDate			SMALLDATETIME,
+		TransId				BIGINT,
+		Serial				BIGINT,
+		StatusId			INT,
+		Status				NVARCHAR(50),
+		Modds				MONEY,
+		Stake				MONEY,
+		WinLost				MONEY,
+		PlayComm			MONEY
+	)
+
+	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
+
+	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
+	EXEC bodb02.dbo.Age_SelBalanceUpDay
+
+	DECLARE @MoveBetsDay SMALLDATETIME,
+		@BalanceUpDay SMALLDATETIME
+
+	SELECT @MoveBetsDay = MoveBetsDay, 
+		@BalanceUpDay = BalanceUpDay
+	FROM @tmp
+
+	IF @BalanceUpDay IS NULL
+		SET @BalanceUpDay = @MoveBetsDay
+
+	DECLARE @TransId		BIGINT,
+		@RefNo				BIGINT,
+		@CustID				INT,
+		@Stake				MONEY,
+		@OutstandingStake	MONEY
+
+	SELECT TOP 1
+		@TransId = b.transid,
+		@RefNo = b.refno,
+		@CustID = b.custid,
+		@Stake = b.stake
+	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
+	WHERE b.bettype = 29
+
+	IF @TransId IS NOT NULL
+	BEGIN
+		-- Act
+		DECLARE @Command NVARCHAR(MAX)
+
+		SET @Command = 'EXEC bodb02.dbo.[Acc_BetlistCombinationParlay_Details] 
+							@RefNo = ' + CONVERT(VARCHAR, @RefNo) + ',
+							@CustId = ' + CONVERT(VARCHAR, @CustID) + ',
+							@MoveBetDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
+							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
+
+		INSERT @Data
+		EXEC tSQLt.ResultSetFilter 1, @Command;
+
+		EXEC bodb02.dbo.[Acc_BetlistCombinationParlay_Details] 
+			@RefNo = @RefNo,
+			@CustId = @CustID,
+			@MoveBetDay = @MoveBetsDay,
+			@BalanceUpDay = @BalanceUpDay,
+			@Outstanding = @OutstandingStake OUTPUT
+
+		DECLARE @SettledStake MONEY
+		DECLARE @SumStake MONEY
+
+		SELECT @SettledStake = SUM(Stake)
+		FROM @Data
+
+		SET @SumStake = @SettledStake + @OutstandingStake
+
+		-- Assert
+		EXEC tSQLt.AssertEquals @Stake, @SumStake, @Command
+	END
+	ELSE
+	BEGIN
+		EXEC tSQLt.Fail 'No available test data'
+	END
+
+END;
