@@ -51,15 +51,16 @@ BEGIN
 	SET NOCOUNT ON
 
 	-- Sport Bet Type matrix
-	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
-	
-	DECLARE @isTest BIT
-	SELECT  @isTest = dbo.f_CheckSPVersion(@@SPID)
+	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
-	INSERT INTO @SportBettype (ProductId, Bettype, EventType)
-	SELECT DISTINCT ProductId, Bettype, EventType FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @isTest)
-	WHERE 
-		(ProductID IN (2, 3, 4, 5, 8) OR (ProductID = 1 AND Bettype NOT IN (901, 902, 903)))
+	DECLARE @isTest BIT
+	SELECT @isTest = dbo.f_CheckSPVersion(@@SPID)
+
+	INSERT INTO @SportBettype
+	SELECT DISTINCT ProductId, Bettype, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @isTest)
+	WHERE
+		(ProductID IN (2, 3, 4, 5, 8) OR (ProductID = 1 AND Bettype NOT IN (901, 902, 903, 904)))
 		AND bettype IN (
 			SELECT bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
 			UNION SELECT GroupTypeId FROM dbo.f_GroupBettype() WHERE bettype = @BetType
