@@ -101,7 +101,9 @@ BEGIN
 		Comm			MONEY,
 		PlayerComm		MONEY,
 		IP				NVARCHAR(15),
-		TransDesc		NVARCHAR(1000)
+		TransDesc		NVARCHAR(1000),
+		BetCheck		NVARCHAR(50),
+		MatchCode		VARCHAR(50)
 	)
 
 	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo )
@@ -122,7 +124,15 @@ BEGIN
 			blc.comm,
 			blc.playercomm,
 			blc.ip,
-			blc.transdesc
+			blc.transdesc,
+			CASE
+				WHEN sbt.productID IN (21) THEN blc.TranId3rd
+				ELSE ''
+			END AS BetCheck,
+			CASE
+				WHEN sbt.productID IN (21) THEN blc.GameId3rd
+				ELSE ''
+			END AS MatchCode
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 		WHERE blc.custid = @CustId 
@@ -147,7 +157,15 @@ BEGIN
 			blc.comm,
 			blc.playercomm,
 			blc.ip,
-			blc.transdesc
+			blc.transdesc,
+			CASE
+				WHEN sbt.productID IN (21) THEN blc.TranId3rd
+				ELSE ''
+			END AS BetCheck,
+			CASE
+				WHEN sbt.productID IN (21) THEN blc.GameId3rd
+				ELSE ''
+			END AS MatchCode
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
@@ -170,7 +188,15 @@ BEGIN
 			blc.comm,
 			blc.playercomm,
 			blc.ip,
-			blc.transdesc
+			blc.transdesc,
+			CASE
+				WHEN sbt.productID IN (21) THEN blc.TranId3rd
+				ELSE ''
+			END AS BetCheck,
+			CASE
+				WHEN sbt.productID IN (21) THEN blc.GameId3rd
+				ELSE ''
+			END AS MatchCode
 		FROM DBARC.bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
