@@ -256,7 +256,9 @@ BEGIN
 		CAST(PlayerComm * e.MYR AS MONEY) AS PlayerCommMYR,
 		CAST(PlayerComm * e.GBP AS MONEY) AS PlayerCommGBP,
 		IP,
-		TransDesc
+		TransDesc,
+		BetCheck,
+		MatchCode
 	FROM @tmpBettransLC AS b
 		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)) AS e
 			ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = @currency
