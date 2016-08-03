@@ -1,7 +1,7 @@
 ﻿USE [bodb02]
 GO
 
-ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByBetType_UAT3]
+ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByBetType]
 	@LicenseeId			INT,
 	@UserId				INT,
 	@LicenseeType		VARCHAR(100)	= NULL,
@@ -80,10 +80,11 @@ BEGIN
 
 	INSERT INTO @TempAg (CustId, currency)
 	SELECT DISTINCT CustId, lc.currency
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(@LicenseeId) AS lc
+	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
 		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
 	WHERE [Description] = COALESCE(@LicenseeType, [Description])
 
+	DROP TABLE #Currency
 	-- Create temp table
 	CREATE TABLE #AllData (
 		TransId		BIGINT,
@@ -173,13 +174,13 @@ BEGIN
 				1 AS WhTicket -- bettrans
 			FROM
 				dbo.bettrans b WITH (NOLOCK)
-				INNER JOIN @TempAg t ON b.recommend = t.CustId -- AND b.currency = t.currency
-				INNER JOIN @SportBettype s ON b.bettype = s.bettype
+				INNER JOIN @TempAg t ON b.recommend = t.CustId AND b.currency = t.currency
+				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @ToDate
+				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.Grouptypeid END = @bettype
 				AND b.statusID NOT IN (0,1,101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
-				AND EXISTS (SELECT TOP 1 1 FROM #Currency WHERE CurrencyID = b.currency)
 		ELSE
 			INSERT INTO #AllData
 			SELECT
@@ -195,13 +196,12 @@ BEGIN
 				1 AS WhTicket -- bettrans
 			FROM
 				dbo.bettrans b WITH (NOLOCK)
-				INNER JOIN @TempAg t ON b.recommend = t.CustId -- AND b.currency = t.currency
+				INNER JOIN @TempAg t ON b.recommend = t.CustId AND b.currency = t.currency
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @bettype
 				AND b.statusID NOT IN (0,1,101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
-				AND EXISTS (SELECT TOP 1 1 FROM #Currency WHERE CurrencyID = b.currency)
 	END
 
 	-- Bettrans14 range
@@ -231,13 +231,13 @@ BEGIN
 				2 AS WhTicket -- bettrans14
 			FROM
 				dbo.bettrans14 b WITH (NOLOCK)
-				INNER JOIN @TempAg t ON b.recommend = t.CustId -- AND b.currency = t.currency
-				INNER JOIN @SportBettype s ON b.bettype = s.bettype
+				INNER JOIN @TempAg t ON b.recommend = t.CustId AND b.currency = t.currency
+				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
+				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.Grouptypeid END = @bettype
 				AND b.statusID NOT IN (101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
-				AND EXISTS (SELECT TOP 1 1 FROM #Currency WHERE CurrencyID = b.currency)
 		ELSE
 			INSERT INTO #AllData
 			SELECT
@@ -253,13 +253,12 @@ BEGIN
 				2 AS WhTicket -- bettrans14
 			FROM
 				dbo.bettrans14 b WITH (NOLOCK)
-				INNER JOIN @TempAg t ON b.recommend = t.CustId -- AND b.currency = t.currency
+				INNER JOIN @TempAg t ON b.recommend = t.CustId AND b.currency = t.currency
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.bettype = @bettype
 				AND b.statusID NOT IN (101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
-				AND EXISTS (SELECT TOP 1 1 FROM #Currency WHERE CurrencyID = b.currency)
 	END
 
 	DECLARE @RowStart	INT,
@@ -1246,6 +1245,11 @@ BEGIN
 	DROP TABLE #Data
 	DROP TABLE #TempData
 END
+
+
+
+GRANT	VIEW DEFINITION	ON	Lrf_BetList_SelWinLossByBetType	TO	vnteam
+GRANT	EXECUTE	ON	Lrf_BetList_SelWinLossByBetType	TO	bodbLicenseeNet
 
 /*
 declare @p10 int
