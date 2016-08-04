@@ -42,6 +42,7 @@ AS
 			+ Move SP from DBAGE to DBACC
 			+ Don't support Bingo and P2P in bettrans and bettrans14 range anymore
 			+ Apply SportBetTypeMatrix function
+		- 20160623@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
 */
 
 BEGIN
@@ -61,13 +62,15 @@ BEGIN
 	DECLARE
 		@TransId		BIGINT,
 		@BetType		INT,
-		@WinLostDate	SMALLDATETIME
+		@WinLostDate	SMALLDATETIME,
+		@CustId			INT
 
 	-- FROM translog
 	SELECT TOP 1
 		@TransId = b.translogid,
 		@BetType = b.gameID,
-		@WinLostDate = b.winlostdate
+		@WinLostDate = b.winlostdate,
+		@CustId = b.custid
 	FROM dbo.translog AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
 	WHERE b.translogid = @RefNo
@@ -81,7 +84,8 @@ BEGIN
 		SELECT TOP 1
 			@TransId = b.transid,
 			@BetType = b.bettype,
-			@WinLostDate = b.winlostdate
+			@WinLostDate = b.winlostdate,
+			@CustId = b.custid
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
 		WHERE
@@ -97,7 +101,8 @@ BEGIN
 		SELECT TOP 1
 			@TransId = b.transid,
 			@BetType = b.bettype,
-			@WinLostDate = b.winlostdate
+			@WinLostDate = b.winlostdate,
+			@CustId = b.custid
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
 		WHERE b.transid = @RefNo
@@ -191,8 +196,28 @@ BEGIN
 		BetTeam			NVARCHAR(50),
 		TransDesc		VARCHAR(300)
 	)
-	
+
+	DECLARE @DeniedSite TABLE (
+		SiteId			INT,
+		Site			NVARCHAR(50),
+		SpecialGroup	TINYINT)
+
+	DECLARE @Sql VARCHAR(500)
+
+	SET @Sql = 'SELECT * 
+				FROM OPENQUERY(DBPOLICY,
+					''SELECT siteid, site, SpecialGroup
+					FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + CAST(@Userid AS VARCHAR(50)) + ''''')'')'
+
+	INSERT INTO @DeniedSite
+	EXEC (@Sql)
+
 	IF @WinlostDate IS NOT NULL
+		AND NOT EXISTS ( SELECT 1
+						FROM dbo.customer AS c WITH (NOLOCK)
+							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
+							WHERE c.custid = @CustId
+								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- Bettrans
 		IF @WinlostDate > @MoveBetsDay
@@ -3213,6 +3238,7 @@ BEGIN
 
 	SELECT * FROM @DetailData
 END
+
 
 
 GO
