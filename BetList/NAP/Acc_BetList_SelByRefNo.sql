@@ -43,6 +43,7 @@ AS
 			+ Don't support Bingo and P2P in bettrans and bettrans14 range anymore
 			+ Apply SportBetTypeMatrix function
 		- 20160623@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
+		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 
 BEGIN
@@ -58,6 +59,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID <> 1 OR BetType <> 904
 
 	DECLARE
 		@TransId		BIGINT,

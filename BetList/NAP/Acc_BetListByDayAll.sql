@@ -96,6 +96,7 @@ AS
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Fix bug not showing summary tickets if have only Void/Reject detail tickets [#Redmine: 61651]
+		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 
 	Param's Explanation:
 		+ @transtype: 
@@ -118,6 +119,9 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+
+	DELETE FROM @SportBettype
+	WHERE ProductID = 1 AND Bettype = 904
 
 	DECLARE @tmpStatus TABLE ([statusID] TINYINT);
 

@@ -82,6 +82,7 @@ AS
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160606@Kos: Unable to search Gold Deluxe ticket [#Redmine: 58852]
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
+		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 
 BEGIN
@@ -187,6 +188,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID <> 1 OR Bettype <> 904
 
 	-- FROM translog
 	SELECT TOP 1 
@@ -4375,6 +4377,7 @@ BEGIN
 
 	SELECT * FROM @DetailData
 END
+
 
 
 

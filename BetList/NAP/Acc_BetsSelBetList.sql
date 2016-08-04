@@ -100,6 +100,7 @@ AS
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
+		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 
 BEGIN
@@ -129,6 +130,9 @@ BEGIN
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE @tempBettype = 0 OR BetType = @tempBettype
+
+	DELETE FROM #SportBettype
+	WHERE ProductID = 1 AND Bettype = 904
 
 	DECLARE @Today	SMALLDATETIME,
 		@Yesterday	SMALLDATETIME

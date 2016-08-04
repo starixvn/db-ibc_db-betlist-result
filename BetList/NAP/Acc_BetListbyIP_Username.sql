@@ -25,6 +25,7 @@ AS
 		- 20151216@Kos: Support for Cockfighting
 		- 20160621@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
+	- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 
  BEGIN
@@ -67,7 +68,7 @@ AS
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.winlostdate = @FromDate
 		AND b.bettype < 19001
-		AND b.bettype <> 903
+		AND b.bettype NOT IN (903, 904)
 		AND b.ip = @Ip
 		--exclude metric gaming running ticket
 		AND (b.bettype NOT BETWEEN 801 AND 806
@@ -127,7 +128,7 @@ AS
 						WHERE
 							b.winlostdate = @FromDate
 							AND s.SportType = 1 
-							AND b.bettype <> 903
+							AND b.bettype NOT IN (903, 904)
 							AND b.ip = @ip
 							AND m.type = CASE WHEN b.bettype = 10 THEN 'outright' ELSE 'match' END
 							--exclude metric gaming running ticket
@@ -189,7 +190,7 @@ AS
 							INNER JOIN dbo.sports AS s WITH (NOLOCK) ON l.sporttype = s.sporttype
 						WHERE b.winlostdate = @FromDate
 							AND s.SportType = 1
-							AND b.bettype <> 903
+							AND b.bettype NOT IN (903, 904)
 							AND b.ip = @Ip
 							AND m.type = CASE WHEN b.bettype = 10 THEN 'outright' ELSE 'match' END
 						UNION ALL

@@ -42,6 +42,7 @@ AS
 		- 20151210@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160119@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 	
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -263,7 +264,8 @@ BEGIN
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN dbo.sports AS s WITH (NOLOCK) ON l.sporttype = s.sporttype
 			WHERE b.winlostdate = @fromdate
-				AND bettype < 19001 AND bettype <> 10 --20120626@Elodie: exclude outright from sportbook
+				AND bettype < 19001
+				AND bettype NOT IN (10, 904)	--20120626@Elodie: exclude outright from sportbook
 				AND b.custid = @custid
 				AND s.sporttype = 1
 
@@ -492,7 +494,8 @@ BEGIN
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid 
 				INNER JOIN dbo.sports AS s WITH (NOLOCK) ON l.sporttype = s.sporttype 
 			WHERE b.winlostdate = @fromdate 
-				AND b.bettype < 19001 AND b.bettype <> 10 --20120626@Elodie: exclude outright from sportbook
+				AND b.bettype < 19001
+				AND b.bettype NOT IN (10, 904)	--20120626@Elodie: exclude outright from sportbook
 				AND b.custid = @custid
 				AND s.sporttype = 1
 				--exclude metric gaming running ticket
