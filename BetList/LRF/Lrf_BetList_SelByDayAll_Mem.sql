@@ -1466,7 +1466,7 @@ BEGIN
 					AND (sbt.ProductID IN (17, 22)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND sbt.EventType = 0
-					AND brng.statusID IN (SELECT [statusID] FROM @tmpStatus)
+					AND brng.statusID NOT IN (0, 1)
 				GROUP BY
 					b.Bettype,
 					b.transid,
@@ -1548,7 +1548,7 @@ BEGIN
 					AND (sbt.ProductID IN (17, 22)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND sbt.EventType = 0
-					AND brng.statusID IN (SELECT [statusID] FROM @tmpStatus)
+					AND brng.statusID IN (0, 1)
 				GROUP BY
 					b.Bettype,
 					b.transid,
@@ -1747,7 +1747,7 @@ BEGIN
 					AND b.winlostdate = @fromdate 
 					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
-					AND blc.statusID IN (SELECT [statusID] FROM @tmpStatus)
+					AND blc.statusID NOT IN (0, 1)
 				GROUP BY
 					b.Bettype,
 					b.transid,
@@ -1822,7 +1822,7 @@ BEGIN
 					AND b.winlostdate = @fromdate 
 					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
-					AND blc.statusID IN (SELECT [statusID] FROM @tmpStatus)
+					AND blc.statusID IN (0, 1)
 				GROUP BY
 					b.Bettype,
 					b.transid,

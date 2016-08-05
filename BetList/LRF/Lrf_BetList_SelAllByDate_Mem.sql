@@ -1530,7 +1530,7 @@ BEGIN
 		WHERE
 			b.CustID = @CustID
 			AND b.recommend = @Recommend
-			AND sbt.ProductID = 11
+			AND sbt.ProductID IN (11, 21)
 			AND sbt.EventType = 0
 			AND b.transdate >= @FromDate AND b.transdate <= @ToDate 
 			AND b.winlostdate BETWEEN @Yesterday AND @Today		-- yesterday and today
