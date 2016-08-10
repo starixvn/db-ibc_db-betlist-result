@@ -166,7 +166,7 @@ BEGIN
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 22)
 
-	DELETE @SportBettype WHERE ProductID = 1 AND Bettyp
+	DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
 	IF @transtype = 4	-- support only for Microgaming RNG Casino
 	BEGIN
