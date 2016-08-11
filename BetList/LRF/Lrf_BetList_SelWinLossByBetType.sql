@@ -54,7 +54,7 @@ BEGIN
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @isTest BIT
-	SELECT @isTest = dbo.f_CheckSPVersion(@@SPID)
+	SELECT @isTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
 	SELECT DISTINCT ProductId, Bettype, EventType
@@ -175,13 +175,13 @@ BEGIN
 				b.playercomm,
 				1 AS WhTicket -- bettrans
 			FROM
-				dbo.bettrans b WITH (NOLOCK)
-				INNER JOIN @TempAg t ON b.recommend = t.CustId AND b.currency = t.currency
+				dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @TempAg AS t ON b.recommend = t.CustId AND b.currency = t.currency
 				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.Grouptypeid END = @bettype
-				AND b.statusID NOT IN (0,1,101, 102, 103)
+				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		ELSE
 			INSERT INTO #AllData
@@ -197,12 +197,12 @@ BEGIN
 				b.playercomm,
 				1 AS WhTicket -- bettrans
 			FROM
-				dbo.bettrans b WITH (NOLOCK)
-				INNER JOIN @TempAg t ON b.recommend = t.CustId AND b.currency = t.currency
+				dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @TempAg AS t ON b.recommend = t.CustId AND b.currency = t.currency
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @bettype
-				AND b.statusID NOT IN (0,1,101, 102, 103)
+				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 	END
 
@@ -254,8 +254,8 @@ BEGIN
 				b.playercomm,
 				2 AS WhTicket -- bettrans14
 			FROM
-				dbo.bettrans14 b WITH (NOLOCK)
-				INNER JOIN @TempAg t ON b.recommend = t.CustId AND b.currency = t.currency
+				dbo.bettrans14 AS b WITH (NOLOCK)
+				INNER JOIN @TempAg AS t ON b.recommend = t.CustId AND b.currency = t.currency
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.bettype = @bettype
@@ -264,7 +264,7 @@ BEGIN
 	END
 
 	DECLARE @RowStart	INT,
-			@RowEnd		INT
+		@RowEnd			INT
 
 	SELECT @PageIndex = @PageIndex - 1,
 		@RowStart = @PageSize * @PageIndex + 1,
