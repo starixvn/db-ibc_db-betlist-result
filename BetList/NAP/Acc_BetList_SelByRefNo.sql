@@ -116,7 +116,8 @@ BEGIN
 		SELECT TOP 1
 			@TransId = b.transid,
 			@BetType = b.bettype,
-			@WinLostDate = b.winlostdate
+			@WinLostDate = b.winlostdate,
+			@CustId = b.custid
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
 		WHERE b.transid = @RefNo
@@ -2862,12 +2863,14 @@ BEGIN
 
 	-- BettransRnG tables
 	SET @WinlostDate = NULL
+	SET @CustId = NULL
 
 	-- bettransRnG
 	SELECT TOP 1
 		@TransId = b.transid,
 		@BetType = b.gameID,
-		@WinLostDate = b.winlostdate
+		@WinLostDate = b.winlostdate,
+		@CustId = b.custid
 	FROM dbo.bettransRnG AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
 	WHERE b.transid = @RefNo
@@ -2878,13 +2881,19 @@ BEGIN
 		SELECT TOP 1
 			@TransId = b.transid,
 			@BetType = b.gameID,
-			@WinLostDate = b.winlostdate
+			@WinLostDate = b.winlostdate,
+			@CustId = b.custid
 		FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
 		WHERE b.transid = @RefNo
 	END
 
 	IF @WinlostDate IS NOT NULL
+		AND NOT EXISTS ( SELECT 1
+						FROM dbo.customer AS c WITH (NOLOCK)
+							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
+							WHERE c.custid = @CustId
+								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- bettransRnG
 		IF @WinlostDate > @MoveBetsDay
@@ -3045,12 +3054,14 @@ BEGIN
 
 	-- BettransLC tables
 	SET @WinlostDate = NULL
+	SET @CustId = NULL
 
 	-- bettransLC
 	SELECT TOP 1
 		@TransId = b.transid,
 		@BetType = b.gameID,
-		@WinLostDate = b.winlostdate
+		@WinLostDate = b.winlostdate,
+		@CustId = b.custid
 	FROM dbo.bettransLC AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
 	WHERE b.transid = @RefNo
@@ -3061,13 +3072,19 @@ BEGIN
 		SELECT TOP 1
 			@TransId = b.transid,
 			@BetType = b.gameID,
-			@WinLostDate = b.winlostdate
+			@WinLostDate = b.winlostdate,
+			@CustId = b.custid
 		FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
 		WHERE b.transid = @RefNo
 	END
 
 	IF @WinlostDate IS NOT NULL
+		AND NOT EXISTS ( SELECT 1
+						FROM dbo.customer AS c WITH (NOLOCK)
+							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
+							WHERE c.custid = @CustId
+								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- bettransLC
 		IF @WinlostDate > @MoveBetsDay
