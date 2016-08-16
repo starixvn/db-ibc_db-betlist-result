@@ -132,9 +132,10 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 21, 22)
 
 	-- Don't support BetTrade, RNG Casino old bet type (71)
-	DELETE @SportBettype
+	DELETE FROM @SportBettype
 	WHERE (ProductID = 1 AND Bettype IN (901, 902, 903, 904))
 		OR (ProductID = 6 AND SubProduct = '')
 
@@ -151,8 +152,6 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowMGCRNG = 0	THEN 17 END
 		OR ProductID	= CASE WHEN @ShowAB = 0		THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB = 0		THEN 22 END
-		OR (ProductID > 8 AND ProductID NOT IN (11, 13, 17, 21, 22)) -- not suport for LIC system
-		OR ProductID = 7
 	-- end filer bettypes by sporttype
 
 	CREATE TABLE #BetListSelRunningByDateMem (

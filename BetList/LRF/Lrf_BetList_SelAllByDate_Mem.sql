@@ -226,6 +226,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 21, 22)
 
 	DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
@@ -247,8 +248,6 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowMGCRNG	= 0 THEN 17 END
 		OR ProductID	= CASE WHEN @ShowAB		= 0 THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB		= 0 THEN 22 END
-		OR (ProductID > 8 AND sbt.ProductID NOT IN (11, 13, 17, 21, 22)) -- not suport for LIC system
-		OR ProductID = 7
 	-- end filer bettypes by sporttype
 
 	-- BA tickets
