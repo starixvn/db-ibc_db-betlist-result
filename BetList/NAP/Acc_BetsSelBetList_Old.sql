@@ -168,7 +168,7 @@ BEGIN
 	WHERE @tempBettype = 0 OR BetType = @tempBettype
 	
 	DELETE FROM #SportBettype
-	WHERE ProductID = 1 AND Bettyp
+	WHERE ProductID = 1 AND Bettype = 904
 
 	IF EXISTS(SELECT TOP 1 1 FROM #SportBettype s WHERE ProductID IN (1, 3, 4, 5))
 	BEGIN
