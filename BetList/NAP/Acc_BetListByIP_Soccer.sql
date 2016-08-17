@@ -61,7 +61,7 @@ BEGIN
 		betid			BIGINT,
 		refno			BIGINT,
 		matchcode		NVARCHAR(50),
-		race			NVARCHAR(50), 
+		race			NVARCHAR(50),
 		eventdate		DATETIME,
 		virtualrate		FLOAT,
 		isShowOTExRate	BIT,
@@ -393,7 +393,7 @@ BEGIN
 				b.swinlost,
 				c.username creator,
 				b.username,
-				0 hthomescore, 
+				0 hthomescore,
 				0 htawayscore,
 				ip,
 				b.betfrom,
@@ -442,7 +442,7 @@ BEGIN
 				ISNULL(b.checktime,'') checktime,
 				b.hdp1,
 				b.hdp2,
-				b.odds, 
+				b.odds,
 				b.modds,
 				b.oddstype,
 				CASE WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
@@ -462,8 +462,8 @@ BEGIN
 				b.livehomescore,
 				b.liveawayscore,
 				b.liveindicator,
-				(b.winlost-b.actual_stake)  winlost, 
-				b.playercomm AS commission, 
+				(b.winlost-b.actual_stake) AS winlost,
+				b.playercomm AS commission,
 				(b.scomm - b.acomm) AS scomm,
 				(b.acomm - b.comm) AS acomm,
 				(b.comm - b.playercomm) AS comm,
@@ -523,7 +523,7 @@ BEGIN
 				'' AS checktime,
 				0 AS hdp1,
 				0 AS hdp2,
-				b.odds, 
+				b.odds,
 				0 AS modds,
 				CASE WHEN b.gameid IN (801,803,804,805,806) THEN CONVERT(TINYINT, ISNULL(b.custom1, 0)) ELSE 0 END AS OddsType,
 				b.status,
@@ -823,17 +823,17 @@ BEGIN
 				ISNULL(b.checktime,'') checktime,
 				b.hdp1, --phuong.nguyen <2008-12-30>
 				b.hdp2, --end
-				b.odds,   
+				b.odds,
 				b.modds,
-				0 AS OddsType, 
-				b.status, 
+				0 AS OddsType,
+				b.status,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake, 
 				b.actual_stake,
 				b.transdate, 
 				b.betteam,
-				b.spositiontaking,   
-				b.mpositiontaking,   
+				b.spositiontaking,
+				b.mpositiontaking,
 				b.apositiontaking,
 				0 spositiontaking2,
 				0 mpositiontaking2,
@@ -886,7 +886,7 @@ BEGIN
 	FROM @Data AS betList
 		INNER JOIN dbo.bettrans AS originBetList WITH(NOLOCK) ON betList.RefNO = originBetList.TransID
 		LEFT JOIN @Data AS commBetList ON betList.RefNO = commBetList.RefNO AND commBetList.Bettype = 903
-	WHERE betList.Sporttype = 1 AND betList.Bettype IN (901, 902)	
+	WHERE betList.Sporttype = 1 AND betList.Bettype IN (901, 902)
 
 	UPDATE betList
 	SET betList.Odds	= originBetList.Odds

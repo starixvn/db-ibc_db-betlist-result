@@ -25,7 +25,7 @@ AS
 		- 20151216@Kos: Support for Cockfighting
 		- 20160621@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
-	- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 
  BEGIN
@@ -82,13 +82,14 @@ AS
 		COUNT(tl.custid),
 		2
 	FROM dbo.translog AS tl WITH (NOLOCK)
-		INNER JOIN @SportBettype AS sp
-			ON tl.gameid = sp.BetType
-				AND (sp.ProductID IN (8, 12, 13, 15, 19) OR tl.gameid BETWEEN 801 AND 899)
+		INNER JOIN @SportBettype AS sp ON tl.gameid = sp.BetType
+				
 	WHERE tl.winlostdate = @FromDate
 		--AND gameid between 1501 and 1599
 		AND tl.ip = @Ip 
 		AND tl.statusID = 0
+		AND (sp.ProductID IN (8, 12, 13, 15, 19)
+			OR tl.gameid BETWEEN 801 AND 899)
 	GROUP BY tl.custid
 
 	CREATE TABLE #tmpUserBet (
@@ -147,10 +148,10 @@ AS
 												INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 											WHERE 	m.sporttype = 1)
 						--COUNT MG ticket as soccer
-						UNION ALL 
+						UNION ALL
 						SELECT tl.custid
 						FROM dbo.translog AS tl WITH (NOLOCK)
-						WHERE winlostdate = @fromdate 
+						WHERE winlostdate = @fromdate
 							AND tl.gameid BETWEEN 801 AND 899
 							AND ip = @ip
 							AND statusid = 0
@@ -240,6 +241,7 @@ AS
 
 	DROP TABLE #tmpUserBet
 END
+
 
 
 GO
