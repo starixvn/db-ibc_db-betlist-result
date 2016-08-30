@@ -6,124 +6,129 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[Aff_BetList_SelWinLossByDate]
-	@CustId 					INT
-	,@FromDate 					SMALLDATETIME
-	,@ToDate 					SMALLDATETIME
-	,@MoveBetsDay 				SMALLDATETIME
-	,@Language 					VARCHAR(2) 		= 'E'
-	,@ShowSB 					BIT 			= 1
-	,@ShowCS 					BIT 			= 0
-	,@ShowRB 					BIT 			= 0
-	,@ShowNG 					BIT 			= 0
-	,@ShowLC 					BIT 			= 0
-	,@ShowVS 					BIT 			= 0
-	,@ShowKN 					BIT 			= 0
+	@CustId						INT
+	,@FromDate					SMALLDATETIME
+	,@ToDate					SMALLDATETIME
+	,@MoveBetsDay				SMALLDATETIME
+	,@Language					VARCHAR(2)		= 'E'
+	,@ShowSB					BIT 			= 1
+	,@ShowCS					BIT 			= 0
+	,@ShowRB					BIT 			= 0
+	,@ShowNG					BIT 			= 0
+	,@ShowLC					BIT 			= 0
+	,@ShowVS					BIT 			= 0
+	,@ShowKN					BIT 			= 0
 	,@ShowAG					BIT 			= 0
 	,@ShowGD					BIT 			= 0
 	,@ShowCB					BIT 			= 0
 	,@ShowCF					BIT 			= 0
 	,@Error						INT 			= 0 	OUTPUT
-	,@ErrorMsg					NVARCHAR(500) 	= '' 	OUTPUT
+	,@ErrorMsg					NVARCHAR(500)	= ''	OUTPUT
 	,@Duration					INT 			= 0 	OUTPUT
 AS
-/*
-Created: 20141016@Bobby.Nguyen
-Task: Implement Affilite member betlist
-DB:	DBEXT.bodb02
-Original: DBEXT.bodb02.dbo.[Age_BetList_SelWinLossByDate_Mem]
 
-Revisions:           
-	20141016@Bobby.Nguyen: Initial affiliate member betlist
-	20150217@Bobby.Nguyen: Apply sport type matrix table
-	20150415@Bobby.Nguyen: Support for new 60 bettypes betradar
-	20160308@Bobby.Nguyen: #50200 - Implement LIC core bet list for Affiliate site and offer new products
-	20160425@Bobby.Nguyen: #56136 - Support Combo Parlay
+/*
+	Created: 20141016@Bobby.Nguyen
+	Task: Implement Affilite member betlist
+	DB: DBEXT.bodb02
+	Original: DBEXT.bodb02.dbo.[Age_BetList_SelWinLossByDate_Mem]
+
+	Revisions:
+		- 20141016@Bobby: Initial affiliate member betlist
+		- 20150217@Bobby: Apply sport type matrix table
+		- 20150415@Bobby: Support for new 60 bettypes betradar
+		- 20160308@Bobby: #50200 - Implement LIC core bet list for Affiliate site and offer new products
+		- 20160425@Bobby: #56136 - Support Combo Parlay
+		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
 	
-	
-Param's Explanation: 
-	- @CustID: 		Customer/Player ID
-	- @FromDate: 	Date only
-	- @ToDate: 		Date only
-	- @Language: 	translate to which language
-	- @MoveBetsDay: Date only that is a move bet day
-	- @ShowSB: 		Show sportbooks
-	- @ShowCS: 		Show RnG Casino
-	- @ShowRB:		Show Racing,
-	- @ShowNG:		Show Number Game
-	- @ShowKN:		Show Keno
-	- @ShowVS:		Show Virtual Sports
-	- @ShowLC:		Show Live Casino
-	- @ShowAG:		Show AG Casino
-	- @ShowGD:		Show Gold Delux
-	- @ShowCB:		Colossus Bets
-	- @ShowCF:		Cock fighting
+	Param's Explanation: 
+		- @CustID:		Customer/Player ID
+		- @FromDate:	Date only
+		- @ToDate:		Date only
+		- @Language:	translate to which language
+		- @MoveBetsDay: Date only that is a move bet day
+		- @ShowSB:		Show sportbooks
+		- @ShowCS:		Show RnG Casino
+		- @ShowRB:		Show Racing,
+		- @ShowNG:		Show Number Game
+		- @ShowKN:		Show Keno
+		- @ShowVS:		Show Virtual Sports
+		- @ShowLC:		Show Live Casino
+		- @ShowAG:		Show AG Casino
+		- @ShowGD:		Show Gold Deluxe
+		- @ShowCB:		Colossus Bets
+		- @ShowCF:		Cockfighting
 */
+
 BEGIN
 	SET NOCOUNT ON;
-	
+
 	DECLARE @startRun 	DATETIME
-		
+
 	SELECT @startRun 	= GETDATE()
 	
 	DECLARE	 @TransStatus	[dbo].[TVP_BetTicketStatus]
 		, @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]
-	
+
 	-- Gather Ticket status
 	INSERT INTO @TransStatus
 	SELECT StatusId
 	FROM bodb02.dbo.All_f_TransStatus (1) stt
 	WHERE stt.StatusId IN (111, 112, 113)
-	
+
 	-- Gather BettypeMatrix
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
 	INSERT INTO @BettypeMatrix
-		EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 5
-	
+	SELECT ProductID, BetType, EventType, SubProduct
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (1, 2, 3, 4, 5, 6, 8, 11, 12, 15, 19)
+
 	-- DO filtering bettype by product
-	DELETE bt
-	FROM @BettypeMatrix bt
-	WHERE ProductID		= CASE WHEN @ShowSB					= 0 THEN 1 END
-		OR ProductID	= CASE WHEN @ShowRB					= 0 THEN 2 END
-		OR ProductID	= CASE WHEN @ShowNG					= 0 THEN 3 END
-		OR ProductID	= CASE WHEN @ShowLC					= 0 THEN 4 END
-		OR ProductID	= CASE WHEN @ShowVS					= 0 THEN 5 END
-		OR ProductID	= CASE WHEN @ShowCS					= 0 THEN 6 END
-		OR ProductID	= CASE WHEN @ShowKN					= 0 THEN 8 END
-		OR ProductID	= CASE WHEN @ShowAG					= 0 THEN 11 END
-		OR ProductID	= CASE WHEN @ShowGD					= 0 THEN 12 END
-		--OR ProductID	= CASE WHEN @ShowVG					= 0 THEN 14 END
-		OR ProductID	= CASE WHEN @ShowCB					= 0 THEN 15 END
-		OR ProductID	= CASE WHEN @ShowCF					= 0 THEN 19 END
-		OR ProductID 	NOT IN (1,2,3,4,5,6,8,11,12,15,19)
+	DELETE FROM @BettypeMatrix
+	WHERE ProductID		= CASE WHEN @ShowSB		= 0 THEN 1 END
+		OR ProductID	= CASE WHEN @ShowRB		= 0 THEN 2 END
+		OR ProductID	= CASE WHEN @ShowNG		= 0 THEN 3 END
+		OR ProductID	= CASE WHEN @ShowLC		= 0 THEN 4 END
+		OR ProductID	= CASE WHEN @ShowVS		= 0 THEN 5 END
+		OR ProductID	= CASE WHEN @ShowCS		= 0 THEN 6 END
+		OR ProductID	= CASE WHEN @ShowKN		= 0 THEN 8 END
+		OR ProductID	= CASE WHEN @ShowAG		= 0 THEN 11 END
+		OR ProductID	= CASE WHEN @ShowGD		= 0 THEN 12 END
+		OR ProductID	= CASE WHEN @ShowCB		= 0 THEN 15 END
+		OR ProductID	= CASE WHEN @ShowCF		= 0 THEN 19 END
 	
 	-- CALL to core bet list
-		EXEC [bodb02].[dbo].[Aff_CoreBetList_Mem_SelBetTicket]
-		@CustId 			= @CustId
+	EXEC [bodb02].[dbo].[Aff_CoreBetList_Mem_SelBetTicket]
+		@CustId				= @CustId
 		, @FromDate			= @FromDate
-		, @ToDate 			= @ToDate
-		, @MoveBetsDay 		= @MoveBetsDay
+		, @ToDate			= @ToDate
+		, @MoveBetsDay		= @MoveBetsDay
 		, @TransStatus		= @TransStatus
 		, @BettypeMatrix	= @BettypeMatrix
 		/*, @ColumnOutput		= 'Sporttype,
-								Username, 
+								Username,
 								TransID,
 								BetID,
 								Bettype,
-								hdp1, 
-								hdp2, 
+								hdp1,
+								hdp2,
 								OddsType,
-								Odds, 
+								Odds,
 								modds,
-								Stake, 
+								Stake,
 								actual_stake,
 								Betteam,
 								Status,
-								RefNO,	
+								RefNO,
 								Transdate,
 								Winlostdate,
 								Winlost,
 								awinlost,
 								mwinlost,
-								swinlost,		
+								swinlost,
 								PlayerComm,
 								comm,
 								acomm,
@@ -143,16 +148,16 @@ BEGIN
 								MatchCode,
 								Race,
 								HomeID,
-								AwayID, 	
+								AwayID,
 								Betstatus,
 								isNeutral,
 								custid,
 								showtime,
 								BetCheck,
 								comstatus'*/
-	
-	SELECT @Duration = DATEDIFF(millisecond, @startRun, GETDATE());
-		
+
+	SELECT @Duration = DATEDIFF(MILLISECOND, @startRun, GETDATE());
+
 	RETURN;
 
 END
