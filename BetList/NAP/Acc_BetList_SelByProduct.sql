@@ -22,6 +22,7 @@ AS
 	
 	Revisions:
 		- 20160623@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
+		- 20160906@Kos: Support AllBet [#Redmine: 61876]
 */
 
 BEGIN
@@ -308,6 +309,81 @@ BEGIN
 				END
 			END
 
+			-- AllBet
+			IF @ProductId = 21
+			BEGIN
+				IF @GameId <> '' OR @BetId <> ''
+				BEGIN
+					INSERT INTO @Data
+					SELECT
+						b.gameID AS BetType,
+						b.transid,
+						0 AS BetId,
+						b.refno,
+						b.GameId3rd AS MatchCode,
+						'' AS Race,
+						'' AS EventDate,
+						0 AS VirtualRate,
+						0 AS IsShowOTExRate,
+						b.sdiscount,
+						b.adiscount,
+						b.discount,
+						0 AS HomeId,
+						0 AS AwayId,
+						'' AS SettleTime,
+						0 AS Hdp1,
+						0 AS Hdp2,
+						b.odds,
+						0 AS FinalOdds,
+						0 AS FinalOdds2,
+						0 AS OddsType,
+						b.status,
+						'' AS ComStatus,
+						b.stake,
+						b.actual_stake,
+						b.transdate,
+						'' AS BetTeam,
+						b.spositiontaking,
+						b.mpositiontaking,
+						b.apositiontaking,
+						0 AS SPositionTaking2,
+						0 AS MPositionTaking2,
+						0 AS APositionTaking2,
+						0 AS LiveIndicator,
+						0 AS Modds,
+						b.custid,
+						0 AS LiveHomeScore,
+						0 AS LiveAwayScore,
+						0 AS FinalHomeScore,
+						0 AS FinalAwayScore,
+						0 AS LeagueId,
+						b.productID AS SportType,
+						b.ip,
+						b.betfrom,
+						0 AS MatchId,
+						CONVERT(BIT, 0) AS IsNeutral,
+						(b.winlost - b.actual_stake) AS WinLost,
+						b.playercomm AS Commission,
+						(b.scomm - b.acomm) AS SComm,
+						(b.acomm - b.comm) AS AComm,
+						(b.comm - b.playercomm) AS Comm,
+						b.awinlost,
+						b.mwinlost,
+						b.swinlost,
+						'' AS ShowTime,
+						b.winlostdate,
+						b.TranId3rd AS BetCheck,
+						b.transdesc,
+						0 AS OddsSpread
+					FROM dbo.bettransLC AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
+					WHERE b.custid = @CustId
+						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
+						AND (@GameId = '' OR b.GameId3rd = @GameId)
+						AND (@BetId = '' OR b.TranId3rd = @BetId)
+				END
+			END
+
 			-- Macau Games
 			IF @ProductId = 22
 			BEGIN
@@ -470,6 +546,81 @@ BEGIN
 														WHERE bg.refno = b.transid
 															AND bg.bettype = b.bettype
 															AND bg.BetID3rd =  @BetId ))
+				END
+			END
+
+			-- AllBet
+			IF @ProductId = 21
+			BEGIN
+				IF @GameId <> '' OR @BetId <> ''
+				BEGIN
+					INSERT INTO @Data
+					SELECT
+						b.gameID AS BetType,
+						b.transid,
+						0 AS BetId,
+						b.refno,
+						b.GameId3rd AS MatchCode,
+						'' AS Race,
+						'' AS EventDate,
+						0 AS VirtualRate,
+						0 AS IsShowOTExRate,
+						b.sdiscount,
+						b.adiscount,
+						b.discount,
+						0 AS HomeId,
+						0 AS AwayId,
+						'' AS SettleTime,
+						0 AS Hdp1,
+						0 AS Hdp2,
+						b.odds,
+						0 AS FinalOdds,
+						0 AS FinalOdds2,
+						0 AS OddsType,
+						b.status,
+						'' AS ComStatus,
+						b.stake,
+						b.actual_stake,
+						b.transdate,
+						'' AS BetTeam,
+						b.spositiontaking,
+						b.mpositiontaking,
+						b.apositiontaking,
+						0 AS SPositionTaking2,
+						0 AS MPositionTaking2,
+						0 AS APositionTaking2,
+						0 AS LiveIndicator,
+						0 AS Modds,
+						b.custid,
+						0 AS LiveHomeScore,
+						0 AS LiveAwayScore,
+						0 AS FinalHomeScore,
+						0 AS FinalAwayScore,
+						0 AS LeagueId,
+						b.productID AS SportType,
+						b.ip,
+						b.betfrom,
+						0 AS MatchId,
+						CONVERT(BIT, 0) AS IsNeutral,
+						(b.winlost - b.actual_stake) AS WinLost,
+						b.playercomm AS Commission,
+						(b.scomm - b.acomm) AS SComm,
+						(b.acomm - b.comm) AS AComm,
+						(b.comm - b.playercomm) AS Comm,
+						b.awinlost,
+						b.mwinlost,
+						b.swinlost,
+						'' AS ShowTime,
+						b.winlostdate,
+						b.TranId3rd AS BetCheck,
+						b.transdesc,
+						0 AS OddsSpread
+					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
+					WHERE b.custid = @CustId
+						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
+						AND (@GameId = '' OR b.GameId3rd = @GameId)
+						AND (@BetId = '' OR b.TranId3rd = @BetId)
 				END
 			END
 
