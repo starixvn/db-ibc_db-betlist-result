@@ -615,7 +615,7 @@ BEGIN
 						b.TranId3rd AS BetCheck,
 						b.transdesc,
 						0 AS OddsSpread
-					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
+					FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
