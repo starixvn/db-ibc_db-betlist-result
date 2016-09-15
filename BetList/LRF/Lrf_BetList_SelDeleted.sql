@@ -47,6 +47,7 @@ AS
 		- 20160201@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20160913@Kos: Don't support Colossus Bets [#Redmine: 63785]
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 
 	Param's Explanation:
@@ -56,9 +57,9 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @recommend INT
-	DECLARE @Fromdate DATETIME
-	DECLARE @Todate DATETIME
+	DECLARE @recommend	INT,
+		@Fromdate		DATETIME,
+		@Todate			DATETIME
 
 	DECLARE @SportBettype TABLE(ProductID INT, Bettype INT, EventType INT)
 
@@ -69,6 +70,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID <= 6 OR ProductID IN (8, 13)
 
 	DELETE FROM @SportBettype
 	WHERE ProductID = 1 AND Bettype = 904
@@ -121,7 +123,7 @@ BEGIN
 
 	-- Keno
 	INSERT INTO #Data
-	SELECT 
+	SELECT
 		202 AS Sporttype,
 		b.Username,
 		b.custid,
@@ -365,8 +367,8 @@ BEGIN
 	SELECT @ToDate = MAX(winlostdate) FROM #Data
 
 	IF @TotalRows = 0
-	BEGIN 
-		 SELECT @TotalRows = COUNT(transid) FROM #Data
+	BEGIN
+		SELECT @TotalRows = COUNT(transid) FROM #Data
 	END
 
 	CREATE NONCLUSTERED INDEX IDX_Index_Data ON #Data (Currency)
@@ -499,7 +501,6 @@ BEGIN
 	DROP TABLE #TempExchange
 	DROP TABLE #Data
 END
-
 
 
 

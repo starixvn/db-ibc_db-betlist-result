@@ -8,19 +8,19 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelByDayAll_Mem]
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
 	@TotalRows			INT				= 0 OUTPUT,
-	@SumWinlost			MONEY			= 0 OUTPUT,
+	@SumWinLost			MONEY			= 0 OUTPUT,
 	@SumLicenseeWL		MONEY			= 0 OUTPUT,
 	@SumComm			MONEY			= 0 OUTPUT,
 	@SumPlayerComm		MONEY			= 0 OUTPUT,
-	@SumWinlostUSD		MONEY			= 0 OUTPUT,
+	@SumWinLostUSD		MONEY			= 0 OUTPUT,
 	@SumLicenseeWLUSD	MONEY			= 0 OUTPUT,
 	@SumCommUSD			MONEY			= 0 OUTPUT,
 	@SumPlayerCommUSD	MONEY			= 0 OUTPUT,
-	@SumWinlostEUR		MONEY			= 0 OUTPUT,
+	@SumWinLostEUR		MONEY			= 0 OUTPUT,
 	@SumLicenseeWLEUR	MONEY			= 0 OUTPUT,
 	@SumCommEUR			MONEY			= 0 OUTPUT,
 	@SumPlayerCommEUR	MONEY			= 0 OUTPUT,
-	@SumWinlostGBP		MONEY			= 0 OUTPUT,
+	@SumWinLostGBP		MONEY			= 0 OUTPUT,
 	@SumLicenseeWLGBP	MONEY			= 0 OUTPUT,
 	@SumCommGBP			MONEY			= 0 OUTPUT,
 	@SumPlayerCommGBP	MONEY			= 0 OUTPUT,
@@ -77,6 +77,7 @@ AS
 		- 20160718@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
 		- 20160727@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20160913@Kos: Support Colossus Bets [#Redmine: 63785]
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 
 	Param's Explanation: 
@@ -221,9 +222,10 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 21, 22) -- not suport for LIC system
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22) -- not suport for LIC system
 
-	DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 904
+	DELETE @SportBettype
+	WHERE ProductID = 1 AND Bettype = 904
 
 	IF @transtype = 3	-- Don't support running RNG Casino old bet type (71)
 	BEGIN
@@ -231,10 +233,10 @@ BEGIN
 		WHERE ProductID = 6 AND SubProduct = ''
 	END
 
-	IF @transtype = 4	-- support only for Microgaming RNG Casino
+	IF @transtype = 4	-- support only for Microgaming RNG Casino, Colossus Bets
 	BEGIN
 		DELETE @SportBettype
-		WHERE ProductID NOT IN (17)
+		WHERE ProductID NOT IN (15, 17)
 	END
 
 	-- END filer bettypes
@@ -377,8 +379,8 @@ BEGIN
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.liveindicator
 				ELSE ''
 			END AS liveindicator,
-			0 AS finalhomescore, 
-			0 AS finalawayscore,
+			0 AS FinalHomeScore, 
+			0 AS FinalAwayScore,
 			0 AS hthomescore, 
 			0 AS htawayscore,
 			b.IP,
@@ -436,8 +438,8 @@ BEGIN
 				0 AS livehomescore,
 				0 AS liveawayscore,
 				0 AS liveindicator,
-				0 AS finalhomescore,
-				0 AS finalawayscore,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
 				0 AS hthomescore,
 				0 AS htawayscore,
 				b.IP,
@@ -494,8 +496,8 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
-			0 AS finalhomescore,
-			0 AS finalawayscore,
+			0 AS FinalHomeScore,
+			0 AS FinalAwayScore,
 			0 AS hthomescore,
 			0 AS htawayscore,
 			b.IP,
@@ -517,7 +519,7 @@ BEGIN
 			AND sbt.EventType = 3
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Mixed parlay & system parlay
+		-- Mixed Parlay, System Parlay
 		INSERT INTO @Data 
 		SELECT
 			0,
@@ -680,8 +682,8 @@ BEGIN
 				0 AS livehomescore,
 				0 AS liveawayscore,
 				0 AS liveindicator,
-				0 AS finalhomescore,
-				0 AS finalawayscore,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
 				0 AS hthomescore,
 				0 AS htawayscore,
 				b.ip,
@@ -709,10 +711,71 @@ BEGIN
 				AND @transtype <> 4
 		END
 
-		-- Microgaming RNG Casino Jackpot Win
+		-- Colossus Bets
+		IF @transtype <> 4
+		BEGIN
+			INSERT INTO @Data
+			SELECT
+				204 AS SportType,
+				0 AS LeagueId,
+				0 AS HomeId,
+				0 AS AwayId,
+				b.bettype,
+				'' AS MatchCode,
+				'' AS Race,
+				0 AS MatchId,
+				b.transid,
+				b.transdate,
+				b.winlostdate,
+				b.refno,
+				0 AS BetId,
+				0 AS OddsId,
+				0 AS Hdp1,
+				0 AS Hdp2,
+				0 AS MOdds,
+				0 AS OddsYype,
+				0 AS Odds,
+				'' AS BetTeam,
+				b.status,
+				'' AS BetStatus,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				0 AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				b.discount,
+				0 AS LiveHomeScore,
+				0 AS LiveAwayScore,
+				0 AS LiveIndicator,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
+				0 AS HtHomeScore,
+				0 AS HtAwayScore,
+				b.ip,
+				b.Username,
+				CONVERT(BIT, 0) AS IsNeutral,
+				b.currency,
+				'' AS ShowTime,
+				ISNULL(bm.betcheck, '') AS BetCheck,
+				'' AS TransDesc
+			FROM
+				dbo.bettrans14 AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+				LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
+			WHERE
+				b.custid = @custid
+				AND b.winlostdate = @fromdate 
+				AND sbt.ProductID = 15
+				AND sbt.EventType = 0
+				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+		END
+
+		-- Grand Prize Jackpot Win
 		IF @transtype = 4
 		BEGIN
-			INSERT INTO @Data 
+			-- Microgaming RNG Casino
+			INSERT INTO @Data
 			SELECT
 				205 AS sporttype,
 				0 AS leagueid,
@@ -746,8 +809,8 @@ BEGIN
 				0 AS livehomescore,
 				0 AS liveawayscore,
 				0 AS liveindicator,
-				0 AS finalhomescore,
-				0 AS finalawayscore,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
 				0 AS hthomescore,
 				0 AS htawayscore,
 				b.IP,
@@ -766,6 +829,65 @@ BEGIN
 				AND pt.winlostdate = @fromdate 
 				AND sbt.ProductID = 17
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+
+			-- Colossus Bets
+			INSERT INTO @Data
+			SELECT
+				204 AS SportType,
+				0 AS LeagueId,
+				0 AS HomeId,
+				0 AS AwayId,
+				b.bettype,
+				'' AS MatchCode,
+				'' AS Race,
+				0 AS MatchId,
+				b.transid,
+				b.transdate,
+				b.winlostdate,
+				b.refno,
+				0 AS BetId,
+				0 AS OddsId,
+				0 AS Hdp1,
+				0 AS Hdp2,
+				0 AS MOdds,
+				0 AS OddsType,
+				0 AS Odds,
+				'' AS BetTeam,
+				b.status,
+				'' AS BetStatus,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				0 AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				b.discount,
+				0 AS LiveHomeScore,
+				0 AS LiveAwayScore,
+				0 AS LiveIndicator,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
+				0 AS HtHomeScore,
+				0 AS HtAwayScore,
+				b.ip,
+				b.Username,
+				CONVERT(BIT, 0) AS IsNeutral,
+				b.currency,
+				'' AS ShowTime,
+				ISNULL(bm.betcheck, '') AS BetCheck,
+				b.transdesc
+			FROM
+				dbo.bettrans14 AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+				LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
+			WHERE
+				b.custid = @custid
+				AND b.winlostdate = @fromdate 
+				AND sbt.ProductID = 15
+				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+				AND EXISTS (	SELECT 1 
+								FROM DBACC.bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
+								WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
 		END
 
 		-- For BetTrade
@@ -895,8 +1017,8 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
-			0 AS finalhomescore,
-			0 AS finalawayscore,
+			0 AS FinalHomeScore,
+			0 AS FinalAwayScore,
 			0 AS hthomescore,
 			0 AS htawayscore,
 			b.IP,
@@ -950,8 +1072,8 @@ BEGIN
 				0 AS livehomescore,
 				0 AS liveawayscore,
 				0 AS liveindicator,
-				0 AS finalhomescore,
-				0 AS finalawayscore,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
 				0 AS hthomescore,
 				0 AS htawayscore,
 				b.IP,
@@ -1006,8 +1128,8 @@ BEGIN
 				0 AS livehomescore,
 				0 AS liveawayscore,
 				0 AS liveindicator,
-				0 AS finalhomescore,
-				0 AS finalawayscore,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
 				0 AS hthomescore,
 				0 AS htawayscore,
 				t.IP,
@@ -1063,8 +1185,8 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
-			0 AS finalhomescore,
-			0 AS finalawayscore,
+			0 AS FinalHomeScore,
+			0 AS FinalAwayScore,
 			0 AS hthomescore,
 			0 AS htawayscore,
 			b.IP,
@@ -1194,10 +1316,10 @@ BEGIN
 			b.discount,
 			b.livehomescore, 
 			b.liveawayscore, 
-			0, 
-			0, 
-			0, 
-			0, 
+			0,
+			0,
+			0,
+			0,
 			0,
 			b.IP,
 			b.Username,
@@ -1221,6 +1343,7 @@ BEGIN
 
 		-- Microgaming Live Casino
 		IF @transtype = 1 OR @transtype = 2
+		BEGIN
 			INSERT INTO @Data 
 			SELECT
 				203 AS sporttype,
@@ -1255,8 +1378,8 @@ BEGIN
 				0 AS livehomescore,
 				0 AS liveawayscore,
 				0 AS liveindicator,
-				0 AS finalhomescore,
-				0 AS finalawayscore,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
 				0 AS hthomescore,
 				0 AS htawayscore,
 				b.IP,
@@ -1272,24 +1395,31 @@ BEGIN
 			WHERE
 				b.custid = @custid
 				AND b.winlostdate = @fromdate 
-				AND sbt.ProductID = 13
+				AND sbt.ProductID IN (13, 15)
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
-		ELSE
+		END
+
+		-- Microgaming Live Casino, Colossus Bets (translog)
+		IF @transtype = 3
+		BEGIN
 			INSERT INTO @Data
 			SELECT
-				203 AS sporttype,
-				0 AS leagueid,
+				CASE
+					WHEN sbt.ProductId = 13 THEN 203
+					WHEN sbt.ProductId = 15 THEN 204
+				END AS SportType,
+				0 AS LeagueId,
 				0 AS homeID,
 				0 AS awayID,
-				t.gameID AS bettype,
+				t.gameID AS BetType,
 				'' AS matchcode,
 				'' AS race,
 				0 AS matchid,
-				t.translogid,
+				t.translogid AS TransId,
 				t.transdate,
 				t.winlostdate,
-				t.translogid,
+				t.translogid AS RefNo,
 				0 AS betid,
 				0 AS oddsid,
 				0 AS hdp1,
@@ -1302,34 +1432,37 @@ BEGIN
 				0 AS betstatus,
 				t.stake,
 				t.actual_stake,
-				0 AS winlost,
+				0 AS WinLost,
 				0 AS LicenseeWL,
-				0 AS comm,
-				0 AS playercomm,
+				0 AS Comm,
+				0 AS PlayerComm,
 				t.discount,
-				0 AS livehomescore,
-				0 AS liveawayscore,
-				0 AS liveindicator,
-				0 AS finalhomescore,
-				0 AS finalawayscore,
+				0 AS LiveHomeScore,
+				0 AS LiveAwayScore,
+				0 AS LiveIndicator,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
 				0 AS hthomescore,
 				0 AS htawayscore,
-				t.IP,
+				t.ip,
 				t.Username,
 				CONVERT(BIT, 0) AS IsNeutral,
 				t.currency,
 				'' AS ShowTime,
-				'' AS betcheck
-				,'' AS transdesc
+				CASE
+					WHEN sbt.ProductId = 15 THEN t.Tranid3rd
+					ELSE ''
+				END AS BetCheck,
+				'' AS transdesc
 			FROM 
 				dbo.translog AS t WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON t.gameID = sbt.bettype
 			WHERE
 				t.custid = @custid
 				AND t.winlostdate = @fromdate
-				AND sbt.ProductID = 13
-				AND sbt.EventType = 0
+				AND sbt.ProductID IN (13, 15)
 				AND t.statusID IN (SELECT [statusID] FROM @tmpStatus)
+		END
 
 		-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge
 		IF @transtype = 1
@@ -1374,8 +1507,8 @@ BEGIN
 					0 AS livehomescore,
 					0 AS liveawayscore,
 					0 AS liveindicator,
-					0 AS finalhomescore,
-					0 AS finalawayscore,
+					0 AS FinalHomeScore,
+					0 AS FinalAwayScore,
 					0 AS hthomescore,
 					0 AS htawayscore,
 					b.IP,
@@ -1443,8 +1576,8 @@ BEGIN
 					0 AS livehomescore,
 					0 AS liveawayscore,
 					0 AS liveindicator,
-					0 AS finalhomescore,
-					0 AS finalawayscore,
+					0 AS FinalHomeScore,
+					0 AS FinalAwayScore,
 					0 AS hthomescore,
 					0 AS htawayscore,
 					b.IP,
@@ -1525,8 +1658,8 @@ BEGIN
 					0 AS livehomescore,
 					0 AS liveawayscore,
 					0 AS liveindicator,
-					0 AS finalhomescore,
-					0 AS finalawayscore,
+					0 AS FinalHomeScore,
+					0 AS FinalAwayScore,
 					0 AS hthomescore,
 					0 AS htawayscore,
 					b.IP,
@@ -1564,8 +1697,129 @@ BEGIN
 					sbt.ProductID
 			END
 		END
-		ELSE IF @transtype = 4	-- Jackpot Win
+
+		-- Colossus Bets
+		IF @transtype IN (1, 2)
 		BEGIN
+			INSERT INTO @Data 
+			SELECT
+				204 AS SportType,
+				0 AS LeagueId,
+				0 AS HomeId,
+				0 AS AwayId,
+				b.bettype,
+				'' AS MatchCode,
+				'' AS Race,
+				0 AS MatchId,
+				b.transid,
+				b.transdate,
+				b.winlostdate,
+				b.refno,
+				0 AS BetId,
+				0 AS OddsId,
+				0 AS Hdp1,
+				0 AS Hdp2,
+				0 AS MOdds,
+				0 AS OddsYype,
+				0 AS Odds,
+				'' AS BetTeam,
+				b.status,
+				'' AS BetStatus,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				0 AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				b.discount,
+				0 AS LiveHomeScore,
+				0 AS LiveAwayScore,
+				0 AS LiveIndicator,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
+				0 AS HtHomeScore,
+				0 AS HtAwayScore,
+				b.ip,
+				b.Username,
+				CONVERT(BIT, 0) AS IsNeutral,
+				b.currency,
+				'' AS ShowTime,
+				ISNULL(bm.betcheck, '') AS BetCheck,
+				'' AS TransDesc
+			FROM
+				dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+				LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
+			WHERE
+				b.custid = @custid
+				AND b.winlostdate = @fromdate 
+				AND sbt.ProductID = 15
+				AND sbt.EventType = 0
+				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+		END
+		ELSE IF @transtype = 3
+		BEGIN
+			INSERT INTO @Data 
+			SELECT
+				204 AS SportType,
+				0 AS LeagueId,
+				0 AS HomeId,
+				0 AS AwayId,
+				b.bettype,
+				'' AS MatchCode,
+				'' AS Race,
+				0 AS MatchId,
+				b.transid,
+				b.transdate,
+				b.winlostdate,
+				b.refno,
+				0 AS BetId,
+				0 AS OddsId,
+				0 AS Hdp1,
+				0 AS Hdp2,
+				0 AS MOdds,
+				0 AS OddsYype,
+				0 AS Odds,
+				'' AS BetTeam,
+				b.status,
+				'' AS BetStatus,
+				b.stake,
+				b.actual_stake,
+				0 AS WinLost,
+				0 AS LicenseeWL,
+				0 AS comm,
+				0 AS playercomm,
+				b.discount,
+				0 AS LiveHomeScore,
+				0 AS LiveAwayScore,
+				0 AS LiveIndicator,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
+				0 AS HtHomeScore,
+				0 AS HtAwayScore,
+				b.ip,
+				b.Username,
+				CONVERT(BIT, 0) AS IsNeutral,
+				b.currency,
+				'' AS ShowTime,
+				ISNULL(bm.betcheck, '') AS BetCheck,
+				'' AS TransDesc
+			FROM
+				dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+				LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
+			WHERE
+				b.custid = @custid
+				AND b.winlostdate = @fromdate 
+				AND sbt.ProductID = 15
+				AND sbt.EventType = 0
+				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+		END
+		
+		-- Grand Prize Jackpot Win
+		IF @transtype = 4
+		BEGIN
+			-- Microgaming RNG Casino
 			INSERT INTO @Data 
 			SELECT
 				205 AS sporttype,
@@ -1600,8 +1854,8 @@ BEGIN
 				0 AS livehomescore,
 				0 AS liveawayscore,
 				0 AS liveindicator,
-				0 AS finalhomescore,
-				0 AS finalawayscore,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
 				0 AS hthomescore,
 				0 AS htawayscore,
 				b.ip,
@@ -1620,6 +1874,65 @@ BEGIN
 				AND pt.winlostdate = @fromdate 
 				AND sbt.ProductID = 17
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+
+			-- Colossus Bets
+			INSERT INTO @Data
+			SELECT
+				204 AS SportType,
+				0 AS LeagueId,
+				0 AS HomeId,
+				0 AS AwayId,
+				b.bettype,
+				'' AS MatchCode,
+				'' AS Race,
+				0 AS MatchId,
+				b.transid,
+				b.transdate,
+				b.winlostdate,
+				b.refno,
+				0 AS BetId,
+				0 AS OddsId,
+				0 AS Hdp1,
+				0 AS Hdp2,
+				0 AS MOdds,
+				0 AS OddsType,
+				0 AS Odds,
+				'' AS BetTeam,
+				b.status,
+				'' AS BetStatus,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				0 AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				b.discount,
+				0 AS LiveHomeScore,
+				0 AS LiveAwayScore,
+				0 AS LiveIndicator,
+				0 AS FinalHomeScore,
+				0 AS FinalAwayScore,
+				0 AS HtHomeScore,
+				0 AS HtAwayScore,
+				b.ip,
+				b.Username,
+				CONVERT(BIT, 0) AS IsNeutral,
+				b.currency,
+				'' AS ShowTime,
+				ISNULL(bm.betcheck, '') AS BetCheck,
+				b.transdesc
+			FROM
+				dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+				LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
+			WHERE
+				b.custid = @custid
+				AND b.winlostdate = @fromdate 
+				AND sbt.ProductID = 15
+				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+				AND EXISTS (	SELECT 1 
+								FROM DBACC.bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
+								WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
 		END
 
 		-- AG Casino, AllBet
@@ -1664,8 +1977,8 @@ BEGIN
 					0 AS livehomescore,
 					0 AS liveawayscore,
 					0 AS liveindicator,
-					0 AS finalhomescore,
-					0 AS finalawayscore,
+					0 AS FinalHomeScore,
+					0 AS FinalAwayScore,
 					0 AS hthomescore,
 					0 AS htawayscore,
 					b.IP,
@@ -1728,8 +2041,8 @@ BEGIN
 					0 AS livehomescore,
 					0 AS liveawayscore,
 					0 AS liveindicator,
-					0 AS finalhomescore,
-					0 AS finalawayscore,
+					0 AS FinalHomeScore,
+					0 AS FinalAwayScore,
 					0 AS hthomescore,
 					0 AS htawayscore,
 					b.IP,
@@ -1803,8 +2116,8 @@ BEGIN
 					0 AS livehomescore,
 					0 AS liveawayscore,
 					0 AS liveindicator,
-					0 AS finalhomescore,
-					0 AS finalawayscore,
+					0 AS FinalHomeScore,
+					0 AS FinalAwayScore,
 					0 AS hthomescore,
 					0 AS htawayscore,
 					b.IP,
@@ -2077,6 +2390,7 @@ BEGIN
 
 	DROP TABLE #TempExchange
 END
+
 
 
 GO 

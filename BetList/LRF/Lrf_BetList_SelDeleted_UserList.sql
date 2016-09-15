@@ -31,6 +31,7 @@ AS
 		- 20150609@Edward : Support BetTrade
 		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20160913@Kos: Don't support Colossus Bets [#Redmine: 63785]
 */
 
 BEGIN
@@ -53,7 +54,10 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <> 1 OR Bettype NOT IN (903, 904)
+	WHERE ProductID <= 6 OR ProductID IN (8, 13)
+
+	DELETE FROM @SportBettype
+	WHERE ProductID = 1 AND Bettype IN (903, 904)
 
 	------------
 	DECLARE @TempAg AS TABLE (CustId INT, Currency INT)

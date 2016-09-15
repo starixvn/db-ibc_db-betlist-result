@@ -25,6 +25,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelAllByDate_Mem]
 	@ShowCS				BIT = 0, -- RNG Casino
 	@ShowKN				BIT = 0, -- Keno
 	@ShowMGCLC			BIT = 0, -- Microgaming Live Casino
+	@ShowCB				BIT = 0, -- Colossus Bets
 	@ShowMGCRNG			BIT = 0, -- Microgaming RNG Casino
 	@ShowAGC			BIT = 0, -- AG Casino
 	@ShowAB				BIT = 0, -- AllBet
@@ -103,6 +104,7 @@ AS
 		- 20160714@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
 		- 20160727@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20160913@Kos: Support Colossus Bets [#Redmine: 63785]
 		- 20161006@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
 
@@ -113,8 +115,8 @@ BEGIN
 		@Today			SMALLDATETIME,
 		@Yesterday		SMALLDATETIME
 
-	SELECT @Today = DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
-		, @Yesterday = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
+	SELECT @Today = DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0),
+		@Yesterday = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 	
 	IF @CustId IS NULL
 	BEGIN
@@ -227,7 +229,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 21, 22)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22)
 
 	DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 904
 
@@ -237,7 +239,7 @@ BEGIN
 	END
 
 	DELETE FROM @SportBettype
-	WHERE 	(ProductID	= CASE WHEN @ShowSB	= 0 AND @ShowBA = 0 THEN 1 END AND Bettype NOT IN (901, 902, 903))
+	WHERE (ProductID	= CASE WHEN @ShowSB	= 0 AND @ShowBA = 0 THEN 1 END AND Bettype NOT IN (901, 902, 903))
 		OR ProductID	= CASE WHEN @ShowRB		= 0 THEN 2 END
 		OR ProductID	= CASE WHEN @ShowNG		= 0 THEN 3 END
 		OR ProductID	= CASE WHEN @ShowLC		= 0 THEN 4 END
@@ -246,6 +248,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowKN		= 0 THEN 8 END
 		OR ProductID	= CASE WHEN @ShowAGC	= 0 THEN 11 END
 		OR ProductID	= CASE WHEN @ShowMGCLC	= 0 THEN 13 END
+		OR ProductID	= CASE WHEN @ShowCB		= 0 THEN 15 END
 		OR ProductID	= CASE WHEN @ShowMGCRNG	= 0 THEN 17 END
 		OR ProductID	= CASE WHEN @ShowAB		= 0 THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB		= 0 THEN 22 END
@@ -1025,7 +1028,69 @@ BEGIN
 			AND t.statusID IN (0, 1)
 	END
 
-	-- Microgaming Live Casino
+	-- Microgaming Live Casino, Colossus Bets (translog)
+	IF @ShowMGCLC = 1 OR @ShowCB = 1
+	BEGIN
+		INSERT INTO #BetListSelAllByDateMem
+		SELECT
+			@UserName AS UserName,
+			CASE
+				WHEN sbt.ProductID = 13 THEN 203
+				WHEN sbt.ProductID = 15 THEN 204
+				ELSE 0
+			END AS SportType,
+			t.gameid AS BetType,
+			t.translogid AS RefNo,
+			t.translogid AS TransId,
+			0 AS BetId,
+			'' AS MatchCode,
+			0 AS MatchId,
+			'' AS Race,
+			0 AS HomeId,
+			0 AS AwayId,
+			0 AS hdp1,
+			0 AS hdp2,
+			0 AS Odds,
+			0 AS MOdds,
+			t.status,
+			t.stake,
+			t.actual_stake,
+			0 AS WinLost,
+			0 AS LicenseeWL,
+			0 AS Comm,
+			0 AS PlayerComm,
+			t.discount,
+			t.transdate,
+			t.winlostdate,
+			'' AS BetTeam,
+			0 AS LeagueId,
+			0 AS LiveIndicator,
+			0 AS LiveHomeScore,
+			0 AS LiveAwayScore,
+			t.ip,
+			0 AS BetStatus,
+			CONVERT(BIT, 0) AS IsNeutral,
+			0 AS OddsType,
+			t.currency,
+			'' AS ShowTime,
+			CASE
+				WHEN sbt.ProductID = 15 THEN t.Tranid3rd
+				ELSE '' 
+			END AS BetCheck,
+			'' AS transdesc
+		FROM 
+			dbo.translog AS t WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON t.gameID = sbt.Bettype
+		WHERE
+			t.CustID = @CustID
+			AND t.recommend = @Recommend
+			AND sbt.ProductID IN (13, 15)
+			AND sbt.EventType = 0
+			AND t.transdate BETWEEN @FromDate AND @ToDate 
+			AND t.statusID IN (0, 1)
+	END
+
+	-- Microgaming Live Casino (bettrans)
 	IF @ShowMGCLC = 1
 	BEGIN
 		INSERT INTO #BetListSelAllByDateMem
@@ -1048,7 +1113,7 @@ BEGIN
 			b.status,
 			b.stake,
 			b.actual_stake,
-			(winlost - actual_stake) AS WinLlost,
+			(winlost - actual_stake) AS WinLost,
 			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.comm,
 			b.playercomm,
@@ -1060,7 +1125,7 @@ BEGIN
 			0 AS liveindicator,
 			0 AS livehomescore,
 			0 AS liveawayscore,
-			b.IP,
+			b.ip,
 			0 AS betstatus,
 			CONVERT(BIT, 0) AS IsNeutral,
 			0 AS Oddstype,
@@ -1078,57 +1143,60 @@ BEGIN
 			AND sbt.EventType = 0
 			AND b.transdate BETWEEN @FromDate AND @ToDate 
 			AND b.statusID NOT IN (0, 1)
+	END
 
-		UNION ALL
-		SELECT 
+	-- Colossus Bets (bettrans)
+	IF @ShowCB = 1
+	BEGIN
+		INSERT INTO #BetListSelAllByDateMem
+		SELECT
 			@UserName AS UserName,
-			203 AS sporttype,
-			t.gameid AS bettype,
-			t.translogid AS refno,
-			t.translogid AS transid,
-			0 AS BetID,
-			'' AS matchcode,
-			0 AS matchid,
+			204 AS SportType,
+			b.bettype,
+			b.refno,
+			b.transid,
+			ISNULL(b.betid, 0),
+			'' AS MatchCode,
+			0 AS MatchId,
 			'' AS Race,
-			0 AS homeID,
-			0 AS awayID,
+			0 AS HomeId,
+			0 AS AwayId,
 			0 AS hdp1,
 			0 AS hdp2,
-			0 AS odds,
-			0 AS modds,
-			t.status,
-			t.stake,
-			t.actual_stake,
-			(0 - actual_stake) AS winlost,
-			- (0 - t.actual_stake) AS LicenseeWL,
-			0 AS comm,
-			0 AS PlayerComm,
-			t.discount,
-			t.transdate,
-			t.winlostdate,
-			'' AS betteam,
-			0 AS leagueID,
-			0 AS liveindicator,
-			0 AS livehomescore,
-			0 AS liveawayscore,
-			t.IP,
+			0 AS Odds,
+			0 AS MOdds,
+			b.status,
+			b.stake,
+			b.actual_stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			0 AS LicenseeWL,
+			b.comm,
+			b.playercomm,
+			b.discount,
+			b.transdate,
+			b.winlostdate,
+			'' AS BetTeam,
+			0 AS LeagueId,
+			0 AS LiveIndicator,
+			0 AS LiveHomeScore,
+			0 AS LiveAwayScore,
+			b.ip,
 			0 AS betstatus,
 			CONVERT(BIT, 0) AS IsNeutral,
 			0 AS Oddstype,
-			t.currency,
+			b.currency,
 			'' AS ShowTime,
-			'' AS betcheck,
+			ISNULL(bm.betcheck, '') AS BetCheck,
 			'' AS transdesc
-		FROM 
-			dbo.translog AS t WITH (NOLOCK)
-			INNER JOIN @SportBettype AS sbt ON t.gameID = sbt.Bettype
+		FROM
+			dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype sbt ON b.bettype = sbt.Bettype
+			LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 		WHERE
-			t.CustID = @CustID
-			AND t.recommend = @Recommend
-			AND sbt.ProductID = 13
-			AND sbt.EventType = 0
-			AND t.transdate BETWEEN @FromDate AND @ToDate 
-			AND t.statusID IN (0, 1)
+			b.custid = @custid
+			AND b.recommend = @Recommend
+			AND b.transdate BETWEEN @FromDate AND @ToDate 
+			AND sbt.ProductID = 15
 	END
 
 	-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge

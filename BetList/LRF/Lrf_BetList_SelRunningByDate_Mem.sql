@@ -1,12 +1,12 @@
 ﻿ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
-	@LicenseeID INT,
-	@UserID		INT,
-	@CustID		INT			= NULL,
+	@LicenseeId INT,
+	@UserId		INT,
+	@CustId		INT			= NULL,
 	@CurrencyId INT			= 0,
 	@FromDate	DATETIME	= '',
 	@ToDate		DATETIME	= '',
 	@Langkey	VARCHAR(10)	= 'en-US',
-	@username	VARCHAR(30)	= NULL, -- for API
+	@Username	VARCHAR(30)	= NULL, -- for API
 	@PageSize	INT			= 1000,
 	@PageIndex	INT			= 1,
 	-- check for showing product
@@ -19,6 +19,7 @@
 	@ShowCS		BIT			= 0,	-- RNG Casino
 	@ShowKN		BIT			= 0,	-- Keno
 	@ShowMGCLC	BIT			= 0,	-- Microgaming Live Casino
+	@ShowCB		BIT			= 0,	-- Colossus Bets
 	@ShowMGCRNG	BIT			= 0,	-- Microgaming RNG Casino
 	@ShowAGC	BIT			= 0,	-- AG Casino
 	@ShowAB		BIT			= 0,	-- AllBet
@@ -45,10 +46,10 @@ AS
 		- 20111122@Henry: Compare Checktime and CURRENT_TIMESTAMP to show waiting or running status
 		- 20111208@Jim : Change condition bettype <31 
 		- 20111229@Jim : change the way to get odds/oddstype/betteam to web dev
-		- 20120214@Jim: change to use  table ExchangeDaily by use function Lrf_f_GetExchangeDaily  
+		- 20120214@Jim: change to use  table ExchangeDaily by use function Lrf_f_GetExchangeDaily
 		- 20120319@Henry: show main transid for sub-ticket of system parlay
-		- 20120706@Jim: get sporttype for Outright 
-		- 20120726@Jim: add playercomm value 
+		- 20120706@Jim: get sporttype for Outright
+		- 20120726@Jim: add playercomm value
 		- 20120817@Henry: add live casino
 		- 20120924@Jim: add virtual sport
 		- 20130226@Jim: support RNG Casino,Bingo
@@ -76,12 +77,13 @@ AS
 		- 20160714@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
 		- 20160727@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20160913@Kos: Support Colossus Bets [#Redmine: 63785]
 		- 20161006@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
-BEGIN
 
+BEGIN
 	SET NOCOUNT ON
-	
+
 	DECLARE @Today		SMALLDATETIME
 		, @Yesterday	SMALLDATETIME
 	
@@ -116,7 +118,7 @@ BEGIN
 		WHERE CustID = @CustID
 	END
 
-	IF (@custid IS NULL OR @username IS NULL)
+	IF @custid IS NULL OR @username IS NULL
 	BEGIN
 		SELECT @ErrorCode	= 100
 			, @ErrorMsg		= 'The customer was not found.'
@@ -133,7 +135,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 21, 22)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22)
 
 	-- Don't support BetTrade, RNG Casino old bet type (71)
 	DELETE FROM @SportBettype
@@ -150,6 +152,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowKN	= 0		THEN 8 END
 		OR ProductID	= CASE WHEN @ShowAGC = 0	THEN 11 END
 		OR ProductID	= CASE WHEN @ShowMGCLC = 0	THEN 13 END
+		OR ProductID	= CASE WHEN @ShowCB = 0		THEN 15 END
 		OR ProductID	= CASE WHEN @ShowMGCRNG = 0	THEN 17 END
 		OR ProductID	= CASE WHEN @ShowAB = 0		THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB = 0		THEN 22 END
@@ -169,8 +172,8 @@ BEGIN
 		AwayId			INT,
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
-		Odds 			MONEY,
-		Modds 			MONEY,
+		Odds			MONEY,
+		Modds			MONEY,
 		Status			NVARCHAR(50),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
@@ -809,54 +812,60 @@ BEGIN
 			AND t.statusID IN (0, 1)
 	END
 
-	-- Microgaming Live Casino
-	IF @ShowMGCLC = 1
+	-- Microgaming Live Casino, Colossus Bets (translog)
+	IF @ShowMGCLC = 1 OR @ShowCB = 1
 	BEGIN
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
-			203 AS sporttype,
+			CASE
+				WHEN sbt.ProductID = 13 THEN 203
+				WHEN sbt.ProductID = 15 THEN 204
+				ELSE 0
+			END AS SportType,
 			@Username AS UserName,
-			t.gameid AS bettype,
-			0 AS leagueID,
-			t.translogid AS refno,
-			t.translogid AS transid,
-			0 AS BetID,
-			'' AS matchcode,
+			t.gameid AS BetType,
+			0 AS LeagueId,
+			t.translogid AS RefNo,
+			t.translogid AS TransId,
+			0 AS BetId,
+			'' AS MatchCode,
 			'' AS Race,
-			0 AS homeID,
-			0 AS awayID,
+			0 AS HomeId,
+			0 AS AwayId,
 			0 AS hdp1,
 			0 AS hdp2,
-			0 AS odds,
-			0 AS modds,
+			0 AS Odds,
+			0 AS MOdds,
 			t.status,
 			t.stake,
 			t.actual_stake,
 			t.transdate,
-			'' AS betteam,
+			'' AS BetTeam,
 			t.discount,
-			0 AS liveindicator,
-			0 AS livehomescore,
-			0 AS liveawayscore,
-			t.IP,
+			0 AS LiveIndicator,
+			0 AS LiveHomeScore,
+			0 AS LiveAwayScore,
+			t.ip,
 			CONVERT(BIT, 0) AS IsNeutral,
-			0 AS oddstype,
+			0 AS OddsType,
 			t.winlostdate,
 			t.currency,
 			0 AS playercomm,
 			'' AS ShowTime,
-			0 AS matchid,
-			'' AS betcheck,
+			0 AS MatchId,
+			CASE
+				WHEN sbt.ProductID = 15 THEN t.Tranid3rd
+				ELSE '' 
+			END AS BetCheck,
 			'' AS transdesc
 		FROM 
 			dbo.translog AS t WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON t.gameID = sbt.Bettype
 		WHERE
-			t.transdate BETWEEN @FromDate AND @ToDate 
-			AND t.custid = @CustID 
-			AND sbt.ProductID = 13
-			AND sbt.EventType = 0
-			AND t.statusID IN (0, 1) 
+			t.transdate BETWEEN @FromDate AND @ToDate
+			AND t.custid = @CustID
+			AND t.statusID IN (0, 1)
+			AND sbt.ProductID IN (13, 15)
 	END
 
 	-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge
@@ -998,6 +1007,56 @@ BEGIN
 			b.ip,
 			b.currency,
 			sbt.ProductID
+	END
+
+	-- Colossus Bets (bettrans)
+	IF @ShowCB = 1
+	BEGIN
+		INSERT INTO #BetListSelRunningByDateMem
+		SELECT
+			204 AS SportType,
+			@Username AS UserName,
+			b.bettype,
+			0 AS LeagueId,
+			b.refno,
+			b.transid,
+			ISNULL(b.betid, 0),
+			'' AS MatchCode,
+			'' AS Race,
+			0 AS HomeId,
+			0 AS AwayId,
+			0 AS hdp1,
+			0 AS hdp2,
+			0 AS odds,
+			0 AS modds,
+			b.status,
+			b.stake,
+			b.actual_stake,
+			b.transdate,
+			'' AS BetTeam,
+			b.discount,
+			0 AS LiveIndicator,
+			0 AS LiveHomeScore,
+			0 AS LiveAwayScore,
+			b.ip,
+			CONVERT(BIT,0) AS IsNeutral,
+			0 AS OddsType,
+			b.winlostdate,
+			b.currency,
+			b.playercomm,
+			'' AS ShowTime,
+			0 AS MatchId,
+			ISNULL(bm.betcheck, '') AS BetCheck,
+			'' AS transdesc
+		FROM 
+			dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+			LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
+		WHERE
+			b.transdate BETWEEN @FromDate AND @ToDate
+			AND b.custid = @CustId
+			AND b.statusID IN (0, 1)
+			AND sbt.ProductID = 15
 	END
 
 	-- check for filtering by currency
