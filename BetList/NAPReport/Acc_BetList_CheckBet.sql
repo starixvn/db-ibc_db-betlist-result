@@ -12,7 +12,8 @@ AS
 	Original: Acc_BetsSelBetList_ByTransID_Advance
 	
 	Revisions:
-		- 20170725@Kos: Use inline function for SportBettypeMatrix
+		- 20160725@Kos: Use inline function for SportBettypeMatrix
+		- 20160919@Kos: Exclude bet type 904 [#Redmine: 58978]
 */
 
 BEGIN
@@ -25,14 +26,13 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
+	-- Support Sportsbook, Horse Racing, Number Game, Virtual Sports only
+	-- Don't support BetTrade
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-
-	-- Support Sportsbook, Horse Racing, Number Game, Virtual Sports only
-	DELETE @SportBettype
-	WHERE ProductID NOT IN (1, 2, 3, 5)
-		OR SubProduct IN ('BT-Sold', 'BT-Bought', 'BT-Comm')	-- Don't support BetTrade
+	WHERE ProductID IN (1, 2, 3, 5)
+		AND BetType NOT BETWEEN 901 AND 910
 
 	DECLARE @Data TABLE (
 		Username		NVARCHAR(50),
@@ -159,7 +159,7 @@ BEGIN
 			b.betfrom,
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
-			(b.winlost-b.actual_stake) AS winlost,
+			(b.winlost-b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -231,7 +231,7 @@ BEGIN
 			b.betfrom,
 			0 matchid,
 			CONVERT(BIT,0) AS IsNeutral,
-			(b.winlost-b.actual_stake) AS winlost,
+			(b.winlost-b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -304,8 +304,8 @@ BEGIN
 			b.ip,
 			b.betfrom,
 			0 matchid,
-			CONVERT(BIT,0) AS IsNeutral,
-			(b.winlost-b.actual_stake) AS winlost,
+			CONVERT(BIT, 0) AS IsNeutral,
+			(b.winlost-b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -376,7 +376,7 @@ BEGIN
 			b.betfrom,
 			b.matchid,
 			CONVERT(BIT,0) AS IsNeutral,
-			(b.winlost-b.actual_stake) AS winlost,
+			(b.winlost-b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -447,7 +447,7 @@ BEGIN
 			b.betfrom,
 			b.matchid,
 			CONVERT(BIT, 0) AS IsNeutral,
-			(b.winlost - b.actual_stake) AS winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -521,7 +521,7 @@ BEGIN
 			CASE WHEN b.bettype = 1233 THEN bm.spositiontaking2 ELSE 0 END,
 			CASE WHEN b.bettype = 1233 THEN bm.mpositiontaking2 ELSE 0 END,
 			CASE WHEN b.bettype = 1233 THEN bm.apositiontaking2 ELSE 0 END,
-			0 AS liveindicator,
+			0 AS LiveIndicator,
 			b.modds,
 			b.custid,
 			b.livehomescore,
@@ -534,7 +534,7 @@ BEGIN
 			b.betfrom,
 			b.matchid,
 			CONVERT(BIT, 0) AS IsNeutral,
-			(b.winlost - b.actual_stake) AS winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
