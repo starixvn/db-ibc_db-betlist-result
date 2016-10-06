@@ -1395,7 +1395,7 @@ BEGIN
 			WHERE
 				b.custid = @custid
 				AND b.winlostdate = @fromdate 
-				AND sbt.ProductID IN (13, 15)
+				AND sbt.ProductID = 13
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
