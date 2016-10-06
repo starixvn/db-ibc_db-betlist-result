@@ -2,12 +2,12 @@ USE [bodb02]
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByBettypeList]
-	@LicenseeID		INT,
-	@UserID			INT,
-	@CurrencyID		INT				= 0,
+	@LicenseeId		INT,
+	@UserId			INT,
+	@CurrencyId		INT				= 0,
 	@LicenseeType	VARCHAR(100)	= NULL,
-	@bettype		VARCHAR(50),
-	@Langkey		VARCHAR(10)		= 'en-US',
+	@BetType		VARCHAR(50),
+	@LangKey		VARCHAR(10)		= 'en-US',
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@TotalRows		INT				= 0 OUTPUT
@@ -15,7 +15,7 @@ AS
 
 /*
 	Created: Hannah@20140708
-	Task : Betlist
+	Task: Betlist
 	DB: DBEXT.bodb02
 	Original: [Lrf_BetList_SelRunningByBettype]
 	Revisions:
@@ -26,69 +26,71 @@ AS
 		- 20150414@Jim: support betradar
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160412@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20161003@Kos: Remove Live Casino code [Redmine: #65045]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	IF ISNULL(@Bettype, '') = ''
-		SET @Bettype = ''
+	IF ISNULL(@BetType, '') = ''
+		SET @BetType = ''
 
 	CREATE TABLE #Data (
-		CustID			INT,
-		Sporttype		INT,
+		CustId			INT,
+		SportType		INT,
 		Username		NVARCHAR(50),
-		Bettype			SMALLINT,
-		Transid			BIGINT,
-		BetID			BIGINT,
-		refno			BIGINT,
-		Matchcode		VARCHAR(50),
-		HomeID			INT,
-		AwayID			INT,
-		hdp1			SMALLMONEY,
-		hdp2			SMALLMONEY,
-		odds			MONEY,
-		modds			MONEY,
-		status			NVARCHAR(50),
+		BetType			SMALLINT,
+		TransId			BIGINT,
+		BetId			BIGINT,
+		RefNo			BIGINT,
+		MatchCode		VARCHAR(50),
+		HomeId			INT,
+		AwayId			INT,
+		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
+		Odds			MONEY,
+		MOdds			MONEY,
+		Status			NVARCHAR(50),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
-		transdate		DATETIME,
-		betteam			VARCHAR(50),
-		livehomescore	SMALLINT,
-		liveawayscore	SMALLINT,
-		liveindicator	INT,
-		discount		DECIMAL(9,8),
-		LeagueID		INT,
-		ip				NVARCHAR(30),
+		TransDate		DATETIME,
+		BetTeam			VARCHAR(50),
+		LiveHomeScore	SMALLINT,
+		LiveAwayScore	SMALLINT,
+		LiveIndicator	INT,
+		Discount		DECIMAL(9,8),
+		LeagueId		INT,
+		Ip				NVARCHAR(30),
 		IsNeutral		BIT,
-		oddstype		TINYINT,
-		winlostdate		DATETIME,
-		currency		SMALLINT,
-		statusid		INT,
-		playercomm		MONEY,
-		showtime		NVARCHAR(50), -- table - shoe - hand of Live Casino
+		OddsType		TINYINT,
+		WinLostDate		DATETIME,
+		Currency		SMALLINT,
+		StatusId		INT,
+		PlayerComm		MONEY,
+		ShowTime		NVARCHAR(50), -- table - shoe - hand of Live Casino
 		BetCheck		NVARCHAR(50)
 	)
 
 	SELECT currencyID,
-		LicenseeID 
+		LicenseeID
 	INTO #currency
 	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
-	WHERE @CurrencyID = 0 OR (@CurrencyID <> 0 AND CurrencyID = @CurrencyID)
+	WHERE @CurrencyID = 0
+		OR (@CurrencyID <> 0 AND CurrencyID = @CurrencyID)
 
 	DECLARE @tblbettype AS TABLE (bettype INT)
 
 	INSERT INTO @tblbettype (bettype)
 	SELECT CONVERT(INT,VAL) AS bettype
-	FROM strSplit(@Bettype,',')
+	FROM strSplit(@BetType, ',')
 
 	DECLARE @TempAg AS TABLE (custid INT)
 
 	INSERT INTO @TempAg (custid)
 	SELECT DISTINCT CustID
 	FROM bodb_Licensee.dbo.[f_SelLicenseeCust](0) lc
-		INNER JOIN #currency c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType, [Description]) 
+		INNER JOIN #currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
+	WHERE [Description] = COALESCE(@LicenseeType, [Description])
 
 	IF EXISTS (SELECT 1 FROM @tblbettype WHERE bettype IN (9, 29))
 	BEGIN
@@ -133,7 +135,7 @@ BEGIN
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @tblbettype AS bt ON b.bettype = bt.bettype
 		WHERE
-			b.Recommend IN (SELECT custid FROM @TempAg)
+			b.recommend IN (SELECT custid FROM @TempAg)
 			AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
 				OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
 			AND b.bettype IN (9, 29)
@@ -147,7 +149,7 @@ BEGIN
 	ELSE IF EXISTS (SELECT 1 FROM @tblbettype WHERE bettype = 10)  -- Outright
 	BEGIN
 		INSERT INTO #Data
-		SELECT 
+		SELECT
 			b.custid,
 			l.sporttype,
 			b.username,
@@ -186,7 +188,7 @@ BEGIN
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON  b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 		WHERE
-			b.Recommend IN (SELECT custid FROM @TempAg)
+			b.recommend IN (SELECT custid FROM @TempAg)
 			AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
 				OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
 			AND b.bettype = 10
@@ -258,71 +260,42 @@ BEGIN
 		@RowStart = @PageSize * @PageIndex + 1,
 		@RowEnd = @RowStart + @PageSize - 1
 
-	DECLARE @Today SMALLDATETIME 
+	DECLARE @Today SMALLDATETIME
+
 	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120) 
 
 	IF @TotalRows = 0
-	BEGIN 
-		SELECT @TotalRows = COUNT(transid) FROM #Data
+	BEGIN
+		SELECT @TotalRows = COUNT(transid)
+		FROM #Data
 	END
 
 	SELECT A.*
 	FROM
 	(
 		SELECT
-			ROW_NUMBER() over(ORDER BY b.transid) AS RowNum,
-			SUBSTRING(c.username2,  CHARINDEX('$',c.username2) + 1, LEN(c.username2) - CHARINDEX('$',c.username2)) AS nickname,
-			b.* ,
-			stake * e.USD AS stakeUSD,
-			stake * e.EUR AS stakeEUR,
-			stake * e.GBP AS stakeGBP,
-			actual_stake * e.USD AS actual_stakeUSD,
-			actual_stake * e.EUR AS actual_stakeEUR,
-			actual_stake * e.GBP AS actual_stakeGBP,
-			b.playercomm * e.USD AS PlayerCommUSD,
-			b.playercomm * e.EUR AS PlayerCommEUR,
-			b.playercomm * e.GBP AS PlayerCommGBP
-		FROM 
-			#Data AS b
+			ROW_NUMBER() OVER(ORDER BY b.transid) AS RowNum,
+			SUBSTRING(c.username2,  CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
+			b.*,
+			b.Stake * e.USD AS StakeUSD,
+			b.Stake * e.EUR AS StakeEUR,
+			b.Stake * e.GBP AS StakeGBP,
+			b.Actual_Stake * e.USD AS Actual_StakeUSD,
+			b.Actual_Stake * e.EUR AS Actual_StakeEUR,
+			b.Actual_Stake * e.GBP AS Actual_StakeGBP,
+			b.PlayerComm * e.USD AS PlayerCommUSD,
+			b.PlayerComm * e.EUR AS PlayerCommEUR,
+			b.PlayerComm * e.GBP AS PlayerCommGBP
+		FROM #Data AS b
 			INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.custid
 			INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) AS e
 			ON e.exchangeid = b.currency
 	) A WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 
-	-- Live Casino
-	IF EXISTS (SELECT 1 FROM @tblbettype WHERE bettype BETWEEN 1101 AND 1199)
-	BEGIN
-		--get data from bettransg for bettype 1101
-		SELECT * INTO #TempExchange
-		FROM Lrf_f_GetExchangeDaily(@Today,@Today)
-		WHERE exchangeid IN (SELECT DISTINCT CurrencyID FROM #currency)
-
-		SELECT
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			bg.status,
-			bg.apositiontaking,
-			bg.betteam,
-			bg.stake * e.EUR AS stakeEUR,
-			bg.stake * e.USD AS stakeUSD,
-			bg.stake * e.GBP AS stakeGBP
-		FROM dbo.bettransg AS bg WITH (NOLOCK)
-			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON bg.refno = b.refno
-			INNER JOIN @tblbettype AS tb ON b.bettype = tb.bettype
-			INNER JOIN #TempExchange AS e ON e.exchangeid = b.currency AND e.ExchangeDate = b.winlostdate
-		WHERE b.Recommend IN (SELECT custid FROM @TempAg)
-			AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-				OR (@CurrencyID <> 0 AND Currency = @CurrencyID))
-			AND tb.bettype BETWEEN 1101 AND 1199
-			AND b.statusID IN (0, 1)
-
-		DROP TABLE #TempExchange
-	END
-
 	DROP TABLE #currency
 	DROP TABLE #Data
 END
+
 
 
 GO

@@ -1,7 +1,9 @@
-﻿ set ANSI_NULLS ON
-set QUOTED_IDENTIFIER ON
-go
-
+﻿USE [bodb02]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Racing]
 	@LicenseeId			INT,
@@ -55,17 +57,43 @@ AS
 		- 20150128@Winnie: Add base currency GBP
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY, sportstype from TINYINT to SMALLINT [Redmine: #48660]
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
+		- 20161004@Kos: Add product bet type range for sub tables [Redmine: #65045]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
+	----Get Sport Bettype Matrix------
+	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (2, 0, 0, 2, '', '', @IsTest)
+
+	SELECT currencyID,
+		LicenseeID
+	INTO #currency
+	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
+	WHERE @CurrencyID = 0
+		OR (@CurrencyID <> 0 AND CurrencyID = @CurrencyID)
+
 	DECLARE @TempAg AS TABLE (custid INT)
+
+	INSERT INTO @TempAg (custid)
+	SELECT DISTINCT CustID
+	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) lc
+		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
+	WHERE [Description] = COALESCE(@LicenseeType, [Description])
 
 	CREATE TABLE #Data (
 		SportType		SMALLINT,
 		Username		NVARCHAR(50),
 		NickName		NVARCHAR(50),
+		CustId			INT,
 		BetType			SMALLINT,
 		Transid			BIGINT,
 		Race			VARCHAR(50),
@@ -98,19 +126,6 @@ BEGIN
 		Currency		SMALLINT
 	)
 
-	SELECT currencyID,
-		LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
-	WHERE @CurrencyID = 0
-		OR (@CurrencyID <> 0 AND CurrencyID = @CurrencyID)
-
-	INSERT INTO @TempAg (custid)
-	SELECT DISTINCT CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType, [Description])
-
 	IF @Todate > @MoveBetsDay
 	BEGIN
 		INSERT INTO #Data
@@ -118,6 +133,7 @@ BEGIN
 			l.sporttype,
 			b.username,
 			SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$',c.username2)) AS Nickname,
+			b.custid,
 			b.bettype,
 			b.transid,
 			m.groupmatch AS Race,
@@ -161,7 +177,7 @@ BEGIN
 			AND b.winlostdate <= @ToDate
 			AND l.leagueid = @LeagueId
 			AND m.groupmatch = @RaceNo
-			AND b.bettype= @Bettype
+			AND b.bettype = @Bettype
 			AND b.ruben = 1
 	END
   
@@ -172,6 +188,7 @@ BEGIN
 			l.sporttype,
 			b.username,
 			SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
+			b.custid,
 			b.bettype,
 			b.transid,
 			m.groupmatch AS Race,
@@ -261,6 +278,7 @@ BEGIN
 		SportType		SMALLINT,
 		Username		NVARCHAR(50),
 		NickName		NVARCHAR(50),
+		CustId			INT,
 		BetType			SMALLINT,
 		Transid			BIGINT,
 		Race			VARCHAR(50),
@@ -358,8 +376,8 @@ BEGIN
 		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
 	ORDER BY b.RowNum
 
-	-- Get data from bettransm for bettype 33,43
-	IF @BetType IN (33, 43)
+	-- Get data from bettransm for bettype 33
+	IF @BetType = 33
 	BEGIN
 		DECLARE @Bettransm TABLE (
 			RefNo			BIGINT,
@@ -370,34 +388,37 @@ BEGIN
 			BetType			SMALLINT
 		)
 
-		IF @Todate > @MoveBetsDay
+		IF EXISTS (SELECT 1 FROM #PagingData)
 		BEGIN
-			INSERT INTO @Bettransm
-			SELECT
-				bm.refno,
-				bm.finalodds,
-				bm.odds,
-				bm.status,
-				bm.apositiontaking,
-				bm.bettype
-			FROM dbo.bettransm AS bm WITH (NOLOCK)
-				INNER JOIN #PagingData AS b ON bm.refno = b.transid
-			WHERE b.Bettype = @Bettype
-		END
+			IF @Todate > @MoveBetsDay
+			BEGIN
+				INSERT INTO @Bettransm
+				SELECT
+					bm.refno,
+					bm.finalodds,
+					bm.odds,
+					bm.status,
+					bm.apositiontaking,
+					bm.bettype
+				FROM dbo.bettransm AS bm WITH (NOLOCK)
+					INNER JOIN #PagingData AS b ON bm.refno = b.transid AND bm.custid = b.CustId
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+			END
 
-		IF @Fromdate <= @MoveBetsDay
-		BEGIN
-			INSERT INTO @Bettransm
-			SELECT 
-				bm.refno,
-				bm.finalodds,
-				bm.odds,
-				bm.status,
-				bm.apositiontaking,
-				bm.bettype
-			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-				INNER JOIN #PagingData AS b ON bm.refno = b.transid
-			WHERE b.Bettype = @Bettype
+			IF @Fromdate <= @MoveBetsDay
+			BEGIN
+				INSERT INTO @Bettransm
+				SELECT
+					bm.refno,
+					bm.finalodds,
+					bm.odds,
+					bm.status,
+					bm.apositiontaking,
+					bm.bettype
+				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+					INNER JOIN #PagingData AS b ON bm.refno = b.transid AND bm.custid = b.CustId
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+			END
 		END
 
 		SELECT * FROM @Bettransm

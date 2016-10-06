@@ -76,6 +76,7 @@ AS
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
 		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20161004@Kos: Add product bet type range for sub tables [Redmine: #65045]
 
 	Param's Explanation: 
 */
@@ -855,8 +856,9 @@ BEGIN
 			FROM dbo.bettransg AS bg WITH (NOLOCK)
 				INNER JOIN #PagingData AS b ON bg.refno = b.RefNo AND bg.custid = b.CustId
 				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
-				INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
-			WHERE sbt.ProductID = 4
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
+			WHERE sbt.ProductID = 4 AND sbtg.ProductID = 4
 		END
 
 		IF EXISTS (SELECT TOP 1 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchID)
@@ -876,8 +878,9 @@ BEGIN
 			FROM dbo.bettransg14 AS bg WITH (NOLOCK)
 				INNER JOIN #PagingData AS B ON bg.refno = b.RefNo AND bg.custid = b.CustId
 				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
-				INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
-			WHERE sbt.ProductID = 4
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
+			WHERE sbt.ProductID = 4 AND sbtg.ProductID = 4
 		END
 	END
 
@@ -900,8 +903,12 @@ BEGIN
 			FROM dbo.bettransm AS bg WITH (NOLOCK)
 				INNER JOIN #PagingData AS b ON bg.refno = b.RefNo AND bg.custid = b.CustId
 				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
-				INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
-			WHERE sbt.ProductID = 5 AND sbt.EventType = 3
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
+			WHERE sbt.ProductID = 5
+				AND sbt.EventType = 3
+				AND sbtg.ProductID = 5
+				AND sbtg.EventType = 3
 		END
 
 		IF EXISTS (SELECT TOP 1 1 FROM dbo.VSOutright14 WITH (NOLOCK) WHERE EventID = @MatchID)
@@ -921,8 +928,12 @@ BEGIN
 			FROM dbo.bettransm14 AS bg WITH (NOLOCK)
 				INNER JOIN #PagingData AS b ON bg.refno = b.RefNo AND bg.custid = b.CustId
 				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
-				INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
-			WHERE sbt.ProductID = 5 AND sbt.EventType = 3
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
+			WHERE sbt.ProductID = 5
+				AND sbt.EventType = 3
+				AND sbtg.ProductID = 5
+				AND sbtg.EventType = 3
 		END
 	END
 
