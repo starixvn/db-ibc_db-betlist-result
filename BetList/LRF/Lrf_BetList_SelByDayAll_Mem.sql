@@ -77,6 +77,7 @@ AS
 		- 20160718@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
 		- 20160727@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20161007@Kos: Add product bet type range for sub tables [Redmine: #65045]
 
 	Param's Explanation: 
 		+ @transtype:
@@ -1931,7 +1932,7 @@ BEGIN
 
 	IF @IsBet14 = 1
 	BEGIN
-		--get data FROM bettransm14 for bettype 33,43
+		-- Horse Racing
 		INSERT INTO @BettransDetail 
 		SELECT
 			bm.refno,
@@ -1945,29 +1946,15 @@ BEGIN
 			bm.stake * e.USD,
 			bm.stake * e.GBP
 		FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-			INNER JOIN @Data AS b ON bm.refno = b.transid
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE sbt.ProductID = 2 AND sbt.EventType = 2
-		UNION ALL
-		--get data from bettransm14 for bettype 1233
-		SELECT
-			bm.refno,
-			bm.odds,
-			bm.stake,
-			bm.status,
-			bm.apositiontaking,
-			bm.bettype,
-			bm.betteam,
-			bm.stake * e.EUR,
-			bm.stake * e.USD,
-			bm.stake * e.GBP
-		FROM dbo.bettransm14 AS bm WITH (NOLOCK, INDEX=IX_bettransm14)
-			INNER JOIN @Data AS b ON bm.refno = b.refno
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE sbt.ProductID = 5 AND sbt.EventType = 3
+			INNER JOIN @Data AS b ON bm.refno = b.TransId
+			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
+			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
+			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+		WHERE bm.custid = @CustId
+			AND sbt.ProductID = 2
+			AND sbtm.ProductID = 2
 
+		-- Live Casino
 		UNION ALL
 		SELECT
 			bg.refno,
@@ -1981,14 +1968,41 @@ BEGIN
 			bg.stake * e.USD,
 			bg.stake * e.GBP
 		FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-			INNER JOIN @Data b ON bg.refno = b.refno AND bg.custid = @CustID
-			INNER JOIN #TempExchange AS e ON  e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE sbt.ProductID = 4 AND sbt.EventType = 1
+			INNER JOIN @Data AS b ON bg.refno = b.RefNo
+			INNER JOIN #TempExchange AS e ON  e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
+			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
+			INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
+		WHERE bg.custid = @CustId
+			AND sbt.ProductID = 4
+			AND sbtg.ProductID = 4
+
+		-- Virtual Sports
+		UNION ALL
+		SELECT
+			bm.refno,
+			bm.odds,
+			bm.stake,
+			bm.status,
+			bm.apositiontaking,
+			bm.bettype,
+			bm.betteam,
+			bm.stake * e.EUR,
+			bm.stake * e.USD,
+			bm.stake * e.GBP
+		FROM dbo.bettransm14 AS bm WITH (NOLOCK, INDEX=IX_bettransm14)
+			INNER JOIN @Data AS b ON bm.refno = b.RefNo
+			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
+			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
+			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+		WHERE bm.custid = @CustId
+			AND sbt.ProductID = 5
+			AND sbt.EventType = 3
+			AND sbtm.ProductID = 5
+			AND sbtm.EventType = 3
 	END
 	ELSE
 	BEGIN
-		--get data FROM bettransm for bettype 33,43
+		-- Horse Racing
 		INSERT INTO @BettransDetail
 		SELECT
 			bm.refno,
@@ -2002,13 +2016,39 @@ BEGIN
 			bm.stake * e.USD,
 			bm.stake * e.GBP
 		FROM dbo.bettransm AS bm WITH (NOLOCK)
-			INNER JOIN @Data AS b ON bm.refno = b.transid
-			INNER JOIN #TempExchange AS e ON  e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE sbt.ProductID = 2 AND sbt.EventType = 2
+			INNER JOIN @Data AS b ON bm.refno = b.TransId
+			INNER JOIN #TempExchange AS e ON  e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
+			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
+			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+		WHERE  bm.custid = @CustId
+			AND sbt.ProductID = 2
+			AND sbtm.ProductID = 2
+
+		-- Live Casino
 		UNION ALL
-		--get data from bettransm14 for bettype 1233
-		SELECT 
+		SELECT
+			bg.refno,
+			bg.odds,
+			bg.stake,
+			bg.status,
+			bg.apositiontaking,
+			bg.bettype,
+			bg.betteam,
+			bg.stake * e.EUR,
+			bg.stake * e.USD,
+			bg.stake * e.GBP
+		FROM dbo.bettransg AS bg WITH (NOLOCK)
+			INNER JOIN @Data AS b ON bg.refno = b.RefNo
+			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
+			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
+			INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
+		WHERE bg.custid = @CustId
+			AND sbt.ProductID = 4
+			AND sbtg.ProductID = 4
+
+		-- Virtual Sports
+		UNION ALL
+		SELECT
 			bm.refno,
 			bm.odds,
 			bm.Stake,
@@ -2020,28 +2060,15 @@ BEGIN
 			bm.stake * e.USD,
 			bm.stake * e.GBP
 		FROM dbo.bettransm AS bm WITH (NOLOCK)
-			INNER JOIN @Data AS b ON bm.refno = b.refno
-			INNER JOIN #TempExchange AS e ON  e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype sbt ON b.bettype = sbt.bettype
-		WHERE sbt.ProductID = 5 AND sbt.EventType = 3
-
-		UNION
-		SELECT
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			BG.status,
-			bg.apositiontaking,
-			bg.bettype,
-			bg.Betteam,
-			bg.stake * e.EUR,
-			bg.stake * e.USD,
-			bg.stake * e.GBP
-		FROM dbo.bettransg bg WITH (NOLOCK)
-			INNER JOIN @Data b ON bg.refno = b.refno AND bg.custid = @CustID
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE sbt.ProductID = 4 AND sbt.EventType = 1
+			INNER JOIN @Data AS b ON bm.refno = b.RefNo
+			INNER JOIN #TempExchange AS e ON  e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
+			INNER JOIN @SportBettype sbt ON b.BetType = sbt.bettype
+			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+		WHERE bm.custid = @CustId
+			AND sbt.ProductID = 5
+			AND sbt.EventType = 3
+			AND sbtm.ProductID = 5
+			AND sbtm.EventType = 3
 	END
 
 	SELECT *
@@ -2049,8 +2076,6 @@ BEGIN
 	ORDER BY RefNo, BetType
 
 	DROP TABLE #TempExchange
-	RETURN;
-
 END
 
 

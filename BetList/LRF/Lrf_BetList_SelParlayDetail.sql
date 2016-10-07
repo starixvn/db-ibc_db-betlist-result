@@ -26,10 +26,22 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160202@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20161007@Kos: Add product bet type range for sub tables [Redmine: #65045]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	-- Get Sport Bettype Matrix
+	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @tmpParlay TABLE (
 		TransId			BIGINT,
@@ -87,8 +99,9 @@ BEGIN
 	END
 
 	IF EXISTS (	SELECT 1
-				FROM dbo.bettransm WITH (NOLOCK)
-				WHERE refno = @RefNo AND custid = @custid )
+				FROM dbo.bettransm AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				WHERE b.refno = @RefNo AND b.custid = @CustId )
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -116,29 +129,30 @@ BEGIN
 			b.transdesc
 		FROM (
 			SELECT
-				transid,
-				CASE WHEN betcheck = '' THEN NULL ELSE betcheck END AS betcheck,
-				stake,
-				matchid,
-				bettype,
-				hdp1,
-				hdp2,
-				odds,
-				betteam,
-				livehomescore,
-				liveawayscore,
-				liveindicator,
-				statusID,
-				ISNULL(transdesc, '') AS transdesc
-			FROM dbo.bettransm WITH (NOLOCK)
-			WHERE refno = @RefNo AND custid = @CustId
+				bm.transid,
+				CASE WHEN bm.betcheck = '' THEN NULL ELSE betcheck END AS betcheck,
+				bm.stake,
+				bm.matchid,
+				bm.bettype,
+				bm.hdp1,
+				bm.hdp2,
+				bm.odds,
+				bm.betteam,
+				bm.livehomescore,
+				bm.liveawayscore,
+				bm.liveindicator,
+				bm.statusID,
+				ISNULL(bm.transdesc, '') AS transdesc
+			FROM dbo.bettransm AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+			WHERE bm.refno = @RefNo AND bm.custid = @CustId
 			) AS b
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
 	IF EXISTS (	SELECT 1
 				FROM dbo.bettransm14 WITH (NOLOCK)
-				WHERE refno = @RefNo AND custid = @custid )
+				WHERE refno = @RefNo AND custid = @CustId )
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -166,22 +180,23 @@ BEGIN
 			b.transdesc
 		FROM (
 			SELECT
-				transid,
-				CASE WHEN betcheck = '' THEN NULL ELSE betcheck END AS betcheck,
-				stake,
-				matchid,
-				bettype,
-				hdp1,
-				hdp2,
-				odds,
-				betteam,
-				livehomescore,
-				liveawayscore,
-				liveindicator,
-				statusID,
-				ISNULL(transdesc, '') AS transdesc
-			FROM dbo.bettransm14 WITH (NOLOCK)
-			WHERE refno = @RefNo AND custid = @CustId
+				bm.transid,
+				CASE WHEN bm.betcheck = '' THEN NULL ELSE betcheck END AS betcheck,
+				bm.stake,
+				bm.matchid,
+				bm.bettype,
+				bm.hdp1,
+				bm.hdp2,
+				bm.odds,
+				bm.betteam,
+				bm.livehomescore,
+				bm.liveawayscore,
+				bm.liveindicator,
+				bm.statusID,
+				ISNULL(bm.transdesc, '') AS transdesc
+			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+			WHERE bm.refno = @RefNo AND bm.custid = @CustId
 			) AS b
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
@@ -216,22 +231,23 @@ BEGIN
 			b.transdesc
 		FROM (
 			SELECT
-				transid,
-				CASE WHEN betcheck = '' THEN NULL ELSE betcheck END AS betcheck,
-				stake,
-				matchid,
-				bettype,
-				hdp1,
-				hdp2,
-				odds,
-				betteam,
-				livehomescore,
-				liveawayscore,
-				liveindicator,
-				statusID,
-				ISNULL(transdesc, '') AS transdesc
-			FROM DBACC.bodb_Archive.dbo.bettransm WITH (NOLOCK)
-			WHERE refno = @RefNo AND custid = @CustId
+				bm.transid,
+				CASE WHEN bm.betcheck = '' THEN NULL ELSE betcheck END AS betcheck,
+				bm.stake,
+				bm.matchid,
+				bm.bettype,
+				bm.hdp1,
+				bm.hdp2,
+				bm.odds,
+				bm.betteam,
+				bm.livehomescore,
+				bm.liveawayscore,
+				bm.liveindicator,
+				bm.statusID,
+				ISNULL(bm.transdesc, '') AS transdesc
+			FROM DBACC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+			WHERE bm.refno = @RefNo AND bm.custid = @CustId
 			) AS b
 		INNER JOIN DBACC.bodb_archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END

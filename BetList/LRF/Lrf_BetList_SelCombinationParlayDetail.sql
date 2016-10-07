@@ -37,20 +37,31 @@ AS
 		- 20160202@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160510@Kos: Remove param @TransId, @BetId, @CustId [#Redmine: 55282]
+		- 20161007@Kos: Add product bet type range for sub tables [Redmine: #65045]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @CustId	INT,
-		@currency	INT
-	DECLARE
-		@USD FLOAT,
-		@EUR FLOAT,
-		@MYR FLOAT,
-		@GBP FLOAT
+	-- Get Sport Bettype Matrix
+	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
-	DECLARE @tmpBettrans AS TABLE(
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
+
+	DECLARE @CustId	INT,
+		@currency	INT,
+		@USD		FLOAT,
+		@EUR		FLOAT,
+		@MYR		FLOAT,
+		@GBP		FLOAT
+
+	DECLARE @tmpBettrans AS TABLE (
 		TransId	BIGINT,
 		RefNo	BIGINT,
 		Stake	MONEY,
@@ -114,7 +125,8 @@ BEGIN
 		bm.matchdate
 	FROM dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-	WHERE refno = @refno
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+	WHERE refno = @RefNo
 
 	UNION
 
@@ -126,7 +138,8 @@ BEGIN
 		bm.matchdate
 	FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-	WHERE refno = @refno
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+	WHERE refno = @RefNo
 
 	UNION
 
@@ -138,7 +151,8 @@ BEGIN
 		bm.matchdate
 	FROM DBACC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN DBACC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-	WHERE refno = @refno
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+	WHERE refno = @RefNo
 
 	SELECT	@minMatchdate = MIN(matchdate),
 			@maxMatchdate = MAX(matchdate)
@@ -177,7 +191,7 @@ BEGIN
 			END AS Bitmap
 		FROM DBACC.bodb_Archive.dbo.bettrans_bk b WITH(NOLOCK) 
 		WHERE custid = @custid
-			AND refno = @refno
+			AND refno = @RefNo
 			AND matchid = 29
 			AND bettype = 29
 			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
@@ -201,7 +215,7 @@ BEGIN
 			b.comm,
 			CASE WHEN b.statusid IN (112, 113) THEN b.playercomm ELSE 0 END AS playercomm
 		FROM DBACC.bodb_Archive.dbo.BetParlayResult AS b WITH (NOLOCK)
-		WHERE refno = @refno
+		WHERE refno = @RefNo
 	END
 
 	IF @minMatchdate <= @MoveBetsDay	--- bettrans14 range
@@ -221,7 +235,7 @@ BEGIN
 			END AS Bitmap
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		WHERE custid = @custid
-			AND refno = @refno
+			AND refno = @RefNo
 			AND matchid = 29
 			AND bettype = 29
 			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
@@ -244,7 +258,7 @@ BEGIN
 			END AS Bitmap
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE custid = @custid 
-			AND refno = @refno
+			AND refno = @RefNo
 			AND matchid = 29
 			AND bettype = 29
 			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
@@ -269,7 +283,7 @@ BEGIN
 		b.comm,
 		CASE WHEN b.statusid IN (112, 113) THEN b.playercomm ELSE 0 END AS playercomm 
 	FROM dbo.BetParlayResult AS b WITH (NOLOCK) 
-	WHERE refno = @refno AND serial NOT IN (SELECT serial FROM @tmpResults)
+	WHERE refno = @RefNo AND serial NOT IN (SELECT serial FROM @tmpResults)
 
 	-- Generate betparlay detail
 	IF @minMatchdate < @BalanceUpday
@@ -314,7 +328,7 @@ BEGIN
 			serial,
 			matchid
 		FROM dbo.BetParlayDetail WITH (NOLOCK)
-		WHERE refno = @refno
+		WHERE refno = @RefNo
 	END
 
 	-- Get homeid, awayid

@@ -74,6 +74,7 @@ AS
 		- 20160718@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
 		- 20160727@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20161007@Kos: Add product bet type range for sub tables [Redmine: #65045]
 
 	Param's Explanation: 
 		+ @transtype:
@@ -93,7 +94,7 @@ BEGIN
 		AND SystemID = 1
 		AND isActive = 1
 
-	DECLARE @Username VARCHAR(30)
+	DECLARE @Username NVARCHAR(50)
 
 	SELECT @Username = c.username
 	FROM dbo.custInfo AS c WITH (NOLOCK)
@@ -664,40 +665,40 @@ BEGIN
 		@SumCommGBP			= SUM(ISNULL(b.Comm			* e.GBP, 0)),
 		@SumPlayerCommGBP	= SUM(ISNULL(b.PlayerComm	* e.GBP, 0))
 	FROM @Data AS b
-		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
+		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
 
 	SELECT A.* 
 	FROM (
-		SELECT
-			ROW_NUMBER() OVER(ORDER BY transid, refno) AS RowNum,
-			b.*,
-			-- USD
-			b.Stake			* e.USD AS StakeUSD,
-			b.Actual_stake	* e.USD AS Actual_StakeUSD,
-			b.WinLost		* e.USD AS WinLostUSD,
-			b.LicenseeWL	* e.USD AS LicenseeWLUSD,
-			b.Comm			* e.USD AS CommUSD,
-			b.PlayerComm	* e.USD AS PlayerCommUSD,
-			-- EUR
-			b.Stake			* e.EUR AS StakeEUR,
-			b.Actual_stake	* e.EUR AS Actual_StakeEUR,
-			b.WinLost		* e.EUR AS WinLostEUR,
-			b.LicenseeWL	* e.EUR AS LicenseeWLEUR,
-			b.Comm			* e.EUR AS CommEUR,
-			b.PlayerComm	* e.EUR AS PlayercommEUR,
-			-- GBP
-			b.Stake			* e.GBP AS StakeGBP,
-			b.Actual_stake	* e.GBP AS Actual_StakeGBP,
-			b.WinLost		* e.GBP AS WinLostGBP,
-			b.LicenseeWL	* e.GBP AS LicenseeWLGBP,
-			b.Comm			* e.GBP AS CommGBP,
-			b.PlayerComm	* e.GBP AS PlayerCommGBP
-		FROM @Data AS b
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-	) AS A
+			SELECT
+				ROW_NUMBER() OVER(ORDER BY transid, refno) AS RowNum,
+				b.*,
+				-- USD
+				b.Stake			* e.USD AS StakeUSD,
+				b.Actual_stake	* e.USD AS Actual_StakeUSD,
+				b.WinLost		* e.USD AS WinLostUSD,
+				b.LicenseeWL	* e.USD AS LicenseeWLUSD,
+				b.Comm			* e.USD AS CommUSD,
+				b.PlayerComm	* e.USD AS PlayerCommUSD,
+				-- EUR
+				b.Stake			* e.EUR AS StakeEUR,
+				b.Actual_stake	* e.EUR AS Actual_StakeEUR,
+				b.WinLost		* e.EUR AS WinLostEUR,
+				b.LicenseeWL	* e.EUR AS LicenseeWLEUR,
+				b.Comm			* e.EUR AS CommEUR,
+				b.PlayerComm	* e.EUR AS PlayercommEUR,
+				-- GBP
+				b.Stake			* e.GBP AS StakeGBP,
+				b.Actual_stake	* e.GBP AS Actual_StakeGBP,
+				b.WinLost		* e.GBP AS WinLostGBP,
+				b.LicenseeWL	* e.GBP AS LicenseeWLGBP,
+				b.Comm			* e.GBP AS CommGBP,
+				b.PlayerComm	* e.GBP AS PlayerCommGBP
+			FROM @Data AS b
+				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
+		) AS A
 	WHERE A.RowNum BETWEEN (((@PageIndex - 1) * @PageSize) + 1) AND (@PageSize * @PageIndex)
 
-	-- Get ticket detail
+	-- Get sub tickets
 	DECLARE @BettransDetail TABLE(
 		RefNo			BIGINT,
 		Odds			MONEY,
@@ -710,66 +711,95 @@ BEGIN
 		StakeUSD		MONEY,
 		StakeGBP		MONEY
 	)
-	
+
+	-- Horse Racing
+	IF EXISTS (	SELECT 1
+				FROM @Data AS b
+					INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
+				WHERE sbt.ProductID = 2)
+	BEGIN
+		INSERT INTO @BettransDetail
+		SELECT
+			bm.refno,
+			bm.odds,
+			bm.stake,
+			bm.status,
+			bm.apositiontaking,
+			bm.bettype,
+			bm.betteam,
+			bm.stake * e.EUR,
+			bm.stake * e.USD,
+			bm.stake * e.GBP
+		FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN @Data AS b ON bm.refno = b.TransId
+			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
+			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
+			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+		WHERE bm.custid = @CustId
+			AND sbt.ProductID = 2
+			AND sbtm.ProductID = 2
+	END
+
 	-- Live Casino
-	INSERT INTO @BettransDetail
-	SELECT
-		bg.refno,
-		bg.odds,
-		bg.stake,
-		bg.status,
-		bg.apositiontaking,
-		bg.bettype,
-		bg.betteam,
-		bg.stake * e.EUR,
-		bg.stake * e.USD,
-		bg.stake * e.GBP
-	FROM bodb_archive.dbo.bettransG AS bg WITH (NOLOCK)
-		INNER JOIN @Data AS b ON bg.refno = b.refno AND bg.custID = @CustID
-		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-		INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-	WHERE sbt.ProductID = 4 AND sbt.EventType = 1
-	
-	-- Racing
-	UNION ALL
-	SELECT
-		bm.refno,
-		bm.odds,
-		bm.stake,
-		bm.status,
-		bm.apositiontaking,
-		bm.bettype,
-		bm.betteam,
-		bm.stake * e.EUR,
-		bm.stake * e.USD,
-		bm.stake * e.GBP
-	FROM bodb_archive.dbo.bettransm AS bm WITH (NOLOCK)
-		INNER JOIN @Data AS b ON bm.refno = b.transid
-		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-		INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-	WHERE sbt.ProductID = 2 AND sbt.EventType = 2
-	
+	IF EXISTS (	SELECT 1
+				FROM @Data AS b
+					INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
+				WHERE sbt.ProductId = 4 )
+	BEGIN
+		INSERT INTO @BettransDetail
+		SELECT
+			bg.refno,
+			bg.odds,
+			bg.stake,
+			bg.status,
+			bg.apositiontaking,
+			bg.bettype,
+			bg.betteam,
+			bg.stake * e.EUR,
+			bg.stake * e.USD,
+			bg.stake * e.GBP
+		FROM bodb_Archive.dbo.bettransG AS bg WITH (NOLOCK)
+			INNER JOIN @Data AS b ON bg.refno = b.RefNo
+			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+			INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
+		WHERE bg.custid = @CustId
+			AND sbt.ProductID = 4
+			AND sbtg.ProductID = 4
+	END
+
 	-- Virtual Sports
-	UNION ALL
-	SELECT
-		bm.refno,
-		bm.odds,
-		bm.Stake,
-		bm.status,
-		bm.apositiontaking,
-		bm.bettype,
-		bm.betteam,
-		bm.stake * e.EUR,
-		bm.stake * e.USD,
-		bm.stake * e.GBP
-	FROM bodb_archive.dbo.bettransm AS bm with (NOLOCK)
-		INNER JOIN @Data b ON bm.refno = b.refno
-		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-		INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-	WHERE sbt.ProductID = 5 AND sbt.EventType = 3
+	IF EXISTS (	SELECT 1
+				FROM @Data AS b
+					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				WHERE sbt.ProductId = 5 AND sbt.EventType = 3)
+	BEGIN
+		INSERT INTO @BettransDetail
+		SELECT
+			bm.refno,
+			bm.odds,
+			bm.Stake,
+			bm.status,
+			bm.apositiontaking,
+			bm.bettype,
+			bm.betteam,
+			bm.stake * e.EUR,
+			bm.stake * e.USD,
+			bm.stake * e.GBP
+		FROM bodb_Archive.dbo.bettransm AS bm with (NOLOCK)
+			INNER JOIN @Data b ON bm.refno = b.RefNo
+			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+		WHERE bm.custid = @CustId
+			AND sbt.ProductID = 5
+			AND sbt.EventType = 3
+			AND sbtm.ProductID = 5
+			AND sbtm.EventType = 3
+	END
 
 	SELECT * FROM @BettransDetail
-	ORDER BY refno, bettype
+	ORDER BY RefNo, BetType
 
 	DROP TABLE #TempExchange
 END
