@@ -273,13 +273,13 @@ BEGIN
 		FROM
 			(
 				SELECT
-					b.matchId,
-					b.Bettype,
-					REPLACE(ISNULL(b.Betcheck,''),'8','') AS Betcheck
-				FROM DBARC.bodb_archive.dbo.BettransM b (NOLOCK)
-				WHERE b.refno = @RefNo ) bm
-			INNER JOIN DBARC.bodb_archive.dbo.match_BK AS m WITH(NOLOCK) ON bm.matchid = m.matchid
-			LEFT OUTER JOIN dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
+					matchId,
+					Bettype,
+					REPLACE(ISNULL(Betcheck,''),'8','') AS Betcheck
+				FROM DBARC.bodb_archive.dbo.BettransM WITH (NOLOCK)
+				WHERE refno = @RefNo ) bm
+			INNER JOIN DBARC.bodb_archive.dbo.match_BK AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 
 		INSERT INTO @tmpResultDetail
