@@ -6,62 +6,64 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[Aff_BetList_SelMatchResultParlay]
-	@refno	BIGINT
+	@RefNo	BIGINT
 AS
-/*
-Created:20141017@Bobby.Nguyen
-Task: Get Result Page
-DB: DBEXT/bodb02
-Orgiginal: DBEXT/bodb02.dbo.Age_BetList_SelMatchResult
 
-Revisions:    
-	- 20141017@Bobby.Nguyen: Initial SP & Get the detail information of Tennis sport
-	- 20150415@Bobby.Nguyen: Support for new 60 bettypes betradar
-	- 20160425@Bobby.Nguyen: #56136 - Support Combo Parlay
+/*
+	Created: 20141017@Bobby
+	Task: Get parlay ticket result
+	DB: DBEXT.bodb02
+	Orgiginal: DBEXT/bodb02.dbo.Age_BetList_SelMatchResult
+
+	Revisions:
+		- 20141017@Bobby: Initial SP & Get the detail information of Tennis sport
+		- 20150415@Bobby: Support for new 60 bettypes betradar
+		- 20160425@Bobby: #56136 - Support Combo Parlay
+		- 20161007@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 */
+
 BEGIN
 
 	SET NOCOUNT ON;
 	
-	DECLARE	@tmpParlay TABLE(
-		sporttype	INT,
-		leagueid	INT,
-		matchid		INT,
-		homeID		INT,
-		awayID		INT,
-		hthomescore	INT,
-		htawayscore	INT,
-		finalhomescore INT,
-		finalawayscore INT,
-		kickofftime DATETIME,
-		eventdate	DATETIME,
-		isNeutral	BIT,
-		betstatus	VARCHAR(50),
-		eventstatus	VARCHAR(15),
-		IsRefund	BIT,
-		IsCalRefund	BIT,
-		goalrecord	VARCHAR(50),
-		matchcode	VARCHAR(50),
-		isHTCal		BIT,
-		calculate	BIT,
-		IsPending	BIT, 
-		Bettype		SMALLINT,
-		Betcheck	VARCHAR(50),
-		TransDesc	NVARCHAR(200)
+	DECLARE @tmpParlay TABLE(
+		SportType		INT,
+		LeagueId		INT,
+		MatchId			INT,
+		HomeId			INT,
+		AwayId			INT,
+		HtHomeScore		INT,
+		HtAwayScore		INT,
+		FinalHomeScore	INT,
+		FinalAwayScore	INT,
+		KickOffTime		DATETIME,
+		EventDate		DATETIME,
+		IsNeutral		BIT,
+		BetStatus		VARCHAR(50),
+		EventStatus		VARCHAR(15),
+		IsRefund		BIT,
+		IsCalRefund		BIT,
+		GoalRecord		VARCHAR(50),
+		MatchCode		VARCHAR(50),
+		IsHTCal			BIT,
+		Calculate		BIT,
+		IsPending		BIT,
+		BetType			SMALLINT,
+		BetCheck		VARCHAR(50),
+		TransDesc		NVARCHAR(200)
 	)
 
 	DECLARE @tmpResultDetail AS TABLE (
-		MatchId INT ,
-		ResourceId VARCHAR(20),
-		HomeValue VARCHAR(20),
-		AwayValue VARCHAR(20),
-		ResultStatusID TINYINT,
-		SettlementStatusID TINYINT,
-		OtherInfo VARCHAR(50)
+		MatchId				INT,
+		ResourceId			VARCHAR(20),
+		HomeValue			VARCHAR(20),
+		AwayValue			VARCHAR(20),
+		ResultStatusID		TINYINT,
+		SettlementStatusID	TINYINT,
+		OtherInfo			VARCHAR(50)
 	)
 
-
-	IF EXISTS (SELECT 1 FROM dbo.bettransm WITH (NOLOCK) WHERE  refno = @refno)
+	IF EXISTS (SELECT 1 FROM dbo.bettransm WITH (NOLOCK) WHERE refno = @refno)
 	BEGIN
 		;WITH BettransMix AS (
 			SELECT b.matchId
@@ -70,270 +72,202 @@ BEGIN
 			FROM dbo.BettransM b WITH (NOLOCK) 
 			WHERE b.refno = @refno 
 		)
-		INSERT INTO @tmpParlay (
-			sporttype, 	
-			LeagueID,
-			matchid, 	
-			homeID,
-			awayID,
+
+		INSERT INTO @tmpParlay
+		SELECT
+			m.sporttype,
+			m.LeagueID,
+			m.matchid,
+			m.homeID,
+			m.awayID,
 			hthomescore,
-			htawayscore,		
-			finalhomescore,
-			finalawayscore,
-			kickofftime,
-			eventdate,
-			isNeutral,
-			betstatus, 	
-			eventstatus,
-			IsRefund ,
-			IsCalRefund,
-			goalrecord,
-			matchcode,
-			isHTCal,
-			calculate,
-			IsPending, 
-			Bettype, 
-			Betcheck,
-			transdesc
-		)
-		SELECT	m.sporttype, 	
-				m.LeagueID,
-				m.matchid, 	
-				m.homeID,
-				m.awayID,
-				hthomescore,
-				htawayscore,		
-				m.finalhomescore,
-				m.finalawayscore,
-				ISNULL(m.globalshowtime, m.kickofftime), -- kickofftime
-				m.eventdate,
-				m.isNeutral,
-				m.betstatus, 	
-				CASE m.Sporttype WHEN 5 THEN CASE ISNULL(D.SettlementStatusID,0)	 
-										WHEN 1 THEN 'Refund' 
-										WHEN 2 THEN 'Refund HT'
-										WHEN 3 THEN 'Refund FT'
-									ELSE m.eventstatus END 
-								ELSE 
-									CASE  WHEN m.betstatus like 'Refund FT%' THEN 'Refund FT' 
-											WHEN m.betstatus like 'Refund HT%' THEN 'Refund HT'
-											WHEN m.betstatus like 'Refund%' THEN 'Refund' 
-									ELSE m.eventstatus END 
-						END AS eventstatus, 
-				ISNULL(mr.refund,0) IsRefund ,
-				ISNULL(mr.calrefund,0) IsCalRefund,
-				m.goalrecord,
-				m.matchcode,
-				ISNULL(mr.isHTCal,0) AS isHTCal,
-				ISNULL(mr.calculate,0) AS calculate	,
-				ISNULL(mr.IsPending,0) AS IsPending,
-				bm.Bettype, 
-				bm.Betcheck,
-				bm.transdesc
-		FROM BettransMix bm
-			INNER JOIN dbo.match m WITH(NOLOCK) 
-			ON bm.matchid = m.matchid
-			LEFT OUTER JOIN dbo.match_remark mr WITH(NOLOCK) 
-			ON m.matchid = mr.matchid
-			LEFT JOIN dbo.ResultDetail D WITH (NOLOCK) 
-			ON D.matchID = M.MatchID 
-				AND D.ResourceId = '00'
+			htawayscore,
+			m.finalhomescore,
+			m.finalawayscore,
+			ISNULL(m.globalshowtime, m.kickofftime), -- kickofftime
+			m.eventdate,
+			m.isNeutral,
+			m.betstatus,
+			CASE m.Sporttype
+				WHEN 5 THEN
+					CASE ISNULL(d.SettlementStatusID, 0)
+						WHEN 1 THEN 'Refund' 
+						WHEN 2 THEN 'Refund HT'
+						WHEN 3 THEN 'Refund FT'
+						ELSE m.eventstatus
+					END
+				ELSE
+					CASE
+						WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT' 
+						WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
+						WHEN m.betstatus LIKE 'Refund%' THEN 'Refund' 
+						ELSE m.eventstatus
+					END
+			END AS eventstatus,
+			ISNULL(mr.refund,0) IsRefund,
+			ISNULL(mr.calrefund,0) IsCalRefund,
+			m.goalrecord,
+			m.matchcode,
+			ISNULL(mr.isHTCal,0) AS isHTCal,
+			ISNULL(mr.calculate,0) AS calculate,
+			ISNULL(mr.IsPending,0) AS IsPending,
+			bm.Bettype, 
+			bm.Betcheck,
+			bm.transdesc
+		FROM BettransMix AS bm
+			INNER JOIN dbo.match AS m WITH(NOLOCK) ON bm.matchid = m.matchid
+			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
 		
 		-- select from result detail
 		INSERT INTO @tmpResultDetail
-		SELECT		D.MatchId,
-					D.ResourceId,
-					D.HomeValue,
-					D.AwayValue,
-					D.ResultStatusID,
-					D.SettlementStatusID,
-					D.OtherInfo
-			FROM	dbo.ResultDetail D WITH (NOLOCK)
-				INNER JOIN @tmpParlay P 
-					ON D.MatchId = P.MatchId	
-				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F 					
-					ON	F.Bettype = P.Bettype					
-						AND D.ResourceId LIKE F.ResourceID						
-			WHERE	 D.SettlementStatusID > 0
-					 AND (	(P.Sporttype = 5 AND CASE WHEN P.Bettype NOT IN (1324) THEN 2 ELSE 
-								 					 CASE WHEN P.Bettype IN (1324) AND LEFT(D.ResourceId,2) = LEFT(REPLACE (ISNULL(P.Betcheck,''),'8','') ,2) THEN 4 
-														ELSE 0 END END = LEN(D.ResourceId)
-							 )
-							OR 
-							(P.Sporttype = 1 AND D.ResourceId NOT IN ( '00', '01', '08') 
-							 AND D.ResourceId LIKE F.ResourceID		 	 
-							 	
-							)
-						)
-
+		SELECT
+			d.MatchId,
+			d.ResourceId,
+			d.HomeValue,
+			d.AwayValue,
+			d.ResultStatusID,
+			d.SettlementStatusID,
+			d.OtherInfo
+		FROM dbo.ResultDetail d WITH (NOLOCK)
+			INNER JOIN @tmpParlay P ON d.MatchId = P.MatchId
+			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F
+				ON	F.Bettype = P.Bettype AND d.ResourceId LIKE F.ResourceID
+		WHERE d.SettlementStatusID > 0
+			AND ((P.Sporttype = 5
+					AND CASE WHEN P.Bettype NOT IN (1324) THEN 2 ELSE 
+							CASE WHEN P.Bettype IN (1324) AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(P.Betcheck,''),'8',''),2) THEN 4 
+							ELSE 0 END END = LEN(d.ResourceId))
+				OR (P.Sporttype = 1
+					AND (d.ResourceId NOT IN ('00', '01', '08')
+						OR (d.ResourceId = '08'
+							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+					AND d.ResourceId LIKE F.ResourceID))
 	END
-	IF EXISTS (SELECT 1 FROM dbo.bettransm14 WITH (NOLOCK) WHERE  refno = @refno)
+
+	IF EXISTS (SELECT 1 FROM dbo.bettransm14 WITH (NOLOCK) WHERE refno = @refno)
 	BEGIN
-		WITH BettransMix AS (	
+		WITH BettransMix AS (
 			SELECT b.matchId
 				, b.Bettype, REPLACE (ISNULL(b.Betcheck,''),'8','') AS Betcheck
 				, ISNULL(transdesc, '') AS transdesc
 			FROM dbo.BettransM14 b WITH (NOLOCK) 
 			WHERE b.refno = @refno 
 		)
-		INSERT INTO @tmpParlay (
-			sporttype, 	
-			LeagueID,
-			matchid, 	
-			homeID,
-			awayID,
+
+		INSERT INTO @tmpParlay
+		SELECT
+			m.sporttype,
+			m.LeagueID,
+			m.matchid,
+			m.homeID,
+			m.awayID,
 			hthomescore,
-			htawayscore,		
-			finalhomescore,
-			finalawayscore,
-			kickofftime,
-			eventdate,
-			isNeutral,
-			betstatus, 	
-			eventstatus,
-			IsRefund ,
-			IsCalRefund,
-			goalrecord,
-			matchcode,
-			isHTCal,
-			calculate,
-			IsPending,
-			Bettype, 
-			Betcheck,
-			transdesc
-		)
-		SELECT	m.sporttype, 	
-				m.LeagueID,
-				m.matchid, 	
-				m.homeID,
-				m.awayID,
-				hthomescore,
-				htawayscore,		
-				m.finalhomescore,
-				m.finalawayscore,
-				ISNULL(m.globalshowtime, m.kickofftime), -- kickofftime
-				m.eventdate,
-				m.isNeutral,
-				m.betstatus, 	
-				CASE m.Sporttype WHEN 5 THEN CASE ISNULL(D.SettlementStatusID,0)	 
-										WHEN 1 THEN 'Refund' 
-										WHEN 2 THEN 'Refund HT'
-										WHEN 3 THEN 'Refund FT'
-									ELSE m.eventstatus END 
-								ELSE 
-									CASE  WHEN m.betstatus like 'Refund FT%' THEN 'Refund FT' 
-											WHEN m.betstatus like 'Refund HT%' THEN 'Refund HT'
-											WHEN m.betstatus like 'Refund%' THEN 'Refund' 
-									ELSE m.eventstatus END 
-						END AS eventstatus, 
-				ISNULL(mr.refund,0) IsRefund ,
-				ISNULL(mr.calrefund,0) IsCalRefund,
-				m.goalrecord,
-				m.matchcode, 
-				ISNULL(mr.isHTCal,0) AS isHTCal,
-				ISNULL(mr.calculate,0) AS calculate,
-				ISNULL(mr.IsPending,0) AS IsPending,
-				bm.Bettype, 
-				bm.Betcheck,
-				bm.transdesc
+			htawayscore,
+			m.finalhomescore,
+			m.finalawayscore,
+			ISNULL(m.globalshowtime, m.kickofftime), -- kickofftime
+			m.eventdate,
+			m.isNeutral,
+			m.betstatus,
+			CASE m.Sporttype
+				WHEN 5 THEN
+					CASE ISNULL(d.SettlementStatusID,0)
+						WHEN 1 THEN 'Refund' 
+						WHEN 2 THEN 'Refund HT'
+						WHEN 3 THEN 'Refund FT'
+						ELSE m.eventstatus
+					END 
+				ELSE
+					CASE
+						WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT' 
+						WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
+						WHEN m.betstatus LIKE 'Refund%' THEN 'Refund' 
+						ELSE m.eventstatus
+					END
+			END AS eventstatus, 
+			ISNULL(mr.refund,0) IsRefund,
+			ISNULL(mr.calrefund,0) IsCalRefund,
+			m.goalrecord,
+			m.matchcode, 
+			ISNULL(mr.isHTCal,0) AS isHTCal,
+			ISNULL(mr.calculate,0) AS calculate,
+			ISNULL(mr.IsPending,0) AS IsPending,
+			bm.Bettype, 
+			bm.Betcheck,
+			bm.transdesc
 		FROM BettransMix bm
-			INNER JOIN dbo.match14 m WITH(NOLOCK) 
-			ON bm.matchid = m.matchid
-			LEFT OUTER JOIN dbo.match_remark mr WITH(NOLOCK) 
-			ON m.matchid = mr.matchid
-			LEFT JOIN dbo.ResultDetail14 D WITH (NOLOCK) 
-			ON D.matchID = M.MatchID 
-				AND D.ResourceId = '00'
-		
+			INNER JOIN dbo.match14 m WITH (NOLOCK) ON bm.matchid = m.matchid
+			LEFT OUTER JOIN dbo.match_remark mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN dbo.ResultDetail14 d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
+
 		-- select from result detail
 		INSERT INTO @tmpResultDetail
-		SELECT		D.MatchId,
-					D.ResourceId,
-					D.HomeValue,
-					D.AwayValue,
-					D.ResultStatusID,
-					D.SettlementStatusID,
-					D.OtherInfo
-			FROM	dbo.ResultDetail14 D WITH (NOLOCK)
-				INNER JOIN @tmpParlay P 
-					ON D.MatchId = P.MatchId	
-				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F 					
-					ON	F.Bettype = P.Bettype					
-						AND D.ResourceId LIKE F.ResourceID						
-			WHERE	 D.SettlementStatusID > 0
-					 AND (	(P.Sporttype = 5 AND CASE WHEN P.Bettype NOT IN (1324) THEN 2 ELSE 
-								 					 CASE WHEN P.Bettype IN (1324) AND LEFT(D.ResourceId,2) = LEFT(REPLACE (ISNULL(P.Betcheck,''),'8','') ,2) THEN 4 
-														ELSE 0 END END = LEN(D.ResourceId)
-							 )
-							OR 
-							(P.Sporttype = 1 AND D.ResourceId NOT IN ( '00', '01', '08') 
-							 AND D.ResourceId LIKE F.ResourceID		 	 
-							 	
-							)
-						)
-					 
-
+		SELECT
+			d.MatchId,
+			d.ResourceId,
+			d.HomeValue,
+			d.AwayValue,
+			d.ResultStatusID,
+			d.SettlementStatusID,
+			d.OtherInfo
+		FROM dbo.ResultDetail14 d WITH (NOLOCK)
+			INNER JOIN @tmpParlay P ON d.MatchId = P.MatchId
+			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F
+				ON F.Bettype = P.Bettype AND d.ResourceId LIKE F.ResourceID
+		WHERE d.SettlementStatusID > 0
+			AND ((P.Sporttype = 5
+					AND CASE WHEN P.Bettype NOT IN (1324) THEN 2 ELSE 
+						CASE WHEN P.Bettype IN (1324) AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(P.Betcheck,''),'8',''),2) THEN 4 
+						ELSE 0 END END = LEN(d.ResourceId))
+				OR (P.Sporttype = 1
+					AND (d.ResourceId NOT IN ('00', '01', '08')
+						OR (d.ResourceId = '08'
+							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+					AND d.ResourceId LIKE F.ResourceID))
 	END
-	IF EXISTS (SELECT 1 FROM DBARC.bodb_archive.dbo.BettransM  WITH (NOLOCK) WHERE  refno = @refno)
+
+	IF EXISTS (SELECT 1 FROM DBARC.bodb_archive.dbo.BettransM WITH (NOLOCK) WHERE refno = @refno)
 	BEGIN
-		WITH BettransMix AS (	
+		WITH BettransMix AS (
 			SELECT b.matchId
 				, b.Bettype,REPLACE (ISNULL(b.Betcheck,''),'8','') AS Betcheck
-				, ISNULL(transdesc, '') AS transdesc				
-			FROM DBARC.bodb_archive.dbo.BettransM b (NOLOCK) 
+				, ISNULL(transdesc, '') AS transdesc
+			FROM DBARC.bodb_archive.dbo.BettransM b WITH (NOLOCK) 
 			WHERE b.refno = @refno 
 		)
-		INSERT INTO @tmpParlay (
-			sporttype, 	
-			LeagueID,
-			matchid, 	
-			homeID,
-			awayID,
-			hthomescore,
-			htawayscore,		
-			finalhomescore,
-			finalawayscore,
-			kickofftime,
-			eventdate,
-			isNeutral,
-			betstatus, 	
-			eventstatus,
-			IsRefund ,
-			IsCalRefund,
-			goalrecord,
-			matchcode,
-			isHTCal,
-			calculate,
-			IsPending,
-			Bettype, 
-			Betcheck,
-			transdesc
-		)
+
+		INSERT INTO @tmpParlay
 		SELECT	m.sporttype, 
 				m.LeagueID,
-				m.matchid, 			
+				m.matchid,
 				m.homeID,
 				m.awayID,
 				hthomescore,
-				htawayscore,		
+				htawayscore,
 				m.finalhomescore,
 				m.finalawayscore,
 				ISNULL(m.globalshowtime, m.kickofftime), -- kickofftime
 				m.eventdate,
 				m.isNeutral,
-				m.betstatus, 	
-				CASE m.Sporttype WHEN 5 THEN CASE ISNULL(D.SettlementStatusID,0)	 
-										WHEN 1 THEN 'Refund' 
-										WHEN 2 THEN 'Refund HT'
-										WHEN 3 THEN 'Refund FT'
-									ELSE m.eventstatus END 
-								ELSE 
-									CASE  WHEN m.betstatus like 'Refund FT%' THEN 'Refund FT' 
-											WHEN m.betstatus like 'Refund HT%' THEN 'Refund HT'
-											WHEN m.betstatus like 'Refund%' THEN 'Refund' 
-									ELSE m.eventstatus END 
-						END AS eventstatus,
-				ISNULL(mr.refund,0) IsRefund ,
+				m.betstatus,
+				CASE m.Sporttype
+					WHEN 5 THEN
+						CASE ISNULL(d.SettlementStatusID,0)
+							WHEN 1 THEN 'Refund' 
+							WHEN 2 THEN 'Refund HT'
+							WHEN 3 THEN 'Refund FT'
+							ELSE m.eventstatus
+						END
+					ELSE
+						CASE
+							WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT' 
+							WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
+							WHEN m.betstatus LIKE 'Refund%' THEN 'Refund' 
+							ELSE m.eventstatus
+						END 
+				END AS eventstatus,
+				ISNULL(mr.refund,0) IsRefund,
 				ISNULL(mr.calrefund,0) IsCalRefund,
 				m.goalrecord,
 				m.matchcode,
@@ -344,44 +278,41 @@ BEGIN
 				bm.Betcheck,
 				bm.transdesc
 		FROM BettransMix bm
-			INNER JOIN DBARC.bodb_archive.dbo.match_BK m WITH(NOLOCK) 
-			ON bm.matchid = m.matchid
-			LEFT OUTER JOIN dbo.match_remark mr WITH(NOLOCK) 
-			ON m.matchid = mr.matchid
-			LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK D WITH (NOLOCK) 
-			ON D.matchID = M.MatchID 
-				AND D.ResourceId = '00'
-		
+			INNER JOIN DBARC.bodb_archive.dbo.match_BK m WITH(NOLOCK) ON bm.matchid = m.matchid
+			LEFT OUTER JOIN dbo.match_remark mr WITH(NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
+
 		-- select from result detail
 		INSERT INTO @tmpResultDetail
-		SELECT		D.MatchId,
-					D.ResourceId,
-					D.HomeValue,
-					D.AwayValue,
-					D.ResultStatusID,
-					D.SettlementStatusID,
-					D.OtherInfo
-			FROM	DBARC.bodb_archive.dbo.ResultDetail_BK D WITH (NOLOCK)
-				INNER JOIN @tmpParlay P 
-					ON D.MatchId = P.MatchId	
-				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F 					
-					ON	F.Bettype = P.Bettype					
-						AND D.ResourceId LIKE F.ResourceID						
-			WHERE	 D.SettlementStatusID > 0
-					 AND (	(P.Sporttype = 5 AND CASE WHEN P.Bettype NOT IN (1324) THEN 2 ELSE 
-								 					 CASE WHEN P.Bettype IN (1324) AND LEFT(D.ResourceId,2) = LEFT(REPLACE (ISNULL(P.Betcheck,''),'8','') ,2) THEN 4 
-														ELSE 0 END END = LEN(D.ResourceId)
-							 )
-							OR 
-							(P.Sporttype = 1 AND D.ResourceId NOT IN ( '00', '01', '08') 
-							 AND D.ResourceId LIKE F.ResourceID		 	 
-							 	
-							)
-						)
+		SELECT
+			d.MatchId,
+			d.ResourceId,
+			d.HomeValue,
+			d.AwayValue,
+			d.ResultStatusID,
+			d.SettlementStatusID,
+			d.OtherInfo
+		FROM DBARC.bodb_archive.dbo.ResultDetail_BK d WITH (NOLOCK)
+			INNER JOIN @tmpParlay P ON d.MatchId = P.MatchId	
+			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F 
+				ON	F.Bettype = P.Bettype AND d.ResourceId LIKE F.ResourceID
+		WHERE d.SettlementStatusID > 0
+			AND ((P.Sporttype = 5
+					AND CASE WHEN P.Bettype NOT IN (1324) THEN 2 ELSE 
+						CASE WHEN P.Bettype IN (1324) AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(P.Betcheck,''),'8',''),2) THEN 4 
+						ELSE 0 END END = LEN(d.ResourceId)
+					)
+				OR (P.Sporttype = 1
+					AND (d.ResourceId NOT IN ('00', '01', '08')
+						OR (d.ResourceId = '08'
+							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+					AND d.ResourceId LIKE F.ResourceID))
 	END
 	
 	SELECT * FROM @tmpParlay
-	ORDER BY LeagueID, eventdate, matchcode	
+	ORDER BY LeagueID,
+		eventdate,
+		matchcode
 
 	SELECT DISTINCT * FROM @tmpResultDetail
 	ORDER BY MatchID, ResourceId
