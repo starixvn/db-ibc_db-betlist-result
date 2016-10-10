@@ -9,10 +9,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Acc_BetlistCombinationParlay_Details]
-	@refno			BIGINT,
-	@transid		BIGINT		= 0,
-	@betid			BIGINT		= 0,
-	@custid			INT,
+	@RefNo			BIGINT,
+	@TransId		BIGINT		= 0,
+	@BetId			BIGINT		= 0,
+	@CustId			INT,
 	@MoveBetDay		DATETIME,
 	@BalanceUpDay	DATETIME,
 	@Language		NVARCHAR(2)	= 'E',
@@ -35,10 +35,22 @@ AS
 		- 20130404@Daniel (on live version) : fix bug check movebet day in case movebetday = min(matchdate)
 		- 20151210@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160408@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20161010@Kos: Add product bet type range for sub tables [Redmine: #65045]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	-- Get Sport Bettype Matrix (support Sportsbook only)
+	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @tmpBettrans AS TABLE(
 		TransId	BIGINT,
@@ -99,6 +111,7 @@ BEGIN
 		bm.matchdate
 	FROM dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE refno = @refno AND custid = @custid
 	UNION
 	SELECT
@@ -108,6 +121,7 @@ BEGIN
 		bm.matchdate
 	FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE refno = @refno
 	UNION
 	SELECT
@@ -117,6 +131,7 @@ BEGIN
 		bm.matchdate
 	FROM DBARC.bodb_archive.dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN DBARC.bodb_archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE refno = @refno
 
 	SELECT	@minMatchdate = MIN(matchdate),

@@ -14,7 +14,8 @@ AS
 	Original: 
 	
 	Revisions:
-		- 20151022@Kos: Return more columns to support more detail 
+		- 20151022@Kos: Return more columns to support more detail
+		- 20161010@Kos: Add product bet type range for sub tables [Redmine: #65045]
 */
 
 BEGIN
@@ -38,10 +39,10 @@ BEGIN
 	)
 
 	INSERT INTO @Data
-	SELECT transid, 
+	SELECT transid,
 		transdate,
 		bettype,
-		hdp1 AS Sold, 
+		hdp1 AS Sold,
 		(winlost - stake) AS WinLost,
 		statusid,
 		status,
@@ -52,15 +53,17 @@ BEGIN
 		(acomm - comm) AS AComm,
 		comm,
 		ISNULL(oddsspread, 0) AS OddsSpread
-	FROM bettransm WITH (NOLOCK)
-	WHERE refno = @RefNo AND custid = @CustId
+	FROM dbo.bettransm WITH (NOLOCK)
+	WHERE refno = @RefNo
+		AND custid = @CustId
+		AND bettype BETWEEN 18001 AND 18006
 
 	UNION
 
-	SELECT transid, 
+	SELECT transid,
 		transdate,
 		bettype,
-		hdp1 AS Sold, 
+		hdp1 AS Sold,
 		(winlost - stake) AS WinLost,
 		statusid,
 		status,
@@ -71,15 +74,16 @@ BEGIN
 		(acomm - comm) AS AComm,
 		comm,
 		ISNULL(oddsspread, 0) AS OddsSpread
-	FROM bettransm14 WITH (NOLOCK)
+	FROM dbo.bettransm14 WITH (NOLOCK)
 	WHERE refno = @RefNo
+		AND bettype BETWEEN 18001 AND 18006
 	
 	UNION 
 	
-	SELECT transid, 
+	SELECT transid,
 		transdate,
 		bettype,
-		hdp1 AS Sold, 
+		hdp1 AS Sold,
 		(winlost - stake) AS WinLost,
 		statusid,
 		status,
@@ -92,6 +96,7 @@ BEGIN
 		ISNULL(oddsspread, 0) AS OddsSpread
 	FROM DBARC.bodb_archive.dbo.bettransm WITH (NOLOCK)
 	WHERE refno = @RefNo
+		AND bettype BETWEEN 18001 AND 18006
 
 	SELECT * FROM @Data
 END

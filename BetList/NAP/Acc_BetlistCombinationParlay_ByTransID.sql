@@ -8,7 +8,7 @@ AS
 /*
 	Created: 20111128@Johnson
 	Task: Get details of parlay tickets
-	DB: DBAGE.BODB02
+	DB: DBAGE.bodb02
 	
 	Revisions:
 		- 20111215@Lukas: correct scomm, acomm, comm
@@ -24,12 +24,24 @@ AS
 		- 20151210@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160120@Kos: Add transdesc to support PH All In One 1.2 new bet types [#Redmine: 50897]
 		- 20160411@Kos: Support Combo Parlay [#Redmine: 55282]
+		- 20161010@Kos: Add product bet type range for sub tables [Redmine: #65045]
 
 	Paramters Explanation:
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	-- Get Sport Bettype Matrix (support Sportsbook only)
+	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @RefNo		BIGINT,
 		@CurrencyName	NVARCHAR(50),
@@ -210,7 +222,8 @@ BEGIN
 		bm.stake
 	FROM dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-	WHERE refno = @RefNo AND custid = @custid
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+	WHERE bm.refno = @RefNo AND bm.custid = @custid
 
 	UNION
 
@@ -240,7 +253,8 @@ BEGIN
 		bm.stake
 	FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-	WHERE refno = @RefNo
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+	WHERE bm.refno = @RefNo
 
 	UNION
 
@@ -270,7 +284,8 @@ BEGIN
 		bm.stake
 	FROM DBARC.bodb_archive.dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN DBARC.bodb_archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-	WHERE refno = @RefNo
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+	WHERE bm.refno = @RefNo
 
 	SELECT	@minMatchdate = MIN(matchdate),
 			@maxMatchdate = MAX(matchdate)

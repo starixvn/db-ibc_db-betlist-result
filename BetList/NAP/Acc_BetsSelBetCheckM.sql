@@ -7,11 +7,11 @@ AS
 /*
 	Created by: [Creator]
 	Date: 2008
-	Task: Get info of Mix Parlay Bets 
+	Task: Get info of Mix Parlay Bets
 	DB: DBAGE.BODB02
-	Original: Original: SP mteamlist
+	Original: SP mteamlist
 	
-	Revisions: 
+	Revisions:
 		- 20060222@[]: remove refno
 		- 20060310@[]: remove odds depend
 		- 20090408@PhuongDao: Get checktime as SettleTime 
@@ -28,10 +28,22 @@ AS
 		- 20151210@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160119@Kos: Return transdesc to support PH All In One 1.2 [#Redmine: 50897]
 		- 20160407@Kos: Add TransId param, support Combo Parlay [#Redmine: 55282]
+		- 20161010@Kos: Add product bet type range for sub tables [Redmine: #65045]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	-- Get Sport Bettype Matrix (support Sportsbook only)
+	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @BetListMP TABLE(
 		TransId			BIGINT,
@@ -82,7 +94,10 @@ BEGIN
 	END
 
 	-- Get parlay selection detail
-	IF EXISTS(SELECT 1 FROM bettransm WITH (NOLOCK) WHERE refno = @refno)
+	IF EXISTS (	SELECT 1
+				FROM dbo.bettransm AS bm WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+				WHERE bm.refno = @RefNo)
 	BEGIN
 		INSERT INTO @BetListMP
 		SELECT
@@ -109,26 +124,30 @@ BEGIN
 			b.transdesc
 		FROM 
 			(SELECT
-				transid,
-				bettype,
-				stake,
-				matchid,
-				hdp1,
-				hdp2,
-				odds,
-				betteam,
-				statusid,
-				livehomescore,
-				liveawayscore,
-				liveindicator,
-				betcheck,
-				transdesc
-			FROM dbo.bettransm WITH (NOLOCK)
-			WHERE refno = @refno ) AS b
+				bm.transid,
+				bm.bettype,
+				bm.stake,
+				bm.matchid,
+				bm.hdp1,
+				bm.hdp2,
+				bm.odds,
+				bm.betteam,
+				bm.statusID,
+				bm.livehomescore,
+				bm.liveawayscore,
+				bm.liveindicator,
+				bm.betcheck,
+				bm.transdesc
+			FROM dbo.bettransm AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+			WHERE bm.refno = @refno ) AS b
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
-	IF EXISTS(SELECT 1 FROM bettransm14 WITH (NOLOCK) WHERE refno = @refno)
+	IF EXISTS (	SELECT 1
+				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+				WHERE bm.refno = @RefNo )
 	BEGIN
 		INSERT INTO @BetListMP
 		SELECT
@@ -155,28 +174,30 @@ BEGIN
 			b.transdesc
 		FROM 
 			(SELECT
-				transid,
-				bettype,
-				stake,
-				matchid,
-				hdp1,
-				hdp2,
-				odds,
-				betteam,
-				statusid,
-				livehomescore,
-				liveawayscore,
-				liveindicator,
-				betcheck,
-				transdesc
-			FROM dbo.bettransm14 WITH (NOLOCK)
-			WHERE refno = @refno) AS b
+				bm.transid,
+				bm.bettype,
+				bm.stake,
+				bm.matchid,
+				bm.hdp1,
+				bm.hdp2,
+				bm.odds,
+				bm.betteam,
+				bm.statusID,
+				bm.livehomescore,
+				bm.liveawayscore,
+				bm.liveindicator,
+				bm.betcheck,
+				bm.transdesc
+			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+			WHERE bm.refno = @refno) AS b
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
 	SELECT * FROM @BetListMP
 	ORDER BY TransID DESC
 END
+
 
 
 
