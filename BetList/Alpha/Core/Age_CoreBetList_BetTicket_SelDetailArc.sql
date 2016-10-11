@@ -1,20 +1,19 @@
 USE bodb_archive
 GO
 ALTER PROCEDURE [dbo].[Age_CoreBetList_BetTicket_SelDetailArc]
-(
 	@tempCust	TVP_TicketSportBettype READONLY
-)
 AS
 
 /*
 	Created: Bobby.Nguyen
-	Task : Re-factor core betlist and apply GD product
-	DB: DBARC.bodb_archive
-	Original: 
+	Task : Refactor core betlist and apply GD product
+	DB: DBARC.bodb_Archive
+	Original:
 
 	Revisions:
-		- 20150504@Bobby.Nguyen: Create new SP
+		- 20150504@Bobby: Create new SP
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
+		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 
 	Param's Explanation:
 	
@@ -26,104 +25,112 @@ BEGIN
 	SET NOCOUNT ON;
 	
 	-- CREATE output detail tickets
-	DECLARE @BettransDetail TABLE
-	(
-		refno 				BIGINT
-		, odds 				MONEY
-		, stake 			MONEY
-		, status 			NVARCHAR(10)
-		, apositiontaking	SMALLMONEY
-		, mpositiontaking	SMALLMONEY
-		, spositiontaking	SMALLMONEY
-		, bettype 			SMALLINT
-		, betteam 			NVARCHAR(10)
-		, transdesc			VARCHAR(300)
-	) 
-	IF ( EXISTS (SELECT TOP 1 1 
-				FROM @tempCust c
-				WHERE c.ProductId IN (2, 5, 4, 12)
-		)
-	)
+	DECLARE @BettransDetail TABLE (
+		RefNo				BIGINT
+		, Odds				MONEY
+		, Stake				MONEY
+		, Status			NVARCHAR(10)
+		, APositionTaking	SMALLMONEY
+		, MPositionTaking	SMALLMONEY
+		, SPositionTaking	SMALLMONEY
+		, BetType			SMALLINT
+		, BetTeam			NVARCHAR(10)
+		, TransDesc			VARCHAR(300))
+
+	IF EXISTS (SELECT TOP 1 1 FROM @tempCust WHERE ProductId IN (2, 5, 4, 12))
 	BEGIN
-		INSERT INTO @BettransDetail
-		SELECT 
-			bm.refno 
-			, bm.odds 
-			, bm.stake
-			, bm.status 
-			, bm.apositiontaking
-			, bm.mpositiontaking 
-			, bm.spositiontaking
-			, bm.bettype
-			, bm.betteam  
-			, '''' AS transdesc
-		FROM bodb_archive.dbo.bettransm bm WITH (NOLOCK)
-			INNER JOIN @tempCust b 
-			ON bm.refno		= b.transid
-		WHERE bm.custid		= b.custid
-			AND b.ProductId	= 2
-			
-		UNION ALL
-		SELECT 
-			bm.refno 
-			, bm.odds 
-			, bm.stake
-			, bm.status 
-			, bm.apositiontaking
-			, bm.mpositiontaking 
-			, bm.spositiontaking
-			, bm.bettype
-			, bm.betteam  
-			, '''' AS transdesc
-		FROM bodb_archive.dbo.bettransm bm WITH (NOLOCK)
-			INNER JOIN @tempCust b 
-			ON bm.refno		= b.refno
-		WHERE bm.custid		= b.custid
-			AND b.ProductId	= 5
+		-- Get Sport Bettype Matrix
+		DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
-		-- SELECT bettransg14
+		DECLARE @IsTest BIT = 0
+
+		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+		INSERT INTO @SportBettype
+		SELECT ProductID, BetType, EventType
+		FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+		WHERE ProductID IN (2, 4, 5, 12)
+
+		-- Horse Racing
 		INSERT INTO @BettransDetail
-		SELECT 
-			bg.refno 
-			, bg.odds 
+		SELECT
+			bm.refno
+			, bm.odds
+			, bm.stake
+			, bm.status
+			, bm.apositiontaking
+			, bm.mpositiontaking
+			, bm.spositiontaking
+			, bm.bettype
+			, bm.betteam
+			, '''' AS transdesc
+		FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN @tempCust AS b ON bm.refno = b.transid AND bm.custid = b.custid
+			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+		WHERE b.ProductId = 2 AND sbtm.ProductId = 2
+
+		-- Virtual Sports
+		UNION ALL
+		SELECT
+			bm.refno
+			, bm.odds
+			, bm.stake
+			, bm.status
+			, bm.apositiontaking
+			, bm.mpositiontaking
+			, bm.spositiontaking
+			, bm.bettype
+			, bm.betteam
+			, '''' AS transdesc
+		FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN @tempCust AS b ON bm.refno = b.refno AND bm.custid = b.custid
+			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+		WHERE b.ProductId = 5
+			AND sbtm.ProductId = 5
+			AND sbtm.EventType = 3
+
+		-- Live Casino
+		INSERT INTO @BettransDetail
+		SELECT
+			bg.refno
+			, bg.odds
 			, bg.stake
-			, bg.status 
+			, bg.status
 			, bg.apositiontaking
 			, bg.mpositiontaking 
 			, bg.spositiontaking
 			, bg.bettype
-			, bg.betteam 
+			, bg.betteam
 			, '''' AS transdesc
-		FROM bodb_archive.dbo.bettransg bg WITH (NOLOCK)
-			INNER JOIN @tempCust b
-			ON bg.refno		= b.refno
-		WHERE bg.custid		= b.custid
-			AND b.ProductId	= 4
+		FROM bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
+			INNER JOIN @tempCust AS b ON bg.refno = b.refno AND bg.custid = b.custid
+			INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.bettype
+		WHERE b.ProductId = 4 AND sbtg.ProductID = 4
 
+		-- Gold Deluxe
 		UNION ALL
-		SELECT 
-			bg.refno 
-			, bg.odds 
+		SELECT
+			bg.refno
+			, bg.odds
 			, bg.stake
-			, bg.status 
+			, bg.status
 			, bg.apositiontaking
 			, bg.mpositiontaking 
 			, bg.spositiontaking
 			, bg.bettype
-			, bg.betteam 
+			, bg.betteam
 			, bg.transdesc
-		FROM bodb_archive.dbo.bettransg bg WITH (NOLOCK)
-			INNER JOIN @tempCust b
-			ON bg.refno		= b.transid
-		WHERE bg.custid		= b.custid
-			AND b.ProductId	= 12
+		FROM bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
+			INNER JOIN @tempCust AS b ON bg.refno = b.transid AND bg.custid = b.custid
+			INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.bettype
+		WHERE b.ProductId = 12 AND sbtg.ProductID = 12
 	END
 
 	-- OUTPUT ticket detail
-	SELECT * 
-	FROM @BettransDetail d
-	ORDER BY d.refno DESC
-	
+	SELECT *
+	FROM @BettransDetail
+	ORDER BY RefNo DESC
+
 	RETURN;
 END
 
