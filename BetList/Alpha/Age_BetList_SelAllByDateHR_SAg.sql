@@ -1,104 +1,121 @@
 ﻿
 ALTER PROCEDURE [dbo].[Age_BetList_SelAllByDateHR_SAg]
-	 @CustID int=null, --AgentID  
-	 @Bettype int,    	 
-	 @MatchID int,
-	 @Language varchar(2) = 'E' 
-AS  
+	@CustId		INT			= NULL,		-- AgentID
+	@BetType	INT,
+	@MatchId	INT,
+	@Language	VARCHAR(2)	= 'E'
+AS
+
 /*
-Created: 
-Task : get Horse Racing tickets for Super level
-DB: DB053.bodb02
-Original 
-Revisions:    
-    - 20090406@HanhVu: - remove refno 		
-    - 20090421@[HiepVo]: Include more columns: comm, acomm, scomm, awinlost, mwinlost, swinlost  
-    - 20090505@HiepVo: Change formula of commission		
-    - 20090529@HiepVo:  Get more data from bettransm for HR			   			   
-    - 20090618@AnhPham: Remove 'Customer' table
-    - 20091024@[MinhNguyen]: get modds, finalodds.
-	- 20110307@Lukas: get more sporttype (152, 153)
-	- 20110602@Amy: add more condition to get ticket details for WIN/PLACE (33)
-	- 20120313@Lukas: Modify winlostdate condition to get Aust racing tickets ( cross-date meetings)
-	- 20120927@Sophia: Get comstatus
+	Created:
+	Task: get Horse Racing tickets for Super level
+	DB: DBAGE.bodb02
+	Original 
+	Revisions:
+		- 20090406@HanhVu: Remove refno
+		- 20090421@[HiepVo]: Include more columns: comm, acomm, scomm, awinlost, mwinlost, swinlost  
+		- 20090505@HiepVo: Change formula of commission
+		- 20090529@HiepVo: Get more data from bettransm for HR
+		- 20090618@AnhPham: Remove 'Customer' table
+		- 20091024@[MinhNguyen]: get modds, finalodds.
+		- 20110307@Lukas: get more sporttype (152, 153)
+		- 20110602@Amy: add more condition to get ticket details for WIN/PLACE (33)
+		- 20120313@Lukas: Modify winlostdate condition to get Aust racing tickets ( cross-date meetings)
+		- 20120927@Sophia: Get comstatus
+		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
-SET NOCOUNT ON  
 
-Declare @FromDate datetime, @ToDate datetime
-Select @ToDate = convert(datetime,convert(nvarchar(20), getdate(), 101))
-Select	@FromDate = dateadd(dd,-1,@ToDate),
-		@Todate = dateadd(dd,1,@Todate)
- 
-SELECT
-    b.UserName,
-	l.sporttype,
-	b.bettype,		
-	b.transid,
-	m.matchcode,
-	b.matchid,
-	m.GroupMatch as Race,
-	m.teamID as homeID,
-	0 as awayID,
-	b.hdp1, 
-	b.hdp2,
-	modds,
-	b.odds,
-	b.status,
-	b.stake,
-	(winlost-actual_stake)  winlost,
-	b.awinlost,
-	b.mwinlost,
-	b.swinlost,
-	
-	(playercomm) AS playercomm,
-	(b.comm - b.playercomm) as comm,
-	(b.acomm - b.comm) as acomm ,
-	(b.scomm - b.acomm) as scomm,
-	
-	b.transdate,
-	b.winlostdate,
-	'' as Betteam,    
-	b.apositiontaking,	
-	b.mpositiontaking,	
-	b.spositiontaking,	
-	b.discount as adiscount,
-	b.adiscount as mdiscount,
-	b.sdiscount as sdiscount,
-	m.leagueID,
-	0 as liveindicator , 
-	b.livehomescore, 
-	b.liveawayscore,
-	b.IP, 
-	'' betstatus,
-	CONVERT(BIT,0) as IsNeutral,
-	CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
- FROM  
-  bettrans b with (nolock)
-  inner join outright m with (nolock) on b.matchid=m.orid   
-  inner join League l with (nolock) on m.leagueID=l.leagueID    
- WHERE  
-  b.SRecommend=@CustID
-  AND m.eventdate BETWEEN @FromDate AND @ToDate
-  AND b.MatchId= @MatchID
-  AND b.Bettype= @Bettype  
-
-IF @Bettype = 33 OR @Bettype = 43
 BEGIN
-	--get data from bettransm for bettype 33,43
-	SELECT 
-		BM.refno, 
-		BM.finalodds,
-		BM.odds, 
-		BM.status, 
-		BM.apositiontaking, 
-		BM.mpositiontaking, 
-		BM.spositiontaking,
-		BM.bettype  
-	FROM bettransm BM with (NOLOCK)
-	INNER JOIN bettrans B with (NOLOCK) ON BM.refno = B.transid
-	WHERE B.Bettype = @Bettype AND B.MatchId= @MatchID AND B.SRecommend=@CustID
+	SET NOCOUNT ON
+
+	-- Get Sport Bettype Matrix (support Horse Racing only)
+	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (2, 0, 0, 2, '', '', @IsTest)
+
+	DECLARE @FromDate	DATETIME,
+		@ToDate			DATETIME
+
+	SELECT @ToDate = CONVERT(DATETIME,CONVERT(NVARCHAR(20), GETDATE(), 101))
+
+	SELECT @FromDate = DATEADD(dd, -1, @ToDate),
+		@Todate = DATEADD(dd, 1, @Todate)
+
+	SELECT
+		b.Username,
+		l.sporttype,
+		b.bettype,
+		b.transid,
+		m.matchcode,
+		b.matchid,
+		m.GroupMatch AS Race,
+		m.teamID AS homeID,
+		0 AS awayID,
+		b.hdp1,
+		b.hdp2,
+		b.modds,
+		b.odds,
+		b.status,
+		b.stake,
+		(winlost-actual_stake) AS winlost,
+		b.awinlost,
+		b.mwinlost,
+		b.swinlost,
+		b.playercomm,
+		(b.comm - b.playercomm) AS comm,
+		(b.acomm - b.comm) AS acomm,
+		(b.scomm - b.acomm) AS scomm,
+		b.transdate,
+		b.winlostdate,
+		'' AS Betteam,
+		b.apositiontaking,
+		b.mpositiontaking,
+		b.spositiontaking,
+		b.discount AS adiscount,
+		b.adiscount AS mdiscount,
+		b.sdiscount AS sdiscount,
+		m.leagueID,
+		0 AS liveindicator,
+		b.livehomescore, 
+		b.liveawayscore,
+		b.ip,
+		'' betstatus,
+		CONVERT(BIT,0) AS IsNeutral,
+		CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+	 FROM dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
+		INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
+	 WHERE b.srecommend = @CustId
+		AND m.eventdate BETWEEN @FromDate AND @ToDate
+		AND b.matchid = @MatchId
+		AND b.bettype = @BetType
+
+	-- Get sub tickets
+	IF @Bettype IN (33, 43)
+	BEGIN
+		SELECT
+			bm.refno,
+			bm.finalodds,
+			bm.odds,
+			bm.status,
+			bm.apositiontaking,
+			bm.mpositiontaking,
+			bm.spositiontaking,
+			bm.bettype
+		FROM dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON bm.refno = b.transid
+			INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+		WHERE b.bettype = @BetType
+		AND b.matchid= @MatchId
+		AND b.srecommend = @CustId
+	END
 END
-	
 	
 
 
