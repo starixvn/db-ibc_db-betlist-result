@@ -21,10 +21,22 @@ AS
 		- 20141021@Jim : support to show Sportting Solution data detail 
 		- 20140407@Sophia: Support BetRadar
 		- 20161007@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20161011@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	-- Get Sport Bettype Matrix (support Sportsbook only)
+	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @tmpParlay TABLE (
 		SportType		INT,
@@ -62,7 +74,10 @@ BEGIN
 		OtherInfo			VARCHAR(50)
 	)
 
-	IF EXISTS (SELECT 1 FROM dbo.bettransm WITH (NOLOCK) WHERE refno = @refno)
+	IF EXISTS ( SELECT 1
+				FROM dbo.bettransm AS bm WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+				WHERE bm.refno = @refno)
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -105,16 +120,17 @@ BEGIN
 			ISNULL(mr.isHTCal,0) AS isHTCal,
 			ISNULL(mr.calculate,0) AS calculate,
 			ISNULL(mr.IsPending,0) AS IsPending,
-			bm.Bettype, 
-			bm.Betcheck 
+			bm.Bettype,
+			bm.Betcheck
 		FROM
 			(
 				SELECT
-					matchId,
-					bettype,
-					betcheck
-				FROM dbo.bettransm WITH (NOLOCK)
-				WHERE refno = @refno ) bm
+					bm.matchid,
+					bm.bettype,
+					bm.betcheck
+				FROM dbo.bettransm AS bm WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+				WHERE bm.refno = @refno ) AS bm
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
@@ -144,7 +160,10 @@ BEGIN
 					AND d.ResourceId LIKE F.ResourceID))
 	END
 
-	IF EXISTS (SELECT 1 FROM dbo.bettransm14 WITH (NOLOCK) WHERE refno = @refno)
+	IF EXISTS (	SELECT 1
+				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+				WHERE bm.refno = @refno)
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -192,11 +211,12 @@ BEGIN
 		FROM
 			(
 				SELECT
-					matchId,
-					bettype,
-					betcheck
-				FROM dbo.bettransm14 WITH (NOLOCK)
-				WHERE refno = @refno ) bm
+					bm.matchid,
+					bm.bettype,
+					bm.betcheck
+				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+				WHERE bm.refno = @refno ) bm
 			INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
@@ -226,7 +246,10 @@ BEGIN
 					AND d.ResourceId LIKE F.ResourceID))
 	END
 
-	IF EXISTS (SELECT 1 FROM DBARC.bodb_archive.dbo.BettransM  WITH (NOLOCK) WHERE refno = @refno)
+	IF EXISTS (	SELECT 1
+				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+				WHERE bm.refno = @refno)
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -274,11 +297,12 @@ BEGIN
 		FROM
 			(
 				SELECT
-					matchId,
-					Bettype,
-					Betcheck
-				FROM DBARC.bodb_archive.dbo.BettransM WITH (NOLOCK)
-				WHERE refno = @refno ) AS bm
+					bm.matchid,
+					bm.bettype,
+					bm.betcheck
+				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+				WHERE bm.refno = @refno ) AS bm
 			INNER JOIN DBARC.bodb_archive.dbo.match_BK AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
@@ -292,7 +316,7 @@ BEGIN
 			d.ResultStatusID,
 			d.SettlementStatusID,
 			d.OtherInfo
-		FROM DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
+		FROM DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 			INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS F
 				ON F.Bettype = p.Bettype AND d.ResourceId LIKE F.ResourceID
