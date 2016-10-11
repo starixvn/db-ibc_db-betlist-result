@@ -15,7 +15,7 @@ AS
 	
 	Revisions:
 		- 20151022@Kos: Return more columns to support more detail
-		- 20161010@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
 
 BEGIN

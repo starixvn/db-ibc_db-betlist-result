@@ -35,7 +35,7 @@ AS
 		- 20130404@Daniel (on live version) : fix bug check movebet day in case movebetday = min(matchdate)
 		- 20151210@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160408@Kos: Support Combo Parlay [#Redmine: 55282]
-		- 20161010@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
 
 BEGIN
