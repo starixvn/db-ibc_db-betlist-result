@@ -44,7 +44,7 @@ AS
 	Original: [Lrf_BetList_SelWinLossByDate_Mem]
 
 	Revisions:
-		- 20161005@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 
 	Sample call:
 		DECLARE @p11 INT

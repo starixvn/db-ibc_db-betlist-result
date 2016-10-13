@@ -26,7 +26,7 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160202@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
-		- 20161007@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
 
 BEGIN

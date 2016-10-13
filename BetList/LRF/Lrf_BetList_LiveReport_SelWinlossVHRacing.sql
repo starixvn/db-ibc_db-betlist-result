@@ -30,7 +30,7 @@ AS
 		- 20141111@Winnie: change from LicenseeCust to f_SelLicenseeCust 
 		- 20150126@Winnie: Add base currency GBP 
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
-		- 20161004@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
 
 BEGIN

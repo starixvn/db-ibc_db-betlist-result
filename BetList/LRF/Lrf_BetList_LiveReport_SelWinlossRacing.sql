@@ -38,7 +38,7 @@ AS
 		- 20150414@Winnie: Apply sporttype bettype matrix
 		- 20150511@Jim: use table #SportBettype instead of @SportBettype
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY, sporttype from TINYINT to SMALLINT [Redmine: #48660]
-		- 20161004@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
 
 BEGIN
@@ -547,6 +547,7 @@ BEGIN
 	DROP TABLE #Currency 
 	DROP TABLE #SportBettype
 END
+
 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_LiveReport_SelWinlossRacing] TO [bodbLicenseeNet]

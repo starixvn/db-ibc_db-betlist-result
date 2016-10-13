@@ -97,7 +97,7 @@ AS
 		- 20160201@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160714@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
-		- 20161005@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 
 	Param's Explanation: 
 */

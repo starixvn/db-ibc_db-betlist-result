@@ -57,7 +57,7 @@ AS
 		- 20150128@Winnie: Add base currency GBP
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY, sportstype from TINYINT to SMALLINT [Redmine: #48660]
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
-		- 20161004@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
 
 BEGIN

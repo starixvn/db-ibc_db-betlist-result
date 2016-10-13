@@ -74,7 +74,7 @@ AS
 		- 20160718@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
 		- 20160727@Kos: Support AllBet [#Redmine: 61066]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
-		- 20161007@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 
 	Param's Explanation: 
 		+ @transtype:

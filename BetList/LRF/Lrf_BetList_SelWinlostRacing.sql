@@ -58,7 +58,7 @@ AS
 		- 20150127@Winnie: add base currency GBP
 		- 20150409@Winnie: Apply sport bettype matrix
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
-		- 20161004@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 
 	Param's Explanation:
 */

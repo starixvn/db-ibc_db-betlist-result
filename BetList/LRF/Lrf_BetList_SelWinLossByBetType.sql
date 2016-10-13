@@ -43,7 +43,7 @@ AS
 		- 20160531@Kos: Add sorting function [#Redmine: 58491]
 		- 20160721@Percy: Enhance Performance - using index recommend on bettrans/bettrans14 [RedmineID: #60770]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
-		- 20161005@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 
 	Parameters:
 */
