@@ -6,33 +6,46 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER  PROCEDURE [dbo].[Aff_BetList_SelCombinationParlayDetail]  
-	@UserId 			INT
-	,@Refno 			BIGINT
-	,@TransId 			BIGINT 	= 0
-	,@BetId 			BIGINT 	= 0
-	,@CustId 			INT		= 0
-	,@MoveBetsDay 		SMALLDATETIME
-	,@BalanceUpDay 		SMALLDATETIME
-	,@Outstanding 		MONEY = 0 OUTPUT
-	,@OutstandingUSD 	MONEY = 0 OUTPUT
-	,@OutstandingEUR 	MONEY = 0 OUTPUT
-	,@OutstandingMYR 	MONEY = 0 OUTPUT
-	,@OutstandingGBP	MONEY = 0 OUTPUT
+ALTER PROCEDURE [dbo].[Aff_BetList_SelCombinationParlayDetail]
+	@UserId				INT
+	,@Refno				BIGINT
+	,@TransId			BIGINT			= 0
+	,@BetId				BIGINT			= 0
+	,@CustId			INT				= 0
+	,@MoveBetsDay		SMALLDATETIME
+	,@BalanceUpDay		SMALLDATETIME
+	,@Outstanding		MONEY			= 0 OUTPUT
+	,@OutstandingUSD	MONEY			= 0 OUTPUT
+	,@OutstandingEUR	MONEY			= 0 OUTPUT
+	,@OutstandingMYR	MONEY			= 0 OUTPUT
+	,@OutstandingGBP	MONEY			= 0 OUTPUT
 AS
-/*
-Created:20141017@Bobby.Nguyen
-Task: Get Betlist Parlay by TransID
-DB: DBEXT/bodb02
-Orgiginal: dbo.Lrf_BetList_SelCombinationParlayDetail
 
-Revisions:    
-	- 20141017@Bobby.Nguyen: Initial SP
-	- 20160414@Bobby: #56136 - Support Combo Parlay
+/*
+	Created:20141017@Bobby
+	Task: Get Betlist Parlay by TransID
+	DB: DBEXT.bodb02
+	Orgiginal: dbo.Lrf_BetList_SelCombinationParlayDetail
+
+	Revisions:
+		- 20141017@Bobby: Initial SP
+		- 20160414@Bobby: #56136 - Support Combo Parlay
+		- 20161013@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 */
 
-BEGIN	
+BEGIN
 	SET NOCOUNT ON
+
+	-- Get Sport Bettype Matrix
+	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @currency INT
 	DECLARE
@@ -107,6 +120,7 @@ BEGIN
 		bm.matchdate
 	FROM dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE refno = @refno AND custid = @custid
 
 	UNION
@@ -118,6 +132,7 @@ BEGIN
 		bm.matchdate
 	FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE refno = @refno
 
 	UNION
@@ -129,6 +144,7 @@ BEGIN
 		bm.matchdate
 	FROM DBACC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN DBACC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE refno = @refno
 
 	SELECT	@minMatchdate = MIN(matchdate),
