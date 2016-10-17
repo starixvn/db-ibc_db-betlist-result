@@ -44,6 +44,7 @@ AS
 			+ Apply SportBetTypeMatrix function
 		- 20160623@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20161017@Kos: Support search all AllBet related tickets [#Redmine: 65802]
 */
 
 BEGIN
@@ -3246,6 +3247,169 @@ BEGIN
 				WHERE b.transid = @TransId
 					AND s.ProductID IN (11, 21)
 			END
+		END
+	END
+
+	-- Get AllBet related tickets (same game)
+	IF @WinlostDate IS NOT NULL
+		AND EXISTS (SELECT 1
+					FROM @Data AS b
+						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+					WHERE s.ProductID = 21 AND b.MatchCode <> '')
+	BEGIN
+		IF @WinlostDate > @MoveBetsDay
+		BEGIN
+			INSERT INTO @Data
+			SELECT
+				b.gameID AS BetType,
+				b.transid,
+				0 AS BetId,
+				b.refno,
+				CASE
+					WHEN s.ProductID = 21 THEN b.GameId3rd
+					ELSE ''
+				END AS matchcode,
+				'' AS Race,
+				'' AS eventdate,
+				0 AS virtualrate,
+				0 AS isShowOTExRate,
+				b.sdiscount,
+				b.adiscount,
+				b.discount,
+				0 AS homeid,
+				0 AS awayid,
+				'' AS settleTime,
+				0 AS hdp1,
+				0 AS hdp2,
+				CASE
+					WHEN s.ProductID = 21 THEN b.odds
+					ELSE 0
+				END AS odds,
+				0 AS finalodds,
+				0 AS finalodds2,
+				0 AS OddsType,
+				b.status,
+				'' AS comstatus,
+				b.stake,
+				b.actual_stake,
+				b.transdate,
+				'' AS betteam,
+				b.spositiontaking,
+				b.mpositiontaking,
+				b.apositiontaking,
+				0 AS SPositionTaking2,
+				0 AS MPositionTaking2,
+				0 AS APositionTaking2,
+				0 AS liveindicator,
+				0 AS modds,
+				b.custid,
+				0 AS livehomescore,
+				0 AS liveawayscore,
+				0 AS finalhomescore,
+				0 AS finalawayscore,
+				0 AS leagueid,
+				b.productID AS Sporttype,
+				b.ip,
+				b.betfrom,
+				0 AS MatchId,
+				CONVERT(BIT, 0) AS IsNeutral,
+				(b.winlost - b.actual_stake) AS winlost,
+				b.playercomm AS Commission,
+				(b.scomm - b.acomm) AS scomm,
+				(b.acomm - b.comm) AS acomm,
+				(b.comm - b.playercomm) AS comm,
+				b.awinlost,
+				b.mwinlost,
+				b.swinlost,
+				'' AS showtime,
+				b.winlostdate,
+				b.TranId3rd AS BetCheck,
+				b.transdesc,
+				0 AS OddsSpread
+			FROM dbo.bettransLC AS b WITH (NOLOCK)
+				INNER JOIN @Data AS b1 ON b.custid = b1.CustId AND b.gameID = b1.BetType AND b.GameId3rd = b1.MatchCode
+				INNER JOIN @SportBettype AS s ON s.Bettype = b1.bettype
+			WHERE s.ProductID = 21
+				AND b1.MatchCode <> ''
+				AND b.transid <> @TransId
+		END
+
+		-- bettransLC14
+		ELSE IF @WinlostDate BETWEEN @BalanceUpDay AND @MoveBetsDay
+		BEGIN
+			INSERT INTO @Data
+			SELECT
+				b.gameID AS BetType,
+				b.transid,
+				0 AS BetId,
+				b.refno,
+				CASE
+					WHEN s.ProductID = 21 THEN b.GameId3rd
+					ELSE ''
+				END AS matchcode,
+				'' AS Race,
+				'' AS eventdate,
+				0 AS virtualrate,
+				0 AS isShowOTExRate,
+				b.sdiscount,
+				b.adiscount,
+				b.discount,
+				0 AS homeid,
+				0 AS awayid,
+				'' AS settleTime,
+				0 AS hdp1,
+				0 AS hdp2,
+				CASE
+					WHEN s.ProductID = 21 THEN b.odds
+					ELSE 0
+				END AS odds,
+				0 AS finalodds,
+				0 AS finalodds2,
+				0 AS OddsType,
+				b.status,
+				'' AS comstatus,
+				b.stake,
+				b.actual_stake,
+				b.transdate,
+				'' AS betteam,
+				b.spositiontaking,
+				b.mpositiontaking,
+				b.apositiontaking,
+				0 AS SPositionTaking2,
+				0 AS MPositionTaking2,
+				0 AS APositionTaking2,
+				0 AS liveindicator,
+				0 AS modds,
+				b.custid,
+				0 AS livehomescore,
+				0 AS liveawayscore,
+				0 AS finalhomescore,
+				0 AS finalawayscore,
+				0 AS leagueid,
+				b.productID AS Sporttype,
+				b.ip,
+				b.betfrom,
+				0 AS MatchId,
+				CONVERT(BIT, 0) AS IsNeutral,
+				(b.winlost - b.actual_stake) AS winlost,
+				b.playercomm AS Commission,
+				(b.scomm - b.acomm) AS scomm,
+				(b.acomm - b.comm) AS acomm,
+				(b.comm - b.playercomm) AS comm,
+				b.awinlost,
+				b.mwinlost,
+				b.swinlost,
+				'' AS showtime,
+				b.winlostdate,
+				b.TranId3rd AS BetCheck,
+				b.transdesc,
+				0 AS OddsSpread
+			FROM dbo.bettransLC14 AS b WITH (NOLOCK)
+				INNER JOIN @Data AS b1 ON b.custid = b1.CustId AND b.gameID = b1.BetType AND b.GameId3rd = b1.MatchCode
+				INNER JOIN @SportBettype AS s ON s.Bettype = b1.bettype
+			WHERE s.ProductID = 21
+				AND b1.MatchCode <> ''
+				AND b.transid <> @TransId
 		END
 	END
 
