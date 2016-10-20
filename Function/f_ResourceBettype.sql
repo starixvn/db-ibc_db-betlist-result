@@ -194,19 +194,22 @@ BEGIN
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 1, 'Goals', 424, '424')
-	
+
 	-- 4. Fast Market
-	INSERT INTO @ResourceBettype (Sporttype , ResultGroup , ResultGroupDesc , Bettype , ResourceID)
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 10, 'Fast Market', 221, '221%')
 
-	INSERT INTO @ResourceBettype (Sporttype , ResultGroup , ResultGroupDesc , Bettype , ResourceID)
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 10, 'Fast Market', 222, '222%')
 
-	INSERT INTO @ResourceBettype (Sporttype , ResultGroup , ResultGroupDesc , Bettype , ResourceID)
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 10, 'Fast Market', 223, '223%')
 
-	INSERT INTO @ResourceBettype (Sporttype , ResultGroup , ResultGroupDesc , Bettype , ResourceID)
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 10, 'Fast Market', 224, '224%')
+	
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 10, 'Fast Market', 225, '225%')
 
 	RETURN
 END

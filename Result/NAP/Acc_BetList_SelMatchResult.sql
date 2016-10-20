@@ -41,13 +41,13 @@ BEGIN
 
 		SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '' ), 2)
 
-		IF EXISTS(SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @matchid)
+		IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @matchid)
 		BEGIN
 			SELECT
 				m.sporttype,
 				m.betstatus,
-				hthomescore,
-				htawayscore,
+				m.hthomescore,
+				m.htawayscore,
 				DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP) AS playtime,
 				m.leagueid,
 				m.matchid,
@@ -111,7 +111,8 @@ BEGIN
 					OR d.ResourceID LIKE '221%'
 					OR d.ResourceID LIKE '222%'
 					OR d.ResourceID LIKE '223%'
-					OR d.ResourceID LIKE '224%')
+					OR d.ResourceID LIKE '224%'
+					OR d.ResourceID LIKE '225%')
 				AND (	(@Sporttype = 5
 							AND CASE
 									WHEN @Bettype NOT IN (1324) THEN 2
@@ -131,14 +132,13 @@ BEGIN
 
 			RETURN
 		END
-
-		IF EXISTS(SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @matchid)
+		ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @matchid)
 		BEGIN
 			SELECT
 				m.sporttype,
 				m.betstatus,
-				hthomescore,
-				htawayscore,
+				m.hthomescore,
+				m.htawayscore,
 				DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP) AS playtime,
 				m.leagueid,
 				m.matchid,
@@ -201,7 +201,8 @@ BEGIN
 					OR d.ResourceID LIKE '221%'
 					OR d.ResourceID LIKE '222%'
 					OR d.ResourceID LIKE '223%'
-					OR d.ResourceID LIKE '224%')
+					OR d.ResourceID LIKE '224%'
+					OR d.ResourceID LIKE '225%')
 				AND (	(@Sporttype = 5
 							AND CASE
 									WHEN @Bettype NOT IN (1324) THEN 2
@@ -280,7 +281,8 @@ BEGIN
 					OR d.ResourceID LIKE '221%'
 					OR d.ResourceID LIKE '222%'
 					OR d.ResourceID LIKE '223%'
-					OR d.ResourceID LIKE '224%')
+					OR d.ResourceID LIKE '224%'
+					OR d.ResourceID LIKE '225%')
 				AND (	(@Sporttype = 5
 							AND CASE
 									WHEN @Bettype NOT IN (1324) THEN 2
@@ -304,7 +306,7 @@ BEGIN
 		DECLARE @leagueid	INT,
 			@eventdate		DATETIME
 
-		IF EXISTS(SELECT 1 FROM dbo.outright WITH (NOLOCK) WHERE orid = @matchid)
+		IF EXISTS (SELECT 1 FROM dbo.outright WITH (NOLOCK) WHERE orid = @matchid)
 		BEGIN
 			SELECT @leagueid = leagueid,
 				@eventdate = eventdate
@@ -312,10 +314,10 @@ BEGIN
 			WHERE orid = @matchid
 
 			SELECT
-				matchcode,
-				placing,
+				o.matchcode,
+				o.Placing,
 				l.sporttype,
-				teamid runner,
+				o.teamid runner,
 				o.leagueid,
 				'' EventTime,
 				'' HorseNo,
@@ -327,7 +329,7 @@ BEGIN
 			WHERE o.leagueid = @leagueid
 				AND groupmatch = @RaceNo
 				AND eventdate = @eventdate
-				AND ISNULL(placing,0) <> 0
+				AND ISNULL(placing, 0) <> 0
 			ORDER BY placing
 		
 			SELECT
@@ -343,7 +345,7 @@ BEGIN
 				AND FOddsStatus = 'completed'
 			ORDER BY CAST(matchcode AS TINYINT)
 		END
-		ELSE IF EXISTS( SELECT 1 FROM dbo.outright14 WITH (NOLOCK) WHERE orid = @matchid)
+		ELSE IF EXISTS (SELECT 1 FROM dbo.outright14 WITH (NOLOCK) WHERE orid = @matchid)
 		BEGIN
 			SELECT @leagueid = leagueid,
 				@eventdate = eventdate
@@ -351,10 +353,10 @@ BEGIN
 			WHERE orid = @matchid
 
 			SELECT
-				matchcode,
-				placing,
+				o.matchcode,
+				o.Placing,
 				l.sporttype,
-				teamid runner,
+				o.teamid runner,
 				o.leagueid,
 				'' EventTime,
 				'' HorseNo,
@@ -382,7 +384,7 @@ BEGIN
 				AND FOddsStatus = 'completed'
 			ORDER BY CAST (matchcode AS TINYINT) 
 		END
-		ELSE IF EXISTS( SELECT 1 FROM DBARC.bodb_Archive.dbo.Outright_bk WITH (NOLOCK) WHERE orid = @matchid)
+		ELSE IF EXISTS (SELECT 1 FROM DBARC.bodb_Archive.dbo.Outright_bk WITH (NOLOCK) WHERE orid = @matchid)
 		BEGIN
 			SELECT @leagueid = leagueid,
 				@eventdate = eventdate 
@@ -425,12 +427,12 @@ BEGIN
 		BEGIN
 			SELECT
 				'' matchcode,
-				placing,
+				o.Placing,
 				r.sporttype,
-				RacerID runner,
+				o.RacerID runner,
 				r.leagueid,
 				r.EventTime,
-				RacerNum HorseNo,
+				o.RacerNum HorseNo,
 				o.WinOdds,
 				o.PlaceOdds,
 				o.IsFavor
@@ -449,12 +451,12 @@ BEGIN
 		BEGIN
 			SELECT
 				'' matchcode,
-				placing,
+				o.Placing,
 				r.sporttype,
-				RacerID runner,
+				o.RacerID runner,
 				r.leagueid,
 				r.EventTime,
-				RacerNum HorseNo,
+				o.RacerNum HorseNo,
 				o.WinOdds,
 				o.PlaceOdds,
 				o.IsFavor
