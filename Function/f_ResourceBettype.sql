@@ -10,6 +10,7 @@ AS
 			Store only Bettypes of BetRadar which use Table ResultDetail 
 	DB: DBAGE.bodb02, DBEXT.bodb02
 	Revisions:
+		- 20160505@Kos: Support Fast Market [#Redmine: 56589]
 		- 20160829@Kos: Support PH All In One phase 2b [#Redmine: 62882]
 
 */
@@ -181,7 +182,7 @@ BEGIN
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (5, 1, 'Set X', 156, '0%')
 
-	-- 2. PH All In One phase 2b
+	-- 3. PH All In One phase 2b
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 1, 'Goals', 422, '08')
 
@@ -193,6 +194,19 @@ BEGIN
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 1, 'Goals', 424, '424')
+	
+	-- 4. Fast Market
+	INSERT INTO @ResourceBettype (Sporttype , ResultGroup , ResultGroupDesc , Bettype , ResourceID)
+	VALUES (1, 10, 'Fast Market', 221, '221%')
+
+	INSERT INTO @ResourceBettype (Sporttype , ResultGroup , ResultGroupDesc , Bettype , ResourceID)
+	VALUES (1, 10, 'Fast Market', 222, '222%')
+
+	INSERT INTO @ResourceBettype (Sporttype , ResultGroup , ResultGroupDesc , Bettype , ResourceID)
+	VALUES (1, 10, 'Fast Market', 223, '223%')
+
+	INSERT INTO @ResourceBettype (Sporttype , ResultGroup , ResultGroupDesc , Bettype , ResourceID)
+	VALUES (1, 10, 'Fast Market', 224, '224%')
 
 	RETURN
 END

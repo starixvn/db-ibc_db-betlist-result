@@ -26,6 +26,7 @@ AS
 		- 20130226@Elodie: Show the results of Virtual HR
 		- 20140930@Sophia: Get the detail information of Tennis sport
 		- 20140414@Sophia: Support Bet Radar
+		- 20160504@Kos: Support Fast Market [#Redmine: 56589]
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161031@Kos: Support live score [#Redmine: 66447]
 */
@@ -106,7 +107,11 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F
 					ON F.Bettype = @Bettype AND d.ResourceId LIKE F.ResourceID
 			WHERE d.MatchId = @MatchId
-				AND d.SettlementStatusID > 0
+				AND (d.SettlementStatusID > 0
+					OR d.ResourceID LIKE '221%'
+					OR d.ResourceID LIKE '222%'
+					OR d.ResourceID LIKE '223%'
+					OR d.ResourceID LIKE '224%')
 				AND (	(@Sporttype = 5
 							AND CASE
 									WHEN @Bettype NOT IN (1324) THEN 2
@@ -192,7 +197,11 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS F
 					ON F.Bettype = @Bettype AND d.ResourceId LIKE F.ResourceID
 			WHERE d.MatchId = @MatchId
-				AND d.SettlementStatusID > 0
+				AND (d.SettlementStatusID > 0
+					OR d.ResourceID LIKE '221%'
+					OR d.ResourceID LIKE '222%'
+					OR d.ResourceID LIKE '223%'
+					OR d.ResourceID LIKE '224%')
 				AND (	(@Sporttype = 5
 							AND CASE
 									WHEN @Bettype NOT IN (1324) THEN 2
@@ -267,7 +276,11 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS F
 					ON	F.Bettype = @Bettype AND d.ResourceId LIKE F.ResourceID
 			WHERE d.MatchId = @MatchId
-				AND d.SettlementStatusID > 0
+				AND (d.SettlementStatusID > 0
+					OR d.ResourceID LIKE '221%'
+					OR d.ResourceID LIKE '222%'
+					OR d.ResourceID LIKE '223%'
+					OR d.ResourceID LIKE '224%')
 				AND (	(@Sporttype = 5
 							AND CASE
 									WHEN @Bettype NOT IN (1324) THEN 2
