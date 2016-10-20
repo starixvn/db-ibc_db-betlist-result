@@ -23,6 +23,7 @@ AS
 	Revisions:
 		- 20160623@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
 		- 20160906@Kos: Support AllBet [#Redmine: 61876]
+		- 20161202@Kos: Support Fishing World [#Redmine: 65934]
 */
 
 BEGIN
@@ -55,7 +56,7 @@ BEGIN
 		TransId				BIGINT,
 		BetId				BIGINT,
 		RefNo				NVARCHAR(50),
-		MatchCode			NVARCHAR(50),
+		MatchCode			NVARCHAR(1000),
 		Race				NVARCHAR(20),
 		EventDate			SMALLDATETIME,
 		VirtualRate			FLOAT,
@@ -384,8 +385,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games
-			IF @ProductId = 22
+			-- Macau Games, Fishing World
+			IF @ProductId IN (22, 24)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -395,7 +396,10 @@ BEGIN
 						b.transid,
 						0 AS BetId,
 						b.refno,
-						'' AS MatchCode,
+						CASE
+							WHEN s.productID = 24 THEN b.Additional
+							ELSE ''
+						END AS MatchCode,
 						'' AS Race,
 						'' AS EventDate,
 						0 AS VirtualRate,
@@ -624,8 +628,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games
-			IF @ProductId = 22
+			-- Macau Games, Fishing World
+			IF @ProductId IN (22, 24)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -635,7 +639,10 @@ BEGIN
 						b.transid,
 						0 AS BetId,
 						b.refno,
-						'' AS MatchCode,
+						CASE
+							WHEN s.productID = 24 THEN b.Additional
+							ELSE ''
+						END AS MatchCode,
 						'' AS Race,
 						'' AS EventDate,
 						0 AS VirtualRate,

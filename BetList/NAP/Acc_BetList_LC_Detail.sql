@@ -25,6 +25,7 @@ AS
 		- 20160215@Kos: Support AllBet [#Redmine: 50864]
 		- 20160309@Kos: Support paging
 		- 20160704@Kos: Include Void/Rejected detail ticket in TransType = 1 [Redmine: #59366]
+		- 20161111@Kos: Return currency name
 
 	Parameters:
 		- @TransType
@@ -96,6 +97,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		StatusId		TINYINT,
 		Odds			MONEY,
+		Currency		NVARCHAR(50),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
@@ -118,8 +120,36 @@ BEGIN
 		MatchCode		VARCHAR(50)
 	)
 
+	-- Get currency name
+	DECLARE @CurrencyName	NVARCHAR(50),
+		@WhTicket			TINYINT
+
+	SELECT @CurrencyName = ex.currency,
+		@WhTicket = 1
+	FROM dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+	WHERE b.transid = @RefNo
+
+	IF @CurrencyName IS NULL
+	BEGIN
+		SELECT @CurrencyName = ex.currency,
+			@WhTicket = 2
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+		WHERE b.transid = @RefNo
+
+		IF @CurrencyName IS NULL
+		BEGIN
+			SELECT @CurrencyName = ex.currency,
+				@WhTicket = 3
+			FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+			WHERE b.transid = @RefNo
+		END
+	END
+
 	-- Get ticket
-	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo )
+	IF @WhTicket = 1
 	BEGIN
 		INSERT INTO #Data
 		SELECT
@@ -131,6 +161,7 @@ BEGIN
 			blc.status,
 			blc.statusID,
 			blc.odds,
+			@CurrencyName AS Currency,
 			blc.stake,
 			blc.actual_stake,
 			(blc.winlost - blc.actual_stake) AS WinLost,
@@ -163,7 +194,7 @@ BEGIN
 			AND blc.RefNo = @RefNo
 			AND blc.statusID IN (SELECT statusId FROM @tmpStatus)
 	END
-	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @RefNo )
+	ELSE IF @WhTicket = 2
 	BEGIN
 		INSERT INTO #Data
 		SELECT
@@ -175,6 +206,7 @@ BEGIN
 			blc.status,
 			blc.statusID,
 			blc.odds,
+			@CurrencyName AS Currency,
 			blc.stake,
 			blc.actual_stake,
 			(blc.winlost - blc.actual_stake) AS WinLost,
@@ -205,7 +237,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
 	END
-	ELSE IF EXISTS ( SELECT 1 FROM DBARC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK) WHERE transid = @RefNo )
+	ELSE IF @WhTicket = 3
 	BEGIN
 		INSERT INTO #Data
 		SELECT
@@ -217,6 +249,7 @@ BEGIN
 			blc.status,
 			blc.statusID,
 			blc.odds,
+			@CurrencyName AS Currency,
 			blc.stake,
 			blc.actual_stake,
 			(blc.winlost - blc.actual_stake) AS WinLost,

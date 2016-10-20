@@ -27,6 +27,7 @@ AS
 		- 20160331@Kos: Support Voidbridge [#Redmine: 54925]
 		- 20160426@Kos: Support paging
 		- 20160704@Kos: Include Void/Rejected detail ticket in TransType = 1 [Redmine: #59366]
+		- 20161020@Kos: Support Fishing World [#Redmine: 65934]
 
 	Parameters:
 		- @TransType
@@ -40,6 +41,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix --
+	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -49,7 +51,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (17, 22)					-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge
+	WHERE ProductID IN (17, 22, 24)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
@@ -99,6 +101,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		StatusId		TINYINT,
 		Odds			MONEY,
+		Currency		NVARCHAR(50),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
@@ -118,11 +121,39 @@ BEGIN
 		Ip				NVARCHAR(15),
 		TransDesc		NVARCHAR(300),
 		BetCheck		NVARCHAR(50),
-		MatchCode		VARCHAR(50)
+		MatchCode		VARCHAR(1000)
 	)
 
+	-- Get currency name
+	DECLARE @CurrencyName	NVARCHAR(50),
+		@WhTicket			TINYINT
+
+	SELECT @CurrencyName = ex.currency,
+		@WhTicket = 1
+	FROM dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+	WHERE b.transid = @RefNo
+
+	IF @CurrencyName IS NULL
+	BEGIN
+		SELECT @CurrencyName = ex.currency,
+			@WhTicket = 2
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+		WHERE b.transid = @RefNo
+
+		IF @CurrencyName IS NULL
+		BEGIN
+			SELECT @CurrencyName = ex.currency,
+				@WhTicket = 3
+			FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+			WHERE b.transid = @RefNo
+		END
+	END
+
 	-- Get ticket
-	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo )
+	IF @WhTicket = 1
 	BEGIN
 		INSERT INTO #Data
 		SELECT
@@ -134,6 +165,7 @@ BEGIN
 			brng.status,
 			brng.statusID,
 			brng.odds,
+			@CurrencyName AS Currency,
 			brng.stake,
 			brng.actual_stake,
 			(brng.winlost - brng.actual_stake) AS WinLost,
@@ -153,17 +185,20 @@ BEGIN
 			brng.ip,
 			brng.transdesc,
 			CASE
-				WHEN sbt.productID IN (6, 17, 22) THEN brng.TranId3rd
+				WHEN sbt.productID IN (6, 17, 22, 24) THEN brng.TranId3rd
 				ELSE ''
 			END AS BetCheck,
-			'' AS MatchCode
+			CASE
+				WHEN sbt.productID = 24 THEN brng.Additional
+				ELSE ''
+			END AS MatchCode
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId 
 			AND brng.RefNo = @RefNo
 			AND brng.statusID IN (SELECT statusId FROM @tmpStatus)
 	END
-	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @RefNo )
+	ELSE IF @WhTicket = 2
 	BEGIN
 		INSERT INTO #Data
 		SELECT
@@ -175,6 +210,7 @@ BEGIN
 			brng.status,
 			brng.statusID,
 			brng.odds,
+			@CurrencyName AS Currency,
 			brng.stake,
 			brng.actual_stake,
 			(brng.winlost - brng.actual_stake) AS WinLost,
@@ -194,15 +230,18 @@ BEGIN
 			brng.ip,
 			brng.transdesc,
 			CASE
-				WHEN sbt.productID IN (6, 17, 22) THEN brng.TranId3rd
+				WHEN sbt.productID IN (6, 17, 22, 24) THEN brng.TranId3rd
 				ELSE ''
 			END AS BetCheck,
-			'' AS MatchCode
+			CASE
+				WHEN sbt.productID = 24 THEN brng.Additional
+				ELSE ''
+			END AS MatchCode
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
 	END
-	ELSE IF EXISTS ( SELECT 1 FROM DBARC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK) WHERE transid = @RefNo )
+	ELSE IF @WhTicket = 3
 	BEGIN
 		INSERT INTO #Data
 		SELECT
@@ -214,6 +253,7 @@ BEGIN
 			brng.status,
 			brng.statusID,
 			brng.odds,
+			@CurrencyName AS Currency,
 			brng.stake,
 			brng.actual_stake,
 			(brng.winlost - brng.actual_stake) AS WinLost,
@@ -233,10 +273,13 @@ BEGIN
 			brng.ip,
 			brng.transdesc,
 			CASE
-				WHEN sbt.productID IN (6, 17, 22) THEN brng.TranId3rd
+				WHEN sbt.productID IN (6, 17, 22, 24) THEN brng.TranId3rd
 				ELSE ''
 			END AS BetCheck,
-			'' AS MatchCode
+			CASE
+				WHEN sbt.productID = 24 THEN brng.Additional
+				ELSE ''
+			END AS MatchCode
 		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
