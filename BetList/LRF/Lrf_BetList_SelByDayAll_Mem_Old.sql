@@ -851,6 +851,7 @@ BEGIN
 			AND sbtm.ProductID = 2
 	END
 
+	-- Live Casino
 	IF EXISTS (	SELECT 1
 				FROM @Data AS b
 					INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
@@ -878,26 +879,7 @@ BEGIN
 			AND sbtg.ProductID = 4
 	END
 
-		-- Live Casino
-		UNION ALL
-		SELECT
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			bg.status,
-			bg.apositiontaking,
-			bg.bettype,
-			bg.betteam,
-			bg.stake * e.EUR,
-			bg.stake * e.USD,
-			bg.stake * e.GBP
-		FROM bodb_archive.dbo.bettransG AS bg WITH (NOLOCK)
-			INNER JOIN @Data AS b ON bg.refno = b.refno AND bg.custID = @CustID
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE sbt.ProductID = 4 AND sbt.EventType = 1
-
-		-- Virtual Sports
+	-- Virtual Sports
 	IF EXISTS (	SELECT 1
 				FROM @Data AS b
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
