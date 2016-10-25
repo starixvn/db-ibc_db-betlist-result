@@ -113,7 +113,9 @@ BEGIN
 			comm,
 			ISNULL(oddsspread, 0) AS OddsSpread
 		FROM dbo.bettransm WITH (NOLOCK)
-		WHERE refno = @RefNo AND custid = @CustId
+		WHERE refno = @RefNo
+			AND custid = @CustId
+			AND bettype BETWEEN 18001 AND 18006
 
 		UNION
 
@@ -129,6 +131,7 @@ BEGIN
 			ISNULL(oddsspread, 0) AS OddsSpread
 		FROM dbo.bettransm14 WITH (NOLOCK)
 		WHERE refno = @RefNo
+			AND bettype BETWEEN 18001 AND 18006
 	
 		UNION 
 	
@@ -144,6 +147,7 @@ BEGIN
 			ISNULL(oddsspread, 0) AS OddsSpread
 		FROM DBARC.bodb_archive.dbo.bettransm WITH (NOLOCK)
 		WHERE refno = @RefNo
+			AND bettype BETWEEN 18001 AND 18006
 	END
 
 	SELECT
