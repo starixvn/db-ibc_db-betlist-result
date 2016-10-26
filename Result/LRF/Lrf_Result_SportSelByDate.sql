@@ -7,8 +7,9 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_Result_SportSelByDate]
-	@EventDate	DATETIME,
-	@LicenseeId	INT
+	@EventDate		DATETIME,
+	@MoveBetsDay	DATETIME,
+	@LicenseeId		INT
 AS
 
 /*
@@ -33,6 +34,7 @@ AS
 		- 20150416@Sophia: Condition of showing Running match different between Sporting solution and BetRadar
 		- 20150810@Sophia: Hardcode to exclude ResultDetail of bettype 216, 217 for a temporary time [#40991]
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20161026@Kos: Separate bettrans and bettrans14 range, exclude Fast Market result [#Redmine: 56589]
 
 	Sample test case:
 		exec Lrf_Result_SportSelByDate @EventDate='2013-10-06 00:00:00',@licenseeid=1
@@ -41,139 +43,149 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @toDate		DATETIME,
-		@matchcode	VARCHAR(10) --HRDummy
-
-	SELECT @toDate = DATEADD(s,-1, DATEADD(d, 1, @EventDate))
-
 	SELECT DISTINCT ProductID
 	INTO #LicenseeProduct
 	FROM bodb_licensee.dbo.LicenseeProduct3rd WITH (NOLOCK)
-	WHERE licenseeID = @LicenseeID
+	WHERE licenseeID = @LicenseeId
 
-	DECLARE @LicenseeProduct AS TABLE (SportID INT)
+	DECLARE @Sport AS TABLE (SportType INT)
 
-	IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 1)	-- Racing
-	BEGIN 
-		INSERT INTO @LicenseeProduct
-		SELECT 151
-	END
-
-	IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 2)	-- Number Game
-	BEGIN 
-		INSERT INTO @LicenseeProduct
-		SELECT 161
-	END
-
-	IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 4)	-- LIve Casino
-	BEGIN 
-		INSERT INTO @LicenseeProduct
-		SELECT 162
-	END
-
-	IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 5)	-- Virtual Sports
+	IF @EventDate > @MoveBetsDay
 	BEGIN
-		INSERT INTO @LicenseeProduct
-		SELECT 180 UNION ALL
-		SELECT 181 UNION ALL
-		SELECT 183 UNION ALL
-		SELECT 185 UNION ALL
-		SELECT 186
+		-- Sportsbook, Number Game, Live Casino, Virtual Sports
+		INSERT INTO @Sport
+		SELECT DISTINCT m.sporttype
+		FROM dbo.match AS m WITH (NOLOCK)
+			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetail WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+				) AS ss ON m.matchid = ss.MatchID AND m.sporttype = 5
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetail WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+						AND ResourceID NOT IN ('00', '01', '08')
+						AND ResourceID NOT LIKE '217%'
+						AND ResourceID NOT LIKE '216%'
+						AND ResourceID NOT LIKE '221%'
+						AND ResourceID NOT LIKE '222%'
+						AND ResourceID NOT LIKE '223%'
+						AND ResourceID NOT LIKE '224%'
+						AND ResourceID NOT LIKE '225%'
+				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
+		WHERE eventdate = @EventDate
+			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
+				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
+				OR (mr.IsHTCal = 1 AND m.eventstatus ='running')
+				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution show running Match but settled least one type
+				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running'))  -- condition for BetRadar show running Match but settled least one type
+
+		-- Horse Racing
+		IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 1)
+		BEGIN
+			INSERT INTO @Sport
+			SELECT DISTINCT l.sporttype
+			FROM dbo.league AS l WITH (NOLOCK)
+				INNER JOIN (
+						SELECT DISTINCT leagueid
+						FROM dbo.outright WITH (NOLOCK)
+						WHERE eventdate = @EventDate AND oddsstatus = 'completed'
+					) AS o ON o.leagueid = l.leagueid
+			WHERE l.sporttype = 151
+		END
+
+		-- Virtual Sports
+		IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 5)
+		BEGIN
+			INSERT INTO @Sport
+			SELECT DISTINCT l.sporttype
+			FROM dbo.league AS l WITH (NOLOCK)
+				INNER JOIN (
+					SELECT DISTINCT vsr.LeagueID
+					FROM dbo.VSOutright AS vso WITH (NOLOCK)
+						INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
+					WHERE vso.eventdate = @EventDate AND vsr.eventstatus = 'completed'
+					) AS o ON o.leagueid = l.leagueid
+			WHERE l.sporttype IN (181, 183, 185)
+		END
+	END
+	ELSE
+	BEGIN
+		-- Sportsbook, Number Game, Live Casino, Virtual Sports
+		INSERT INTO @Sport
+		SELECT DISTINCT m.sporttype
+		FROM dbo.match14 AS m WITH (NOLOCK)
+			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetail14 WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+				) AS ss ON m.matchid = ss.MatchID AND m.sporttype = 5
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetail14 WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+						AND ResourceID NOT IN ('00', '01', '08')
+						AND ResourceID NOT LIKE '217%'
+						AND ResourceID NOT LIKE '216%'
+						AND ResourceID NOT LIKE '221%'
+						AND ResourceID NOT LIKE '222%'
+						AND ResourceID NOT LIKE '223%'
+						AND ResourceID NOT LIKE '224%'
+						AND ResourceID NOT LIKE '225%'
+				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
+		WHERE eventdate = @EventDate
+			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
+				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
+				OR (mr.IsHTCal = 1 AND m.eventstatus ='running')
+				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution show running Match but settled least one type
+				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar show running Match but settled least one type
+
+		-- Horse Racing
+		IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 1)
+		BEGIN
+			INSERT INTO @Sport
+			SELECT DISTINCT l.sporttype
+			FROM dbo.league AS l WITH (NOLOCK)
+				INNER JOIN (
+						SELECT DISTINCT leagueid
+						FROM dbo.outright14 WITH (NOLOCK)
+						WHERE eventdate = @EventDate AND oddsstatus = 'completed'
+					) AS o ON o.leagueid = l.leagueid
+			WHERE l.sporttype = 151
+		END
+
+		-- Virtual Sports
+		IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 5)
+		BEGIN
+			INSERT INTO @Sport
+			SELECT DISTINCT l.sporttype
+			FROM dbo.league AS l WITH (NOLOCK)
+				INNER JOIN (
+					SELECT DISTINCT vsr.LeagueID
+					FROM dbo.VSOutright14 AS vso WITH (NOLOCK)
+						INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
+					WHERE vso.eventdate = @EventDate AND vsr.eventstatus = 'completed'
+					) AS o ON o.leagueid = l.leagueid
+			WHERE l.sporttype IN (181, 183, 185)
+		END
 	END
 
-	IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 6)	-- RNG Casino
-	BEGIN 
-		INSERT INTO @LicenseeProduct
-		SELECT 251
-	END
+	SELECT DISTINCT SportType,
+		SportName
+	FROM dbo.Sports WITH (NOLOCK)
+	WHERE SportType IN (SELECT SportType FROM @Sport)
+		AND (SportType <> 161 OR EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 2))
+		AND (SportType <> 162 OR EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 4))
+	ORDER BY SportType,
+		SportName
 
-	IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 7)	-- Bingo
-	BEGIN 
-		INSERT INTO @LicenseeProduct
-		SELECT 252
-	END
-
-	SELECT DISTINCT sports.sporttype,
-		sportname
-	FROM sports WITH (NOLOCK)
-		INNER JOIN (
-			SELECT matchid, eventdate, eventstatus, sporttype 
-			FROM dbo.match WITH (NOLOCK)
-			UNION ALL
-			SELECT matchid, eventdate, eventstatus, sporttype 
-			FROM dbo.match14 WITH (NOLOCK)
-			UNION ALL 
-			SELECT vso.EventID AS matchid, vso.EventDate, vso.EventStatus, vsr.Sporttype
-			FROM dbo.VSOutright AS vso WITH (NOLOCK)
-				INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
-			UNION ALL 
-			SELECT vso14.EventID AS matchid, vso14.EventDate, vso14.EventStatus, vsr.Sporttype
-			FROM dbo.VSOutright14 AS vso14 WITH (NOLOCK)
-				INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso14.EventID = vsr.EventID
-			) match ON match.sporttype = sports.sporttype
-		LEFT JOIN dbo.match_remark mr ON match.matchid = mr.matchid
-		LEFT JOIN (
-			SELECT DISTINCT MatchID
-			FROM dbo.ResultDetail R WITH (NOLOCK)
-			WHERE SettlementStatusID > 0
-			UNION ALL
-			SELECT DISTINCT MatchID
-			FROM dbo.ResultDetail14 R WITH (NOLOCK)
-			WHERE SettlementStatusID > 0
-			) SS ON match.Matchid = SS.MatchId AND Match.sporttype = 5
-		LEFT JOIN (
-			SELECT DISTINCT MatchID
-			FROM dbo.ResultDetail WITH (NOLOCK)
-			WHERE SettlementStatusID > 0
-				AND (ResourceID NOT IN ('00', '01', '08')
-					OR (ResourceID = '08'
-						AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-				AND ResourceID NOT LIKE '217%'
-				AND ResourceID NOT LIKE '216%'
-			UNION ALL
-			SELECT DISTINCT MatchID
-			FROM dbo.ResultDetail14 WITH (NOLOCK)
-			WHERE SettlementStatusID > 0
-				AND (ResourceID NOT IN ('00', '01', '08')
-					OR (ResourceID = '08'
-						AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-				AND ResourceID NOT LIKE '217%'
-				AND ResourceID NOT LIKE '216%'
-			) BR ON match.Matchid = BR.MatchId AND Match.sporttype = 1
-	WHERE
-		match.eventdate >= @EventDate
-		AND match.eventdate <= @toDate
-		AND (match.sporttype < 100
-			OR match.sporttype IN (SELECT SportID FROM @LicenseeProduct)
-			OR match.sporttype = 154)
-		AND ( match.eventstatus NOT IN ('internal','closed','running')
-			OR ( mr.IsPending = 1 AND match.eventstatus IN ('running','closed') )
-			OR ( mr.IsHTCal = 1 AND match.eventstatus ='running')
-			OR ( ISNULL(SS.MatchID, 0) <> 0 AND match.eventstatus = 'running')  --- condition for Sportting Solution show running Match but settled least one type
-			OR ( ISNULL(BR.MatchID, 0) <> 0 AND match.eventstatus = 'running'))  --- condition for BetRadar show running Match but settled least one type
-	UNION ALL
-	SELECT s.sporttype,
-		s.sportname
-	FROM (
-		SELECT ROW_NUMBER() OVER (PARTITION BY sporttype ORDER BY l.leagueid) AS RowNumber, l.sporttype, l.leagueid
-		FROM dbo.league l WITH (NOLOCK)
-			INNER JOIN (
-				SELECT leagueid, oddsstatus, eventdate
-				FROM dbo.outright WITH (NOLOCK)
-				WHERE eventdate >= @EventDate AND eventdate <= @toDate
-				UNION ALL
-				SELECT leagueid, oddsstatus, eventdate
-				FROM dbo.outright14 WITH (NOLOCK)
-				WHERE eventdate >= @EventDate AND eventdate <= @toDate
-				) o ON o.leagueid = l.leagueid
-		  WHERE l.sporttype BETWEEN 151 AND 153 AND o.oddsstatus = 'completed'
-		) t 
-		INNER JOIN sports s WITH (NOLOCK) ON t.sporttype = s.sporttype
-		INNER JOIN @LicenseeProduct lp ON lp.sportID = s.sporttype
-	WHERE t.RowNumber < 2
-	ORDER BY sports.sporttype,
-		sports.sportname
+	DROP TABLE #LicenseeProduct
 END
+
+
 
 GO
 GRANT EXECUTE ON [dbo].Lrf_Result_SportSelByDate TO [bodbLicenseeNet]
