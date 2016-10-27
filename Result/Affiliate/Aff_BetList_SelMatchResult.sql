@@ -24,6 +24,7 @@ AS
 		- 20150302@Bobby: Support for showing Virtual Horse Racing bettype
 		- 20150415@Bobby: Support for new 60 bettypes betradar
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20161027@Kos: Support Fast Market [#Redmine: 56589]
 		- 20161031@Kos: Support live score [#Redmine: 66447]
 */
 
@@ -37,7 +38,7 @@ BEGIN
 
 		SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20),@BetId), '8', '' ),2)
 
-		IF EXISTS(SELECT 1 FROM dbo.[match] WITH (NOLOCK) WHERE matchid = @matchid)
+		IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)
 		BEGIN
 			SELECT
 				m.sporttype,
@@ -64,7 +65,7 @@ BEGIN
 				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
-						CASE ISNULL(D.SettlementStatusID, 0)
+						CASE ISNULL(d.SettlementStatusID, 0)
 							WHEN 1 THEN 'Refund' 
 							WHEN 2 THEN 'Refund HT'
 							WHEN 3 THEN 'Refund FT'
@@ -88,47 +89,51 @@ BEGIN
 				m.showtime
 				,m.homeid2
 				,m.awayid2
-			FROM dbo.match m WITH(NOLOCK)
-				LEFT OUTER JOIN dbo.match_remark mr WITH(NOLOCK) ON m.matchid = mr.matchid
-				LEFT JOIN dbo.ResultDetail D WITH (NOLOCK) 
-					ON D.matchID = M.MatchID AND D.ResourceId = '00'
-			WHERE m.matchid = @matchid
-			ORDER BY m.eventdate
-				, m.matchcode
+			FROM dbo.match AS m WITH (NOLOCK)
+				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+				LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) 
+					ON d.MatchID = m.matchid AND d.ResourceId = '00'
+			WHERE m.matchid = @MatchId
+			ORDER BY m.eventdate,
+				m.matchcode
 
 			-- set sporttype
 			SELECT @Sporttype = Sporttype
-			FROM dbo.match WITH(NOLOCK)
-			WHERE matchid = @matchid
+			FROM dbo.match WITH (NOLOCK)
+			WHERE matchid = @MatchId
 			
 			SELECT
-				D.MatchId,
-				D.ResourceId,
-				D.HomeValue,
-				D.AwayValue,
-				D.ResultStatusID,
-				D.SettlementStatusID,
-				D.OtherInfo
-			FROM dbo.ResultDetail D WITH (NOLOCK)
-				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F
-					ON	F.Bettype = @Bettype AND D.ResourceId LIKE F.ResourceID
-			WHERE D.MatchId = @MatchId
-				AND D.SettlementStatusID > 0
-				AND (	(@Sporttype = 5
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetail AS d WITH (NOLOCK)
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS F
+					ON	F.Bettype = @Bettype AND d.ResourceId LIKE F.ResourceID
+			WHERE d.MatchID = @MatchId
+				AND (d.SettlementStatusID > 0
+					OR d.ResourceID LIKE '221%'
+					OR d.ResourceID LIKE '222%'
+					OR d.ResourceID LIKE '223%'
+					OR d.ResourceID LIKE '224%'
+					OR d.ResourceID LIKE '225%')
+				AND ((@Sporttype = 5
 							AND CASE WHEN @Bettype NOT IN (1324) THEN 2 ELSE 
-									CASE WHEN @Bettype IN (1324) AND LEFT(D.ResourceId,2) = @ResourceId THEN 4 
-										ELSE 0 END END = LEN(D.ResourceId))
-						OR 
-						(@Sporttype = 1
-							AND (d.ResourceId NOT IN ('00', '01', '08')
-								OR (d.ResourceId = '08'
-									AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-							AND D.ResourceId LIKE F.ResourceID))
+									CASE WHEN @Bettype IN (1324) AND LEFT(d.ResourceId,2) = @ResourceId THEN 4 
+										ELSE 0 END END = LEN(d.ResourceId))
+					OR (@Sporttype = 1
+						AND (d.ResourceId NOT IN ('00', '01', '08')
+							OR (d.ResourceId = '08'
+								AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+						AND d.ResourceId LIKE F.ResourceID))
 			ORDER BY ResourceId
 
 			RETURN
 		END
-		IF EXISTS(SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @matchid)
+		ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)
 		BEGIN
 			SELECT
 				m.sporttype,
@@ -140,7 +145,7 @@ BEGIN
 					ELSE DATEDIFF(MINUTE, m.GlobalShowTime, CURRENT_TIMESTAMP)
 				END playtime,
 				m.LeagueID,
-				m.matchid, 
+				m.matchid,
 				m.homeID,
 				m.awayID,
 				m.matchcode,
@@ -155,7 +160,7 @@ BEGIN
 				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
-						CASE ISNULL(D.SettlementStatusID,0)
+						CASE ISNULL(d.SettlementStatusID,0)
 							WHEN 1 THEN 'Refund' 
 							WHEN 2 THEN 'Refund HT'
 							WHEN 3 THEN 'Refund FT'
@@ -170,7 +175,7 @@ BEGIN
 						END
 				END AS eventstatus,
 				ISNULL(mr.refund, 0) IsRefund,
-				ISNULL(mr.calrefund,0) IsCalRefund,
+				ISNULL(mr.calrefund, 0) IsCalRefund,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				m.goalrecord,
 				ISNULL(mr.IsHTCal, 0) AS IsHTCal,
@@ -179,49 +184,53 @@ BEGIN
 				m.showtime,
 				m.homeid2,
 				m.awayid2
-			FROM dbo.match14 AS m WITH(NOLOCK)
-				LEFT OUTER JOIN dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
-				LEFT JOIN dbo.ResultDetail14 AS D WITH (NOLOCK)
-					ON D.matchID = M.MatchID AND D.ResourceId = '00'
-			WHERE m.matchid = @matchid
+			FROM dbo.match14 AS m WITH (NOLOCK)
+				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+				LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK)
+					ON d.MatchID = m.matchid AND d.ResourceId = '00'
+			WHERE m.matchid = @MatchId
 			ORDER BY m.eventdate
 				, m.matchcode
 			
 			-- set sporttype
-			SELECT @Sporttype = Sporttype 
-			FROM dbo.match14 m WITH(NOLOCK) 
-			WHERE m.matchid = @matchid
+			SELECT @Sporttype = Sporttype
+			FROM dbo.match14 WITH (NOLOCK)
+			WHERE matchid = @MatchId
 			
 			SELECT
-				D.MatchId,
-				D.ResourceId,
-				D.HomeValue,
-				D.AwayValue,
-				D.ResultStatusID,
-				D.SettlementStatusID,
-				D.OtherInfo
-			FROM dbo.ResultDetail14 D WITH (NOLOCK)
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F
-					ON F.Bettype = @Bettype AND D.ResourceId LIKE F.ResourceID
-			WHERE	D.MatchId = @MatchId
-				AND D.SettlementStatusID > 0
+					ON F.Bettype = @Bettype AND d.ResourceId LIKE F.ResourceID
+			WHERE D.MatchId = @MatchId
+				AND (d.SettlementStatusID > 0
+					OR d.ResourceID LIKE '221%'
+					OR d.ResourceID LIKE '222%'
+					OR d.ResourceID LIKE '223%'
+					OR d.ResourceID LIKE '224%'
+					OR d.ResourceID LIKE '225%')
 				AND (	(@Sporttype = 5
 							AND CASE WHEN @Bettype NOT IN (1324) THEN 2 ELSE 
-									CASE WHEN @Bettype IN (1324) AND LEFT(D.ResourceId,2) = @ResourceId THEN 4 
-										ELSE 0 END END = LEN(D.ResourceId))
-						OR 
-						(@Sporttype = 1
+									CASE WHEN @Bettype IN (1324) AND LEFT(d.ResourceId,2) = @ResourceId THEN 4 
+										ELSE 0 END END = LEN(d.ResourceId))
+						OR (@Sporttype = 1
 							AND (d.ResourceId NOT IN ('00', '01', '08')
 								OR (d.ResourceId = '08'
 									AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-							AND D.ResourceId LIKE F.ResourceID))
+							AND d.ResourceId LIKE F.ResourceID))
 			ORDER BY ResourceId
 
 			RETURN
 		END
 		ELSE
 		BEGIN
-			SELECT 
+			SELECT
 				m.sporttype, 
 				m.betstatus, 
 				hthomescore,
@@ -246,7 +255,7 @@ BEGIN
 				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
-						CASE ISNULL(D.SettlementStatusID,0)	 
+						CASE ISNULL(d.SettlementStatusID,0)	 
 							WHEN 1 THEN 'Refund' 
 							WHEN 2 THEN 'Refund HT'
 							WHEN 3 THEN 'Refund FT'
@@ -270,42 +279,46 @@ BEGIN
 				m.showtime 
 				,m.homeid2
 				,m.awayid2
-			FROM DBARC.bodb_archive.dbo.Match_BK m WITH(NOLOCK)
-				LEFT OUTER JOIN dbo.match_remark mr WITH(NOLOCK) ON m.matchid 	= mr.matchid
-				LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK D WITH (NOLOCK)
-					ON D.matchID 	= M.MatchID AND D.ResourceId = '00'
-			WHERE m.matchid = @matchid
+			FROM DBARC.bodb_archive.dbo.Match_BK AS m WITH(NOLOCK)
+				LEFT OUTER JOIN dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
+				LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
+					ON d.matchID = M.MatchID AND d.ResourceId = '00'
+			WHERE m.matchid = @MatchId
 			ORDER BY m.eventdate
 				, m.matchcode
 
 			-- set sporttype
-			SELECT @Sporttype = Sporttype 
-			FROM DBARC.bodb_archive.dbo.Match_BK m WITH(NOLOCK) 
-			WHERE m.matchid = @matchid
+			SELECT @Sporttype = Sporttype
+			FROM DBARC.bodb_archive.dbo.Match_BK WITH(NOLOCK) 
+			WHERE matchid = @MatchId
 			
 			SELECT
-				D.MatchId,
-				D.ResourceId,
-				D.HomeValue,
-				D.AwayValue,
-				D.ResultStatusID,
-				D.SettlementStatusID,
-				D.OtherInfo
-			FROM DBARC.bodb_archive.dbo.ResultDetail_BK D WITH (NOLOCK)
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F
-					ON F.Bettype = @Bettype AND D.ResourceId LIKE F.ResourceID
-			WHERE D.MatchId = @MatchId
-				AND D.SettlementStatusID > 0
-				AND (	(@Sporttype = 5
+					ON F.Bettype = @Bettype AND d.ResourceId LIKE F.ResourceID
+			WHERE d.MatchId = @MatchId
+				AND (d.SettlementStatusID > 0
+					OR d.ResourceID LIKE '221%'
+					OR d.ResourceID LIKE '222%'
+					OR d.ResourceID LIKE '223%'
+					OR d.ResourceID LIKE '224%'
+					OR d.ResourceID LIKE '225%')
+				AND ((@Sporttype = 5
 							AND CASE WHEN @Bettype NOT IN (1324) THEN 2 ELSE 
-									CASE WHEN @Bettype IN (1324) AND LEFT(D.ResourceId,2) = @ResourceId THEN 4 
-										ELSE 0 END END = LEN(D.ResourceId))
-						OR 
-						(@Sporttype = 1
-							AND (d.ResourceId NOT IN ('00', '01', '08')
-								OR (d.ResourceId = '08'
-									AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-							AND D.ResourceId LIKE F.ResourceID))
+									CASE WHEN @Bettype IN (1324) AND LEFT(d.ResourceId,2) = @ResourceId THEN 4 
+										ELSE 0 END END = LEN(d.ResourceId))
+					OR (@Sporttype = 1
+						AND (d.ResourceId NOT IN ('00', '01', '08')
+							OR (d.ResourceId = '08'
+								AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+						AND d.ResourceId LIKE F.ResourceID))
 			ORDER BY ResourceId
 		END
 	END
@@ -315,27 +328,27 @@ BEGIN
 			, @eventdate	DATETIME;
 			
 		CREATE TABLE #tmpresult (
-			horseNo 		VARCHAR(50)
-			,KickoffTime 	DATETIME
-			,racename 		VARCHAR(50)
-			,place 			TINYINT
-			,sporttype 		INT
-			,horseid 		INT
-			,odds 			SMALLMONEY
-			,PlaceOdds 		SMALLMONEY
-			,meetingid 		INT
-			,oddsstatus 	VARCHAR(10)
-			,IsFavor 		VARCHAR(10)
-			,IsSCR 			BIT
-			,FOddsStatus 	VARCHAR(10)
+			HorseNo		VARCHAR(50),
+			KickOffTime	DATETIME,
+			RaceName	VARCHAR(50),
+			Place		TINYINT,
+			SportType	INT,
+			HorseId		INT,
+			Odds		SMALLMONEY,
+			PlaceOdds	SMALLMONEY,
+			MeetingId	INT,
+			OddsStatus	VARCHAR(10),
+			IsFavor		VARCHAR(10),
+			IsSCR		BIT,
+			FOddsStatus	VARCHAR(10)
 		);
 
-		IF EXISTS (SELECT 1 FROM dbo.outright WITH(NOLOCK) WHERE orid = @matchid)
+		IF EXISTS (SELECT 1 FROM dbo.outright WITH(NOLOCK) WHERE orid = @MatchId)
 		BEGIN
 			SELECT @leagueid = leagueid,
-				@eventdate = eventdate 
-			FROM Outright WITH (NOLOCK)
-			WHERE orid = @matchid 
+				@eventdate = eventdate
+			FROM dbo.outright WITH (NOLOCK)
+			WHERE orid = @MatchId
 
 			INSERT INTO #tmpresult
 			SELECT
@@ -347,25 +360,25 @@ BEGIN
 				o.teamid AS horseid,
 				o.odds,
 				o.placeodds,
-				o.leagueid		AS meetingid,
-				o.oddsstatus	AS [status],
+				o.leagueid AS meetingid,
+				o.oddsstatus AS [status],
 				CONVERT(VARCHAR(10), o.IsFavor) AS IsFavor,
 				o.IsSCR,
 				o.FOddsStatus
-			FROM dbo.Outright o WITH (NOLOCK)
-				INNER JOIN dbo.league l WITH (NOLOCK) ON o.leagueid = l.leagueid
-			WHERE o.leagueid = @leagueid 
+			FROM dbo.outright AS o WITH (NOLOCK)
+				INNER JOIN dbo.league AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+			WHERE o.leagueid = @leagueid
 				AND groupmatch = @RaceNo
-				AND eventdate = @eventdate 
+				AND eventdate = @eventdate
 				AND (ISNULL(placing,0) <> 0 OR isScr = 1)
 			ORDER BY placing
 		END 
-		ELSE IF EXISTS( SELECT 1 FROM dbo.Outright14 WITH (NOLOCK) WHERE orid = @matchid)
+		ELSE IF EXISTS (SELECT 1 FROM dbo.Outright14 WITH (NOLOCK) WHERE orid = @MatchId)
 		BEGIN
 			SELECT @leagueid = leagueid,
 				@eventdate = eventdate 
-			FROM dbo.Outright14 WITH (NOLOCK)
-			WHERE orid = @matchid 
+			FROM dbo.outright14 WITH (NOLOCK)
+			WHERE orid = @MatchId 
 
 			INSERT INTO #tmpresult
 			SELECT
@@ -382,28 +395,28 @@ BEGIN
 				CONVERT(VARCHAR(10),IsFavor) AS IsFavor,
 				o.IsSCR,
 				o.FOddsStatus
-			FROM dbo.Outright14 o WITH (NOLOCK)
-				INNER JOIN dbo.league l WITH(NOLOCK) ON l.leagueid = o.leagueid
+			FROM dbo.Outright14 AS o WITH (NOLOCK)
+				INNER JOIN dbo.league AS l WITH(NOLOCK) ON l.leagueid = o.leagueid
 			WHERE o.leagueid = @leagueid 
 				AND groupmatch = @RaceNo
 				AND eventdate = @eventdate 
 				AND (ISNULL(placing,0) <> 0  OR isScr = 1)
 			ORDER BY placing
 		END 
-		ELSE IF EXISTS( SELECT 1 FROM DBARC.bodb_Archive.dbo.Outright_bk WITH (NOLOCK) WHERE orid = @matchid)
+		ELSE IF EXISTS( SELECT 1 FROM DBARC.bodb_Archive.dbo.Outright_bk WITH (NOLOCK) WHERE orid = @MatchId)
 		BEGIN
 			SELECT @leagueid = leagueid,
 				@eventdate = eventdate 
 			FROM DBARC.bodb_Archive.dbo.Outright_bk WITH (NOLOCK)
-			WHERE orid = @matchid 
+			WHERE orid = @MatchId 
 			
 			INSERT INTO #tmpresult
 			SELECT
-				matchcode AS horseNo, 
+				matchcode AS horseNo,
 				NULL AS KickoffTime,
 				CAST(bk.groupmatch AS INT) AS racename,
 				CASE WHEN placing = 0 THEN 5 ELSE ISNULL(placing,5) END AS place, 
-				l.sporttype, 
+				l.sporttype,
 				teamid horseid,
 				bk.odds,
 				bk.placeodds,
@@ -412,18 +425,18 @@ BEGIN
 				CONVERT(VARCHAR(10),IsFavor) AS IsFavor,
 				bk.IsSCR,
 				bk.FOddsStatus
-			FROM DBARC.bodb_Archive.dbo.Outright_bk bk WITH (NOLOCK)
-				INNER JOIN dbo.league l WITH(NOLOCK) ON l.leagueid = bk.leagueid
-			WHERE bk.leagueid = @leagueid 
+			FROM DBARC.bodb_Archive.dbo.Outright_bk AS bk WITH (NOLOCK)
+				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = bk.leagueid
+			WHERE bk.leagueid = @leagueid
 				AND groupmatch = @RaceNo
-				AND eventdate = @eventdate 
-				AND (ISNULL(placing,0)<> 0  OR isScr = 1)
+				AND eventdate = @eventdate
+				AND (ISNULL(placing, 0)<> 0 OR isScr = 1)
 			ORDER BY placing
 		END
 		-------------------Start Virtual Horse Racing -----------------------------------
-		IF EXISTS(SELECT TOP 1 1 FROM dbo.VSOutright WITH(NOLOCK) WHERE orid = @RaceNo)
+		IF EXISTS (SELECT TOP 1 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE orid = @RaceNo)
 		BEGIN
-			-- Virtual HR 
+			-- Virtual HR
 			INSERT INTO #tmpresult
 			SELECT
 				RacerNum AS horseNo,
@@ -439,12 +452,12 @@ BEGIN
 				o.IsFavor,
 				'' IsSCR,
 				'' FOddsStatus
-			FROM dbo.VSOutright o WITH (NOLOCK)
-				INNER JOIN VSRaceInfo r WITH (NOLOCK) ON r.EventID = o.EventID
+			FROM dbo.VSOutright AS o WITH (NOLOCK)
+				INNER JOIN VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventID = @MatchID AND (ISNULL(placing,0) <> 0)
 			ORDER BY placing
 		END
-		ELSE IF EXISTS(SELECT 1 FROM dbo.VSOutright14 WITH(NOLOCK) WHERE orid = @RaceNo)
+		ELSE IF EXISTS (SELECT 1 FROM dbo.VSOutright14 WITH (NOLOCK) WHERE orid = @RaceNo)
 		BEGIN
 			-- Virtual HR 
 			INSERT INTO #tmpresult 
@@ -462,12 +475,12 @@ BEGIN
 				o.IsFavor,
 				'' IsSCR,
 				'' FOddsStatus
-			FROM VSOutright14 o WITH (NOLOCK)
-				INNER JOIN VSRaceInfo r WITH (NOLOCK) ON r.EventID = o.EventID
+			FROM dbo.VSOutright14 AS o WITH (NOLOCK)
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventID = @MatchID AND (ISNULL(placing,0) <> 0)
 			ORDER BY placing
 		END
-		ELSE 
+		ELSE
 		BEGIN
 			-- Virtual HR 
 			INSERT INTO #tmpresult 
@@ -485,13 +498,13 @@ BEGIN
 				o.IsFavor,
 				'' IsSCR,
 				'' FOddsStatus
-			FROM DBARC.bodb_Archive.dbo.VSOutright_bk o WITH (NOLOCK)
-				INNER JOIN VSRaceInfo r WITH (NOLOCK) ON r.EventID = o.EventID
+			FROM DBARC.bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK)
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventID = @MatchID AND (ISNULL(placing,0) <> 0)
 			ORDER BY placing
 		END
 		-------------------End Virtual Horse Racing -----------------------------------
-		IF EXISTS (SELECT 1 FROM #tmpresult  WHERE sporttype in (151,152,153))
+		IF EXISTS (SELECT 1 FROM #tmpresult WHERE sporttype IN (151, 152, 153))
 		BEGIN 
 			WITH DataSUM AS (
 				SELECT meetingid
@@ -547,7 +560,7 @@ BEGIN
 				,d.racename
 				,d.place
 		END
-		ELSE IF ( EXISTS (SELECT TOP 1 1 FROM  #tmpresult WHERE sporttype IN (181,182,183,184,185)) )
+		ELSE IF EXISTS (SELECT TOP 1 1 FROM #tmpresult WHERE sporttype IN (181, 182, 183, 184, 185))
 		BEGIN 
 			WITH DataSUMVHR AS (
 				SELECT kickofftime
@@ -557,7 +570,7 @@ BEGIN
 			)
 			SELECT
 				d.horseNo,
-				d.KickoffTime,
+				d.KickOffTime,
 				d.racename,
 				d.place,
 				d.sporttype,
@@ -581,18 +594,19 @@ BEGIN
 				,'' TF
 				,'' SCR
 				, d2.rc AS [RowCount]
-			FROm #tmpresult d
-				INNER JOIN DataSUMVHR d2 ON d.kickofftime = d2.kickofftime 
+			FROm #tmpresult AS d
+				INNER JOIN DataSUMVHR AS d2 ON d.kickofftime = d2.kickofftime 
 			WHERE (d.place < 5 AND d.sporttype <> 183) 
 				OR (d.place < 2 AND d.sporttype = 183)
 			ORDER BY meetingid
 				, kickofftime
 				, place
 		END
-		ELSE 
-		BEGIN 
+		ELSE
+		BEGIN
 			SELECT * FROM #tmpresult 
 		END
+
 		DROP TABLE #tmpresult 
 	END
 	RETURN;
