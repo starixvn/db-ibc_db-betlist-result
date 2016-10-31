@@ -30,7 +30,8 @@ AS
 		- 20131010@Kathy: Turn to use GlobalShowTime for display the Kick-off-Time [redmine:#6076] (exclusive LiveCasino)
 		- 20140930@Sophia: Get the detail information of Tennis sport
 		- 20140403@Sophia: Support BetRadar
-		- 201600829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20161031@Kos: Support live score [#Redmine: 66447]
 */
 
 BEGIN
@@ -66,6 +67,8 @@ BEGIN
 				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(D.SettlementStatusID, 0)
@@ -150,6 +153,8 @@ BEGIN
 				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(D.SettlementStatusID, 0)
@@ -236,6 +241,8 @@ BEGIN
 				END kickofftime,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(D.SettlementStatusID,0)	 
