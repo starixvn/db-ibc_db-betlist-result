@@ -24,6 +24,7 @@ AS
 		- 20150302@Bobby: Support for showing Virtual Horse Racing bettype
 		- 20150415@Bobby: Support for new 60 bettypes betradar
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20161031@Kos: Support live score [#Redmine: 66447]
 */
 
 BEGIN
@@ -59,6 +60,8 @@ BEGIN
 				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(D.SettlementStatusID, 0)
@@ -148,6 +151,8 @@ BEGIN
 				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(D.SettlementStatusID,0)
@@ -237,6 +242,8 @@ BEGIN
 				END kickofftime,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(D.SettlementStatusID,0)	 
