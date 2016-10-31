@@ -26,7 +26,8 @@ AS
 		- 20130226@Elodie: Show the results of Virtual HR
 		- 20140930@Sophia: Get the detail information of Tennis sport
 		- 20140414@Sophia: Support Bet Radar
-		- 201600829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20161031@Kos: Support live score [#Redmine: 66447]
 */
 
 BEGIN
@@ -56,6 +57,8 @@ BEGIN
 				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(d.SettlementStatusID, 0)
@@ -141,6 +144,8 @@ BEGIN
 				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.sporttype
 					WHEN 5 THEN
 						CASE ISNULL(d.SettlementStatusID, 0)
@@ -224,6 +229,8 @@ BEGIN
 				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE
 					WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT'
 					WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
