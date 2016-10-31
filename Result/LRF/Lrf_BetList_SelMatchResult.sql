@@ -35,6 +35,7 @@ AS
 		- 20141021@Jim : support to show Sportting Solution data detail 
 		- 20140403@Sophia: Support BetRadar
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20161031@Kos: Support live score [#Redmine: 66447]
 
 		*******************
 		sample test case:
@@ -75,6 +76,8 @@ BEGIN
 				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(D.SettlementStatusID,0)
@@ -164,6 +167,8 @@ BEGIN
 				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(D.SettlementStatusID,0)
@@ -250,6 +255,8 @@ BEGIN
 				END kickofftime,
 				m.finalhomescore,
 				m.finalawayscore,
+				m.livehomescore,
+				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(D.SettlementStatusID,0)	 
@@ -604,6 +611,7 @@ BEGIN
 		DROP TABLE #tmpresult 
 	END
 END
+
  
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResult] TO [bodbLicenseeNet]
