@@ -32,6 +32,7 @@ AS
 		- 20160401@Kos: Support Voidbridge [#Redmine: 54643]
 		- 20160411@Kos: Support Combo Parlay [Redmine: #55282]
 		- 20160812@Kos: Support NG2
+		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
 
 	
 	Param's Explanation:
@@ -52,8 +53,9 @@ BEGIN
 		- Gold Deluxe			: ProductID = 12
 		- Cockfighting			: ProductID = 19
 		- AllBet				: ProductId = 21
-		- Voidbridge			: ProductId = 22
+		- Macau Games			: ProductId = 22
 		- NG2					: ProductId = 23
+		- Fishing World			: ProductId = 24
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -77,6 +79,7 @@ BEGIN
 			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2581 AND 2619 THEN 215
 			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
+			WHEN c.ProductId = 24 THEN 219
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
@@ -173,7 +176,7 @@ BEGIN
 		END AS comstatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
-			WHEN c.ProductId IN (19, 22, 23) THEN b.transdesc
+			WHEN c.ProductId IN (19, 22, 23, 24) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, 0 AS OddsSpread
@@ -486,6 +489,7 @@ BEGIN
 
 	RETURN
 END
+
 
 
 

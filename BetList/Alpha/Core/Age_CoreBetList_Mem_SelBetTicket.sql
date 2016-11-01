@@ -51,8 +51,9 @@ AS
 		- 20160217@Kos: Support AllBet [Redmine: #50864]
 		- 20160323@Kos: Hotfix - Colossus Bet Grand Prize ticket in bettrans14 [#Redmine: 54643]
 		- 20160328@Kos: Support Grand Prize ticket which status is Expired
-		- 20160404@Kos: Support Voidbridge [Redmine: #54925]
+		- 20160404@Kos: Support Macau Games [Redmine: #54925]
 		- 20160518@Francis: Use local variables to avoid bad parameter sniffing
+		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -85,13 +86,6 @@ BEGIN
 		FROM bodb02.dbo.bettrans14 WITH (NOLOCK)
 	END
 
-	-- CHECK for BalanceupDay
-	IF @BalanceupDay IS NULL
-	BEGIN
-		SELECT @BalanceupDay = MIN(Winlostdate)
-		FROM bodb02.dbo.bettrans14 WITH (NOLOCK)
-	END
-
 	-- RESTET output
 	SELECT @TotalRows	= 0
 		,@Error			= 0
@@ -100,22 +94,19 @@ BEGIN
 	-- CHECK member info
 	IF @CustID IS NULL AND @UserName IS NOT NULL
 	BEGIN
-		SELECT @CustID = CustID
-			, @Recommend = Recommend 
+		SELECT @CustID = custid
+			, @Recommend = recommend
 		FROM bodb02.dbo.custinfo WITH (NOLOCK)
 		WHERE UserName = @UserName
 	END
 
-	IF( @CustID > 0
-		AND (@Recommend IS NULL 
-			OR @UserName IS NULL
-		)
-	)
+	IF @CustID > 0
+		AND (@Recommend IS NULL OR @UserName IS NULL)
 	BEGIN
 		SELECT @Recommend = Recommend 
 			,@UserName = UserName
 		FROM bodb02.dbo.custinfo WITH (NOLOCK)
-		WHERE CustID = @CustID
+		WHERE custid = @CustID
 	END
 
 	IF @Recommend IS NULL
@@ -153,9 +144,9 @@ BEGIN
 				, b.bettype
 				, bt.EventType
 				, 1 AS WhTicket
-			FROM bodb02.dbo.bettrans b WITH (NOLOCK)
-				INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
-				INNER JOIN @TransStatus stt ON b.statusid = stt.statusid
+			FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 			WHERE b.winlostdate BETWEEN @fromdate AND @todate 
 				AND b.recommend = @Recommend 
 				AND b.custid = @CustID
@@ -163,7 +154,7 @@ BEGIN
 				AND ( bt.SubProduct NOT IN ('MG-SuperLive') 
 					OR ( bt.SubProduct IN ('MG-SuperLive') AND b.StatusId NOT IN (0, 1) )
 				)
-				AND ((bt.ProductId NOT IN (21, 22)		-- not yesterday and today AllBet, RNG Casino Single Wallet, Voidbridge
+				AND ((bt.ProductId NOT IN (21, 22, 24)		-- not yesterday and today AllBet, RNG Casino Single Wallet, Macau Games, Fishing World
 					AND (bt.ProductId <> 6 OR bt.SubProduct = ''))
 						OR b.winlostdate < @Yesterday)
 
@@ -174,7 +165,7 @@ BEGIN
 				- Cockfighting	: ProductId = 19
 				- Sportsbook	: Metric Gaming bettype(801-899)
 			*/
-			IF EXISTS(SELECT TOP 1 1 FROM @TransStatus WHERE StatusId IN (0, 1))
+			IF EXISTS (SELECT TOP 1 1 FROM @TransStatus WHERE StatusId IN (0, 1))
 			BEGIN
 				INSERT INTO @tempCust (
 					TransID
@@ -193,8 +184,8 @@ BEGIN
 					, bt.EventType
 					, 0 AS WhTicket
 				FROM bodb02.dbo.translog AS b WITH (NOLOCK)
-					INNER JOIN @BettypeMatrix bt ON b.gameid = bt.Bettype
-					INNER JOIN @TransStatus st ON b.statusID = st.StatusID
+					INNER JOIN @BettypeMatrix AS bt ON b.gameid = bt.Bettype
+					INNER JOIN @TransStatus AS st ON b.statusID = st.StatusID
 				WHERE b.winlostdate BETWEEN @fromdate AND @todate 
 					AND b.custid = @CustID
 					AND	(bt.ProductId IN (8, 12, 15, 19)
@@ -207,7 +198,8 @@ BEGIN
 				Yesterday and today RNG Casino/Live Casino summary ticket
 				+ RNG Casino (WhTicket = 4)
 					- RNG Casino Single Wallet	: ProductId = 6 AND bettype <> 71
-					- Voidbridge				: ProductId = 22
+					- Macau Games				: ProductId = 22
+					- Fishing World				: ProductId = 24
 				+ Live Casino (WhTicket = 5)
 					- AllBet	: ProductId = 21
 			*/
@@ -232,16 +224,16 @@ BEGIN
 					, bt.EventType
 					, CASE
 							WHEN bt.ProductId = 6 AND bt.SubProduct <> '' THEN 4
-							WHEN bt.ProductId = 22 THEN 4
+							WHEN bt.ProductId IN (22, 24) THEN 4
 							WHEN bt.ProductId = 21 THEN 5
 						END AS WhTicket
-				FROM bodb02.dbo.bettrans b WITH (NOLOCK)
-					INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
+				FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
+					INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 				WHERE b.winlostdate BETWEEN @fromdate AND @todate 
 					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND b.recommend = @Recommend 
 					AND b.custid = @CustID
-					AND (bt.ProductId IN (21, 22)
+					AND (bt.ProductId IN (21, 22, 24)
 						OR (bt.ProductId = 6 AND bt.SubProduct <> ''))
 			END
 		END
@@ -268,9 +260,9 @@ BEGIN
 					, b.bettype
 					, bt.EventType
 					, 1 AS WhTicket
-				FROM bodb02.dbo.bettrans b WITH (NOLOCK)
-					INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
-					INNER JOIN @TransStatus stt ON b.statusid = stt.statusid
+				FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
+					INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+					INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 				WHERE b.winlostdate BETWEEN @fromdate AND @todate 
 					AND b.recommend = @Recommend 
 					AND b.custid = @CustID
@@ -355,6 +347,8 @@ BEGIN
 
 	RETURN;
 END
+
+
 GO
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_Mem_SelBetTicket] TO [bodbDownlineNet] AS [dbo]
 GO

@@ -37,7 +37,8 @@ AS
 		- 20160125@Kos: Fix performance issue with today RNG Casino Single Wallet ticket [#Redmine: 51388]
 		- 20160216@Kos: Support yesterday running ticket for Casino products
 		- 20160217@Kos: Support AllBet [Redmine: #50864]
-		- 20160404@Kos: Support Voidbridge [Redmine: #54925]
+		- 20160404@Kos: Support Macau Games [Redmine: #54925]
+		- 20161101@Kos: Support Fishing World [Redmine: #54925]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -70,11 +71,8 @@ BEGIN
 		WHERE UserName = @UserName
 	END
 	
-	IF( @CustID > 0
-		AND (@Recommend IS NULL 
-			OR @UserName IS NULL
-		)
-	)
+	IF @CustID > 0
+		AND (@Recommend IS NULL OR @UserName IS NULL)
 	BEGIN
 		SELECT @Recommend	= Recommend
 			,@UserName		= UserName
@@ -110,7 +108,7 @@ BEGIN
 				AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0) THEN		-- Yesterday and today summary ticket
 				CASE
 					WHEN bt.ProductId = 6 AND bt.SubProduct <> '' THEN 4	-- RNG Casino Single Wallet
-					WHEN bt.ProductId = 22 THEN 4							-- Voidbridge
+					WHEN bt.ProductId IN (22, 24) THEN 4					-- Macau Games, Fishing World
 					WHEN bt.ProductId = 21 THEN 5							-- AllBet
 					ELSE 1
 				END
@@ -153,14 +151,12 @@ BEGIN
 			, bt.EventType
 			, 0 AS WhTicket
 		FROM dbo.translog AS b WITH (NOLOCK)
-			INNER JOIN @BettypeMatrix bt ON b.gameid = bt.Bettype
-			INNER JOIN @TransStatus st ON b.statusID = st.StatusID
+			INNER JOIN @BettypeMatrix AS bt ON b.gameid = bt.Bettype
+			INNER JOIN @TransStatus AS st ON b.statusID = st.StatusID
 		WHERE b.transdate BETWEEN @fromdate AND @todate 
 			AND b.custid = @CustID
-			AND (
-				bt.ProductId IN (8, 12, 15, 19) 
-				OR bt.bettype BETWEEN 801 AND 899
-			)
+			AND (bt.ProductId IN (8, 12, 15, 19) 
+				OR bt.bettype BETWEEN 801 AND 899)
 			AND b.statusID IN (0, 1)
 	END
 
