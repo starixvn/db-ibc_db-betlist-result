@@ -23,6 +23,7 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160111@Kos: Add @TransStatus to support RNG Casino Single Wallet [Redmine: #48958]
 		- 20162017@Kos: Add WhTicket = 5 to support AllBet [Redmine: #50864]
+		- 20160907@Kos: Extend length of transdesc to 1000 to support NG2 
 
 	Param's Explanation:
 		- @tempCust  AS TABLE
@@ -97,7 +98,7 @@ BEGIN
 		, showtime			NVARCHAR(50)
 		, betcheck			NVARCHAR(50)
 		, comstatus			NVARCHAR(20)
-		, transdesc			NVARCHAR(300)
+		, transdesc			NVARCHAR(1000)
 		, OddsSpread		SMALLMONEY
 	);
 

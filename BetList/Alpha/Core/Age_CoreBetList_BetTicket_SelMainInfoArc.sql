@@ -17,6 +17,7 @@ AS
 		- 20150504@Bobby.Nguyen: Create new SP - Apply GD product
 		- 20150526@Bobby.Nguyen: Apply metric-gaming bettype
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
+		- 20160907@Kos: Extend length of transdesc to 1000 to support NG2 
 
 	Param's Explanation:
 	
@@ -93,7 +94,7 @@ BEGIN
 		, showtime 			NVARCHAR(50)
 		, betcheck 			NVARCHAR(50)
 		, comstatus 		NVARCHAR(20)
-		, transdesc			NVARCHAR(300)
+		, transdesc			NVARCHAR(1000)
 		, OddsSpread		SMALLMONEY
 	);
 

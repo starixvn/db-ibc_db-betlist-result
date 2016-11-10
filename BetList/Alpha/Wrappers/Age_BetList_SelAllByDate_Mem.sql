@@ -28,6 +28,7 @@ ALTER PROCEDURE [dbo].[Age_BetList_SelAllByDate_Mem]
 	, @ShowCF			BIT = 0
 	, @ShowAB			BIT = 0
 	, @ShowVB			BIT = 0
+	, @ShowNG2			BIT = 0
 	, @Error			INT				= 0
 	, @ErrorMsg			NVARCHAR(250)	= NULL
 AS
@@ -96,6 +97,7 @@ AS
 		- 20160215@Kos: Support AllBet [#Redmine: 50864]
 		- 20160401@Kos: Support Voidbridge [#Redmine: 54643]
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
+		- 20160811@Kos: Support NG2
 */
 
 BEGIN
@@ -161,6 +163,8 @@ BEGIN
 		INSERT INTO @ProductFilter VALUES (21)
 	IF @ShowVB = 1
 		INSERT INTO @ProductFilter VALUES (22)
+	IF @ShowNG2 = 1
+		INSERT INTO @ProductFilter VALUES (23)
 
 	-- DELETE bettypes 
 	DELETE bt

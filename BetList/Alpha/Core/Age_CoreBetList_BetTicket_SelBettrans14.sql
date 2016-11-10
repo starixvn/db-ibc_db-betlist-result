@@ -31,6 +31,8 @@ AS
 		- 20160217@Kos: Support AllBet [Redmine: #50864]
 		- 20160401@Kos: Support Voidbridge [#Redmine: 54643]
 		- 20160411@Kos: Support Combo Parlay [Redmine: #55282]
+		- 20160812@Kos: Support NG2
+
 	
 	Param's Explanation:
 	
@@ -51,6 +53,7 @@ BEGIN
 		- Cockfighting			: ProductID = 19
 		- AllBet				: ProductId = 21
 		- Voidbridge			: ProductId = 22
+		- NG2					: ProductId = 23
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -69,6 +72,11 @@ BEGIN
 			WHEN c.ProductID = 19 THEN 206
 			WHEN c.ProductID = 21 THEN 211
 			WHEN c.ProductID = 22 THEN 212
+			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2501 AND 2539 THEN 213
+			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2541 AND 2579 THEN 214
+			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2581 AND 2619 THEN 215
+			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
+			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
@@ -79,11 +87,11 @@ BEGIN
 			ELSE ''
 		END AS Betteam
 		, CASE
-			WHEN c.ProductID = 1 THEN b.hdp1
+			WHEN c.ProductID IN (1, 23) THEN b.hdp1
 			ELSE 0
 		END AS hdp1
 		, CASE
-			WHEN c.ProductID = 1 THEN b.hdp2
+			WHEN c.ProductID IN (1, 23) THEN b.hdp2
 			ELSE 0
 		END AS hdp2
 		, CASE
@@ -92,7 +100,7 @@ BEGIN
 		END AS OddsType
 		, b.oddsid
 		, CASE
-			WHEN c.ProductID IN ( 1, 8, 12, 19 ) THEN b.Odds
+			WHEN c.ProductID IN (1, 8, 12, 19, 23) THEN b.Odds
 			ELSE 0
 		END AS Odds
 		, CASE
@@ -126,7 +134,7 @@ BEGIN
 			ELSE 0
 		END AS Liveindicator
 		, CASE
-			WHEN c.ProductID = 1 THEN b.Livehomescore
+			WHEN c.ProductID IN (1, 23) THEN b.Livehomescore
 			ELSE 0
 		END AS Livehomescore
 		, CASE
@@ -142,7 +150,7 @@ BEGIN
 		, CASE
 			WHEN c.ProductID = 8 THEN fnc.GameId
 			WHEN c.ProductID = 12 THEN 255
-			WHEN c.ProductID = 19 THEN b.betdaqid
+			WHEN c.ProductID IN (19, 23) THEN b.betdaqid
 			ELSE 0
 		END AS MatchID
 		, '' AS MatchCode
@@ -165,7 +173,7 @@ BEGIN
 		END AS comstatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
-			WHEN c.ProductId IN (19, 22) THEN b.transdesc
+			WHEN c.ProductId IN (19, 22, 23) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, 0 AS OddsSpread
