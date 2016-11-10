@@ -70,6 +70,7 @@ AS
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20160810@Kos: Support NG2
 */
 
 BEGIN
@@ -138,7 +139,7 @@ BEGIN
 		showtime		NVARCHAR(50),
 		winlostdate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
-		transdesc		NVARCHAR(300),
+		transdesc		NVARCHAR(1000),
 		OddsSpread		SMALLMONEY
 	)
 
@@ -461,8 +462,8 @@ BEGIN
 	END
 
 	-- RNG Casino, Bingo, P2P, Gold Deluxe, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, Cockfighting, AllBet
-	-- Voidbridge
-	IF EXISTS(SELECT TOP 1 1 FROM #SportBettype WHERE ProductID IN (6, 7, 9, 11, 12, 13, 17, 19, 21, 22))
+	-- Voidbridge, NG2
+	IF EXISTS(SELECT TOP 1 1 FROM #SportBettype WHERE ProductID IN (6, 7, 9, 11, 12, 13, 17, 19, 21, 22, 23))
 	BEGIN
 		INSERT INTO #BetListData
 		SELECT
@@ -481,10 +482,16 @@ BEGIN
 			0 AS homeid,
 			0 AS awayid,
 			'' AS settleTime,
-			0 AS hdp1,
-			0 AS hdp2,
 			CASE
-				WHEN s.ProductId IN (12, 19) THEN b.odds
+				WHEN s.ProductId = 23 THEN b.hdp1
+				ELSE 0
+			END AS hdp1,
+			CASE
+				WHEN s.ProductId = 23 THEN b.hdp2
+				ELSE 0
+			END AS hdp2,
+			CASE
+				WHEN s.ProductId IN (12, 19, 23) THEN b.odds
 				ELSE 0
 			END AS odds,
 			0 AS finalodds,
@@ -508,7 +515,10 @@ BEGIN
 			0 AS liveindicator,
 			0 AS modds,
 			b.custid,
-			0 AS livehomescore,
+			CASE
+				WHEN s.ProductId = 23 THEN b.livehomescore
+				ELSE 0
+			END AS livehomescore,
 			0 AS liveawayscore,
 			0 AS finalhomescore,
 			0 AS finalawayscore,
@@ -525,12 +535,17 @@ BEGIN
 				WHEN s.ProductId = 19 THEN 206
 				WHEN s.ProductId = 21 THEN 211
 				WHEN s.ProductId = 22 THEN 212
+				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
+				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
+				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
+				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
+				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 			END AS sporttype,
 			b.ip,
 			b.betfrom,
 			CASE
 				WHEN s.ProductId = 12 THEN b.matchid
-				WHEN s.ProductId = 19 THEN b.betdaqid
+				WHEN s.ProductId IN (19, 23) THEN b.betdaqid
 				ELSE 0
 			END AS matchid,
 			CONVERT(BIT, 0) AS IsNeutral,
@@ -551,7 +566,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.transdesc
-				WHEN s.ProductId IN (19, 22) THEN b.transdesc
+				WHEN s.ProductId IN (19, 22, 23) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			0 AS OddsSpread
@@ -559,7 +574,7 @@ BEGIN
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @Custid
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
-			AND s.ProductId IN (6, 7, 9, 11, 12, 13, 17, 19, 21, 22)
+			AND s.ProductId IN (6, 7, 9, 11, 12, 13, 17, 19, 21, 22, 23)
 	END
 
 	-- Keno
@@ -954,6 +969,7 @@ BEGIN
 	DROP TABLE #BetListDetailData;
 	DROP TABLE #SportBettype
 END
+
 
 
 

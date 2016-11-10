@@ -83,6 +83,7 @@ AS
 		- 20160606@Kos: Unable to search Gold Deluxe ticket [#Redmine: 58852]
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20160810@Kos: Support NG2
 */
 
 BEGIN
@@ -158,7 +159,7 @@ BEGIN
 		ShowTime		NVARCHAR(50),
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(1000),
 		OddsSpread		SMALLMONEY
 	)
 
@@ -617,6 +618,84 @@ BEGIN
 					AND (s.ProductId IN (7, 12, 13, 19)
 						OR (s.ProductId = 6 AND s.SubProduct = ''))
 					AND b.refno = @refno
+			END
+
+			-- NG2
+			IF EXISTS (SELECT TOP 1 1 FROM  @SportBettype WHERE ProductID = 23 AND Bettype = @Bettype)
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					ISNULL(b.betid, 0) AS BetId,
+					b.refno,
+					'' AS matchcode,
+					'' AS race,
+					'' AS eventdate,
+					0 AS virtualrate,
+					0 AS isShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					0 AS homeid,
+					0 AS awayid,
+					'' AS settleTime,
+					b.hdp1,
+					b.hdp2,
+					b.odds,
+					0 AS finalodds,
+					0 AS finalodds2,
+					0 AS OddsType,
+					b.status,
+					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					'' AS betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 AS spositiontaking2,
+					0 AS mpositiontaking2,
+					0 AS apositiontaking2,
+					0 AS liveindicator,
+					0 AS modds,
+					b.custid,
+					b.livehomescore,
+					0 AS liveawayscore,
+					0,
+					0,
+					0 AS leagueid,
+					CASE
+						WHEN s.Bettype BETWEEN 2501 AND 2539 THEN 213
+						WHEN s.Bettype BETWEEN 2541 AND 2579 THEN 214
+						WHEN s.Bettype BETWEEN 2581 AND 2619 THEN 215
+						WHEN s.Bettype BETWEEN 2621 AND 2659 THEN 216
+						WHEN s.Bettype BETWEEN 2681 AND 2699 THEN 218
+					END AS sporttype,
+					b.ip,
+					b.betfrom,
+					b.betdaqid AS matchid,
+					CONVERT(BIT, 0) AS IsNeutral,
+					0 AS allowdelete,
+					(b.winlost - b.actual_stake) AS winlost,
+					b.playercomm AS commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					'' AS showtime,
+					b.winlostdate,
+					'' AS BetCheck,
+					ISNULL(b.transdesc, '') AS transdesc,
+					0 AS OddsSpread
+				FROM dbo.bettrans AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+				WHERE b.custid = @Custid
+					AND s.ProductId = 23
+					AND b.transid = @transid
 			END
 
 			-- Keno
@@ -2558,17 +2637,17 @@ BEGIN
 					AND b.refno = @refno
 			END
 
-			-- Microgaming RNG Casino, AG Casino, RNG Casino Single Wallet, AllBet, Voidbridge
+			-- Microgaming RNG Casino, AG Casino, RNG Casino Single Wallet, AllBet, Voidbridge, NG2
 			IF EXISTS(	SELECT TOP 1 1 FROM @SportBettype
 						WHERE Bettype = @Bettype 
-							AND (ProductID IN (11, 17, 21, 22) 
+							AND (ProductID IN (11, 17, 21, 22, 23) 
 								OR (ProductID = 6 AND SubProduct <> '')))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
 					b.bettype,
 					b.transid,
-					ISNULL(b.BetID, 0) AS BetID,
+					ISNULL(b.betid, 0) AS BetId,
 					b.refno,
 					'' AS matchcode,
 					'' AS race,
@@ -2581,12 +2660,21 @@ BEGIN
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
-					0 AS hdp1,
-					0 AS hdp2,
-					0 AS odds,
+					CASE
+						WHEN s.ProductID = 23 THEN b.hdp1
+						ELSE 0
+					END AS hdp1,
+					CASE
+						WHEN s.ProductID = 23 THEN b.hdp2
+						ELSE 0
+					END AS hdp2,
+					CASE
+						WHEN s.ProductID = 23 THEN b.odds
+						ELSE 0
+					END AS odds,
 					0 AS finalodds,
 					0 AS finalodds2,
-					'' AS OddsType,
+					0 AS OddsType,
 					b.status,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -2602,7 +2690,10 @@ BEGIN
 					0 AS liveindicator,
 					0 AS modds,
 					b.custid,
-					0 AS livehomescore,
+					CASE
+						WHEN s.ProductID = 23 THEN b.livehomescore
+						ELSE 0
+					END AS livehomescore,
 					0 AS liveawayscore,
 					0 AS finalhomescore,
 					0 AS finalawayscore,
@@ -2613,10 +2704,15 @@ BEGIN
 						WHEN s.ProductID = 17 THEN 205
 						WHEN s.ProductID = 21 THEN 211
 						WHEN s.ProductID = 22 THEN 212
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 					END AS sporttype,
 					b.ip,
 					b.betfrom,
-					0 AS matchid,
+					b.betdaqid AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
 					(b.winlost - b.actual_stake) AS winlost,
@@ -2631,14 +2727,14 @@ BEGIN
 					b.winlostdate,
 					'' AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (6, 22) THEN b.transdesc
+						WHEN s.ProductID IN (6, 22, 23) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @Custid
-					AND (s.ProductID IN (11, 17, 21, 22)
+					AND (s.ProductID IN (11, 17, 21, 22, 23)
 						OR (ProductID = 6 AND SubProduct <> ''))
 					AND b.transid = @TransID
 			END
@@ -3387,17 +3483,17 @@ BEGIN
 					AND b.refno = @refno
 			END
 
-			-- Microgaming RNG Casino, AG Casino, RNG Casino Single Wallet, AllBet, Voidbridge
+			-- Microgaming RNG Casino, AG Casino, RNG Casino Single Wallet, AllBet, Voidbridge, NG2
 			IF EXISTS (	SELECT TOP 1 1 FROM @SportBettype s 
 						WHERE Bettype = @Bettype
-							AND (ProductID IN (11, 17, 21, 22) 
+							AND (ProductID IN (11, 17, 21, 22, 23) 
 								OR (ProductID = 6 AND SubProduct <> '')))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
 					b.bettype,
 					b.transid,
-					ISNULL(b.BetID, 0) AS BetID,
+					ISNULL(b.BetID, 0) AS BetId,
 					b.refno,
 					'' AS matchcode,
 					'' AS race,
@@ -3410,9 +3506,18 @@ BEGIN
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
-					0 AS hdp1,
-					0 AS hdp2,
-					0 AS odds,
+					CASE
+						WHEN s.ProductID = 23 THEN b.hdp1
+						ELSE 0
+					END AS hdp1,
+					CASE
+						WHEN s.ProductID = 23 THEN b.hdp2
+						ELSE 0
+					END AS hdp2,
+					CASE
+						WHEN s.ProductID = 23 THEN b.odds
+						ELSE 0
+					END AS odds,
 					0 AS finalodds,
 					0 AS finalodds2,
 					0 AS OddsType,
@@ -3431,7 +3536,10 @@ BEGIN
 					0 AS liveindicator,
 					0 AS modds,
 					b.custid,
-					0 AS livehomescore,
+					CASE
+						WHEN s.ProductID = 23 THEN b.livehomescore
+						ELSE 0
+					END AS livehomescore,
 					0 AS liveawayscore,
 					0,
 					0,
@@ -3442,13 +3550,18 @@ BEGIN
 						WHEN s.ProductID = 17 THEN 205
 						WHEN s.ProductID = 21 THEN 211
 						WHEN s.ProductID = 22 THEN 212
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 					END AS sporttype,
 					b.ip,
 					b.betfrom,
-					0 AS matchid,
+					b.betdaqid AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
-					(b.winlost - b.actual_stake) winlost,
+					(b.winlost - b.actual_stake) AS winlost,
 					b.playercomm AS commission,
 					(b.scomm - b.acomm) AS scomm,
 					(b.acomm - b.comm) AS acomm,
@@ -3460,14 +3573,14 @@ BEGIN
 					b.winlostdate,
 					'' AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (6, 22) THEN b.transdesc
+						WHEN s.ProductID IN (6, 22, 23) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread
 				FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @Custid
-					AND (s.ProductID IN (11, 17, 21, 22)
+					AND (s.ProductID IN (11, 17, 21, 22, 23)
 						OR (ProductID = 6 AND SubProduct <> ''))
 					AND b.transid = @TransID
 			END

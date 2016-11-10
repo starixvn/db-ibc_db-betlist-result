@@ -72,6 +72,7 @@ AS
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Fix bug not showing summary tickets if have only Void/Reject detail tickets [#Redmine: 61651]
+		- 20160810@Kos: Support NG2
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -153,7 +154,7 @@ BEGIN
 		showtime		NVARCHAR(50),
 		winlostdate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
-		transdesc		NVARCHAR(300),
+		transdesc		NVARCHAR(1000),
 		OddsSpread		SMALLMONEY
 	)
 
@@ -805,7 +806,7 @@ BEGIN
 				AND b.custid = @custid
 				AND s.SportType <> 1 
 
-			-- Casino, Bingo, Gold Deluxe, Cockfighting, Microgaming Live Casino bettrans
+			-- Casino, Bingo, Gold Deluxe, Cockfighting, Microgaming Live Casino, NG2 bettrans
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -827,10 +828,16 @@ BEGIN
 				0 AS homeid,
 				0 AS awayid,
 				ISNULL(b.checktime, '') AS checktime,
-				0 AS hdp1,
-				0 AS hdp2,
 				CASE
-					WHEN s.ProductID IN (12, 19) THEN b.odds
+					WHEN s.ProductId = 23 THEN b.hdp1
+					ELSE 0
+				END AS hdp1,
+				CASE
+					WHEN s.ProductId = 23 THEN b.hdp2
+					ELSE 0
+				END AS hdp2,
+				CASE
+					WHEN s.ProductID IN (12, 19, 23) THEN b.odds
 					ELSE 0
 				END AS odds,
 				0 AS modds,
@@ -846,7 +853,10 @@ BEGIN
 				b.actual_stake,
 				b.transdate,
 				'' AS betteam,
-				0 AS livehomescore,
+				CASE
+					WHEN s.ProductId = 23 THEN b.livehomescore
+					ELSE 0
+				END AS livehomescore,
 				0 AS liveawayscore,
 				0 AS liveindicator,
 				(b.winlost - b.actual_stake) AS winlost,
@@ -862,10 +872,15 @@ BEGIN
 					WHEN s.ProductID = 12 THEN 255
 					WHEN s.ProductID = 13 THEN 203
 					WHEN s.ProductID = 19 THEN 206
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 				END AS sporttype,
 				CASE
 					WHEN s.ProductID = 12 THEN b.matchid
-					WHEN s.ProductID = 19 THEN b.betdaqid
+					WHEN s.ProductID IN (19, 23) THEN b.betdaqid
 					ELSE 0
 				END AS matchid,
 				0 AS IsNeutral,
@@ -880,7 +895,7 @@ BEGIN
 					ELSE ''
 				END AS betcheck,
 				CASE
-					WHEN s.ProductID = 19 THEN b.transdesc
+					WHEN s.ProductID IN (19, 23) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				0 AS OddsSpread
@@ -888,11 +903,11 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @custid
 				AND b.winlostdate = @fromdate
-				AND (s.ProductID IN (7, 12, 13, 19)
+				AND (s.ProductID IN (7, 12, 13, 19, 23)
 					OR (s.ProductId = 6 AND s.SubProduct = ''))
 
 			-- Casino, Bingo, Gold Deluxe, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Cockfighting, AllBet 
-			-- Voidbridge bettrans14
+			-- Voidbridge, NG2 bettrans14
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -914,10 +929,16 @@ BEGIN
 				0 AS homeid,
 				0 AS awayid,
 				ISNULL(b.checktime, '') AS checktime,
-				0 AS hdp1,
-				0 AS hdp2,
 				CASE
-					WHEN s.ProductID IN (12, 19) THEN b.odds
+					WHEN s.ProductId = 23 THEN b.hdp1
+					ELSE 0
+				END AS hdp1,
+				CASE
+					WHEN s.ProductId = 23 THEN b.hdp2
+					ELSE 0
+				END AS hdp2,
+				CASE
+					WHEN s.ProductID IN (12, 19, 23) THEN b.odds
 					ELSE 0
 				END AS odds,
 				0 AS modds,
@@ -954,10 +975,15 @@ BEGIN
 					WHEN s.ProductID = 19 THEN 206
 					WHEN s.ProductID = 21 THEN 211
 					WHEN s.ProductID = 22 THEN 212
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 				END AS sporttype,
 				CASE
 					WHEN s.ProductID = 12 THEN b.matchid
-					WHEN s.ProductID = 19 THEN b.betdaqid
+					WHEN s.ProductID IN (19, 23) THEN b.betdaqid
 					ELSE 0
 				END AS matchid,
 				0 AS IsNeutral,
@@ -973,7 +999,7 @@ BEGIN
 				END AS betcheck,
 				CASE
 					WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.transdesc
-					WHEN s.ProductID IN (19, 22) THEN b.transdesc
+					WHEN s.ProductID IN (19, 22, 23) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				0 AS OddsSpread
@@ -981,7 +1007,7 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @custid
 				AND b.winlostdate = @fromdate
-				AND s.ProductID IN (6, 7, 11, 12, 13, 17, 19, 21, 22)
+				AND s.ProductID IN (6, 7, 11, 12, 13, 17, 19, 21, 22, 23)
 
 			-- Keno
 			UNION ALL

@@ -97,6 +97,7 @@ AS
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Fix bug not showing summary tickets if have only Void/Reject detail tickets [#Redmine: 61651]
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20160810@Kos: Support NG2
 
 	Param's Explanation:
 		+ @transtype: 
@@ -219,7 +220,7 @@ BEGIN
 		SWinLost		MONEY,
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(1000),
 		OddsSpread		SMALLMONEY
 	);
 
@@ -623,7 +624,7 @@ BEGIN
 			AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
 		-- RNG Casino, Bingo, Gold Deluxe, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Cockfighting, AllBet
-		-- Voidbridge
+		-- Voidbridge, NG2
 		IF @transtype <> 4
 		BEGIN
 			INSERT INTO @Data
@@ -639,6 +640,11 @@ BEGIN
 					WHEN s.ProductID = 19 THEN 206
 					WHEN s.ProductID = 21 THEN 211
 					WHEN s.ProductID = 22 THEN 212
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
+					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 				END AS SportType,
 				0 AS leagueid,
 				0 AS homeid,
@@ -654,7 +660,7 @@ BEGIN
 				ISNULL(b.checktime, '') AS settletime,
 				CASE
 					WHEN s.ProductID = 12 THEN b.matchid
-					WHEN s.ProductId = 19 THEN b.betdaqid
+					WHEN s.ProductId IN (19, 23) THEN b.betdaqid
 					ELSE 0
 				END AS MatchID,
 				b.transid,
@@ -663,10 +669,16 @@ BEGIN
 				b.transdate,
 				b.oddsid,
 				b.bettype,
-				0 AS hdp1,
-				0 AS hdp2,
+				CASE
+					WHEN s.ProductId = 23 THEN b.hdp1
+					ELSE 0
+				END AS hdp1,
+				CASE
+					WHEN s.ProductId = 23 THEN b.hdp2
+					ELSE 0
+				END AS hdp2,
 				CASE 
-					WHEN s.ProductID IN (12, 19) THEN b.Odds
+					WHEN s.ProductID IN (12, 19, 23) THEN b.Odds
 					ELSE 0 
 				END AS Odds,
 				0 AS modds,
@@ -684,7 +696,10 @@ BEGIN
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS winlost,
 				b.playercomm,
-				0 AS livehomescore,
+				CASE
+					WHEN s.ProductId = 23 THEN b.livehomescore
+					ELSE 0
+				END AS livehomescore,
 				0 AS liveawayscore,
 				0 AS liveindicator,
 				0 AS finalhomescore,
@@ -716,7 +731,7 @@ BEGIN
 				END AS betcheck,
 				CASE
 					WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.transdesc
-					WHEN s.ProductId IN (19, 22) THEN b.transdesc
+					WHEN s.ProductId IN (19, 22, 23) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				0 AS OddsSpread
@@ -724,7 +739,7 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @custid
 				AND b.winlostdate = @fromdate
-				AND s.ProductID IN (6, 7, 11, 12, 13, 17, 19, 21, 22)
+				AND s.ProductID IN (6, 7, 11, 12, 13, 17, 19, 21, 22, 23)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 		END
 
@@ -1587,12 +1602,17 @@ BEGIN
 			AND s.EventType = 3
 			AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
-		-- Casino, Bingo
+		-- Casino, Bingo, NG2
 		INSERT INTO @Data
 		SELECT
 			CASE
 				WHEN s.ProductID = 6 THEN 251
 				WHEN s.ProductID = 7 THEN 252
+				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
+				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
+				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
+				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
+				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 			END AS SportType,
 			0 AS leagueid,
 			0 AS homeid,
@@ -1606,15 +1626,24 @@ BEGIN
 			b.adiscount,
 			b.discount,
 			'' AS settletime,
-			0 AS matchid,
+			CASE
+				WHEN s.ProductId = 23 THEN b.betdaqid
+				ELSE 0
+			END AS matchid,
 			b.transid,
 			ISNULL(b.BetID, 0),
 			b.refno,
 			b.transdate,
 			b.oddsid,
 			b.bettype,
-			0 AS hdp1,
-			0 AS hdp2,
+			CASE
+				WHEN s.ProductId = 23 THEN b.hdp1
+				ELSE 0
+			END AS hdp1,
+			CASE
+				WHEN s.ProductId = 23 THEN b.hdp2
+				ELSE 0
+			END AS hdp2,
 			b.odds,
 			0 AS modds,
 			0 AS finalodds,
@@ -1628,7 +1657,10 @@ BEGIN
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS winlost,
 			b.playercomm,
-			0 AS livehomescore,
+			CASE
+				WHEN s.ProductId = 23 THEN b.livehomescore
+				ELSE 0
+			END AS livehomescore,
 			0 AS liveawayscore,
 			0 AS liveindicator,
 			0, --finalhomescore, 
@@ -1655,14 +1687,17 @@ BEGIN
 			b.swinlost,
 			b.winlostdate,
 			'' AS BetCheck,
-			'' AS transdesc,
+			CASE
+				WHEN s.ProductId = 23 THEN ISNULL(b.transdesc, '')
+				ELSE ''
+			END AS transdesc,
 			0 AS OddsSpread
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @custid
 			AND b.winlostdate = @fromdate
-				AND (s.ProductId = 7
-					OR (s.ProductId = 6 AND s.SubProduct = ''))
+			AND (s.ProductId IN (7, 23)
+				OR (s.ProductId = 6 AND s.SubProduct = ''))
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 		-- Keno
