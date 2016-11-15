@@ -76,6 +76,7 @@ AS
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20160915@Kos: Support Colossus Bets [#Redmine: 63785]
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
 
 	Param's Explanation: 
 		+ @transtype:
@@ -167,9 +168,10 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24)
 
-	DELETE @SportBettype WHERE ProductID = 1 AND Bettype = 904
+	DELETE @SportBettype
+	WHERE ProductID = 1 AND Bettype = 904
 
 	IF @TransType = 4	-- support only for Microgaming RNG Casino, Colossus Bets
 	BEGIN
@@ -177,6 +179,11 @@ BEGIN
 		WHERE ProductID NOT IN (15, 17)
 	END
 	-- end filer bettypes by sporttype
+
+	-- Use temp variable to avoid using index in winlostdate column
+	DECLARE @TempFromDate	SMALLDATETIME
+
+	SET @TempFromDate = @FromDate
 	
 	IF @TransType = 1
 	BEGIN
@@ -241,8 +248,8 @@ BEGIN
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS ba WITH (NOLOCK) ON b.transid = ba.transid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE b.custid = @custid
-			AND b.winlostdate = @FromDate
+		WHERE b.custid = @CustId
+			AND b.winlostdate = @TempFromDate
 			AND sbt.EventType = 1
 
 		UPDATE betList
@@ -305,8 +312,8 @@ BEGIN
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			CROSS APPLY dbo.f_ParseTransDesc(b.transdesc, b.bettype) AS fnc
-		WHERE b.custid = @custid
-			AND b.winlostdate = @FromDate
+		WHERE b.custid = @CustId
+			AND b.winlostdate = @TempFromDate
 			AND sbt.ProductID = 8
 			AND sbt.EventType = 0
 
@@ -359,8 +366,8 @@ BEGIN
 			INNER JOIN bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE b.custid = @custid
-			AND b.winlostdate = @FromDate
+		WHERE b.custid = @CustId
+			AND b.winlostdate = @TempFromDate
 			AND sbt.ProductId = 5
 			AND sbt.EventType = 3
 
@@ -416,8 +423,8 @@ BEGIN
 			bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			LEFT JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS ba WITH (NOLOCK) ON b.transid = ba.transid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE b.custid = @custid
-			AND b.winlostdate = @FromDate
+		WHERE b.custid = @CustId
+			AND b.winlostdate = @TempFromDate
 			AND b.matchid IN (0, 9, 29) -- Should not remove 0 for Archive
 			AND sbt.ProductID = 1
 			AND sbt.EventType = 0
@@ -477,12 +484,12 @@ BEGIN
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			LEFT JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS ba WITH (NOLOCK) ON b.transid = ba.transid
 			INNER JOIN @SportBettype sbt ON b.bettype = sbt.bettype
-		WHERE b.custid = @custid
-			AND b.winlostdate = @FromDate
+		WHERE b.custid = @CustId
+			AND b.winlostdate = @TempFromDate
 			AND sbt.ProductID IN (1, 2)
 			AND sbt.EventType = 2
 
-		-- RNG Casino, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, AllBet, Voidbridge
+		-- RNG Casino, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, AllBet, Macau Games, Fishing World
 		INSERT INTO @Data 
 		SELECT
 			CASE
@@ -493,6 +500,7 @@ BEGIN
 				WHEN sbt.ProductID = 17 THEN 205
 				WHEN sbt.ProductID = 21 THEN 211
 				WHEN sbt.ProductID = 22 THEN 212
+				WHEN sbt.ProductID = 24 THEN 219
 			END AS SportType,
 			0 AS leagueid,
 			0 AS homeID,
@@ -572,14 +580,14 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-				WHEN sbt.ProductID = 22 THEN b.transdesc
+				WHEN sbt.ProductID IN (22, 24) THEN b.transdesc
 				ELSE ''
 			END AS transdesc
 		FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE b.custid = @custid
-			AND b.winlostdate = @FromDate
-			AND sbt.ProductID IN (6, 11, 13, 17, 21, 22)
+		WHERE b.custid = @CustId
+			AND b.winlostdate = @TempFromDate
+			AND sbt.ProductID IN (6, 11, 13, 17, 21, 22, 24)
 			AND sbt.EventType = 0
 
 		-- Colossus Bets
@@ -630,8 +638,8 @@ BEGIN
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
-		WHERE b.custid = @custid
-			AND b.winlostdate = @FromDate
+		WHERE b.custid = @CustId
+			AND b.winlostdate = @TempFromDate
 			AND sbt.ProductID = 15
 	END
 	ELSE IF @transtype = 4		-- Grand Prize Jackpot Win
@@ -686,7 +694,7 @@ BEGIN
 			INNER JOIN bodb_archive.dbo.bettransRnG_bk AS b WITH (NOLOCK) ON pt.RefNo = b.transid
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.bettype
 		WHERE pt.custid = @CustId
-			AND pt.winlostdate = @FromDate
+			AND pt.winlostdate = @TempFromDate
 			AND sbt.ProductID = 17
 			AND b.statusID IN (111, 112, 113)
 
@@ -741,7 +749,7 @@ BEGIN
 			LEFT JOIN bodb_archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 		WHERE
 			b.custid = @CustId
-			AND b.winlostdate = @FromDate
+			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (111, 112, 113)
 			AND sbt.ProductID = 15
 			AND EXISTS (	SELECT 1 
@@ -914,6 +922,7 @@ BEGIN
 
 	DROP TABLE #TempExchange
 END
+
 
 
 

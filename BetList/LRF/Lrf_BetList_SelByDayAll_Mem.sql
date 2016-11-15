@@ -3,6 +3,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelByDayAll_Mem]
 	@UserId				INT,
 	@CustId				INT,
 	@FromDate			SMALLDATETIME,
+	@MoveBetsDay		SMALLDATETIME,
 	@TransType			INT				= 0,
 	@LangKey			NVARCHAR(10)	= 'en-US',
 	@PageSize			INT				= 1000,
@@ -79,9 +80,10 @@ AS
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20160913@Kos: Support Colossus Bets [#Redmine: 63785]
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
 
 	Param's Explanation: 
-		+ @transtype:
+		+ @TransType:
 			1: Won/Lose/Draw/Refund ticket
 			2: Void/Reject ticket
 			3: Running/Waiting ticket
@@ -91,8 +93,6 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @IsBet14 BIT
-
 	/*
 		WON: 112, LOSE: 113, DRAW: 111, REFUND: 103
 		VOID: 102, REJECT: 101
@@ -100,7 +100,7 @@ BEGIN
 	*/
 	DECLARE @tmpStatus TABLE ([statusID] INT)
 
-	IF @transtype = 1
+	IF @TransType = 1
 	BEGIN
 		INSERT INTO @tmpStatus([statusID])
 		SELECT 111 UNION ALL
@@ -108,19 +108,19 @@ BEGIN
 		SELECT 113 UNION ALL
 		SELECT 103
 	END
-	ELSE IF @transtype = 2
+	ELSE IF @TransType = 2
 	BEGIN
 		INSERT INTO @tmpStatus([statusID])
 		SELECT 101 UNION ALL
 		SELECT 102
 	END 
-	ELSE IF @transtype = 3
+	ELSE IF @TransType = 3
 	BEGIN
 		INSERT INTO @tmpStatus([statusID])
 		SELECT 0 UNION ALL
 		SELECT 1
 	END
-	ELSE IF @transtype = 4
+	ELSE IF @TransType = 4
 	BEGIN
 		INSERT INTO @tmpStatus([statusID])
 		SELECT 111 UNION ALL
@@ -222,18 +222,18 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22) -- not suport for LIC system
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24) -- not suport for LIC system
 
 	DELETE @SportBettype
 	WHERE ProductID = 1 AND Bettype = 904
 
-	IF @transtype = 3	-- Don't support running RNG Casino old bet type (71)
+	IF @TransType = 3	-- Don't support running RNG Casino old bet type (71)
 	BEGIN
 		DELETE @SportBettype
 		WHERE ProductID = 6 AND SubProduct = ''
 	END
 
-	IF @transtype = 4	-- support only for Microgaming RNG Casino, Colossus Bets
+	IF @TransType = 4	-- support only for Microgaming RNG Casino, Colossus Bets
 	BEGIN
 		DELETE @SportBettype
 		WHERE ProductID NOT IN (15, 17)
@@ -241,12 +241,7 @@ BEGIN
 
 	-- END filer bettypes
 
-	IF EXISTS (SELECT TOP 1 1 FROM dbo.match14 (NOLOCK) WHERE eventdate = @fromdate)
-		SELECT @IsBet14 = 1
-	ELSE 
-		SELECT @IsBet14 = 0
-
-	IF @IsBet14 = 1
+	IF @FromDate <= @MoveBetsDay
 	BEGIN
 		-- single bet
 		INSERT INTO @Data
@@ -297,14 +292,13 @@ BEGIN
 				ELSE '' 
 			END AS betcheck,
 			ISNULL(b.transdesc, '') AS transdesc
-		FROM 
-			dbo.bettrans14 AS b WITH (NOLOCK)
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE
 			b.custid = @custid
-			AND b.winlostdate = @fromdate
+			AND b.winlostdate = @FromDate
 			AND sbt.EventType = 1
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
@@ -396,13 +390,13 @@ BEGIN
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE b.custid = @custid 
-			AND b.winlostdate = @fromdate
+			AND b.winlostdate = @FromDate
 			AND sbt.ProductID = 6
 			AND sbt.EventType = 0
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
 		-- Keno
-		IF @transtype = 1 OR @transtype = 2
+		IF @TransType = 1 OR @TransType = 2
 		BEGIN
 			INSERT INTO @Data 
 			SELECT
@@ -455,13 +449,13 @@ BEGIN
 				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) t
 			WHERE
 				b.custid = @custid
-				AND b.winlostdate = @fromdate 
+				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 8
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 
-		-- VHR
+		-- Virtual Horse Racing
 		INSERT INTO @Data 
 		SELECT
 			r.sporttype,
@@ -514,7 +508,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE
 			b.custid = @custid
-			AND b.winlostdate = @fromdate 
+			AND b.winlostdate = @FromDate 
 			AND sbt.ProductId = 5 
 			AND sbt.EventType = 3
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -566,12 +560,12 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc
 		FROM 
-			dbo.bettrans14 b WITH (NOLOCK)
-			INNER JOIN @SportBettype sbt ON b.bettype = sbt.bettype
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction BA WITH (NOLOCK) ON b.transid = BA.transid
+			dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @custid
-			AND b.winlostdate = @fromdate
+			AND b.winlostdate = @FromDate
 			AND sbt.ProductID = 1
 			AND sbt.EventType = 0
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -634,13 +628,13 @@ BEGIN
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @custid
-			AND b.winlostdate = @fromdate
+			AND b.winlostdate = @FromDate
 			AND sbt.ProductID IN (1, 2) 
 			AND sbt.EventType = 2
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet, Voidbridge
-		IF @transtype = 1 OR @transtype = 2
+		-- Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet, Macau Games, Fishing World
+		IF @TransType = 1 OR @TransType = 2
 		BEGIN
 			INSERT INTO @Data 
 			SELECT
@@ -650,6 +644,7 @@ BEGIN
 					WHEN sbt.ProductID = 17 THEN 205
 					WHEN sbt.ProductID = 21 THEN 211
 					WHEN sbt.ProductID = 22 THEN 212
+					WHEN sbt.ProductID = 24 THEN 219
 				END AS sporttype,
 				0 AS leagueid,
 				0 AS homeID,
@@ -696,7 +691,7 @@ BEGIN
 					ELSE ''
 				END AS betcheck,
 				CASE
-					WHEN sbt.ProductID = 22 THEN b.transdesc
+					WHEN sbt.ProductID IN (22, 24) THEN b.transdesc
 					ELSE ''
 				END AS transdesc
 			FROM
@@ -704,15 +699,15 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			WHERE
 				b.custid = @custid
-				AND b.winlostdate = @fromdate 
-				AND sbt.ProductID IN (11, 13, 17, 21, 22)
+				AND b.winlostdate = @FromDate 
+				AND sbt.ProductID IN (11, 13, 17, 21, 22, 24)
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
-				AND @transtype <> 4
+				AND @TransType <> 4
 		END
 
 		-- Colossus Bets
-		IF @transtype <> 4
+		IF @TransType <> 4
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -765,14 +760,14 @@ BEGIN
 				LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
 				b.custid = @custid
-				AND b.winlostdate = @fromdate 
+				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 15
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 
 		-- Grand Prize Jackpot Win
-		IF @transtype = 4
+		IF @TransType = 4
 		BEGIN
 			-- Microgaming RNG Casino
 			INSERT INTO @Data
@@ -826,7 +821,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.bettype
 			WHERE
 				pt.custid = @custid
-				AND pt.winlostdate = @fromdate 
+				AND pt.winlostdate = @FromDate 
 				AND sbt.ProductID = 17
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
@@ -882,7 +877,7 @@ BEGIN
 				LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
 				b.custid = @custid
-				AND b.winlostdate = @fromdate 
+				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 15
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 				AND EXISTS (	SELECT 1 
@@ -897,8 +892,8 @@ BEGIN
 			,betList.comm	= CASE WHEN betList.Bettype = 902 THEN commBetList.comm ELSE betList.comm END
 			,betList.BetID	= originBetList.Bettype
 		FROM @Data AS betList
-			INNER JOIN bettrans14 AS originBetList WITH(NOLOCK) ON betList.RefNO = originBetList.TransID
-			LEFT JOIN @Data AS commBetList ON betList.RefNO = commBetList.RefNO AND commBetList.Bettype = 903
+			INNER JOIN dbo.bettrans14 AS originBetList WITH (NOLOCK) ON betList.RefNo = originBetList.TransID
+			LEFT JOIN @Data AS commBetList ON betList.RefNO = commBetList.RefNo AND commBetList.Bettype = 903
 		WHERE betList.Sporttype = 1 AND betList.Bettype IN (901, 902)
 
 		DELETE @Data WHERE Sporttype = 1 AND Bettype = 903
@@ -972,13 +967,13 @@ BEGIN
 			END AS betcheck,
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM 
-			dbo.bettrans b WITH (NOLOCK)
-			INNER JOIN dbo.match m WITH (NOLOCK) ON b.matchid = m.matchid
-			INNER JOIN @SportBettype sbt ON b.bettype = sbt.bettype
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction BA WITH (NOLOCK) ON b.transid = BA.transid
+			dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @custid
-			AND b.winlostdate = @fromdate
+			AND b.winlostdate = @FromDate
 			AND sbt.EventType = 1
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
@@ -1031,13 +1026,13 @@ BEGIN
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE b.custid = @custid
-			AND b.winlostdate = @fromdate
+			AND b.winlostdate = @FromDate
 			AND (sbt.ProductID = 6 AND sbt.SubProduct = '')
 			AND sbt.EventType = 0
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
 		-- Keno
-		IF @transtype = 1 OR @transtype = 2
+		IF @TransType = 1 OR @TransType = 2
 			INSERT INTO @Data
 			SELECT
 				202 AS sporttype,
@@ -1084,12 +1079,12 @@ BEGIN
 				,'' AS betcheck
 				,'' AS transdesc
 			FROM 
-				dbo.bettrans b WITH (NOLOCK)
-				INNER JOIN @SportBettype sbt ON b.bettype = sbt.bettype
+				dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) t
 			WHERE
 				b.custid = @custid
-				AND b.winlostdate = @fromdate
+				AND b.winlostdate = @FromDate
 				AND sbt.ProductID = 8
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -1145,12 +1140,12 @@ BEGIN
 				OUTER APPLY dbo.[f_ParseTransDesc](t.TransDesc, t.gameID) k
 			WHERE
 				t.custid = @custid
-				AND t.winlostdate = @fromdate 
+				AND t.winlostdate = @FromDate 
 				AND sbt.ProductID = 8
 				AND sbt.EventType = 0
 				AND t.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- VHR
+		-- Virtual Horse Racing
 		INSERT INTO @Data
 		SELECT
 			r.sporttype,
@@ -1203,7 +1198,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE
 			b.custid = @custid
-			AND b.winlostdate = @fromdate 
+			AND b.winlostdate = @FromDate 
 			AND sbt.ProductId = 5 
 			AND sbt.EventType = 3
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -1268,7 +1263,7 @@ BEGIN
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @custid
-			AND b.winlostdate = @fromdate
+			AND b.winlostdate = @FromDate
 			AND sbt.ProductID = 1
 			AND sbt.EventType = 0
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -1336,13 +1331,13 @@ BEGIN
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @custid
-			AND b.winlostdate = @fromdate
+			AND b.winlostdate = @FromDate
 			AND sbt.ProductID IN (1, 2)
 			AND sbt.EventType = 2
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
 		-- Microgaming Live Casino
-		IF @transtype = 1 OR @transtype = 2
+		IF @TransType = 1 OR @TransType = 2
 		BEGIN
 			INSERT INTO @Data 
 			SELECT
@@ -1394,14 +1389,14 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			WHERE
 				b.custid = @custid
-				AND b.winlostdate = @fromdate 
+				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 13
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 
 		-- Microgaming Live Casino, Colossus Bets (translog)
-		IF @transtype = 3
+		IF @TransType = 3
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -1459,15 +1454,15 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON t.gameID = sbt.bettype
 			WHERE
 				t.custid = @custid
-				AND t.winlostdate = @fromdate
+				AND t.winlostdate = @FromDate
 				AND sbt.ProductID IN (13, 15)
 				AND t.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 
-		-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge
-		IF @transtype = 1
+		-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
+		IF @TransType = 1
 		BEGIN
-			IF @fromdate < @yesterday	-- not yesterday and today settled ticket
+			IF @FromDate < @yesterday	-- not yesterday and today settled ticket
 			BEGIN
 				INSERT INTO @Data 
 				SELECT
@@ -1475,6 +1470,7 @@ BEGIN
 						WHEN sbt.ProductID = 6 THEN b.matchid
 						WHEN sbt.ProductID = 17 THEN 205
 						WHEN sbt.ProductID = 22 THEN 212
+						WHEN sbt.ProductID = 24 THEN 219
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -1518,7 +1514,7 @@ BEGIN
 					'' AS ShowTime,
 					'' AS betcheck,
 					CASE
-						WHEN sbt.ProductID IN (6, 22) THEN b.transdesc
+						WHEN sbt.ProductID IN (6, 22, 24) THEN b.transdesc
 						ELSE ''
 					END AS transdesc
 				FROM 
@@ -1526,8 +1522,8 @@ BEGIN
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
 					b.custid = @custid
-					AND b.winlostdate = @fromdate 
-					AND (sbt.ProductID IN (17, 22)
+					AND b.winlostdate = @FromDate 
+					AND (sbt.ProductID IN (17, 22, 24)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND sbt.EventType = 0
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -1540,6 +1536,7 @@ BEGIN
 						WHEN sbt.ProductID = 6 THEN b.matchid
 						WHEN sbt.ProductID = 17 THEN 205
 						WHEN sbt.ProductID = 22 THEN 212
+						WHEN sbt.ProductID = 24 THEN 219
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -1587,7 +1584,7 @@ BEGIN
 					'' AS ShowTime,
 					'' AS betcheck,
 					CASE
-						WHEN sbt.ProductID IN (6, 22) THEN b.transdesc
+						WHEN sbt.ProductID IN (6, 22, 24) THEN b.transdesc
 						ELSE ''
 					END AS transdesc
 				FROM 
@@ -1596,8 +1593,8 @@ BEGIN
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
 					b.custid = @custid
-					AND b.winlostdate = @fromdate 
-					AND (sbt.ProductID IN (17, 22)
+					AND b.winlostdate = @FromDate 
+					AND (sbt.ProductID IN (17, 22, 24)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND sbt.EventType = 0
 					AND brng.statusID NOT IN (0, 1)
@@ -1616,9 +1613,9 @@ BEGIN
 					sbt.ProductID
 			END
 		END
-		ELSE IF @transtype = 3
+		ELSE IF @TransType = 3
 		BEGIN
-			IF @fromdate BETWEEN @yesterday AND @today		-- yesterday and today running ticket
+			IF @FromDate BETWEEN @yesterday AND @today		-- yesterday and today running ticket
 			BEGIN
 				INSERT INTO @Data 
 				SELECT
@@ -1626,6 +1623,7 @@ BEGIN
 						WHEN sbt.ProductID = 6 THEN b.matchid
 						WHEN sbt.ProductID = 17 THEN 205
 						WHEN sbt.ProductID = 22 THEN 212
+						WHEN sbt.ProductID = 24 THEN 219
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -1669,7 +1667,7 @@ BEGIN
 					'' AS ShowTime,
 					'' AS betcheck,
 					CASE
-						WHEN sbt.ProductID IN (6, 22) THEN b.transdesc
+						WHEN sbt.ProductID IN (6, 22, 24) THEN b.transdesc
 						ELSE ''
 					END AS transdesc
 				FROM 
@@ -1678,8 +1676,8 @@ BEGIN
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
 					b.custid = @custid
-					AND b.winlostdate = @fromdate 
-					AND (sbt.ProductID IN (17, 22)
+					AND b.winlostdate = @FromDate 
+					AND (sbt.ProductID IN (17, 22, 24)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND sbt.EventType = 0
 					AND brng.statusID IN (0, 1)
@@ -1699,7 +1697,7 @@ BEGIN
 		END
 
 		-- Colossus Bets
-		IF @transtype IN (1, 2)
+		IF @TransType IN (1, 2)
 		BEGIN
 			INSERT INTO @Data 
 			SELECT
@@ -1752,12 +1750,12 @@ BEGIN
 				LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
 				b.custid = @custid
-				AND b.winlostdate = @fromdate 
+				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 15
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
-		ELSE IF @transtype = 3
+		ELSE IF @TransType = 3
 		BEGIN
 			INSERT INTO @Data 
 			SELECT
@@ -1810,14 +1808,14 @@ BEGIN
 				LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
 				b.custid = @custid
-				AND b.winlostdate = @fromdate 
+				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 15
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 		
 		-- Grand Prize Jackpot Win
-		IF @transtype = 4
+		IF @TransType = 4
 		BEGIN
 			-- Microgaming RNG Casino
 			INSERT INTO @Data 
@@ -1871,7 +1869,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.bettype
 			WHERE
 				pt.custid = @custid
-				AND pt.winlostdate = @fromdate 
+				AND pt.winlostdate = @FromDate 
 				AND sbt.ProductID = 17
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
@@ -1927,7 +1925,7 @@ BEGIN
 				LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
 				b.custid = @custid
-				AND b.winlostdate = @fromdate 
+				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 15
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 				AND EXISTS (	SELECT 1 
@@ -1936,9 +1934,9 @@ BEGIN
 		END
 
 		-- AG Casino, AllBet
-		IF @transtype = 1
+		IF @TransType = 1
 		BEGIN
-			IF @fromdate < @yesterday	-- not yesterday and today settled ticket
+			IF @FromDate < @yesterday	-- not yesterday and today settled ticket
 			BEGIN
 				INSERT INTO @Data 
 				SELECT
@@ -1993,7 +1991,7 @@ BEGIN
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
 					b.custid = @custid
-					AND b.winlostdate = @fromdate 
+					AND b.winlostdate = @FromDate 
 					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -2058,7 +2056,7 @@ BEGIN
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
 					b.custid = @custid
-					AND b.winlostdate = @fromdate 
+					AND b.winlostdate = @FromDate 
 					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
 					AND blc.statusID NOT IN (0, 1)
@@ -2075,9 +2073,9 @@ BEGIN
 					sbt.ProductID
 			END
 		END
-		ELSE IF @transtype = 3
+		ELSE IF @TransType = 3
 		BEGIN
-			IF @fromdate BETWEEN @yesterday AND @today		-- yesterday and today running ticket
+			IF @FromDate BETWEEN @yesterday AND @today		-- yesterday and today running ticket
 			BEGIN
 				INSERT INTO @Data 
 				SELECT
@@ -2133,7 +2131,7 @@ BEGIN
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
 					b.custid = @custid
-					AND b.winlostdate = @fromdate 
+					AND b.winlostdate = @FromDate 
 					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
 					AND blc.statusID IN (0, 1)
@@ -2193,8 +2191,8 @@ BEGIN
 		@SumPlayerCommGBP	= SUM(ISNULL(b.PlayerComm	* e.GBP, 0))
 	FROM @Data AS b
 		INNER JOIN #TempExchange AS e
-		ON e.ExchangeDate = (CASE WHEN b.winlostdate > @Today THEN @Today ELSE b.winlostdate END)
-			AND e.exchangeid = b.currency
+			ON e.ExchangeDate = (CASE WHEN b.winlostdate > @Today THEN @Today ELSE b.winlostdate END)
+				AND e.exchangeid = b.currency
 
 	SELECT A.*
 	FROM
@@ -2243,7 +2241,7 @@ BEGIN
 		StakeGBP		MONEY
 	);
 
-	IF @IsBet14 = 1
+	IF @FromDate <= @MoveBetsDay
 	BEGIN
 		-- Horse Racing
 		INSERT INTO @BettransDetail 

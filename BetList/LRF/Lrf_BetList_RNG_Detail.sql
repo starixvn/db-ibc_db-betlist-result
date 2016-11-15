@@ -29,6 +29,7 @@ AS
 		- 20160530@Kos: Add ORDER BY statement to correct ticket order [Redmine: #58448]
 		- 20160727@Kos: Include Void/Rejected detail tickets view drilldown WON/LOSE/DRAW summary tickets
 					- Change to use inline function for SportBetTypeMatrix
+		- 20161111@Kos: Support Fishing World [#Redmine: 66737]
 
 	Parameters:
 		- @TransType
@@ -47,11 +48,11 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge
+	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (17, 22)
+	WHERE ProductID IN (17, 22, 24)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
@@ -103,11 +104,13 @@ BEGIN
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
+		LicenseeWL 		MONEY,
 		Comm			MONEY,
 		PlayerComm		MONEY,
-		IP				NVARCHAR(15),
+		Ip				NVARCHAR(15),
 		TransDesc		NVARCHAR(1000),
-		BetCheck		VARCHAR(64)
+		BetCheck		VARCHAR(64),
+		MatchCode		VARCHAR(1000)
 	)
 
 	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo )
@@ -124,12 +127,26 @@ BEGIN
 			brng.odds,
 			brng.stake,
 			brng.actual_stake,
-			(brng.winlost - brng.actual_stake) AS WinLost,
-			brng.comm,
+			CASE
+				WHEN brng.statusID IN (0, 1) THEN 0
+				ELSE (brng.winlost - brng.actual_stake)
+			END AS WinLost,
+			CASE
+				WHEN brng.statusID IN (0, 1) THEN 0
+				ELSE - (brng.winlost - brng.actual_stake)
+			END AS LicenseeWL,
+			CASE
+				WHEN brng.statusID IN (0, 1) THEN 0
+				ELSE brng.comm
+			END AS Comm,
 			brng.playercomm,
 			brng.ip,
 			brng.transdesc,
-			brng.TranId3rd AS BetCheck
+			brng.TranId3rd AS BetCheck,
+			CASE
+				WHEN sbt.productID = 24 THEN brng.Additional
+				ELSE ''
+			END AS MatchCode
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId 
@@ -150,12 +167,26 @@ BEGIN
 			brng.odds,
 			brng.stake,
 			brng.actual_stake,
-			(brng.winlost - brng.actual_stake) AS WinLost,
-			brng.comm,
+			CASE
+				WHEN brng.statusID IN (0, 1) THEN 0
+				ELSE (brng.winlost - brng.actual_stake)
+			END AS WinLost,
+			CASE
+				WHEN brng.statusID IN (0, 1) THEN 0
+				ELSE - (brng.winlost - brng.actual_stake)
+			END AS LicenseeWL,
+			CASE
+				WHEN brng.statusID IN (0, 1) THEN 0
+				ELSE brng.comm
+			END AS Comm,
 			brng.playercomm,
 			brng.ip,
 			brng.transdesc,
-			brng.TranId3rd AS BetCheck
+			brng.TranId3rd AS BetCheck,
+			CASE
+				WHEN sbt.productID = 24 THEN brng.Additional
+				ELSE ''
+			END AS MatchCode
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
@@ -174,28 +205,45 @@ BEGIN
 			brng.odds,
 			brng.stake,
 			brng.actual_stake,
-			(brng.winlost - brng.actual_stake) AS WinLost,
-			brng.comm,
+			CASE
+				WHEN brng.statusID IN (0, 1) THEN 0
+				ELSE (brng.winlost - brng.actual_stake)
+			END AS WinLost,
+			CASE
+				WHEN brng.statusID IN (0, 1) THEN 0
+				ELSE - (brng.winlost - brng.actual_stake)
+			END AS LicenseeWL,
+			CASE
+				WHEN brng.statusID IN (0, 1) THEN 0
+				ELSE brng.comm
+			END AS Comm,
 			brng.playercomm,
 			brng.ip,
 			brng.transdesc,
-			brng.TranId3rd AS BetCheck
+			brng.TranId3rd AS BetCheck,
+			CASE
+				WHEN sbt.productID = 24 THEN brng.Additional
+				ELSE ''
+			END AS MatchCode
 		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
 	END
 
 	-- get currency (for security)
-	DECLARE @currency INT
+	DECLARE @Currency	INT,
+		@CurrencyCode	NVARCHAR(50)
 
 	SELECT currencyID,
 		LicenseeID 
 	INTO #currency
 	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)	-- System is default=1 (LRF)
 
-	SELECT @currency = c.currency
+	SELECT @Currency = c.currency,
+		@CurrencyCode = CASE WHEN ex.Code <> '' THEN ex.Code ELSE ex.currency END
 	FROM dbo.custinfo AS c WITH (NOLOCK)
-		INNER JOIN #Currency AS cy ON c.Currency = cy.CurrencyID 
+		INNER JOIN #Currency AS cy ON c.currency = cy.CurrencyID
+		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
 	WHERE c.custid = @custid
 
 	DROP TABLE #Currency
@@ -209,43 +257,32 @@ BEGIN
 	FROM @tmpBettransRnG
 
 	SELECT
-		TransId,
-		SportType,
-		BetType,
-		TransDate,
-		WinLostDate,
-		Status,
-		StatusId,
-		Odds,
-		Stake,
-		Actual_Stake,
-		CAST(Stake * e.USD AS MONEY) AS StakeUSD,
-		CAST(Stake * e.EUR AS MONEY) AS StakeEUR,
-		CAST(Stake * e.MYR AS MONEY) AS StakeMYR,
-		CAST(Stake * e.GBP AS MONEY) AS StakeGBP,
-		WinLost,
-		CAST(WinLost * e.USD AS MONEY) AS WinLostUSD,
-		CAST(WinLost * e.EUR AS MONEY) AS WinLostEUR,
-		CAST(WinLost * e.MYR AS MONEY) AS WinLostMYR,
-		CAST(WinLost * e.GBP AS MONEY) AS WinLostGBP,
-		Comm,
-		CAST(Comm * e.USD AS MONEY) AS CommUSD,
-		CAST(Comm * e.EUR AS MONEY) AS CommEUR,
-		CAST(Comm * e.MYR AS MONEY) AS CommMYR,
-		CAST(Comm * e.GBP AS MONEY) AS CommGBP,
-		PlayerComm,
-		CAST(PlayerComm * e.USD AS MONEY) AS PlayerCommUSD,
-		CAST(PlayerComm * e.EUR AS MONEY) AS PlayerCommEUR,
-		CAST(PlayerComm * e.MYR AS MONEY) AS PlayerCommMYR,
-		CAST(PlayerComm * e.GBP AS MONEY) AS PlayerCommGBP,
-		IP,
-		TransDesc,
-		BetCheck
+		b.*,
+		@CurrencyCode AS Currency,
+		CAST(b.Stake * e.USD AS MONEY) AS StakeUSD,
+		CAST(b.Stake * e.EUR AS MONEY) AS StakeEUR,
+		CAST(b.Stake * e.MYR AS MONEY) AS StakeMYR,
+		CAST(b.Stake * e.GBP AS MONEY) AS StakeGBP,
+		CAST(b.WinLost * e.USD AS MONEY) AS WinLostUSD,
+		CAST(b.WinLost * e.EUR AS MONEY) AS WinLostEUR,
+		CAST(b.WinLost * e.MYR AS MONEY) AS WinLostMYR,
+		CAST(b.WinLost * e.GBP AS MONEY) AS WinLostGBP,
+		CAST(b.LicenseeWL * e.USD AS MONEY) AS LicenseeWLUSD,
+		CAST(b.LicenseeWL * e.EUR AS MONEY) AS LicenseeWLEUR,
+		CAST(b.LicenseeWL * e.MYR AS MONEY) AS LicenseeWLMYR,
+		CAST(b.LicenseeWL * e.GBP AS MONEY) AS LicenseeWLGBP,
+		CAST(b.Comm * e.USD AS MONEY) AS CommUSD,
+		CAST(b.Comm * e.EUR AS MONEY) AS CommEUR,
+		CAST(b.Comm * e.MYR AS MONEY) AS CommMYR,
+		CAST(b.Comm * e.GBP AS MONEY) AS CommGBP,
+		CAST(b.PlayerComm * e.USD AS MONEY) AS PlayerCommUSD,
+		CAST(b.PlayerComm * e.EUR AS MONEY) AS PlayerCommEUR,
+		CAST(b.PlayerComm * e.MYR AS MONEY) AS PlayerCommMYR,
+		CAST(b.PlayerComm * e.GBP AS MONEY) AS PlayerCommGBP
 	FROM @tmpBettransRnG AS b
 		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)) AS e
 			ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = @currency
 	ORDER BY b.TransId ASC
-
 END
 
 

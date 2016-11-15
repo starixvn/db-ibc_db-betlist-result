@@ -24,6 +24,7 @@
 	@ShowAGC	BIT			= 0,	-- AG Casino
 	@ShowAB		BIT			= 0,	-- AllBet
 	@ShowVB		BIT			= 0,	-- Voidbridge
+	@ShowFW		BIT			= 0,	-- Fishing World
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -79,6 +80,7 @@ AS
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20160913@Kos: Support Colossus Bets [#Redmine: 63785]
 		- 20161006@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
 */
 
 BEGIN
@@ -87,18 +89,18 @@ BEGIN
 	DECLARE @Today		SMALLDATETIME
 		, @Yesterday	SMALLDATETIME
 	
-	SELECT @Today	= DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
-		,@Yesterday	= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
-		,@TotalRows	= 0
-		,@ErrorCode	= 0
-		,@ErrorMsg	= ''
+	SELECT @Today = DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
+		, @Yesterday = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
+		, @TotalRows = 0
+		, @ErrorCode = 0
+		, @ErrorMsg	= ''
 
 	-- validate customer info
 	SELECT currencyID
 		, LicenseeID 
 	INTO #currency
 	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
-	
+
 	IF @CustID IS NULL
 	BEGIN
 		SELECT TOP 1 
@@ -135,7 +137,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24)
 
 	-- Don't support BetTrade, RNG Casino old bet type (71)
 	DELETE FROM @SportBettype
@@ -143,19 +145,20 @@ BEGIN
 		OR (ProductID = 6 AND SubProduct = '')
 
 	DELETE FROM @SportBettype
-	WHERE ProductID		= CASE WHEN @ShowSB	= 0 AND @ShowBA = 0 THEN 1 END
-		OR ProductID	= CASE WHEN @ShowRB	= 0		THEN 2 END
-		OR ProductID	= CASE WHEN @ShowNG	= 0		THEN 3 END
-		OR ProductID	= CASE WHEN @ShowLC	= 0		THEN 4 END
-		OR ProductID	= CASE WHEN @ShowVS	= 0		THEN 5 END
-		OR ProductID	= CASE WHEN @ShowCS	= 0		THEN 6 END
-		OR ProductID	= CASE WHEN @ShowKN	= 0		THEN 8 END
+	WHERE ProductID		= CASE WHEN @ShowSB = 0 AND @ShowBA = 0 THEN 1 END
+		OR ProductID	= CASE WHEN @ShowRB = 0		THEN 2 END
+		OR ProductID	= CASE WHEN @ShowNG = 0		THEN 3 END
+		OR ProductID	= CASE WHEN @ShowLC = 0		THEN 4 END
+		OR ProductID	= CASE WHEN @ShowVS = 0		THEN 5 END
+		OR ProductID	= CASE WHEN @ShowCS = 0		THEN 6 END
+		OR ProductID	= CASE WHEN @ShowKN = 0		THEN 8 END
 		OR ProductID	= CASE WHEN @ShowAGC = 0	THEN 11 END
 		OR ProductID	= CASE WHEN @ShowMGCLC = 0	THEN 13 END
 		OR ProductID	= CASE WHEN @ShowCB = 0		THEN 15 END
 		OR ProductID	= CASE WHEN @ShowMGCRNG = 0	THEN 17 END
 		OR ProductID	= CASE WHEN @ShowAB = 0		THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB = 0		THEN 22 END
+		OR ProductID	= CASE WHEN @ShowFW = 0		THEN 24 END
 	-- end filer bettypes by sporttype
 
 	CREATE TABLE #BetListSelRunningByDateMem (
@@ -259,7 +262,7 @@ BEGIN
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
-			INNER JOIN @SportBettype sbt ON b.bettype = sbt.Bettype
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE b.transdate >= @FromDate AND b.transdate <= @ToDate
 			AND b.custid = @CustID
 			AND sbt.ProductId = 1
@@ -391,7 +394,7 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc
 		FROM 
-			#TempBATicket AS b 
+			#TempBATicket AS b
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE sbt.ProductID = 1 AND sbt.EventType = 0
 	END
@@ -492,7 +495,7 @@ BEGIN
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE
-			b.transdate >= @FromDate AND b.transdate<=@ToDate
+			b.transdate >= @FromDate AND b.transdate <= @ToDate
 			AND b.custid = @CustID
 			AND sbt.ProductID = 1
 			AND sbt.EventType = 2
@@ -540,7 +543,7 @@ BEGIN
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE
-			b.transdate >= @FromDate AND b.transdate<=@ToDate 
+			b.transdate >= @FromDate AND b.transdate <= @ToDate 
 			AND b.custid = @CustID
 			AND sbt.ProductID = 1
 			AND sbt.EventType = 0
@@ -598,7 +601,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE
 			b.transdate >= @FromDate AND b.transdate <= @ToDate
-			AND b.custid = @CustID 
+			AND b.custid = @CustID
 			AND sbt.ProductID = 2
 			AND sbt.EventType = 2
 			AND b.statusID IN (0, 1)
@@ -699,7 +702,7 @@ BEGIN
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
-			INNER JOIN @SportBettype sbt ON b.bettype = sbt.Bettype
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE
 			b.transdate >= @FromDate AND b.transdate <= @ToDate
 			AND b.custid = @CustID 
@@ -868,8 +871,8 @@ BEGIN
 			AND sbt.ProductID IN (13, 15)
 	END
 
-	-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge
-	IF @ShowCS = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1
+	-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
+	IF @ShowCS = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1
 	BEGIN
 		-- Yesterday and today running ticket
 		INSERT INTO #BetListSelRunningByDateMem
@@ -878,6 +881,7 @@ BEGIN
 				WHEN sbt.ProductID = 6 THEN b.matchid
 				WHEN sbt.ProductID = 17 THEN 205
 				WHEN sbt.ProductID = 22 THEN 212
+				WHEN sbt.ProductID = 24 THEN 219
 			END AS Sporttype,
 			@Username AS UserName,
 			b.bettype,
@@ -912,7 +916,7 @@ BEGIN
 			0 AS matchid,
 			'' AS betcheck,
 			CASE
-				WHEN sbt.ProductID IN (6, 22) THEN b.transdesc
+				WHEN sbt.ProductID IN (6, 22, 24) THEN b.transdesc
 				ELSE ''
 			END AS transdesc
 		FROM 
@@ -921,9 +925,9 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE
 			b.transdate BETWEEN @FromDate AND @ToDate
-			AND b.winlostdate BETWEEN @Yesterday AND @Today		-- yesterday and today
+			AND b.winlostdate BETWEEN @Yesterday AND @Today
 			AND b.custid = @CustID
-			AND (sbt.ProductID IN (17, 22)
+			AND (sbt.ProductID IN (17, 22, 24)
 				OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 			AND sbt.EventType = 0
 			AND brng.statusID = 0
