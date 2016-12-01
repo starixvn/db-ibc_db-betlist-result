@@ -1,7 +1,5 @@
 ALTER PROCEDURE [dbo].[Age_Result_MatchSelResultDetail]
-(
 	@MatchId INT
-)
 AS
 
 /*
@@ -12,7 +10,8 @@ AS
 		- 20141218@Sophia: Not to use Betstatus to get REFUND status of Tennis anymore
 		- 20150324@Sophia: Support to get BetRadar
 		- 20150810@Sophia: Hardcode to exclude ResultDetail of bettype 216, 217 for a temporary time [#40991]
-		- 201600829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
 */
 
 BEGIN
@@ -38,7 +37,7 @@ BEGIN
 			m.finalawayscore,
 			CASE m.Sporttype
 				WHEN 5 THEN
-					CASE ISNULL(R.SettlementStatusID, 0)
+					CASE ISNULL(r.SettlementStatusID, 0)
 						WHEN 1 THEN 'Refund'
 						WHEN 2 THEN 'Refund HT'
 						WHEN 3 THEN 'Refund FT'
@@ -60,14 +59,13 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(mr.IsPending, 0) AS IsPending
 		FROM dbo.match AS m WITH (NOLOCK)
-			LEFT JOIN dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN dbo.ResultDetail AS R WITH (NOLOCK) ON R.matchID = M.matchid AND R.ResourceId = '00'
-		WHERE m.MatchId = @matchid
+			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
+		WHERE m.MatchId = @MatchId
 
-		------------------------------------- 
 		SELECT @Sporttype = Sporttype
 		FROM dbo.match WITH (NOLOCK)
-		WHERE matchid = @matchid
+		WHERE matchid = @MatchId
 		
 		SELECT
 			MatchId,
@@ -85,7 +83,12 @@ BEGIN
 						OR (ResourceId = '08'
 							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
 					AND ResourceID NOT LIKE '217%'
-					AND ResourceID NOT LIKE '216%')
+					AND ResourceID NOT LIKE '216%'
+					AND ResourceID NOT LIKE '221%'
+					AND ResourceID NOT LIKE '222%'
+					AND ResourceID NOT LIKE '223%'
+					AND ResourceID NOT LIKE '224%'
+					AND ResourceID NOT LIKE '225%')
 				OR @Sporttype = 5 )
 		ORDER BY MatchID,
 			ResourceId
@@ -108,7 +111,7 @@ BEGIN
 			m.finalawayscore,
 			CASE m.Sporttype
 				WHEN 5 THEN
-					CASE ISNULL(R.SettlementStatusID, 0)
+					CASE ISNULL(r.SettlementStatusID, 0)
 						WHEN 1 THEN 'Refund'
 						WHEN 2 THEN 'Refund HT'
 						WHEN 3 THEN 'Refund FT'
@@ -130,14 +133,14 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(mr.IsPending, 0) AS IsPending
 		FROM dbo.match14 AS m WITH (NOLOCK)
-			LEFT JOIN dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN dbo.ResultDetail14 AS R WITH (NOLOCK) ON R.matchID = m.matchid AND R.ResourceId = '00'
-		WHERE m.matchid = @matchid
+			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.matchID = m.matchid AND r.ResourceId = '00'
+		WHERE m.matchid = @MatchId
 
 		-----------------------------------
 		SELECT @Sporttype = Sporttype
 		FROM dbo.match14 WITH (NOLOCK)
-		WHERE matchid = @matchid
+		WHERE matchid = @MatchId
 
 		SELECT
 			MatchId,
@@ -155,12 +158,19 @@ BEGIN
 						OR (ResourceId = '08'
 							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
 					AND ResourceID NOT LIKE '217%'
-					AND ResourceID NOT LIKE '216%')
+					AND ResourceID NOT LIKE '216%'
+					AND ResourceID NOT LIKE '221%'
+					AND ResourceID NOT LIKE '222%'
+					AND ResourceID NOT LIKE '223%'
+					AND ResourceID NOT LIKE '224%'
+					AND ResourceID NOT LIKE '225%')
 				OR @Sporttype = 5)
 		ORDER BY MatchID,
 			ResourceId
 	END
 END
+
+
 
 GO 
 GRANT EXECUTE ON [dbo].[Age_Result_MatchSelResultDetail] TO [bodbDownlineNet]

@@ -1,6 +1,7 @@
 ﻿ALTER PROCEDURE [dbo].[Age_Result_SportSelByDate]
-	@EventDate	DATETIME,
-	@IsShowAll	BIT			= 0
+	@EventDate		DATETIME,
+	@MoveBetsDay	DATETIME,
+	@IsShowAll		BIT			= 0
 AS
 
 /*
@@ -21,6 +22,7 @@ AS
 		- 20150810@Sophia: Hardcode to exclude ResultDetail of bettype 216, 217 for a temporary time [#40991]
 		- 20151014@Sophia: Show internal match [#45531]
 		- 201600829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
+		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
 */
 
 BEGIN
@@ -61,6 +63,11 @@ BEGIN
 							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
 					AND ResourceID NOT LIKE '217%'
 					AND ResourceID NOT LIKE '216%'
+					AND ResourceID NOT LIKE '221%'
+					AND ResourceID NOT LIKE '222%'
+					AND ResourceID NOT LIKE '223%'
+					AND ResourceID NOT LIKE '224%'
+					AND ResourceID NOT LIKE '225%'
 				UNION ALL
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetail14 WITH (NOLOCK)
@@ -70,6 +77,11 @@ BEGIN
 							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
 					AND ResourceID NOT LIKE '217%'
 					AND ResourceID NOT LIKE '216%'
+					AND ResourceID NOT LIKE '221%'
+					AND ResourceID NOT LIKE '222%'
+					AND ResourceID NOT LIKE '223%'
+					AND ResourceID NOT LIKE '224%'
+					AND ResourceID NOT LIKE '225%'
 			) BR ON match.matchid = BR.MatchID AND match.sporttype = 1
 	WHERE match.eventdate >= @EventDate
 		AND match.eventdate <= @toDate
