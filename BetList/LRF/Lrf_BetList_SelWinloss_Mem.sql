@@ -98,6 +98,7 @@ AS
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20160913@Kos: Support Colossus Bets [#Redmine: 63785]
 		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20161205@Kos: Fix Colossus Bets bet list empty before BalanceUpDay [Redmine: #68289]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -3029,7 +3030,7 @@ BEGIN
 				INNER JOIN @SportBettype sbt ON b.bettype = sbt.Bettype
 				LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
-				b.winlostdate BETWEEN @BalanceUpDay AND @tdate
+				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @custid
 				AND (@currencyID = 0 OR b.currency = @currencyID )
 				AND b.statusID IN (111, 112, 113)
@@ -3441,6 +3442,7 @@ BEGIN
 		@ShowCB			 = 1
 	*/
 END
+
 
 
 
