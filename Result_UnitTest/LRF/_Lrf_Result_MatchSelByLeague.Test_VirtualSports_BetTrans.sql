@@ -1,0 +1,95 @@
+﻿USE [UnitTest_Kos]
+GO
+/****** Object:  StoredProcedure [_Lrf_Result_MatchSelByLeague].[Test_VirtualSports_BetTrans]    Script Date: 1/13/2017 1:59:50 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER PROCEDURE [_Lrf_Result_MatchSelByLeague].[Test_VirtualSports_BetTrans]
+AS
+BEGIN
+	-- Arrange
+	DECLARE @Data TABLE (
+		SportType		TINYINT,
+		BetStatus		NVARCHAR(50),
+		LeagueId		INT,
+		MatchId			INT,
+		Lcolor			NVARCHAR(50),
+		MatchCode		NVARCHAR(50),
+		EventDate		DATETIME,
+		KickOffTime		DATETIME,
+		HomeId			INT,
+		AwayId			INT,
+		HtHomeScore		INT,
+		HtAwayScore		INT,
+		FinalHomeScore	INT,
+		FinalAwayScore	INT,
+		EventStatus		NVARCHAR(50),
+		ShowTime		NVARCHAR(50),
+		HomeId2			INT,
+		IsNeutral		BIT,
+		GoalRecord		VARCHAR(50),
+		IsHTCal			BIT,
+		Calculate		BIT,
+		IsPending		BIT
+	)
+
+	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
+
+	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
+	EXEC bodb02.dbo.Age_SelBalanceUpDay
+
+	DECLARE @MoveBetsDay SMALLDATETIME,
+		@BalanceUpDay SMALLDATETIME
+
+	SELECT @MoveBetsDay = MoveBetsDay, 
+		@BalanceUpDay = BalanceUpDay
+	FROM @tmp
+
+	DECLARE @EventDate	DATETIME,
+		@SportType		TINYINT,
+		@LeagueId		INT,
+		@MatchId		INT
+
+	SELECT TOP 1
+		@EventDate = m.eventdate,
+		@SportType = m.sporttype,
+		@LeagueId = m.leagueid,
+		@MatchId = m.matchid
+	FROM bodb02.dbo.match AS m WITH (NOLOCK)
+		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH(NOLOCK) ON m.sporttype = s.SportType
+	WHERE s.ProductID = 5
+		AND m.eventstatus NOT IN ('closed', 'running')
+
+	IF @SportType IS NOT NULL
+	BEGIN
+		-- Act
+		DECLARE @Command NVARCHAR(MAX)
+
+		SET @Command = 'EXEC bodb02.dbo.[Lrf_Result_MatchSelByLeague]
+							@FromDate = ''' + CONVERT(VARCHAR, @EventDate, 23) + ''',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
+							@LeagueId = ' + CONVERT(VARCHAR, @LeagueId) + ',
+							@SportType = ' + CONVERT(VARCHAR, @SportType) + ',
+							@IsShowAll = 1'
+
+		INSERT @Data
+		EXEC tSQLt.ResultSetFilter 1, @Command;
+
+		DECLARE @Expected	INT
+
+		SELECT @Expected = COUNT(*)
+		FROM @Data
+		WHERE MatchId = @MatchId
+
+		-- Assert
+		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+	END
+	ELSE
+	BEGIN
+		EXEC tSQLt.Fail 'No available test data'
+	END
+
+END;
+
