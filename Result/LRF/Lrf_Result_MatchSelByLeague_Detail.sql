@@ -11,7 +11,7 @@ AS
 
 /*
 	Created: 20141021@Jim
-	Task: Retrieve detail a  matches
+	Task: Retrieve result detail of a match
 	DB: DBEXT.bodb02
 	Original: [Age_Result_MatchSelResultDetail]
 	Revisions:
@@ -19,6 +19,7 @@ AS
 		- 20150810@Sophia: Hardcode to exclude ResultDetail of bettype 216, 217 for a temporary time [#40991]
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
+		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 
 	-------
 	EXEC Lrf_Result_MatchSelByLeague_Detail_xtest
@@ -42,26 +43,28 @@ BEGIN
 			CASE
 				WHEN m.sporttype NOT IN (162, 161, 180, 186) THEN m.GlobalShowTime
 				ELSE m.kickofftime
-			END kickofftime,
+			END AS KickOffTime,
 			m.homeid,
 			m.awayid,
 			m.hthomescore,
-			m.htawayscore, 
+			m.htawayscore,
 			m.finalhomescore,
 			m.finalawayscore,
 			CASE m.Sporttype
 				WHEN 5 THEN
 					CASE ISNULL(r.SettlementStatusID, 0)
-						WHEN 1 THEN 'Refund' 
+						WHEN 1 THEN 'Refund'
 						WHEN 2 THEN 'Refund HT'
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
 				ELSE
 					CASE
-						WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT' 
-						WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE 'Refund%' THEN 'Refund' 
+						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
+						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
+						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
+						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
+						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
 						ELSE m.eventstatus
 					END
 			END AS eventstatus,
@@ -82,13 +85,13 @@ BEGIN
 		WHERE matchid = @MatchId
 		
 		SELECT
-			MatchId
-			,ResourceId
-			,HomeValue
-			,AwayValue
-			,ResultStatusID
-			,SettlementStatusID
-			,OtherInfo
+			MatchId,
+			ResourceId,
+			HomeValue,
+			AwayValue,
+			ResultStatusID,
+			SettlementStatusID,
+			OtherInfo
 		FROM dbo.ResultDetail WITH (NOLOCK)
 		WHERE MatchID = @MatchId
 			AND SettlementStatusID > 0
@@ -107,19 +110,19 @@ BEGIN
 	END 
 	ELSE
 	BEGIN
-		SELECT 
+		SELECT
 			m.sporttype,
 			m.betstatus,
 			m.leagueid,
 			m.matchid,
 			m.matchcode,
-			m.eventdate, 
+			m.eventdate,
 			CASE
 				WHEN m.sporttype NOT IN (162, 161, 180, 186) THEN m.GlobalShowTime
 				ELSE m.kickofftime
 			END kickofftime,
-			m.homeID,
-			m.awayID,
+			m.homeid,
+			m.awayid,
 			m.hthomescore,
 			m.htawayscore,
 			m.finalhomescore,
@@ -134,11 +137,13 @@ BEGIN
 					END 
 				ELSE
 					CASE
-						WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT' 
-						WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE 'Refund%' THEN 'Refund' 
+						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
+						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
+						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
+						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
+						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
 						ELSE m.eventstatus
-					END 
+					END
 			END AS eventstatus,
 			m.showtime,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
@@ -157,13 +162,13 @@ BEGIN
 		WHERE MatchId = @MatchId
 
 		SELECT
-			MatchId
-			,ResourceId
-			,HomeValue
-			,AwayValue
-			,ResultStatusID
-			,SettlementStatusID
-			,OtherInfo
+			MatchId,
+			ResourceId,
+			HomeValue,
+			AwayValue,
+			ResultStatusID,
+			SettlementStatusID,
+			OtherInfo
 		FROM dbo.ResultDetail14 WITH (NOLOCK)
 		WHERE MatchID = @MatchId
 			AND SettlementStatusID > 0
@@ -179,7 +184,7 @@ BEGIN
 				OR @Sporttype = 5)
 		ORDER BY MatchID,
 			ResourceID
-	END 
+	END
 END
 
 
