@@ -12,6 +12,7 @@ AS
 		- 20150810@Sophia: Hardcode to exclude ResultDetail of bettype 216, 217 for a temporary time [#40991]
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
+		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 */
 
 BEGIN
@@ -28,14 +29,17 @@ BEGIN
 			m.matchid,
 			m.matchcode,
 			m.eventdate,
-			CASE WHEN m.sporttype = 162 THEN m.kickofftime ELSE m.globalshowtime END AS kickofftime,
-			m.homeID,
-			m.awayID,
+			CASE
+				WHEN m.sporttype = 162 THEN m.kickofftime
+				ELSE m.GlobalShowTime
+			END AS kickofftime,
+			m.homeid,
+			m.awayid,
 			m.hthomescore,
 			m.htawayscore,
 			m.finalhomescore,
 			m.finalawayscore,
-			CASE m.Sporttype
+			CASE m.sporttype
 				WHEN 5 THEN
 					CASE ISNULL(r.SettlementStatusID, 0)
 						WHEN 1 THEN 'Refund'
@@ -45,12 +49,14 @@ BEGIN
 					END
 				ELSE
 					CASE
-						WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE 'Refund%' THEN 'Refund'
+						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
+						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
+						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
+						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
+						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
 						ELSE m.eventstatus
 					END
-			END AS eventstatus,
+			END AS EventStatus,
 			m.showtime,
 			isnull(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			m.goalrecord,
@@ -102,14 +108,17 @@ BEGIN
 			m.matchid,
 			m.matchcode,
 			m.eventdate,
-			CASE WHEN m.sporttype = 162 THEN m.kickofftime ELSE m.globalshowtime END AS kickofftime,
-			m.homeID,
-			m.awayID,
+			CASE
+				WHEN m.sporttype = 162 THEN m.kickofftime
+				ELSE m.globalshowtime
+			END AS kickofftime,
+			m.homeid,
+			m.awayid,
 			m.hthomescore,
 			m.htawayscore,
 			m.finalhomescore,
 			m.finalawayscore,
-			CASE m.Sporttype
+			CASE m.sporttype
 				WHEN 5 THEN
 					CASE ISNULL(r.SettlementStatusID, 0)
 						WHEN 1 THEN 'Refund'
@@ -119,12 +128,14 @@ BEGIN
 					END
 				ELSE
 					CASE
-						WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE 'Refund%' THEN 'Refund'
+						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
+						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
+						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
+						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
+						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
 						ELSE m.eventstatus
 					END
-			END AS eventstatus, 
+			END AS EventStatus,
 			m.showtime,
 			isnull(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			m.goalrecord,
@@ -137,8 +148,7 @@ BEGIN
 			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.matchID = m.matchid AND r.ResourceId = '00'
 		WHERE m.matchid = @MatchId
 
-		-----------------------------------
-		SELECT @Sporttype = Sporttype
+		SELECT @Sporttype = sporttype
 		FROM dbo.match14 WITH (NOLOCK)
 		WHERE matchid = @MatchId
 

@@ -32,6 +32,7 @@ AS
 		- 20140403@Sophia: Support BetRadar
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161031@Kos: Support live score [#Redmine: 66447]
+		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 */
 
 BEGIN
@@ -79,9 +80,11 @@ BEGIN
 						END
 					ELSE
 						CASE
-							WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT'
-							WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
-							WHEN m.betstatus LIKE 'Refund%' THEN 'Refund' 
+							WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
+							WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
+							WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
+							WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
+							WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
 							ELSE m.eventstatus
 						END 
 				END AS eventstatus,
@@ -165,9 +168,11 @@ BEGIN
 						END
 					ELSE
 						CASE
-							WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT' 
-							WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
-							WHEN m.betstatus LIKE 'Refund%' THEN 'Refund' 
+							WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
+							WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
+							WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
+							WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
+							WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
 							ELSE m.eventstatus
 						END 
 				END AS eventstatus,
@@ -253,9 +258,11 @@ BEGIN
 						END
 					ELSE
 						CASE
-							WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT'
-							WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
-							WHEN m.betstatus LIKE 'Refund%' THEN 'Refund' 
+							WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
+							WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
+							WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
+							WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
+							WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
 						ELSE m.eventstatus END
 					END AS eventstatus,
 				ISNULL(mr.refund,0) IsRefund,
