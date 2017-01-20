@@ -30,6 +30,7 @@ AS
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161031@Kos: Support live score [#Redmine: 66447]
 		- 20170116@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
+		- 20170120@Kos: Get result detail of bet type 221 in case of 225 [#Redmine: 56589]
 */
 
 BEGIN
@@ -41,6 +42,10 @@ BEGIN
 			@Sporttype		TINYINT
 
 		SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '' ), 2)
+
+		-- Get result detail of bet type 221 in case of 225
+		IF @BetType = 225
+			SET @BetType = 221
 
 		IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @matchid)
 		BEGIN
