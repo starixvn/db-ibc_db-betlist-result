@@ -33,6 +33,7 @@ AS
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161031@Kos: Support live score [#Redmine: 66447]
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
+		- 20170120@Kos: Support Fast Market, get result detail of bet type 221 in case of 225 [#Redmine: 56589]
 */
 
 BEGIN
@@ -44,6 +45,10 @@ BEGIN
 			@Sporttype		TINYINT
 
 		SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20),@BetId), '8', '' ), 2)
+
+		-- Get result detail of bet type 221 in case of 225
+		IF @BetType = 225
+			SET @BetType = 221
 		
 		IF EXISTS(SELECT 1 FROM dbo.match WITH(NOLOCK) WHERE matchid = @matchid)
 		BEGIN
@@ -118,7 +123,13 @@ BEGIN
 			FROM dbo.ResultDetail D WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F
 					ON F.Bettype = @Bettype AND D.ResourceId LIKE F.ResourceID
-			WHERE D.MatchId = @MatchId AND D.SettlementStatusID > 0
+			WHERE D.MatchId = @MatchId
+				AND (d.SettlementStatusID > 0
+					OR d.ResourceID LIKE '221%'
+					OR d.ResourceID LIKE '222%'
+					OR d.ResourceID LIKE '223%'
+					OR d.ResourceID LIKE '224%'
+					OR d.ResourceID LIKE '225%')
 				AND ((@Sporttype = 5
 							AND CASE WHEN @Bettype NOT IN (1324) THEN 2 ELSE 
 									CASE WHEN @Bettype IN (1324) AND LEFT(D.ResourceId,2) = @ResourceId THEN 4 
@@ -133,7 +144,7 @@ BEGIN
 
 			RETURN
 		END
-		IF EXISTS(SELECT 1 FROM dbo.match14 WITH(NOLOCK) WHERE matchid = @matchid)
+		ELSE IF EXISTS(SELECT 1 FROM dbo.match14 WITH(NOLOCK) WHERE matchid = @matchid)
 		BEGIN
 			SELECT
 				m.sporttype, 
@@ -208,7 +219,12 @@ BEGIN
 					ON	F.Bettype = @Bettype
 						AND D.ResourceId LIKE F.ResourceID	
 			WHERE D.MatchId = @MatchId
-				AND D.SettlementStatusID > 0
+				AND (d.SettlementStatusID > 0
+					OR d.ResourceID LIKE '221%'
+					OR d.ResourceID LIKE '222%'
+					OR d.ResourceID LIKE '223%'
+					OR d.ResourceID LIKE '224%'
+					OR d.ResourceID LIKE '225%')
 				AND (	(@Sporttype = 5
 								AND CASE WHEN @Bettype NOT IN (1324) THEN 2 ELSE 
 								 	CASE WHEN @Bettype IN (1324) AND LEFT(D.ResourceId,2) = @ResourceId THEN 4 
@@ -297,7 +313,12 @@ BEGIN
 					ON	F.Bettype = @Bettype
 						AND D.ResourceId LIKE F.ResourceID	
 			WHERE D.MatchId = @MatchId
-				AND D.SettlementStatusID > 0
+				AND (d.SettlementStatusID > 0
+					OR d.ResourceID LIKE '221%'
+					OR d.ResourceID LIKE '222%'
+					OR d.ResourceID LIKE '223%'
+					OR d.ResourceID LIKE '224%'
+					OR d.ResourceID LIKE '225%')
 				AND (	(@Sporttype = 5
 							AND CASE WHEN @Bettype NOT IN (1324) THEN 2 ELSE 
 									CASE WHEN @Bettype IN (1324) AND LEFT(D.ResourceId,2) = @ResourceId THEN 4 
