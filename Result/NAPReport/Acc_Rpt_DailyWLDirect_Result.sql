@@ -1,168 +1,220 @@
 ﻿ALTER PROCEDURE [dbo].[Acc_Rpt_DailyWLDirect_Result]
-	@MatchID int,
-	@Bettype int,	
-	@TraderName nvarchar(100) OUTPUT
+	@MatchId	INT,
+	@BetType	INT,
+	@TraderName	NVARCHAR(100) OUTPUT
 AS
+
 /*
-Created: Elodie
-Task: Get result in report 2h
-DB: DBACC/bodb02
-Original: Acc_BetList_SelMatchResult
+	Created: Elodie
+	Task: Get result in report 2h
+	DB: DBACC.bodb02
+	Original: Acc_BetList_SelMatchResult
 
-Revisions:    
- - 20141021@Sophia: Get data of ResultDetail (Sporting Solution) 
- - 20140414@Sophia: Support Bet Radar
-	
+	Revisions:
+		- 20141021@Sophia: Get data of ResultDetail (Sporting Solution)
+		- 20140414@Sophia: Support Bet Radar
+		- 20170123@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70731]
 */
-SET NOCOUNT ON
 
-DECLARE @Sporttype TINYINT
+BEGIN
+	SET NOCOUNT ON
 
-IF EXISTS(SELECT 1 FROM match WITH(NOLOCK) WHERE matchid = @matchid)
-BEGIN	
-	SELECT 
-		m.betstatus, 
-		m.hthomescore,
-		m.htawayscore,
-		datediff(minute,kickofftime,CURRENT_TIMESTAMP) playtime,
-		m.LeagueID,
-		m.homeID,
-		m.awayID,
-		m.matchcode,
-		m.kickofftime,
-		m.eventdate,
-		m.finalhomescore,
-		m.finalawayscore,
-		CASE m.Sporttype WHEN 5 THEN CASE ISNULL(R.SettlementStatusID,0)	 
-										WHEN 1 THEN 'Refund' 
-										WHEN 2 THEN 'Refund HT'
-										WHEN 3 THEN 'Refund FT'
-									ELSE m.eventstatus END 
-								ELSE 
-									CASE  WHEN m.betstatus like 'Refund FT%' THEN 'Refund FT' 
-										  WHEN m.betstatus like 'Refund HT%' THEN 'Refund HT'
-										  WHEN m.betstatus like 'Refund%' THEN 'Refund' 
-									ELSE m.eventstatus END 
-						END AS eventstatus, 
+	DECLARE @SportType TINYINT
 
-		isnull(mr.refund,0) IsRefund, 
-		isnull(mr.calrefund,0) IsCalRefund,
-		isnull(m.isNeutral, CONVERT(BIT,0)) as IsNeutral,
-		m.goalrecord,
-		ISNULL(mr.IsHTCal,0) as IsHTCal,
-		ISNULL(mr.calculate,0) as calculate,
-		ISNULL(mr.IsPending,0) as IsPending,
-		m.showtime	
-	FROM match m WITH(NOLOCK)
-		LEFT OUTER JOIN match_remark mr WITH(NOLOCK) ON m.matchid = mr.matchid
-		LEFT JOIN dbo.ResultDetail R WITH (NOLOCK) ON R.matchID = M.MatchID AND R.ResourceId = '00'
-	WHERE m.matchid = @matchid
-	
-	SELECT @TraderName = c.username
-	FROM  Dot_Admin_Assignment_Operator o WITH (NOLOCK)
-		INNER JOIN customer c with(nolock) on o.OperatorID = c.custid
-	WHERE matchid = @MatchID 
-		AND @Bettype = CASE WHEN bettype IN (1,5) AND OperatorType = 1 THEN 1
-							WHEN bettype = 1 AND OperatorType = 2 THEN 7
-							WHEN bettype = 2 AND OperatorType = 1 THEN 3
-							WHEN bettype = 2 AND OperatorType = 2 THEN 8
-							WHEN bettype = 3 AND OperatorType = 1 THEN 5
-							WHEN bettype = 3 AND OperatorType = 2 THEN 15
-							WHEN bettype = 4 AND OperatorType = 1 THEN 2
-							WHEN bettype = 4 AND OperatorType = 2 THEN 12
+	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)		-- Bettrans range
+	BEGIN
+		-- Get match info and result
+		SELECT
+			m.betstatus,
+			m.hthomescore,
+			m.htawayscore,
+			DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP) AS PlayTime,
+			m.leagueid,
+			m.homeid,
+			m.awayid,
+			m.matchcode,
+			m.kickofftime,
+			m.eventdate,
+			m.finalhomescore,
+			m.finalawayscore,
+			m.livehomescore,
+			m.liveawayscore,
+			CASE m.Sporttype
+				WHEN 5 THEN
+					CASE ISNULL(r.SettlementStatusID, 0)
+						WHEN 1 THEN 'Refund'
+						WHEN 2 THEN 'Refund HT'
+						WHEN 3 THEN 'Refund FT'
+						ELSE m.eventstatus
+					END
+				ELSE
+					CASE
+						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
+						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
+						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
+						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
+						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
+						ELSE m.eventstatus
+					END
+			END AS EventStatus,
+			ISNULL(mr.refund, 0) AS IsRefund,
+			ISNULL(mr.calrefund, 0) AS IsCalRefund,
+			ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
+			m.goalrecord,
+			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
+			ISNULL(mr.calculate, 0) AS Calculate,
+			ISNULL(mr.IsPending, 0) AS IsPending,
+			m.showtime
+		FROM dbo.match AS m WITH (NOLOCK)
+			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
+		WHERE m.matchid = @MatchId
+
+		-- Get trader name
+		SELECT @TraderName = c.username
+		FROM dbo.Dot_Admin_Assignment_Operator AS o WITH (NOLOCK)
+			INNER JOIN dbo.customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
+		WHERE o.matchid = @MatchId
+			AND @Bettype = CASE
+								WHEN bettype IN (1, 5) AND OperatorType = 1 THEN 1
+								WHEN bettype = 1 AND OperatorType = 2 THEN 7
+								WHEN bettype = 2 AND OperatorType = 1 THEN 3
+								WHEN bettype = 2 AND OperatorType = 2 THEN 8
+								WHEN bettype = 3 AND OperatorType = 1 THEN 5
+								WHEN bettype = 3 AND OperatorType = 2 THEN 15
+								WHEN bettype = 4 AND OperatorType = 1 THEN 2
+								WHEN bettype = 4 AND OperatorType = 2 THEN 12
 							END
 
-		SELECT @Sporttype = Sporttype FROM dbo.Match m WITH (NOLOCK) WHERE MatchId = @matchid
+		SELECT @SportType = sporttype
+		FROM dbo.match WITH (NOLOCK)
+		WHERE matchid = @MatchId
 
+		-- Get result detail
+		SELECT
+			d.MatchID,
+			d.ResourceID,
+			d.HomeValue,
+			d.AwayValue,
+			d.ResultStatusID,
+			d.SettlementStatusID,
+			d.OtherInfo
+		FROM dbo.ResultDetail AS d WITH (NOLOCK)
+			LEFT JOIN (SELECT Bettype, ResourceId FROM f_ResourceBettype()) AS f
+				ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+		WHERE d.MatchID = @MatchId
+			AND (d.SettlementStatusID > 0
+				OR d.ResourceID LIKE '221%'
+				OR d.ResourceID LIKE '222%'
+				OR d.ResourceID LIKE '223%'
+				OR d.ResourceID LIKE '224%'
+				OR d.ResourceID LIKE '225%')
+			AND ((@SportType = 1
+					AND (d.ResourceId NOT IN ('00', '01', '08')
+						OR (d.ResourceId = '08'
+							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+					AND d.ResourceID LIKE f.ResourceID)
+				OR @SportType = 5)
+		ORDER BY d.MatchID,
+			d.ResourceID
+	END
+	ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)	-- Bettrans14 range
+	BEGIN
+		-- Get match info and result
+		SELECT
+			m.betstatus,
+			m.hthomescore,
+			m.htawayscore,
+			DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP) AS PlayTime,
+			m.leagueid,
+			m.homeid,
+			m.awayid,
+			m.matchcode,
+			m.kickofftime,
+			m.eventdate,
+			m.finalhomescore,
+			m.finalawayscore,
+			m.livehomescore,
+			m.liveawayscore,
+			CASE m.Sporttype
+				WHEN 5 THEN
+					CASE ISNULL(r.SettlementStatusID, 0)
+						WHEN 1 THEN 'Refund'
+						WHEN 2 THEN 'Refund HT'
+						WHEN 3 THEN 'Refund FT'
+						ELSE m.eventstatus
+					END
+				ELSE
+					CASE
+						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
+						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
+						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
+						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
+						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
+						ELSE m.eventstatus
+					END
+			END AS EventStatus,
+			ISNULL(mr.refund, 0) AS IsRefund,
+			ISNULL(mr.calrefund, 0) AS IsCalRefund,
+			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
+			m.goalrecord,
+			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
+			ISNULL(mr.calculate, 0) AS Calculate,
+			ISNULL(mr.IsPending, 0) AS IsPending,
+			m.showtime
+		FROM dbo.match14 AS m WITH (NOLOCK)
+			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
+		WHERE m.matchid = @MatchId
 
-		SELECT	D.MatchId,
-				D.ResourceId,
-				D.HomeValue,
-				D.AwayValue,
-				D.ResultStatusID,
-				D.SettlementStatusID,
-				D.OtherInfo
-		FROM	dbo.ResultDetail D WITH (NOLOCK)			
-		WHERE	D.MatchId = @MatchId	
-				AND D.SettlementStatusID > 0
-				AND ((@Sporttype = 1 AND D.ResourceId NOT IN ( '00', '01', '08'))
-						OR @Sporttype = 5
-						)
-		ORDER BY  D.MatchID, D.ResourceId 
-
-
-END
-ELSE IF exists(SELECT 1 FROM match14 WITH(NOLOCK) WHERE matchid = @matchid)	
-BEGIN	
-	SELECT 
-		m.betstatus, 
-		m.hthomescore,
-		m.htawayscore,
-		datediff(minute,kickofftime,CURRENT_TIMESTAMP) playtime,
-		m.LeagueID,
-		m.homeID,
-		m.awayID,
-		m.matchcode,
-		m.kickofftime,
-		m.eventdate,
-		m.finalhomescore,
-		m.finalawayscore,
-		CASE m.Sporttype WHEN 5 THEN CASE ISNULL(R.SettlementStatusID,0)	 
-										WHEN 1 THEN 'Refund' 
-										WHEN 2 THEN 'Refund HT'
-										WHEN 3 THEN 'Refund FT'
-									ELSE m.eventstatus END 
-								ELSE 
-									CASE  WHEN m.betstatus like 'Refund FT%' THEN 'Refund FT' 
-										  WHEN m.betstatus like 'Refund HT%' THEN 'Refund HT'
-										  WHEN m.betstatus like 'Refund%' THEN 'Refund' 
-									ELSE m.eventstatus END 
-						END AS eventstatus,
-		isnull(mr.refund,0) IsRefund, 
-		isnull(mr.calrefund,0) IsCalRefund,
-		isnull(m.isNeutral, CONVERT(BIT,0)) as IsNeutral,
-		m.goalrecord,
-		ISNULL(mr.IsHTCal,0) as IsHTCal,
-		ISNULL(mr.calculate,0) as calculate,
-		ISNULL(mr.IsPending,0) as IsPending,
-		m.showtime	
-	FROM match14 m WITH(NOLOCK)
-		LEFT OUTER JOIN match_remark mr WITH(NOLOCK) ON m.matchid = mr.matchid
-		LEFT JOIN dbo.ResultDetail14 R WITH (NOLOCK) ON R.matchID = M.MatchID AND R.ResourceId = '00'
-	WHERE m.matchid = @matchid
-	
-	SELECT @TraderName = c.username
-	FROM  DBARC.bodb_archive.dbo.Dot_Admin_Assignment_Operator_bk o WITH (NOLOCK)
-		INNER JOIN customer c with(nolock) on o.OperatorID = c.custid
-	WHERE matchid = @MatchID 
-		AND @Bettype = CASE WHEN bettype IN (1,5) AND OperatorType = 1 THEN 1
-							WHEN bettype = 1 AND OperatorType = 2 THEN 7
-							WHEN bettype = 2 AND OperatorType = 1 THEN 3
-							WHEN bettype = 2 AND OperatorType = 2 THEN 8
-							WHEN bettype = 3 AND OperatorType = 1 THEN 5
-							WHEN bettype = 3 AND OperatorType = 2 THEN 15
-							WHEN bettype = 4 AND OperatorType = 1 THEN 2
-							WHEN bettype = 4 AND OperatorType = 2 THEN 12
+		-- Get trader name
+		SELECT @TraderName = c.username
+		FROM DBARC.bodb_Archive.dbo.Dot_Admin_Assignment_Operator_bk AS o WITH (NOLOCK)
+			INNER JOIN dbo.customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
+		WHERE o.matchid = @MatchId
+			AND @Bettype = CASE
+								WHEN bettype IN (1, 5) AND OperatorType = 1 THEN 1
+								WHEN bettype = 1 AND OperatorType = 2 THEN 7
+								WHEN bettype = 2 AND OperatorType = 1 THEN 3
+								WHEN bettype = 2 AND OperatorType = 2 THEN 8
+								WHEN bettype = 3 AND OperatorType = 1 THEN 5
+								WHEN bettype = 3 AND OperatorType = 2 THEN 15
+								WHEN bettype = 4 AND OperatorType = 1 THEN 2
+								WHEN bettype = 4 AND OperatorType = 2 THEN 12
 							END
 
-		SELECT @Sporttype = Sporttype FROM dbo.Match14 m WITH (NOLOCK) WHERE MatchId = @matchid
+		SELECT @SportType = sporttype
+		FROM dbo.match14 WITH (NOLOCK)
+		WHERE matchid = @MatchId
 
-		SELECT	D.MatchId,
-				D.ResourceId,
-				D.HomeValue,
-				D.AwayValue,
-				D.ResultStatusID,
-				D.SettlementStatusID,
-				D.OtherInfo
-		FROM	dbo.ResultDetail14 D WITH (NOLOCK)			
-		WHERE	D.MatchId = @MatchId	
-				AND D.SettlementStatusID > 0	
-				AND ((@Sporttype = 1 AND D.ResourceId NOT IN ( '00', '01', '08'))
-						OR @Sporttype = 5
-						)
-		ORDER BY  D.MatchID, D.ResourceId 	
-	 
-
+		-- Get result detail
+		SELECT
+			d.MatchID,
+			d.ResourceID,
+			d.HomeValue,
+			d.AwayValue,
+			d.ResultStatusID,
+			d.SettlementStatusID,
+			d.OtherInfo
+		FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
+			LEFT JOIN (SELECT Bettype, ResourceId FROM f_ResourceBettype()) AS f
+				ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+		WHERE d.MatchID = @MatchId
+			AND (d.SettlementStatusID > 0
+				OR d.ResourceID LIKE '221%'
+				OR d.ResourceID LIKE '222%'
+				OR d.ResourceID LIKE '223%'
+				OR d.ResourceID LIKE '224%'
+				OR d.ResourceID LIKE '225%')
+			AND ((@SportType = 1
+					AND (d.ResourceId NOT IN ('00', '01', '08')
+						OR (d.ResourceId = '08'
+							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+					AND d.ResourceID LIKE f.ResourceID)
+				OR @Sporttype = 5)
+		ORDER BY d.MatchID,
+			d.ResourceID
+	END
 END
 
 GO
