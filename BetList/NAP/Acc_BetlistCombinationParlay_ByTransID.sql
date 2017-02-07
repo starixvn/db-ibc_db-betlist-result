@@ -25,6 +25,7 @@ AS
 		- 20160120@Kos: Add transdesc to support PH All In One 1.2 new bet types [#Redmine: 50897]
 		- 20160411@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170210@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
 
 	Paramters Explanation:
 */
@@ -618,7 +619,7 @@ BEGIN
 		END
 	END
 
-	SELECT
+	SELECT DISTINCT
 		CASE WHEN ISNULL(BetId, 0) = 0 THEN TransId ELSE BetId END AS TransId,
 		TransDate,
 		RefNo,
@@ -650,7 +651,7 @@ BEGIN
 		BetCheck
 	FROM @tmpBettrans
 
-	SELECT
+	SELECT DISTINCT
 		TransId,
 		RefNo,
 		WinLostDate,
@@ -696,10 +697,10 @@ BEGIN
 			WHEN 0 THEN 'RUNNING'
 			ELSE ''
 		END AS status
-	FROM @tmpResults
+	FROM ( SELECT DISTINCT * FROM @tmpResults ) AS tmp
 	ORDER BY CASE WHEN statusid NOT IN (0, 1) THEN winlostdate ELSE '' END ASC
 
-	SELECT * FROM @tmpMatch
+	SELECT DISTINCT * FROM @tmpMatch
 END
 
 

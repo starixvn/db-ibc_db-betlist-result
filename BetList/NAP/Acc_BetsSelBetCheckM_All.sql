@@ -8,20 +8,21 @@ AS
 	Created by: Henry
 	Date: 2009-12-05
 	Task: Get info of Mix Parlay Bets
-	DB: DBAGE.BODB02
+	DB: DBAGE.bodb02
 	Original: Acc_BetsSelBetCheckM
-	
+
 	Revisions:
 		- 20101007@Henry: Change column transid from INT to BIGINT
-		- 20110513@Lukas: re-arrange bettype
-		- 20110928@Johnson: get column statusid to mark void sub-ticket
+		- 20110513@Lukas: Re-arrange bettype
+		- 20110928@Johnson: Get column statusid to mark void sub-ticket
 		- 20120629@Sophia: Remove function f_GetOddsByBettype, f_ShowOddsByBettype,f_GetChoice for odds, Oddstype, betteam
-		- 20130121@Dan: change linked server DB06 to DBARC
-		- 20141006@Sophia: get Betcheck
+		- 20130121@Dan: Change linked server DB06 to DBARC
+		- 20141006@Sophia: Get Betcheck
 		- 20151210@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160119@Kos: Return transdesc to support PH All In One 1.2 [#Redmine: 50897]
 		- 20160407@Kos: Add TransId param, support Combo Parlay [#Redmine: 55282]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170207@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
 */
 
 BEGIN
@@ -237,7 +238,7 @@ BEGIN
 		INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
-	SELECT * FROM @BetListMP
+	SELECT DISTINCT * FROM @BetListMP
 	ORDER BY TransId DESC
 END
 

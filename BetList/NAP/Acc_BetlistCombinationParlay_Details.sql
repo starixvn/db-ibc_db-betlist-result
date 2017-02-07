@@ -36,6 +36,7 @@ AS
 		- 20151210@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160408@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170210@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
 */
 
 BEGIN
@@ -341,7 +342,7 @@ BEGIN
 	WHERE StatusId NOT IN (0, 1)
 
 	-- Return combo detail
-	SELECT
+	SELECT DISTINCT
 		WinLostDate,
 		0 AS transid,
 		Serial,
@@ -363,7 +364,7 @@ BEGIN
 
 	UNION ALL
 
-	SELECT
+	SELECT DISTINCT
 		WinLostDate,
 		0 AS transid,
 		0 AS serial,
@@ -380,6 +381,7 @@ BEGIN
 
 	SELECT * FROM @tmpMatch
 END
+
 
 
 
