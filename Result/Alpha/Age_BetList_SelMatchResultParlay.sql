@@ -20,6 +20,7 @@ AS
 		- 20140403@Sophia: Support BetRadar, correct Kickofftime
 		- 20161007@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170209@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
 */
 
 BEGIN
@@ -332,7 +333,7 @@ BEGIN
 					AND d.ResourceId LIKE F.ResourceID))
 	END
 
-	SELECT * FROM @tmpParlay
+	SELECT DISTINCT * FROM @tmpParlay
 	ORDER BY LeagueId,
 		BetType,
 		EventDate,
