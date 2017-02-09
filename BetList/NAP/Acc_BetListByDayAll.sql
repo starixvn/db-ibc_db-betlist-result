@@ -101,6 +101,7 @@ AS
 		- 20160810@Kos: Support NG2
 		- 20161019@Kos: Remove Bingo and P2P in bettrans and bettrans14 range [#Redmine: 53988]
 					  - Support Fishing World [#Redmine: 65934]
+		- 20170209@Kos: Statement - Unable to show NG2 betlist [#Redmine: 71344]
 
 	Param's Explanation:
 		+ @transtype: 
@@ -1625,7 +1626,7 @@ BEGIN
 			INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @custid
 			AND b.winlostdate = @fromdate
-			AND (s.ProductId = 7
+			AND (s.ProductId = 23
 				OR (s.ProductId = 6 AND s.SubProduct = ''))
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
