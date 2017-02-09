@@ -14,12 +14,11 @@ AS
 		- 20141021@Sophia: Get data of ResultDetail (Sporting Solution)
 		- 20140414@Sophia: Support Bet Radar
 		- 20170123@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70731]
+		- 20170209@Kos: Don't support result detail anymore [#Redmine: 70731]
 */
 
 BEGIN
 	SET NOCOUNT ON
-
-	DECLARE @SportType TINYINT
 
 	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)		-- Bettrans range
 	BEGIN
@@ -85,38 +84,6 @@ BEGIN
 								WHEN bettype = 4 AND OperatorType = 1 THEN 2
 								WHEN bettype = 4 AND OperatorType = 2 THEN 12
 							END
-
-		SELECT @SportType = sporttype
-		FROM dbo.match WITH (NOLOCK)
-		WHERE matchid = @MatchId
-
-		-- Get result detail
-		SELECT
-			d.MatchID,
-			d.ResourceID,
-			d.HomeValue,
-			d.AwayValue,
-			d.ResultStatusID,
-			d.SettlementStatusID,
-			d.OtherInfo
-		FROM dbo.ResultDetail AS d WITH (NOLOCK)
-			LEFT JOIN (SELECT Bettype, ResourceId FROM f_ResourceBettype()) AS f
-				ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
-		WHERE d.MatchID = @MatchId
-			AND (d.SettlementStatusID > 0
-				OR d.ResourceID LIKE '221%'
-				OR d.ResourceID LIKE '222%'
-				OR d.ResourceID LIKE '223%'
-				OR d.ResourceID LIKE '224%'
-				OR d.ResourceID LIKE '225%')
-			AND ((@SportType = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08')
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceID LIKE f.ResourceID)
-				OR @SportType = 5)
-		ORDER BY d.MatchID,
-			d.ResourceID
 	END
 	ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)	-- Bettrans14 range
 	BEGIN
@@ -182,38 +149,6 @@ BEGIN
 								WHEN bettype = 4 AND OperatorType = 1 THEN 2
 								WHEN bettype = 4 AND OperatorType = 2 THEN 12
 							END
-
-		SELECT @SportType = sporttype
-		FROM dbo.match14 WITH (NOLOCK)
-		WHERE matchid = @MatchId
-
-		-- Get result detail
-		SELECT
-			d.MatchID,
-			d.ResourceID,
-			d.HomeValue,
-			d.AwayValue,
-			d.ResultStatusID,
-			d.SettlementStatusID,
-			d.OtherInfo
-		FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
-			LEFT JOIN (SELECT Bettype, ResourceId FROM f_ResourceBettype()) AS f
-				ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
-		WHERE d.MatchID = @MatchId
-			AND (d.SettlementStatusID > 0
-				OR d.ResourceID LIKE '221%'
-				OR d.ResourceID LIKE '222%'
-				OR d.ResourceID LIKE '223%'
-				OR d.ResourceID LIKE '224%'
-				OR d.ResourceID LIKE '225%')
-			AND ((@SportType = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08')
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceID LIKE f.ResourceID)
-				OR @Sporttype = 5)
-		ORDER BY d.MatchID,
-			d.ResourceID
 	END
 END
 
