@@ -20,6 +20,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		StatusId		TINYINT,
 		Odds			MONEY,
+		Currency		NVARCHAR(50),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
@@ -84,3 +85,4 @@ BEGIN
 	END
 
 END;
+

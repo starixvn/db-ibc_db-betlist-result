@@ -6,7 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Acc_BetList_LC_Detail].[Test_AGCasino_BetTrans14_All]
+ALTER PROCEDURE [_Acc_BetList_LC_Detail].[Test_AGCasino_BetTransBk_All]
 AS
 BEGIN
 	-- Arrange
@@ -20,6 +20,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		StatusId		TINYINT,
 		Odds			MONEY,
+		Currency		NVARCHAR(50),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
@@ -51,8 +52,8 @@ BEGIN
 		@RefNo = b.transid,
 		@CustID = b.custid,
 		@TransId = brng.transid
-	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
-		INNER JOIN bodb02.dbo.bettransLC14 AS brng WITH (NOLOCK) ON brng.refno = b.transid
+	FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+		INNER JOIN DBARC.bodb_Archive.dbo.bettransLC_bk AS brng WITH (NOLOCK) ON brng.refno = b.transid
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
 	WHERE s.ProductID = 11
 

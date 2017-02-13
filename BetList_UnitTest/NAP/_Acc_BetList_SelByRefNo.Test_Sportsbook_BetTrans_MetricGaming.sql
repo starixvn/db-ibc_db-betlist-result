@@ -6,7 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Acc_BetList_SelByRefNo].[Test_ColossusBet_BetTrans]
+ALTER PROCEDURE [_Acc_BetList_SelByRefNo].[Test_Sportsbook_BetTrans_MetricGaming]
 AS
 BEGIN
 	-- Arrange
@@ -96,7 +96,8 @@ BEGIN
 		@RefNo = b.refno
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE s.ProductID = 15
+	WHERE s.SubProduct = 'MG-SuperLive'
+		AND b.statusID NOT IN (0, 1)
 
 	IF @TransId IS NOT NULL
 	BEGIN
