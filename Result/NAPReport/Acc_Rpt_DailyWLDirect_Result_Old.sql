@@ -1,94 +1,103 @@
-﻿USE [bodb_dwrs]
+﻿USE [bodb02]
 GO
-/****** Object:  StoredProcedure [dbo].[Acc_Rpt_DailyWLDirect_Result_Old]    Script Date: 02/14/2017 03:34:33 ******/
+/****** Object:  StoredProcedure [dbo].[Acc_Rpt_DailyWLDirect_Result_Old]    Script Date: 2/14/2017 4:31:02 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Acc_Rpt_DailyWLDirect_Result_Old]
-	@MatchID int,
-	@Bettype int,
-	@TraderName nvarchar(100) OUTPUT
+	@MatchId	INT,
+	@BetType	INT,
+	@TraderName	NVARCHAR(100) OUTPUT
 AS
+
 /*
-Created: Dom.Cao
-Task: show popup of match information
-DB: DBDW2/BODB_DWRS
-Original: Acc_BetList_SelMatchResult_Old
+	Created: Dom.Cao
+	Task: show popup of match information
+	DB: DBACC.bodb02
+	Original: Acc_BetList_SelMatchResult_Old
 
-Revisions:    
- - 20141023@Sophia: Get data from ResultDetail table (support Sporting solution) - (RedmineID :#23671)
- - 20150415@Sophia: Support BetRadar
- - 20151215@Tom: Change data type of parameter @Sporttype from TINYINT to SMALLINT
-			Change DB06 to alias server DBACC (RedmineID :#48078)
+	Revisions:
+		- 20141023@Sophia: Get data from ResultDetail table (support Sporting solution) (RedmineID :#23671)
+		- 20150415@Sophia: Support BetRadar
+		- 20151215@Tom: Change data type of parameter @Sporttype from TINYINT to SMALLINT
+					- Change DB06 to alias server DBACC (RedmineID :#48078)
+		- 20170214@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70731]
+					- Don't support result detail anymore [#Redmine: 70731]
+					- Move SP from DBDW2.bodb_dwrs to DBACC.bodb02
 */
-SET NOCOUNT ON
 
-DECLARE @Sporttype SMALLINT
+BEGIN
+	SET NOCOUNT ON
 
-	SELECT 
-		m.betstatus, 
+	-- Get match info and result
+	SELECT
+		m.betstatus,
 		m.hthomescore,
 		m.htawayscore,
-		datediff(minute,kickofftime,CURRENT_TIMESTAMP) playtime,
-		m.LeagueID,
-		m.homeID,
-		m.awayID,
+		DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP) AS PlayTime,
+		m.leagueid,
+		m.homeid,
+		m.awayid,
 		m.matchcode,
 		m.kickofftime,
 		m.eventdate,
 		m.finalhomescore,
 		m.finalawayscore,
-		CASE m.Sporttype WHEN 5 THEN CASE ISNULL(R.SettlementStatusID,0)	 
-										WHEN 1 THEN 'Refund' 
-										WHEN 2 THEN 'Refund HT'
-										WHEN 3 THEN 'Refund FT'
-									ELSE m.eventstatus END 
-								ELSE 
-									CASE  WHEN m.betstatus like 'Refund FT%' THEN 'Refund FT' 
-										  WHEN m.betstatus like 'Refund HT%' THEN 'Refund HT'
-										  WHEN m.betstatus like 'Refund%' THEN 'Refund' 
-									ELSE m.eventstatus END 
-						END AS eventstatus, 
+		m.livehomescore,
+		m.liveawayscore,
+		CASE m.sporttype
+			WHEN 5 THEN
+				CASE ISNULL(r.SettlementStatusID, 0)
+					WHEN 1 THEN 'Refund'
+					WHEN 2 THEN 'Refund HT'
+					WHEN 3 THEN 'Refund FT'
+					ELSE m.eventstatus
+				END
+			ELSE
+				CASE
+					WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
+					WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
+					WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
+					WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
+					WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
+					ELSE m.eventstatus
+				END
+		END AS EventStatus,
+		ISNULL(mr.refund, 0) IsRefund,
+		ISNULL(mr.calrefund, 0) IsCalRefund,
+		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
+		m.goalrecord,
+		ISNULL(mr.IsHTCal, 0) AS IsHTCal,
+		ISNULL(mr.calculate, 0) AS Calculate,
+		ISNULL(mr.IsPending, 0) AS IsPending
+	FROM bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
+		LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+		LEFT JOIN bodb_Archive.dbo.ResultDetail_bk AS r WITH (NOLOCK) ON r.MatchId = m.matchid AND r.ResourceId = '00'
+	WHERE m.matchid = @MatchId
 
-		isnull(mr.refund,0) IsRefund, 
-		isnull(mr.calrefund,0) IsCalRefund,
-		isnull(m.isNeutral, CONVERT(BIT,0)) as IsNeutral,		
-		ISNULL(mr.IsPending,0) as IsPending
-	FROM DBACC.bodb_archive.dbo.match_bk m WITH(NOLOCK)
-	LEFT OUTER JOIN bodb02.dbo.match_remark mr WITH(NOLOCK) ON m.matchid = mr.matchid
-	LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_bk R WITH (NOLOCK) ON R.matchID = M.MatchID AND R.ResourceId = '00'
-	WHERE m.matchid = @matchid
-	
+	-- Get trader name
 	SELECT @TraderName = c.username
-	FROM  DBARC.bodb_archive.dbo.Dot_Admin_Assignment_Operator_bk o WITH (NOLOCK)
-		INNER JOIN bodb02.dbo.customer c with(nolock) on o.OperatorID = c.custid
-	WHERE matchid = @MatchID 
-		AND @Bettype = CASE WHEN bettype IN (1,5) AND OperatorType = 1 THEN 1
-							WHEN bettype = 1 AND OperatorType = 2 THEN 7
-							WHEN bettype = 2 AND OperatorType = 1 THEN 3
-							WHEN bettype = 2 AND OperatorType = 2 THEN 8
-							WHEN bettype = 3 AND OperatorType = 1 THEN 5
-							WHEN bettype = 3 AND OperatorType = 2 THEN 15
-							WHEN bettype = 4 AND OperatorType = 1 THEN 2
-							WHEN bettype = 4 AND OperatorType = 2 THEN 12
-							END
+	FROM bodb_Archive.dbo.Dot_Admin_Assignment_Operator_bk AS o WITH (NOLOCK)
+		INNER JOIN dbo.customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
+	WHERE o.matchid = @MatchId
+		AND @BetType = CASE WHEN o.bettype IN (1, 5) AND o.OperatorType = 1 THEN 1
+							WHEN o.bettype = 1 AND o.OperatorType = 2 THEN 7
+							WHEN o.bettype = 2 AND o.OperatorType = 1 THEN 3
+							WHEN o.bettype = 2 AND o.OperatorType = 2 THEN 8
+							WHEN o.bettype = 3 AND o.OperatorType = 1 THEN 5
+							WHEN o.bettype = 3 AND o.OperatorType = 2 THEN 15
+							WHEN o.bettype = 4 AND o.OperatorType = 1 THEN 2
+							WHEN o.bettype = 4 AND o.OperatorType = 2 THEN 12
+						END
+END
 
 
-		SELECT @Sporttype = Sporttype FROM DBARC.bodb_archive.dbo.match_bk m WITH (NOLOCK) WHERE MatchId = @matchid
 
-	--- Get detail 
-		SELECT	D.MatchId,
-				D.ResourceId,
-				D.HomeValue,
-				D.AwayValue,
-				D.ResultStatusID,
-				D.SettlementStatusID,
-				D.OtherInfo
-		FROM	DBARC.bodb_archive.dbo.ResultDetail_bk D WITH (NOLOCK)			
-		WHERE	D.MatchId = @MatchId AND D.SettlementStatusID > 0				
-				AND ((@Sporttype = 1 AND D.ResourceId NOT IN ( '00', '01', '08'))
-						OR @Sporttype = 5
-						)
-		ORDER BY  D.MatchID, D.ResourceId
+GO
+GRANT EXECUTE ON [dbo].[Acc_Rpt_DailyWLDirect_Result_Old] TO [bodbExtAccNet]
+GO
+GRANT EXECUTE ON [dbo].[Acc_Rpt_DailyWLDirect_Result_Old] TO [bodbAdminNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[Acc_Rpt_DailyWLDirect_Result_Old] TO [vnteam]
