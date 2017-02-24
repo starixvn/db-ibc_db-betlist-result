@@ -1,11 +1,9 @@
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelByDayAll_Mem]
-	@LicenseeId			INT,
-	@UserId				INT,
+	@AgentList			VARCHAR(MAX),
 	@CustId				INT,
 	@FromDate			SMALLDATETIME,
 	@MoveBetsDay		SMALLDATETIME,
 	@TransType			INT				= 0,
-	@LangKey			NVARCHAR(10)	= 'en-US',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
 	@TotalRows			INT				= 0 OUTPUT,
@@ -82,6 +80,7 @@ AS
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 
 	Param's Explanation: 
 		+ @TransType:
@@ -93,6 +92,27 @@ AS
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	/*
 		WON: 112, LOSE: 113, DRAW: 111, REFUND: 103
@@ -135,38 +155,6 @@ BEGIN
 	SELECT @Today = DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
 		, @Yesterday = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 
-	CREATE TABLE #Currency (CurrencyID INT, LicenseeID INT)
-
-	INSERT INTO #Currency
-	SELECT currencyID
-		, LicenseeID
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)-- System is default=1 (LRF)
-
-	DECLARE @recommend INT
-
-	SELECT @recommend = recommend
-	FROM bodb_licensee.dbo.licenseeCustInfo WITH (NOLOCK)
-	WHERE CustId = @CustId
-
-	DECLARE @TempAg TABLE (custID INT, currency INT)
-
-	INSERT INTO @TempAg (custID, currency) 
-	SELECT lc.custID,
-		lc.currency
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(@licenseeID) AS lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID 
-	WHERE lc.CustID = @recommend
-
-	IF NOT EXISTS ( SELECT 1 FROM @TempAg )
-	BEGIN 
-		SELECT @ErrCode = 101
-			, @ErrMsg	= 'You have not permission to view this CustID, please check again.'
-		RETURN
-	END 
-
-	------------------------------------
-	DROP TABLE #Currency
-	------------------------------------
 	DECLARE @Data TABLE (
 		SportType		INT,
 		LeagueId		INT,
@@ -193,7 +181,7 @@ BEGIN
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
-		LicenseeWL 		MONEY,
+		LicenseeWL		MONEY,
 		Comm			MONEY,
 		PlayerComm		MONEY,
 		Discount		DECIMAL(9,8),
@@ -2172,10 +2160,13 @@ BEGIN
 		-- End Bet Trade
 	END
 
+	DELETE @Data
+	WHERE Currency NOT IN (SELECT DISTINCT Currency FROM @TempAg)
+
 	SELECT *
 	INTO #TempExchange
 	FROM Lrf_f_GetExchangeDaily(@FromDate, @Today)
-	WHERE exchangeid IN (SELECT DISTINCT Currency FROM @TempAg)
+	WHERE exchangeid IN (SELECT DISTINCT Currency FROM @Data)
 
 	SELECT
 		@TotalRows 			= COUNT(b.TransId),
@@ -2391,8 +2382,7 @@ BEGIN
 			AND sbtm.EventType = 3
 	END
 
-	SELECT *
-	FROM @BettransDetail
+	SELECT DISTINCT * FROM @BettransDetail
 	ORDER BY RefNo, BetType
 
 	DROP TABLE #TempExchange

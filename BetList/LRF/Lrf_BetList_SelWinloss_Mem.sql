@@ -6,11 +6,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinloss_Mem]
-	@LicenseeId			INT,
-	@UserId				INT,
+	@AgentList			VARCHAR(MAX),
 	@CustId				INT,
 	@FromDate			DATETIME,
 	@ToDate				DATETIME,
+	@DrawFilter			SMALLINT	= 1,
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
 	@ShowSB				BIT			= 0,
@@ -47,26 +47,23 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinloss_Mem]
 	@SumPlayerComm		MONEY		= 0 OUTPUT,
 	@SumPlayerCommUSD	MONEY		= 0 OUTPUT,
 	@SumPLayerCommEUR	MONEY		= 0 OUTPUT,
-	@SumPLayerCommGBP	MONEY		= 0 OUTPUT,
-	@DrawFilter			SMALLINT	= 1,
-	@LangKey			VARCHAR(10) = 'en-US',
-	@CurrencyId			INT			= 0 
+	@SumPLayerCommGBP	MONEY		= 0 OUTPUT
 AS
 
 /*
 	Created: Henry
 	Date: 2012-01-09
-	Task : Betlist for Licensee Winloss Report
+	Task: Betlist for Licensee Winloss Report
 	DB: DBACC.bodb02
 
 	Revisions:
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
-		- 20120319@Henry: show main transid for sub-ticket of system parlay 
+		- 20120319@Henry: show main transid for sub-ticket of system parlay
 		- 20120529@Henry: enhance performance
 		- 20120703@Henry: add value to column hdp1, hdp2 for Number Game
 		- 20120717@Jim: add paging filter
-		- 20120723@Jim: add playercomm value 
-		- 20120816@Henry: add ShowLiveCasino 
+		- 20120723@Jim: add playercomm value
+		- 20120816@Henry: add ShowLiveCasino
 		- 20120911@Jim : add virtual sport
 		- 20130123@Daniel: Change link server alias
 		- 20130204@Jim: support RNG Casino and Bingo product
@@ -76,7 +73,7 @@ AS
 		- 20140307@Hannah: offer Keno
 		- 20140630@Hannah: offer BetRadar and Sporting Solution
 		- 20140908@Jim: restrict Virtual Horse Racing bettype (hot fix  #22012)
-		- 20141128@winnie: change currency keenocean	
+		- 20141128@winnie: change currency keenocean
 		- 20150124@winnie: Add base currency GBP
 		- 20150406@Winnie: Add 60 bettypes Betradar & Apply matrix of sporttype & bettype 
 		- 20150515@Winnie: fix bug
@@ -101,6 +98,7 @@ AS
 		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20161111@Kos: Support Fishing World [#Redmine: 66737]
 		- 20161205@Kos: Fix Colossus Bets bet list empty before BalanceUpDay [Redmine: #68289]
+		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170302@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation:
@@ -112,6 +110,27 @@ AS
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	DECLARE @fdate DATETIME,
 		@tdate DATETIME
@@ -273,7 +292,6 @@ BEGIN
 		WHERE
 			b.winlostdate BETWEEN @TempFromDate AND @tdate
 			AND b.custid = @custid
-			AND (@currencyID = 0 OR b.currency = @currencyID )
 			AND b.statusID IN (111, 112, 113)
 			AND b.bettype NOT IN (901, 902, 903)
 
@@ -409,7 +427,7 @@ BEGIN
 				'',--MatchCode
 				'',--Race
 				0, --HomeID
-				0, --AwayID		
+				0, --AwayID
 				0, --Betstatus
 				CONVERT(BIT,0) AS IsNeutral,
 				0,
@@ -476,7 +494,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.custid = @custid
-				AND (@currencyID = 0 OR b.currency = @currencyID)
 				AND b.bettype NOT IN (901, 902, 903)
 				AND sbt.ProductID = 1
 				AND sbt.EventType = 1
@@ -533,7 +550,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND sbt.ProductID = 1 
 				AND sbt.EventType = 2 
 				AND b.statusID IN (111, 112, 113) 
@@ -589,7 +605,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND sbt.ProductID = 1 
 				AND sbt.EventType = 0 
 				AND b.matchid IN (9, 29) 
@@ -648,7 +663,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.custid = @custid
-				AND (@currencyID = 0 OR b.currency = @currencyID)
 				AND b.bettype IN (901, 902, 903)
 				AND sbt.ProductID = 1
 				AND sbt.EventType = 1
@@ -709,7 +723,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID ) 
 				AND sbt.ProductID IN (3, 4)
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -764,7 +777,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.custid = @custid
-				AND (@currencyID = 0 OR b.currency = @currencyID )
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 1
 				AND b.statusID IN (111, 112, 113)
@@ -811,13 +823,12 @@ BEGIN
 				'' AS betcheck,
 				'' AS transdesc
 			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-				INNER JOIN VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID)
 				AND sbt.ProductID = 5 
 				AND sbt.EventType = 3 
 				AND b.statusID IN (111, 112, 113)
@@ -881,7 +892,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID )
 				AND (sbt.ProductID = 13
 					OR (sbt.ProductID = 6 AND sbt.SubProduct = ''))
 				AND b.statusID IN (111, 112, 113)
@@ -938,7 +948,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID ) 
 				AND sbt.ProductID = 2 
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -993,7 +1002,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID ) 
 				AND sbt.ProductID = 8 
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -1057,7 +1065,6 @@ BEGIN
 				b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.winlostdate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
 				AND b.custid = @custid
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND (sbt.ProductID IN (17, 22, 24)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 				AND b.statusID IN (111, 112, 113)
@@ -1126,7 +1133,6 @@ BEGIN
 					AND b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) 
 						AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
 					AND b.custid = @custid 
-					AND (@currencyID = 0 OR b.currency = @currencyID) 
 					AND (sbt.ProductID IN (17, 22, 24)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND brng.statusID <> 0
@@ -1199,7 +1205,6 @@ BEGIN
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.winlostdate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND sbt.ProductID IN (11, 21)
 				AND b.statusID IN (111, 112, 113)
 
@@ -1262,7 +1267,6 @@ BEGIN
 					AND b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) 
 						AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
 					AND b.custid = @custid 
-					AND (@currencyID = 0 OR b.currency = @currencyID) 
 					AND sbt.ProductID IN (11, 21)
 					AND blc.statusID <> 0
 				GROUP BY
@@ -1328,7 +1332,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID )
 				AND b.statusID IN (111, 112, 113)
 				AND sbt.ProductID = 15
 		END
@@ -1380,10 +1383,10 @@ BEGIN
 			dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
-			b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate AND
-			b.custid = @custid AND (@currencyID = 0 OR b.currency = @currencyID ) AND
-			b.statusID IN (111, 112, 113) AND
-			b.bettype NOT IN (901, 902, 903)
+			b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
+			AND b.custid = @custid
+			AND b.statusID IN (111, 112, 113)
+			AND b.bettype NOT IN (901, 902, 903)
 
 		IF @ShowBA = 1
 		BEGIN
@@ -1585,7 +1588,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND b.bettype NOT IN (901, 902, 903)
 				AND sbt.ProductID = 1
 				AND sbt.EventType = 1
@@ -1643,7 +1645,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 				AND b.custid = @custid
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND sbt.ProductID = 1
 				AND sbt.EventType = 0
 				AND b.matchid IN (9, 29)
@@ -1699,7 +1700,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID ) 
 				AND sbt.ProductID = 1 
 				AND sbt.EventType = 2 
 				AND b.statusID IN (111, 112, 113) 
@@ -1757,7 +1757,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND b.bettype IN (901, 902, 903) 
 				AND sbt.ProductID = 1
 				AND sbt.EventType = 1
@@ -1818,7 +1817,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @tdate 
 				AND b.custid = @custid
-				AND (@currencyID = 0 OR b.currency = @currencyID)
 				AND sbt.ProductID IN (3, 4)
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -1873,7 +1871,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID ) 
 				AND sbt.ProductID = 5 
 				AND sbt.EventType = 1 
 				AND b.statusID IN (111, 112, 113)
@@ -1926,7 +1923,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID ) 
 				AND sbt.ProductID = 5 
 				AND sbt.EventType = 3 
 				AND b.statusID IN (111, 112, 113)
@@ -2018,7 +2014,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID)
 				AND sbt.ProductID IN (6, 11, 13, 17, 21, 22, 24)
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -2074,7 +2069,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND sbt.ProductID = 2 
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -2129,7 +2123,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @tdate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID ) 
 				AND sbt.ProductID = 8 
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -2184,7 +2177,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @tdate
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID )
 				AND b.statusID IN (111, 112, 113)
 				AND sbt.ProductID = 15
 		END
@@ -2235,7 +2227,6 @@ BEGIN
 		WHERE
 			b.winlostdate BETWEEN @fdate AND @TempToDate 
 			AND b.custid = @custid 
-			AND (@currencyID = 0 OR b.currency = @currencyID) 
 			AND b.ruben = 1 
 			AND b.status NOT IN ('VOID','REJECT','REFUND') 
 			AND b.bettype NOT IN (901, 902, 903)
@@ -2440,7 +2431,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID)
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
 				AND b.bettype NOT IN (901, 902, 903)
@@ -2497,7 +2487,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID ) 
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND') 
 				AND sbt.ProductID = 1 
@@ -2554,7 +2543,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID', 'REJECT','REFUND') 
 				AND sbt.ProductID = 1 
@@ -2614,7 +2602,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID)
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND') 
 				AND b.bettype IN (901, 902, 903) 
@@ -2675,7 +2662,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID)
 				AND sbt.ProductID IN (3, 4)
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
@@ -2731,7 +2717,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND sbt.ProductID = 5 
 				AND sbt.EventType = 1 
 				AND b.ruben = 1 
@@ -2783,7 +2768,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID)
 				AND sbt.ProductID = 5 
 				AND sbt.EventType = 3 
 				AND b.statusID IN (111, 112, 113)
@@ -2875,7 +2859,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND sbt.ProductID IN (6, 11, 13, 17, 21, 22, 24)
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
@@ -2932,7 +2915,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID ) 
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID','REJECT','REFUND') 
 				AND sbt.ProductID = 2
@@ -2988,7 +2970,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @custid 
-				AND (@currencyID = 0 OR b.currency = @currencyID) 
 				AND sbt.ProductID = 8 
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
@@ -3044,7 +3025,6 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @custid
-				AND (@currencyID = 0 OR b.currency = @currencyID )
 				AND b.statusID IN (111, 112, 113)
 				AND sbt.ProductID = 15
 		END
@@ -3063,30 +3043,16 @@ BEGIN
 		DELETE @BetListByDateMem WHERE Sporttype = 1 AND Bettype = 903
 	END
 
-	--@currency
-	SELECT CurrencyID
-		,LicenseeID
-	INTO #Currency
-	FROM DBLIC.bodb_licensee.dbo.CurrencyUser WITH (NOLOCK)
-	WHERE usrID = @userID 
-		AND LicenseeID = @LicenseeID 
-		AND SystemID = 1
-		AND isActive = 1
+	DELETE @BetListByDateMem
+	WHERE Currency NOT IN (SELECT DISTINCT Currency FROM @TempAg)
 
-	SELECT * 
-	INTO #TempExchange 
+	-- Get exchange rate
+	SELECT *
+	INTO #TempExchange
 	FROM Lrf_f_GetExchangeDaily(@FDate, @TDate)
-	WHERE exchangeid IN 
-	(
-		SELECT DISTINCT lc.Currency
-		FROM OPENQUERY(DBLIC, 'SELECT * FROM bodb_licensee.dbo.f_SelLicenseeCust(0)') lc
-			INNER JOIN #currency c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID 
-	)
-	---------------------------------------
-	DROP TABLE #currency
-	---------------------------------------
+	WHERE exchangeid IN (SELECT DISTINCT Currency FROM @BetListByDateMem)
 
-	--exclude draw for no draw option (2)
+	-- Exclude draw for no draw option (2)
 	DELETE FROM @BetListByDateMem
 	WHERE @drawfilter = 2 AND status = 'DRAW' AND ABS(modds) <> 0.25
 
@@ -3119,7 +3085,7 @@ BEGIN
 		@SumCommGBP			= SUM(ISNULL(b.Comm			* e.GBP, 0)),
 		@SumPlayerCommGBP	= SUM(ISNULL(b.PlayerComm	* e.GBP, 0))
 	FROM @BetListByDateMem AS b
-		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
+		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
 
 	SELECT A.*
 	FROM
@@ -3155,10 +3121,11 @@ BEGIN
 			d.LicenseeWL	* e.GBP	AS LicenseeWLGBP,
 			d.Comm			* e.GBP	AS commGBP,
 			d.PlayerComm	* e.GBP	AS playercommGBP
-		FROM @BetListByDateMem d
-			INNER JOIN #TempExchange e
+		FROM @BetListByDateMem AS d
+			INNER JOIN #TempExchange AS e
 				ON e.ExchangeDate =  d.WinLostDate AND e.exchangeid = d.Currency
-		) A WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
+		) A
+	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 
 	-- Get sub tickets
 	DECLARE @BettransDetail TABLE(
@@ -3418,7 +3385,7 @@ BEGIN
 	END 
 
 	SELECT * FROM @BettransDetail 
-	ORDER BY RefNo,Bettype
+	ORDER BY RefNo, Bettype
 
 	DROP TABLE #TempExchange
 	/*

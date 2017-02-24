@@ -7,13 +7,11 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_WinlostByLeague_Mem]
+	@AgentList		VARCHAR(MAX),
 	@CustId			INT,
 	@Odds			MONEY			= 0,
 	@LeagueId		INT,
 	@MatchId		INT				= 0,
-	@LicenseeId		INT,
-	@UserId			INT,
-	@CurrencyId		INT				= 0,
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@TotalRows		INT				= 0 OUTPUT,
@@ -45,14 +43,13 @@ AS
 		- 20160201@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20170227@Kos: Support sub licensees [#Redmine: 71679]
 
 	Param's Explanation: 
+		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
 		- @CustID : Customer Number
 		- @Odds : decimals odds, default >=0
 		- @LeagueID : LeagueID, Number
-		- @LicenseeID :Licensee ID
-		- @UserID	 : User ID who run this report
-		- @CurrencyID : Filter Currency . defaul=0 (All)
 		- @PageSize : Number rows of one fage, for faging
 		- @PageIndex : Index of paging
 		- @TotalRows : Number rows of output
@@ -68,12 +65,26 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT currencyID
-		,LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @userID, 1) -- System is default=1 (LRF)
-	WHERE @CurrencyID = 0
-		OR (@CurrencyID <> 0 AND CurrencyID = @CurrencyID)
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	DECLARE @TempFromDate SMALLDATETIME
 	DECLARE @TempToDate SMALLDATETIME
@@ -89,14 +100,6 @@ BEGIN
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID = 1 AND BetType NOT IN (901, 902, 903, 904)
-
-	-------
-	DECLARE @TempAg AS TABLE (custid INT)
-
-	INSERT INTO @TempAg (custid)
-	SELECT DISTINCT CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) lc
-		INNER JOIN #currency c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
 
 	DECLARE @IFromdate DATETIME
 	DECLARE @ITodate DATETIME
@@ -238,12 +241,11 @@ BEGIN
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 			WHERE m.leagueid = @LeagueID
-				AND ((@CurrencyID = 0 AND currency IN (SELECT currencyId FROM #currency)) 
-					OR (@CurrencyID <> 0 AND Currency = @CurrencyID))
-				AND b.statusID IN ( SELECT * FROM @status )
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+				AND b.statusID IN (SELECT * FROM @status)
 				AND b.winlostdate BETWEEN @FromDate AND @ToDate
 				AND b.custid = @CustID
-				AND tpositiontaking = 0 --getBA
+				AND b.tpositiontaking = 0 --getBA
 				AND (@matchid = 0 OR m.matchid = @matchid)
 			ORDER BY b.STATUS
 				,b.transid
@@ -287,7 +289,7 @@ BEGIN
 							END
 					ELSE b.odds
 				END odds2
-				,b.STATUS
+				,b.status
 				,b.stake
 				,(b.winlost - actual_stake) AS WinLost
 				,CASE 
@@ -318,8 +320,7 @@ BEGIN
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 			WHERE m.leagueid = @LeagueID
-				AND ((@CurrencyID = 0 AND currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND Currency = @CurrencyID))
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN ( SELECT * FROM @status )
 				AND b.winlostdate BETWEEN @FromDate AND @ToDate
 				AND b.custid = @CustID
@@ -404,8 +405,7 @@ BEGIN
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 			WHERE m.leagueid = @leagueID
-				AND ((@CurrencyID = 0 AND currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND Currency = @CurrencyID))
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN ( SELECT * FROM @status )
 				AND b.winlostdate BETWEEN @FromDate AND @ToDate
 				AND b.custid = @CustID
@@ -487,8 +487,7 @@ BEGIN
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 			WHERE m.leagueid = @leagueID
-				AND ((@CurrencyID = 0 AND currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND Currency = @CurrencyID))
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (SELECT * FROM @status)
 				AND b.winlostdate BETWEEN @FromDate AND @ToDate
 				AND b.custid = @CustID
@@ -756,7 +755,6 @@ BEGIN
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 
-	DROP TABLE #Currency
 	DROP TABLE #TempExchange
 	DROP TABLE #Data
 END

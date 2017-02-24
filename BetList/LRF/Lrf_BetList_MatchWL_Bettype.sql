@@ -3,14 +3,10 @@ set QUOTED_IDENTIFIER ON
 go
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Bettype]
+	@AgentList			VARCHAR(MAX),
 	@MatchId			INT,
-	@LicenseeId			INT,
-	@UserId				INT,
-	@LicenseeType		VARCHAR(100)	= NULL,
-	@CurrencyId			INT				= 0,
 	@BetType			INT				= 0,
 	@LiveIndicator		INT				= -1,
-	@LangKey			VARCHAR(10)		= 'en-US',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
 	@TotalRows			INT				= 0 OUTPUT,
@@ -18,15 +14,15 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Bettype]
 	@SumLicenseeWL		MONEY			= 0 OUTPUT,
 	@SumComm			MONEY			= 0 OUTPUT,
 	@SumPlayerComm		MONEY			= 0 OUTPUT,
-	@SumWinlostUSD		MONEY			= 0 OUTPUT,
+	@SumWinLostUSD		MONEY			= 0 OUTPUT,
 	@SumLicenseeWLUSD	MONEY			= 0 OUTPUT,
 	@SumCommUSD			MONEY			= 0 OUTPUT,
 	@SumPlayerCommUSD	MONEY			= 0 OUTPUT,
-	@SumWinlostEUR		MONEY			= 0 OUTPUT,
+	@SumWinLostEUR		MONEY			= 0 OUTPUT,
 	@SumLicenseeWLEUR	MONEY			= 0 OUTPUT,
 	@SumCommEUR			MONEY			= 0 OUTPUT,
 	@SumPlayerCommEUR	MONEY			= 0 OUTPUT,
-	@SumWinlostGBP		MONEY			= 0 OUTPUT,
+	@SumWinLostGBP		MONEY			= 0 OUTPUT,
 	@SumLicenseeWLGBP	MONEY			= 0 OUTPUT,
 	@SumCommGBP			MONEY			= 0 OUTPUT,
 	@SumPlayerCommGBP	MONEY			= 0 OUTPUT,
@@ -77,6 +73,7 @@ AS
 		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation: 
@@ -85,29 +82,35 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
+
 	DECLARE @_Date SMALLDATETIME
 
 	IF @Date IS NOT NULL
 		SET @_Date = @Date
 
-	SELECT currencyID,
-		LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)-- System is default=1 (LRF)
-	WHERE @CurrencyId = 0
-		OR (@CurrencyId <> 0 AND CurrencyID = @CurrencyId)
-
-	DECLARE @TempAg AS TABLE (custid INT)
-
-	INSERT INTO @TempAg (custid)
-	SELECT DISTINCT CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) lc
-		INNER JOIN #currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType, [Description])
-
 	SELECT @BetType = ISNULL(@BetType, 0)
 
-	----Get Sport Bettype Matrix------
+	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -167,8 +170,8 @@ BEGIN
 		TransDesc		NVARCHAR(300)
 	)
 
-	IF EXISTS(SELECT TOP 1 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchID
-		UNION SELECT TOP 1 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE EventID = @MatchID )
+	IF EXISTS(SELECT TOP 1 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId
+		UNION SELECT TOP 1 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE EventID = @MatchId )
 	BEGIN
 		IF @ShowBA = 1
 		BEGIN
@@ -202,7 +205,7 @@ BEGIN
 				b.matchid,
 				m.betstatus,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
-				b.OddsType,
+				b.oddstype,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -215,13 +218,12 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
 			WHERE
-				b.matchid = @matchid
+				b.matchid = @MatchId
 				AND (@BetType = 0
 					OR (@BetType <> 0 AND CASE WHEN ISNULL(ss.bettype,0) = 0 THEN b.bettype ELSE ss.Grouptypeid END = @BetType))
 				AND sbt.ProductID = 1
-				AND b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
+				AND b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND b.tpositiontaking = 0
 				AND ((@LiveIndicator = -1)
@@ -276,13 +278,12 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
 			WHERE
-				b.matchid = @matchid
+				b.matchid = @MatchId
 				AND (@BetType = 0
 					OR (@BetType <> 0 AND CASE WHEN ISNULL(ss.bettype,0) = 0 THEN b.bettype ELSE ss.Grouptypeid END = @BetType))
 				AND sbt.ProductID = 1
-				AND b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
+				AND b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND b.tpositiontaking <> 0
 				AND ((@LiveIndicator = -1)
@@ -340,14 +341,13 @@ BEGIN
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE
-				b.matchid = @matchid
+				b.matchid = @MatchId
 				AND (@BetType = 0
 					OR (@BetType <> 0 AND b.bettype = @BetType))
 				AND sbt.ProductID IN (3, 4, 5)
 				AND sbt.EventType = 1
-				AND b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
+				AND b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = -1) 
 					OR (@LiveIndicator = 0 AND b.Liveindicator = 0)
@@ -393,7 +393,7 @@ BEGIN
 				b.betid,
 				b.currency,
 				b.refno,
-				CONVERT(VARCHAR(20),r.EventTime) AS ShowTime,
+				CONVERT(VARCHAR(20), r.EventTime) AS ShowTime,
 				'' AS betcheck,
 				'' AS transdesc
 			FROM
@@ -402,14 +402,13 @@ BEGIN
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE
-				o.EventID = @matchid
+				o.EventID = @MatchId
 				AND (@BetType = 0
 					OR (@BetType <> 0 AND b.bettype = @BetType))
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 3
-				AND b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
+				AND b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = -1)
 					OR (@LiveIndicator = 0 AND b.Liveindicator = 0)
@@ -452,7 +451,7 @@ BEGIN
 				b.matchid,
 				m.betstatus,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
-				b.OddsType,
+				b.oddstype,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -469,9 +468,8 @@ BEGIN
 				AND (@BetType = 0
 					OR (@BetType <> 0 AND CASE WHEN ISNULL(ss.bettype,0) = 0 THEN b.bettype ELSE ss.Grouptypeid END = @BetType))
 				AND sbt.ProductID = 1
-				AND b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
+				AND b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND b.tpositiontaking = 0
 				AND (@_Date IS NULL
@@ -532,9 +530,8 @@ BEGIN
 				AND (@BetType = 0
 					OR (@BetType <> 0 AND CASE WHEN ISNULL(ss.bettype,0) = 0 THEN b.bettype ELSE ss.Grouptypeid END = @BetType))
 				AND sbt.ProductID = 1
-				AND b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency)) 
-					OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
+				AND b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = -1)
@@ -588,7 +585,7 @@ BEGIN
 				'' AS betcheck,
 				'' AS transdesc
 			FROM
-				dbo.bettrans14 AS b WITH (NOLOCK) 
+				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE
@@ -597,9 +594,8 @@ BEGIN
 					OR (@BetType <> 0 AND b.bettype = @BetType))
 				AND sbt.ProductID IN (3, 4, 5)
 				AND sbt.EventType = 1
-				AND b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency)) 
-					OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
+				AND b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = -1) 
 					OR (@LiveIndicator = 0 AND b.Liveindicator = 0)
@@ -649,7 +645,7 @@ BEGIN
 				'' AS betcheck,
 				'' AS transdesc
 			FROM
-				dbo.bettrans14 AS b WITH (NOLOCK) 
+				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -659,9 +655,8 @@ BEGIN
 					OR (@BetType <> 0 AND b.bettype = @BetType))
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 3
-				AND b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
+				AND b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = -1)
 					OR (@LiveIndicator = 0 AND b.Liveindicator = 0)
@@ -673,11 +668,12 @@ BEGIN
 
 	DECLARE @RowStart INT,
 		@RowEnd INT
+
 	SELECT @PageIndex = @PageIndex - 1,
 		@RowStart = @PageSize * @PageIndex + 1,
 		@RowEnd = @RowStart + @PageSize - 1
 
-	DECLARE @Today SMALLDATETIME 
+	DECLARE @Today SMALLDATETIME
 	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 
 	DECLARE @Fromdate DATETIME
@@ -846,7 +842,7 @@ BEGIN
 
 	IF @ShowLC = 1
 	BEGIN
-		IF EXISTS (SELECT TOP 1 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchID)
+		IF EXISTS (SELECT TOP 1 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)
 		BEGIN
 			INSERT INTO @BettransDetail
 			SELECT 
@@ -868,7 +864,7 @@ BEGIN
 			WHERE sbt.ProductID = 4 AND sbtg.ProductID = 4
 		END
 
-		IF EXISTS (SELECT TOP 1 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchID)
+		IF EXISTS (SELECT TOP 1 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)
 		BEGIN
 			INSERT INTO @BettransDetail
 			SELECT 
@@ -893,7 +889,7 @@ BEGIN
 
 	IF @ShowVS = 1
 	BEGIN
-		IF EXISTS (SELECT TOP 1 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE EventID = @MatchID)
+		IF EXISTS (SELECT TOP 1 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE EventID = @MatchId)
 		BEGIN
 			INSERT INTO @BettransDetail
 			SELECT
@@ -918,7 +914,7 @@ BEGIN
 				AND sbtg.EventType = 3
 		END
 
-		IF EXISTS (SELECT TOP 1 1 FROM dbo.VSOutright14 WITH (NOLOCK) WHERE EventID = @MatchID)
+		IF EXISTS (SELECT TOP 1 1 FROM dbo.VSOutright14 WITH (NOLOCK) WHERE EventID = @MatchId)
 		BEGIN
 			INSERT INTO @BettransDetail
 			SELECT
@@ -949,7 +945,6 @@ BEGIN
 
 	DROP TABLE #TempExchange
 	DROP TABLE #PagingData
-	DROP TABLE #Currency
 END
 
 

@@ -2,16 +2,12 @@
 USE bodb02
 GO
 ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Outright]
-	@LicenseeId			INT,
-	@UserId				INT,
-	@LicenseeType		VARCHAR(100)	= NULL,
-	@CurrencyId			INT				= 0,
+	@AgentList			VARCHAR(MAX),
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
 	@ShowBA				BIT				= 0,
 	@ShowSB				BIT				= 0,
 	@ExcludeReject		BIT				= 0,
-	@Langkey			VARCHAR(10)		= 'en-US',
 	@MoveBetsDay		SMALLDATETIME,
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 0,
@@ -57,6 +53,7 @@ AS
 		- 20150406@Winnie: Apply spottype bettype matrix
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
+		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 
 	Example:
 
@@ -88,7 +85,6 @@ AS
 	SELECT @DateTo = GETDATE()
 	SELECT @MoveBetsDay = MAX(eventdate) FROM match14 WITH(NOLOCK)
 
-
 	exec Lrf_BetList_SelWinlossOutright @LicenseeID=4,@LicenseeType=default,@CurrencyName=default,@FromDate=@DateFrom,@ToDate=@DateTo,@ShowBA=1,@ShowSB=0,@Language=default,@MoveBetsDay=@MoveBetsDay,@PageSize=1000,@PageIndex=1,@TotalRows=@p12 output,@SumWinlost=@p13 output,@SumLicenseeWL=@p14 output,@SumComm=@p15 output,@SumWinlostUSD=@p16 output,@SumLicenseeWLUSD=@p17 output,@SumCommUSD=@p18 output,@SumWinlostEUR=@p19 output,@SumLicenseeWLEUR=@p20 output,@SumCommEUR=@p21 output
 	select @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21
 */
@@ -96,26 +92,38 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT currencyID,
-		LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)-- System is default=1 (LRF)
-	WHERE @CurrencyId = 0
-		OR (@CurrencyId <> 0 AND CurrencyID = @CurrencyId)
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
 
-	DECLARE @TempAg AS TABLE (custid INT)
+	-- Get AgentList
+	DECLARE @DocHandler INT
 
-	INSERT INTO @TempAg (custid)
-	SELECT DISTINCT CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID=c.LicenseeID AND lc.Currency = c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType, [Description])
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	----Get Sport Bettype Matrix------
-	DECLARE @SportBettype TABLE(ProductID INT, BetType INT, EventType INT)
+	DECLARE @SportBettype TABLE(ProductID TINYINT, BetType INT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode = 4, @ProductID = 1
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
+	WHERE EventType = 2
 
 	CREATE TABLE #Data (
 		SportType		INT,
@@ -194,13 +202,9 @@ BEGIN
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
-				AND b.winlostdate >= @FromDate
-				AND b.winlostdate <= @ToDate
-				AND sbt.ProductID = 1
-				AND sbt.EventType = 2
+				b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+				AND b.winlostdate BETWEEN @FromDate AND @ToDate
 				AND b.ruben = 1
 				AND b.tpositiontaking = 0
 				AND (@ExcludeReject = 0
@@ -248,13 +252,9 @@ BEGIN
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
-				AND b.winlostdate >= @FromDate
-				AND b.winlostdate <= @ToDate
-				AND sbt.ProductID = 1
-				AND sbt.EventType = 2
+				b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+				AND b.winlostdate BETWEEN @FromDate AND @ToDate
 				AND b.ruben = 1
 				AND b.tpositiontaking <> 0
 				AND (@ExcludeReject = 0
@@ -305,14 +305,10 @@ BEGIN
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
-				AND b.Winlostdate >= @FromDate
-				AND b.Winlostdate <= @ToDate
-				AND sbt.ProductID = 1
-				AND sbt.EventType = 2
-				AND b.Ruben = 1
+				b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.ruben = 1
 				AND b.tpositiontaking = 0
 				AND (@ExcludeReject = 0
 					OR (@ExcludeReject = 1 AND b.statusID NOT IN (101, 102, 103)))
@@ -359,13 +355,9 @@ BEGIN
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
-				AND b.winlostdate >= @FromDate
-				AND b.winlostdate <= @ToDate
-				AND sbt.ProductID = 1
-				AND sbt.EventType = 2
+				b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+				AND b.winlostdate BETWEEN @FromDate AND @ToDate
 				AND b.ruben = 1
 				AND b.tpositiontaking <> 0
 				AND (@ExcludeReject = 0
@@ -517,7 +509,6 @@ BEGIN
 
 	DROP TABLE #PagingData
 	DROP TABLE #TempExchange
-	DROP TABLE #currency
 END
 
 

@@ -2,10 +2,8 @@
 GO
  
 ALTER PROCEDURE [dbo].[Lrf_Monitor_BetlistSel_New]
-	@LicenseeId		INT,
-	@UserId			INT,
+	@AgentList		VARCHAR(MAX),
 	@BetType		VARCHAR(50)		= NULL,
-	@LicenseeType	VARCHAR(100)	= NULL,
 	@Currency		VARCHAR(200)	= NULL,
 	@SpecialLevel	VARCHAR(200)	= NULL,
 	@TransId		BIGINT			= 0,
@@ -39,6 +37,7 @@ AS
 		- 20160115@Joseph: Redefine values of parameter betfrom
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160919@Kos: Add column transdesc to support PH AIO phase 2b [#Redmine: 62878]
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 
 	Parameter's Explanation:
 		- @bettypes: 
@@ -74,15 +73,35 @@ AS
 */
 
 BEGIN
+	SET NOCOUNT ON
+
+	CREATE TABLE #TempAg (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO #TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
+
 	DECLARE @SQL VARCHAR(8000)
 	DECLARE @ORDERBY VARCHAR(1000)
-	SELECT @SQL = 'SET NOCOUNT ON '
+	SELECT @SQL = ''
 
 	IF @Currency IS NULL OR @Currency = ''
 		SET @Currency = 'ALL' 
-
-	IF @LicenseeType IS NULL OR @LicenseeType = ''
-		SET @LicenseeType = 'ALL'
 
 	IF @SpecialLevel IS NULL OR @SpecialLevel = ''
 		SET @SpecialLevel = 'ALL'
@@ -141,7 +160,6 @@ BEGIN
 		'b.betid,' + CHAR(13) +
 		'b.livehomescore,' + CHAR(13) +
 		'b.liveawayscore,' + CHAR(13) +
-		--'CONVERT(INT,b.liveindicator) AS LiveIndicator,'+ CHAR(13) +
 		'b.liveindicator,' + CHAR(13) +
 		'b.hdp1,' + CHAR(13) +
 		'b.hdp2,' + CHAR(13) +
@@ -172,16 +190,12 @@ BEGIN
 		'ISNULL(b.transdesc, '''') AS TransDesc' + CHAR(13) +
 		'FROM dbo.bettrans_lrf_betRunning b WITH (NOLOCK) ' + CHAR(13) +
 		'INNER JOIN Lrf_f_GetExchangeDaily(CONVERT(VARCHAR(10), GETDATE(), 111),CONVERT(VARCHAR(10), GETDATE(), 111)) ex on ex.exchangeid = b.currency ' + CHAR(13) +
-		'INNER JOIN bodb_licensee.dbo.CurrencyUser cr WITH (NOLOCK) ON b.LicenseeID = cr.LicenseeID AND b.Currency = cr.CurrencyID'+ CHAR(13) +
+		'INNER JOIN #TempAg a WITH (NOLOCK) ON b.Recommend = a.CustId AND b.Currency = a.Currency'+ CHAR(13) +
 		CASE
 			WHEN @SportID > 0 AND @Sportid <> 999 THEN 'INNER JOIN @Match m on b.matchid = m.matchid '
 			ELSE ' '
 		END + CHAR(13) +
-		'WHERE b.LicenseeID=' + CONVERT(VARCHAR(10),@LicenseeID) + ' '  + CHAR(13) +
-		'AND cr.isActive=1' + CHAR(13) +
-		'AND cr.UsrID=' + CONVERT(VARCHAR(20), @UserID) + '' + CHAR(13) +
-		'AND cr.SystemID=1' + CHAR(13) +
-		'AND Transid >' + CONVERT(VARCHAR(20), @transid) + '  ' + CHAR(13) +
+		'WHERE Transid >' + CONVERT(VARCHAR(20), @transid) + '  ' + CHAR(13) +
 		'AND Statusid = 0' + CHAR(13) +
 		CASE
 			WHEN @betfrom = 1 THEN 'AND betfrom=''d'''
@@ -221,8 +235,7 @@ BEGIN
 					ELSE ' '
 				END 
 		END + CHAR(13) +
-		CASE WHEN @Currency <> 'ALL' THEN 'AND currency IN (' + @Currency + ') ' ELSE ' ' END + CHAR(13) + 
-		CASE WHEN @LicenseeType <> 'ALL' THEN 'AND [Description] = ''' + @LicenseeType + '''' ELSE ' ' END + CHAR(13) + 
+		CASE WHEN @Currency <> 'ALL' THEN 'AND b.currency IN (' + @Currency + ') ' ELSE ' ' END + CHAR(13) + 
 		CASE WHEN @SpecialLevel <> 'ALL' THEN 'AND SpecialLevel IN (' + @SpecialLevel + ')' ELSE ' ' END+ CHAR(13) + 
 		CASE
 			WHEN @SportID > 0 AND @SportID < 999 AND @LiveIndicator IN (0,1) THEN 'AND Liveindicator = '+CONVERT(VARCHAR(10),@LiveIndicator) 
@@ -274,7 +287,10 @@ BEGIN
 		PRINT @sql
 	ELSE
 		EXEC(@sql)
+
+	DROP TABLE #TempAg
 END
+
 
 
 

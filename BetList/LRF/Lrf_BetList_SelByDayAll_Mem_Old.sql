@@ -1,10 +1,8 @@
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelByDayAll_Mem_Old]
-	@LicenseeId			INT,
-	@UserId				INT,
+	@AgentList			VARCHAR(MAX),
 	@CustId				INT,
 	@FromDate			SMALLDATETIME,
 	@TransType			TINYINT			= 0,
-	@Language			NVARCHAR(10)	= 'en-us',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
 	@TotalRows			INT				= 0 OUTPUT,
@@ -46,9 +44,9 @@ AS
 		- 20111229@Jim: change the way to get odds/oddstype/betteam to web dev
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
 		- 20120319@Henry: show main transid for sub-ticket of system parlay
-		- 20120724@Jim: add player commision value 
-		- 20120817@Jim: add live casino 
-		- 20120913@Jim: add virtual sport 
+		- 20120724@Jim: add player commision value
+		- 20120817@Jim: add live casino
+		- 20120913@Jim: add virtual sport
 		- 20130123@Daniel: Change link server alias
 		- 20130410@Jim: return betteam,modd value for Parlay ticket (Mix parlay & system parlay)
 		- 20130411@Jim: support base currency USD
@@ -78,6 +76,7 @@ AS
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 
 	Param's Explanation: 
 		+ @transtype:
@@ -88,32 +87,42 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT CurrencyID
-		, LicenseeID
-	INTO #Currency
-	FROM DBLIC.bodb_licensee.dbo.CurrencyUser WITH (NOLOCK)
-	WHERE usrID = @UserId
-		AND LicenseeID = @LicenseeId
-		AND SystemID = 1
-		AND isActive = 1
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	DECLARE @Username NVARCHAR(50)
 
-	SELECT @Username = c.username
-	FROM dbo.custInfo AS c WITH (NOLOCK)
-		INNER JOIN #Currency AS cy ON c.currency = cy.CurrencyID
-	WHERE c.custid = @CustID
+	SELECT @Username = username
+	FROM dbo.custInfo WITH (NOLOCK)
+	WHERE custid = @CustId
+		AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
 	
 	IF @Username IS NULL
 	BEGIN
 		SELECT @ErrCode = 101
-			, @ErrMsg	= 'Account was not found.'
+			, @ErrMsg = 'Account was not found.'
 
 		RETURN
 	END
 
-	DROP TABLE #Currency
-	------------------------------------
 	DECLARE @Data TABLE (
 		SportType		INT,
 		LeagueId		INT,

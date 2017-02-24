@@ -7,8 +7,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelCombinationParlayDetail]
-	@LicenseeId		INT,
-	@UserId			INT,
+	@AgentList		VARCHAR(MAX),
 	@RefNo			BIGINT,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
@@ -29,8 +28,8 @@ AS
 		- 20111202@Henry: correct outstanding
 		- 20120214@Jim: change to use  table ExchangeDaily by use function Lrf_f_GetExchangeDaily
 		- 20120319@Henry: Fix bug in case of sub & main ticket are not in the same table (bettrans14, bettrans_bk,..)
-		- 20120724@Jim: add player commission value 
-		- 20130404@Daniel: fix bug check movebet day in case movebetday = min(matchdate) 
+		- 20120724@Jim: add player commission value
+		- 20130404@Daniel: fix bug check movebet day in case movebetday = min(matchdate)
 		- 20130514@Jim:Restrict permission of Licensee Users by currency
 		- 20150123@Jim: support base on Currency GBP
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
@@ -38,10 +37,32 @@ AS
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160510@Kos: Remove param @TransId, @BetId, @CustId [#Redmine: 55282]
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
@@ -126,7 +147,7 @@ BEGIN
 	FROM dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-	WHERE refno = @RefNo
+	WHERE bm.refno = @RefNo
 
 	UNION
 
@@ -139,7 +160,7 @@ BEGIN
 	FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-	WHERE refno = @RefNo
+	WHERE bm.refno = @RefNo
 
 	UNION
 
@@ -152,7 +173,7 @@ BEGIN
 	FROM DBACC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN DBACC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-	WHERE refno = @RefNo
+	WHERE bm.refno = @RefNo
 
 	SELECT	@minMatchdate = MIN(matchdate),
 			@maxMatchdate = MAX(matchdate)
@@ -161,17 +182,10 @@ BEGIN
 	SELECT TOP 1 @CustId = CustId
 	FROM @parlay_base
 
-	SELECT CurrencyID,
-		LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
-
-	SELECT @currency = c.currency
-	FROM dbo.custinfo AS c WITH (NOLOCK)
-		INNER JOIN #Currency AS cy ON c.currency = cy.CurrencyID
-	WHERE c.custid = @custid
-
-	DROP TABLE #Currency
+	SELECT @currency = currency
+	FROM dbo.custinfo WITH (NOLOCK)
+	WHERE custid = @CustId
+		AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
 
 	-- Get bettrans and BetParlayResult data
 	IF @minMatchdate < @BalanceUpDay
@@ -189,7 +203,7 @@ BEGIN
 				WHEN betcheck IS NULL THEN CONVERT(INT, hdp2)	-- old Parlay tickets
 				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
 			END AS Bitmap
-		FROM DBACC.bodb_Archive.dbo.bettrans_bk b WITH(NOLOCK) 
+		FROM DBACC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
 		WHERE custid = @custid
 			AND refno = @RefNo
 			AND matchid = 29
@@ -257,7 +271,7 @@ BEGIN
 				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
 			END AS Bitmap
 		FROM dbo.bettrans AS b WITH (NOLOCK)
-		WHERE custid = @custid 
+		WHERE custid = @custid
 			AND refno = @RefNo
 			AND matchid = 29
 			AND bettype = 29
@@ -281,8 +295,8 @@ BEGIN
 		b.winlost,
 		b.statusid,
 		b.comm,
-		CASE WHEN b.statusid IN (112, 113) THEN b.playercomm ELSE 0 END AS playercomm 
-	FROM dbo.BetParlayResult AS b WITH (NOLOCK) 
+		CASE WHEN b.statusid IN (112, 113) THEN b.playercomm ELSE 0 END AS playercomm
+	FROM dbo.BetParlayResult AS b WITH (NOLOCK)
 	WHERE refno = @RefNo AND serial NOT IN (SELECT serial FROM @tmpResults)
 
 	-- Generate betparlay detail
@@ -405,7 +419,7 @@ BEGIN
 	FROM @tmpResults
 
 	-- Return combo detail
-	SELECT
+	SELECT DISTINCT
 		0 AS [Order],
 		b.WinLostDate,
 		0 AS TransId,
@@ -421,20 +435,20 @@ BEGIN
 		END AS status,
 		b.Modds,
 		b.Stake,
-		CAST (b.Stake * e.USD AS MONEY) AS StakeUSD,
-		CAST (b.Stake * e.EUR AS MONEY) AS StakeEUR,
-		CAST (b.Stake * e.MYR AS MONEY) AS StakeMYR,
-		CAST (b.Stake * e.GBP AS MONEY) AS StakeGBP,
+		CAST(b.Stake * e.USD AS MONEY) AS StakeUSD,
+		CAST(b.Stake * e.EUR AS MONEY) AS StakeEUR,
+		CAST(b.Stake * e.MYR AS MONEY) AS StakeMYR,
+		CAST(b.Stake * e.GBP AS MONEY) AS StakeGBP,
 		b.WinLost - b.Stake AS WinLost,
-		CAST ((b.WinLost - b.Stake) * e.USD AS MONEY) AS WinLostUSD,
-		CAST ((b.WinLost - b.Stake) * e.EUR AS MONEY) AS WinLostEUR,
-		CAST ((b.WinLost - b.Stake) * e.MYR AS MONEY) AS WinLostMYR,
-		CAST ((b.WinLost - b.Stake) * e.GBP AS MONEY) AS WinLostGBP,
+		CAST((b.WinLost - b.Stake) * e.USD AS MONEY) AS WinLostUSD,
+		CAST((b.WinLost - b.Stake) * e.EUR AS MONEY) AS WinLostEUR,
+		CAST((b.WinLost - b.Stake) * e.MYR AS MONEY) AS WinLostMYR,
+		CAST((b.WinLost - b.Stake) * e.GBP AS MONEY) AS WinLostGBP,
 		b.Comm,
-		CAST (b.Comm * e.USD AS MONEY) AS CommUSD,
-		CAST (b.Comm * e.EUR AS MONEY) AS CommEUR,
-		CAST (b.Comm * e.MYR AS MONEY) AS CommMYR,
-		CAST (b.Comm * e.GBP AS MONEY) AS CommGBP,
+		CAST(b.Comm * e.USD AS MONEY) AS CommUSD,
+		CAST(b.Comm * e.EUR AS MONEY) AS CommEUR,
+		CAST(b.Comm * e.MYR AS MONEY) AS CommMYR,
+		CAST(b.Comm * e.GBP AS MONEY) AS CommGBP,
 		b.PlayerComm,
 		CAST(b.PlayerComm * e.USD AS MONEY) AS PlayerCommUSD,
 		CAST(b.PlayerComm * e.EUR AS MONEY) AS PlayerCommEUR,
@@ -447,7 +461,7 @@ BEGIN
 
 	UNION ALL
 
-	SELECT
+	SELECT DISTINCT
 		999 AS [Order],
 		b.WinLostDate,
 		0 AS TransId,
@@ -484,7 +498,7 @@ BEGIN
 		[Order] ASC,
 		b.WinLostDate ASC
 
-	SELECT * FROM @tmpMatch
+	SELECT DISTINCT * FROM @tmpMatch
 END
 
 

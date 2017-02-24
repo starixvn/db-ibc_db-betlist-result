@@ -6,13 +6,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByDate_Mem]
-	@LicenseeId			INT,
-	@UserId				INT,
+	@AgentList			VARCHAR(MAX),
 	@CustId				INT,
-	@CurrencyId			INT				= 0,
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
-	@LangKey			VARCHAR(20)		= 'en-US',
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
 	@PageSize			INT				= 1000,
@@ -114,10 +111,32 @@ AS
 		- 20161006@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	----Get Sport Bettype Matrix------
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
@@ -159,25 +178,13 @@ BEGIN
 		, @Recommend		INT
 		, @BetEffectiveDate SMALLDATETIME
 
-	SELECT CurrencyID
-		, LicenseeID
-	INTO #Currency
-	FROM DBLIC.bodb_licensee.dbo.CurrencyUser WITH (NOLOCK)
-	WHERE usrID = @userID 
-		AND LicenseeID = @LicenseeID 
-		AND SystemID = 1
-		AND isActive = 1
-
 	SELECT @BetEffectiveDate = '2014-09-01'
 
 	SELECT @UserName = UserName,
 		@Recommend = Recommend
-	FROM dbo.custinfo AS c WITH (NOLOCK)
-		INNER JOIN #Currency AS cy ON c.Currency = cy.CurrencyID
-	WHERE CustID = @CustID
-	----------------------------------------
-	DROP TABLE #currency
-	-----------------------------------------
+	FROM dbo.custinfo WITH (NOLOCK)
+	WHERE custid = @CustId
+
 	CREATE TABLE #BetListByDateMem (
 		SportType		SMALLINT,
 		Username		NVARCHAR(20),
@@ -432,7 +439,7 @@ BEGIN
 				b.Liveindicator,
 				b.Livehomescore,
 				b.Liveawayscore,
-				b.IP,
+				b.Ip,
 				0, --LeagueID
 				0, --MatchID
 				'',--MatchCode
@@ -1149,7 +1156,6 @@ BEGIN
 				WHERE b.winlostdate BETWEEN @TempFromDate AND @todate
 					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND b.custid = @custid 
-					AND (@currencyID = 0 OR b.currency = @currencyID) 
 					AND (sbt.ProductID IN (17, 22, 24)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND brng.statusID <> 0
@@ -1283,7 +1289,6 @@ BEGIN
 				WHERE b.winlostdate BETWEEN @TempFromDate AND @todate
 					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND b.custid = @custid 
-					AND (@currencyID = 0 OR b.currency = @currencyID) 
 					AND sbt.ProductID IN (11, 21)
 					AND blc.statusID <> 0
 				GROUP BY
@@ -2429,7 +2434,7 @@ BEGIN
 				0 AS LiveIndicator, 
 				b.LiveHomescore, 
 				b.LiveAwayscore,
-				b.IP,
+				b.ip,
 				m.LeagueID,
 				m.orid, --MatchID
 				m.MatchCode,
@@ -2828,7 +2833,7 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- Show Keno
+		-- Keno
 		IF @ShowKN = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
@@ -2906,14 +2911,11 @@ BEGIN
 
 	CREATE NONCLUSTERED INDEX IDX_Index_betlist ON #BetListByDateMem (Currency)
 
-	IF @CurrencyID <> 0
-	BEGIN 
-		DELETE #BetListByDateMem
-		WHERE Currency <> @CurrencyID
-	END
+	DELETE #BetListByDateMem
+	WHERE Currency NOT IN (SELECT DISTINCT Currency FROM @TempAg)
 
 	SELECT * INTO #TempExchange 
-	FROM Lrf_f_GetExchangeDaily(@FromDate,@ToDate)
+	FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)
 	WHERE exchangeid IN (SELECT DISTINCT Currency FROM #BetListByDateMem)
 
 	UPDATE #BetListByDateMem
@@ -3242,7 +3244,7 @@ BEGIN
 		END
 	END
 
-	SELECT * FROM @BettransDetail 
+	SELECT DISTINCT * FROM @BettransDetail 
 	ORDER BY RefNo, Bettype 
 
 	DROP TABLE #TempExchange

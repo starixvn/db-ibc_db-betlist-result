@@ -1,236 +1,249 @@
 ﻿ALTER PROCEDURE [dbo].[Lrf_BetList_SelAllByDateHR]
-	@LicenseeID			INT ,
-	@UserID				INT,
-	@LicenseeType		VARCHAR(100) = NULL ,
-	@CurrencyID			INT=0 ,
-	@Bettype			INT,
-	@MatchID			INT,
-	@PageSize			INT=1000,
-	@PageIndex			INT=1,
-	@TotalRows			INT=0 OUTPUT,
-	@SumWinlost			MONEY=0 OUTPUT,
-	@SumLicenseeWL		MONEY=0 OUTPUT,
-	@SumComm			MONEY=0 OUTPUT,
-	@SumPlayerComm		MONEY=0 OUTPUT,
-	@SumWinlostUSD		MONEY=0 OUTPUT,
-	@SumLicenseeWLUSD	MONEY=0 OUTPUT,
-	@SumCommUSD			MONEY=0 OUTPUT,
-	@SumPlayerCommUSD	MONEY=0 OUTPUT,	
-	@SumWinlostEUR		MONEY=0 OUTPUT,
-	@SumLicenseeWLEUR	MONEY=0 OUTPUT,
-	@SumCommEUR			MONEY=0 OUTPUT,
-	@SumPlayerCommEUR	MONEY=0 OUTPUT,
-	@SumWinlostGBP		MONEY=0 OUTPUT,
-	@SumLicenseeWLGBP	MONEY=0 OUTPUT,
-	@SumCommGBP			MONEY=0 OUTPUT,
-	@SumPlayerCommGBP	MONEY=0 OUTPUT
-AS 
+	@AgentList			VARCHAR(MAX),
+	@BetType			INT,
+	@MatchId			INT,
+	@PageSize			INT		= 1000,
+	@PageIndex			INT		= 1,
+	@TotalRows			INT		= 0 OUTPUT,
+	@SumWinLost			MONEY	= 0 OUTPUT,
+	@SumLicenseeWL		MONEY	= 0 OUTPUT,
+	@SumComm			MONEY	= 0 OUTPUT,
+	@SumPlayerComm		MONEY	= 0 OUTPUT,
+	@SumWinLostUSD		MONEY	= 0 OUTPUT,
+	@SumLicenseeWLUSD	MONEY	= 0 OUTPUT,
+	@SumCommUSD			MONEY	= 0 OUTPUT,
+	@SumPlayerCommUSD	MONEY	= 0 OUTPUT,
+	@SumWinLostEUR		MONEY	= 0 OUTPUT,
+	@SumLicenseeWLEUR	MONEY	= 0 OUTPUT,
+	@SumCommEUR			MONEY	= 0 OUTPUT,
+	@SumPlayerCommEUR	MONEY	= 0 OUTPUT,
+	@SumWinLostGBP		MONEY	= 0 OUTPUT,
+	@SumLicenseeWLGBP	MONEY	= 0 OUTPUT,
+	@SumCommGBP			MONEY	= 0 OUTPUT,
+	@SumPlayerCommGBP	MONEY	= 0 OUTPUT
+AS
 
 /*
 	Created: Henry@20101208
-	Task : get Horse Racing tickets for Agent level
-	DB: DB052.bodb02
+	Task: get Horse Racing tickets for Agent level
+	DB: DBEXTbodb02
 	Original 
-	Revisions:    
+	Revisions:
 		- 20110214@Jacob: Add column discount IN the result SET
 		- 20110216@Jacob: Add column nickname IN the result SET
 		- 20110303@Henry: suppport based currency
 		- 20110308@Henry: get more sporttype (152,153)
 		- 20110712@Henry: output column LicenseeWL insteed of AWinlost
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
-		- 20120724@Jim: add player commision value 	
+		- 20120724@Jim: add player commision value
 		- 20121004@Jim: replace @currencyname input param by @currencyID
 		- 20130514@Jim: Restrict permission of Licensee Users by currency
 		- 20141111@Winnie: change from LicenseeCust to f_SelLicenseeCust 
 		- 20150127@Winnie: Add base currency GBP 
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
+		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 */
 
 BEGIN
-	SET NOCOUNT ON  
+	SET NOCOUNT ON
 
-	SELECT  currencyID,LicenseeID into #currency
-	FROM  dbo.Lrf_f_GetCurrencybyUser(@licenseeID,@userID,1)-- System is default=1 (LRF)
-	WHERE (@CurrencyID = 0 OR (@CurrencyID<>0 AND CurrencyID=@CurrencyID))
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
 
-	DECLARE @TempAg AS TABLE ( CustId INT )
+	-- Get AgentList
+	DECLARE @DocHandler INT
 
-	INSERT INTO @TempAg( CustId)
-	SELECT DISTINCT CustID  
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) lc --WITH ( NOLOCK )  
-		INNER JOIN #Currency c ON lc.licenseeID=c.licenseeID AND lc.Currency=c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType, [Description]) 
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
 
-	DECLARE @FromDate DATETIME, @ToDate DATETIME
-	SELECT @ToDate = CONVERT(DATETIME,CONVERT(NVARCHAR(20), GETDATE(), 101))
-	SELECT @FromDate = DATEADD(dd,-1,@ToDate)
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
+
+	DECLARE @FromDate DATETIME,
+		@ToDate DATETIME
+
+	SELECT @ToDate = CONVERT(DATETIME, CONVERT(NVARCHAR(20), GETDATE(), 101))
+	SELECT @FromDate = DATEADD(dd, -1, @ToDate)
  
-	DECLARE @Data TABLE(
-		--RowNum INT,
-		Username NVARCHAR(50),
-		NickName NVARCHAR(50),
-		Sporttype INT,
-		Bettype SMALLINT,
-		Transid BIGINT,
-		Matchcode VARCHAR(50),
-		Matchid INT,
-		Race VARCHAR(50),
-		HomeID INT,
-		AwayID INT,
-		hdp1 SMALLMONEY,
-		hdp2 SMALLMONEY,
-		modds MONEY,
-		odds MONEY,
-		status NVARCHAR(50),
-		stake MONEY,
-		winlost MONEY,
-		licenseeWL MONEY,
-		comm MONEY,
-		playercomm MONEY,
-		discount MONEY,
-		transdate DATETIME,
-		winlostdate DATETIME,
-		betteam VARCHAR (50),
-		leagueid INT,
-		liveindicator INT,
-		livehomescore SMALLINT,
-		liveawayscore SMALLINT,
-		ip NVARCHAR(20),
-		betstatus VARCHAR(50),
-		IsNeutral BIT,
-		currency SMALLINT
-	) 
+	DECLARE @Data TABLE (
+		Username		NVARCHAR(50),
+		NickName		NVARCHAR(50),
+		SportType		INT,
+		BetType			SMALLINT,
+		TransId			BIGINT,
+		MatchCode		VARCHAR(50),
+		MatchId			INT,
+		Race			VARCHAR(50),
+		HomeId			INT,
+		AwayId			INT,
+		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
+		MOdds			MONEY,
+		Odds			MONEY,
+		Status			NVARCHAR(50),
+		Stake			MONEY,
+		WinLost			MONEY,
+		LicenseeWL		MONEY,
+		Comm			MONEY,
+		PlayerComm		MONEY,
+		Discount		MONEY,
+		TransDate		DATETIME,
+		WinLostDate		DATETIME,
+		BetTeam			VARCHAR(50),
+		LeagueId		INT,
+		LiveIndicator	INT,
+		LiveHomeScore	SMALLINT,
+		LiveAwayScore	SMALLINT,
+		Ip				NVARCHAR(20),
+		BetStatus		VARCHAR(50),
+		IsNeutral		BIT,
+		Currency		SMALLINT
+	)
 
-	DECLARE @RowStart INT, @RowEnd INT  
-	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1
+	DECLARE @RowStart INT,
+		@RowEnd INT
+
+	SELECT @PageIndex = @PageIndex - 1,
+		@RowStart = @PageSize * @PageIndex + 1,
+		@RowEnd = @RowStart + @PageSize - 1
 
 	INSERT INTO @Data
-	SELECT 
-		b.UserName,
-		SUBSTRING(c.username2,  CHARINDEX('$',c.username2)+1, len(c.username2)-CHARINDEX('$',c.username2)) AS nickname,
-		l.sporttype AS sporttype,
-		b.bettype,		
+	SELECT
+		b.Username,
+		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS NickName,
+		l.sporttype,
+		b.bettype,
 		b.transid,
 		m.matchcode,
 		b.matchid,
-		m.GroupMatch AS Race,
-		m.teamID AS homeID,
+		m.groupmatch AS Race,
+		m.teamid AS homeID,
 		0 AS awayID,
-		b.hdp1, 
+		b.hdp1,
 		b.hdp2,
 		modds,
 		b.odds,
 		b.status,
 		b.stake,
-		(winlost-actual_stake)  winlost,
+		(winlost - actual_stake) AS winlost,
 		b.awinlost,
 		b.comm,
-		b.playercomm , 
+		b.playercomm,
 		b.discount,
 		b.transdate,
 		b.winlostdate,
-		'' AS Betteam,    
-		m.leagueID,
-		0 AS liveindicator , 
-		b.livehomescore, 
+		'' AS Betteam,
+		m.leagueid,
+		0 AS liveindicator,
+		b.livehomescore,
 		b.liveawayscore,
-		b.IP, 
-		'' betstatus,
+		b.ip,
+		'' AS betstatus,
 		CONVERT(BIT,0) AS IsNeutral,
 		b.currency
-	FROM  
-		bettrans b WITH (NOLOCK)
-		INNER JOIN outright m WITH (NOLOCK) ON b.matchid=m.orid   
-		INNER JOIN League l WITH (NOLOCK) ON m.leagueID=l.leagueID 
-		INNER JOIN customer c WITH (NOLOCK) ON c.custid=b.custid	   
-	WHERE  
-		b.MatchId = @MatchID
-		AND b.Bettype = @Bettype  
-		AND b.Recommend IN (SELECT * FROM @TempAg)
-		AND ((@CurrencyID=0 AND b.currency IN (SELECT currencyId FROM #currency))  OR (@CurrencyID<>0 AND b.Currency=@CurrencyID))
+	FROM
+		dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
+		INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
+		INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.custid
+	WHERE
+		b.matchid = @MatchId
+		AND b.bettype = @BetType
+		AND b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND m.eventdate BETWEEN @FromDate AND @ToDate
-	ORDER BY b.transid DESC  
+	ORDER BY b.transid DESC
 
-	DECLARE @Today SMALLDATETIME 
+	DECLARE @Today SMALLDATETIME
+
 	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
+
 	DECLARE @Fdate DATETIME
 	DECLARE @Tdate DATETIME 
 
-	SELECT @Fdate=min(b.winlostdate),@Tdate=max(b.winlostdate)
-	FROM @Data b 
+	SELECT @Fdate = MIN(winlostdate),
+		@Tdate = MAX(winlostdate)
+	FROM @Data
 
-	SELECT 
-		@TotalRows = COUNT(transid),
-		@SumWinlost=SUM(ISNULL(winlost,0)),
-		@SumLicenseeWL=SUM(ISNULL(LicenseeWL,0)),
-		@SumComm=SUM(ISNULL(comm,0)) ,
-		@SumPlayerComm=SUM(ISNULL(playercomm,0)) ,
-	
-		--USD
-		@SumWinlostUSD=SUM(ISNULL(winlost*e.USD,0)),
-		@SumLicenseeWLUSD=SUM(ISNULL(LicenseeWL*e.USD,0)),
-		@SumCommUSD=SUM(ISNULL(comm*e.USD,0)) ,
-		@SumPlayerCommUSD=SUM(ISNULL(playercomm*e.USD,0)) ,
-		--EUR
-		@SumWinlostEUR=SUM(ISNULL(winlost*e.EUR,0)),
-		@SumLicenseeWLEUR=SUM(ISNULL(LicenseeWL*e.EUR,0)),
-		@SumCommEUR=SUM(ISNULL(comm*e.EUR,0)),
-		@SumPlayerCommEUR=SUM(ISNULL(playercomm*e.EUR,0)),
-		--GBP
-		@SumWinlostGBP=SUM(ISNULL(winlost*e.GBP,0)),
-		@SumLicenseeWLGBP=SUM(ISNULL(LicenseeWL*e.GBP,0)),
-		@SumCommGBP=SUM(ISNULL(comm*e.GBP,0)),
-		@SumPlayerCommGBP=SUM(ISNULL(playercomm*e.GBP,0))
-	FROM @Data b
-		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FDate,@TDate)) e  
-		ON e.ExchangeDate = (CASE WHEN b.winlostdate <= @Today THEN  b.winlostdate ELSE @Today END)   AND e.exchangeid = b.currency
+	SELECT
+		@TotalRows		= COUNT(b.TransId),
+		@SumWinlost		= SUM(ISNULL(b.WinLost, 0)),
+		@SumLicenseeWL	= SUM(ISNULL(b.LicenseeWL, 0)),
+		@SumComm		= SUM(ISNULL(b.Comm, 0)),
+		@SumPlayerComm	= SUM(ISNULL(b.PlayerComm, 0)),
+		-- USD
+		@SumWinlostUSD		= SUM(ISNULL(b.WinLost		* e.USD, 0)),
+		@SumLicenseeWLUSD	= SUM(ISNULL(b.LicenseeWL	* e.USD, 0)),
+		@SumCommUSD			= SUM(ISNULL(b.Comm			* e.USD, 0)),
+		@SumPlayerCommUSD	= SUM(ISNULL(b.PlayerComm	* e.USD, 0)),
+		-- EUR
+		@SumWinlostEUR		= SUM(ISNULL(b.WinLost		* e.EUR, 0)),
+		@SumLicenseeWLEUR	= SUM(ISNULL(b.LicenseeWL	* e.EUR, 0)),
+		@SumCommEUR			= SUM(ISNULL(b.Comm			* e.EUR, 0)),
+		@SumPlayerCommEUR	= SUM(ISNULL(b.PlayerComm	* e.EUR, 0)),
+		-- GBP
+		@SumWinlostGBP		= SUM(ISNULL(b.WinLost		* e.GBP, 0)),
+		@SumLicenseeWLGBP	= SUM(ISNULL(b.LicenseeWL	* e.GBP, 0)),
+		@SumCommGBP			= SUM(ISNULL(b.Comm			* e.GBP, 0)),
+		@SumPlayerCommGBP	= SUM(ISNULL(b.PlayerComm	* e.GBP, 0))
+	FROM @Data AS b
+		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FDate,@TDate)) AS e
+			ON e.ExchangeDate = (CASE WHEN b.winlostdate <= @Today THEN b.winlostdate ELSE @Today END) AND e.exchangeid = b.currency
 
-	SELECT c.* FROM 
-	(
-		SELECT 
-			ROW_NUMBER() over(ORDER BY b.transid DESC) AS RowNum,
-			b.*,
-			--USD
-			stake*e.USD stakeUSD,
-			winlost*e.USD winlostUSD,
-			LicenseeWL*e.USD LicenseeWLUSD,
-			comm*e.USD commUSD,
-			playercomm*e.USD PlayerCommUSD,
-			--EUR
-			stake*e.EUR stakeEUR,
-			winlost*e.EUR winlostEUR,
-			LicenseeWL*e.EUR LicenseeWLEUR,
-			comm*e.EUR commEUR,
-			playercomm*e.EUR PlayerCommEUR,
-			--GBP
-			stake*e.GBP stakeGBP,
-			winlost*e.GBP winlostGBP,
-			LicenseeWL*e.GBP LicenseeWLGBP,
-			comm*e.GBP commGBP,
-			playercomm*e.GBP PlayerCommGBP
-		FROM	@Data b
-			INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FDate,@TDate)) e 
-			ON e.ExchangeDate = (CASE WHEN b.winlostdate <= @Today THEN  b.winlostdate ELSE @Today END)   AND e.exchangeid = b.currency
-	) c WHERE c.RowNum BETWEEN @RowStart AND @RowEnd
+	SELECT c.*
+	FROM
+		(
+			SELECT 
+				ROW_NUMBER() OVER(ORDER BY b.transid DESC) AS RowNum,
+				b.*,
+				-- USD
+				b.Stake			* e.USD AS StakeUSD,
+				b.WinLost		* e.USD AS WinLostUSD,
+				b.LicenseeWL	* e.USD AS LicenseeWLUSD,
+				b.Comm			* e.USD AS CommUSD,
+				b.PlayerComm	* e.USD AS PlayerCommUSD,
+				-- EUR
+				b.Stake			* e.EUR AS StakeEUR,
+				b.WinLost		* e.EUR AS WinLostEUR,
+				b.LicenseeWL	* e.EUR AS LicenseeWLEUR,
+				b.Comm			* e.EUR AS CommEUR,
+				b.PlayerComm	* e.EUR AS PlayerCommEUR,
+				-- GBP
+				b.Stake			* e.GBP AS StakeGBP,
+				b.WinLost		* e.GBP AS WinLostGBP,
+				b.LicenseeWL	* e.GBP AS LicenseeWLGBP,
+				b.Comm			* e.GBP AS CommGBP,
+				b.PlayerComm	* e.GBP AS PlayerCommGBP
+			FROM @Data AS b
+				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FDate, @TDate)) e
+					ON e.ExchangeDate = (CASE WHEN b.winlostdate <= @Today THEN b.winlostdate ELSE @Today END) AND e.exchangeid = b.currency
+		) c
+	WHERE c.RowNum BETWEEN @RowStart AND @RowEnd
 
 	IF @Bettype = 33 OR @Bettype = 43
 	BEGIN
-		--get data from bettransm for bettype 33,43
-		SELECT 
-			BM.refno, 
-			BM.finalodds,
-			BM.odds, 
-			BM.status, 
-			BM.apositiontaking, 
-			0 AS mpositiontaking, 
+		SELECT
+			bm.refno,
+			bm.finalodds,
+			bm.odds,
+			bm.status,
+			bm.apositiontaking,
+			0 AS mpositiontaking,
 			0 AS spositiontaking,
-			BM.bettype  
-		FROM bettransm BM WITH (NOLOCK)
-			INNER JOIN @Data B ON BM.refno = B.transid
-		WHERE B.Bettype = @Bettype
+			bm.bettype
+		FROM dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN @Data AS b ON bm.refno = b.transid
+		WHERE b.BetType = @BetType
 	END
-
-	DROP TABLE #Currency 
 END
 
 GO

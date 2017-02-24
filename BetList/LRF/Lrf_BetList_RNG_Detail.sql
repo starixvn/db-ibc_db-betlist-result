@@ -7,18 +7,15 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_RNG_Detail]
-	@LicenseeId		INT,
-	@UserId			INT,
-	@CustId			INT,
-	@RefNo			BIGINT,
-	@TransType		TINYINT			= 0,
-	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME
+	@AgentList	VARCHAR(MAX),
+	@CustId		INT,
+	@RefNo		BIGINT,
+	@TransType	TINYINT	= 0
 AS
 
 /*
 	Created: Kos@20150921
-	Task : Get ticket detail from table bettransRnG (Microgaming RNG Game)
+	Task: Get ticket detail from table bettransRnG (Microgaming RNG Game)
 	DB: DBEXT.bodb02
 	Original:
 	Revisions:
@@ -30,6 +27,7 @@ AS
 		- 20160727@Kos: Include Void/Rejected detail tickets view drilldown WON/LOSE/DRAW summary tickets
 					- Change to use inline function for SportBetTypeMatrix
 		- 20161111@Kos: Support Fishing World [#Redmine: 66737]
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 
 	Parameters:
 		- @TransType
@@ -42,6 +40,28 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
+
+	-- Get SportBetTypeMatrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -104,7 +124,7 @@ BEGIN
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
-		LicenseeWL 		MONEY,
+		LicenseeWL		MONEY,
 		Comm			MONEY,
 		PlayerComm		MONEY,
 		Ip				NVARCHAR(15),
@@ -234,26 +254,19 @@ BEGIN
 	DECLARE @Currency	INT,
 		@CurrencyCode	NVARCHAR(50)
 
-	SELECT currencyID,
-		LicenseeID 
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)	-- System is default=1 (LRF)
-
 	SELECT @Currency = c.currency,
 		@CurrencyCode = CASE WHEN ex.Code <> '' THEN ex.Code ELSE ex.currency END
 	FROM dbo.custinfo AS c WITH (NOLOCK)
-		INNER JOIN #Currency AS cy ON c.currency = cy.CurrencyID
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
-	WHERE c.custid = @custid
-
-	DROP TABLE #Currency
+	WHERE c.custid = @CustId
+		AND c.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 
 	-- get from date - to date
 	DECLARE @Fromdate DATETIME
-	DECLARE @Todate DATETIME 
+	DECLARE @Todate DATETIME
 
 	SELECT @Fromdate = MIN(WinLostDate),
-		@Todate = MAX(WinLostDate) 
+		@Todate = MAX(WinLostDate)
 	FROM @tmpBettransRnG
 
 	SELECT

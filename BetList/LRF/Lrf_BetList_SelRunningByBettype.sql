@@ -7,27 +7,23 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByBettype]
-	@LicenseeId		INT,
-	@UserId			INT,
-	@CurrencyId		INT				= 0,
-	@LicenseeType	VARCHAR(100)	= NULL,
-	@BetType		INT,
-	@Langkey		VARCHAR(10)		= 'en-US',
-	@PageSize		INT				= 1000,
-	@PageIndex		INT				= 1,
-	@TotalRows		INT				= 0 OUTPUT
+	@AgentList	VARCHAR(MAX),
+	@BetType	INT,
+	@PageSize	INT				= 1000,
+	@PageIndex	INT				= 1,
+	@TotalRows	INT				= 0 OUTPUT
 AS
 
 /*
 	Created: Henry@20101209
-	Task : Betlist
+	Task: Betlist
 	DB: DBEXT.bodb02
 	Original:[Age_BetList_SelRunningByBettype_Ag]
 	Revisions:
 		- 20110216@Jacob: Add column nickname IN the result SET
 		- 20110303@Henry: suppport based currency
 		- 20110408@Amy: Change function to get Odds value AND odds type
-		- 20110516@@Henry: change bettype to new range
+		- 20110516@Henry: change bettype to new range
 		- 20110630@Henry: add column discount
 		- 20110714@Henry: remove column apositiontaking
 		- 20110729@Henry: offer 3 new bettypes for Number Game + Combination Mixed Parlay + get status waiting for MP
@@ -50,10 +46,32 @@ AS
 		- 20150414@Jim: support betradar
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20161004@Kos: Remove Live Casino code [Redmine: #65045]
+		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 */ 
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	CREATE TABLE #Data (
 		CustId			INT,
@@ -91,22 +109,7 @@ BEGIN
 		BetCheck		NVARCHAR(50)
 	)
 
-	SELECT currencyID,
-		LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
-	WHERE @CurrencyId = 0
-		OR (@CurrencyId <> 0 AND CurrencyID = @CurrencyId)
-
-	DECLARE @TempAg AS TABLE (custid INT)
-
-	INSERT INTO @TempAg (custid)
-	SELECT DISTINCT CustID
-	FROM bodb_Licensee.dbo.[f_SelLicenseeCust](0) lc
-		INNER JOIN #currency c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType, [Description])
-
-	IF @bettype IN (9, 29)
+	IF @BetType IN (9, 29)
 	BEGIN
 		INSERT INTO #Data
 		SELECT
@@ -148,11 +151,10 @@ BEGIN
 			'' AS BetCheck
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE
-			b.Recommend IN (SELECT custid FROM @TempAg)
-			AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-				OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
-			AND b.bettype = @bettype
-			AND b.matchid = @bettype
+			b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+			AND b.bettype = @BetType
+			AND b.matchid = @BetType
 			AND b.statusID IN (0, 1)
 			AND b.ruben = 0
 		ORDER BY
@@ -201,10 +203,9 @@ BEGIN
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON  b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 		WHERE
-			b.Recommend IN (SELECT custid FROM @TempAg)
-			AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-				OR (@CurrencyID<>0 AND b.currency = @CurrencyID))
-			AND b.bettype = @bettype
+			b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+			AND b.bettype = @BetType
 			AND b.statusID = 0
 		ORDER BY b.status,
 			b.transid
@@ -221,8 +222,8 @@ BEGIN
 			ISNULL(b.betid, 0),
 			b.refno,
 			m.matchcode,
-			m.homeID,
-			m.awayID,
+			m.homeid,
+			m.awayid,
 			CONVERT(FLOAT, b.hdp1) AS hdp1,
 			CONVERT(FLOAT, b.hdp2) AS hdp2,
 			b.odds,
@@ -251,10 +252,9 @@ BEGIN
 			b.betcheck
  		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		WHERE b.Recommend IN (SELECT custid FROM @TempAg)
-			AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-				OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
-			AND b.bettype = @bettype
+		WHERE b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+			AND b.bettype = @BetType
 			AND b.statusID IN (0, 1)
 			AND b.bettype NOT IN (SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 		ORDER BY b.status,
@@ -294,14 +294,12 @@ BEGIN
 				b.PlayerComm * e.USD AS PlayerCommUSD,
 				b.PlayerComm * e.EUR AS PlayerCommEUR,
 				b.PlayerComm * e.GBP AS PlayerCommGBP
-			FROM
-				#Data AS b
-				INNER JOIN dbo.customer AS c WITH(NOLOCK) ON c.custid = b.custid
+			FROM #Data AS b
+				INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.custid
 				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) e ON e.exchangeid = b.currency
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 
-	DROP TABLE #currency
 	DROP TABLE #Data
 END
 

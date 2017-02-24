@@ -5,10 +5,7 @@ USE bodb02
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinlostRacing]
-	@LicenseeId			INT,
-	@UserId				INT,
-	@LicenseeType		VARCHAR(100)	= NULL,
-	@CurrencyId			INT				= 0,
+	@AgentList			VARCHAR(MAX),
 	@Date				DATETIME,
 	@LeagueId			INT,
 	@RaceNo				VARCHAR(10),
@@ -59,12 +56,34 @@ AS
 		- 20150409@Winnie: Apply sport bettype matrix
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170227@Kos: Support sub licensees [#Redmine: 71679]
 
 	Param's Explanation:
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID INT,Bettype INT,EventType INT)
@@ -76,39 +95,6 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (2, 0, 0, 2, '', '', @IsTest)
-
-	SELECT CurrencyID,
-		LicenseeID
-	INTO #Currency
-	FROM DBLIC.bodb_licensee.dbo.CurrencyUser WITH (NOLOCK)
-	WHERE usrID = @userID
-		AND LicenseeID = @LicenseeID 
-		AND SystemID = 1
-		AND isActive = 1
-		AND (@CurrencyID = 0
-			OR (@CurrencyID <> 0 AND CurrencyID = @CurrencyID))
-
-	DECLARE @TempAg AS TABLE (CustId INT)
-
-	INSERT INTO @TempAg(CustId)
-	SELECT CustId
-	FROM dbo.custInfo WITH ( NOLOCK )
-	WHERE custid IN (
-			SELECT DISTINCT CustID
-			FROM OPENQUERY(DBLIC, 'SELECT * FROM bodb_licensee.dbo.f_SelLicenseeCust(0)') lc
-				INNER JOIN  #currency c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-			WHERE [Description] = COALESCE(@LicenseeType, [Description]) )
-				AND RoleId = 2
-
-	DECLARE @LicenseeName VARCHAR(50)
-
-	SELECT @LicenseeName = LicenseeName
-	FROM DBLIC.bodb_Licensee.dbo.Licensees WITH (NOLOCK)
-	WHERE LicenseeID = @LicenseeID
-	
-	DECLARE @str_compare VARCHAR(30)
-	
-	SELECT @str_compare = @LicenseeName + '$'
 
 	CREATE TABLE #DataTmp (
 		Username		NVARCHAR(50),
@@ -145,15 +131,15 @@ BEGIN
 		INSERT INTO #DataTmp
 		SELECT
 			b.username,
-			REPLACE(c.username2, @str_compare, '') AS Nickname,
+			SUBSTRING(c.username2, CHARINDEX('$',c.username2) + 1, LEN(c.username2) - CHARINDEX('$',c.username2)) AS Nickname,
 			b.custid,
 			b.transid,
 			o.groupmatch AS race,
 			b.transdate,
 			b.bettype,
 			b.matchid,
-			b.hdp1 winOdds,
-			b.hdp2 placeOdds,
+			b.hdp1 AS WinOdds,
+			b.hdp2 AS PlaceOdds,
 			b.odds,
 			b.stake,
 			(b.winlost - b.actual_stake) winlost,
@@ -177,13 +163,11 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 		WHERE b.ruben = 1
 			AND b.statusID NOT IN (101, 102, 103, 121)
-			AND b.currency = @currencyID
 			AND b.winlostdate = @date
-			AND o.leagueid = @leagueid
-			AND o.groupmatch = @raceNo
-			AND b.recommend IN (SELECT custid FROM @TempAg)
-			AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-				OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
+			AND o.leagueid = @LeagueId
+			AND o.groupmatch = @RaceNo
+			AND b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		ORDER BY b.username
 	END
 	ELSE
@@ -191,15 +175,15 @@ BEGIN
 		INSERT INTO #DataTmp
 		SELECT
 			b.username,
-			REPLACE(c.username2, @str_compare, '') AS Nickname,
+			SUBSTRING(c.username2, CHARINDEX('$',c.username2) + 1, LEN(c.username2) - CHARINDEX('$',c.username2)) AS Nickname,
 			b.custid,
 			b.transid,
 			o.groupmatch AS race,
 			b.transdate,
 			b.bettype,
 			b.matchid,
-			b.hdp1 winOdds,
-			b.hdp2 placeOdds,
+			b.hdp1 AS WinOdds,
+			b.hdp2 AS PlaceOdds,
 			b.odds,
 			b.stake,
 			(b.winlost - b.actual_stake) winlost,
@@ -223,13 +207,11 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 		WHERE b.ruben = 1
 			AND b.statusID NOT IN (101, 102, 103, 121)
-			AND b.currency = @currencyID
 			AND b.winlostdate = @date
-			AND o.leagueid = @leagueid
-			AND o.groupmatch = @raceNo
-			AND b.recommend IN (SELECT custid FROM @TempAg)
-			AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-				OR (@CurrencyID <> 0 AND b.Currency = @CurrencyID))
+			AND o.leagueid = @LeagueId
+			AND o.groupmatch = @RaceNo
+			AND b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		ORDER BY b.username
 	END
 
@@ -365,7 +347,6 @@ BEGIN
 
 	DROP TABLE #DataTmp
 	DROP TABLE #TempExchange
-	DROP TABLE #currency
 END
 
 

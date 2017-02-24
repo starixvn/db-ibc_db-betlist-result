@@ -7,24 +7,21 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossRacingByDate_Mem]
-	@LicenseeId			INT,
-	@UserId				INT,
+	@AgentList			VARCHAR(MAX),
 	@CustId				INT,
-	@CurrencyId			INT				= 0,
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
-	@LangKey			VARCHAR(20)		= 'en-US',
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
 	@PageIndex			INT				= 1,
 	@PageSize			INT				= 1000,
 	@TotalRows			INT				= 0 OUTPUT,
-	@SumWinlost			MONEY			= 0 OUTPUT,
-	@SumWinlostUSD		MONEY			= 0 OUTPUT,
-	@SumWinlostEUR		MONEY			= 0 OUTPUT,
-	@SumWinlostGBP		MONEY			= 0 OUTPUT,
+	@SumWinLost			MONEY			= 0 OUTPUT,
+	@SumWinLostUSD		MONEY			= 0 OUTPUT,
+	@SumWinLostEUR		MONEY			= 0 OUTPUT,
+	@SumWinLostGBP		MONEY			= 0 OUTPUT,
 	@SumLicenseeWL		MONEY			= 0 OUTPUT,
-	@SumLicenseeWLUSD 	MONEY			= 0 OUTPUT,
+	@SumLicenseeWLUSD	MONEY			= 0 OUTPUT,
 	@SumLicenseeWLEUR	MONEY			= 0 OUTPUT,
 	@SumLicenseeWLGBP	MONEY			= 0 OUTPUT,
 	@SumComm			MONEY			= 0 OUTPUT,
@@ -45,6 +42,7 @@ AS
 
 	Revisions:
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170227@Kos: Support sub licensees [#Redmine: 71679]
 
 	Sample call:
 		DECLARE @p11 INT
@@ -65,7 +63,7 @@ AS
 		DECLARE @p26 MONEY
 		DECLARE @p27 MONEY
 
-		EXEC Lrf_BetList_SelWinLossRacingByDate_Mem @licenseeid=1,@userid=68,@CustID=1368168,@CurrencyId=0,
+		EXEC Lrf_BetList_SelWinLossRacingByDate_Mem @AgentList='<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>',@CustID=1368168,
 		@FromDate='2016-03-01 00:00:00',@ToDate='2016-03-11 00:00:00',@MoveBetsDay='2016-02-28 00:00:00',
 		@BalanceUpDay='2016-02-27 00:00:00',@PageSize=2147483646,@PageIndex=1,@totalrows=@p11 OUTPUT,@SumWinlost=@p12 OUTPUT,
 		@SumLicenseeWL=@p13 OUTPUT,@SumComm=@p14 OUTPUT,@SumPlayerComm=@p15 OUTPUT,@SumWinlostUSD=@p16 OUTPUT,
@@ -78,7 +76,28 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	----Get Sport Bettype Matrix------
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
+
+	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -89,25 +108,11 @@ BEGIN
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (2, 0, 0, 2, '', '', @IsTest)
 
-	DECLARE @UserName	NVARCHAR(20)
-		, @Recommend	INT
+	DECLARE @UserName NVARCHAR(50)
 
-	SELECT CurrencyId
-		, LicenseeId
-	INTO #Currency
-	FROM DBLIC.bodb_licensee.dbo.CurrencyUser WITH (NOLOCK)
-	WHERE usrID = @UserId
-		AND LicenseeID = @LicenseeId
-		AND SystemID = 1
-		AND isActive = 1
-
-	SELECT @UserName = UserName,
-		@Recommend = Recommend
-	FROM dbo.custinfo AS c WITH (NOLOCK)
-		INNER JOIN #Currency AS cy ON c.Currency = cy.CurrencyId
-	WHERE CustID = @CustId
-
-	DROP TABLE #Currency
+	SELECT @UserName = username
+	FROM dbo.custinfo WITH (NOLOCK)
+	WHERE custid = @CustId
 
 	CREATE TABLE #Data (
 		TransId			BIGINT,
@@ -152,7 +157,7 @@ BEGIN
 	DECLARE @TempFromDate SMALLDATETIME
 	DECLARE @TempToDate SMALLDATETIME
 
-	IF @Todate > @MoveBetsDay
+	IF @ToDate > @MoveBetsDay
 	BEGIN
 		IF @FromDate <= @MoveBetsDay
 			SET @TempFromDate =  DATEADD(DAY, 1, @MoveBetsDay)
@@ -204,11 +209,11 @@ BEGIN
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			INNER JOIN @SportBettype sbt ON b.bettype = sbt.Bettype
 		WHERE
-			b.winlostdate BETWEEN @TempFromDate AND @todate
-			AND b.recommend = @Recommend
+			b.winlostdate BETWEEN @TempFromDate AND @ToDate
+			AND b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 			AND b.custid = @CustId
 			AND b.ruben = 1
-			AND (@CurrencyId = 0 OR b.currency = @CurrencyId)
 	END
 
 	IF @Fromdate <= @MoveBetsDay
@@ -262,21 +267,21 @@ BEGIN
 			'' AS TransDesc
 		FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX=bettrans1423)
 			INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
-			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueID = l.leagueid
+			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			INNER JOIN @SportBettype sbt ON b.bettype = sbt.Bettype
 		WHERE b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
-			AND b.recommend = @Recommend
-			AND b.custid = @CustId 
+			AND b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+			AND b.custid = @CustId
 			AND b.ruben = 1
-			AND (@CurrencyId = 0 OR b.currency = @CurrencyId)
 	END
 
 	IF @FromDate < @BalanceUpDay
 	BEGIN
-		IF @todate >= DATEADD(dd, -1, @BalanceUpDay)
+		IF @ToDate >= DATEADD(dd, -1, @BalanceUpDay)
 			SET @TempToDate = DATEADD(dd, -1, @BalanceUpDay)
 		ELSE
-			SET @TempToDate = @todate
+			SET @TempToDate = @ToDate
 
 		-- Horse Racing
 		INSERT INTO #Data
@@ -319,14 +324,14 @@ BEGIN
 			'' AS BetCheck,
 			'' AS TransDesc
 		FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
-			INNER JOIN bodb_archive.dbo.outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid 
+			INNER JOIN bodb_archive.dbo.outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			INNER JOIN @SportBettype sbt ON b.Bettype = sbt.Bettype
 		WHERE b.winlostdate BETWEEN @fromdate AND @TempToDate
+			AND b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 			AND b.custid = @CustId
-			AND b.recommend = @Recommend
 			AND b.ruben = 1
-			AND (@CurrencyId = 0 OR b.currency = @CurrencyId)
 	END
 
 	DECLARE @Today SMALLDATETIME
@@ -338,26 +343,26 @@ BEGIN
 	WHERE ExchangeId IN (SELECT DISTINCT Currency FROM #Data)
 
 	SELECT
-		@TotalRows			= COUNT(transid),
-		@SumWinlost			= SUM(ISNULL(WinLost, 0)),
-		@SumLicenseeWL		= SUM(ISNULL(LicenseeWL, 0)),
-		@SumComm			= SUM(ISNULL(Comm, 0)),
-		@SumPlayerComm		= SUM(ISNULL(PlayerComm, 0)),
+		@TotalRows			= COUNT(b.TransId),
+		@SumWinlost			= SUM(ISNULL(b.WinLost, 0)),
+		@SumLicenseeWL		= SUM(ISNULL(b.LicenseeWL, 0)),
+		@SumComm			= SUM(ISNULL(b.Comm, 0)),
+		@SumPlayerComm		= SUM(ISNULL(b.PlayerComm, 0)),
 		--USD
-		@SumWinlostUSD		= SUM(ISNULL(WinLost	* e.USD, 0)),
-		@SumLicenseeWLUSD	= SUM(ISNULL(LicenseeWL	* e.USD, 0)),
-		@SumCommUSD			= SUM(ISNULL(Comm		* e.USD, 0)),
-		@SumPlayerCommUSD	= SUM(ISNULL(PlayerComm	* e.USD, 0)),
+		@SumWinlostUSD		= SUM(ISNULL(b.WinLost		* e.USD, 0)),
+		@SumLicenseeWLUSD	= SUM(ISNULL(b.LicenseeWL	* e.USD, 0)),
+		@SumCommUSD			= SUM(ISNULL(b.Comm			* e.USD, 0)),
+		@SumPlayerCommUSD	= SUM(ISNULL(b.PlayerComm	* e.USD, 0)),
 		--EUR
-		@SumWinlostEUR		= SUM(ISNULL(WinLost	* e.EUR, 0)),
-		@SumLicenseeWLEUR	= SUM(ISNULL(LicenseeWL	* e.EUR, 0)),
-		@SumCommEUR			= SUM(ISNULL(comm		* e.EUR, 0)),
-		@SumPlayerCommEUR	= SUM(ISNULL(PlayerComm	* e.EUR, 0)),
+		@SumWinlostEUR		= SUM(ISNULL(b.WinLost		* e.EUR, 0)),
+		@SumLicenseeWLEUR	= SUM(ISNULL(b.LicenseeWL	* e.EUR, 0)),
+		@SumCommEUR			= SUM(ISNULL(b.Comm			* e.EUR, 0)),
+		@SumPlayerCommEUR	= SUM(ISNULL(b.PlayerComm	* e.EUR, 0)),
 		--GBP
-		@SumWinlostGBP		= SUM(ISNULL(WinLost	* e.GBP, 0)),
-		@SumLicenseeWLGBP	= SUM(ISNULL(LicenseeWL	* e.GBP, 0)),
-		@SumCommGBP			= SUM(ISNULL(Comm		* e.GBP, 0)),
-		@SumPlayerCommGBP	= SUM(ISNULL(PlayerComm	* e.GBP, 0))
+		@SumWinlostGBP		= SUM(ISNULL(b.WinLost		* e.GBP, 0)),
+		@SumLicenseeWLGBP	= SUM(ISNULL(b.LicenseeWL	* e.GBP, 0)),
+		@SumCommGBP			= SUM(ISNULL(b.Comm			* e.GBP, 0)),
+		@SumPlayerCommGBP	= SUM(ISNULL(b.PlayerComm	* e.GBP, 0))
 	FROM #Data AS b
 		INNER JOIN #TempExchange AS e
 			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.ExchangeId = b.Currency

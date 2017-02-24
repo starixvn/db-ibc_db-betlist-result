@@ -7,26 +7,22 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_TotalBets_Sel430]
-	@LicenseeId		INT,
-	@CurrencyId		INT				= 0,
-	@UserId			INT,
-	@LicenseeType	VARCHAR(100)	= NULL,
-	@LangKey		VARCHAR(10)		= 'en-US',
-	@PageSize		INT				= 50,
-	@PageIndex		INT				= 1,
-	@TotalRows		INT				= 0 OUTPUT
+	@AgentList	VARCHAR(MAX),
+	@PageSize		INT			= 50,
+	@PageIndex		INT			= 1,
+	@TotalRows		INT			= 0 OUTPUT
 AS
 
 /*
 	Created: Henry@20101209
-	Task : Betlist for Correct score and first correct score
+	Task: Betlist for Correct score and first correct score
 	DB: DBEXT.bodb02
 	Original:
 	Revisions:
 		- 20111229@Jim: change the way to get odds/oddstype/betteam to web dev
 		- 20120214@Jim: change to use  table ExchangeDaily by use function Lrf_f_GetExchangeDaily
 		- 20121004@Jim: replace @currencyname input param by @currencyID
-		- 20130514@Jim:Restrict permission of Licensee Users by currency
+		- 20130514@Jim: Restrict permission of Licensee Users by currency
 		- 20140620@Florent: offer new bettypes 152 - Half Time/Full Time Correct Score
 		- 20141110@Winnie: Change from LicenseeCust table to [f_SelLicenseeCust] function
 		- 20150124@Winnie: Add base currency GBP 
@@ -34,11 +30,33 @@ AS
 		- 20151203@Bobby: Database - Change datatype [Redmine: #48660]
 		- 20151207@Kos: Include bet type 405 2H Correct Score [Redmine: #47959]
 		- 20160129@Kos: Include bet type 413 Correct Score (aos) and [414] 1H Correct Score (aos) [Redmine: #50897]
-		- 20170720@Kos: Include bet type 416 Half Time/Full Time Correct Score (own) [Redmine: #53153]
+		- 20160720@Kos: Include bet type 416 Half Time/Full Time Correct Score (own) [Redmine: #53153]
+		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	DECLARE @Data TABLE (
 		CustId			INT,
@@ -71,21 +89,6 @@ BEGIN
 		Currency		SMALLINT,
 		TransDesc		NVARCHAR(200)
 	)
-
-	SELECT currencyID,
-		LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @userID, 1)-- System is default=1 (LRF)
-	WHERE @CurrencyId = 0
-		OR (@CurrencyId <> 0 AND CurrencyID = @CurrencyId)
-
-	DECLARE @TempAg AS TABLE (custid INT)
-
-	INSERT INTO @TempAg (custid)
-	SELECT DISTINCT CustID
-	FROM bodb_Licensee.dbo.[f_SelLicenseeCust](0) lc
-		INNER JOIN #currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType, [Description])
 
 	INSERT INTO @Data
 	SELECT
@@ -121,10 +124,8 @@ BEGIN
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-	WHERE
-		b.Recommend IN (SELECT custid FROM @TempAg)
-		AND((@CurrencyID = 0 AND currency IN (SELECT currencyId FROM #currency))
-			OR (@CurrencyID <> 0 AND Currency = @CurrencyID))
+	WHERE b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.bettype IN (4, 30, 152, 165, 166, 405, 413, 414, 416)
 		AND b.statusID IN (0, 1)
 		AND b.tpositiontaking <> 0 
@@ -151,7 +152,7 @@ BEGIN
 	FROM (
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY b.status, b.transid) AS RowNum,
-				SUBSTRING(c.username2, CHARINDEX('$',c.username2) + 1, LEN(c.username2) - CHARINDEX('$',c.username2)) AS nickname,
+				SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
 				b.*,
 				b.Stake * e.USD AS StakeUSD,
 				b.Stake * e.EUR AS StakeEUR,
@@ -164,8 +165,6 @@ BEGIN
 				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) AS e ON e.exchangeid = b.currency
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
-
-	DROP TABLE #currency
 END
 
 

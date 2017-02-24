@@ -7,11 +7,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelDeleted]
-	@LicenseeId	INT,
-	@UserId		INT,
+	@AgentList	VARCHAR(MAX),
 	@CustId		INT,
-	@CurrencyId	INT				= 0,
-	@LangKey	NVARCHAR(10)	= 'en-US',
 	@PageSize	INT				= 1000,
 	@PageIndex	INT				= 1,
 	@TotalRows	INT				= 0 OUTPUT
@@ -49,19 +46,38 @@ AS
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20160913@Kos: Don't support Colossus Bets [#Redmine: 63785]
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170228@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation:
-		+ @CustID: AgentID
+		- @AgentList: Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @recommend	INT,
-		@Fromdate		DATETIME,
-		@Todate			DATETIME
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
 
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
+
+	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID INT, Bettype INT, EventType INT)
 
 	DECLARE @IsTest BIT = 0
@@ -75,16 +91,6 @@ BEGIN
 
 	DELETE FROM @SportBettype
 	WHERE ProductID = 1 AND Bettype = 904
-
-	SELECT currencyID,
-		LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)-- System is default=1 (LRF) 
-
-	SELECT @recommend = recommend
-	FROM dbo.Customer AS c WITH (NOLOCK)
-		INNER JOIN #currency AS cy ON c.currency = cy.currencyID
-	WHERE custid = @custid
 
 	CREATE TABLE #Data (
 		SportType		SMALLINT,
@@ -164,7 +170,8 @@ BEGIN
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 	WHERE
 		b.custid = @CustID
-		AND b.recommend = @recommend
+		AND b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.statusID IN (101, 102)
 		AND b.winlostdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 		AND sbt.productId = 8
@@ -223,13 +230,14 @@ BEGIN
 					isneutral,
 					showtime,
 					kickofftime
-				FROM dbo.match WITH (NOLOCK) 
+				FROM dbo.match WITH (NOLOCK)
 				WHERE eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 			) AS m ON b.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 	WHERE
 		b.custid = @CustID
-		AND b.recommend = @recommend
+		AND b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.statusID IN (101, 102)
 		AND sbt.ProductID != 8
 		AND b.bettype NOT IN (SELECT bettype FROM dbo.f_VSHorseRacingByBettype()) 
@@ -286,9 +294,11 @@ BEGIN
 		INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 	WHERE
-		(sbt.ProductID = 2 OR (sbt.ProductID = 1 AND sbt.EventType = 2))
-		AND b.recommend = @recommend
+		(sbt.ProductID = 2
+			OR (sbt.ProductID = 1 AND sbt.EventType = 2))
 		AND b.custid = @CustID
+		AND b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.statusID IN (101, 102)
 
 	-- Virtual Horse Racing
@@ -348,8 +358,9 @@ BEGIN
 	WHERE
 		sbt.ProductID = 5
 		AND sbt.EventType = 3
-		AND b.recommend = @recommend
 		AND b.custid = @CustID
+		AND b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.statusID IN (101, 102)
 	
 	UPDATE betList
@@ -363,11 +374,8 @@ BEGIN
 	DELETE #Data
 	WHERE Sporttype = 1 AND Bettype = 903
 
-	DECLARE @RowStart INT, @RowEnd INT
-
-	SELECT @PageIndex = @PageIndex - 1,
-		@RowStart = @PageSize * @PageIndex + 1,
-		@RowEnd = @RowStart + @PageSize - 1
+	DECLARE @Fromdate	DATETIME,
+		@Todate			DATETIME
 
 	SELECT @FromDate = MIN(winlostdate) FROM #Data
 	SELECT @ToDate = MAX(winlostdate) FROM #Data
@@ -379,15 +387,15 @@ BEGIN
 
 	CREATE NONCLUSTERED INDEX IDX_Index_Data ON #Data (Currency)
 
-	IF @CurrencyID <> 0
-	BEGIN 
-		DELETE #Data
-		WHERE Currency <> @CurrencyID
-	END
-
 	SELECT * INTO #TempExchange
-	FROM Lrf_f_GetExchangeDaily(@FromDate,@ToDate)
+	FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)
 	WHERE exchangeid IN (SELECT DISTINCT Currency FROM #Data)
+
+	DECLARE @RowStart INT, @RowEnd INT
+
+	SELECT @PageIndex = @PageIndex - 1,
+		@RowStart = @PageSize * @PageIndex + 1,
+		@RowEnd = @RowStart + @PageSize - 1
 
 	SELECT A.* 
 	FROM
@@ -503,7 +511,6 @@ BEGIN
 	SELECT * FROM @BettransDetail
 	ORDER BY RefNo, Bettype
 
-	DROP TABLE #Currency
 	DROP TABLE #TempExchange
 	DROP TABLE #Data
 END

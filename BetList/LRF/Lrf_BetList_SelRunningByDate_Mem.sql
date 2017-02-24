@@ -1,21 +1,18 @@
 ﻿ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
-	@LicenseeId INT,
-	@UserId		INT,
+	@AgentList	VARCHAR(MAX),
 	@CustId		INT			= NULL,
-	@CurrencyId INT			= 0,
 	@FromDate	DATETIME	= '',
 	@ToDate		DATETIME	= '',
-	@Langkey	VARCHAR(10)	= 'en-US',
 	@Username	VARCHAR(30)	= NULL, -- for API
 	@PageSize	INT			= 1000,
 	@PageIndex	INT			= 1,
 	-- check for showing product
-	@ShowSB		BIT			= 0,
-	@ShowRB		BIT			= 0,
-	@ShowNG		BIT			= 0,
+	@ShowSB		BIT			= 0,	-- Sportsbook
+	@ShowRB		BIT			= 0,	-- Horse Racing
+	@ShowNG		BIT			= 0,	-- Number Game
 	@ShowBA		BIT			= 0,
-	@ShowLC		BIT			= 0,
-	@ShowVS		BIT			= 0,
+	@ShowLC		BIT			= 0,	-- Live Casino
+	@ShowVS		BIT			= 0,	-- Virtual Sports
 	@ShowCS		BIT			= 0,	-- RNG Casino
 	@ShowKN		BIT			= 0,	-- Keno
 	@ShowMGCLC	BIT			= 0,	-- Microgaming Live Casino
@@ -82,10 +79,32 @@ AS
 		- 20161006@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	DECLARE @Today		SMALLDATETIME
 		, @Yesterday	SMALLDATETIME
@@ -96,39 +115,33 @@ BEGIN
 		, @ErrorCode = 0
 		, @ErrorMsg	= ''
 
-	-- validate customer info
-	SELECT currencyID
-		, LicenseeID 
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
-
 	IF @CustID IS NULL
 	BEGIN
-		SELECT TOP 1 
-			@custid = c.custid
-			, @username = CASE WHEN @username IS NULL THEN c.username ELSE @username END 
-		FROM dbo.customer AS c WITH (NOLOCK) 
-			INNER JOIN #currency AS cy ON c.Currency = cy.CurrencyID
-		WHERE username = @username
+		SELECT TOP 1
+			@CustId = custid
+			, @Username = CASE WHEN @Username IS NULL THEN username ELSE @Username END
+		FROM dbo.customer WITH (NOLOCK)
+		WHERE username = @Username
+			AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
 	END
 	ELSE
 	BEGIN
-		SELECT TOP 1 
-			@custid = @custid
-			, @username = CASE WHEN @username IS NULL THEN c.username ELSE @username END 
-		FROM dbo.customer AS c WITH (NOLOCK) 
-			INNER JOIN #currency AS cy ON c.Currency = cy.CurrencyID
-		WHERE CustID = @CustID
+		SELECT TOP 1
+			@CustId = @custid
+			, @Username = CASE WHEN @Username IS NULL THEN username ELSE @Username END
+		FROM dbo.customer WITH (NOLOCK)
+		WHERE custid = @CustId
+			AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
 	END
 
-	IF @custid IS NULL OR @username IS NULL
+	IF @CustId IS NULL OR @Username IS NULL
 	BEGIN
 		SELECT @ErrorCode	= 100
 			, @ErrorMsg		= 'The customer was not found.'
 		RETURN;
 	END
 
-	-- filer bettypes by sporttype
+	-- Get SportBetTypeMatrix
 	DECLARE @SportBettype TABLE ( ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -1069,11 +1082,8 @@ BEGIN
 	END
 
 	-- check for filtering by currency
-	IF @CurrencyID <> 0 
-	BEGIN 
-		DELETE #BetListSelRunningByDateMem
-		WHERE Currency <> @CurrencyID
-	END
+	DELETE #BetListSelRunningByDateMem
+	WHERE Currency NOT IN (SELECT DISTINCT Currency FROM @TempAg)
 
 	-- set totalrows
 	SELECT @TotalRows = COUNT(1)

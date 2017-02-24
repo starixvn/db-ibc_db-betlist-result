@@ -6,10 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Racing]
-	@LicenseeId			INT,
-	@UserId				INT,
-	@LicenseeType		VARCHAR(100)	= NULL,
-	@CurrencyId			INT				= 0,
+	@AgentList			VARCHAR(MAX),
 	@BetType			INT,
 	@LeagueId			INT,
 	@RaceNo				VARCHAR(50),
@@ -40,28 +37,50 @@ AS
 
 /*
 	Created: Henry@20101210
-	Task : Betlist HR
+	Task: Betlist HR
 	DB: DBEXT.bodb02
 	Original: Age_BetList_SelWinlossHR_Ag
 	Revisions:
 		- 20110214@Jacob: Add column discount in the result SET
 		- 20110216@Jacob: Add column nickname in the result SET
-		- 20110303@Henry: suppport based currency
-		- 20110506@Henry: fix bug do not have data if only parameter @CustID --> change to param: @LicenseeID, @LicenseeType, @CurrencyName to get the list of agents
+		- 20110303@Henry: Suppport based currency
+		- 20110506@Henry: Fix bug do not have data if only parameter @CustID --> change to param: @LicenseeID, @LicenseeType, @CurrencyName to get the list of agents
 		- 20110721@Henry: Add Licensee WL
-		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
-		- 20120726@Jim: add playercomm value 
-		- 20121004@Jim: replace @currencyname input param by @currencyID
+		- 20120214@Jim: Change table ExchangeDaily by function Lrf_f_GetExchangeDaily
+		- 20120726@Jim: Add playercomm value
+		- 20121004@Jim: Replace @currencyname input param by @currencyID
 		- 20130514@Jim: Restrict permission of Licensee Users by currency
 		- 20141111@Winnie: Change from LicenseeCust to f_SelLicenseeCust 
 		- 20150128@Winnie: Add base currency GBP
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY, sportstype from TINYINT to SMALLINT [Redmine: #48660]
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
 		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	----Get Sport Bettype Matrix------
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
@@ -73,21 +92,6 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (2, 0, 0, 2, '', '', @IsTest)
-
-	SELECT currencyID,
-		LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
-	WHERE @CurrencyID = 0
-		OR (@CurrencyID <> 0 AND CurrencyID = @CurrencyID)
-
-	DECLARE @TempAg AS TABLE (custid INT)
-
-	INSERT INTO @TempAg (custid)
-	SELECT DISTINCT CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType, [Description])
 
 	CREATE TABLE #Data (
 		SportType		SMALLINT,
@@ -170,14 +174,12 @@ BEGIN
 			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.custid
 		WHERE
-			b.recommend IN (SELECT custid FROM @TempAg)
-			AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-				OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
-			AND b.winlostdate >= @FromDate
-			AND b.winlostdate <= @ToDate
+			b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+			AND b.winlostdate BETWEEN @FromDate AND @ToDate
 			AND l.leagueid = @LeagueId
 			AND m.groupmatch = @RaceNo
-			AND b.bettype = @Bettype
+			AND b.bettype = @BetType
 			AND b.ruben = 1
 	END
   
@@ -225,14 +227,12 @@ BEGIN
 			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 			INNER JOIN dbo.customer AS c WITH(NOLOCK) ON c.custid = b.custid
 		WHERE
-			b.recommend IN (SELECT custid FROM @TempAg)
-			AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-				OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
-			AND b.winlostdate >= @FromDate
-			AND b.winlostdate <= @ToDate
+			b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+			AND b.winlostdate BETWEEN @FromDate AND @ToDate
 			AND l.leagueid = @LeagueId
 			AND m.groupmatch = @RaceNo
-			AND b.bettype = @Bettype
+			AND b.bettype = @BetType
 			AND b.ruben = 1
 	END
 
@@ -427,7 +427,6 @@ BEGIN
 	
 	DROP TABLE #TempExchange
 	DROP TABLE #PagingData
-	DROP TABLE #Currency
 END
   
 

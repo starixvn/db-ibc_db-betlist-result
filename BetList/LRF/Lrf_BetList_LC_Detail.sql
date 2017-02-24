@@ -7,13 +7,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_LC_Detail]
-	@LicenseeId		INT,
-	@UserId			INT,
-	@CustId			INT,
-	@RefNo			BIGINT,
-	@TransType		TINYINT			= 0,
-	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME
+	@AgentList	VARCHAR(MAX),
+	@CustId		INT,
+	@RefNo		BIGINT,
+	@TransType	TINYINT	= 0
 AS
 
 /*
@@ -25,6 +22,7 @@ AS
 		- 20160530@Kos: Add ORDER BY statement to correct ticket order [Redmine: #58448]
 		- 20160727@Kos: Include Void/Rejected detail tickets view drilldown WON/LOSE/DRAW summary tickets
 					- Change to use inline function for SportBetTypeMatrix
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 
 	Parameters:
 		- @TransType
@@ -37,6 +35,28 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
+
+	-- Get SportBetTypeMatrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -100,7 +120,7 @@ BEGIN
 		WinLost			MONEY,
 		Comm			MONEY,
 		PlayerComm		MONEY,
-		IP				NVARCHAR(15),
+		Ip				NVARCHAR(15),
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(50),
 		MatchCode		VARCHAR(50)
@@ -202,27 +222,20 @@ BEGIN
 		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
 	END
 
-	-- get currency (for security)
+	-- Get currency (for security)
 	DECLARE @currency INT
 
-	SELECT currencyID,
-		LicenseeID 
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)	-- System is default=1 (LRF)
+	SELECT @currency = currency
+	FROM dbo.custinfo WITH (NOLOCK)
+	WHERE custid = @CustId
+		AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
 
-	SELECT @currency = c.currency 
-	FROM dbo.custinfo AS c WITH (NOLOCK)
-		INNER JOIN #Currency AS cy ON c.Currency = cy.CurrencyID 
-	WHERE c.custid = @custid
-
-	DROP TABLE #Currency
-
-	-- get from date - to date
+	-- Get from date - to date
 	DECLARE @Fromdate DATETIME
-	DECLARE @Todate DATETIME 
+	DECLARE @Todate DATETIME
 
 	SELECT @Fromdate = MIN(WinLostDate),
-		@Todate = MAX(WinLostDate) 
+		@Todate = MAX(WinLostDate)
 	FROM @tmpBettransLC
 
 	SELECT
@@ -263,7 +276,6 @@ BEGIN
 		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)) AS e
 			ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = @currency
 	ORDER BY b.TransId ASC
-
 END
 
 

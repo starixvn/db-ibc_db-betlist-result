@@ -6,12 +6,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelAllByDate_Mem]
-	@LicenseeId			INT,
-	@UserId				INT,
+	@AgentList			VARCHAR(MAX),
 	@CustId				INT			= NULL,
 	@FromDate			DATETIME,
 	@ToDate				DATETIME,
-	@Langkey			VARCHAR(10) = 'en-US',
 	@Username			VARCHAR(50) = NULL, -- for API
 	@PageSize			INT			= 1000,
 	@PageIndex			INT			= 1,
@@ -38,13 +36,13 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelAllByDate_Mem]
 	@SumComm			MONEY			= 0 OUTPUT,
 	@SumPlayerComm		MONEY			= 0 OUTPUT,
 	@SumWinLostUSD		MONEY			= 0 OUTPUT,
-	@SumLicenseeWLUSD 	MONEY			= 0 OUTPUT,
+	@SumLicenseeWLUSD	MONEY			= 0 OUTPUT,
 	@SumCommUSD			MONEY			= 0 OUTPUT,
 	@SumPlayerCommUSD	MONEY			= 0 OUTPUT,
 	@SumWinLostEUR		MONEY			= 0 OUTPUT,
-	@SumLicenseeWLEUR 	MONEY			= 0 OUTPUT,
+	@SumLicenseeWLEUR	MONEY			= 0 OUTPUT,
 	@SumCommEUR			MONEY			= 0 OUTPUT,
-	@SumPlayerCommEUR 	MONEY			= 0 OUTPUT,
+	@SumPlayerCommEUR	MONEY			= 0 OUTPUT,
 	@SumWinLostGBP		MONEY			= 0 OUTPUT,
 	@SumLicenseeWLGBP	MONEY			= 0 OUTPUT,
 	@SumCommGBP			MONEY			= 0 OUTPUT,
@@ -67,7 +65,7 @@ AS
 		- 20110712@Henry: Add column LicenseeWL
 		- 20110729@Henry: offer 3 new bettypes for Number Game + Combination Mix Parlay
 		- 20111128@Henry: Compare Checktime and CURRENT_TIMESTAMP to shDow waiting or running status
-		- 20111208@Jim: Chang condition  bettype < 31
+		- 20111208@Jim: Chang condition bettype < 31
 		- 20111229@Jim: change the way to get odds/oddstype/betteam to web dev
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
 		- 20120319@Henry: show main transid for sub-ticket of system parlay 
@@ -109,10 +107,32 @@ AS
 		- 20161006@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 */
 
 BEGIN
 	SET NOCOUNT ON;
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 	
 	DECLARE @Recommend	INT,
 		@Today			SMALLDATETIME,
@@ -127,22 +147,14 @@ BEGIN
 		FROM dbo.customer WITH (NOLOCK)
 		WHERE username = @username
 	END
-	
-	SELECT currencyID
-		, LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)-- System is default=1 (LRF)
 
 	SELECT @Recommend = Recommend
 		, @UserName = Username
-	FROM dbo.custinfo AS c WITH (NOLOCK)
-		INNER JOIN #Currency AS cy ON cy.CurrencyID = c.Currency
-	WHERE CustID = @CustId
-	------------------------------
-	DROP TABLE #currency
-	------------------------------
+	FROM dbo.custinfo WITH (NOLOCK)
+	WHERE custid = @CustId
+		AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
 
-	IF @custid IS NULL OR @username IS NULL
+	IF @CustId IS NULL OR @UserName IS NULL
 	BEGIN
 		SELECT @ErrorCode	= 100
 			, @ErrorMsg		= 'The customer was not found.'
@@ -675,8 +687,8 @@ BEGIN
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN @SportBettype sbt ON b.bettype = sbt.Bettype
 		WHERE b.CustID = @CustID 
-			AND	b.recommend = @Recommend
-			AND	b.matchid > 0
+			AND b.recommend = @Recommend
+			AND b.matchid > 0
 			AND sbt.ProductID = 1
 			AND sbt.EventType = 1
 			AND b.transdate >= @FromDate AND b.transdate <= @ToDate
@@ -747,7 +759,7 @@ BEGIN
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE b.CustID = @CustID
-			AND	b.recommend = @Recommend
+			AND b.recommend = @Recommend
 			AND b.matchid > 0
 			AND sbt.ProductID = 2
 			AND sbt.EventType = 2
@@ -811,7 +823,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE
 			b.CustID = @CustID
-			AND	b.recommend = @Recommend
+			AND b.recommend = @Recommend
 			AND sbt.ProductID IN (3, 4, 5)
 			AND sbt.EventType = 1
 			AND b.transdate >= @FromDate AND b.transdate <= @ToDate
@@ -1489,7 +1501,7 @@ BEGIN
 			AND b.winlostdate < @Yesterday	-- not yesterday and today summary ticket
 			AND b.statusID NOT IN (0, 1)
 
-		-- Today running ticket
+		-- Yesterday and today running ticket
 		INSERT INTO #BetListSelAllByDateMem
 		SELECT 
 			@UserName AS UserName,
@@ -1556,7 +1568,7 @@ BEGIN
 			b.currency,
 			sbt.ProductID
 
-		-- Today settled ticket
+		-- Yesterday and today settled ticket
 		INSERT INTO #BetListSelAllByDateMem
 		SELECT 
 			@UserName AS UserName,
@@ -1643,8 +1655,8 @@ BEGIN
 								ELSE @WinLostDate
 							END
 
-	SELECT * 
-	INTO #TempExchange 
+	SELECT *
+	INTO #TempExchange
 	FROM Lrf_f_GetExchangeDaily(@FromDate, @ExchangeToDate) ex
 	WHERE ex.ExchangeId IN (SELECT DISTINCT Currency FROM #BetListSelAllByDateMem)
 
@@ -1673,7 +1685,7 @@ BEGIN
 	WHERE b.[status] <> 'running'
 
 	-- return betlist single ticket
-	SELECT T.* 
+	SELECT T.*
 	FROM (
 		SELECT
 			ROW_NUMBER() OVER(ORDER BY b.transid DESC) AS RowNum,
@@ -1810,7 +1822,7 @@ BEGIN
 	ORDER BY RefNo
 		, Bettype
 
-	DROP TABLE #TempExchange 
+	DROP TABLE #TempExchange
 	DROP TABLE #BetListSelAllByDateMem
 END
 

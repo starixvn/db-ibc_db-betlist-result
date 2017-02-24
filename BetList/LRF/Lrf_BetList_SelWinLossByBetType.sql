@@ -2,10 +2,7 @@
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByBetType]
-	@LicenseeId			INT,
-	@UserId				INT,
-	@LicenseeType		VARCHAR(100)	= NULL,
-	@CurrencyId			INT				= 0,
+	@AgentList			VARCHAR(MAX),
 	@BetType			INT,
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
@@ -15,10 +12,10 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByBetType]
 	@PageIndex			INT				= 1,
 	@Sort				VARCHAR(100)	= 'TransId ASC',
 	@TotalRows			INT				= 0 OUTPUT,
-	@SumWinlost			MONEY			= 0 OUTPUT,
-	@SumWinlostUSD		MONEY			= 0 OUTPUT,
-	@SumWinlostEUR		MONEY			= 0 OUTPUT,
-	@SumWinlostGBP		MONEY			= 0 OUTPUT,
+	@SumWinLost			MONEY			= 0 OUTPUT,
+	@SumWinLostUSD		MONEY			= 0 OUTPUT,
+	@SumWinLostEUR		MONEY			= 0 OUTPUT,
+	@SumWinLostGBP		MONEY			= 0 OUTPUT,
 	@SumLicenseeWL		MONEY			= 0 OUTPUT,
 	@SumLicenseeWLUSD	MONEY			= 0 OUTPUT,
 	@SumLicenseeWLEUR	MONEY			= 0 OUTPUT,
@@ -35,7 +32,7 @@ AS
 
 /*
 	Created: Kos@20160229
-	Task : Get bet list of Win Loss By Bet Type report
+	Task: Get bet list of Win Loss By Bet Type report
 	DB: DBEXT.bodb02
 	Original:
 	Revisions:
@@ -44,6 +41,7 @@ AS
 		- 20160721@Percy: Enhance Performance - using index recommend on bettrans/bettrans14 [RedmineID: #60770]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170227@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170302@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Parameters:
@@ -51,6 +49,27 @@ AS
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	-- Sport Bet Type matrix
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
@@ -73,22 +92,6 @@ BEGIN
 		OR (ProductID = 1 AND Bettype IN (901, 902, 903, 904))
 	*/
 
-	-- Licensee type
-	SELECT CurrencyId,
-		LicenseeId
-	INTO #Currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)	-- System is default=1 (LRF)
-	WHERE @CurrencyId = 0 OR CurrencyID = @CurrencyId
-
-	DECLARE @TempAg AS TABLE (CustId INT, currency SMALLINT)
-
-	INSERT INTO @TempAg (CustId, currency)
-	SELECT DISTINCT CustId, lc.currency
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
-	WHERE [Description] = COALESCE(@LicenseeType, [Description])
-
-	DROP TABLE #Currency
 	-- Create temp table
 	CREATE TABLE #AllData (
 		TransId		BIGINT,
@@ -235,7 +238,7 @@ BEGIN
 				2 AS WhTicket -- bettrans14
 			FROM
 				dbo.bettrans14 b WITH (NOLOCK)
-				INNER JOIN @TempAg t ON b.recommend = t.CustId AND b.currency = t.currency
+				INNER JOIN @TempAg AS t ON b.recommend = t.CustId AND b.currency = t.currency
 				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate

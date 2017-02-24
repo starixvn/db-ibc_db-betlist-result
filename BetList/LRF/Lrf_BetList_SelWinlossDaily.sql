@@ -5,22 +5,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-/*
-exec Lrf_BetList_SelWinlossDaily
-@date='2012-09-04 00:00:00:000',
-@LicenseeID=1,
-@MoveBetsDay='2012-09-03 00:00:00:000',
-@BalanceUpDay='2012-09-01 00:00:00:000'
-*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinlossDaily]
+	@AgentList			VARCHAR(MAX),
 	@Date				SMALLDATETIME,
-	@LicenseeId			INT,
-	@UserId				INT,
-	@CurrencyId			INT			= 0,
 	@Product			VARCHAR(10)	= 'ALL',
 	@Status				VARCHAR(10)	= 'won',
-	@LangKey			VARCHAR(10)	= 'en-US',
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
 	@PageSize			INT			= 1000,
@@ -47,7 +37,7 @@ AS
 
 /*
 	Created: 20111904@Henry
-	Task : Betlist
+	Task: Betlist
 	DB: DBEXT.bodb02
 	Original:
 	Revisions:
@@ -84,7 +74,7 @@ AS
 		- 20140718@Jim: fix bug 'Win loss and Licensee WL showed on web are incorrect when product is BA' (#19261)
 		- 20141111@Jim: use f_SelLicenseeCust instead of licenseecust (#Redmine 25673)
 		- 20150114@Winnie: remove hardcode bettype, use spottype bettype matrix
-		- 20150128@Winnie: Add base currency GBP 
+		- 20150128@Winnie: Add base currency GBP
 		- 20150410@Jim: support betradar and apply report-bettype matrix
 		- 20150604@Edward: Support Microgaming
 		- 20150608@Edward: Exclude 3 transactions SOLD/BOUGHT/BetTrade Commission of BetTrade
@@ -98,6 +88,7 @@ AS
 		- 20160714@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170301@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation: 
@@ -105,12 +96,34 @@ AS
 
 BEGIN
 	SET NOCOUNT ON
+
+	CREATE TABLE #TempAg (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO #TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
+
 	--- to Deal With Parameter Sniffing
-	DECLARE 
+	DECLARE
 		@wldate			SMALLDATETIME,
 		@MoveBetsDay_	SMALLDATETIME,
 		@BalanceUpDay_	SMALLDATETIME
-	SELECT 
+	SELECT
 		@wldate			= @date,
 		@MoveBetsDay_	= @MoveBetsDay,
 		@BalanceUpDay_	= @BalanceUpDay
@@ -203,9 +216,6 @@ BEGIN
 		IsNeutral	INT
 	)
 
-	CREATE TABLE #TempAg (CustId INT, Currency INT)
-	------------
-
 	DECLARE @RowStart INT, @RowEnd INT
 
 	SELECT @PageIndex = @PageIndex - 1
@@ -217,24 +227,11 @@ BEGIN
 	DECLARE @LicenseeWL	VARCHAR(150)
 	DECLARE @Winlost	VARCHAR(150)
 
-	SELECT currencyID,
-		LicenseeID 
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
-	WHERE @CurrencyID = 0 OR (@CurrencyID <> 0 AND CurrencyID = @CurrencyID)
-
-	INSERT INTO #TempAg (custid, currency)
-	SELECT lc.CustID
-		, lc.currency
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(@licenseeID) lc
-		INNER JOIN #currency c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-
-	DROP TABLE #Currency
-
-	SELECT * 
+	SELECT *
 	INTO #TempExchange
-	FROM Lrf_f_GetExchangeDaily(@wldate,@wldate)
+	FROM Lrf_f_GetExchangeDaily(@wldate, @wldate)
 
+	-- Get SportBettypeMatrix
 	CREATE TABLE #SportBettype (ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -739,9 +736,9 @@ BEGIN
 				SUM(ISNULL(b.comm, 0)),
 				SUM(b.playercomm) AS SumPlayerComm
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN #SportBettype AS sbt ON sbt.Bettype=b.bettype
-				INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
-				INNER JOIN #TempAg ag ON b.recommend = ag.custid AND b.currency = ag.Currency
+				INNER JOIN #SportBettype AS sbt ON sbt.Bettype = b.bettype
+				INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS ba WITH (NOLOCK) ON b.transid = BA.transid
+				INNER JOIN #TempAg AS ag ON b.recommend = ag.custid AND b.currency = ag.Currency
 			WHERE
 				b.winlostdate = @wldate
 				AND b.bettype NOT IN (9,29,10)
@@ -877,20 +874,20 @@ BEGIN
 			ISNULL(b.transdesc, '''') AS transdesc,
 			--USD
 			b.stake*e.USD stakeUSD,'
-			+@Winlost+'*e.USD WinlostUSD,'
-			+ @LicenseeWL+'*e.USD LicenseeWLUSD,
+			+ @Winlost + '*e.USD WinlostUSD,'
+			+ @LicenseeWL + '*e.USD LicenseeWLUSD,
 			b.comm*e.USD commUSD,
 			b.playercomm*e.USD AS PlayerCommUSD,
 			--EUR
 			b.stake*e.EUR stakeEUR,'
-			+@Winlost+'*e.EUR WinlostEUR,'
-			+ @LicenseeWL+'*e.EUR LicenseeWLEUR,
+			+ @Winlost + '*e.EUR WinlostEUR,'
+			+ @LicenseeWL + '*e.EUR LicenseeWLEUR,
 			b.comm*e.EUR commEUR,
 			b.playercomm*e.EUR AS PlayerCommEUR,
 			--GBP
 			b.stake*e.GBP stakeGBP,'
-			+@Winlost+'*e.GBP WinlostGBP,'
-			+ @LicenseeWL+'*e.GBP LicenseeWLGBP,
+			+ @Winlost + '*e.GBP WinlostGBP,'
+			+ @LicenseeWL + '*e.GBP LicenseeWLGBP,
 			b.comm*e.GBP commGBP,
 			b.playercomm*e.GBP AS PlayerCommGBP
 		FROM
@@ -1312,8 +1309,8 @@ BEGIN
 	DROP TABLE #TempExchangeSum
 	DROP TABLE #Data
 	DROP TABLE #SportBettype
-	DROP TABLE #TempAg
 	DROP TABLE #BettransDetail
+	DROP TABLE #TempAg
 END
 
 

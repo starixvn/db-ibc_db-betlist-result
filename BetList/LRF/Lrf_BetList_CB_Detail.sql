@@ -2,8 +2,7 @@ USE [bodb02]
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_CB_Detail]
-	@LicenseeId	INT,
-	@UserId		INT,
+	@AgentList	VARCHAR(MAX),
 	@CustId		INT,
 	@RefNo		BIGINT
 AS
@@ -12,7 +11,8 @@ AS
 	Created by: Kos@20160915
 	Task: Get details info for Colossus Bets ticket
 	DB: DBEXT.bodb02
-	Original: 
+	Original:
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 	
 	Revisions:
 */
@@ -20,19 +20,34 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
+
 	-- Get currency (for security)
 	DECLARE @Currency INT
 
-	SELECT CurrencyId
-	INTO #Currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)	-- System is default=1 (LRF)
-
-	SELECT @Currency = c.currency 
-	FROM dbo.custinfo AS c WITH (NOLOCK)
-		INNER JOIN #Currency AS cy ON c.currency = cy.CurrencyId
-	WHERE c.custid = @CustId
-
-	DROP TABLE #Currency
+	SELECT @Currency = currency
+	FROM dbo.custinfo WITH (NOLOCK)
+	WHERE custid = @CustId
+		AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
 
 	-- Get winlostdate of main ticket to use for exchange rate
 	DECLARE

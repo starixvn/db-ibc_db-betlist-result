@@ -6,10 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelDeleted_UserList]
-	@LicenseeId		INT,
-	@UserId			INT,
-	@CurrencyId		INT				= 0,
-	@LicenseeType	VARCHAR(100)	= NULL
+	@AgentList	VARCHAR(MAX)
 AS
 
 /*
@@ -18,7 +15,7 @@ AS
 	Original: [Age_BetList_SelDeleted_UserList_Ag]
 
 	Revisions:
-		- 20110302@Henry: Allow to choose all type of licensee AND all currency 
+		- 20110302@Henry: Allow to choose all type of licensee AND all currency
 		- 20110325@Henry: Support username2 to the list
 		- 20121004@Jim: Replace @currencyname input param by @currencyID
 		- 20130514@Jim: Restrict permission of Licensee Users by currency
@@ -26,25 +23,40 @@ AS
 		- 20140403@Hannah: Offer Keno
 		- 20140408@Florent: Add more condition for Keno
 		- 20141111@Jim: Use f_SelLicenseeCust instead of licenseecust (#Redmine 25673)
-		- 20150409@Winnie: Apply spottype bettype matrix 
+		- 20150409@Winnie: Apply spottype bettype matrix
 		- 20150514@Winnie: Fix bug
-		- 20150609@Edward : Support BetTrade
+		- 20150609@Edward: Support BetTrade
 		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20160913@Kos: Don't support Colossus Bets [#Redmine: 63785]
+		- 20170301@Kos: Support sub licensees [#Redmine: 71679]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT currencyID,
-		LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)-- System is default=1 (LRF)
-	WHERE (@CurrencyId = 0
-		OR (@CurrencyId <> 0 AND CurrencyID = @CurrencyId))
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
 
-	------------
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
+
+	-- Get SportBettypeMatrix
 	DECLARE @SportBettype TABLE(ProductID INT, Bettype INT, EventType INT)
 
 	DECLARE @IsTest BIT = 0
@@ -58,18 +70,6 @@ BEGIN
 
 	DELETE FROM @SportBettype
 	WHERE ProductID = 1 AND Bettype IN (903, 904)
-
-	------------
-	DECLARE @TempAg AS TABLE (CustId INT, Currency INT)
-
-	INSERT INTO @TempAg
-	SELECT CustID
-		,Currency
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(@LicenseeId) AS lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType, [Description])
-
-	DROP TABLE #Currency
 
 	DECLARE @bc TABLE (CustId INT, BetCount INT)
 
@@ -134,7 +134,7 @@ BEGIN
 	SELECT
 		c.username,
 		c.custid,
-		SUBSTRING(c.username2, CHARINDEX('$',c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
+		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
 		SUM(betcount) AS BetCount
 	FROM dbo.customer AS c WITH (NOLOCK)
 		INNER JOIN @bc AS b ON c.custid = b.CustId

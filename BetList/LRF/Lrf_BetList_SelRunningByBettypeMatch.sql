@@ -7,18 +7,14 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByBettypeMatch]
+	@AgentList		VARCHAR(MAX),
 	@MatchId		INT,
-	@LicenseeId		INT,
-	@CurrencyId		INT				= 0,
-	@UserId			INT,
-	@LicenseeType	VARCHAR(100)	= NULL,
 	@BetType		INT,
-	@LangKey		VARCHAR(10)		= 'en-US',
-	@BetTeam		VARCHAR(20)		= NULL,
-	@LiveIndicator	INT				= -1,
-	@PageSize		INT				= 1000,
-	@PageIndex		INT				= 1,
-	@TotalRows		INT				= 0 OUTPUT
+	@BetTeam		VARCHAR(20)	= NULL,
+	@LiveIndicator	INT			= -1,
+	@PageSize		INT			= 1000,
+	@PageIndex		INT			= 1,
+	@TotalRows		INT			= 0 OUTPUT
 AS
 
 /*
@@ -52,25 +48,32 @@ AS
 		- 20150630@Jim: remove BA ticket
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20161003@Kos: Remove Live Casino code
+		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT currencyID,
-		LicenseeID 
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @userID, 1)-- System is default=1 (LRF)
-	WHERE @CurrencyId = 0
-		OR (@CurrencyId <> 0 AND CurrencyID = @CurrencyId)
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
 
-	DECLARE @TempAg AS TABLE (custid INT)
+	-- Get AgentList
+	DECLARE @DocHandler INT
 
-	INSERT INTO @TempAg (custid)
-	SELECT DISTINCT CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) lc --WITH ( NOLOCK )
-		INNER JOIN #currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType, [Description]) 
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	SET @BetTeam = RTRIM(LTRIM(ISNULL(@BetTeam, '')))
 
@@ -150,15 +153,13 @@ BEGIN
 		WHERE
 			b.matchid = @MatchId
 			AND b.bettype = @BetType
-			AND ((@CurrencyId = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-				OR (@CurrencyId <> 0 AND b.currency = @CurrencyId))
-			AND b.recommend IN (SELECT custid FROM @TempAg)
+			AND b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 			AND b.statusID = 0
 		ORDER BY
 			b.status,
 			b.transid
 	END
-	--ELSE IF @bettype<=19000: old condition 
 	ELSE IF @BetType <= 19000
 	BEGIN
 		INSERT INTO #Data
@@ -203,9 +204,8 @@ BEGIN
 		WHERE
 			b.matchid = @MatchId
 			AND b.bettype = @BetType
-			AND ((@CurrencyId = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-				OR (@CurrencyId <> 0 AND b.currency = @CurrencyId))
-			AND b.recommend IN (SELECT custid FROM @TempAg)
+			AND b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 			AND b.statusID IN (0, 1)
 			AND b.bettype NOT IN (SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 			AND ((@LiveIndicator = -1)
@@ -250,12 +250,11 @@ BEGIN
 				b.PlayerComm * e.EUR AS PlayerCommEUR,
 				b.PlayerComm * e.GBP AS PlayerCommGBP
 			FROM #Data AS b
-				INNER JOIN dbo.customer AS c WITH(NOLOCK) ON c.custid = b.custid 
-				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today))e ON e.exchangeid = b.currency
+				INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.custid 
+				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) e ON e.exchangeid = b.currency
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 
-	DROP TABLE #Currency
 	DROP TABLE #Data
 END
 

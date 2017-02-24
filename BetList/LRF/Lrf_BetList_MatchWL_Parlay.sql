@@ -4,11 +4,8 @@ go
 
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Parlay]
-	@LicenseeID			INT,
-	@UserID				INT,
-	@LicenseeType		VARCHAR(100)	= NULL,
-	@CurrencyID			INT				= 0,
-	@Bettype			INT				= 9,
+	@AgentList			VARCHAR(MAX),
+	@BetType			INT				= 9,
 	@ShowBA				BIT				= 0,
 	@ShowSB				BIT				= 0,
 	@FromDate			SMALLDATETIME,
@@ -38,7 +35,7 @@ AS
 
 /*
 	Created: Henry@20120111
-	Task : Betlist for Parlay
+	Task: Betlist for Parlay
 	DB: DBEXT.bodb02
 	Original: [Age_BetList_SelWinlossParlay_Ag]
 	Revisions:
@@ -55,6 +52,7 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
+		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 
 	Param's Explanation:
 */
@@ -62,20 +60,26 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @TempAg AS TABLE (custid INT)
+	DECLARE @TempAg TABLE (CustId INT, Currency INT)
 
-	SELECT currencyID,
-		LicenseeID
-	INTO #currency
-	FROM dbo.Lrf_f_GetCurrencybyUser(@licenseeID, @userID, 1)-- System is default=1 (LRF)
-	WHERE @CurrencyID = 0 
-		OR (@CurrencyID <> 0 AND CurrencyID = @CurrencyID)
+	-- Get AgentList
+	DECLARE @DocHandler INT
 
-	INSERT INTO @TempAg (CustId)
-	SELECT DISTINCT CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) lc
-		INNER JOIN #Currency c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
-	WHERE [Description] = COALESCE(@LicenseeType,[Description])
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO @TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Paramter invalid.'
+
+		RETURN
+	END CATCH
 
 	-- Use local variables to avoid bad params sniffing
 	DECLARE @FDate	SMALLDATETIME, 
@@ -158,11 +162,9 @@ BEGIN
 				ISNULL(b.betcheck, '') AS BetCheck
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
-				AND b.winlostdate >= @FDate
-				AND b.winlostdate <= @TDate
+				b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+				AND b.winlostdate BETWEEN @FDate AND @TDate
 				AND b.bettype = @BetType
 				AND b.matchid = @BetType
 				AND b.tpositiontaking = 0
@@ -171,7 +173,7 @@ BEGIN
 
 		IF @ShowSB = 1
 		BEGIN
-			INSERT INTO #Data 
+			INSERT INTO #Data
 			SELECT
 				b.username,
 				'' AS Nickname,
@@ -208,16 +210,14 @@ BEGIN
 				ISNULL(b.betcheck, '') AS BetCheck
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
-				AND b.winlostdate >= @FDate
-				AND b.winlostdate <= @TDate
+				b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+				AND b.winlostdate BETWEEN @FDate AND @TDate
 				AND b.bettype = @Bettype
 				AND b.matchid = @Bettype
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
-		END	
+		END
 	END
 
 	IF @FDate <= @MoveBetsDay
@@ -261,11 +261,9 @@ BEGIN
 				ISNULL(b.betcheck, '') AS BetCheck
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
-				AND b.winlostdate >= @FDate
-				AND b.winlostdate <= @TDate
+				b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+				AND b.winlostdate BETWEEN @FDate AND @TDate
 				AND b.bettype = @BetType
 				AND b.matchid = @BetType
 				AND b.tpositiontaking = 0
@@ -311,11 +309,9 @@ BEGIN
 				ISNULL(b.betcheck, '') AS BetCheck
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE
-				b.recommend IN (SELECT custid FROM @TempAg)
-				AND ((@CurrencyID = 0 AND b.currency IN (SELECT currencyId FROM #currency))
-					OR (@CurrencyID <> 0 AND b.currency = @CurrencyID))
-				AND b.winlostdate >= @FDate
-				AND b.winlostdate <= @TDate
+				b.recommend IN (SELECT CustId FROM @TempAg)
+				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+				AND b.winlostdate BETWEEN @FDate AND @TDate
 				AND b.bettype = @Bettype
 				AND b.matchid = @Bettype
 				AND b.tpositiontaking <> 0
@@ -477,7 +473,6 @@ BEGIN
 
 	DROP TABLE #PagingData
 	DROP TABLE #TempExchange
-	DROP TABLE #Currency
 END
 
 
