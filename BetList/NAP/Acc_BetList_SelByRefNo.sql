@@ -47,6 +47,7 @@ AS
 		- 20160810@Kos: Support NG2
 		- 20161017@Kos: Support search all AllBet related tickets [#Redmine: 65802]
 		- 20161019@Kos: Support Fishing World [#Redmine: 65934]
+		- 20170228@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 */
 
 BEGIN
@@ -187,7 +188,7 @@ BEGIN
 		WinLostDate			SMALLDATETIME,
 		BetCheck			NVARCHAR(50),
 		TransDesc			NVARCHAR(1000),
-		OddsSpread			SMALLMONEY
+		OddsSpread			MONEY
 	)
 
 	DECLARE @DetailData TABLE (
@@ -222,8 +223,8 @@ BEGIN
 		AND NOT EXISTS ( SELECT 1
 						FROM dbo.customer AS c WITH (NOLOCK)
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
-							WHERE c.custid = @CustId
-								AND a.site IN (SELECT Site FROM @DeniedSite))
+						WHERE c.custid = @CustId
+							AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- Bettrans
 		IF @WinlostDate > @MoveBetsDay
@@ -290,7 +291,10 @@ BEGIN
 					b.awinlost,
 					b.mwinlost,
 					b.swinlost,
-					m.showtime,
+					CASE
+						WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						ELSE m.showtime
+					END AS ShowTime,
 					b.winlostdate,
 					b.betcheck,
 					ISNULL(b.transdesc, '') AS TransDesc,
@@ -855,7 +859,7 @@ BEGIN
 					AND s.ProductID = 8
 			END
 
-			-- Virtual HR
+			-- Virtual Horse Racing
 			IF EXISTS(SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
@@ -1697,7 +1701,10 @@ BEGIN
 					b.awinlost,
 					b.mwinlost,
 					b.swinlost,
-					m.showtime,
+					CASE
+						WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						ELSE m.showtime
+					END AS ShowTime,
 					b.winlostdate,
 					b.BetCheck,
 					ISNULL(b.transdesc, '') AS TransDesc,
@@ -1714,8 +1721,8 @@ BEGIN
 				,betList.comm	= CASE WHEN betList.Bettype = 902 THEN ISNULL(commBetList.awinlost,0) ELSE betList.comm END
 				,betList.BetID	= originBetList.Bettype
 			FROM @Data AS betList
-				INNER JOIN dbo.bettrans14 AS originBetList WITH (NOLOCK) ON betList.RefNO = originBetList.TransID
-				LEFT JOIN @Data AS commBetList ON betList.RefNO = commBetList.RefNO AND commBetList.Bettype = 903
+				INNER JOIN dbo.bettrans14 AS originBetList WITH (NOLOCK) ON betList.RefNo = originBetList.transid
+				LEFT JOIN @Data AS commBetList ON betList.RefNO = commBetList.RefNo AND commBetList.Bettype = 903
 			WHERE betList.Sporttype = 1 AND betList.Bettype IN (901, 902)
 
 			-- Mix Parlay, Combination Mix Parlay
@@ -1926,8 +1933,8 @@ BEGIN
 					0 AS OddsSpread
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN dbo.outright14 AS odds WITH (NOLOCK) ON b.matchid = odds.orid
-					INNER JOIN dbo.league l WITH (NOLOCK) ON odds.leagueid = l.leagueid
-					INNER JOIN @SportBettype s ON s.BetType = b.BetType
+					INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
+					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType
 					LEFT JOIN (
 						SELECT
 							t.refno,
@@ -1996,8 +2003,8 @@ BEGIN
 					b.ip,
 					b.betfrom,
 					b.matchid,
-					CONVERT (BIT, 0) AS IsNeutral,
-					(b.winlost-b.actual_stake)  winlost,
+					CONVERT(BIT, 0) AS IsNeutral,
+					(b.winlost - b.actual_stake) AS WinLost,
 					b.playercomm AS Commission,
 					(b.scomm - b.acomm) AS scomm,
 					(b.acomm - b.comm) AS acomm,
@@ -2011,7 +2018,7 @@ BEGIN
 					 '' AS TransDesc,
 					 0 AS OddsSpread
 				FROM 
-					dbo.bettrans14 AS b WITH (NOLOCK) 
+					dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType 
@@ -2024,7 +2031,7 @@ BEGIN
 							f.apositiontaking apositiontaking2,
 							f.mpositiontaking mpositiontaking2,
 							f.spositiontaking spositiontaking2
-						FROM dbo.bettransm14 AS t WITH (NOLOCK)  
+						FROM dbo.bettransm14 AS t WITH (NOLOCK)
 							INNER JOIN dbo.bettransm14 AS f WITH (NOLOCK) ON t.refno = f.refno
 						WHERE t.bettype = 1231 AND f.bettype = 1232 
 						) bm ON b.refno = bm.refno
@@ -2354,7 +2361,10 @@ BEGIN
 					b.awinlost,
 					b.mwinlost,
 					b.swinlost,
-					m.showtime,
+					CASE
+						WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						ELSE m.showtime
+					END AS ShowTime,
 					b.winlostdate,
 					b.BetCheck,
 					ISNULL(b.transdesc, '') AS TransDesc,
@@ -2604,7 +2614,7 @@ BEGIN
 				WHERE s.ProductID = 2 AND b.transid = @TransId
 			END
 
-			-- Virtual HR
+			-- Virtual Horse Racing
 			IF EXISTS(SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
@@ -2663,7 +2673,7 @@ BEGIN
 					b.awinlost,
 					b.mwinlost,
 					b.swinlost,
-					r.EventTime showtime, -- Race Name
+					r.EventTime AS ShowTime,
 					b.winlostdate,
 					b.BetCheck,
 					 '' AS TransDesc,
@@ -2674,8 +2684,8 @@ BEGIN
 					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType
 					LEFT JOIN (
-						SELECT 
-							t.refno, 
+						SELECT
+							t.refno,
 							t.apositiontaking,
 							t.mpositiontaking,
 							t.spositiontaking,

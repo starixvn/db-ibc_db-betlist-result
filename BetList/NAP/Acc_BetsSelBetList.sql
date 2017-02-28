@@ -22,7 +22,7 @@ AS
 	Original: account\betlist.asp
 	
 	Revisions:
-		- 20060225@[]: remove refno 
+		- 20060225@[]: remove refno
 		- 20081223@PhuongNguyen: Get sdiscount, adiscount, discount, placing
 		- 20081230@PhuongNguyen: Get livehomescore and liveawayscore, hdp1, hdp2
 		- 20081231@PhuongNguyen: Remove placing
@@ -72,7 +72,7 @@ AS
 						   Get Winlostdate field
 		- 20140306@Dom: Add Keno
 		- 20140318@Dom: #13487 Prevent user to delete LAS ticket in bet list accounting site
-		- 20140908@Dom:	[Redmine #22012] Update VS conditions
+		- 20140908@Dom: [Redmine #22012] Update VS conditions
 		- 20141103@Dom: Apply sport bettype matrix
 		- 20150122@Dom: HotFix #29646 Fix bug virtual HR
 		- 20150415@Sophia: Get Betcheck for Betradar
@@ -104,6 +104,7 @@ AS
 		- 20160810@Kos: Support NG2
 		- 20161019@Kos: Remove Bingo and P2P in bettrans and bettrans14 range [#Redmine: 53988]
 					  - Support Fishing World [#Redmine: 65934]
+		- 20170228@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 */
 
 BEGIN
@@ -116,9 +117,9 @@ BEGIN
 	--list of bettype not allowed to delete
 	DECLARE @tableBettypeNotAllowDelete TABLE(typeid INT NOT NULL)
 
-	INSERT INTO @tableBettypeNotAllowDelete (typeid) 
-	SELECT 31 UNION ALL SELECT 32 UNION ALL SELECT 33 UNION ALL SELECT 41 UNION ALL SELECT 42 UNION ALL SELECT 43 UNION ALL 
-	SELECT 51 UNION ALL SELECT 52 UNION ALL SELECT 53 UNION ALL SELECT 54 UNION ALL SELECT 55 UNION ALL SELECT 56 UNION ALL 
+	INSERT INTO @tableBettypeNotAllowDelete (typeid)
+	SELECT 31 UNION ALL SELECT 32 UNION ALL SELECT 33 UNION ALL SELECT 41 UNION ALL SELECT 42 UNION ALL SELECT 43 UNION ALL
+	SELECT 51 UNION ALL SELECT 52 UNION ALL SELECT 53 UNION ALL SELECT 54 UNION ALL SELECT 55 UNION ALL SELECT 56 UNION ALL
 	SELECT 61 UNION ALL SELECT 62 UNION ALL SELECT 63 UNION ALL SELECT 64 UNION ALL SELECT 65 UNION SELECT 66
 	--End
 
@@ -177,7 +178,7 @@ BEGIN
 		SPositionTaking2 SMALLMONEY,
 		MPositionTaking2 SMALLMONEY,
 		APositionTaking2 SMALLMONEY,
-		LiveIndicator	 BIT,
+		LiveIndicator	BIT,
 		Modds			MONEY,
 		CustId			INT,
 		LiveHomeScore	INT,
@@ -203,7 +204,7 @@ BEGIN
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
-		OddsSpread		SMALLMONEY
+		OddsSpread		MONEY
 	)
 
 	CREATE TABLE #BetListDetailData (
@@ -293,16 +294,19 @@ BEGIN
 				b.awinlost,
 				b.mwinlost,
 				b.swinlost,
-				m.showtime,
+				CASE
+					WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					ELSE m.showtime
+				END AS ShowTime,
 				b.winlostdate,
 				b.BetCheck,
 				ISNULL(b.transdesc, '') AS transdesc,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM 
 				dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_custid_matchid_bettype)
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid --phuong.nguyen, remove left join match_remark
+				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #SportBettype s ON s.Bettype = b.bettype
-			WHERE b.custid = @Custid 
+			WHERE b.custid = @Custid
 				AND b.matchid > 0
 				AND s.EventType = 1
 				--exclude metric gaming running ticket
@@ -605,7 +609,7 @@ BEGIN
 				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_custid_matchid_bettype)
 					INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 					INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
-				WHERE b.custid = @Custid 
+				WHERE b.custid = @Custid
 					AND b.matchid > 0
 					AND b.bettype = 10
 					AND b.winlostdate BETWEEN @FromDate AND @ToDate
@@ -879,7 +883,7 @@ BEGIN
 				AND b.winlostdate BETWEEN @FromDate AND @ToDate
 		END
 
-		-- HR
+		-- Horse Racing
 		IF EXISTS (SELECT TOP 1 1 FROM #SportBettype WHERE ProductID = 2)
 		BEGIN
 			INSERT INTO #BetListData 
@@ -972,7 +976,7 @@ BEGIN
 				AND b.winlostdate BETWEEN @FromDate AND @ToDate
 		END
 
-		-- Virtual HR
+		-- Virtual Horse Racing
 		IF EXISTS (SELECT TOP 1 1 FROM #SportBettype WHERE ProductID = 5)
 		BEGIN
 			INSERT INTO #BetListData
@@ -1852,13 +1856,16 @@ BEGIN
 				b.awinlost,
 				b.mwinlost,
 				b.swinlost,
-				m.showtime,
+				CASE
+					WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					ELSE m.showtime
+				END AS ShowTime,
 				b.winlostdate,
-				b.BetCheck,
+				b.betcheck,
 				ISNULL(b.transdesc, '') AS transdesc,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM 
-				dbo.bettrans14 AS b WITH (NOLOCK, INDEX=bettrans1413) 
+				dbo.bettrans14 AS b WITH (NOLOCK, INDEX=bettrans1413)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #SportBettype s ON s.Bettype = b.bettype
 			WHERE b.custid = @Custid
@@ -2284,7 +2291,7 @@ BEGIN
 				AND s.ProductID = 8
 		END
 
-		-- HR
+		-- Horse Racing
 		IF EXISTS (SELECT TOP 1 1 FROM #SportBettype WHERE ProductID = 2)
 		BEGIN
 			INSERT INTO #BetListData 
@@ -2376,7 +2383,7 @@ BEGIN
 				AND s.ProductId = 2
 		END
 
-		-- Virtual HR
+		-- Virtual Horse Racing
 		IF EXISTS (SELECT TOP 1 1 FROM #SportBettype WHERE ProductID = 5)
 		BEGIN
 			INSERT INTO #BetListData
@@ -2571,7 +2578,7 @@ BEGIN
 				bg.spositiontaking,
 				bg.bettype,
 				bg.betteam,
-				bg.TransDesc 
+				bg.TransDesc
 			FROM dbo.bettransg AS bg WITH (NOLOCK)
 				INNER JOIN #SportBettype AS sp ON bg.bettype = sp.bettype
 				INNER JOIN #BetListData AS b1 ON bg.refno = b1.refno AND bg.bettype = b1.bettype
@@ -2646,7 +2653,7 @@ BEGIN
 		END 
 	END
 
-	SELECT * FROM #BetListDetailData
+	SELECT DISTINCT * FROM #BetListDetailData
 	ORDER BY refno
 
 	DROP TABLE #BetListData

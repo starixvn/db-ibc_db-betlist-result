@@ -34,10 +34,10 @@ AS
 		- 20120120@Sophia: Add Showtime for Table-hand-shoe of Live Casino
 						   Add sub detail for Live Casino
 		- 20120405@Hurri: Exclude bettype 72 (P2P bet ticket) in the calculation of Casino
-		- 20120416@Johnson: Correct column transid for p2p	
+		- 20120416@Johnson: Correct column transid for p2p
 		- 20120418@Sophia: Edit sub detail for Live Casino
 		- 20120423@Lukas: show transid of main ticket for all subticket of system parlay
-		- 20120606@Sophia: Change datatype of stake to money	
+		- 20120606@Sophia: Change datatype of stake to money
 		- 20120626@Lukas: exclude outright from sportbook ( in case of matchid = orid)
 		- 20120629@Sophia: Remove function f_GetOddsByBettype, f_ShowOddsByBettype,f_GetChoice for odds, Oddstype, betteam
 		- 20120927@Johnson: get commstatus column to check double comm losing
@@ -72,6 +72,7 @@ AS
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20160810@Kos: Support NG2
 		- 20161019@Kos: Support Fishing World [#Redmine: 65934]
+		- 20170228@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 */
 
 BEGIN
@@ -141,12 +142,12 @@ BEGIN
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
-		OddsSpread		SMALLMONEY
+		OddsSpread		MONEY
 	)
 
 	CREATE TABLE #BetListDetailData (
-		RefNo			VARCHAR(50), 
-		Odds			MONEY, 
+		RefNo			VARCHAR(50),
+		Odds			MONEY,
 		Stake			MONEY,
 		Status			VARCHAR(50),
 		APositionTaking SMALLMONEY,
@@ -231,7 +232,10 @@ BEGIN
 			b.awinlost,
 			b.mwinlost,
 			b.swinlost,
-			m.showtime,
+			CASE
+				WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE m.showtime
+			END AS ShowTime,
 			b.winlostdate,
 			b.BetCheck,
 			ISNULL(b.transdesc, '') AS transdesc,
@@ -322,7 +326,10 @@ BEGIN
 			INSERT INTO #BetListData
 			SELECT
 				29 bettype,
-				CASE WHEN ISNULL(b.betID, 0) = 0 THEN b.transid ELSE b.betID END AS transid,
+				CASE
+					WHEN ISNULL(b.betID, 0) = 0 THEN b.transid
+					ELSE b.betID
+				END AS transid,
 				ISNULL(b.betid, 0),
 				b.refno,
 				'' matchcode,
@@ -435,7 +442,7 @@ BEGIN
 				0 AS finalawayscore,
 				odds.leagueid,
 				l.sporttype,
-				b.ip ,
+				b.ip,
 				b.betfrom,
 				b.matchid,
 				CONVERT(BIT,0) AS IsNeutral,
@@ -652,7 +659,7 @@ BEGIN
 			AND s.ProductId = 8
 	END
 
-	-- HR
+	-- Horse Racing
 	IF EXISTS (SELECT TOP 1 1 FROM #SportBettype WHERE ProductID = 2)
 	BEGIN
 		INSERT INTO #BetListData 
@@ -699,7 +706,7 @@ BEGIN
 			0 AS finalawayscore,
 			odds.leagueid,
 			l.sporttype,
-			b.ip ,
+			b.ip,
 			b.betfrom,
 			b.matchid,
 			CONVERT(BIT,0) AS IsNeutral,
@@ -743,7 +750,7 @@ BEGIN
 			AND s.ProductId = 2
 	END
 
-	-- Virtual HR
+	-- Virtual Horse Racing
 	IF EXISTS (SELECT TOP 1 1 FROM #SportBettype WHERE ProductID = 5)
 	BEGIN
 		INSERT INTO #BetListData
@@ -795,7 +802,7 @@ BEGIN
 			b.matchid,
 			CONVERT(BIT, 0) AS IsNeutral,
 			0 AS allowdelete,
-			(b.winlost-b.actual_stake)  winlost,
+			(b.winlost-b.actual_stake) AS winlost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm),
 			(b.acomm - b.comm),
@@ -921,8 +928,7 @@ BEGIN
 		DELETE #BetListData WHERE Sporttype = 1 AND Bettype = 903
 	END
 
-	SELECT * 
-	FROM #BetListData
+	SELECT * FROM #BetListData
 	ORDER BY transid
 
 	-- Live Casino
