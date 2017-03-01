@@ -14,6 +14,7 @@ AS
 	Revisions:
 		- 20160725@Kos: Use inline function for SportBettypeMatrix
 		- 20160919@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 */
 
 BEGIN
@@ -94,7 +95,7 @@ BEGIN
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
-		OddsSpread		SMALLMONEY
+		OddsSpread		MONEY
 	)
 
 	DECLARE @BetType INT
@@ -167,7 +168,10 @@ BEGIN
 			b.awinlost,
 			b.mwinlost,
 			b.swinlost,
-			m.showtime,
+			CASE
+				WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE m.showtime
+			END AS ShowTime,
 			b.winlostdate,
 			b.BetCheck,
 			ISNULL(b.transdesc, '') AS transdesc,
@@ -482,8 +486,8 @@ BEGIN
 		WHERE s.ProductID = 2 AND b.transid = @TransId
 	END
 
-	-- Virtual HR
-	IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND bettype = @BetType)
+	-- Virtual Horse Racing
+	IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND Bettype = @BetType)
 	BEGIN
 		INSERT INTO @Data
 		SELECT 
