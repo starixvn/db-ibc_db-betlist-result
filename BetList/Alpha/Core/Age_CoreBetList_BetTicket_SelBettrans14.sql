@@ -14,9 +14,9 @@ AS
 
 /*
 	Created: Bobby.Nguyen
-	Task : Re-factor core betlist and apply GD product
+	Task: Re-factor core betlist and apply GD product
 	DB: DBAGE.bodb02
-	Original: 
+	Original:
 
 	Revisions:
 		- 20150504@Bobby: Create new SP
@@ -33,7 +33,7 @@ AS
 		- 20160411@Kos: Support Combo Parlay [Redmine: #55282]
 		- 20160812@Kos: Support NG2
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
-
+		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 	
 	Param's Explanation:
 	
@@ -274,7 +274,7 @@ BEGIN
 		, b.username
 		, m.Sporttype
 		, b.Bettype
-		, ISNULL(b.BetID,0)
+		, ISNULL(b.betid, 0)
 		, b.betteam
 		, CASE
 			WHEN c.ProductID IN (4) THEN 0
@@ -317,22 +317,25 @@ BEGIN
 		, m.finalawayscore
 		, m.hthomescore
 		, m.htawayscore
-		, b.IP
-		, m.LeagueID
-		, m.MatchID
-		, m.MatchCode
+		, b.ip
+		, m.leagueid
+		, m.matchid
+		, m.matchcode
 		, '' AS Race
 		, m.eventdate
-		, m.HomeID
-		, m.AwayID
+		, m.homeid
+		, m.awayid
 		, m.Betstatus
 		, ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral
 		, '' AS Placing
-		, ISNULL(m.showtime,'') AS showtime
-		, CASE WHEN (c.ProductId = 1 AND b.bettype IN (154,155,156,216,217,1311,1312,1316,1317,1318,1324)) 
-				THEN b.betcheck 
-				ELSE '' 
-			END AS betcheck
+		, CASE
+			WHEN c.ProductId = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+			ELSE ISNULL(m.showtime, '')
+		END AS ShowTime
+		, CASE
+			WHEN (c.ProductId = 1 AND b.bettype IN (154,155,156,216,217,1311,1312,1316,1317,1318,1324)) THEN b.betcheck
+			ELSE '' 
+		END AS betcheck
 		, CASE
 			WHEN b.comstatus = '1' THEN '1' 
 			ELSE '0' 
@@ -341,7 +344,7 @@ BEGIN
 		, ISNULL(b.oddsspread, 0) AS OddsSpread
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		INNER JOIN @tempCust c ON b.transid = c.transid
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
 --			AND b.custid = c.custid
 	WHERE c.WhTicket = 2
 		AND c.EventType = 1
@@ -410,9 +413,9 @@ BEGIN
 		, '' AS transdesc
 		, 0 AS OddsSpread
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
-		INNER JOIN dbo.Outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
+		INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
-		INNER JOIN @tempCust c ON b.transid = c.transid
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
 --			AND b.custid = c.custid
 	WHERE c.WhTicket = 2
 		AND c.EventType = 2

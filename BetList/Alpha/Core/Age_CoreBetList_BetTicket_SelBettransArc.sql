@@ -34,6 +34,7 @@ AS
 		- 20160411@Kos: Support Combo Parlay [Redmine: #55282]
 		- 20160812@Kos: Support NG2
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
+		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation:
 	
@@ -292,9 +293,9 @@ BEGIN
 		, b.refno
 		, b.custid
 		, ci.username
-		, m.Sporttype
-		, b.Bettype
-		, ISNULL(b.BetID,0)
+		, m.sporttype
+		, b.bettype
+		, ISNULL(b.betid, 0)
 		, b.betteam
 		, CASE
 			WHEN c.ProductID IN (4) THEN 0
@@ -304,20 +305,20 @@ BEGIN
 			WHEN c.ProductID IN (3, 4) THEN 0
 			ELSE b.hdp2
 		END AS hdp2
-		, b.OddsType 
+		, b.OddsType
 		, b.oddsid
-		, b.odds 
+		, b.odds
 		, b.modds
-		, b.stake 
+		, b.stake
 		, b.actual_stake
-		, b.status 
+		, b.status
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost-actual_stake) AS winlost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
-		, b.PlayerComm
+		, b.playercomm
 		, (b.comm - b.playercomm)	AS comm
 		, (b.acomm - b.comm)		AS acomm
 		, (b.scomm - b.acomm)		AS scomm
@@ -328,17 +329,17 @@ BEGIN
 		, b.discount
 		, b.adiscount
 		, b.sdiscount
-		, b.Liveindicator
-		, b.Livehomescore
+		, b.liveindicator
+		, b.livehomescore
 		, b.Liveawayscore
 		, m.finalhomescore
 		, m.finalawayscore
 		, m.hthomescore
 		, m.htawayscore
-		, b.IP
-		, m.LeagueID
-		, m.MatchID
-		, m.MatchCode
+		, b.ip
+		, m.leagueid
+		, m.matchid
+		, m.matchcode
 		, '' AS Race
 		, m.eventdate
 		, m.HomeID
@@ -346,7 +347,10 @@ BEGIN
 		, m.Betstatus
 		, ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral
 		, '' AS Placing
-		, ISNULL(m.showtime,'') AS showtime
+		, CASE
+			WHEN c.ProductId = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+			ELSE ISNULL(m.showtime, '')
+		END AS ShowTime
 		, CASE 
 			WHEN (c.ProductId = 1 AND b.bettype IN (216,217)) THEN b.betcheck 
 			ELSE '' 
@@ -359,9 +363,9 @@ BEGIN
 		, ISNULL(b.oddsspread, 0) AS OddsSpread
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
 		INNER JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		INNER JOIN @tempCust c ON b.transid = c.transid
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		--	AND b.custid = c.custid
-		INNER JOIN @custInfo ci
+		INNER JOIN @custInfo AS ci
 		--ON b.custid = ci.custid
 		ON c.custid = ci.custid
 	WHERE c.WhTicket = 3
@@ -433,9 +437,9 @@ BEGIN
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
 		INNER JOIN dbo.Outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
-		INNER JOIN @tempCust c ON b.transid = c.transid
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		--	AND b.custid = c.custid
-		INNER JOIN @custInfo ci
+		INNER JOIN @custInfo AS ci
 		--ON b.custid = ci.custid
 		ON c.custid = ci.custid
 	WHERE c.WhTicket = 3
@@ -506,9 +510,9 @@ BEGIN
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
 		INNER JOIN dbo.VSOutright_bk o WITH (NOLOCK) ON b.oddsid = o.Orid
 		INNER JOIN bodb02.dbo.VSRaceInfo r WITH (NOLOCK) ON r.EventID = o.EventID
-		INNER JOIN @tempCust c ON b.transid = c.transid
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		--	AND b.custid = c.custid
-		INNER JOIN @custInfo ci
+		INNER JOIN @custInfo AS ci
 		--ON b.custid = ci.custid
 		ON c.custid = ci.custid
 	WHERE c.WhTicket = 3
@@ -516,6 +520,7 @@ BEGIN
 
 	RETURN
 END
+
 
 
 

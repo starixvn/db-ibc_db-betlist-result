@@ -34,6 +34,7 @@ AS
 		- 20160411@Kos: Support Combo Parlay [Redmine: #55282]
 		- 20160812@Kos: Support NG2
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
+		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation:
 
@@ -331,7 +332,7 @@ BEGIN
 		, 0 AS finalawayscore
 		, 0 AS hthomescore
 		, 0 AS htawayscore
-		, b.IP
+		, b.ip
 		, 0 AS LeagueID
 		, 0 AS MatchID
 		, '' AS MatchCode
@@ -635,7 +636,7 @@ BEGIN
 		, b.username
 		, m.Sporttype
 		, b.Bettype
-		, ISNULL(b.BetID,0)
+		, ISNULL(b.betid, 0)
 		, b.betteam
 		, CASE
 			WHEN c.ProductID IN (4) THEN 0
@@ -645,13 +646,14 @@ BEGIN
 			WHEN c.ProductID IN (3, 4) THEN 0
 			ELSE b.hdp2
 		END AS hdp2
-		, b.OddsType
+		, b.oddstype
 		, b.oddsid
 		, b.odds 
 		, b.modds
 		, b.stake 
 		, b.actual_stake
-		, CASE WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+		, CASE
+			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 			ELSE b.status 
 		END AS status
 		, b.transdate
@@ -678,21 +680,25 @@ BEGIN
 		, m.finalawayscore
 		, m.hthomescore
 		, m.htawayscore
-		, b.IP
-		, m.LeagueID
-		, m.MatchID
-		, m.MatchCode
+		, b.ip
+		, m.leagueid
+		, m.matchid
+		, m.matchcode
 		, '' AS Race
 		, m.eventdate
-		, m.HomeID
-		, m.AwayID
-		, m.Betstatus
+		, m.homeid
+		, m.awayid
+		, m.betstatus
 		, ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral
 		, '' AS Placing
-		, ISNULL(m.showtime,'') AS showtime
-		, CASE WHEN (c.ProductId = 1 AND b.bettype IN (216,217)) THEN b.betcheck 
-				ELSE '' 
-			END AS betcheck
+		, CASE
+			WHEN c.ProductId = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+			ELSE ISNULL(m.showtime, '')
+		END AS ShowTime
+		, CASE
+			WHEN (c.ProductId = 1 AND b.bettype IN (216,217)) THEN b.betcheck
+			ELSE '' 
+		END AS betcheck
 		, CASE WHEN b.comstatus = '1' THEN '1' 
 			ELSE '0' 
 		END AS comstatus
@@ -771,7 +777,7 @@ BEGIN
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.Outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
-		INNER JOIN @tempCust c ON b.transid = c.transid
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
 --			AND b.custid = c.custid
 	WHERE c.WhTicket = 1
 		AND c.EventType = 2
@@ -839,9 +845,9 @@ BEGIN
 		, '' AS transdesc
 		, 0 AS OddsSpread
 	FROM dbo.bettrans AS b WITH (NOLOCK)
-		INNER JOIN dbo.VSOutright o WITH (NOLOCK) ON b.oddsid = o.Orid
-		INNER JOIN dbo.VSRaceInfo r WITH (NOLOCK) ON r.EventID = o.EventID
-		INNER JOIN @tempCust c ON b.transid = c.transid
+		INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
+		INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
 --			AND b.custid = c.custid
 	WHERE c.WhTicket = 1
 		AND c.EventType = 3
