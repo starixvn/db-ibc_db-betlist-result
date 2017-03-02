@@ -101,6 +101,7 @@ AS
 		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20161111@Kos: Support Fishing World [#Redmine: 66737]
 		- 20161205@Kos: Fix Colossus Bets bet list empty before BalanceUpDay [Redmine: #68289]
+		- 20170302@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -753,7 +754,7 @@ BEGIN
 				0,
 				0,
 				b.currency,
-				'' AS showtime,
+				CONVERT(NVARCHAR(50), m.kickofftime) AS ShowTime,
 				'' AS betcheck,
 				'' AS transdesc
 			FROM
@@ -1862,7 +1863,7 @@ BEGIN
 				0,
 				0,
 				b.currency,
-				'' AS showtime,
+				CONVERT(NVARCHAR(50), m.kickofftime) AS ShowTime,
 				'' AS betcheck,
 				'' AS transdesc
 			FROM
@@ -2680,6 +2681,7 @@ BEGIN
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
 		END
 
+		-- Virtual Sports
 		IF @ShowVS = 1
 		BEGIN
 			INSERT INTO @BetListByDateMem
@@ -2719,7 +2721,7 @@ BEGIN
 				0,
 				0,
 				b.currency,
-				'' AS showtime,
+				CONVERT(NVARCHAR(50), m.kickofftime) AS ShowTime,
 				'' AS betcheck,
 				'' AS transdesc
 			FROM

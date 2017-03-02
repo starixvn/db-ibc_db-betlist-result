@@ -98,6 +98,7 @@ AS
 		- 20160714@Kos: Remove Bingo and change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation: 
 */
@@ -593,12 +594,14 @@ BEGIN
 			awayID = 	m.awayid,
 			betstatus = m.betstatus,
 			IsNeutral = m.IsNeutral,
-			showtime = CASE 
-							WHEN b.bettype BETWEEN 1101 AND 1199 THEN ISNULL(m.showtime,'') 
+			showtime = CASE
+							WHEN b.bettype BETWEEN 1101 AND 1199 THEN ISNULL(m.showtime,'')
+							WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 							ELSE ''
 						END
 		FROM #BetData1 AS b
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN #SportBettype AS s WITH (NOLOCK) ON b.BetType = s.Bettype
 		WHERE b.bettype NOT BETWEEN 1501 AND 1599 -- exclude Keno
 
 		-- Update data with @vhr table
@@ -991,10 +994,12 @@ BEGIN
 			IsNeutral = m.IsNeutral,
 			showtime = CASE 
 							WHEN b.bettype BETWEEN 1101 AND 1199 THEN ISNULL(m.showtime, '')
+							WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 							ELSE ''
 						END
 		FROM #BetData14 AS b
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN #SportBettype AS s WITH (NOLOCK) ON b.BetType = s.Bettype
 		WHERE b.bettype NOT BETWEEN 1501 AND 1599 -- exclude Keno
 
 		-- Update data with @vhr table

@@ -113,6 +113,7 @@ AS
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20161006@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
+		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 */
 
 BEGIN
@@ -830,7 +831,7 @@ BEGIN
 				m.Betstatus,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.currency,
-				'' AS ShowTime,
+				CONVERT(NVARCHAR(50), m.kickofftime) AS ShowTime,
 				'' AS betcheck,
 				'' AS transdesc
 			FROM
@@ -1876,7 +1877,7 @@ BEGIN
 				m.Betstatus,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.currency,
-				'' AS ShowTime,
+				CONVERT(NVARCHAR(50), m.kickofftime) AS ShowTime,
 				'' AS betcheck,
 				'' AS transdesc
 			FROM
@@ -2665,7 +2666,7 @@ BEGIN
 				m.Betstatus,
 				CONVERT(BIT,0) AS IsNeutral	,
 				b.currency,
-				'' AS ShowTime,
+				CONVERT(NVARCHAR(50), m.kickofftime) AS ShowTime,
 				'' AS betcheck,
 				'' AS transdesc
 			FROM

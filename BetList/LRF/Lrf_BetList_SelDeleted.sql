@@ -49,6 +49,7 @@ AS
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20160913@Kos: Don't support Colossus Bets [#Redmine: 63785]
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation:
 		+ @CustID: AgentID
@@ -202,7 +203,10 @@ BEGIN
 		ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 		b.betid,
 		b.currency,
-		'' AS ShowTime,
+		CASE
+			WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+			ELSE ''
+		END AS ShowTime,
 		b.betcheck,
 		ISNULL(b.transdesc, '') AS transdesc
 	FROM 
@@ -217,7 +221,8 @@ BEGIN
 					matchcode,
 					eventdate,
 					isneutral,
-					showtime 
+					showtime,
+					kickofftime
 				FROM dbo.match WITH (NOLOCK) 
 				WHERE eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 			) AS m ON b.matchid = m.matchid
@@ -319,7 +324,7 @@ BEGIN
 		CONVERT(BIT,0) AS IsNeutral,
 		b.betid,
 		b.currency,
-		'' AS ShowTime,
+		CONVERT(NVARCHAR(50), vhr.EventTime) AS ShowTime,
 		'' AS betcheck,
 		'' AS transdesc
 	FROM 
@@ -334,7 +339,8 @@ BEGIN
 					vso.Orid,
 					CONVERT(VARCHAR(20), vso.RacerNum) AS matchcode,
 					'' groupmatch,
-					vso.EventDate
+					vso.EventDate,
+					vsr.EventTime
 				FROM dbo.VSOutright AS vso WITH (NOLOCK) 
 					INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
 				WHERE vso.EventDate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)

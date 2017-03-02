@@ -77,6 +77,7 @@ AS
 		- 20160915@Kos: Support Colossus Bets [#Redmine: 63785]
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
+		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation: 
 		+ @transtype:
@@ -233,7 +234,8 @@ BEGIN
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			b.currency,
 			CASE 
-				WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime,'') 
+				WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
+				WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE '' 
 			END AS ShowTime,
 			CASE 

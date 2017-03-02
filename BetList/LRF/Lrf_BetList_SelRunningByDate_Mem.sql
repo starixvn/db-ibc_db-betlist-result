@@ -81,6 +81,7 @@ AS
 		- 20160913@Kos: Support Colossus Bets [#Redmine: 63785]
 		- 20161006@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20161114@Kos: Support Fishing World [#Redmine: 66737]
+		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 */
 
 BEGIN
@@ -644,7 +645,11 @@ BEGIN
 			b.winlostdate,
 			b.currency,
 			b.playercomm,
-			CASE WHEN @ShowLC = 1 THEN ISNULL(m.showtime,'') ELSE '' END AS ShowTime,
+			CASE
+				WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
+				WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE ''
+			END AS ShowTime,
 			m.matchid,
 			'' AS betcheck,
 			'' AS transdesc

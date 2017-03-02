@@ -51,6 +51,7 @@ AS
 		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Param's Explanation: 
 		@Liveindicator : indicate that whether the report will get live data or not
@@ -405,7 +406,11 @@ BEGIN
 				b.betid,
 				b.currency,
 				b.refno,
-				CASE WHEN sbt.ProductID=4 THEN ISNULL(m.showtime,'') ELSE '' END AS ShowTime,
+				CASE
+					WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
+					WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					ELSE '' 
+				END AS ShowTime,
 				'' AS betcheck,
 				'' AS transdesc
 			FROM
@@ -702,7 +707,11 @@ BEGIN
 				b.betid,
 				b.currency,
 				b.refno,
-				CASE WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime,'') ELSE '' END AS ShowTime,
+				CASE
+					WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
+					WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					ELSE ''
+				END AS ShowTime,
 				'' AS betcheck,
 				'' AS transdesc
 			FROM

@@ -44,6 +44,7 @@ AS
 		- 20160721@Percy: Enhance Performance - using index recommend on bettrans/bettrans14 [RedmineID: #60770]
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170302@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 
 	Parameters:
 */
@@ -548,7 +549,10 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				ISNULL(m.showtime,'') AS ShowTime,
+				CASE
+					WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					ELSE ISNULL(m.showtime,'')
+				END AS ShowTime,
 				b.status,
 				m.betstatus,
 				b.transdate,
@@ -656,7 +660,7 @@ BEGIN
 				0 AS LiveIndicator,
 				b.livehomescore,
 				b.liveawayscore,
-				'' AS ShowTime,
+				CONVERT(NVARCHAR(50), r.EventTime) AS ShowTime,
 				b.status,
 				'' AS BetStatus,
 				b.transdate,
@@ -934,7 +938,10 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				ISNULL(m.showtime,'') AS ShowTime,
+				CASE
+					WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					ELSE ISNULL(m.showtime,'')
+				END AS ShowTime,
 				b.status,
 				m.betstatus,
 				b.transdate,
@@ -1042,7 +1049,7 @@ BEGIN
 				0 AS LiveIndicator,
 				b.livehomescore,
 				b.liveawayscore,
-				'' AS ShowTime,
+				CONVERT(NVARCHAR(50), r.EventTime) AS ShowTime,
 				b.status,
 				'' AS BetStatus,
 				b.transdate,
