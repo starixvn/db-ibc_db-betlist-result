@@ -7,20 +7,21 @@
 AS
 
 /*
-	Created: Henry
+	Created: Henry@20091228
 	Date:28/12/2009
-	DB: DBAGE.BODB02
+	DB: DBAGE.bodb02
 	
 	Revisions:
-		- 13/01/2010@Henry: Newly created
-		- 20110516@Lukas: re-arrange bettype
-		- 20110524@Henry: change to use winlostdate instead of transdate
-		- 20130121@Dan: change linked server DB06 to DBARC
+		- 20100113@Henry: Newly created
+		- 20110516@Lukas: Re-arrange bettype
+		- 20110524@Henry: Change to use winlostdate instead of transdate
+		- 20130121@Dan: Change linked server DB06 to DBARC
 		- 20140311@Dom: Add keno translog
 		- 20150615@Edward: Remove bettype 903 of BetTrade
 		- 20150529@Tom: Add filter by custid on translog
 		- 20150707@Bobby: Exclude Metric Gaming running ticket from bettrans table
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20170315@Kos: Exclude bet type 913, 914 [#Redmine: 71963]
 */
 
 BEGIN
@@ -31,7 +32,7 @@ BEGIN
 	DECLARE @TempFromDate DATETIME
 	DECLARE @TempToDate DATETIME
 
-	IF @Todate > @MoveBetsDay
+	IF @ToDate > @MoveBetsDay
 	BEGIN
 		IF @FromDate <= @MoveBetsDay
 			SET @TempFromDate = DATEADD(DAY, 1, @MoveBetsDay)
@@ -40,18 +41,18 @@ BEGIN
 
 		INSERT INTO @BettypeTable
 		SELECT DISTINCT bettype
-		FROM dbo.bettrans AS b WITH (NOLOCK)
+		FROM dbo.bettrans WITH (NOLOCK)
 		WHERE bettype < 19001
-			AND bettype NOT IN (903, 904)
+			AND bettype NOT IN (903, 904, 913, 914)
 			AND custid = @CustId
 			AND winlostdate BETWEEN @TempFromDate AND @todate
 			--exclude metric gaming running ticket
-			AND (b.bettype NOT BETWEEN 801 AND 806
-				OR (b.bettype BETWEEN 801 AND 806 AND b.statusID NOT IN (0, 1)))
+			AND (bettype NOT BETWEEN 801 AND 806
+				OR (bettype BETWEEN 801 AND 806 AND statusID NOT IN (0, 1)))
 		UNION ALL
 		SELECT DISTINCT gameID AS BetType
 		FROM dbo.translog WITH (NOLOCK)
-		WHERE winlostdate BETWEEN @TempFromDate AND @todate
+		WHERE winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND custid = @CustId
 			AND statusID = 0
 	END
@@ -70,9 +71,9 @@ BEGIN
 		SELECT DISTINCT bettype
 		FROM dbo.bettrans14 WITH (NOLOCK)
 		WHERE bettype < 19001
-			AND bettype NOT IN (903, 904)
+			AND bettype NOT IN (903, 904, 913, 914)
 			AND custid = @CustId
-			AND winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
+			AND winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 	END
 
 	IF @FromDate < @BalanceUpDay
@@ -84,11 +85,11 @@ BEGIN
 
 		INSERT INTO @BettypeTable
 		SELECT DISTINCT bettype
-		FROM DBARC.bodb_archive.dbo.bettrans_bk WITH (NOLOCK)
+		FROM DBARC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
 		WHERE bettype < 19001
-			AND bettype NOT IN (903, 904)
+			AND bettype NOT IN (903, 904, 913, 914)
 			AND custid = @CustId
-			AND winlostdate BETWEEN @FromDate AND @TempToDate 
+			AND winlostdate BETWEEN @FromDate AND @TempToDate
 	END
 
 	SELECT

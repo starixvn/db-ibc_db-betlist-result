@@ -1,14 +1,14 @@
 ﻿ALTER PROCEDURE [dbo].[Acc_BetListbyIP_Username]
-	@FromDate	DATETIME,
-	@Ip			VARCHAR(15),
-	@UserId		INT			= NULL
+	@FromDate		DATETIME,
+	@Ip				VARCHAR(15),
+	@UserId			INT			= NULL,
+	@MoveBetsDay	SMALLDATETIME
 AS
 
 /*
-	Created by: Phuong Dao
-	Date: 2009-03-18
+	Created by: Jamie@20090318
 	Task: Total bet by IP and Username 
-	DB: DBACC/bodb02
+	DB: DBACC.bodb02
 
 	Revisions:
 		- 20100611@Henry: Change mix-parlay match from 0 to 9
@@ -26,12 +26,13 @@ AS
 		- 20160621@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
+		- 20170315@Kos: Exclude bet type 913, 914 [#Redmine: 71963]
 */
 
  BEGIN
 	SET NOCOUNT ON
 
-	----Get Sport Bettype Matrix------
+	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -41,38 +42,25 @@ AS
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-
-	DECLARE @min_date	SMALLDATETIME,
-			@max_date	SMALLDATETIME,
-			@min_date14	SMALLDATETIME,
-			@max_date14	SMALLDATETIME
-	
-	SELECT @min_date = MIN(winlostdate),
-		@max_date = MAX(winlostdate)
-	FROM dbo.bettrans WITH (NOLOCK)
-	WHERE bettype < 19001
-
-	SELECT @min_date14 = MIN(winlostdate),
-		@max_date14 = MAX(winlostdate)
-	FROM dbo.bettrans14 WITH (NOLOCK)
+	WHERE ProductID NOT IN (7, 9)
 	
 	DECLARE @UserTicketTmp TABLE (
-		custid		INT,
-		totalBet	INT,
+		CustId		INT,
+		TotalBet	INT,
 		Type		TINYINT) --Type: 1: Ticket in bettrans, 2: Ticket in translog (for Keno)
 
-	INSERT INTO @UserTicketTmp (custid, totalBet, Type)
-	SELECT b.custid,
-		COUNT(b.custid),
+	INSERT INTO @UserTicketTmp
+	SELECT custid,
+		COUNT(custid),
 		1
-	FROM dbo.bettrans AS b WITH (NOLOCK)
-	WHERE b.winlostdate = @FromDate
-		AND b.bettype < 19001
-		AND b.bettype NOT IN (903, 904)
-		AND b.ip = @Ip
+	FROM dbo.bettrans WITH (NOLOCK)
+	WHERE winlostdate = @FromDate
+		AND bettype < 19001
+		AND bettype NOT IN (903, 904, 913, 914)
+		AND ip = @Ip
 		--exclude metric gaming running ticket
-		AND (b.bettype NOT BETWEEN 801 AND 806
-			OR (b.bettype BETWEEN 801 AND 806 AND b.statusID NOT IN (0, 1)))
+		AND (bettype NOT BETWEEN 801 AND 806
+			OR (bettype BETWEEN 801 AND 806 AND statusID NOT IN (0, 1)))
 	GROUP BY custid
 
 	UNION ALL
@@ -83,33 +71,31 @@ AS
 		2
 	FROM dbo.translog AS tl WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sp ON tl.gameid = sp.BetType
-				
 	WHERE tl.winlostdate = @FromDate
-		--AND gameid between 1501 and 1599
-		AND tl.ip = @Ip 
+		AND tl.ip = @Ip
 		AND tl.statusID = 0
 		AND (sp.ProductID IN (8, 12, 13, 15, 19)
 			OR tl.gameid BETWEEN 801 AND 899)
 	GROUP BY tl.custid
 
 	CREATE TABLE #tmpUserBet (
-		custid		INT,
-		soccerBet	INT DEFAULT 0,
-		totalBet	INT DEFAULT 0,
-		is14		BIT DEFAULT 0,
-		PRIMARY KEY(CustID,is14) )
+		CustId		INT,
+		SoccerBet	INT DEFAULT 0,
+		TotalBet	INT DEFAULT 0,
+		Is14		BIT DEFAULT 0,
+		PRIMARY KEY(CustId, Is14) )
 
-	IF @FromDate >= @min_date AND @FromDate <= @max_date
+	IF @FromDate > @MoveBetsDay
 	BEGIN
-		INSERT #tmpUserBet (custid, totalBet)
-		SELECT custid,
-			SUM(totalBet)
+		INSERT #tmpUserBet (CustId, TotalBet)
+		SELECT CustId,
+			SUM(TotalBet)
 		FROM @UserTicketTmp
-		GROUP BY custid
+		GROUP BY CustId
 
 		UPDATE #tmpUserBet
 		SET soccerBet = tmpSoccerBet.totalSoccer
-		FROM #tmpUserBet u
+		FROM #tmpUserBet AS u
 			INNER JOIN
 			(
 				SELECT custid,
@@ -118,26 +104,32 @@ AS
 						SELECT b.custid
 						FROM dbo.bettrans AS b WITH (NOLOCK)
 							INNER JOIN (
-									SELECT matchid, leagueid, 'match' AS type
+									SELECT
+										matchid,
+										leagueid,
+										'match' AS type
 									FROM dbo.match WITH (NOLOCK)
 									UNION ALL
-									SELECT orid, leagueid, 'outright' AS type
+									SELECT
+										orid,
+										leagueid,
+										'outright' AS type
 									FROM dbo.outright WITH (NOLOCK)
 								) m ON b.matchid = m.matchid
 							INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 							INNER JOIN dbo.sports AS s WITH (NOLOCK) ON l.sporttype = s.sporttype
 						WHERE
 							b.winlostdate = @FromDate
-							AND s.SportType = 1 
-							AND b.bettype NOT IN (903, 904)
-							AND b.ip = @ip
+							AND s.SportType = 1
+							AND b.bettype NOT IN (903, 904, 913, 914)
+							AND b.ip = @Ip
 							AND m.type = CASE WHEN b.bettype = 10 THEN 'outright' ELSE 'match' END
 							--exclude metric gaming running ticket
 							AND (b.bettype NOT BETWEEN 801 AND 806
 								OR (b.bettype BETWEEN 801 AND 806 AND b.statusID NOT IN (0, 1)))
 						UNION ALL
 						SELECT b.custid
-						FROM dbo.bettrans b WITH (NOLOCK) 
+						FROM dbo.bettrans AS b WITH (NOLOCK) 
 						WHERE 1 = CASE WHEN b.bettype = 9 AND b.matchid = 9 THEN 1
 										WHEN b.bettype = 29 AND b.matchid = 29 THEN 1
 										ELSE 0 END
@@ -146,28 +138,27 @@ AS
 							AND b.refno IN (SELECT refno
 											FROM dbo.bettransm AS bm WITH (NOLOCK) 
 												INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-											WHERE 	m.sporttype = 1)
+											WHERE m.sporttype = 1)
 						--COUNT MG ticket as soccer
 						UNION ALL
-						SELECT tl.custid
-						FROM dbo.translog AS tl WITH (NOLOCK)
-						WHERE winlostdate = @fromdate
-							AND tl.gameid BETWEEN 801 AND 899
-							AND ip = @ip
+						SELECT custid
+						FROM dbo.translog WITH (NOLOCK)
+						WHERE winlostdate = @FromDate
+							AND gameid BETWEEN 801 AND 899
+							AND ip = @Ip
 							AND statusid = 0
 					) Bet
 				GROUP BY custid
 			) tmpSoccerBet ON tmpSoccerBet.custid = u.custid
 	END
-
-	IF @FromDate >= @min_date14 AND @FromDate <= @max_date14
+	ELSE
 	BEGIN
-		INSERT #tmpUserBet (custid, totalBet, is14)
+		INSERT #tmpUserBet (CustId, TotalBet, Is14)
 		SELECT custid,
 			COUNT(custid),
 			1
 		FROM dbo.bettrans14 WITH (NOLOCK)
-		WHERE winlostdate = @fromdate AND ip = @ip
+		WHERE winlostdate = @FromDate AND ip = @Ip
 		GROUP BY custid
 
 		UPDATE #tmpUserBet
@@ -181,17 +172,23 @@ AS
 						SELECT b.custid
 						FROM dbo.bettrans14 AS b WITH (NOLOCK)
 							INNER JOIN (
-									SELECT matchid, leagueid, 'match' AS type
+									SELECT
+										matchid,
+										leagueid,
+										'match' AS type
 									FROM dbo.match14 WITH (NOLOCK)
 									UNION ALL
-									SELECT orid, leagueid, 'outright' AS type
+									SELECT
+										orid,
+										leagueid,
+										'outright' AS type
 									FROM dbo.outright14 WITH (NOLOCK)
 								) m ON b.matchid = m.matchid
 							INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 							INNER JOIN dbo.sports AS s WITH (NOLOCK) ON l.sporttype = s.sporttype
 						WHERE b.winlostdate = @FromDate
 							AND s.SportType = 1
-							AND b.bettype NOT IN (903, 904)
+							AND b.bettype NOT IN (903, 904, 913, 914)
 							AND b.ip = @Ip
 							AND m.type = CASE WHEN b.bettype = 10 THEN 'outright' ELSE 'match' END
 						UNION ALL
@@ -228,9 +225,9 @@ AS
 
 	SELECT c.custid,
 		c.username,
-		SUM(soccerBet) AS soccerBet,
-		SUM(totalBet)- SUM(soccerBet) AS otherBet,
-		SUM(totalBet) AS totalBet
+		SUM(u.SoccerBet) AS soccerBet,
+		SUM(u.TotalBet)- SUM(u.SoccerBet) AS otherBet,
+		SUM(u.TotalBet) AS totalBet
 	FROM #tmpUserBet AS u
 		INNER JOIN dbo.customer AS c WITH (NOLOCK) ON u.custid = c.custid
 		INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid

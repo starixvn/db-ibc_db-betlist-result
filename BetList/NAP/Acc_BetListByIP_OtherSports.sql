@@ -76,6 +76,7 @@ AS
 		- 20161019@Kos: Remove Bingo and P2P in bettrans and bettrans14 range [#Redmine: 53988]
 					  - Support Fishing World [#Redmine: 65934]
 		- 20170228@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170321@Kos: Support CashOut [#Redmine: 71963]
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -162,7 +163,10 @@ BEGIN
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
-		OddsSpread		MONEY
+		OddsSpread		MONEY,
+		OriginalBetType	INT,
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	DECLARE @DetailData TABLE (
@@ -242,7 +246,10 @@ BEGIN
 		winlostdate,
 		BetCheck,
 		transdesc,
-		OddsSpread
+		OddsSpread,
+		OriginalBetType,
+		BetdaqId,
+		ExtraInfo
 	FROM (
 			SELECT
 				m.finalhomescore,
@@ -301,7 +308,10 @@ BEGIN
 				b.winlostdate,
 				b.betcheck,
 				ISNULL(b.transdesc, '') AS transdesc,
-				ISNULL(b.oddsspread, 0) AS OddsSpread
+				ISNULL(b.oddsspread, 0) AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
@@ -366,13 +376,16 @@ BEGIN
 				b.winlostdate,
 				b.betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans14 AS b  WITH (NOLOCK)
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
 			WHERE b.bettype = 9 
 				AND b.winlostdate = @Date 
 				AND b.matchid = 9
-				AND b.custid = @custid 
+				AND b.custid = @CustId 
 				AND b.refno IN (SELECT RefNo 
 								FROM dbo.bettransm14 AS b WITH (NOLOCK)
 									INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -436,13 +449,16 @@ BEGIN
 				b.winlostdate,
 				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK) 
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
-			WHERE b.bettype = 29 
+			WHERE b.bettype = 29
 				AND b.winlostdate = @Date
 				AND b.matchid = 29
-				AND b.custid = @custid 
+				AND b.custid = @CustId
 				AND b.refno IN (SELECT RefNo
 								FROM dbo.bettransm14 AS b WITH (NOLOCK)
 									INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -512,7 +528,10 @@ BEGIN
 				b.winlostdate,
 				b.betcheck,
 				ISNULL(b.transdesc, '') AS transdesc,
-				ISNULL(b.oddsspread, 0) AS OddsSpread
+				ISNULL(b.oddsspread, 0) AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK) 
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
@@ -521,7 +540,7 @@ BEGIN
 				AND s.eventtype = 1
 				AND b.bettype <> 10
 				AND m.sporttype <> 1
-				AND b.custid = @custid
+				AND b.custid = @CustId
 		
 			UNION ALL
 			SELECT
@@ -578,13 +597,16 @@ BEGIN
 				b.winlostdate,
 				b.betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
 			WHERE b.winlostdate = @Date
 				AND b.matchid = 9
 				AND b.bettype = 9
-				AND b.custid = @custid
+				AND b.custid = @CustId
 				AND b.refno IN (SELECT RefNo
 								FROM dbo.bettransm AS b WITH (NOLOCK)
 									INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -651,13 +673,16 @@ BEGIN
 				b.winlostdate,
 				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
 			WHERE b.winlostdate = @Date
 				AND b.matchid = 29
 				AND b.bettype = 29
-				AND b.custid = @custid
+				AND b.custid = @CustId
 				AND b.refno IN (SELECT RefNo 
 								FROM dbo.bettransm AS b WITH (NOLOCK)
 									INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -722,7 +747,10 @@ BEGIN
 				b.winlostdate,
 				b.betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -738,7 +766,7 @@ BEGIN
 				) bmOdd ON b.transid = bmOdd.refno 
 			WHERE sbt.eventtype = 2
 				AND b.winlostdate = @Date
-				AND b.custid = @custid
+				AND b.custid = @CustId
 				AND l.sporttype <> 1
 
 			-- Outright14
@@ -797,7 +825,10 @@ BEGIN
 				b.winlostdate,
 				b.betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -813,7 +844,7 @@ BEGIN
 				) bmOdd ON b.transid = bmOdd.refno 
 			WHERE sbt.eventtype = 2
 				AND b.winlostdate = @Date
-				AND b.custid = @custid
+				AND b.custid = @CustId
 				AND l.sporttype <> 1 
 
 			-- Casino, Gold Deluxe, Cockfighting, Microgaming Live Casino, NG2 bettrans
@@ -875,7 +906,7 @@ BEGIN
 				b.username,
 				0 AS hthomescore,
 				0 AS htawayscore,
-				ip,
+				b.ip,
 				CASE
 					WHEN s.ProductID = 6 THEN 251
 					WHEN s.ProductID = 12 THEN 255
@@ -907,10 +938,13 @@ BEGIN
 					WHEN s.ProductID IN (19, 23) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-			WHERE b.custid = @custid
+			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND (s.ProductID IN (12, 13, 19, 23)
 					OR (s.ProductId = 6 AND s.SubProduct = ''))
@@ -972,7 +1006,7 @@ BEGIN
 				b.username,
 				0 AS hthomescore,
 				0 AS htawayscore,
-				ip,
+				b.ip,
 				CASE
 					WHEN s.ProductID = 6 AND s.SubProduct = '' THEN 251
 					WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.matchid
@@ -1011,10 +1045,13 @@ BEGIN
 					WHEN s.ProductID IN (19, 22, 23, 24) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-			WHERE b.custid = @custid
+			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND s.ProductID IN (6, 7, 11, 12, 13, 17, 19, 21, 22, 23, 24)
 
@@ -1074,13 +1111,16 @@ BEGIN
 				b.winlostdate,
 				b.betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) d
 			WHERE s.ProductID = 8
 				AND b.winlostdate = @Date
-				AND b.custid = @custid
+				AND b.custid = @CustId
 
 			UNION ALL -- keno translog
 			SELECT
@@ -1137,16 +1177,19 @@ BEGIN
 				b.winlostdate,
 				'' betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.translog b WITH (NOLOCK)
 				INNER JOIN @SportBettype s ON s.Bettype = b.gameID
 				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.gameid) d
 			WHERE s.ProductID = 8
 				AND b.winlostdate = @Date
-				AND b.custid = @custid
+				AND b.custid = @CustId
 				AND b.statusID = 0
 
-			--- Keno14
+			-- Keno14
 			UNION ALL
 			SELECT	
 				0 finalhomescore,
@@ -1202,13 +1245,16 @@ BEGIN
 				b.winlostdate,
 				b.betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) d
 			WHERE s.ProductID = 8
 				AND b.winlostdate = @Date
-				AND b.custid = @custid
+				AND b.custid = @CustId
 
 			-- Virtual Horse Racing
 			UNION ALL
@@ -1266,7 +1312,10 @@ BEGIN
 				b.winlostdate,
 				b.betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -1274,7 +1323,7 @@ BEGIN
 			WHERE s.ProductID = 5
 				AND s.EventType = 3
 				AND b.winlostdate = @Date
-				AND b.custid = @custid
+				AND b.custid = @CustId
 
 			-- Virtual Horse Racing 14
 			UNION ALL
@@ -1332,7 +1381,10 @@ BEGIN
 				b.winlostdate,
 				b.betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -1340,7 +1392,7 @@ BEGIN
 			WHERE s.ProductID = 5
 				AND s.EventType = 3
 				AND b.winlostdate = @Date
-				AND b.custid = @custid
+				AND b.custid = @CustId
 
 			-- Gold Deluxe, Microgaming Live Casino, Colossus Bet, Cockfighting translog
 			UNION ALL 
@@ -1419,12 +1471,15 @@ BEGIN
 					WHEN s.ProductID = 19 THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.translog AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 			WHERE s.ProductID IN (12, 13, 15, 19)
 				AND b.winlostdate = @Date
-				AND b.custid = @custid
+				AND b.custid = @CustId
 				AND b.statusID = 0
 
 			-- Colossus Bet
@@ -1483,11 +1538,14 @@ BEGIN
 				b.winlostdate,
 				ISNULL(bm.betcheck, '') AS BetCheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
-			WHERE b.custid = @custid
+			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND s.ProductID = 15
 
@@ -1547,11 +1605,14 @@ BEGIN
 				b.winlostdate,
 				ISNULL(bm.betcheck, '') AS BetCheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
-			WHERE b.custid = @custid
+			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND s.ProductID = 15
 
@@ -1620,10 +1681,13 @@ BEGIN
 					WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-			WHERE b.custid = @custid
+			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND @Date < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
 				AND (s.ProductId IN (17, 22, 24)
@@ -1694,11 +1758,14 @@ BEGIN
 					WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-			WHERE b.custid = @custid
+			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND @Date BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)	-- yesterday and today
@@ -1792,11 +1859,14 @@ BEGIN
 					WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-			WHERE b.custid = @custid
+			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND @Date BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
@@ -1865,7 +1935,7 @@ BEGIN
 				b.username,
 				0 AS hthomescore,
 				0 AS htawayscore,
-				ip,
+				b.ip,
 				CASE
 					WHEN s.ProductID = 11 THEN 250
 					WHEN s.ProductID = 21 THEN 211
@@ -1880,10 +1950,13 @@ BEGIN
 				b.winlostdate,
 				'' AS betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-			WHERE b.custid = @custid
+			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND @Date < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
 				AND s.ProductID IN (11, 21)
@@ -1947,11 +2020,14 @@ BEGIN
 				b.winlostdate,
 				'' AS betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettransLC AS blc WITH (NOLOCK)
 				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-			WHERE b.custid = @custid
+			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND @Date BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
@@ -2036,11 +2112,14 @@ BEGIN
 				b.winlostdate,
 				'' AS betcheck,
 				'' AS transdesc,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo
 			FROM dbo.bettransLC AS blc WITH (NOLOCK)
 				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-			WHERE b.custid = @custid
+			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND @Date BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
@@ -2143,6 +2222,7 @@ BEGIN
 
 	SELECT DISTINCT * FROM @DetailData
 END
+
 
 
 
