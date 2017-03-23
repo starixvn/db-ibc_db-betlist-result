@@ -15,10 +15,13 @@ AS
 		- 20140414@Sophia: Support Bet Radar
 		- 20170123@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70731]
 		- 20170209@Kos: Don't support result detail anymore [#Redmine: 70731]
+		- 20170323@Kos: Support Basketball AIO [#Redmine: 73033]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @SportType TINYINT
 
 	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)		-- Bettrans range
 	BEGIN
@@ -84,6 +87,27 @@ BEGIN
 								WHEN bettype = 4 AND OperatorType = 1 THEN 2
 								WHEN bettype = 4 AND OperatorType = 2 THEN 12
 							END
+
+		-- Get sport type
+		SELECT @SportType = sporttype
+		FROM dbo.match WITH (NOLOCK)
+		WHERE matchid = @MatchId
+
+		-- Get result detail for Basketball and Tennis main result only
+		SELECT
+			MatchID,
+			ResourceID,
+			HomeValue,
+			AwayValue,
+			ResultStatusID,
+			SettlementStatusID,
+			OtherInfo
+		FROM dbo.ResultDetail WITH (NOLOCK)
+		WHERE @SportType IN (2, 5)
+			AND MatchID = @MatchId
+			AND SettlementStatusID > 0
+			AND LEN(ResourceID) = 2
+		ORDER BY ResourceID
 	END
 	ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)	-- Bettrans14 range
 	BEGIN
@@ -149,6 +173,27 @@ BEGIN
 								WHEN bettype = 4 AND OperatorType = 1 THEN 2
 								WHEN bettype = 4 AND OperatorType = 2 THEN 12
 							END
+
+		-- Get sport type
+		SELECT @SportType = sporttype
+		FROM dbo.match14 WITH (NOLOCK)
+		WHERE matchid = @MatchId
+
+		-- Get result detail for Basketball and Tennis main result only
+		SELECT
+			MatchID,
+			ResourceID,
+			HomeValue,
+			AwayValue,
+			ResultStatusID,
+			SettlementStatusID,
+			OtherInfo
+		FROM dbo.ResultDetail14 WITH (NOLOCK)
+		WHERE @SportType IN (2, 5)
+			AND MatchID = @MatchId
+			AND SettlementStatusID > 0
+			AND LEN(ResourceID) = 2
+		ORDER BY ResourceID
 	END
 END
 
