@@ -1,4 +1,4 @@
-ALTER FUNCTION [dbo].[f_ResourceBettype] 
+ALTER FUNCTION [dbo].[f_ResourceBettype]
 (
 )
 RETURNS @ResourceBettype TABLE (Sporttype TINYINT, ResultGroup TINYINT, ResultGroupDesc VARCHAR(500), Bettype SMALLINT, ResourceID VARCHAR(20))
@@ -12,6 +12,7 @@ AS
 	Revisions:
 		- 20160505@Kos: Support Fast Market [#Redmine: 56589]
 		- 20160829@Kos: Support PH All In One phase 2b [#Redmine: 62882]
+		- 20170323@Kos: Support Basketball AIO [#Redmine: 73033]
 
 */
 
@@ -211,8 +212,30 @@ BEGIN
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 10, 'Fast Market', 225, '225%')
 
+	-- 5. Basketball AIO
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (2, 1, 'Basketball AIO', 604, '604')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (2, 1, 'Basketball AIO', 605, '605')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (2, 1, 'Basketball AIO', 606, '606%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (2, 1, 'Basketball AIO', 607, '607%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (2, 1, 'Basketball AIO', 613, '613%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (2, 1, 'Basketball AIO', 617, '617%')
+
 	RETURN
 END
+
+
+
 
 GO 
 GRANT SELECT ON [dbo].[f_ResourceBettype] TO [bodbDownlineNet]
