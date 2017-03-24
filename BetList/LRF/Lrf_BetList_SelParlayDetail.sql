@@ -27,6 +27,7 @@ AS
 		- 20160202@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170324@Kos: Hotfix - Mix Parlay duplciate ticket detail [Redmine: #73984]
 */
 
 BEGIN
@@ -252,11 +253,10 @@ BEGIN
 		INNER JOIN DBACC.bodb_archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
-	SELECT *
+	SELECT DISTINCT *
 	FROM @tmpParlay
 	ORDER BY TransId DESC
 END
-
 
 
 GO
