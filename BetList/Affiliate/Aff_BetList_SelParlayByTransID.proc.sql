@@ -20,6 +20,7 @@ AS
 		- 20141017@Bobby: Initial SP
 		- 20160425@Bobby: #56136 - Support Combo Parlay
 		- 20161013@Kos: Add product bet type range for sub tables [Redmine: #65045]
+		- 20170324@Kos: Hotfix - Mix Parlay duplicate ticket detail [Redmine: #73984]
 */
 
 BEGIN
@@ -59,7 +60,7 @@ BEGIN
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(200))
 
-	DECLARE @refno 		BIGINT
+	DECLARE @RefNo 		BIGINT
 		, @custID 		INT
 		, @CurrencyCode	VARCHAR(3)
 
@@ -72,19 +73,19 @@ BEGIN
 
 	IF @refno IS NULL
 	BEGIN
-		SELECT @refno = refno,
+		SELECT @RefNo = refno,
 			@custID = custid,
 			@CurrencyCode = CASE WHEN ex.Code <> '' THEN ex.Code ELSE ex.currency END
-		FROM dbo.bettrans14 b WITH (NOLOCK) 
+		FROM dbo.bettrans14 AS b WITH (NOLOCK) 
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 		WHERE TransID = @TransID
 
 		IF @refno IS NULL
 		BEGIN
-			SELECT @refno = refno,
+			SELECT @RefNo = refno,
 				@custID = custid,
 				@CurrencyCode = CASE WHEN ex.Code <> '' THEN ex.Code ELSE ex.currency END
-			FROM DBARC.bodb_archive.dbo.bettrans_bk b WITH (NOLOCK) 
+			FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK) 
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			WHERE TransID = @TransID
 		END
@@ -240,7 +241,7 @@ BEGIN
 			INNER JOIN DBARC.bodb_archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
-	SELECT * FROM @tmpParlay
+	SELECT DISTINCT * FROM @tmpParlay
 	ORDER BY transID DESC 
 END
 GO
