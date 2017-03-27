@@ -43,6 +43,7 @@ AS
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170227@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170302@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 
 	Parameters:
 */
@@ -81,7 +82,8 @@ BEGIN
 	SELECT DISTINCT ProductId, Bettype, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @isTest)
 	WHERE
-		(ProductID IN (2, 3, 4, 5, 8) OR (ProductID = 1 AND Bettype NOT IN (901, 902, 903, 904)))
+		ProductID IN (1, 2, 3, 4, 5, 8)
+		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 		AND bettype IN (
 			SELECT bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
 			UNION SELECT GroupTypeId FROM dbo.f_GroupBettype() WHERE bettype = @BetType
@@ -151,7 +153,11 @@ BEGIN
 		PlayerComm		MONEY,
 		Race			VARCHAR(20),
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300)
+		TransDesc		NVARCHAR(300),
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000),
+		OriginalStake	MONEY,
+		OriginalBetType	SMALLINT
 	)
 
 	DECLARE @TempFromDate DATETIME,
@@ -396,7 +402,18 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				ISNULL(b.betcheck, '') AS BetCheck,
-				ISNULL(b.transdesc, '') AS TransDesc
+				ISNULL(b.transdesc, '') AS TransDesc,
+				ISNULL(b.betdaqid, -1) AS BetdaqId,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				CASE
+					WHEN b.ExtraInfo LIKE '%p25%' THEN
+						ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
+					ELSE 0
+				END AS OriginalStake,
+				CASE
+					WHEN b.stake <> 0 THEN -1
+					ELSE 0
+				END AS OriginalBetType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
@@ -405,7 +422,6 @@ BEGIN
 				AND b.bettype IN (SELECT bettype FROM @SportBettype)
 				AND b.statusID NOT IN (0,1,101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
-
 		END
 
 		-- Outright
@@ -450,7 +466,11 @@ BEGIN
 				b.playercomm,
 				o.groupmatch AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
@@ -507,7 +527,11 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				ISNULL(b.betcheck, '') AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 			WHERE td.WhTicket = 1
@@ -568,7 +592,11 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -622,7 +650,11 @@ BEGIN
 				b.playercomm,
 				o.groupmatch AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
@@ -676,7 +708,11 @@ BEGIN
 				b.playercomm,
 				CONVERT(VARCHAR(20), b.oddsid) AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -730,7 +766,11 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 				CROSS APPLY dbo.f_ParseTransDesc(b.transdesc, b.bettype) AS fnc
@@ -786,7 +826,18 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				ISNULL(b.betcheck, '') AS BetCheck,
-				ISNULL(b.transdesc, '') AS TransDesc
+				ISNULL(b.transdesc, '') AS TransDesc,
+				ISNULL(b.betdaqid, -1) AS BetdaqId,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				CASE
+					WHEN b.ExtraInfo LIKE '%p25%' THEN
+						ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
+					ELSE 0
+				END AS OriginalStake,
+				CASE
+					WHEN b.stake <> 0 THEN -1
+					ELSE 0
+				END AS OriginalBetType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
@@ -839,7 +890,11 @@ BEGIN
 				b.playercomm,
 				o.groupmatch AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
@@ -896,7 +951,11 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				ISNULL(b.betcheck, '') AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 			WHERE td.WhTicket = 2
@@ -957,7 +1016,11 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -1011,7 +1074,11 @@ BEGIN
 				b.playercomm,
 				o.groupmatch AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
@@ -1065,7 +1132,11 @@ BEGIN
 				b.playercomm,
 				CONVERT(VARCHAR(20), b.oddsid) AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -1119,7 +1190,11 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 				CROSS APPLY dbo.f_ParseTransDesc(b.transdesc, b.bettype) AS fnc
@@ -1133,22 +1208,25 @@ BEGIN
 
 	SELECT
 		b.*,
-		SUBSTRING(c.username2, CHARINDEX('$',c.username2) + 1, LEN(c.username2) - CHARINDEX('$',c.username2)) AS Nickname,
-		Stake		* e.USD AS StakeUSD,
-		WinLost		* e.USD AS WinLostUSD,
-		LicenseeWL	* e.USD AS LicenseeWLUSD,
-		Comm		* e.USD AS CommUSD,
-		PlayerComm	* e.USD AS PlayerCommUSD,
-		Stake		* e.EUR AS StakeEUR,
-		WinLost		* e.EUR AS WinLostEUR,
-		LicenseeWL	* e.EUR AS LicenseeWLEUR,
-		Comm		* e.EUR AS CommEUR,
-		PlayerComm	* e.EUR AS PlayerCommEUR,
-		Stake		* e.GBP AS StakeGBP,
-		WinLost		* e.GBP AS WinLostGBP,
-		LicenseeWL	* e.GBP AS LicenseeWLGBP,
-		Comm		* e.GBP AS CommGBP,
-		PlayerComm	* e.GBP AS PlayerCommGBP
+		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
+		b.Stake			* e.USD AS StakeUSD,
+		b.WinLost		* e.USD AS WinLostUSD,
+		b.LicenseeWL	* e.USD AS LicenseeWLUSD,
+		b.Comm			* e.USD AS CommUSD,
+		b.PlayerComm	* e.USD AS PlayerCommUSD,
+		b.OriginalStake	* e.USD AS OriginalStakeUSD,
+		b.Stake			* e.EUR AS StakeEUR,
+		b.WinLost		* e.EUR AS WinLostEUR,
+		b.LicenseeWL	* e.EUR AS LicenseeWLEUR,
+		b.Comm			* e.EUR AS CommEUR,
+		b.PlayerComm	* e.EUR AS PlayerCommEUR,
+		b.OriginalStake	* e.EUR AS OriginalStakeEUR,
+		b.Stake			* e.GBP AS StakeGBP,
+		b.WinLost		* e.GBP AS WinLostGBP,
+		b.LicenseeWL	* e.GBP AS LicenseeWLGBP,
+		b.Comm			* e.GBP AS CommGBP,
+		b.PlayerComm	* e.GBP AS PlayerCommGBP,
+		b.OriginalStake	* e.GBP AS OriginalStakeGBP
 	FROM #Data AS b
 		INNER JOIN dbo.Customer AS c (NOLOCK) ON b.custid = c.custid
 		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.Exchangeid = b.Currency
@@ -1309,7 +1387,7 @@ BEGIN
 			AND sbtm.EventType = 3
 	END
 
-	SELECT * FROM @BettransDetail
+	SELECT DISTINCT * FROM @BettransDetail
 	ORDER BY RefNo, Bettype
 
 	DROP TABLE #TempExchange

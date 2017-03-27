@@ -30,6 +30,7 @@ AS
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20160913@Kos: Don't support Colossus Bets [#Redmine: 63785]
 		- 20170301@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 */
 
 BEGIN
@@ -66,10 +67,10 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 13)
+	WHERE ProductID <= 6 OR ProductID IN (8, 13, 25)
 
 	DELETE FROM @SportBettype
-	WHERE ProductID = 1 AND Bettype IN (903, 904)
+	WHERE Bettype IN (903, 904, 913, 914)
 
 	DECLARE @bc TABLE (CustId INT, BetCount INT)
 
@@ -121,7 +122,7 @@ BEGIN
 	INSERT INTO @bc
 	SELECT b.custid,
 		SUM(1) AS BetCount
-	FROM 
+	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @TempAg AS ag ON b.recommend = ag.CustId AND b.currency = ag.Currency
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
@@ -135,7 +136,7 @@ BEGIN
 		c.username,
 		c.custid,
 		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
-		SUM(betcount) AS BetCount
+		SUM(b.BetCount) AS BetCount
 	FROM dbo.customer AS c WITH (NOLOCK)
 		INNER JOIN @bc AS b ON c.custid = b.CustId
 	WHERE c.roleid = 1

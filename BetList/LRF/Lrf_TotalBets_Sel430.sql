@@ -25,13 +25,14 @@ AS
 		- 20130514@Jim: Restrict permission of Licensee Users by currency
 		- 20140620@Florent: offer new bettypes 152 - Half Time/Full Time Correct Score
 		- 20141110@Winnie: Change from LicenseeCust table to [f_SelLicenseeCust] function
-		- 20150124@Winnie: Add base currency GBP 
+		- 20150124@Winnie: Add base currency GBP
 		- 20150420@Jim: add more bettype 165, 166
 		- 20151203@Bobby: Database - Change datatype [Redmine: #48660]
 		- 20151207@Kos: Include bet type 405 2H Correct Score [Redmine: #47959]
 		- 20160129@Kos: Include bet type 413 Correct Score (aos) and [414] 1H Correct Score (aos) [Redmine: #50897]
 		- 20160720@Kos: Include bet type 416 Half Time/Full Time Correct Score (own) [Redmine: #53153]
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 */
 
 BEGIN
@@ -87,7 +88,11 @@ BEGIN
 		OddsType		TINYINT,
 		WinLostDate		DATETIME,
 		Currency		SMALLINT,
-		TransDesc		NVARCHAR(200)
+		TransDesc		NVARCHAR(200),
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000),
+		OriginalStake	MONEY,
+		OriginalBetType	SMALLINT
 	)
 
 	INSERT INTO @Data
@@ -120,7 +125,18 @@ BEGIN
 		b.oddstype,
 		b.winlostdate,
 		b.currency,
-		ISNULL(b.transdesc, '') AS transdesc
+		ISNULL(b.transdesc, '') AS transdesc,
+		ISNULL(b.betdaqid, -1) AS BetdaqId,
+		ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+		CASE
+			WHEN b.ExtraInfo LIKE '%p25%' THEN
+				ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
+			ELSE 0
+		END AS OriginalStake,
+		CASE
+			WHEN b.stake <> 0 THEN -1
+			ELSE 0
+		END AS OriginalBetType
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -136,8 +152,8 @@ BEGIN
 	DECLARE @RowStart INT,
 		@RowEnd INT
 
-	SELECT @PageIndex = @PageIndex - 1, 
-		@RowStart = @PageSize * @PageIndex + 1, 
+	SELECT @PageIndex = @PageIndex - 1,
+		@RowStart = @PageSize * @PageIndex + 1,
 		@RowEnd = @RowStart + @PageSize - 1
 
 	DECLARE @Today SMALLDATETIME
@@ -151,7 +167,7 @@ BEGIN
 	SELECT A.*
 	FROM (
 			SELECT
-				ROW_NUMBER() OVER(ORDER BY b.status, b.transid) AS RowNum,
+				ROW_NUMBER() OVER(ORDER BY b.status, b.TransId) AS RowNum,
 				SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
 				b.*,
 				b.Stake * e.USD AS StakeUSD,
@@ -159,13 +175,17 @@ BEGIN
 				b.Stake * e.GBP AS StakeGBP,
 				b.Actual_Stake * e.USD AS Actual_StakeUSD,
 				b.Actual_Stake * e.EUR AS Actual_StakeEUR,
-				b.Actual_Stake * e.GBP AS Actual_StakeGBP
+				b.Actual_Stake * e.GBP AS Actual_StakeGBP,
+				b.OriginalStake * e.USD AS OriginalStakeUSD,
+				b.OriginalStake * e.EUR AS OriginalStakeEUR,
+				b.OriginalStake * e.GBP AS OriginalStakeGBP
 			FROM @Data AS b
-				INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.custid
-				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) AS e ON e.exchangeid = b.currency
+				INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.CustId
+				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) AS e ON e.exchangeid = b.Currency
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 END
+
 
 
 GO

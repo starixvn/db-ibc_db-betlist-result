@@ -24,6 +24,7 @@ AS
 		- 20160412@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20161003@Kos: Remove Live Casino code [Redmine: #65045]
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 */
 
 BEGIN
@@ -91,8 +92,12 @@ BEGIN
 		Currency		SMALLINT,
 		StatusId		INT,
 		PlayerComm		MONEY,
-		ShowTime		NVARCHAR(50), -- table - shoe - hand of Live Casino
-		BetCheck		NVARCHAR(50)
+		ShowTime		NVARCHAR(50),
+		BetCheck		NVARCHAR(50),
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000),
+		OriginalStake	MONEY,
+		OriginalBetType	SMALLINT
 	)
 
 	IF EXISTS (SELECT 1 FROM @tblbettype WHERE bettype IN (9, 29))
@@ -100,7 +105,7 @@ BEGIN
 		INSERT INTO #Data
 		SELECT
 			b.custid,
-			0 AS sporttype,
+			0 AS SportType,
 			b.username,
 			b.bettype,
 			CASE
@@ -134,7 +139,11 @@ BEGIN
 			b.statusid,
 			b.playercomm,
 			'' AS ShowTime,
-			ISNULL(b.betcheck, '') AS BetCheck
+			ISNULL(b.betcheck, '') AS BetCheck,
+			-1 AS BetdaqId,
+			'' AS ExtraInfo,
+			0 AS OriginalStake,
+			0 AS OriginalBetType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @tblbettype AS bt ON b.bettype = bt.bettype
 		WHERE
@@ -148,7 +157,7 @@ BEGIN
 			b.status,
 			b.transid
 	END
-	ELSE IF EXISTS (SELECT 1 FROM @tblbettype WHERE bettype = 10)  -- Outright
+	ELSE IF EXISTS (SELECT 1 FROM @tblbettype WHERE bettype = 10)	-- Outright
 	BEGIN
 		INSERT INTO #Data
 		SELECT
@@ -184,7 +193,11 @@ BEGIN
 			b.statusid,
 			b.playercomm,
 			'' AS ShowTime,
-			'' AS BetCheck
+			'' AS BetCheck,
+			-1 AS BetdaqId,
+			'' AS ExtraInfo,
+			0 AS OriginalStake,
+			0 AS OriginalBetType
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON  b.matchid = m.orid
@@ -237,7 +250,18 @@ BEGIN
 			b.statusid,
 			b.playercomm,
 			ISNULL(m.showtime, '') AS showtime,
-			b.betcheck
+			b.betcheck,
+			ISNULL(b.betdaqid, -1) AS BetdaqId,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			CASE
+				WHEN b.ExtraInfo LIKE '%p25%' THEN
+					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]', 'MONEY'), 0)
+				ELSE 0
+			END AS OriginalStake,
+			CASE
+				WHEN b.stake <> 0 THEN -1
+				ELSE 0
+			END AS OriginalBetType
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -274,8 +298,8 @@ BEGIN
 	FROM
 		(
 			SELECT
-				ROW_NUMBER() OVER(ORDER BY b.transid) AS RowNum,
-				SUBSTRING(c.username2,  CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
+				ROW_NUMBER() OVER(ORDER BY b.TransId) AS RowNum,
+				SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
 				b.*,
 				b.Stake * e.USD AS StakeUSD,
 				b.Stake * e.EUR AS StakeEUR,
@@ -285,11 +309,13 @@ BEGIN
 				b.Actual_Stake * e.GBP AS Actual_StakeGBP,
 				b.PlayerComm * e.USD AS PlayerCommUSD,
 				b.PlayerComm * e.EUR AS PlayerCommEUR,
-				b.PlayerComm * e.GBP AS PlayerCommGBP
+				b.PlayerComm * e.GBP AS PlayerCommGBP,
+				b.OriginalStake * e.USD AS OriginalStakeUSD,
+				b.OriginalStake * e.EUR AS OriginalStakeEUR,
+				b.OriginalStake * e.GBP AS OriginalStakeGBP
 			FROM #Data AS b
-				INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.custid
-				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) AS e
-				ON e.exchangeid = b.currency
+				INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.CustId
+				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) AS e ON e.exchangeid = b.Currency
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 

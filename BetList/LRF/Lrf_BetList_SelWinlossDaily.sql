@@ -55,10 +55,10 @@ AS
 		- 20121004@Jim: replace @currencyname input param by @currencyID
 		- 20121016@Henry: enhance SP
 		- 20130305@Jim: change input param @winlostdate by @date
-		- 20130320@Jim: fix bug wrong Total Rows's value 
+		- 20130320@Jim: fix bug wrong Total Rows's value
 		- 20130328@Scott: Support RNG Casino and Bingo
 		- 20130514@Jim:Restrict permission of Licensee Users by currency
-		- 20130619@Jim: fix bug missing RNG Casino data 
+		- 20130619@Jim: fix bug missing RNG Casino data
 		- 20130716@Jim: update matchid for RNG Casino and Bingo
 		- 20131007@Jim: Enhance the usability of Daily Bet List report and offer Virtual Horse Racing & Virtual Tennis
 		- 20131108@Don: Improve performance temporarily
@@ -90,8 +90,9 @@ AS
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170301@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 
-	Param's Explanation: 
+	Param's Explanation:
 */
 
 BEGIN
@@ -129,57 +130,64 @@ BEGIN
 		@BalanceUpDay_	= @BalanceUpDay
 
 	CREATE TABLE #Data (
-		SportType		INT,
-		Username		NVARCHAR(50),
-		NickName		NVARCHAR(50),
-		BetType			INT,
-		LeagueId		INT,
-		TransId			BIGINT,
-		MatchCode		VARCHAR(50),
-		Race			NVARCHAR(20),
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		Status			NVARCHAR(50),
-		Stake			MONEY,
-		WinLost			MONEY,
-		LicenseeWL		MONEY,
-		Comm			MONEY,
-		PlayerComm		MONEY,
-		TransDate		DATETIME,
-		WinLostDate		DATETIME,
-		BetTeam			VARCHAR(300),
-		LiveIndicator	INT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		MatchId			INT,
-		BetStatus		NVARCHAR(50),
-		IsNeutral		BIT,
-		OddsType		INT,
-		BetId			BIGINT,
-		Currency		SMALLINT,
-		RefNo			BIGINT,
-		CustId			INT,
-		ShowTime		NVARCHAR(50), -- table - shoe - hand of Live Casino
-		BetCheck		NVARCHAR(100),
-		TransDesc		NVARCHAR(300),
-		StakeUSD		MONEY,
-		WinLostUSD		MONEY,
-		LicenseeWLUSD	MONEY,
-		CommUSD			MONEY,
-		PlayerCommUSD	MONEY,
-		StakeEUR		MONEY,
-		WinLostEUR		MONEY,
-		LicenseeWLEUR	MONEY,
-		CommEUR			MONEY,
-		PlayerCommEUR	MONEY,
-		StakeGBP		MONEY,
-		WinLostGBP		MONEY,
-		LicenseeWLGBP	MONEY,
-		CommGBP			MONEY,
-		PlayerCommGBP	MONEY
+		SportType			INT,
+		Username			NVARCHAR(50),
+		NickName			NVARCHAR(50),
+		BetType				INT,
+		LeagueId			INT,
+		TransId				BIGINT,
+		MatchCode			VARCHAR(50),
+		Race				NVARCHAR(20),
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		Status				NVARCHAR(50),
+		Stake				MONEY,
+		WinLost				MONEY,
+		LicenseeWL			MONEY,
+		Comm				MONEY,
+		PlayerComm			MONEY,
+		TransDate			DATETIME,
+		WinLostDate			DATETIME,
+		BetTeam				VARCHAR(300),
+		LiveIndicator		INT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		MatchId				INT,
+		BetStatus			NVARCHAR(50),
+		IsNeutral			BIT,
+		OddsType			INT,
+		BetId				BIGINT,
+		Currency			SMALLINT,
+		RefNo				BIGINT,
+		CustId				INT,
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(100),
+		TransDesc			NVARCHAR(300),
+		OriginalStake		MONEY,
+		OriginalBetType		SMALLINT,
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		StakeUSD			MONEY,
+		WinLostUSD			MONEY,
+		LicenseeWLUSD		MONEY,
+		CommUSD				MONEY,
+		PlayerCommUSD		MONEY,
+		OriginalStakeUSD	MONEY,
+		StakeEUR			MONEY,
+		WinLostEUR			MONEY,
+		LicenseeWLEUR		MONEY,
+		CommEUR				MONEY,
+		PlayerCommEUR		MONEY,
+		OriginalStakeEUR	MONEY,
+		StakeGBP			MONEY,
+		WinLostGBP			MONEY,
+		LicenseeWLGBP		MONEY,
+		CommGBP				MONEY,
+		PlayerCommGBP		MONEY,
+		OriginalStakeGBP	MONEY
 	)
 
 	DECLARE @DataSum TABLE (
@@ -222,7 +230,7 @@ BEGIN
 	SELECT @RowStart = @PageSize * @PageIndex + 1
 	SELECT @RowEnd = (@RowStart -1)  + @PageSize
 
-	DECLARE @sql		NVARCHAR(3000)
+	DECLARE @sql		NVARCHAR(4000)
 	DECLARE @SortTemp	VARCHAR(250)
 	DECLARE @LicenseeWL	VARCHAR(150)
 	DECLARE @Winlost	VARCHAR(150)
@@ -329,7 +337,7 @@ BEGIN
 				0,
 				SUM(ISNULL(b.comm,0)),
 				SUM(b.playercomm) AS SumPlayerComm
-			FROM dbo.bettrans AS b WITH (NOLOCK) 
+			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 				INNER JOIN #SportBettype AS sbt ON sbt.Bettype = b.bettype
 				INNER JOIN #TempAg AS ag ON b.recommend = ag.custid AND b.currency = ag.Currency
@@ -349,7 +357,7 @@ BEGIN
 				b.currency,
 				COUNT(b.transid),
 				SUM(ISNULL(b.winlost-b.actual_stake, 0)),
-				-SUM(ISNULL(CASE WHEN b.bettype IN (31,32,33) THEN awinlost
+				-SUM(ISNULL(CASE WHEN b.bettype IN (31, 32, 33) THEN awinlost
 								ELSE (b.winlost-b.actual_stake) 
 							END
 								,0)
@@ -364,76 +372,81 @@ BEGIN
 				AND b.bettype NOT IN (9, 29, 10)
 				AND b.status = @status
 				AND b.ruben = 1
-				AND (
-					(@Product = 'SB' AND b.tpositiontaking <> 0)
-					OR @Product <> 'SB'
-					)
+				AND ((@Product = 'SB' AND b.tpositiontaking <> 0)
+					OR @Product <> 'SB')
 			GROUP BY b.currency
 		END
 
 		CREATE TABLE #BetData1 (
-			OddsId			INT,
-			SportType		INT,
-			Username		NVARCHAR(50),
-			NickName		NVARCHAR(50),
-			BetType			INT,
-			LeagueId		INT,
-			TransId			BIGINT,
-			MatchCode		VARCHAR(50),
-			Race			NVARCHAR(20),
-			HomeId			INT,
-			AwayId			INT,
-			Hdp1			SMALLMONEY,
-			Hdp2			SMALLMONEY,
-			Odds			MONEY,
-			Status			NVARCHAR(50),
-			Stake			MONEY,
-			WinLost			MONEY,
-			LicenseeWL		MONEY,
-			Comm			MONEY,
-			PlayerComm		MONEY,
-			TransDate		DATETIME,
-			WinLostDate		DATETIME,
-			BetTeam			VARCHAR(300),
-			LiveIndicator	INT,
-			LiveHomeScore	SMALLINT,
-			LiveAwayScore	SMALLINT,
-			MatchId			INT,
-			BetStatus		NVARCHAR(50),
-			IsNeutral		BIT,
-			OddsType		INT,
-			BetId			BIGINT,
-			Currency		SMALLINT,
-			RefNo			BIGINT,
-			CustId			INT,
-			ShowTime		NVARCHAR(50),
-			BetCheck		NVARCHAR(100),
-			TransDesc		NVARCHAR(300),
-			StakeUSD		MONEY,
-			WinLostUSD		MONEY,
-			LicenseeWLUSD	MONEY,
-			CommUSD			MONEY,
-			PlayerCommUSD	MONEY,
-			StakeEUR		MONEY,
-			WinLostEUR		MONEY,
-			LicenseeWLEUR	MONEY,
-			CommEUR			MONEY,
-			PlayerCommEUR	MONEY,
-			StakeGBP		MONEY,
-			WinLostGBP		MONEY,
-			LicenseeWLGBP	MONEY,
-			CommGBP			MONEY,
-			PlayerCommGBP	MONEY
+			OddsId				INT,
+			SportType			INT,
+			Username			NVARCHAR(50),
+			NickName			NVARCHAR(50),
+			BetType				INT,
+			LeagueId			INT,
+			TransId				BIGINT,
+			MatchCode			VARCHAR(50),
+			Race				NVARCHAR(20),
+			HomeId				INT,
+			AwayId				INT,
+			Hdp1				SMALLMONEY,
+			Hdp2				SMALLMONEY,
+			Odds				MONEY,
+			Status				NVARCHAR(50),
+			Stake				MONEY,
+			WinLost				MONEY,
+			LicenseeWL			MONEY,
+			Comm				MONEY,
+			PlayerComm			MONEY,
+			TransDate			DATETIME,
+			WinLostDate			DATETIME,
+			BetTeam				VARCHAR(300),
+			LiveIndicator		INT,
+			LiveHomeScore		SMALLINT,
+			LiveAwayScore		SMALLINT,
+			MatchId				INT,
+			BetStatus			NVARCHAR(50),
+			IsNeutral			BIT,
+			OddsType			INT,
+			BetId				BIGINT,
+			Currency			SMALLINT,
+			RefNo				BIGINT,
+			CustId				INT,
+			ShowTime			NVARCHAR(50),
+			BetCheck			NVARCHAR(100),
+			TransDesc			NVARCHAR(300),
+			OriginalStake		MONEY,
+			OriginalBetType		SMALLINT,
+			BetdaqId			BIGINT,
+			ExtraInfo			VARCHAR(1000),
+			StakeUSD			MONEY,
+			WinLostUSD			MONEY,
+			LicenseeWLUSD		MONEY,
+			CommUSD				MONEY,
+			PlayerCommUSD		MONEY,
+			OriginalStakeUSD	MONEY,
+			StakeEUR			MONEY,
+			WinLostEUR			MONEY,
+			LicenseeWLEUR		MONEY,
+			CommEUR				MONEY,
+			PlayerCommEUR		MONEY,
+			OriginalStakeEUR	MONEY,
+			StakeGBP			MONEY,
+			WinLostGBP			MONEY,
+			LicenseeWLGBP		MONEY,
+			CommGBP				MONEY,
+			PlayerCommGBP		MONEY,
+			OriginalStakeGBP	MONEY
 		)
 
 		-- Get Betdata from bettrans and filter by row number
 		SET @sql = 
 		'SELECT
 			b.oddsid,
-			CAST(NULL AS INT) AS sporttype,
+			CAST(NULL AS INT) AS SportType,
 			b.username,
-			SUBSTRING(c.username2, CHARINDEX(''$'',c.username2) + 1, 
-			len(c.username2)-CHARINDEX(''$'',c.username2)) AS nickname,
+			SUBSTRING(c.username2, CHARINDEX(''$'', c.username2) + 1,
+			LEN(c.username2) - CHARINDEX(''$'', c.username2)) AS Nickname,
 			b.bettype,
 			CAST(NULL AS INT) AS leagueID,
 			b.transid,
@@ -447,8 +460,8 @@ BEGIN
 			b.status,
 			b.stake,
 			(b.winlost-actual_stake) winlost,
-			CASE  
-				WHEN b.bettype NOT IN (31,32,33) THEN - (b.winlost-b.actual_stake) 
+			CASE
+				WHEN b.bettype NOT IN (31,32,33) THEN - (b.winlost-b.actual_stake)
 				ELSE awinlost
 			END AS LicenseeWL,
 			b.comm,
@@ -473,42 +486,70 @@ BEGIN
 			CAST('''' AS NVARCHAR(50)) AS showtime,
 			b.betcheck,
 			ISNULL(b.transdesc, '''') AS transdesc,
-			--USD
+			CASE
+				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
+				ELSE 0
+			END AS OriginalStake,
+			CASE
+				WHEN b.stake <> 0 THEN -1
+				ELSE 0
+			END AS OriginalBetType,
+			ISNULL(b.betdaqid, -1) AS BetdaqId,
+			ISNULL(b.ExtraInfo, '''') AS ExtraInfo,
+			-- USD
 			b.stake * e.USD stakeUSD,'
 			+ @Winlost + ' * e.USD WinlostUSD,'
 			+ @LicenseeWL + ' * e.USD LicenseeWLUSD,
 			b.comm * e.USD commUSD,
 			b.playercomm * e.USD AS PlayerCommUSD,
-			--EUR
+			CASE
+				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
+				ELSE 0
+			END * e.USD AS OriginalStakeUSD,
+			-- EUR
 			b.stake * e.EUR stakeEUR,'
 			+ @Winlost + '* e.EUR WinlostEUR,'
 			+ @LicenseeWL + '* e.EUR LicenseeWLEUR,
 			b.comm * e.EUR commEUR,
 			b.playercomm * e.EUR AS PlayerCommEUR,
-			--GBP
+			CASE
+				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
+				ELSE 0
+			END * e.EUR AS OriginalStakeEUR,
+			-- GBP
 			b.stake * e.GBP AS stakeGBP,'
 			+ @Winlost + '* e.GBP AS WinlostGBP,'
 			+ @LicenseeWL + '* e.GBP AS LicenseeWLGBP,
 			b.comm * e.GBP AS commGBP,
-			b.playercomm * e.GBP AS PlayerCommGBP
+			b.playercomm * e.GBP AS PlayerCommGBP,
+			CASE
+				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
+				ELSE 0
+			END * e.GBP AS OriginalStakeGBP
 		FROM
-			dbo.bettrans b WITH (NOLOCK) 
+			dbo.bettrans b WITH (NOLOCK)
 			INNER JOIN dbo.customer c WITH (NOLOCK) ON b.custid = c.custid
 			INNER JOIN #TempAg ag ON b.recommend = ag.custid AND b.currency = ag.Currency
 			INNER JOIN #SportBettype sbt ON sbt.Bettype = b.bettype
 			INNER JOIN #TempExchange e ON  e.exchangeid = b.currency' + CHAR(13) +
-		CASE WHEN @Product='BA' THEN 'INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction BA WITH (NOLOCK) ON b.transid = BA.transid'
-								ELSE ''
-								END + CHAR(13) +
+			CASE
+				WHEN @Product = 'BA' THEN 'INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction BA WITH (NOLOCK) ON b.transid = BA.transid'
+				ELSE ''
+			END + CHAR(13) +
 		'WHERE
 			b.winlostdate = ''' + CAST(@wldate AS VARCHAR(50)) + '''' + CHAR(13) +
 			'AND b.status=''' + CAST(@status AS VARCHAR(15)) + '''' + CHAR(13) +
 			'AND b.bettype NOT IN (9,29,10)
 			AND b.ruben = 1' + CHAR(13) +
-			CASE WHEN @Product='SB' THEN 'AND b.tpositiontaking<>0'
-									ELSE ''
-									END+CHAR(13)
-	
+			CASE
+				WHEN @Product = 'SB' THEN 'AND b.tpositiontaking<>0'
+				ELSE ''
+			END + CHAR(13)
+
 		INSERT INTO #BetData1 (
 			Oddsid,
 			Sporttype,
@@ -547,37 +588,44 @@ BEGIN
 			showtime,
 			betcheck,
 			transdesc,
+			OriginalStake,
+			OriginalBetType,
+			BetdaqId,
+			ExtraInfo,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
 			commUSD,
 			PlayerCommUSD,
+			OriginalStakeUSD,
 			stakeEUR,
 			WinlostEUR,
 			LicenseeWLEUR,
 			commEUR,
 			PlayerCommEUR,
+			OriginalStakeEUR,
 			stakeGBP,
 			WinlostGBP,
 			LicenseeWLGBP,
 			commGBP,
-			PlayerCommGBP)
+			PlayerCommGBP,
+			OriginalStakeGBP)
 		EXEC (@sql)
 
 		-- Update LicenseeWL with LicenseeBATransaction table
 		UPDATE b
-		SET LicenseeWL = 0
-			,LicenseeWLUSD = 0
-			,LicenseeWLEUR = 0
-			,LicenseeWLGBP = 0
+		SET LicenseeWL = 0,
+			LicenseeWLUSD = 0,
+			LicenseeWLEUR = 0,
+			LicenseeWLGBP = 0
 		FROM #BetData1 AS b
 			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 
 		UPDATE b
 		SET
-			betteam = t.ChoiceId,
-			matchid = t.GameId,
-			b.sporttype = 202
+			BetTeam = t.ChoiceId,
+			MatchId = t.GameId,
+			b.SportType = 202
 		FROM #BetData1 b
 			CROSS APPLY dbo.[f_ParseTransDesc](b.betteam, b.bettype) t
 		WHERE b.bettype BETWEEN 1501 AND 1599
@@ -585,14 +633,14 @@ BEGIN
 		-- Update data with match table
 		UPDATE b
 		SET sporttype = m.sporttype,
-			leagueID = 	m.leagueid,
+			leagueID = m.leagueid,
 			matchcode = m.matchcode,
-			homeID = 	m.homeid,
-			awayID = 	m.awayid,
+			homeID = m.homeid,
+			awayID = m.awayid,
 			betstatus = m.betstatus,
 			IsNeutral = m.IsNeutral,
 			showtime = CASE
-							WHEN b.bettype BETWEEN 1101 AND 1199 THEN ISNULL(m.showtime,'')
+							WHEN b.bettype BETWEEN 1101 AND 1199 THEN ISNULL(m.showtime, '')
 							WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 							ELSE ''
 						END
@@ -613,7 +661,7 @@ BEGIN
 		FROM #BetData1 AS b
 			INNER JOIN @vhr AS v ON b.oddsid = v.OrID
 		WHERE b.bettype IN (1231, 1232, 1233, 1237, 1238)
-	
+
 		-- Update data with @hr table
 		UPDATE b
 		SET sporttype = r.sporttype,
@@ -629,7 +677,7 @@ BEGIN
 
 		-- Insert and drop temp table
 		INSERT INTO #Data
-		SELECT 
+		SELECT
 			sporttype,
 			username,
 			nickname,
@@ -666,21 +714,28 @@ BEGIN
 			showtime,
 			betcheck,
 			transdesc,
+			OriginalStake,
+			OriginalBetType,
+			BetdaqId,
+			ExtraInfo,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
 			commUSD,
 			PlayerCommUSD,
+			OriginalStakeUSD,
 			stakeEUR,
 			WinlostEUR,
 			LicenseeWLEUR,
 			commEUR,
 			PlayerCommEUR,
+			OriginalStakeEUR,
 			stakeGBP,
 			WinlostGBP,
 			LicenseeWLGBP,
 			commGBP,
-			PlayerCommGBP
+			PlayerCommGBP,
+			OriginalStakeGBP
 		FROM #BetData1
 
 		DROP TABLE #BetData1
@@ -728,7 +783,7 @@ BEGIN
 		IF @Product = 'BA'
 		BEGIN
 			INSERT INTO @DataSum
-			SELECT 
+			SELECT
 				b.currency,
 				COUNT(b.transid),
 				SUM(ISNULL(b.winlost - b.actual_stake, 0)),
@@ -742,8 +797,8 @@ BEGIN
 			WHERE
 				b.winlostdate = @wldate
 				AND b.bettype NOT IN (9,29,10)
-				AND b.status=@status
-			GROUP BY b.currency	
+				AND b.status = @status
+			GROUP BY b.currency
 		END
 
 		IF @Product <> 'BA'
@@ -763,68 +818,72 @@ BEGIN
 				b.winlostdate = @wldate
 				AND b.bettype NOT IN (9, 29, 10)
 				AND b.status = @status
-				AND (
-					(@Product = 'SB' AND b.tpositiontaking <> 0)
-					OR (@Product <> 'SB')
-					)
+				AND ((@Product = 'SB' AND b.tpositiontaking <> 0)
+					OR (@Product <> 'SB'))
 			GROUP BY b.currency
 		END
 
-		CREATE TABLE #BetData14
-		(
-			oddsid			INT,
-			Sporttype		INT,
-			Username		NVARCHAR(50),
-			NickName		NVARCHAR(50),
-			Bettype			INT,
-			LeagueID		INT,
-			Transid			BIGINT,
-			Matchcode		VARCHAR(50),
-			Race			NVARCHAR(20),
-			HomeID			INT,
-			AwayID			INT,
-			hdp1			SMALLMONEY,
-			hdp2			SMALLMONEY,
-			odds			MONEY,
-			status			NVARCHAR(50),
-			stake			MONEY,
-			Winlost			MONEY,
-			LicenseeWL		MONEY,
-			comm			MONEY,
-			PlayerComm		MONEY,
-			transdate		DATETIME,
-			Winlostdate		DATETIME,
-			betteam			VARCHAR(300),
-			liveindicator	INT,
-			livehomescore	SMALLINT,
-			liveawayscore	SMALLINT,
-			MatchID			INT,
-			Betstatus		NVARCHAR(50),
-			IsNeutral		BIT,
-			oddstype		INT,
-			betid			BIGINT,
-			currency		SMALLINT,
-			RefNO			BIGINT,
-			CustID			INT,
-			showtime		NVARCHAR(50),
-			betcheck		NVARCHAR(100),
-			transdesc		NVARCHAR(300),
-			stakeUSD		MONEY,
-			WinlostUSD		MONEY,
-			LicenseeWLUSD	MONEY,
-			commUSD			MONEY,
-			PlayerCommUSD	MONEY,
-			stakeEUR		MONEY,
-			WinlostEUR		MONEY,
-			LicenseeWLEUR	MONEY,
-			commEUR			MONEY,
-			PlayerCommEUR	MONEY,
-			stakeGBP		MONEY,
-			WinlostGBP		MONEY,
-			LicenseeWLGBP	MONEY,
-			commGBP			MONEY,
-			PlayerCommGBP	MONEY
-		)	
+		CREATE TABLE #BetData14 (
+			OddsId				INT,
+			SportType			INT,
+			Username			NVARCHAR(50),
+			NickName			NVARCHAR(50),
+			BetType				INT,
+			LeagueId			INT,
+			TransId				BIGINT,
+			MatchCode			VARCHAR(50),
+			Race				NVARCHAR(20),
+			HomeId				INT,
+			AwayId				INT,
+			Hdp1				SMALLMONEY,
+			Hdp2				SMALLMONEY,
+			Odds				MONEY,
+			Status				NVARCHAR(50),
+			Stake				MONEY,
+			WinLost				MONEY,
+			LicenseeWL			MONEY,
+			Comm				MONEY,
+			PlayerComm			MONEY,
+			TransDate			DATETIME,
+			WinLostDate			DATETIME,
+			BetTeam				VARCHAR(300),
+			LiveIndicator		INT,
+			LiveHomeScore		SMALLINT,
+			LiveAwayScore		SMALLINT,
+			MatchId				INT,
+			BetStatus			NVARCHAR(50),
+			IsNeutral			BIT,
+			OddsType			INT,
+			BetId				BIGINT,
+			Currency			SMALLINT,
+			RefNo				BIGINT,
+			CustId				INT,
+			ShowTime			NVARCHAR(50),
+			BetCheck			NVARCHAR(100),
+			TransDesc			NVARCHAR(300),
+			OriginalStake		MONEY,
+			OriginalBetType		SMALLINT,
+			BetdaqId			BIGINT,
+			ExtraInfo			VARCHAR(1000),
+			StakeUSD			MONEY,
+			WinLostUSD			MONEY,
+			LicenseeWLUSD		MONEY,
+			CommUSD				MONEY,
+			PlayerCommUSD		MONEY,
+			OriginalStakeUSD	MONEY,
+			StakeEUR			MONEY,
+			WinLostEUR			MONEY,
+			LicenseeWLEUR		MONEY,
+			CommEUR				MONEY,
+			PlayerCommEUR		MONEY,
+			OriginalStakeEUR	MONEY,
+			StakeGBP			MONEY,
+			WinLostGBP			MONEY,
+			LicenseeWLGBP		MONEY,
+			CommGBP				MONEY,
+			PlayerCommGBP		MONEY,
+			OriginalStakeGBP	MONEY
+		)
 
 		-- Get Betdata from bettrans14 and filter by row number
 		SET @sql = 
@@ -840,8 +899,8 @@ BEGIN
 			CAST('''' AS NVARCHAR(20)) AS Race,
 			CAST(NULL AS INT) AS homeID,
 			CAST(NULL AS INT) AS awayID,
-			CONVERT(FLOAT, b.hdp1) AS hdp1, 
-			CONVERT(FLOAT, b.hdp2) AS hdp2, 
+			CONVERT(FLOAT, b.hdp1) AS hdp1,
+			CONVERT(FLOAT, b.hdp2) AS hdp2,
 			b.odds,
 			b.status,
 			b.stake,
@@ -856,7 +915,7 @@ BEGIN
 			b.winlostdate,
 			CASE
 				WHEN b.bettype BETWEEN 1501 AND 1599 THEN b.transdesc
-				ELSE b.betteam 
+				ELSE b.betteam
 			END AS betteam,
 			b.liveindicator,
 			b.livehomescore,
@@ -872,41 +931,69 @@ BEGIN
 			CAST('''' AS NVARCHAR(50)) AS showtime,
 			b.betcheck,
 			ISNULL(b.transdesc, '''') AS transdesc,
-			--USD
-			b.stake*e.USD stakeUSD,'
-			+ @Winlost + '*e.USD WinlostUSD,'
-			+ @LicenseeWL + '*e.USD LicenseeWLUSD,
-			b.comm*e.USD commUSD,
-			b.playercomm*e.USD AS PlayerCommUSD,
-			--EUR
-			b.stake*e.EUR stakeEUR,'
-			+ @Winlost + '*e.EUR WinlostEUR,'
-			+ @LicenseeWL + '*e.EUR LicenseeWLEUR,
-			b.comm*e.EUR commEUR,
-			b.playercomm*e.EUR AS PlayerCommEUR,
-			--GBP
-			b.stake*e.GBP stakeGBP,'
-			+ @Winlost + '*e.GBP WinlostGBP,'
-			+ @LicenseeWL + '*e.GBP LicenseeWLGBP,
-			b.comm*e.GBP commGBP,
-			b.playercomm*e.GBP AS PlayerCommGBP
+			CASE
+				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
+				ELSE 0
+			END AS OriginalStake,
+			CASE
+				WHEN b.stake <> 0 THEN -1
+				ELSE 0
+			END AS OriginalBetType,
+			ISNULL(b.betdaqid, -1) AS BetdaqId,
+			ISNULL(b.ExtraInfo, '''') AS ExtraInfo,
+			-- USD
+			b.stake * e.USD stakeUSD,'
+			+ @Winlost + ' * e.USD WinlostUSD,'
+			+ @LicenseeWL + ' * e.USD LicenseeWLUSD,
+			b.comm * e.USD commUSD,
+			b.playercomm * e.USD AS PlayerCommUSD,
+			CASE
+				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
+				ELSE 0
+			END * e.USD AS OriginalStakeUSD,
+			-- EUR
+			b.stake * e.EUR stakeEUR,'
+			+ @Winlost + ' * e.EUR WinlostEUR,'
+			+ @LicenseeWL + ' * e.EUR LicenseeWLEUR,
+			b.comm * e.EUR commEUR,
+			b.playercomm * e.EUR AS PlayerCommEUR,
+			CASE
+				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
+				ELSE 0
+			END * e.EUR AS OriginalStakeEUR,
+			-- GBP
+			b.stake * e.GBP stakeGBP,'
+			+ @Winlost + ' * e.GBP WinlostGBP,'
+			+ @LicenseeWL + ' * e.GBP LicenseeWLGBP,
+			b.comm * e.GBP commGBP,
+			b.playercomm * e.GBP AS PlayerCommGBP,
+			CASE
+				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
+				ELSE 0
+			END * e.GBP AS OriginalStakeGBP
 		FROM
 			dbo.bettrans14 b WITH (NOLOCK) 
 			INNER JOIN dbo.customer c WITH (NOLOCK) ON b.custid = c.custid
 			INNER JOIN #TempAg ag ON b.recommend = ag.custid AND b.currency = ag.Currency
 			INNER JOIN #TempExchange e ON  e.exchangeid = b.currency' + CHAR(13) +
-			'INNER JOIN #SportBettype sbt ON sbt.Bettype=b.bettype' + CHAR(13) +
-		CASE WHEN @Product = 'BA' THEN 'INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction BA WITH (NOLOCK) ON b.transid = BA.transid'	
-								ELSE ''
-								END + CHAR(13) +
+			'INNER JOIN #SportBettype sbt ON sbt.Bettype = b.bettype' + CHAR(13) +
+			CASE
+				WHEN @Product = 'BA' THEN 'INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction BA WITH (NOLOCK) ON b.transid = BA.transid'	
+				ELSE ''
+			END + CHAR(13) +
 		'WHERE
 			b.winlostdate = ''' + CAST(@wldate AS VARCHAR(50)) + '''' + CHAR(13) +
-			'AND b.status=''' + CAST(@status AS VARCHAR(15)) + '''' + CHAR(13) +
+			'AND b.status = ''' + CAST(@status AS VARCHAR(15)) + '''' + CHAR(13) +
 			' AND b.bettype NOT IN (9,29,10)
 			AND b.ruben = 1' + CHAR(13) +
-			CASE WHEN @Product='SB' THEN 'AND b.tpositiontaking<>0'
-									ELSE ''
-									END + CHAR(13)
+			CASE
+				WHEN @Product = 'SB' THEN 'AND b.tpositiontaking <> 0'
+				ELSE ''
+			END + CHAR(13)
 
 		INSERT INTO #BetData14 (
 			Oddsid,
@@ -946,21 +1033,28 @@ BEGIN
 			showtime,
 			betcheck,
 			transdesc,
+			OriginalStake,
+			OriginalBetType,
+			BetdaqId,
+			ExtraInfo,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
 			commUSD,
 			PlayerCommUSD,
+			OriginalStakeUSD,
 			stakeEUR,
 			WinlostEUR,
 			LicenseeWLEUR,
 			commEUR,
 			PlayerCommEUR,
+			OriginalStakeEUR,
 			stakeGBP,
 			WinlostGBP,
 			LicenseeWLGBP,
 			commGBP,
-			PlayerCommGBP)
+			PlayerCommGBP,
+			OriginalStakeGBP)
 		EXEC (@sql)
 
 		-- Update LicenseeWL with LicenseeBATransaction table
@@ -989,7 +1083,7 @@ BEGIN
 			awayID = m.awayid,
 			betstatus = m.betstatus,
 			IsNeutral = m.IsNeutral,
-			showtime = CASE 
+			showtime = CASE
 							WHEN b.bettype BETWEEN 1101 AND 1199 THEN ISNULL(m.showtime, '')
 							WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 							ELSE ''
@@ -1027,7 +1121,7 @@ BEGIN
 
 		-- Insert and drop temp table
 		INSERT INTO #Data
-		SELECT 
+		SELECT
 			sporttype,
 			username,
 			nickname,
@@ -1064,21 +1158,28 @@ BEGIN
 			showtime,
 			betcheck,
 			transdesc,
+			OriginalStake,
+			OriginalBetType,
+			BetdaqId,
+			ExtraInfo,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
 			commUSD,
 			PlayerCommUSD,
+			OriginalStakeUSD,
 			stakeEUR,
 			WinlostEUR,
 			LicenseeWLEUR,
 			commEUR,
 			PlayerCommEUR,
+			OriginalStakeEUR,
 			stakeGBP,
 			WinlostGBP,
 			LicenseeWLGBP,
 			commGBP,
-			PlayerCommGBP
+			PlayerCommGBP,
+			OriginalStakeGBP
 		FROM #BetData14
 	
 		DROP TABLE #BetData14

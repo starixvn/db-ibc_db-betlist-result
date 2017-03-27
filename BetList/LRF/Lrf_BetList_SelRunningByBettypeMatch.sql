@@ -35,8 +35,8 @@ AS
 		- 20111212@Jim: change condition bettype<19000
 		- 20111229@Jim: change the way to get odds/oddstype/betteam to web dev
 		- 20120214@Jim: change to use  table ExchangeDaily by use function Lrf_f_GetExchangeDaily
-		- 20120706@Jim: get sporttype for Outright 
-		- 20120726@Jim: add playercomm value 
+		- 20120706@Jim: get sporttype for Outright
+		- 20120726@Jim: add playercomm value
 		- 20120817@Henry: add live casino
 		- 20121004@Jim: replace @currencyname input param by @currencyID
 		- 20130411@Jim: support base currency USD
@@ -44,11 +44,12 @@ AS
 		- 20140925@Jim: restrict Virtual Horse Racing bettype (hot fix  #22012)
 		- 20141111@Winnie: change from LicenseeCust to f_SelLicenseeCust 
 		- 20150124@Winnie: Add base currency GBP
-		- 20150414@Jim: support betradar 
+		- 20150414@Jim: support betradar
 		- 20150630@Jim: remove BA ticket
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20161003@Kos: Remove Live Casino code
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170324@Kos: Support CashOut [#Redmine: 71963]
 */
 
 BEGIN
@@ -108,7 +109,11 @@ BEGIN
 		PlayerComm		MONEY,
 		RefNo			BIGINT,
 		ShowTime		NVARCHAR(50), -- table - shoe - hand of Live Casino
-		BetCheck		NVARCHAR(50)
+		BetCheck		NVARCHAR(50),
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000),
+		OriginalStake	MONEY,
+		OriginalBetType	SMALLINT
 	)
 
 	IF @BetType = 10
@@ -145,7 +150,11 @@ BEGIN
 			b.playercomm,
 			b.refno,
 			'' AS ShowTime,
-			'' AS betcheck
+			'' AS betcheck,
+			-1 AS BetdaqId,
+			'' AS ExtraInfo,
+			0 AS OriginalStake,
+			0 AS OriginalBetType
 		FROM 
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
@@ -197,9 +206,20 @@ BEGIN
 			b.playercomm,
 			b.refno,
 			ISNULL(m.showtime,'') AS showtime,
-			b.betcheck
-		FROM 
-			dbo.bettrans AS b WITH (NOLOCK) 
+			b.betcheck,
+			ISNULL(b.betdaqid, -1) AS BetdaqId,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			CASE
+				WHEN b.ExtraInfo LIKE '%p25%' THEN
+					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
+				ELSE 0
+			END AS OriginalStake,
+			CASE
+				WHEN b.stake <> 0 THEN -1
+				ELSE 0
+			END AS OriginalBetType
+		FROM
+			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE
 			b.matchid = @MatchId
@@ -209,8 +229,8 @@ BEGIN
 			AND b.statusID IN (0, 1)
 			AND b.bettype NOT IN (SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 			AND ((@LiveIndicator = -1)
-				OR (@LiveIndicator = 0 AND b.Liveindicator = 0)
-				OR (@LiveIndicator = 1 AND b.Liveindicator = 1))
+				OR (@LiveIndicator = 0 AND b.liveindicator = 0)
+				OR (@LiveIndicator = 1 AND b.liveindicator = 1))
 			AND ((@BetTeam = '')
 				OR (@BetTeam <> '' AND b.betteam = @BetTeam))
 			AND b.tpositiontaking <> 0
@@ -236,21 +256,24 @@ BEGIN
 		FROM #Data
 	END
 
-	SELECT A.* 
+	SELECT A.*
 	FROM
 		(
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY b.status, b.transid) AS RowNum,
-				SUBSTRING(c.username2, CHARINDEX('$',c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
+				SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
 				b.*,
 				b.Stake * e.USD AS StakeUSD,
 				b.Stake * e.EUR AS StakeEUR,
 				b.Stake * e.GBP AS StakeGBP,
 				b.PlayerComm * e.USD AS PlayerCommUSD,
 				b.PlayerComm * e.EUR AS PlayerCommEUR,
-				b.PlayerComm * e.GBP AS PlayerCommGBP
+				b.PlayerComm * e.GBP AS PlayerCommGBP,
+				b.OriginalStake * e.USD AS OriginalStakeUSD,
+				b.OriginalStake * e.EUR AS OriginalStakeEUR,
+				b.OriginalStake * e.GBP AS OriginalStakeGBP
 			FROM #Data AS b
-				INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.custid 
+				INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.custid
 				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) e ON e.exchangeid = b.currency
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd

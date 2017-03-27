@@ -38,19 +38,20 @@ AS
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160919@Kos: Add column transdesc to support PH AIO phase 2b [#Redmine: 62878]
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170331@Kos: Support CashOut [#Redmine: 71963]
 
 	Parameter's Explanation:
-		- @bettypes: 
+		- @BetType: 
 			+ HDP: 1, 7, 1303, 17, 183
 			+ Others: NOT IN 1,3,7,8,17,18,178,183,1303,1306, 401, 402, 403, 404
 			+ OU: 3, 18, 8, 178, 1306, 401, 402, 403, 404
 			+ ALL: <=19000
-		- @transid: lastest transid 
+		- @TransId: lastest transid 
 		- @LimitRowCount: max record return (10,20,30)
 		- @SportID = 999  -> Parlay and System Parlay
 		- @LiveIndicator ( 0 : non live, 1 : live , 2 : mix non live & live)
-		- @includebetfrom: 1: show column betfrom, 0: hide
-		- @betfrom:  0: All
+		- @IncludeBetFrom: 1: show column betfrom, 0: hide
+		- @BetFrom:  0: All
 					 1: Asia (d)
 					 2: New Asia (a)
 					 3: Euro (e) and Euro 12bet (u)
@@ -144,143 +145,159 @@ BEGIN
 	END
 
 	SELECT @SQL = @SQL + 'SELECT TOP (' + CONVERT(VARCHAR(10), @LimitRowCount) + ')' + CHAR(13) +
-		'0 AS sporttype,' + CHAR(13) +
-		'b.matchid,' + CHAR(13) +
-		'0 AS leagueid,' + CHAR(13) +
-		'b.Username,' + CHAR(13) +
-		'SUBSTRING(b.username2, CHARINDEX(''$'', b.username2) + 1,LEN(b.username2) - CHARINDEX(''$'',b.username2)) AS nickname,'+ CHAR(13) +
-		'b.bettype,' + CHAR(13) +
-		'b.transid,' + CHAR(13) +
-		'b.refno,' + CHAR(13) +
-		'b.transdate,' + CHAR(13) +
-		''''' AS matchcode,' + CHAR(13) +
-		'0 AS homeid,' + CHAR(13) +
-		'0 AS awayid,' + CHAR(13) +
-		''''' AS race,' + CHAR(13) +
-		'b.betid,' + CHAR(13) +
-		'b.livehomescore,' + CHAR(13) +
-		'b.liveawayscore,' + CHAR(13) +
-		'b.liveindicator,' + CHAR(13) +
-		'b.hdp1,' + CHAR(13) +
-		'b.hdp2,' + CHAR(13) +
-		'b.odds,' + CHAR(13) +
-		CASE
-			WHEN @BaseCurrency = 'USD' THEN 'b.actual_stake * ex.USD actual_stakeUSD,'
-			WHEN @BaseCurrency = 'EUR' THEN 'b.actual_stake * ex.EUR actual_stakeEUR,'
-			WHEN @BaseCurrency = 'GBP' THEN 'b.actual_stake * ex.GBP actual_stakeGBP,'
-			ELSE 'b.actual_stake ' + 'actual_stake' + @BaseCurrency + ','
-		END + CHAR(13) +
-		CASE
-			WHEN @BaseCurrency = 'USD' THEN 'b.stake * ex.USD StakeUSD,'
-			WHEN @BaseCurrency = 'EUR' THEN 'b.stake * ex.EUR StakeEUR,'
-			WHEN @BaseCurrency = 'GBP' THEN 'b.stake * ex.GBP StakeGBP,'
-			ELSE 'b.stake ' + 'Stake' + @BaseCurrency + ','
-		END + CHAR(13) +
-		CASE WHEN @includebetfrom = 1 THEN 'betfrom,'
-			ELSE ''
-		END + CHAR(13) +
-		'''running'' AS status,' + CHAR(13) +
-		'b.betteam,' + CHAR(13) +
-		'CONVERT(BIT,0) AS isNeutral,' + CHAR(13) +
-		'b.OddsType,' + CHAR(13) +
-		'b.currency AS currencyid,' + CHAR(13) +
-		''''' AS currencyname,' + CHAR(13) +
-		'b.SpecialLevel,' + CHAR(13) +
-		'ISNULL(b.betcheck, '''') AS BetCheck,' + CHAR(13) +
-		'ISNULL(b.transdesc, '''') AS TransDesc' + CHAR(13) +
-		'FROM dbo.bettrans_lrf_betRunning b WITH (NOLOCK) ' + CHAR(13) +
-		'INNER JOIN Lrf_f_GetExchangeDaily(CONVERT(VARCHAR(10), GETDATE(), 111),CONVERT(VARCHAR(10), GETDATE(), 111)) ex on ex.exchangeid = b.currency ' + CHAR(13) +
-		'INNER JOIN #TempAg a WITH (NOLOCK) ON b.Recommend = a.CustId AND b.Currency = a.Currency'+ CHAR(13) +
-		CASE
-			WHEN @SportID > 0 AND @Sportid <> 999 THEN 'INNER JOIN @Match m on b.matchid = m.matchid '
-			ELSE ' '
-		END + CHAR(13) +
+			'0 AS sporttype,' + CHAR(13) +
+			'b.matchid,' + CHAR(13) +
+			'0 AS leagueid,' + CHAR(13) +
+			'b.Username,' + CHAR(13) +
+			'SUBSTRING(b.username2, CHARINDEX(''$'', b.username2) + 1,LEN(b.username2) - CHARINDEX(''$'',b.username2)) AS nickname,'+ CHAR(13) +
+			'b.bettype,' + CHAR(13) +
+			'b.transid,' + CHAR(13) +
+			'b.refno,' + CHAR(13) +
+			'b.transdate,' + CHAR(13) +
+			''''' AS matchcode,' + CHAR(13) +
+			'0 AS homeid,' + CHAR(13) +
+			'0 AS awayid,' + CHAR(13) +
+			''''' AS race,' + CHAR(13) +
+			'b.betid,' + CHAR(13) +
+			'b.livehomescore,' + CHAR(13) +
+			'b.liveawayscore,' + CHAR(13) +
+			'b.liveindicator,' + CHAR(13) +
+			'b.hdp1,' + CHAR(13) +
+			'b.hdp2,' + CHAR(13) +
+			'b.odds,' + CHAR(13) +
+			CASE
+				WHEN @BaseCurrency = 'USD' THEN 'b.actual_stake * ex.USD actual_stakeUSD,'
+				WHEN @BaseCurrency = 'EUR' THEN 'b.actual_stake * ex.EUR actual_stakeEUR,'
+				WHEN @BaseCurrency = 'GBP' THEN 'b.actual_stake * ex.GBP actual_stakeGBP,'
+				ELSE 'b.actual_stake ' + 'actual_stake' + @BaseCurrency + ','
+			END + CHAR(13) +
+			CASE
+				WHEN @BaseCurrency = 'USD' THEN 'b.stake * ex.USD StakeUSD,'
+				WHEN @BaseCurrency = 'EUR' THEN 'b.stake * ex.EUR StakeEUR,'
+				WHEN @BaseCurrency = 'GBP' THEN 'b.stake * ex.GBP StakeGBP,'
+				ELSE 'b.stake ' + 'Stake' + @BaseCurrency + ','
+			END + CHAR(13) +
+			CASE WHEN @includebetfrom = 1 THEN 'betfrom,'
+				ELSE ''
+			END + CHAR(13) +
+			'''running'' AS status,' + CHAR(13) +
+			'b.betteam,' + CHAR(13) +
+			'CONVERT(BIT,0) AS isNeutral,' + CHAR(13) +
+			'b.OddsType,' + CHAR(13) +
+			'b.currency AS currencyid,' + CHAR(13) +
+			''''' AS currencyname,' + CHAR(13) +
+			'b.SpecialLevel,' + CHAR(13) +
+			'ISNULL(b.betcheck, '''') AS BetCheck,' + CHAR(13) +
+			'ISNULL(b.transdesc, '''') AS TransDesc,' + CHAR(13) +
+			'ISNULL(b.betdaqid, -1) AS BetdaqId,' + CHAR(13) +
+			'ISNULL(b.ExtraInfo, '''') AS ExtraInfo,' + CHAR(13) +
+			'CASE
+				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
+				ELSE 0
+			END ' + CASE
+						WHEN @BaseCurrency = 'USD' THEN '* ex.USD AS OriginalStakeUSD'
+						WHEN @BaseCurrency = 'EUR' THEN '* ex.EUR AS OriginalStakeEUR'
+						WHEN @BaseCurrency = 'GBP' THEN '* ex.GBP AS OriginalStakeGBP'
+						ELSE 'AS OriginalStake' + @BaseCurrency
+					END + ',' + CHAR(13) +
+			'CASE
+				WHEN b.stake <> 0 THEN -1
+				ELSE 0
+			END AS OriginalBetType
+		FROM dbo.bettrans_lrf_betRunning b WITH (NOLOCK) ' + CHAR(13) +
+			'INNER JOIN Lrf_f_GetExchangeDaily(CONVERT(VARCHAR(10), GETDATE(), 111),CONVERT(VARCHAR(10), GETDATE(), 111)) ex ON ex.exchangeid = b.currency ' + CHAR(13) +
+			'INNER JOIN #TempAg a WITH (NOLOCK) ON b.Recommend = a.CustId AND b.Currency = a.Currency'+ CHAR(13) +
+			CASE
+				WHEN @SportID > 0 AND @Sportid <> 999 THEN 'INNER JOIN @Match m on b.matchid = m.matchid '
+				ELSE ' '
+			END + CHAR(13) +
 		'WHERE Transid >' + CONVERT(VARCHAR(20), @transid) + '  ' + CHAR(13) +
-		'AND Statusid = 0' + CHAR(13) +
-		CASE
-			WHEN @betfrom = 1 THEN 'AND betfrom=''d'''
-			WHEN @betfrom = 2 THEN 'AND betfrom=''a'''
-			WHEN @betfrom = 3 THEN 'AND betfrom IN (''e'',''u'')'
-			WHEN @betfrom = 4 THEN 'AND betfrom=''m'''
-			WHEN @betfrom = 5 THEN 'AND betfrom IN (''s'',''l'')'
-			ELSE ''
-		END + CHAR(13) +
-		CASE
-			WHEN @BaseCurrency = 'USD' THEN
-				CASE
-					WHEN @MinStake = 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.USD <= ' + CONVERT(VARCHAR(20), @MaxStake)
-					WHEN @MinStake > 0 AND @MaxStake = 0 THEN 'AND b.stake * ex.USD >= ' + CONVERT(VARCHAR(20), @MinStake)
-					WHEN @MinStake > 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.USD BETWEEN ' + CONVERT(VARCHAR(20), @MinStake) +' AND ' + CONVERT(VARCHAR(20),@MaxStake)
-					ELSE ' '
-				END
-			WHEN @BaseCurrency = 'EUR' THEN 
-				CASE
-					WHEN @MinStake = 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.EUR <= ' + CONVERT(VARCHAR(20),@MaxStake)
-					WHEN @MinStake > 0 AND @MaxStake = 0 THEN 'AND b.stake * ex.EUR >= ' + CONVERT(VARCHAR(20),@MinStake)
-					WHEN @MinStake > 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.EUR BETWEEN ' + CONVERT(VARCHAR(20),@MinStake) +' AND ' + CONVERT(VARCHAR(20),@MaxStake)
-					ELSE ' '
-				END
-			WHEN @BaseCurrency = 'GBP' THEN 
-				CASE
-					WHEN @MinStake = 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.GBP <= ' + CONVERT(VARCHAR(20),@MaxStake)
-					WHEN @MinStake > 0 AND @MaxStake = 0 THEN 'AND b.stake * ex.GBP >= ' + CONVERT(VARCHAR(20),@MinStake)
-					WHEN @MinStake > 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.GBP BETWEEN ' + CONVERT(varchar(20),@MinStake) +' AND ' + CONVERT(varchar(20),@MaxStake)
-					ELSE ' '
-				END
-			ELSE
-				CASE
-					WHEN @MinStake = 0 AND @MaxStake > 0 THEN 'AND b.stake <= ' + CONVERT(VARCHAR(20),@MaxStake)
-					WHEN @MinStake > 0 AND @MaxStake = 0 THEN 'AND b.stake >= ' + CONVERT(VARCHAR(20),@MinStake)
-					WHEN @MinStake > 0 AND @MaxStake > 0 THEN 'AND b.stake BETWEEN ' + CONVERT(VARCHAR(20),@MinStake) +' AND ' + CONVERT(VARCHAR(20),@MaxStake)
-					ELSE ' '
-				END 
-		END + CHAR(13) +
-		CASE WHEN @Currency <> 'ALL' THEN 'AND b.currency IN (' + @Currency + ') ' ELSE ' ' END + CHAR(13) + 
-		CASE WHEN @SpecialLevel <> 'ALL' THEN 'AND SpecialLevel IN (' + @SpecialLevel + ')' ELSE ' ' END+ CHAR(13) + 
-		CASE
-			WHEN @SportID > 0 AND @SportID < 999 AND @LiveIndicator IN (0,1) THEN 'AND Liveindicator = '+CONVERT(VARCHAR(10),@LiveIndicator) 
-			WHEN @SportID > 0 AND @SportID < 999 AND @LiveIndicator = 2 THEN 'AND b.bettype=9 AND b.Livehomescore=' + CONVERT(VARCHAR(10),@LiveIndicator)
-			WHEN @SportID > 0 AND @Sportid <> 999 AND @LiveIndicator = 3 THEN'AND ( b.bettype < 31 OR b.bettype BETWEEN 121 AND 999 OR (b.Bettype BETWEEN 1301 AND 1399) )'
-			ELSE ' '
-		END + CHAR(13) +
-		CASE 
-			WHEN @SportID = 0 THEN 
-				CASE
-					WHEN @LiveIndicator = 3 THEN 'AND ( b.bettype < 31 OR b.bettype BETWEEN 121 AND 999 OR (b.Bettype BETWEEN 1301 AND 1399))' 
-					WHEN @LiveIndicator = 2 THEN 'AND b.bettype = 9 AND b.Livehomescore=' + CONVERT(VARCHAR(10),@LiveIndicator) + ' '
-					WHEN @LiveIndicator IN (0,1) THEN 
-						'AND 
-							(
-								(Liveindicator=' + CONVERT(VARCHAR(10),@LiveIndicator) + 
-									' AND 
-										(
-											(b.bettype < 31 AND b.bettype NOT IN (9,29)) 
-											OR b.bettype BETWEEN 121 AND 999
-											OR (b.Bettype BETWEEN 1301 AND 1399)
-										)
-								) ' +
-								'OR 
-								(b.bettype IN (9,29) AND b.Livehomescore=' + CONVERT(VARCHAR(10),@LiveIndicator) + ')
-							) '
-					ELSE ' '
-				END
-			ELSE ' ' 
-		END + CHAR(13) +
-		CASE
-			WHEN @bettype = 'HDP' AND @SportID <> 999 THEN 'AND  b.bettype IN (1, 7, 1303, 17, 183)'
-			WHEN @bettype = 'OU' AND @SportID <> 999 THEN ' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404)'
-			WHEN @bettype = 'Others' AND @SportID <> 999 THEN ' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404)'
-			ELSE ' '
-		END + CHAR(13)+
-		CASE @SportID
-			WHEN 999 THEN 
-				CASE @LiveIndicator 
-					WHEN 3 THEN 'AND b.bettype IN (9,29) '
-					WHEN 2 THEN 'AND b.bettype = 9 AND b.Livehomescore = ' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
-					ELSE 'AND b.bettype IN (9, 29) AND b.Livehomescore = ' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
-				END
-			ELSE ''
-		END + CHAR(13) +
+			'AND Statusid = 0' + CHAR(13) +
+			CASE
+				WHEN @betfrom = 1 THEN 'AND betfrom=''d'''
+				WHEN @betfrom = 2 THEN 'AND betfrom=''a'''
+				WHEN @betfrom = 3 THEN 'AND betfrom IN (''e'',''u'')'
+				WHEN @betfrom = 4 THEN 'AND betfrom=''m'''
+				WHEN @betfrom = 5 THEN 'AND betfrom IN (''s'',''l'')'
+				ELSE ''
+			END + CHAR(13) +
+			CASE
+				WHEN @BaseCurrency = 'USD' THEN
+					CASE
+						WHEN @MinStake = 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.USD <= ' + CONVERT(VARCHAR(20), @MaxStake)
+						WHEN @MinStake > 0 AND @MaxStake = 0 THEN 'AND b.stake * ex.USD >= ' + CONVERT(VARCHAR(20), @MinStake)
+						WHEN @MinStake > 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.USD BETWEEN ' + CONVERT(VARCHAR(20), @MinStake) +' AND ' + CONVERT(VARCHAR(20),@MaxStake)
+						ELSE ' '
+					END
+				WHEN @BaseCurrency = 'EUR' THEN 
+					CASE
+						WHEN @MinStake = 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.EUR <= ' + CONVERT(VARCHAR(20),@MaxStake)
+						WHEN @MinStake > 0 AND @MaxStake = 0 THEN 'AND b.stake * ex.EUR >= ' + CONVERT(VARCHAR(20),@MinStake)
+						WHEN @MinStake > 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.EUR BETWEEN ' + CONVERT(VARCHAR(20),@MinStake) +' AND ' + CONVERT(VARCHAR(20),@MaxStake)
+						ELSE ' '
+					END
+				WHEN @BaseCurrency = 'GBP' THEN 
+					CASE
+						WHEN @MinStake = 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.GBP <= ' + CONVERT(VARCHAR(20),@MaxStake)
+						WHEN @MinStake > 0 AND @MaxStake = 0 THEN 'AND b.stake * ex.GBP >= ' + CONVERT(VARCHAR(20),@MinStake)
+						WHEN @MinStake > 0 AND @MaxStake > 0 THEN 'AND b.stake * ex.GBP BETWEEN ' + CONVERT(varchar(20),@MinStake) +' AND ' + CONVERT(varchar(20),@MaxStake)
+						ELSE ' '
+					END
+				ELSE
+					CASE
+						WHEN @MinStake = 0 AND @MaxStake > 0 THEN 'AND b.stake <= ' + CONVERT(VARCHAR(20),@MaxStake)
+						WHEN @MinStake > 0 AND @MaxStake = 0 THEN 'AND b.stake >= ' + CONVERT(VARCHAR(20),@MinStake)
+						WHEN @MinStake > 0 AND @MaxStake > 0 THEN 'AND b.stake BETWEEN ' + CONVERT(VARCHAR(20),@MinStake) +' AND ' + CONVERT(VARCHAR(20),@MaxStake)
+						ELSE ' '
+					END 
+			END + CHAR(13) +
+			CASE WHEN @Currency <> 'ALL' THEN 'AND b.currency IN (' + @Currency + ') ' ELSE ' ' END + CHAR(13) +
+			CASE WHEN @SpecialLevel <> 'ALL' THEN 'AND SpecialLevel IN (' + @SpecialLevel + ')' ELSE ' ' END+ CHAR(13) +
+			CASE
+				WHEN @SportID > 0 AND @SportID < 999 AND @LiveIndicator IN (0, 1) THEN 'AND Liveindicator = '+CONVERT(VARCHAR(10),@LiveIndicator)
+				WHEN @SportID > 0 AND @SportID < 999 AND @LiveIndicator = 2 THEN 'AND b.bettype = 9 AND b.Livehomescore=' + CONVERT(VARCHAR(10),@LiveIndicator)
+				WHEN @SportID > 0 AND @Sportid <> 999 AND @LiveIndicator = 3 THEN'AND ( b.bettype < 31 OR b.bettype BETWEEN 121 AND 999 OR (b.Bettype BETWEEN 1301 AND 1399) )'
+				ELSE ' '
+			END + CHAR(13) +
+			CASE 
+				WHEN @SportID = 0 THEN 
+					CASE
+						WHEN @LiveIndicator = 3 THEN 'AND ( b.bettype < 31 OR b.bettype BETWEEN 121 AND 999 OR (b.Bettype BETWEEN 1301 AND 1399))' 
+						WHEN @LiveIndicator = 2 THEN 'AND b.bettype = 9 AND b.Livehomescore=' + CONVERT(VARCHAR(10),@LiveIndicator) + ' '
+						WHEN @LiveIndicator IN (0,1) THEN 
+							'AND 
+								(
+									(Liveindicator=' + CONVERT(VARCHAR(10),@LiveIndicator) +
+										' AND 
+											(
+												(b.bettype < 31 AND b.bettype NOT IN (9,29))
+												OR b.bettype BETWEEN 121 AND 999
+												OR (b.Bettype BETWEEN 1301 AND 1399)
+											)
+									) ' +
+									'OR 
+									(b.bettype IN (9,29) AND b.Livehomescore=' + CONVERT(VARCHAR(10),@LiveIndicator) + ')
+								) '
+						ELSE ' '
+					END
+				ELSE ' ' 
+			END + CHAR(13) +
+			CASE
+				WHEN @bettype = 'HDP' AND @SportID <> 999 THEN 'AND  b.bettype IN (1, 7, 1303, 17, 183)'
+				WHEN @bettype = 'OU' AND @SportID <> 999 THEN ' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404)'
+				WHEN @bettype = 'Others' AND @SportID <> 999 THEN ' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404)'
+				ELSE ' '
+			END + CHAR(13)+
+			CASE @SportID
+				WHEN 999 THEN 
+					CASE @LiveIndicator 
+						WHEN 3 THEN 'AND b.bettype IN (9,29) '
+						WHEN 2 THEN 'AND b.bettype = 9 AND b.Livehomescore = ' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
+						ELSE 'AND b.bettype IN (9, 29) AND b.Livehomescore = ' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
+					END
+				ELSE ''
+			END + CHAR(13) +
 		'ORDER BY transid DESC'
 
 	IF @debug = 1
