@@ -15,6 +15,7 @@ AS
 		- 20160725@Kos: Use inline function for SportBettypeMatrix
 		- 20160919@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170404@Kos: Support CashOut [#Redmine: 71963]
 */
 
 BEGIN
@@ -33,7 +34,7 @@ BEGIN
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 2, 3, 5)
-		AND BetType NOT BETWEEN 901 AND 910
+		AND BetType NOT BETWEEN 901 AND 920
 
 	DECLARE @Data TABLE (
 		Username		NVARCHAR(50),
@@ -95,7 +96,9 @@ BEGIN
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
-		OddsSpread		MONEY
+		OddsSpread		MONEY,
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	DECLARE @BetType INT
@@ -160,7 +163,7 @@ BEGIN
 			b.betfrom,
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
-			(b.winlost-b.actual_stake) AS WinLost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -175,7 +178,15 @@ BEGIN
 			b.winlostdate,
 			b.BetCheck,
 			ISNULL(b.transdesc, '') AS transdesc,
-			ISNULL(b.oddsspread, 0) AS OddsSpread
+			ISNULL(b.oddsspread, 0) AS OddsSpread,
+			CASE
+				WHEN s.ProductID = 1 THEN ISNULL(b.betdaqid, -1)
+				ELSE -1
+			END AS BetdaqId,
+			CASE
+				WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
+				ELSE ''
+			END AS ExtraInfo
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK) 
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -247,7 +258,9 @@ BEGIN
 			b.winlostdate,
 			b.BetCheck,
 			'' AS transdesc,
-			0 AS OddsSpread
+			0 AS OddsSpread,
+			-1 AS BetdaqId,
+			'' AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE b.matchid = 9
 			AND b.bettype = 9
@@ -321,7 +334,9 @@ BEGIN
 			b.winlostdate,
 			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc,
-			0 AS OddsSpread
+			0 AS OddsSpread,
+			-1 AS BetdaqId,
+			'' AS ExtraInfo
 		FROM dbo.bettrans b WITH(NOLOCK)
 		WHERE b.matchid = 29
 			AND bettype = 29
@@ -392,7 +407,9 @@ BEGIN
 			b.winlostdate,
 			b.BetCheck,
 			'' AS transdesc,
-			0 AS OddsSpread
+			0 AS OddsSpread,
+			-1 AS BetdaqId,
+			'' AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -413,7 +430,7 @@ BEGIN
 			odds.groupmatch AS race,
 			odds.eventdate,
 			b.virtualrate,
-			CASE WHEN b.currency2 IS NULL THEN CONVERT(BIT,0) ELSE CONVERT(BIT,1) END AS isShowOTExRate,
+			CASE WHEN b.currency2 IS NULL THEN CONVERT(BIT, 0) ELSE CONVERT(BIT, 1) END AS isShowOTExRate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
@@ -463,7 +480,9 @@ BEGIN
 			b.winlostdate,
 			b.BetCheck,
 			'' AS transdesc,
-			0 AS OddsSpread
+			0 AS OddsSpread,
+			-1 AS BetdaqId,
+			'' AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -550,20 +569,22 @@ BEGIN
 			b.winlostdate,
 			b.BetCheck,
 			'' AS transdesc,
-			0 AS OddsSpread
-		FROM dbo.bettrans AS b WITH (NOLOCK) 
+			0 AS OddsSpread,
+			-1 AS BetdaqId,
+			'' AS ExtraInfo
+		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
-			INNER JOIN @SportBettype AS s ON s.BetType = b.BetType 
+			INNER JOIN @SportBettype AS s ON s.BetType = b.BetType
 			LEFT JOIN (
 				SELECT
 					t.refno,
 					t.apositiontaking,
 					t.mpositiontaking,
 					t.spositiontaking,
-					f.apositiontaking apositiontaking2,
-					f.mpositiontaking mpositiontaking2,
-					f.spositiontaking spositiontaking2
+					f.apositiontaking AS apositiontaking2,
+					f.mpositiontaking AS mpositiontaking2,
+					f.spositiontaking AS spositiontaking2
 				FROM dbo.bettransm AS t WITH (NOLOCK)
 					INNER JOIN dbo.bettransm AS f WITH (NOLOCK) ON t.refno = f.refno
 				WHERE t.bettype = 1231 AND f.bettype = 1232
