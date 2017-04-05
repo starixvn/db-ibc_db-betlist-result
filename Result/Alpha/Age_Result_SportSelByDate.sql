@@ -10,7 +10,7 @@ AS
 	DB: DBAGE.bodb02
 	Original:
 	Revision:
-		- 20110307@Lukas: get more sporttype 152,153
+		- 20110307@Lukas: get more sporttype 152, 153
 		- 20110908@Sophia: Add Condition Where : OR (eventstatus = 'running' AND (mr.ishtcal=1 OR mr.calculate=1))
 		- 20111003@Sophia: Edit condition OR to show the row which have eventstatus IN ('running','closed')
 		- 20130712@Kathy: Hide sporttype in the "Sport" dropdown list since these sports have not launched yet.
@@ -23,12 +23,13 @@ AS
 		- 20151014@Sophia: Show internal match [#45531]
 		- 201600829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
+		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @toDate	DATETIME
+	DECLARE @toDate DATETIME
  
 	SELECT @toDate = DATEADD(s,-1, DATEADD(d, 1, @EventDate))
 
@@ -38,13 +39,13 @@ BEGIN
 	FROM dbo.sports WITH (NOLOCK)
 		INNER JOIN
 			(	SELECT matchid, eventdate, eventstatus, sporttype, leagueid
-				FROM dbo.match (NOLOCK)
+				FROM dbo.match WITH (NOLOCK)
 				UNION ALL
 				SELECT matchid, eventdate, eventstatus, sporttype, leagueid
-				FROM dbo.match14 (NOLOCK)
+				FROM dbo.match14 WITH (NOLOCK)
 			) match ON match.sporttype = sports.sporttype
-		LEFT JOIN dbo.match_remark AS mr ON match.matchid = mr.matchid
-		INNER JOIN dbo.league AS l WITH(NOLOCK) ON l.leagueid = match.leagueid
+		LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON match.matchid = mr.matchid
+		INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = match.leagueid
 		LEFT JOIN
 			(	SELECT DISTINCT MatchID
 				FROM dbo.ResultDetail WITH (NOLOCK)
@@ -53,7 +54,7 @@ BEGIN
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetail14 WITH (NOLOCK)
 				WHERE SettlementStatusID > 0
-			) SS ON match.Matchid = SS.MatchId AND match.sporttype = 5
+			) SS ON match.Matchid = SS.MatchId AND match.sporttype IN (2, 5)
 		LEFT JOIN
 			(	SELECT DISTINCT MatchID
 				FROM dbo.ResultDetail WITH (NOLOCK)
@@ -88,7 +89,7 @@ BEGIN
 		AND ( match.eventstatus NOT IN ('closed','running')
 			OR ( mr.IsPending = 1 AND match.eventstatus IN ('running','closed') )
 			OR ( mr.IsHTCal = 1 AND match.eventstatus ='running')
-			OR ( ISNULL(SS.MatchID, 0) <> 0 AND match.eventstatus = 'running')	-- condition for Sportting Solution show running Match but settled least one type
+			OR ( ISNULL(SS.MatchID, 0) <> 0 AND match.eventstatus = 'running')	-- condition for Sportting Solution, BAIO show running Match but settled least one type
 			OR ( ISNULL(BR.MatchID, 0) <> 0 AND match.eventstatus = 'running')	-- condition for BetRadar show running Match but settled least one type
 		)
 		AND sports.sporttype NOT IN (201, 162)

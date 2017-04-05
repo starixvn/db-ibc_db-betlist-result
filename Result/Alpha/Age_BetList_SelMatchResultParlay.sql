@@ -22,6 +22,7 @@ AS
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170209@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
+		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 */
 
 BEGIN
@@ -149,23 +150,30 @@ BEGIN
 			d.OtherInfo
 		FROM dbo.ResultDetail AS d WITH (NOLOCK)
 			INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
-			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f
-				ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
-		WHERE d.SettlementStatusID > 0
-			AND ((p.Sporttype = 5
-					AND CASE
-							WHEN p.Bettype NOT IN (1324) THEN 2
-							ELSE CASE
-									WHEN p.Bettype IN (1324)
-										AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(p.Betcheck,''), '8', ''), 2) THEN 4
-									ELSE 0
-								END
-						END = LEN(d.ResourceId))
-				OR (p.Sporttype = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08')
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceId LIKE f.ResourceID))
+			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+				ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+		WHERE ((p.SportType = 5
+				AND d.SettlementStatusID > 0
+				AND CASE
+						WHEN p.BetType NOT IN (1324) THEN 2
+						ELSE CASE
+								WHEN p.BetType IN (1324)
+									AND LEFT(d.ResourceId, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+								ELSE 0
+							END
+					END = LEN(d.ResourceId))
+			OR (p.SportType = 1
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceId NOT IN ('00', '01', '08')
+					OR (d.ResourceId = '08'
+						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND d.ResourceId LIKE f.ResourceID)
+			OR (p.SportType = 2
+				AND (LEN(d.ResourceId) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND (p.BetType NOT IN (606, 607, 613, 617)
+							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
 	-- Bettrans14 range
@@ -208,7 +216,7 @@ BEGIN
 						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
 						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
 						ELSE m.eventstatus
-					END 
+					END
 			END AS eventstatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
@@ -243,22 +251,30 @@ BEGIN
 			d.OtherInfo
 		FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
 			INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
-			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f
-				ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
-		WHERE d.SettlementStatusID > 0
-			AND ((p.Sporttype = 5
-					AND CASE WHEN p.Bettype NOT IN (1324) THEN 2
-							ELSE CASE
-									WHEN p.Bettype IN (1324)
-										AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(p.Betcheck,''), '8', ''), 2) THEN 4 
-									ELSE 0
-								END
-						END = LEN(d.ResourceId))
-				OR (p.Sporttype = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08')
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceId LIKE f.ResourceID))
+			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+				ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+		WHERE ((p.SportType = 5
+				AND d.SettlementStatusID > 0
+				AND CASE
+						WHEN p.BetType NOT IN (1324) THEN 2
+						ELSE CASE
+								WHEN p.BetType IN (1324)
+									AND LEFT(d.ResourceId, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+								ELSE 0
+							END
+					END = LEN(d.ResourceId))
+			OR (p.SportType = 1
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceId NOT IN ('00', '01', '08')
+					OR (d.ResourceId = '08'
+						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND d.ResourceId LIKE f.ResourceID)
+			OR (p.SportType = 2
+				AND (LEN(d.ResourceId) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND (p.BetType NOT IN (606, 607, 613, 617)
+							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
 	-- Bettrans_bk range
@@ -310,8 +326,8 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(mr.IsPending, 0) AS IsPending,
-			bm.Bettype, 
-			bm.Betcheck 
+			bm.Bettype,
+			bm.Betcheck
 		FROM
 			(
 				SELECT
@@ -336,23 +352,30 @@ BEGIN
 			d.OtherInfo
 		FROM DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 			INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
-			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f
-				ON	f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
-		WHERE d.SettlementStatusID > 0
-			AND ((p.Sporttype = 5
-					AND CASE
-							WHEN p.Bettype NOT IN (1324) THEN 2
-							ELSE CASE
-									WHEN p.Bettype IN (1324)
-										AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(p.Betcheck,''),'8',''),2) THEN 4
-									ELSE 0
-								END
-						END = LEN(d.ResourceId))
-				OR (p.Sporttype = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08')
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceId LIKE f.ResourceID))
+			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+				ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
+		WHERE ((p.SportType = 5
+				AND d.SettlementStatusID > 0
+				AND CASE
+						WHEN p.BetType NOT IN (1324) THEN 2
+						ELSE CASE
+								WHEN p.BetType IN (1324)
+									AND LEFT(d.ResourceId, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+								ELSE 0
+							END
+					END = LEN(d.ResourceId))
+			OR (p.SportType = 1
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceId NOT IN ('00', '01', '08')
+					OR (d.ResourceId = '08'
+						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND d.ResourceId LIKE f.ResourceID)
+			OR (p.SportType = 2
+				AND (LEN(d.ResourceId) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND (p.BetType NOT IN (606, 607, 613, 617)
+							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
 	SELECT DISTINCT * FROM @tmpParlay
@@ -367,6 +390,7 @@ BEGIN
 	ORDER BY MatchId,
 		ResourceId
 END
+
 
 
 

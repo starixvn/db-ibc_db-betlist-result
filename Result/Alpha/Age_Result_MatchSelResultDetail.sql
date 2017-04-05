@@ -13,14 +13,15 @@ AS
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
+		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @Sporttype TINYINT
+	DECLARE @SportType TINYINT
 
-	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @matchid)
+	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)
 	BEGIN
 		SELECT
 			m.sporttype,
@@ -58,7 +59,7 @@ BEGIN
 					END
 			END AS EventStatus,
 			m.showtime,
-			isnull(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+			ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 			m.goalrecord,
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
@@ -69,10 +70,12 @@ BEGIN
 			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
 		WHERE m.MatchId = @MatchId
 
-		SELECT @Sporttype = Sporttype
+		-- Get sport type
+		SELECT @SportType = sporttype
 		FROM dbo.match WITH (NOLOCK)
 		WHERE matchid = @MatchId
-		
+
+		-- Get result detail
 		SELECT
 			MatchId,
 			ResourceId,
@@ -83,8 +86,8 @@ BEGIN
 			OtherInfo
 		FROM dbo.ResultDetail WITH (NOLOCK)
 		WHERE MatchID = @MatchId
-			AND SettlementStatusID > 0
-			AND ((@Sporttype = 1
+			AND ((@SportType = 1
+					AND SettlementStatusID > 0
 					AND (ResourceId NOT IN ('00', '01', '08')
 						OR (ResourceId = '08'
 							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
@@ -95,7 +98,11 @@ BEGIN
 					AND ResourceID NOT LIKE '223%'
 					AND ResourceID NOT LIKE '224%'
 					AND ResourceID NOT LIKE '225%')
-				OR @Sporttype = 5 )
+				OR (@SportType = 5
+					AND SettlementStatusID > 0)
+				OR (@SportType = 2
+					AND (LEN(ResourceID) = 2
+						OR SettlementStatusID > 0)))
 		ORDER BY MatchID,
 			ResourceId
 	END
@@ -137,7 +144,7 @@ BEGIN
 					END
 			END AS EventStatus,
 			m.showtime,
-			isnull(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+			ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 			m.goalrecord,
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
@@ -148,10 +155,12 @@ BEGIN
 			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.matchID = m.matchid AND r.ResourceId = '00'
 		WHERE m.matchid = @MatchId
 
-		SELECT @Sporttype = sporttype
+		-- Get sport type
+		SELECT @SportType = sporttype
 		FROM dbo.match14 WITH (NOLOCK)
 		WHERE matchid = @MatchId
 
+		-- Get result detail
 		SELECT
 			MatchId,
 			ResourceId,
@@ -162,8 +171,8 @@ BEGIN
 			OtherInfo
 		FROM dbo.ResultDetail14 WITH (NOLOCK)
 		WHERE MatchID = @MatchId
-			AND SettlementStatusID > 0
-			AND ((@Sporttype = 1
+			AND ((@SportType = 1
+					AND SettlementStatusID > 0
 					AND (ResourceId NOT IN ('00', '01', '08')
 						OR (ResourceId = '08'
 							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
@@ -174,7 +183,11 @@ BEGIN
 					AND ResourceID NOT LIKE '223%'
 					AND ResourceID NOT LIKE '224%'
 					AND ResourceID NOT LIKE '225%')
-				OR @Sporttype = 5)
+				OR (@SportType = 5
+					AND SettlementStatusID > 0)
+				OR (@SportType = 2
+					AND (LEN(ResourceID) = 2
+						OR SettlementStatusID > 0)))
 		ORDER BY MatchID,
 			ResourceId
 	END
