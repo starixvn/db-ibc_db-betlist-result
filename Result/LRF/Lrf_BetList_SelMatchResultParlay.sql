@@ -15,14 +15,15 @@ AS
 	DB: DBEXT.bodb02
 	Original: Age_BetList_SelMatchResultParlay
 	Revisions:
-		- 20110907@Sophia: Add column IsHTCal, calculate for Pending result.
+		- 20110907@Sophia: Add column IsHTCal, calculate for Pending result
 		- 20110927@Henry: Add more columns
 		- 20131017@Jim: Turn to use GlobalShowTime for display the Kick-off-Time
-		- 20141021@Jim : Support to show Sportting Solution data detail 
+		- 20141021@Jim: Support to show Sportting Solution data detail
 		- 20140407@Sophia: Support BetRadar
 		- 20161007@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161011@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
+		- 20170418@Kos: Support Basketball AIO [#Redmine: 73033]
 */
 
 BEGIN
@@ -78,7 +79,7 @@ BEGIN
 	IF EXISTS ( SELECT 1
 				FROM dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @refno)
+				WHERE bm.refno = @RefNo)
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -133,7 +134,7 @@ BEGIN
 					bm.betcheck
 				FROM dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @refno ) AS bm
+				WHERE bm.refno = @RefNo ) AS bm
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
@@ -151,22 +152,34 @@ BEGIN
 			INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f
 				ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
-		WHERE d.SettlementStatusID > 0
-			AND ((p.Sporttype = 5
-					AND CASE WHEN p.Bettype NOT IN (1324) THEN 2 ELSE 
-							CASE WHEN p.Bettype IN (1324) AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(p.Betcheck,''),'8',''),2) THEN 4
-							ELSE 0 END END = LEN(d.ResourceId))
-				OR (p.Sporttype = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08')
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceId LIKE f.ResourceID))
+		WHERE ((p.SportType = 5								-- Tennis
+				AND d.SettlementStatusID > 0
+				AND CASE
+						WHEN p.BetType NOT IN (1324) THEN 2
+						ELSE CASE
+							WHEN p.BetType IN (1324)
+								AND LEFT(d.ResourceID, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+							ELSE 0
+						END
+					END = LEN(d.ResourceId))
+			OR (p.SportType = 1								-- Soccer
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceID NOT IN ('00', '01', '08')
+					OR (d.ResourceID = '08'
+						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND d.ResourceId LIKE f.ResourceID)
+			OR (p.SportType = 2								-- Basketball
+				AND (LEN(d.ResourceId) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND (p.BetType NOT IN (606, 607, 613, 617)
+							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
 	IF EXISTS (	SELECT 1
 				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @refno)
+				WHERE bm.refno = @RefNo)
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -221,7 +234,7 @@ BEGIN
 					bm.betcheck
 				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @refno ) bm
+				WHERE bm.refno = @RefNo ) bm
 			INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
@@ -238,23 +251,35 @@ BEGIN
 		FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
 			INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f
-				ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
-		WHERE d.SettlementStatusID > 0
-			AND ((p.Sporttype = 5
-					AND CASE WHEN p.BetType NOT IN (1324) THEN 2 ELSE 
-						CASE WHEN p.BetType IN (1324) AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(p.Betcheck,''),'8',''),2) THEN 4 
-						ELSE 0 END END = LEN(d.ResourceId))
-				OR (p.Sporttype = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08')
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceId LIKE f.ResourceID))
+				ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+		WHERE ((p.SportType = 5								-- Tennis
+				AND d.SettlementStatusID > 0
+				AND CASE
+						WHEN p.BetType NOT IN (1324) THEN 2
+						ELSE CASE
+							WHEN p.BetType IN (1324)
+								AND LEFT(d.ResourceID, 2) = LEFT(REPLACE (ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+							ELSE 0
+						END
+					END = LEN(d.ResourceId))
+			OR (p.SportType = 1								-- Soccer
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceID NOT IN ('00', '01', '08')
+					OR (d.ResourceID = '08'
+						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND d.ResourceId LIKE f.ResourceID)
+			OR (p.SportType = 2								-- Basketball
+				AND (LEN(d.ResourceId) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND (p.BetType NOT IN (606, 607, 613, 617)
+							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
 	IF EXISTS (	SELECT 1
 				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @refno)
+				WHERE bm.refno = @RefNo)
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -309,7 +334,7 @@ BEGIN
 					bm.betcheck
 				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @refno ) AS bm
+				WHERE bm.refno = @RefNo ) AS bm
 			INNER JOIN DBARC.bodb_archive.dbo.match_BK AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
@@ -326,17 +351,29 @@ BEGIN
 		FROM DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 			INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
-				ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
-		WHERE d.SettlementStatusID > 0
-			AND ((p.Sporttype = 5
-					AND CASE WHEN p.Bettype NOT IN (1324) THEN 2 ELSE 
-							CASE WHEN p.Bettype IN (1324) AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(p.Betcheck,''),'8',''),2) THEN 4 
-							ELSE 0 END END = LEN(d.ResourceId))
-				OR (p.Sporttype = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08') 
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceId LIKE F.ResourceID))
+				ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+		WHERE ((p.SportType = 5								-- Tennis
+				AND d.SettlementStatusID > 0
+				AND CASE
+						WHEN p.BetType NOT IN (1324) THEN 2
+						ELSE CASE
+							WHEN p.BetType IN (1324)
+								AND LEFT(d.ResourceID, 2) = LEFT(REPLACE (ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+							ELSE 0
+						END
+					END = LEN(d.ResourceId))
+			OR (p.SportType = 1								-- Soccer
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceID NOT IN ('00', '01', '08')
+					OR (d.ResourceID = '08'
+						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND d.ResourceId LIKE f.ResourceID)
+			OR (p.SportType = 2								-- Basketball
+				AND (LEN(d.ResourceId) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND (p.BetType NOT IN (606, 607, 613, 617)
+							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
 	--- GET DATA 

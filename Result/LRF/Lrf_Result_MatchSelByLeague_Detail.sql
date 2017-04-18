@@ -20,6 +20,7 @@ AS
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
+		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 
 	-------
 	EXEC Lrf_Result_MatchSelByLeague_Detail_xtest
@@ -29,7 +30,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @Sporttype TINYINT
+	DECLARE @SportType TINYINT
 
 	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)
 	BEGIN
@@ -67,23 +68,25 @@ BEGIN
 						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
 						ELSE m.eventstatus
 					END
-			END AS eventstatus,
+			END AS EventStatus,
 			m.showtime,
-			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
-			m.goalrecord,
-			ISNULL(m.homeid2, 0) AS homeid2, 
+			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
+			m.GoalRecord,
+			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(mr.IsPending, 0) AS IsPending
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
-		WHERE m.MatchId = @MatchId
+		WHERE m.matchid = @MatchId
 
-		SELECT @Sporttype = Sporttype
+		-- Get sport type
+		SELECT @SportType = Sporttype
 		FROM dbo.match WITH (NOLOCK)
 		WHERE matchid = @MatchId
-		
+
+		-- Get result detail
 		SELECT
 			MatchId,
 			ResourceId,
@@ -94,8 +97,8 @@ BEGIN
 			OtherInfo
 		FROM dbo.ResultDetail WITH (NOLOCK)
 		WHERE MatchID = @MatchId
-			AND SettlementStatusID > 0
-			AND ((@Sporttype = 1
+			AND ((@SportType = 1							-- Soccer
+					AND SettlementStatusID > 0
 					AND ResourceID NOT IN ('00', '01', '08')
 					AND ResourceID NOT LIKE '217%'
 					AND ResourceID NOT LIKE '216%'
@@ -104,7 +107,11 @@ BEGIN
 					AND ResourceID NOT LIKE '223%'
 					AND ResourceID NOT LIKE '224%'
 					AND ResourceID NOT LIKE '225%')
-				OR @Sporttype = 5)
+				OR (@SportType = 5							-- Tennis
+					AND SettlementStatusID > 0)
+				OR (@SportType = 2							-- Basketball
+					AND (LEN(ResourceID) = 2
+						OR SettlementStatusID > 0)))
 		ORDER BY MatchID,
 			ResourceID
 	END 
@@ -130,11 +137,11 @@ BEGIN
 			CASE m.Sporttype
 				WHEN 5 THEN
 					CASE ISNULL(r.SettlementStatusID, 0)
-						WHEN 1 THEN 'Refund' 
+						WHEN 1 THEN 'Refund'
 						WHEN 2 THEN 'Refund HT'
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
-					END 
+					END
 				ELSE
 					CASE
 						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
@@ -147,7 +154,7 @@ BEGIN
 			END AS eventstatus,
 			m.showtime,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
-			m.goalrecord,
+			m.GoalRecord,
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
@@ -157,10 +164,12 @@ BEGIN
 			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.matchID = m.matchid AND r.ResourceId = '00'
 		WHERE m.matchid = @MatchId
 
-		SELECT @Sporttype = Sporttype
+		-- Get sport type
+		SELECT @SportType = sporttype
 		FROM dbo.match14 WITH (NOLOCK)
-		WHERE MatchId = @MatchId
+		WHERE matchid = @MatchId
 
+		-- Get result detail
 		SELECT
 			MatchId,
 			ResourceId,
@@ -171,8 +180,8 @@ BEGIN
 			OtherInfo
 		FROM dbo.ResultDetail14 WITH (NOLOCK)
 		WHERE MatchID = @MatchId
-			AND SettlementStatusID > 0
-			AND ((@Sporttype = 1
+			AND ((@SportType = 1							-- Soccer
+					AND SettlementStatusID > 0
 					AND ResourceID NOT IN ('00', '01', '08')
 					AND ResourceID NOT LIKE '217%'
 					AND ResourceID NOT LIKE '216%'
@@ -181,7 +190,11 @@ BEGIN
 					AND ResourceID NOT LIKE '223%'
 					AND ResourceID NOT LIKE '224%'
 					AND ResourceID NOT LIKE '225%')
-				OR @Sporttype = 5)
+				OR (@SportType = 5							-- Tennis
+					AND SettlementStatusID > 0)
+				OR (@SportType = 2							-- Basketball
+					AND (LEN(ResourceID) = 2
+						OR SettlementStatusID > 0)))
 		ORDER BY MatchID,
 			ResourceID
 	END

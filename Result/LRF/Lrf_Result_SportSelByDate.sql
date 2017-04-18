@@ -20,9 +20,9 @@ AS
 	Revisions:
 		- 20101201@Jacob: Copy source code from Age_Result_SportSelByDate
 		- 20110803@Henry: get more sporttype 152, 153
-		- 20110908@Sophia: Add Condition Where : OR (eventstatus = 'running' AND (mr.ishtcal=1 OR mr.calculate=1)) 
+		- 20110908@Sophia: Add Condition Where : OR (eventstatus = 'running' AND (mr.ishtcal=1 OR mr.calculate=1))
 		- 20111004@Henry:  Edit condition OR to show the row which have mr.IsPending=1  AND (m.eventstatus = 'running' OR m.eventstatus = 'closed') 
-		- 20111025@Henry: Edit condition OR to show the rows which have eventstatus IN ('running','closed') 
+		- 20111025@Henry: Edit condition OR to show the rows which have eventstatus IN ('running','closed')
 		- 20120321@Henry: Fix bug to not show Casino
 		- 20120815@Jim: add live casino
 		- 20120906@Jim: add virtual sport
@@ -35,6 +35,7 @@ AS
 		- 20150810@Sophia: Hardcode to exclude ResultDetail of bettype 216, 217 for a temporary time [#40991]
 		- 20160829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161026@Kos: Separate bettrans and bettrans14 range, exclude Fast Market result [#Redmine: 56589]
+		- 20170418@Kos: Support Basketball AIO [#Redmine: 73033]
 
 	Sample test case:
 		exec Lrf_Result_SportSelByDate @EventDate='2013-10-06 00:00:00',@licenseeid=1
@@ -61,7 +62,7 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetail WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-				) AS ss ON m.matchid = ss.MatchID AND m.sporttype = 5
+				) AS ss ON m.matchid = ss.MatchID AND m.sporttype IN (2, 5)
 			LEFT JOIN (
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetail WITH (NOLOCK)
@@ -75,12 +76,12 @@ BEGIN
 						AND ResourceID NOT LIKE '224%'
 						AND ResourceID NOT LIKE '225%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
-		WHERE eventdate = @EventDate
+		WHERE m.eventdate = @EventDate
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
-				OR (mr.IsHTCal = 1 AND m.eventstatus ='running')
-				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution show running Match but settled least one type
-				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running'))  -- condition for BetRadar show running Match but settled least one type
+				OR (mr.IsHTCal = 1 AND m.eventstatus = 'running')
+				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution, BAIO show running Match but settled least one type
+				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar show running Match but settled least one type
 
 		-- Horse Racing
 		IF EXISTS (SELECT TOP 1 1 FROM #LicenseeProduct WHERE ProductID = 1)
@@ -122,7 +123,7 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetail14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-				) AS ss ON m.matchid = ss.MatchID AND m.sporttype = 5
+				) AS ss ON m.matchid = ss.MatchID AND m.sporttype IN (2, 5)
 			LEFT JOIN (
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetail14 WITH (NOLOCK)
@@ -136,11 +137,11 @@ BEGIN
 						AND ResourceID NOT LIKE '224%'
 						AND ResourceID NOT LIKE '225%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
-		WHERE eventdate = @EventDate
+		WHERE m.eventdate = @EventDate
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
-				OR (mr.IsHTCal = 1 AND m.eventstatus ='running')
-				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution show running Match but settled least one type
+				OR (mr.IsHTCal = 1 AND m.eventstatus = 'running')
+				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution, BAIO show running Match but settled least one type
 				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar show running Match but settled least one type
 
 		-- Horse Racing
