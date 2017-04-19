@@ -38,7 +38,7 @@ BEGIN
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
-	DECLARE @tmpParlay TABLE(
+	DECLARE @tmpParlay TABLE (
 		SportType		INT,
 		LeagueId		INT,
 		MatchId			INT,
@@ -85,8 +85,8 @@ BEGIN
 			SELECT
 				b.matchId,
 				b.bettype,
-				REPLACE (ISNULL(b.betcheck,''),'8','') AS Betcheck,
-				ISNULL(b.transdesc, '') AS transdesc
+				REPLACE (ISNULL(b.betcheck,''), '8', '') AS BetCheck,
+				ISNULL(b.transdesc, '') AS TransDesc
 			FROM dbo.bettransm AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE b.refno = @RefNo
@@ -135,12 +135,22 @@ BEGIN
 			bm.Bettype,
 			bm.Betcheck,
 			bm.transdesc
-		FROM BettransMix AS bm
+		FROM
+			(
+				SELECT
+					b.matchid,
+					b.bettype,
+					ISNULL(b.betcheck, '') AS BetCheck,
+					ISNULL(b.transdesc, '') AS TransDesc
+				FROM dbo.bettransm AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				WHERE b.refno = @RefNo
+			) AS bm
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
+			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
 
-		-- select from result detail
+		-- Get result detail
 		INSERT INTO @tmpResultDetail
 		SELECT
 			d.MatchId,
@@ -153,21 +163,29 @@ BEGIN
 		FROM dbo.ResultDetail AS d WITH (NOLOCK)
 			INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f
-				ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
-		WHERE d.SettlementStatusID > 0
-			AND ((p.Sporttype = 5
-					AND CASE WHEN p.Bettype NOT IN (1324) THEN 2 ELSE 
-							CASE
-								WHEN p.Bettype IN (1324)
-									AND LEFT(d.ResourceId, 2) = LEFT(REPLACE (ISNULL(p.Betcheck,''), '8', ''),2) THEN 4 
-								ELSE 0
+				ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+		WHERE ((p.Sporttype = 5								-- Tennis
+					AND d.SettlementStatusID > 0
+					AND CASE
+							WHEN p.Bettype NOT IN (1324) THEN 2
+							ELSE CASE
+									WHEN p.Bettype IN (1324)
+										AND LEFT(d.ResourceId, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+									ELSE 0
 							END
 						END = LEN(d.ResourceId))
-				OR (p.Sporttype = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08')
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceId LIKE f.ResourceID))
+			OR (p.Sporttype = 1								-- Soccer
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceId NOT IN ('00', '01', '08')
+					OR (d.ResourceId = '08'
+						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND d.ResourceId LIKE f.ResourceID)
+			OR (p.SportType = 2								-- Basketball
+				AND (LEN(d.ResourceId) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND (p.BetType NOT IN (606, 607, 613, 617)
+							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
 	-- Bettrans14 range
@@ -176,17 +194,6 @@ BEGIN
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo)
 	BEGIN
-		WITH BettransMix AS (
-			SELECT
-				b.matchId,
-				b.bettype,
-				REPLACE (ISNULL(b.betcheck,''),'8','') AS Betcheck,
-				ISNULL(b.transdesc, '') AS transdesc
-			FROM dbo.bettransm14 AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			WHERE b.refno = @RefNo
-		)
-
 		INSERT INTO @tmpParlay
 		SELECT
 			m.sporttype,
@@ -230,7 +237,17 @@ BEGIN
 			bm.Bettype,
 			bm.Betcheck,
 			bm.transdesc
-		FROM BettransMix AS bm
+		FROM
+			(
+				SELECT
+					b.matchId,
+					b.bettype,
+					ISNULL(b.betcheck,'') AS BetCheck,
+					ISNULL(b.transdesc, '') AS TransDesc
+				FROM dbo.bettransm14 AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				WHERE b.refno = @RefNo
+			) AS bm
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.MatchID = M.MatchID AND d.ResourceId = '00'
@@ -248,21 +265,29 @@ BEGIN
 		FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
 			INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f
-				ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
-		WHERE d.SettlementStatusID > 0
-			AND ((p.Sporttype = 5
-					AND CASE WHEN p.Bettype NOT IN (1324) THEN 2 ELSE 
-							CASE
-								WHEN p.Bettype IN (1324)
-									AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(p.Betcheck,''),'8',''),2) THEN 4
-								ELSE 0
+				ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+		WHERE ((p.Sporttype = 5								-- Tennis
+					AND d.SettlementStatusID > 0
+					AND CASE
+							WHEN p.Bettype NOT IN (1324) THEN 2
+							ELSE CASE
+									WHEN p.Bettype IN (1324)
+										AND LEFT(d.ResourceId, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+									ELSE 0
 							END
 						END = LEN(d.ResourceId))
-				OR (p.Sporttype = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08')
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceId LIKE f.ResourceID))
+			OR (p.Sporttype = 1								-- Soccer
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceId NOT IN ('00', '01', '08')
+					OR (d.ResourceId = '08'
+						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND d.ResourceId LIKE f.ResourceID)
+			OR (p.SportType = 2								-- Basketball
+				AND (LEN(d.ResourceId) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND (p.BetType NOT IN (606, 607, 613, 617)
+							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
 	-- Bettrans_bk range
@@ -271,16 +296,6 @@ BEGIN
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE refno = @RefNo)
 	BEGIN
-		WITH BettransMix AS (
-			SELECT b.matchId,
-				b.Bettype,
-				REPLACE (ISNULL(b.Betcheck,''),'8','') AS Betcheck,
-				ISNULL(transdesc, '') AS transdesc
-			FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK) 
-				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			WHERE b.refno = @RefNo 
-		)
-
 		INSERT INTO @tmpParlay
 		SELECT
 			m.sporttype,
@@ -324,10 +339,19 @@ BEGIN
 			bm.Bettype, 
 			bm.Betcheck,
 			bm.transdesc
-		FROM BettransMix AS bm
-			INNER JOIN DBARC.bodb_archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		FROM (
+				SELECT
+					b.matchId,
+					b.bettype,
+					ISNULL(b.betcheck,'') AS BetCheck,
+					ISNULL(b.transdesc, '') AS TransDesc
+				FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				WHERE b.refno = @RefNo
+			) AS bm 
+			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
+			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
 
 		-- select from result detail
 		INSERT INTO @tmpResultDetail
@@ -343,23 +367,31 @@ BEGIN
 			INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f 
 				ON	f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
-		WHERE d.SettlementStatusID > 0
-			AND ((p.Sporttype = 5
-					AND CASE WHEN p.Bettype NOT IN (1324) THEN 2 ELSE 
-							CASE
-								WHEN p.Bettype IN (1324)
-									AND LEFT(d.ResourceId,2) = LEFT(REPLACE (ISNULL(p.Betcheck,''),'8',''),2) THEN 4
-								ELSE 0
+		WHERE ((p.Sporttype = 5								-- Tennis
+					AND d.SettlementStatusID > 0
+					AND CASE
+							WHEN p.Bettype NOT IN (1324) THEN 2
+							ELSE CASE
+									WHEN p.Bettype IN (1324)
+										AND LEFT(d.ResourceId, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+									ELSE 0
 							END
 						END = LEN(d.ResourceId))
-				OR (p.Sporttype = 1
-					AND (d.ResourceId NOT IN ('00', '01', '08')
-						OR (d.ResourceId = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-					AND d.ResourceId LIKE f.ResourceID))
+			OR (p.Sporttype = 1								-- Soccer
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceId NOT IN ('00', '01', '08')
+					OR (d.ResourceId = '08'
+						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND d.ResourceId LIKE f.ResourceID)
+			OR (p.SportType = 2								-- Basketball
+				AND (LEN(d.ResourceId) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND (p.BetType NOT IN (606, 607, 613, 617)
+							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 	
-	SELECT * FROM @tmpParlay
+	SELECT DISTINCT * FROM @tmpParlay
 	ORDER BY LeagueId,
 		EventDate,
 		MatchCode
