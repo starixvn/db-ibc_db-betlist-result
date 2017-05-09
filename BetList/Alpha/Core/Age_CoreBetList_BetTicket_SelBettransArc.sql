@@ -38,6 +38,7 @@ AS
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
+		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 
 	Param's Explanation:
 
@@ -135,7 +136,7 @@ BEGIN
 		, b.Transdate
 		, b.winlostdate
 		, CASE WHEN b.bettype IN (23102, 23002, 23202) THEN 0
-				ELSE (b.winlost - b.actual_stake) 
+				ELSE (b.winlost - b.actual_stake)
 			END AS WinLost
 		, b.awinlost
 		, b.mwinlost
@@ -184,12 +185,12 @@ BEGIN
 		, '' AS Placing
 		, '' AS showtime
 		, CASE 
-			WHEN c.ProductID IN ( 9, 12 ) AND b.bettype IN ( 1000, 1701, 1702 ) THEN b.betcheck 
+			WHEN c.ProductID IN (9, 12) AND b.bettype IN (1000, 1701, 1702) THEN b.betcheck 
 			WHEN c.ProductID IN (1, 19, 27) THEN ISNULL(b.betcheck, '')
 			ELSE ''
 		END	AS betcheck
-		, CASE WHEN b.comstatus = '1' THEN '1' 
-				ELSE '0' 
+		, CASE WHEN b.comstatus = '1' THEN '1'
+				ELSE '0'
 			END AS comstatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
@@ -226,9 +227,9 @@ BEGIN
 		, b.oddsid
 		, 0 AS Odds
 		, 0 AS modds
-		, b.Stake
-		, b.actual_stake 
-		, b.Status
+		, b.stake
+		, b.actual_stake
+		, b.status
 		, b.Transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -236,9 +237,9 @@ BEGIN
 		, b.mwinlost
 		, b.swinlost
 		, b.playercomm
-		, (b.comm - b.playercomm)	AS comm
-		, (b.acomm - b.comm)		AS acomm
-		, (b.scomm - b.acomm)		AS scomm
+		, (b.comm - b.playercomm) AS comm
+		, (b.acomm - b.comm) AS acomm
+		, (b.scomm - b.acomm) AS scomm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -266,9 +267,9 @@ BEGIN
 		, '' AS Placing
 		, '' AS showtime
 		, ISNULL(bm.betcheck, '') AS BetCheck
-		, CASE WHEN b.comstatus = '1' THEN '1' 
-				ELSE '0' 
-		END		AS comstatus
+		, CASE WHEN b.comstatus = '1' THEN '1'
+				ELSE '0'
+		END AS comstatus
 		, '' AS transdesc
 		, 0 AS OddsSpread
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
@@ -276,9 +277,9 @@ BEGIN
 		--	AND b.custid = c.custid
 		INNER JOIN @custInfo AS ci
 		--ON b.custid = ci.custid
-		ON c.custid = ci.custid
+			ON c.custid = ci.custid
 		LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.refno AND bm.bettype = 18001
-	WHERE	c.WhTicket = 3
+	WHERE c.WhTicket = 3
 		AND c.EventType = 0
 		AND c.ProductID = 15
 
@@ -287,6 +288,7 @@ BEGIN
 	- Number Game				: ProductID = 3
 	- Live Casino				: ProductID = 4
 	- Virtual Sports			: ProductID = 5
+	- Lucky 3					: ProductID = 26
 	- Betradar Virtual Sports	: ProductID = 27
 	*/
 	UNION ALL
@@ -304,7 +306,7 @@ BEGIN
 			ELSE b.hdp1
 		END AS hdp1
 		, CASE
-			WHEN c.ProductID IN (3, 4) THEN 0
+			WHEN c.ProductID IN (3, 4, 26) THEN 0
 			ELSE b.hdp2
 		END AS hdp2
 		, b.OddsType
@@ -328,9 +330,18 @@ BEGIN
 		, b.MPositiontaking
 		, b.SPositiontaking
 		, b.TPositiontaking
-		, b.discount
-		, b.adiscount
-		, b.sdiscount
+		, CASE
+			WHEN c.ProductID IN (1, 3, 4, 5, 27) THEN b.discount
+			ELSE 0
+		END AS ADiscount
+		, CASE
+			WHEN c.ProductID IN (1, 3, 4, 5, 27) THEN b.adiscount
+			ELSE 0
+		END AS MDiscount
+		, CASE
+			WHEN c.ProductID IN (1, 3, 4, 5, 27) THEN b.sdiscount
+			ELSE 0
+		END AS SDiscount
 		, b.liveindicator
 		, b.livehomescore
 		, b.Liveawayscore
@@ -347,22 +358,28 @@ BEGIN
 		, m.HomeID
 		, m.AwayID
 		, m.Betstatus
-		, ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral
+		, ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral
 		, '' AS Placing
 		, CASE
 			WHEN c.ProductId IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 			ELSE ISNULL(m.showtime, '')
 		END AS ShowTime
 		, CASE 
-			WHEN (c.ProductId = 1 AND b.bettype IN (216,217)) THEN b.betcheck 
-			ELSE '' 
+			WHEN (c.ProductId = 1 AND b.bettype IN (216, 217)) THEN b.betcheck
+			ELSE ''
 		END AS betcheck
 		, CASE
 			WHEN b.comstatus = '1' THEN '1' 
 			ELSE '0' 
 		END AS comstatus
-		, ISNULL(b.transdesc, '') AS transdesc
-		, ISNULL(b.oddsspread, 0) AS OddsSpread
+		, CASE
+			WHEN c.ProductID IN (1, 26, 27) THEN ISNULL(b.transdesc, '')
+			ELSE ''
+		END AS TransDesc
+		, CASE
+			WHEN c.ProductID = 1 THEN ISNULL(b.oddsspread, 0)
+			ELSE 0
+		END AS OddsSpread
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
 		INNER JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
@@ -375,7 +392,7 @@ BEGIN
 
 	/* 
 		- Sportsbook outright	: ProductID = 1
-		- Horse Racing		 	: ProductID = 2
+		- Horse Racing			: ProductID = 2
 	*/
 	UNION ALL
 	SELECT
@@ -466,7 +483,7 @@ BEGIN
 		, b.oddsid
 		, b.odds
 		, b.modds
-		, b.Stake 
+		, b.stake
 		, b.actual_stake
 		, b.status
 		, b.transdate
@@ -476,9 +493,9 @@ BEGIN
 		, b.mwinlost
 		, b.swinlost
 		, b.PlayerComm
-		, (b.comm - b.playercomm)	AS comm
-		, (b.acomm - b.comm)		AS acomm
-		, (b.scomm - b.acomm)		AS scomm
+		, (b.comm - b.playercomm) AS comm
+		, (b.acomm - b.comm) AS acomm
+		, (b.scomm - b.acomm) AS scomm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -522,8 +539,6 @@ BEGIN
 
 	RETURN
 END
-
-
 
 
 
