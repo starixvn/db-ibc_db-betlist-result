@@ -57,6 +57,7 @@ AS
 		- 20171024@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20171227@Kos: Return ticket detail of Racing and Virtual Horse Racing [#Redmine: 88775]
 					- Don't support Live Casino in bettrans and bettrans14 anymore
+		- 20180118@Kos: Support Licensee Bonus System [#Redmine: 74978]
 */
 
 BEGIN
@@ -203,7 +204,9 @@ BEGIN
 		OddsSpread			MONEY,
 		OriginalBetType		INT,
 		BetdaqId			BIGINT,
-		ExtraInfo			VARCHAR(1000)
+		ExtraInfo			VARCHAR(1000),
+		WalletType			TINYINT,
+		RefCode				BIGINT
 	)
 
 	DECLARE @DeniedSite TABLE (
@@ -318,7 +321,15 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
-					END AS ExtraInfo
+					END AS ExtraInfo,
+					CASE
+						WHEN s.ProductID = 1 THEN ISNULL(b.WalletType, 0)
+						ELSE 0
+					END AS WalletType,
+					CASE
+						WHEN s.ProductID = 1 THEN ISNULL(b.RefCode, 0)
+						ELSE 0
+					END AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 					INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
@@ -390,7 +401,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.translog AS b WITH (NOLOCK) 
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventId = m.matchid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
@@ -538,7 +551,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799)
 			END
@@ -609,7 +624,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 					INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -682,7 +699,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 					INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -812,7 +831,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
@@ -886,7 +907,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK) 
 					INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -1000,7 +1023,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.translog AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.translogid = @TransId
@@ -1074,7 +1099,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
@@ -1163,7 +1190,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.translog AS b WITH (NOLOCK)
 					INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.eventid = m.Match3rdId
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
@@ -1254,7 +1283,9 @@ BEGIN
 						0 AS OddsSpread,
 						0 AS OriginalBetType,
 						-1 AS BetdaqId,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						0 AS WalletType,
+						0 AS RefCode
 					FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1354,7 +1385,9 @@ BEGIN
 						0 AS OddsSpread,
 						0 AS OriginalBetType,
 						-1 AS BetdaqId,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						0 AS WalletType,
+						0 AS RefCode
 					FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1452,7 +1485,9 @@ BEGIN
 						0 AS OddsSpread,
 						0 AS OriginalBetType,
 						-1 AS BetdaqId,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						0 AS WalletType,
+						0 AS RefCode
 					FROM dbo.bettrans AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					WHERE b.transid = @TransId
@@ -1535,7 +1570,9 @@ BEGIN
 						0 AS OddsSpread,
 						0 AS OriginalBetType,
 						-1 AS BetdaqId,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						0 AS WalletType,
+						0 AS RefCode
 					FROM dbo.bettransLC AS blc WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1627,7 +1664,9 @@ BEGIN
 						0 AS OddsSpread,
 						0 AS OriginalBetType,
 						-1 AS BetdaqId,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						0 AS WalletType,
+						0 AS RefCode
 					FROM dbo.bettransLC AS blc WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1717,7 +1756,9 @@ BEGIN
 						0 AS OddsSpread,
 						0 AS OriginalBetType,
 						-1 AS BetdaqId,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						0 AS WalletType,
+						0 AS RefCode
 					FROM dbo.bettrans AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					WHERE b.transid = @TransId
@@ -1791,12 +1832,93 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 				WHERE b.transid = @TransId
 					AND s.ProductID = 15
+			END
+
+			-- Get related Bonus/Cash tickets
+			IF EXISTS (SELECT 1 FROM @Data WHERE RefCode <> 0)
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					ISNULL(b.betid, 0) AS BetId,
+					b.refno,
+					m.matchcode,
+					'' AS Race,
+					m.eventdate,
+					0 AS virtualrate,
+					0 AS isShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					m.homeid,
+					m.awayid,
+					ISNULL(b.checktime,'') settleTime,
+					b.hdp1,
+					b.hdp2,
+					b.odds,
+					0 AS finalodds,
+					0 AS finalodds2,
+					b.oddstype,
+					b.status,
+					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 AS SPositionTaking2,
+					0 AS MPositionTaking2,
+					0 AS APositionTaking2,
+					b.liveindicator,
+					b.modds,
+					b.custid,
+					b.livehomescore,
+					b.liveawayscore,
+					m.finalhomescore,
+					m.finalawayscore,
+					m.leagueid,
+					m.sporttype,
+					b.ip,
+					b.betfrom,
+					b.matchid,
+					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+					(b.winlost - b.actual_stake) AS winlost,
+					b.playercomm AS Commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					m.showtime,
+					b.winlostdate,
+					b.BetCheck,
+					ISNULL(b.transdesc, '') AS TransDesc,
+					ISNULL(b.oddsspread, 0) AS OddsSpread,
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					'' AS ExtraInfo,
+					ISNULL(b.WalletType, 0) AS WalletType,
+					ISNULL(b.RefCode, 0) AS RefCode
+				FROM
+					dbo.bettrans AS b WITH (NOLOCK)
+					INNER JOIN @Data AS b1
+						ON b.custid = b1.CustId
+						AND b.winlostdate = b1.WinLostDate
+						AND b.RefCode = b1.RefCode
+						AND b.transid <> b1.TransId
+					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			END
 		END
 
@@ -1862,7 +1984,7 @@ BEGIN
 					b.ip,
 					b.betfrom,
 					b.matchid,
-					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+					ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 					(b.winlost - b.actual_stake) AS winlost,
 					b.playercomm AS Commission,
 					(b.scomm - b.acomm) AS scomm,
@@ -1887,7 +2009,15 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
-					END AS ExtraInfo
+					END AS ExtraInfo,
+					CASE
+						WHEN s.ProductID = 1 THEN ISNULL(b.WalletType, 0)
+						ELSE 0
+					END AS WalletType,
+					CASE
+						WHEN s.ProductID = 1 THEN ISNULL(b.RefCode, 0)
+						ELSE 0
+					END AS RefCode
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -2033,7 +2163,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799)
 			END
@@ -2104,7 +2236,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN dbo.outright14 AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 					INNER JOIN dbo.league l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -2178,7 +2312,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN dbo.outright14 AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 					INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -2267,7 +2403,9 @@ BEGIN
 					 0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM 
 					dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
@@ -2405,7 +2543,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransID
@@ -2478,7 +2618,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM
 					dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
@@ -2552,12 +2694,93 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 				WHERE b.transid = @TransId
 					AND s.ProductID = 15
+			END
+
+			-- Get related Bonus/Cash tickets
+			IF EXISTS (SELECT 1 FROM @Data WHERE RefCode <> 0)
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					ISNULL(b.betid, 0) AS BetId,
+					b.refno,
+					m.matchcode,
+					'' AS Race,
+					m.eventdate,
+					0 AS virtualrate,
+					0 AS isShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					m.homeid,
+					m.awayid,
+					ISNULL(b.checktime,'') settleTime,
+					b.hdp1,
+					b.hdp2,
+					b.odds,
+					0 AS finalodds,
+					0 AS finalodds2,
+					b.oddstype,
+					b.status,
+					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 AS SPositionTaking2,
+					0 AS MPositionTaking2,
+					0 AS APositionTaking2,
+					b.liveindicator,
+					b.modds,
+					b.custid,
+					b.livehomescore,
+					b.liveawayscore,
+					m.finalhomescore,
+					m.finalawayscore,
+					m.leagueid,
+					m.sporttype,
+					b.ip,
+					b.betfrom,
+					b.matchid,
+					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+					(b.winlost - b.actual_stake) AS winlost,
+					b.playercomm AS Commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					m.showtime,
+					b.winlostdate,
+					b.BetCheck,
+					ISNULL(b.transdesc, '') AS TransDesc,
+					ISNULL(b.oddsspread, 0) AS OddsSpread,
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					'' AS ExtraInfo,
+					ISNULL(b.WalletType, 0) AS WalletType,
+					ISNULL(b.RefCode, 0) AS RefCode
+				FROM
+					dbo.bettrans14 AS b WITH (NOLOCK)
+					INNER JOIN @Data AS b1
+						ON b.custid = b1.CustId
+						AND b.winlostdate = b1.WinLostDate
+						AND b.RefCode = b1.RefCode
+						AND b.transid <> b1.TransId
+					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			END
 		END
 
@@ -2648,7 +2871,15 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
-					END AS ExtraInfo
+					END AS ExtraInfo,
+					CASE
+						WHEN s.ProductID = 1 THEN ISNULL(b.WalletType, 0)
+						ELSE 0
+					END AS WalletType,
+					CASE
+						WHEN s.ProductID = 1 THEN ISNULL(b.RefCode, 0)
+						ELSE 0
+					END AS RefCode
 				FROM
 					bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN bodb_archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -2795,7 +3026,9 @@ BEGIN
 					0 AS bettrans14,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799)
 			END
@@ -2866,7 +3099,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN bodb_Archive.dbo.outright_bk AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 					INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -2940,7 +3175,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN bodb_Archive.dbo.outright_bk AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 					INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -3029,7 +3266,9 @@ BEGIN
 					 0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM 
 					bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK) 
 					INNER JOIN bodb_archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
@@ -3155,15 +3394,106 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransID
 					AND (s.ProductID IN (11, 17, 21, 22, 23, 24)
 						OR (s.ProductID = 6 AND s.SubProduct <> ''))
 			END
+
+			-- Get related Bonus/Cash tickets
+			IF EXISTS (SELECT 1 FROM @Data WHERE RefCode <> 0)
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					ISNULL(b.betid, 0) AS BetId,
+					b.refno,
+					m.matchcode,
+					'' AS Race,
+					m.eventdate,
+					0 AS virtualrate,
+					0 AS isShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					m.homeid,
+					m.awayid,
+					ISNULL(b.checktime,'') settleTime,
+					b.hdp1,
+					b.hdp2,
+					b.odds,
+					0 AS finalodds,
+					0 AS finalodds2,
+					b.oddstype,
+					b.status,
+					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 AS SPositionTaking2,
+					0 AS MPositionTaking2,
+					0 AS APositionTaking2,
+					b.liveindicator,
+					b.modds,
+					b.custid,
+					b.livehomescore,
+					b.liveawayscore,
+					m.finalhomescore,
+					m.finalawayscore,
+					m.leagueid,
+					m.sporttype,
+					b.ip,
+					b.betfrom,
+					b.matchid,
+					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+					(b.winlost - b.actual_stake) AS winlost,
+					b.playercomm AS Commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					m.showtime,
+					b.winlostdate,
+					b.BetCheck,
+					ISNULL(b.transdesc, '') AS TransDesc,
+					ISNULL(b.oddsspread, 0) AS OddsSpread,
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					'' AS ExtraInfo,
+					ISNULL(b.WalletType, 0) AS WalletType,
+					ISNULL(b.RefCode, 0) AS RefCode
+				FROM
+					bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					INNER JOIN @Data AS b1
+						ON b.custid = b1.CustId
+						AND b.winlostdate = b1.WinLostDate
+						AND b.RefCode = b1.RefCode
+						AND b.transid <> b1.TransId
+					INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			END
 		END
 	END
+	
+	-- Don't display Cash text for ticket from Cash Wallet only
+	UPDATE @Data
+	SET WalletType = 0
+	WHERE WalletType = 2 AND RefCode = 0
+
+	-- Display Cash/Bonus text for ticket from multiple wallets
+	UPDATE @Data
+	SET RefCode = 0
+	WHERE RefCode <> 0
 
 	DECLARE @DetailData TABLE (
 		RefNo			NVARCHAR(50),
@@ -3509,7 +3839,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettransRnG AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.transid = @TransId
@@ -3593,7 +3925,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.transid = @TransId
@@ -3712,7 +4046,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettransLC AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.transid = @TransId
@@ -3795,7 +4131,9 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo
+					'' AS ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.transid = @TransId
@@ -3882,7 +4220,9 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettransLC AS b WITH (NOLOCK)
 				INNER JOIN @Data AS b1 ON b.custid = b1.CustId AND b.gameID = b1.BetType AND b.GameId3rd = b1.MatchCode
 				INNER JOIN @SportBettype AS s ON s.Bettype = b1.bettype
@@ -3963,7 +4303,9 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 				INNER JOIN @Data AS b1 ON b.custid = b1.CustId AND b.gameID = b1.BetType AND b.GameId3rd = b1.MatchCode
 				INNER JOIN @SportBettype AS s ON s.Bettype = b1.bettype

@@ -45,7 +45,8 @@ AS
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20170321@Kos: Support CashOut [#Redmine: 71963]
 		- 20170602@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
-	
+		- 20170615@Kos: Support Licensee Bonus System [#Redmine: 74978]
+
 	Param's Explanation:
 		• @fromdate = @winlostdate
 */
@@ -119,7 +120,9 @@ BEGIN
 		OddsSpread		SMALLMONEY,
 		OriginalBetType	INT,
 		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000)
+		ExtraInfo		VARCHAR(1000),
+		WalletType		TINYINT,
+		RefCode			BIGINT
 	)
 
 	DECLARE @DetailData TABLE (
@@ -205,7 +208,9 @@ BEGIN
 		OddsSpread,
 		OriginalBetType,
 		BetdaqId,
-		ExtraInfo
+		ExtraInfo,
+		WalletType,
+		RefCode
 	FROM (
 			SELECT
 				m.finalhomescore,
@@ -273,7 +278,9 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread,
 				0 AS OriginalBetType,
 				ISNULL(b.betdaqid, -1) AS BetdaqId,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				ISNULL(b.WalletType, 0) AS WalletType,
+				ISNULL(b.RefCode, 0) AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
@@ -350,7 +357,9 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK) 
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
 			WHERE b.bettype = 9
@@ -428,7 +437,9 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
 			WHERE b.bettype = 29
@@ -510,7 +521,9 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread,
 				0 AS OriginalBetType,
 				ISNULL(b.betdaqid, -1) AS BetdaqId,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				ISNULL(b.WalletType, 0) AS WalletType,
+				ISNULL(b.RefCode, 0) AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK) 
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
@@ -548,7 +561,7 @@ BEGIN
 				b.odds,
 				0 AS modds,
 				CASE
-					WHEN b.gameid IN (801,803,804,805,806) THEN CONVERT(TINYINT, ISNULL(b.custom1, 0))
+					WHEN b.gameid IN (801, 803, 804, 805, 806) THEN CONVERT(TINYINT, ISNULL(b.custom1, 0))
 					ELSE 0
 				END AS OddsType,
 				b.status,
@@ -594,13 +607,15 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.translog AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
 			WHERE b.winlostdate = @Date
 				AND b.Gameid BETWEEN 801 AND 899
-				AND b.custid = @CustId 
+				AND b.custid = @CustId
 				AND b.statusID = 0
 			
 			-- Mix Parlay
@@ -671,7 +686,9 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
 			WHERE b.winlostdate = @Date
@@ -750,7 +767,9 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK) 
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
 			WHERE b.winlostdate = @Date
@@ -830,7 +849,9 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -907,7 +928,9 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -1012,6 +1035,80 @@ BEGIN
 	END
 
 	DELETE @Data WHERE Bettype IN (903, 913)
+
+	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
+	IF EXISTS (SELECT 1 FROM @Data WHERE RefCode <> 0)
+	BEGIN
+		DECLARE @RefCodeTmp TABLE (
+			RefCode			BIGINT,
+			TransId			BIGINT,
+			Stake			MONEY,
+			Actual_Stake	MONEY,
+			WinLost			MONEY,
+			Commission		MONEY,
+			SWinLost		MONEY,
+			MWinLost		MONEY,
+			AWinLost		MONEY,
+			SComm			MONEY,
+			AComm			MONEY,
+			Comm			MONEY
+		)
+
+		-- Prepare temp table
+		INSERT INTO @RefCodeTmp
+		SELECT
+			RefCode,
+			MIN(TransId) AS TransId,
+			SUM(Stake) AS Stake,
+			SUM(Actual_Stake) AS Actual_Stake,
+			SUM(WinLost) AS WinLost,
+			SUM(Commission) AS Commission,
+			SUM(SWinLost) AS SWinLost,
+			SUM(MWinLost) AS MWinLost,
+			SUM(AWinLost) AS AWinLost,
+			SUM(SComm) AS SComm,
+			SUM(AComm) AS AComm,
+			SUM(Comm) AS Comm
+		FROM @Data
+		WHERE RefCode <> 0
+		GROUP BY RefCode
+		HAVING COUNT(*) > 1
+
+		IF EXISTS (SELECT 1 FROM @RefCodeTmp)
+		BEGIN
+			-- Update data for summmary ticket
+			UPDATE b
+			SET
+				b.Stake = r.Stake,
+				b.Actual_Stake = r.Actual_Stake,
+				b.WinLost = r.WinLost,
+				b.Commission = r.Commission,
+				b.SWinLost = r.SWinLost,
+				b.MWinLost = r.MWinLost,
+				b.AWinLost = r.AWinLost,
+				b.SComm = r.SComm,
+				b.AComm = r.AComm,
+				b.Comm = r.Comm,
+				b.WalletType = 0
+			FROM @Data AS b
+				INNER JOIN @RefCodeTmp AS r ON b.RefCode = r.RefCode AND b.TransId = r.TransId
+
+			-- Delete 2nd Bonus/Cash tickets
+			DELETE @Data
+			WHERE WalletType <> 0
+				AND RefCode IN (SELECT RefCode FROM @RefCodeTmp)
+		END
+	END
+
+	-- Display detail link for ticket from Bonus Wallet only
+	UPDATE @Data
+	SET RefCode = TransId
+	WHERE WalletType = 1 AND RefCode = 0
+
+	-- Don't display Cash text for ticket from Cash Wallet only
+	UPDATE @Data
+	SET WalletType = 0
+	WHERE WalletType = 2 AND RefCode = 0
 
 	SELECT * FROM @Data
 	ORDER BY 4,26
