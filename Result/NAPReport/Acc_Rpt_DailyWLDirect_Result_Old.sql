@@ -97,7 +97,7 @@ BEGIN
 
 	-- Get sport type
 	SELECT @SportType = sporttype
-	FROM dbo.match WITH (NOLOCK)
+	FROM bodb_Archive.dbo.match_bk WITH (NOLOCK)
 	WHERE matchid = @MatchId
 
 	-- Get result detail for Basketball and Tennis main result only
@@ -109,13 +109,14 @@ BEGIN
 		ResultStatusID,
 		SettlementStatusID,
 		OtherInfo
-	FROM DBARC.bodb_archive.dbo.ResultDetail_bk WITH (NOLOCK)
-	WHERE @SportType IN (2, 5)
-		AND MatchID = @MatchId
-		AND SettlementStatusID > 0
-		AND LEN(ResourceID) = 2
+	FROM bodb_Archive.dbo.ResultDetail_bk WITH (NOLOCK)
+	WHERE MatchID = @MatchId
+			AND LEN(ResourceID) = 2
+			AND (@SportType = 2
+				OR (@SportType = 5 AND SettlementStatusID > 0))
 	ORDER BY ResourceID
 END
+
 
 
 

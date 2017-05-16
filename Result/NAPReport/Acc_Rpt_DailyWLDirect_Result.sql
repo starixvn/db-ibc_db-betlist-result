@@ -103,10 +103,10 @@ BEGIN
 			SettlementStatusID,
 			OtherInfo
 		FROM dbo.ResultDetail WITH (NOLOCK)
-		WHERE @SportType IN (2, 5)
-			AND MatchID = @MatchId
-			AND SettlementStatusID > 0
+		WHERE MatchID = @MatchId
 			AND LEN(ResourceID) = 2
+			AND (@SportType = 2
+				OR (@SportType = 5 AND SettlementStatusID > 0))
 		ORDER BY ResourceID
 	END
 	ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)	-- Bettrans14 range
@@ -189,10 +189,10 @@ BEGIN
 			SettlementStatusID,
 			OtherInfo
 		FROM dbo.ResultDetail14 WITH (NOLOCK)
-		WHERE @SportType IN (2, 5)
-			AND MatchID = @MatchId
-			AND SettlementStatusID > 0
+		WHERE MatchID = @MatchId
 			AND LEN(ResourceID) = 2
+			AND (@SportType = 2
+				OR (@SportType = 5 AND SettlementStatusID > 0))
 		ORDER BY ResourceID
 	END
 END
