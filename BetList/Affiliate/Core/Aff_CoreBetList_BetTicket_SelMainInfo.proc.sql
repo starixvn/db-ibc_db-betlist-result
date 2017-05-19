@@ -3,9 +3,9 @@ GO
 
 ALTER PROCEDURE [dbo].[Aff_CoreBetList_BetTicket_SelMainInfo]
 (
-	@tempCust		[dbo].[TVP_TicketSportBettype]	READONLY
-	, @TransStatus	[dbo].[TVP_BetTicketStatus]		READONLY
-	, @ColumnOutput	VARCHAR(MAX)	= NULL
+	@tempCust		[dbo].[TVP_TicketSportBettype]	READONLY,
+	@TransStatus	[dbo].[TVP_BetTicketStatus]		READONLY,
+	@ColumnOutput	VARCHAR(MAX)	= NULL
 )
 AS
 
@@ -17,16 +17,17 @@ AS
 
 	Revisions:
 		- 20160308@Bobby: Implement LIC core bet list for Affiliate site
+		- 20170519@Kos: Support CashOut [#Redmine: 71963]
 
 	Param's Explanation:
-		- @tempCust  AS TABLE
-		( 
-			transid			BIGINT
-			, refno			BIGINT
-			, custid		INT
-			, productId		INT
-			, eventType		TINYINT
-			, WhTicket		TINYINT
+		- @tempCust AS TABLE
+		(
+			transid		BIGINT
+			, refno		BIGINT
+			, custid	INT
+			, productId	INT
+			, eventType	TINYINT
+			, WhTicket	TINYINT
 		)
 */
 
@@ -36,63 +37,66 @@ BEGIN
 	-- CREATE output main info ticket
 	CREATE TABLE #MemBetTicket
 	(
-		TransId 			BIGINT
-		, RefNo 			BIGINT
-		, custid 			INT
-		, Username 			NVARCHAR(30)
-		, Sporttype 		SMALLINT
-		, Bettype 			SMALLINT
-		, BetId 			BIGINT
-		, Betteam 			NVARCHAR(20)
-		, hdp1 				SMALLMONEY
-		, hdp2 				SMALLMONEY 
-		, OddsType 			TINYINT
-		, oddsid			INT
-		, Odds 				MONEY 
-		, modds 			MONEY
-		, Stake 			MONEY
-		, actual_stake		MONEY
-		, Status 			NVARCHAR(10)
-		, transdate 		DATETIME
-		, winlostdate 		DATETIME
-		, winlost			MONEY
-		, awinlost			MONEY
-		, mwinlost			MONEY
-		, swinlost			MONEY
-		, playerComm		MONEY
-		, comm				MONEY
-		, acomm				MONEY
-		, scomm				MONEY
-		, apositiontaking	SMALLMONEY
-		, mpositiontaking	SMALLMONEY
-		, spositiontaking	SMALLMONEY
-		, tpositiontaking	SMALLMONEY
-		, adiscount			SMALLMONEY
-		, mdiscount			SMALLMONEY
-		, sdiscount			SMALLMONEY
-		, liveindicator 	BIT
-		, livehomescore 	SMALLINT
-		, liveawayscore 	SMALLINT
-		, finalhomescore 	SMALLINT
-		, finalawayscore 	SMALLINT 
-		, hthomescore 		SMALLINT
-		, htawayscore 		SMALLINT 
-		, IP 				NVARCHAR(15)
-		, LeagueId 			INT
-		, MatchId 			INT
-		, MatchCode 		NVARCHAR(50)
-		, Race 				NVARCHAR(20)
-		, eventdate 		DATETIME
-		, HomeId 			INT
-		, AwayId 			INT 	
-		, Betstatus 		NVARCHAR(50)
-		, isNeutral 		BIT
-		, Placing 			NVARCHAR(20)
-		, showtime 			NVARCHAR(50)
-		, betcheck 			NVARCHAR(50)
-		, comstatus 		NVARCHAR(20)
-		, transdesc			NVARCHAR(300)
+		TransId				BIGINT
+		, RefNo				BIGINT
+		, CustId			INT
+		, Username			NVARCHAR(30)
+		, SportType			SMALLINT
+		, BetType			SMALLINT
+		, BetId				BIGINT
+		, BetTeam			NVARCHAR(20)
+		, Hdp1				SMALLMONEY
+		, Hdp2				SMALLMONEY
+		, OddsType			TINYINT
+		, OddsId			INT
+		, Odds				MONEY
+		, MOdds				MONEY
+		, Stake				MONEY
+		, Actual_Stake		MONEY
+		, Status			NVARCHAR(10)
+		, TransDate			DATETIME
+		, WinLostDate		DATETIME
+		, WinLost			MONEY
+		, AWinLost			MONEY
+		, MWinLost			MONEY
+		, SWinLost			MONEY
+		, PlayerComm		MONEY
+		, Comm				MONEY
+		, AComm				MONEY
+		, SComm				MONEY
+		, APositionTaking	SMALLMONEY
+		, MPositionTaking	SMALLMONEY
+		, SPositionTaking	SMALLMONEY
+		, TPositionTaking	SMALLMONEY
+		, ASiscount			SMALLMONEY
+		, MDiscount			SMALLMONEY
+		, SDiscount			SMALLMONEY
+		, LiveIndicator		BIT
+		, LiveHomeScore		SMALLINT
+		, LiveAwayScore		SMALLINT
+		, FinalHomeScore	SMALLINT
+		, FinalAwayScore	SMALLINT
+		, HtHomeScore		SMALLINT
+		, HtAwayScore		SMALLINT
+		, Ip				NVARCHAR(15)
+		, LeagueId			INT
+		, MatchId			INT
+		, MatchCode			NVARCHAR(50)
+		, Race				NVARCHAR(20)
+		, EventDate			DATETIME
+		, HomeId			INT
+		, AwayId			INT
+		, BetStatus			NVARCHAR(50)
+		, IsNeutral			BIT
+		, Placing			NVARCHAR(20)
+		, ShowTime			NVARCHAR(50)
+		, BetCheck			NVARCHAR(50)
+		, ComStatus			NVARCHAR(20)
+		, TransDesc			NVARCHAR(1000)
 		, OddsSpread		SMALLMONEY
+		, BetdaqId			BIGINT
+		, ExtraInfo			VARCHAR(1000)
+		, OriginalBetType	SMALLINT
 	);
 
 	-- CHECK for selecting from translog
@@ -116,15 +120,30 @@ BEGIN
 		EXEC [dbo].[Aff_CoreBetList_BetTicket_SelBettrans14] @tempCust = @tempCust, @TransStatus = @TransStatus
 	END
 
+	-- Get more info for CashOut tickets
+	IF EXISTS (SELECT TOP 1 1 FROM #MemBetTicket WHERE BetType = 911)
+	BEGIN
+		UPDATE b
+		SET b.Odds = ob.Odds,
+			b.LiveIndicator = ob.LiveIndicator,
+			b.LiveHomeScore = ob.LiveHomeScore,
+			b.LiveAwayScore = ob.LiveAwayScore,
+			b.OriginalBetType = ob.BetType,
+			b.BetdaqId = ob.TransId
+		FROM #MemBetTicket AS b
+			INNER JOIN #MemBetTicket AS ob WITH (NOLOCK) ON b.RefNo = ob.TransId
+		WHERE b.BetType = 911
+	END
+
 	-- OUTPUT main ticket
-	IF (@ColumnOutput IS NULL)
+	IF @ColumnOutput IS NULL
 	BEGIN
 		SELECT *
-		FROM #MemBetTicket t
-		ORDER BY t.transid DESC
+		FROM #MemBetTicket
+		ORDER BY transid DESC
 	END
 	ELSE
-	BEGIN 
+	BEGIN
 		DECLARE @queryOutput NVARCHAR(MAX)
 		SET @queryOutput = 'SELECT' 
 							+ ' ' + @ColumnOutput 
@@ -133,16 +152,15 @@ BEGIN
 		
 		EXEC sp_sqlexec @queryOutput
 	END
-	
+
 	/*
 	SELECT *
 	FROM #MemBetTicket t
 	ORDER BY t.transid DESC
 	*/
 	
-	-- 	OUTPUT ticket in detail
+	-- OUTPUT ticket in detail
 	EXEC [dbo].[Aff_CoreBetList_BetTicket_SelDetail] @tempCust = @tempCust
 
 	RETURN;
 END
-GO

@@ -1,28 +1,28 @@
 USE [bodb_archive]
 GO
 ALTER PROCEDURE [dbo].[Aff_BetList_SelWinLossByDate_Old]
-	@CustID						INT
-	,@FromDate					SMALLDATETIME
-	,@ToDate					SMALLDATETIME
-	,@Language					VARCHAR(2)		= 'E'
-	,@ShowSB					BIT				= 1
-	,@ShowCS					BIT				= 0
-	,@ShowRB					BIT				= 0
-	,@ShowNG					BIT				= 0
-	,@ShowLC					BIT				= 0
-	,@ShowVS					BIT				= 0
-	,@ShowKN					BIT				= 0
-	,@ShowAG					BIT				= 0
-	,@ShowGD					BIT				= 0
-	,@ShowCB					BIT				= 0
-	,@ShowCF					BIT				= 0
-	,@Error						INT				= 0		OUTPUT
-	,@ErrorMsg					NVARCHAR(500)	= ''	OUTPUT
-	,@Duration					INT				= 0	OUTPUT
+	@CustId		INT,
+	@FromDate	SMALLDATETIME,
+	@ToDate		SMALLDATETIME,
+	@Language	VARCHAR(2)		= 'E',
+	@ShowSB		BIT				= 1,
+	@ShowCS		BIT				= 0,
+	@ShowRB		BIT				= 0,
+	@ShowNG		BIT				= 0,
+	@ShowLC		BIT				= 0,
+	@ShowVS		BIT				= 0,
+	@ShowKN		BIT				= 0,
+	@ShowAG		BIT				= 0,
+	@ShowGD		BIT				= 0,
+	@ShowCB		BIT				= 0,
+	@ShowCF		BIT				= 0,
+	@Error		INT				= 0		OUTPUT,
+	@ErrorMsg	NVARCHAR(500)	= ''	OUTPUT,
+	@Duration	INT				= 0	OUTPUT
 AS
 
 /*
-	Created: 20141016@Bobby.Nguyen
+	Created: 20141016@Bobby
 	Task: Implement Affilite member betlist
 	DB: DBARC.bodb_Archive
 	Original: DBARC.bodb_Archive.dbo.[Age_BetList_SelWinLossByDate_Mem_Old]
@@ -36,8 +36,9 @@ AS
 		- 20160425@Bobby: #56136 - Support Combo Parlay
 		- 20160715@Bobby: #60971 - Fixbug - missing TransStatus param
 		- 20160714@Kos: Change to use inline function for SportBettypeMatrix
+		- 20170519@Kos: Support CashOut [#Redmine: 71963]
 
-	Param's Explanation: 
+	Param's Explanation:
 		- @CustID:		Customer/Player ID
 		- @FromDate:	Date only
 		- @ToDate:		Date only
@@ -80,24 +81,25 @@ BEGIN
 	INSERT INTO @BettypeMatrix
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 2, 3, 4, 5, 6, 8, 11, 12, 15, 19)
+	WHERE ProductID IN (1, 2, 3, 4, 5, 6, 8, 11, 12, 15, 19, 25)
 
 	-- DO filtering bettype by product
 	DELETE FROM @BettypeMatrix
-	WHERE ProductID		= CASE WHEN @ShowSB		= 0 THEN 1 END
-		OR ProductID	= CASE WHEN @ShowRB		= 0 THEN 2 END
-		OR ProductID	= CASE WHEN @ShowNG		= 0 THEN 3 END
-		OR ProductID	= CASE WHEN @ShowLC		= 0 THEN 4 END
-		OR ProductID	= CASE WHEN @ShowVS		= 0 THEN 5 END
-		OR ProductID	= CASE WHEN @ShowCS		= 0 THEN 6 END
-		OR ProductID	= CASE WHEN @ShowKN		= 0 THEN 8 END
-		OR ProductID	= CASE WHEN @ShowAG		= 0 THEN 11 END
-		OR ProductID	= CASE WHEN @ShowGD		= 0 THEN 12 END
-		OR ProductID	= CASE WHEN @ShowCB		= 0 THEN 15 END
-		OR ProductID	= CASE WHEN @ShowCF		= 0 THEN 19 END
+	WHERE ProductID		= CASE WHEN @ShowSB	= 0 THEN 1 END
+		OR ProductID	= CASE WHEN @ShowRB	= 0 THEN 2 END
+		OR ProductID	= CASE WHEN @ShowNG	= 0 THEN 3 END
+		OR ProductID	= CASE WHEN @ShowLC	= 0 THEN 4 END
+		OR ProductID	= CASE WHEN @ShowVS	= 0 THEN 5 END
+		OR ProductID	= CASE WHEN @ShowCS	= 0 THEN 6 END
+		OR ProductID	= CASE WHEN @ShowKN	= 0 THEN 8 END
+		OR ProductID	= CASE WHEN @ShowAG	= 0 THEN 11 END
+		OR ProductID	= CASE WHEN @ShowGD	= 0 THEN 12 END
+		OR ProductID	= CASE WHEN @ShowCB	= 0 THEN 15 END
+		OR ProductID	= CASE WHEN @ShowCF	= 0 THEN 19 END
+		OR ProductID	= CASE WHEN @ShowSB	= 0 THEN 25 END
 
 	-- CALL to core bet list
-	EXEC [dbo].[Age_CoreBetList_MemArc_SelBetTicket]
+	EXEC [dbo].[Aff_CoreBetList_MemArc_SelBetTicket]
 		@CustId 			= @CustId
 		, @FromDate			= @FromDate
 		, @ToDate 			= @ToDate
@@ -156,9 +158,10 @@ BEGIN
 	RETURN;
 	
 END
-GO
+
+
+
 GRANT EXECUTE ON [dbo].[Aff_BetList_SelWinLossByDate_Old] TO [bodbAdminNet] AS [dbo]
 GO
-
 GRANT EXECUTE ON [dbo].[Aff_BetList_SelWinLossByDate_Old] TO [bodbDownlineNet] AS [dbo]
 GO
