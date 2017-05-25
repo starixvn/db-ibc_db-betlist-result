@@ -1,76 +1,100 @@
-﻿ALTER PROCEDURE [dbo].[Age_BetList_SelMatchResultNumberGame]  
-	@MatchID INT
-AS 
-/*  
-Created: 20100908@Jacob: Show the results for number game
-Task: Get Result for number game 
-DB: DBAGE/bodb02  
-  
-Revisions:      
-	- 20110721@Johnson: get column kickofftime, leagueid
-	- 20110831@Johnson: correct event status when refund ticket
-	- 20130121@Dan: change linked server DB06 to DBARC
-*/  
-  
-SET NOCOUNT ON  
- 
-IF EXISTS(SELECT 1 FROM bingoBall WITH(NOLOCK) WHERE matchid = @matchid)  
-BEGIN   
-	SELECT	b.matchid,   
-			b.Seq,   
-			b.number,
-			b.updatetime,
-			m.kickofftime, 
-			m.leagueid,  
-			m.eventdate,
-			case when m.betstatus like 'Refund FT%' then 'Refund FT' 
-				 when m.betstatus like 'Refund HT%' then 'Refund HT'
-				 when m.betstatus like 'Refund%' then 'Refund' 
-				else m.eventstatus end as eventstatus,
-			m.matchcode,
-			m.leagueid
-	FROM bingoBall b WITH(NOLOCK) INNER JOIN [match] m WITH(NOLOCK) ON b.matchid=m.matchid
-	WHERE b.matchid = @matchid
-	ORDER BY b.Seq
-END
-ELSE IF EXISTS(SELECT 1 FROM bingoBall14 WITH(NOLOCK) WHERE matchid = @matchid)   
-BEGIN  
-	SELECT	b.matchid,   
-			b.Seq,   
-			b.number,
-			b.updatetime,
-			m.kickofftime, 
-			m.leagueid,  
-			m.eventdate,
-			case when m.betstatus like 'Refund FT%' then 'Refund FT' 
-				 when m.betstatus like 'Refund HT%' then 'Refund HT'
-				 when m.betstatus like 'Refund%' then 'Refund' 
-				else m.eventstatus end as eventstatus,
-			m.matchcode,
-			m.leagueid
-	FROM bingoBall14 b WITH(NOLOCK) INNER JOIN [match14] m WITH(NOLOCK) ON b.matchid=m.matchid
-	WHERE b.matchid = @matchid
-	ORDER BY b.Seq
-END  
-ELSE  
-BEGIN  
-	SELECT	b.matchid,   
-			b.Seq,   
-			b.number,
-			b.updatetime,
+﻿ALTER PROCEDURE [dbo].[Age_BetList_SelMatchResultNumberGame]
+	@MatchId	INT
+AS
+
+/*
+	Created: 20100908@Jacob
+	Task: Get Result for Number Game
+	DB: DBAGE.bodb02
+
+	Revisions:
+		- 20110721@Johnson: get column kickofftime, leagueid
+		- 20110831@Johnson: correct event status when refund ticket
+		- 20130121@Dan: change linked server DB06 to DBARC
+		- 20170525@Kos: Support Lucky 3 [#Redmine: 75277]
+*/
+
+BEGIN
+	SET NOCOUNT ON
+
+	IF EXISTS (SELECT 1 FROM dbo.bingoball WITH (NOLOCK) WHERE Matchid = @MatchId)
+	BEGIN
+		SELECT
+			b.Matchid,
+			b.Seq,
+			b.Number,
+			b.UpdateTime,
 			m.kickofftime,
-			m.leagueid,  
+			m.leagueid,
 			m.eventdate,
-			case when m.betstatus like 'Refund FT%' then 'Refund FT' 
-				 when m.betstatus like 'Refund HT%' then 'Refund HT'
-				 when m.betstatus like 'Refund%' then 'Refund' 
-				else m.eventstatus end as eventstatus,
+			CASE
+				WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT'
+				WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
+				WHEN m.betstatus LIKE 'Refund%' THEN 'Refund'
+				ELSE m.eventstatus
+			END AS EventStatus,
 			m.matchcode,
-			m.leagueid
-	FROM DBARC.bodb_archive.dbo.bingoBall_bk b WITH(NOLOCK) INNER JOIN DB06.bodb_archive.dbo.match_bk m WITH(NOLOCK)  ON b.matchid=m.matchid
-	WHERE m.matchid = @matchid 
-	ORDER BY b.Seq 
-END  
+			m.livehomescore,
+			m.liveawayscore,
+			m.finalhomescore
+		FROM dbo.bingoball AS b WITH (NOLOCK)
+			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.Matchid = m.matchid
+		WHERE b.Matchid = @MatchId
+		ORDER BY b.Seq
+	END
+	ELSE IF EXISTS(SELECT 1 FROM dbo.bingoball14 WITH (NOLOCK) WHERE Matchid = @MatchId)
+	BEGIN
+		SELECT
+			b.Matchid,
+			b.Seq,
+			b.Number,
+			b.UpdateTime,
+			m.kickofftime,
+			m.leagueid,
+			m.eventdate,
+			CASE
+				WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT'
+				WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
+				WHEN m.betstatus LIKE 'Refund%' THEN 'Refund'
+				ELSE m.eventstatus
+			END AS EventStatus,
+			m.matchcode,
+			m.livehomescore,
+			m.liveawayscore,
+			m.finalhomescore
+		FROM dbo.bingoball14 AS b WITH (NOLOCK)
+			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Matchid = m.matchid
+		WHERE b.Matchid = @MatchId
+		ORDER BY b.Seq
+	END
+	ELSE
+	BEGIN
+		SELECT
+			b.Matchid,
+			b.Seq,
+			b.Number,
+			b.UpdateTime,
+			m.kickofftime,
+			m.leagueid,
+			m.eventdate,
+			CASE
+				WHEN m.betstatus LIKE 'Refund FT%' THEN 'Refund FT'
+				WHEN m.betstatus LIKE 'Refund HT%' THEN 'Refund HT'
+				WHEN m.betstatus LIKE 'Refund%' THEN 'Refund'
+				ELSE m.eventstatus
+			END AS EventStatus,
+			m.matchcode,
+			m.livehomescore,
+			m.liveawayscore,
+			m.finalhomescore
+		FROM DBARC.bodb_Archive.dbo.bingoBall_bk AS b WITH (NOLOCK)
+			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.Matchid = m.matchid
+		WHERE m.matchid = @MatchId
+		ORDER BY b.Seq
+	END
+END
+
+
   
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultNumberGame] TO [bodbDownlineNet]
