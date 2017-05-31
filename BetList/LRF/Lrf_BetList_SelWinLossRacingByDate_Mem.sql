@@ -43,6 +43,7 @@ AS
 	Revisions:
 		- 20161005@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170227@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
 
 	Sample call:
 		DECLARE @p11 INT
@@ -132,14 +133,12 @@ BEGIN
 		Hdp2			SMALLMONEY,
 		BetTeam			NVARCHAR(10),
 		Odds			MONEY,
-		OddsType		TINYINT,
 		Modds			MONEY,
 		LiveIndicator	BIT,
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
 		ShowTime		NVARCHAR(50),
 		Status			NVARCHAR(10),
-		BetStatus		NVARCHAR(50),
 		TransDate		DATETIME,
 		WinLostDate		DATETIME,
 		Stake			MONEY,
@@ -149,9 +148,7 @@ BEGIN
 		Comm			MONEY,
 		PlayerComm		MONEY,
 		Race			NVARCHAR(20),
-		Ip				NVARCHAR(15),
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300)
+		Ip				NVARCHAR(15)
 	)
 
 	DECLARE @TempFromDate SMALLDATETIME
@@ -183,31 +180,27 @@ BEGIN
 			b.hdp2,
 			'' AS BetTeam,
 			b.odds,
-			0 AS OddsType,
 			b.modds,
 			0 AS LiveIndicator,
 			b.livehomescore,
 			b.liveawayscore,
 			'' AS ShowTime,
 			b.status,
-			'' AS BetStatus,
 			b.transdate,
 			b.winlostdate,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - actual_stake) AS WinLost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.awinlost AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			m.groupmatch AS Race,
-			b.ip,
-			'' AS BetCheck,
-			'' AS TransDesc
+			b.ip
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
-			INNER JOIN @SportBettype sbt ON b.bettype = sbt.Bettype
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE
 			b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND b.recommend IN (SELECT CustId FROM @TempAg)
@@ -245,30 +238,26 @@ BEGIN
 			b.hdp2,
 			'' AS BetTeam,
 			b.odds,
-			0 AS OddsType,
 			b.modds,
 			0 AS LiveIndicator,
 			b.livehomescore,
 			b.liveawayscore,
 			'' AS ShowTime,
 			b.status,
-			'' AS BetStatus,
 			b.transdate,
 			b.winlostdate,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - actual_stake) AS WinLost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.awinlost AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			m.groupmatch AS Race,
-			b.ip,
-			'' AS BetCheck,
-			'' AS TransDesc
+			b.ip
 		FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX=bettrans1423)
 			INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
-			INNER JOIN @SportBettype sbt ON b.bettype = sbt.Bettype
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 			AND b.recommend IN (SELECT CustId FROM @TempAg)
 			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
@@ -303,30 +292,26 @@ BEGIN
 			b.hdp2,
 			'' AS BetTeam,
 			b.odds,
-			0 AS OddsType,
 			b.modds,
 			0 AS LiveIndicator,
 			b.livehomescore,
 			b.liveawayscore,
 			'' AS ShowTime,
 			b.status,
-			'' AS BetStatus,
 			b.transdate,
 			b.winlostdate,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - actual_stake) AS WinLost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.awinlost AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			m.groupmatch AS Race,
-			b.ip,
-			'' AS BetCheck,
-			'' AS TransDesc
-		FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
-			INNER JOIN bodb_archive.dbo.outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
+			b.ip
+		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
+			INNER JOIN bodb_Archive.dbo.outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
-			INNER JOIN @SportBettype sbt ON b.Bettype = sbt.Bettype
+			INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 		WHERE b.winlostdate BETWEEN @fromdate AND @TempToDate
 			AND b.recommend IN (SELECT CustId FROM @TempAg)
 			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
@@ -348,17 +333,17 @@ BEGIN
 		@SumLicenseeWL		= SUM(ISNULL(b.LicenseeWL, 0)),
 		@SumComm			= SUM(ISNULL(b.Comm, 0)),
 		@SumPlayerComm		= SUM(ISNULL(b.PlayerComm, 0)),
-		--USD
+		-- USD
 		@SumWinlostUSD		= SUM(ISNULL(b.WinLost		* e.USD, 0)),
 		@SumLicenseeWLUSD	= SUM(ISNULL(b.LicenseeWL	* e.USD, 0)),
 		@SumCommUSD			= SUM(ISNULL(b.Comm			* e.USD, 0)),
 		@SumPlayerCommUSD	= SUM(ISNULL(b.PlayerComm	* e.USD, 0)),
-		--EUR
+		-- EUR
 		@SumWinlostEUR		= SUM(ISNULL(b.WinLost		* e.EUR, 0)),
 		@SumLicenseeWLEUR	= SUM(ISNULL(b.LicenseeWL	* e.EUR, 0)),
 		@SumCommEUR			= SUM(ISNULL(b.Comm			* e.EUR, 0)),
 		@SumPlayerCommEUR	= SUM(ISNULL(b.PlayerComm	* e.EUR, 0)),
-		--GBP
+		-- GBP
 		@SumWinlostGBP		= SUM(ISNULL(b.WinLost		* e.GBP, 0)),
 		@SumLicenseeWLGBP	= SUM(ISNULL(b.LicenseeWL	* e.GBP, 0)),
 		@SumCommGBP			= SUM(ISNULL(b.Comm			* e.GBP, 0)),
@@ -379,21 +364,21 @@ BEGIN
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY b.TransId) AS RowNum,
 				b.*,
-				--USD
+				-- USD
 				b.Stake			* e.USD AS StakeUSD,
 				b.Actual_Stake	* e.USD AS Actual_StakeUSD,
 				b.WinLost		* e.USD AS WinLostUSD,
 				b.LicenseeWL	* e.USD AS LicenseeWLUSD,
 				b.Comm			* e.USD AS CommUSD,
 				b.PlayerComm	* e.USD AS PlayerCommUSD,
-				--EUR
+				-- EUR
 				b.Stake			* e.EUR AS StakeEUR,
 				b.Actual_Stake	* e.EUR AS Actual_StakeEUR,
 				b.WinLost		* e.EUR AS WinLostEUR,
 				b.LicenseeWL	* e.EUR AS LicenseeWLEUR,
 				b.Comm			* e.EUR AS CommEUR,
 				b.PlayerComm	* e.EUR AS PlayerCommEUR,
-				--GBP
+				-- GBP
 				b.Stake			* e.GBP AS StakeGBP,
 				b.Actual_Stake	* e.GBP AS Actual_StakeGBP,
 				b.WinLost		* e.GBP AS WinLostGBP,
@@ -422,7 +407,6 @@ BEGIN
 
 	IF EXISTS (SELECT 1 FROM #Data)
 	BEGIN
-		-- Horse Racing
 		IF @Todate > @MoveBetsDay
 		BEGIN
 			INSERT INTO @BettransDetail
@@ -479,7 +463,7 @@ BEGIN
 				bm.stake * e.EUR,
 				bm.stake * e.USD,
 				bm.stake * e.GBP
-			FROM bodb_archive.dbo.bettransm AS bm WITH (NOLOCK)
+			FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 				INNER JOIN #Data AS b ON bm.refno = b.TransId
 				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.bettype
@@ -487,7 +471,7 @@ BEGIN
 		END
 	END
 
-	SELECT * FROM @BettransDetail
+	SELECT DISTINCT * FROM @BettransDetail
 	ORDER BY RefNo, Bettype
 
 	DROP TABLE #TempExchange

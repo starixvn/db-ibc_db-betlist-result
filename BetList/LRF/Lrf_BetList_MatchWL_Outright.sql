@@ -40,7 +40,7 @@ AS
 		- 20110214@Jacob: Add column discount IN the result SET
 		- 20110216@Jacob: Add column nickname IN the result SET
 		- 20110303@Henry: suppport based currency
-		- 20110506@Henry: fix bug do not have data if only parameter @CustID --> change to param: @LicenseeID, @LicenseeType, @CurrencyName to get the list of agents
+		- 20110506@Henry: Change to param: @LicenseeID, @LicenseeType, @CurrencyName to get the list of agents
 		- 20110712@Henry: Add column LicenseeWL
 		- 20111121@Jacob: Add 3 parameters: @ShowBA & @Show SB & @ExcludeReject
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
@@ -54,29 +54,20 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
 
 	Example:
 
 	declare @p12 int
-	set @p12=7
 	declare @p13 money
-	set @p13=0
 	declare @p14 money
-	set @p14=0
 	declare @p15 money
-	set @p15=0
 	declare @p16 money
-	set @p16=0
 	declare @p17 money
-	set @p17=0
 	declare @p18 money
-	set @p18=0
 	declare @p19 money
-	set @p19=0
 	declare @p20 money
-	set @p20=0
 	declare @p21 money
-	set @p21=0
 
 	DECLARE @DateFrom DATETIME
 	DECLARE @DateTo DATETIME
@@ -85,7 +76,10 @@ AS
 	SELECT @DateTo = GETDATE()
 	SELECT @MoveBetsDay = MAX(eventdate) FROM match14 WITH(NOLOCK)
 
-	exec Lrf_BetList_SelWinlossOutright @LicenseeID=4,@LicenseeType=default,@CurrencyName=default,@FromDate=@DateFrom,@ToDate=@DateTo,@ShowBA=1,@ShowSB=0,@Language=default,@MoveBetsDay=@MoveBetsDay,@PageSize=1000,@PageIndex=1,@TotalRows=@p12 output,@SumWinlost=@p13 output,@SumLicenseeWL=@p14 output,@SumComm=@p15 output,@SumWinlostUSD=@p16 output,@SumLicenseeWLUSD=@p17 output,@SumCommUSD=@p18 output,@SumWinlostEUR=@p19 output,@SumLicenseeWLEUR=@p20 output,@SumCommEUR=@p21 output
+	exec Lrf_BetList_SelWinlossOutright @LicenseeID=4,@LicenseeType=default,@CurrencyName=default,@FromDate=@DateFrom,
+		@ToDate=@DateTo,@ShowBA=1,@ShowSB=0,@Language=default,@MoveBetsDay=@MoveBetsDay,@PageSize=1000,@PageIndex=1,
+		@TotalRows=@p12 output,@SumWinlost=@p13 output,@SumLicenseeWL=@p14 output,@SumComm=@p15 output,@SumWinlostUSD=@p16 output,
+		@SumLicenseeWLUSD=@p17 output,@SumCommUSD=@p18 output,@SumWinlostEUR=@p19 output,@SumLicenseeWLEUR=@p20 output,@SumCommEUR=@p21 output
 	select @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21
 */
 
@@ -113,7 +107,7 @@ BEGIN
 		RETURN
 	END CATCH
 
-	----Get Sport Bettype Matrix------
+	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, BetType INT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -152,15 +146,22 @@ BEGIN
 		LeagueId		INT,
 		MatchId			INT, 
 		Ip				VARCHAR(30),
-		BetStatus		VARCHAR(50),
 		IsNeutral		BIT,
 		WinLostDate		DATETIME,
 		Currency		SMALLINT,
 		IsBA			INT
 	)
 
-	IF @Todate > @MoveBetsDay
+	DECLARE @TempFromDate	SMALLDATETIME,
+		@TempToDate			SMALLDATETIME
+
+	IF @ToDate > @MoveBetsDay
 	BEGIN
+		IF @FromDate <= @MoveBetsDay
+			SET @TempFromDate =  DATEADD(DAY, 1, @MoveBetsDay)
+		ELSE
+			SET @TempFromDate = @FromDate
+
 		IF @ShowBA = 1
 		BEGIN
 			INSERT INTO #Data
@@ -179,7 +180,7 @@ BEGIN
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost - actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -191,7 +192,6 @@ BEGIN
 				l.leagueid,
 				b.matchid,
 				b.ip,
-				NULL,
 				CONVERT(BIT, 0) AS IsNeutral,
 				b.winlostdate,
 				b.currency,
@@ -204,7 +204,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.ruben = 1
 				AND b.tpositiontaking = 0
 				AND (@ExcludeReject = 0
@@ -229,7 +229,7 @@ BEGIN
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost - actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -241,7 +241,6 @@ BEGIN
 				l.leagueid,
 				b.matchid,
 				b.ip,
-				NULL,
 				CONVERT(BIT, 0) AS IsNeutral,
 				b.winlostdate,
 				b.currency,
@@ -254,7 +253,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.ruben = 1
 				AND b.tpositiontaking <> 0
 				AND (@ExcludeReject = 0
@@ -262,8 +261,13 @@ BEGIN
 		END
 	END
 
-	IF @Fromdate <= @MoveBetsDay
+	IF @FromDate <= @MoveBetsDay
 	BEGIN
+		IF @ToDate >= @MoveBetsDay
+			SET @TempToDate = @MoveBetsDay
+		ELSE
+			SET @TempToDate = @ToDate
+
 		IF @ShowBA = 1
 		BEGIN
 			INSERT INTO #Data
@@ -282,7 +286,7 @@ BEGIN
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost - actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -294,7 +298,6 @@ BEGIN
 				l.leagueid,
 				b.matchid,
 				b.ip,
-				NULL,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.winlostdate,
 				b.currency,
@@ -307,7 +310,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.ruben = 1
 				AND b.tpositiontaking = 0
 				AND (@ExcludeReject = 0
@@ -332,7 +335,7 @@ BEGIN
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost - actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -342,9 +345,8 @@ BEGIN
 				b.livehomescore,
 				b.liveawayscore,
 				l.leagueid,
-				b.matchid, 
+				b.matchid,
 				b.ip,
-				NULL,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.winlostdate,
 				b.currency,
@@ -357,7 +359,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.ruben = 1
 				AND b.tpositiontaking <> 0
 				AND (@ExcludeReject = 0
@@ -400,7 +402,7 @@ BEGIN
 		@SumCommGBP			= SUM(ISNULL(b.Comm			* e.GBP, 0)),
 		@SumPlayerCommGBP	= SUM(ISNULL(b.PlayerComm	* e.GBP, 0))
 	FROM #Data AS b
-		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
+		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
 
 	UPDATE #Data
 	SET Nickname = SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2))
@@ -435,7 +437,6 @@ BEGIN
 		LeagueId		INT,
 		MatchId			INT, 
 		Ip				VARCHAR(30),
-		BetStatus		VARCHAR(50),
 		IsNeutral		BIT,
 		WinLostDate		DATETIME,
 		Currency		SMALLINT,

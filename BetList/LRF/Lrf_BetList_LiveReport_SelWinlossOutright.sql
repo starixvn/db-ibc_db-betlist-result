@@ -28,6 +28,7 @@ AS
 		- 20150126@Winnie: Add base currency GBP 
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20170306@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
 */
 
 BEGIN
@@ -77,17 +78,24 @@ BEGIN
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
 		LeagueId		INT,
-		MatchId			INT, 
+		MatchId			INT,
 		Ip				VARCHAR(30),
-		BetStatus		VARCHAR(50),
 		IsNeutral		BIT,
 		WinLostDate		DATETIME,
 		Currency		SMALLINT,
 		IsBA			INT
 	)
 
+	DECLARE @TempFromDate	SMALLDATETIME,
+		@TempToDate			SMALLDATETIME
+
 	IF @Todate > @MoveBetsDay
 	BEGIN
+		IF @FromDate <= @MoveBetsDay
+			SET @TempFromDate =  DATEADD(DAY, 1, @MoveBetsDay)
+		ELSE
+			SET @TempFromDate = @FromDate
+
 		IF @ShowBA = 1
 		BEGIN
 			INSERT INTO #AgWinlossOutright
@@ -97,14 +105,14 @@ BEGIN
 				b.bettype,
 				b.transid,
 				m.matchcode,
-				m.teamID,
+				m.teamid,
 				0,
 				b.hdp1,
 				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -113,10 +121,9 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				l.leagueID,
-				b.matchid, 
+				l.leagueid,
+				b.matchid,
 				b.ip,
-				NULL,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.winlostdate,
 				b.currency,
@@ -128,7 +135,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = 10
 				AND b.tpositiontaking = 0
 				AND b.statusID IN (111, 112, 113)
@@ -150,8 +157,8 @@ BEGIN
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake),
-				-(b.winlost-b.actual_stake) AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -162,7 +169,6 @@ BEGIN
 				l.leagueID,
 				b.matchid, 
 				b.ip,
-				NULL,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.winlostdate,
 				b.currency,
@@ -170,11 +176,11 @@ BEGIN
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK) 
 				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = 10
 				AND b.statusID IN (111, 112, 113)
 				AND b.tpositiontaking <> 0
@@ -183,6 +189,11 @@ BEGIN
 
 	IF @Fromdate <= @MoveBetsDay
 	BEGIN
+		IF @ToDate >= @MoveBetsDay
+			SET @TempToDate = @MoveBetsDay
+		ELSE
+			SET @TempToDate = @ToDate
+
 		IF @ShowBA = 1
 		BEGIN
 			INSERT INTO #AgWinlossOutright
@@ -199,7 +210,7 @@ BEGIN
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -208,10 +219,9 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				l.leagueID,
-				b.matchid, 
+				l.leagueid,
+				b.matchid,
 				b.ip,
-				NULL,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.winlostdate,
 				b.currency,
@@ -223,7 +233,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.bettype = 10
 				AND b.statusID IN (111, 112, 113)
 				AND b.tpositiontaking = 0
@@ -245,8 +255,8 @@ BEGIN
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake),
-				-(b.winlost-b.actual_stake)AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				-(b.winlost - b.actual_stake)AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -255,9 +265,8 @@ BEGIN
 				b.livehomescore,
 				b.liveawayscore,
 				l.leagueID,
-				b.matchid, 
+				b.matchid,
 				b.ip,
-				NULL,
 				CONVERT(BIT,0) AS IsNeutral,
 				b.winlostdate,
 				b.currency,
@@ -269,7 +278,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.bettype = 10
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
@@ -286,7 +295,7 @@ BEGIN
 	CREATE NONCLUSTERED INDEX IDX_Index_Ag ON #AgWinlossOutright(Currency)
 
 	SELECT * INTO #TempExchange 
-	FROM Lrf_f_GetExchangeDaily(@FromDate,@ToDate)
+	FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)
 	WHERE exchangeid IN (SELECT DISTINCT Currency FROM #AgWinlossOutright)
 
 	SELECT A.* 
@@ -316,7 +325,7 @@ BEGIN
 				b.PlayerComm	* e.GBP AS PlayerCommGBP
 			FROM #AgWinlossOutright AS b
 				INNER JOIN dbo.customer AS c WITH(NOLOCK) ON c.custid = b.custid
-				INNER JOIN #TempExchange AS e ON b.currency = e.exchangeID AND b.winlostdate = e.exchangeDate
+				INNER JOIN #TempExchange AS e ON b.Currency = e.exchangeID AND b.WinLostDate = e.exchangeDate
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 

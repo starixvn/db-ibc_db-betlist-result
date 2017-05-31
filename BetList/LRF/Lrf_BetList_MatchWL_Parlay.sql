@@ -41,8 +41,8 @@ AS
 	Revisions:
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
 		- 20120319@Henry: show main transid for sub-ticket of system parlay
-		- 20120614@Jim: optimize code 
-		- 20120724@Jim: add playercomm value 
+		- 20120614@Jim: optimize code
+		- 20120724@Jim: add playercomm value
 		- 20121004@Jim: replace @currency input param by @currencyID
 		- 20130514@Jim: Restrict permission of Licensee Users by currency
 		- 20140428@Hannah: Sort betlist
@@ -53,6 +53,7 @@ AS
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
 
 	Param's Explanation:
 */
@@ -82,18 +83,15 @@ BEGIN
 	END CATCH
 
 	-- Use local variables to avoid bad params sniffing
-	DECLARE @FDate	SMALLDATETIME, 
-		@TDate		SMALLDATETIME
-
-	SELECT @FDate = @FromDate,
-		@TDate = @ToDate
+	DECLARE @TempFromDate	SMALLDATETIME,
+		@TempToDate			SMALLDATETIME
 
 	CREATE TABLE #Data (
 		Username		NVARCHAR(50),
 		Nickname		VARCHAR(50),
 		CustId			INT,
 		BetType			SMALLINT,
-		RefNo			NVARCHAR(50),
+		RefNo			BIGINT,
 		TransId			BIGINT,
 		BetId			BIGINT,
 		Hdp1			SMALLMONEY,
@@ -121,8 +119,13 @@ BEGIN
 		BetCheck		NVARCHAR(50)
 	)
 
-	IF @TDate > @MoveBetsDay
+	IF @ToDate > @MoveBetsDay
 	BEGIN
+		IF @FromDate <= @MoveBetsDay
+			SET @TempFromDate =  DATEADD(DAY, 1, @MoveBetsDay)
+		ELSE
+			SET @TempFromDate = @FromDate
+
 		IF @ShowBA = 1
 		BEGIN
 			INSERT INTO #Data
@@ -131,7 +134,7 @@ BEGIN
 				'' AS Nickname,
 				b.custid,
 				b.bettype,
-				CONVERT(NVARCHAR, b.refno),
+				b.refno,
 				CASE
 					WHEN bettype <> 29 THEN b.transid
 					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE betid END
@@ -144,7 +147,7 @@ BEGIN
 				b.status,
 				b.stake,
 				b.actual_stake,
-				(b.winlost-actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -164,7 +167,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FDate AND @TDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @BetType
 				AND b.matchid = @BetType
 				AND b.tpositiontaking = 0
@@ -179,7 +182,7 @@ BEGIN
 				'' AS Nickname,
 				b.custid,
 				b.bettype,
-				CONVERT(NVARCHAR, b.refno),
+				b.refno,
 				CASE
 					WHEN bettype <> 29 THEN b.transid
 					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE betid END
@@ -192,7 +195,7 @@ BEGIN
 				b.status,
 				b.stake,
 				b.actual_stake,
-				(b.winlost - actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				 -(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -212,7 +215,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FDate AND @TDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @Bettype
 				AND b.matchid = @Bettype
 				AND b.tpositiontaking <> 0
@@ -220,8 +223,13 @@ BEGIN
 		END
 	END
 
-	IF @FDate <= @MoveBetsDay
+	IF @FromDate <= @MoveBetsDay
 	BEGIN
+		IF @ToDate >= @MoveBetsDay
+			SET @TempToDate = @MoveBetsDay
+		ELSE
+			SET @TempToDate = @ToDate
+
 		IF @ShowBA = 1
 		BEGIN
 			INSERT INTO #Data 
@@ -230,7 +238,7 @@ BEGIN
 				'' AS Nickname,
 				b.custid,
 				b.bettype,
-				CONVERT(NVARCHAR, b.refno),
+				b.refno,
 				CASE
 					WHEN bettype <> 29 THEN b.transid
 					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE betid END
@@ -243,7 +251,7 @@ BEGIN
 				b.status,
 				b.stake,
 				b.actual_stake,
-				(b.winlost-actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -263,7 +271,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FDate AND @TDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.bettype = @BetType
 				AND b.matchid = @BetType
 				AND b.tpositiontaking = 0
@@ -278,7 +286,7 @@ BEGIN
 				'' AS Nickname,
 				b.custid,
 				b.bettype,
-				CONVERT(NVARCHAR, b.refno),
+				b.refno,
 				CASE
 					WHEN bettype <> 29 THEN b.transid
 					ELSE CASE WHEN ISNULL(b.BetID,0) = 0 THEN b.transid ELSE betid END
@@ -291,7 +299,7 @@ BEGIN
 				b.status,
 				b.stake,
 				b.actual_stake,
-				(b.winlost - actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -311,7 +319,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FDate AND @TDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.bettype = @Bettype
 				AND b.matchid = @Bettype
 				AND b.tpositiontaking <> 0
@@ -328,11 +336,11 @@ BEGIN
 
 	CREATE NONCLUSTERED INDEX IDX_Index_Ag ON #Data (Currency)
 
-	SELECT * INTO #TempExchange 
-	FROM Lrf_f_GetExchangeDaily(@FDate, @TDate)
+	SELECT * INTO #TempExchange
+	FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)
 	WHERE exchangeid IN (SELECT DISTINCT Currency FROM #Data)
 
-	SELECT 
+	SELECT
 		@TotalRows			= COUNT(b.TransId),
 		@SumWinlost			= SUM(ISNULL(b.WinLost, 0)),
 		@SumLicenseeWL		= SUM(ISNULL(b.LicenseeWL, 0)),
@@ -368,7 +376,7 @@ BEGIN
 		Nickname		VARCHAR(50),
 		CustId			INT,
 		BetType			SMALLINT,
-		RefNo			NVARCHAR(50),
+		RefNo			BIGINT,
 		TransId			BIGINT,
 		BetId			BIGINT,
 		Hdp1			SMALLMONEY,
@@ -474,6 +482,7 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #TempExchange
 END
+
 
 
 GO

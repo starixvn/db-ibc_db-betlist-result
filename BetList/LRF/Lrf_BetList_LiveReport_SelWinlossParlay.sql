@@ -20,8 +20,8 @@ AS
 	Revisions:
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
 		- 20120319@Henry: show main transid for sub-ticket of system parlay 
-		- 20120614@Jim: optimize code 
-		- 20120724@Jim: add playercomm value 
+		- 20120614@Jim: optimize code
+		- 20120724@Jim: add playercomm value
 		- 20121004@Jim: replace @currency input param by @currencyID
 		- 20130305@Jim: remove Grand total row in the result data
 		- 20130404@Jim: set default @ShowBA=0
@@ -34,6 +34,7 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20170306@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
 
 	Param's Explanation:
 		@Liveindicator : indicate that whether the report will get live data or not
@@ -70,7 +71,7 @@ BEGIN
 		Username		NVARCHAR(50),
 		CustId			INT,
 		BetType			SMALLINT,
-		RefNo			NVARCHAR(50),
+		RefNo			BIGINT,
 		TransId			BIGINT,
 		BetId			BIGINT,
 		Hdp1			SMALLMONEY,
@@ -97,8 +98,16 @@ BEGIN
 		IsBA			INT
 	)
 
+	DECLARE @TempFromDate	SMALLDATETIME,
+		@TempToDate			SMALLDATETIME
+
 	IF @Todate > @MoveBetsDay
 	BEGIN
+		IF @FromDate <= @MoveBetsDay
+			SET @TempFromDate =  DATEADD(DAY, 1, @MoveBetsDay)
+		ELSE
+			SET @TempFromDate = @FromDate
+
 		IF @ShowBA = 1
 		BEGIN
 			INSERT INTO #AgWinlossMP
@@ -106,7 +115,7 @@ BEGIN
 				b.username,
 				b.custid,
 				b.bettype,
-				CONVERT(NVARCHAR,b.refno),
+				b.refno,
 				CASE
 					WHEN b.bettype <> 29 THEN b.transid
 					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
@@ -119,7 +128,7 @@ BEGIN
 				b.status,
 				b.stake,
 				b.actual_stake,
-				(b.winlost-actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -138,7 +147,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @BetType
 				AND b.matchid = @BetType
 				AND b.tpositiontaking = 0
@@ -155,7 +164,7 @@ BEGIN
 				b.username,
 				b.custid,
 				b.bettype,
-				CONVERT(NVARCHAR, b.refno),
+				b.refno,
 				CASE
 					WHEN b.bettype <> 29 THEN b.transid
 					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
@@ -168,7 +177,7 @@ BEGIN
 				b.status,
 				b.stake,
 				b.actual_stake,
-				(b.winlost - actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				 -(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -187,7 +196,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @Bettype
 				AND b.matchid = @Bettype
 				AND b.tpositiontaking <> 0
@@ -200,6 +209,11 @@ BEGIN
 
 	IF @Fromdate <= @MoveBetsDay
 	BEGIN
+		IF @ToDate >= @MoveBetsDay
+			SET @TempToDate = @MoveBetsDay
+		ELSE
+			SET @TempToDate = @ToDate
+
 		IF @ShowBA = 1
 		BEGIN
 			INSERT INTO #AgWinlossMP
@@ -207,7 +221,7 @@ BEGIN
 				b.username,
 				b.custid,
 				b.bettype,
-				CONVERT(NVARCHAR, b.refno),
+				b.refno,
 				CASE
 					WHEN b.bettype <> 29 THEN b.transid
 					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
@@ -220,7 +234,7 @@ BEGIN
 				b.status,
 				b.stake,
 				b.actual_stake,
-				(b.winlost-actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -239,7 +253,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.bettype = @BetType
 				AND b.matchid = @BetType
 				AND b.tpositiontaking = 0
@@ -256,7 +270,7 @@ BEGIN
 				b.username,
 				b.custid,
 				b.bettype,
-				CONVERT(NVARCHAR, b.refno),
+				b.refno,
 				CASE
 					WHEN b.bettype <> 29 THEN b.transid
 					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
@@ -269,7 +283,7 @@ BEGIN
 				b.status,
 				b.stake,
 				b.actual_stake,
-				(b.winlost - actual_stake),
+				(b.winlost - b.actual_stake) AS WinLost,
 				 -(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -288,7 +302,7 @@ BEGIN
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.bettype = @Bettype
 				AND b.matchid = @Bettype
 				AND b.tpositiontaking <> 0
@@ -317,10 +331,10 @@ BEGIN
 
 	IF @Sort LIKE '%USD%' OR @Sort LIKE '%EUR%' OR @Sort LIKE '%GBP%'
 	BEGIN
-		DECLARE @charindex INT
+		DECLARE @CharIndex INT
 
-		SELECT @charindex = CHARINDEX( ' ', @Sort, 1)
-		SELECT @SortTemp = SUBSTRING(@Sort, 1, @charindex - 4) + '*e.' + SUBSTRING(@Sort, @charindex - 3, 4) + SUBSTRING(@Sort, @charindex + 1, LEN(@Sort))
+		SELECT @CharIndex = CHARINDEX( ' ', @Sort, 1)
+		SELECT @SortTemp = SUBSTRING(@Sort, 1, @CharIndex - 4) + '*e.' + SUBSTRING(@Sort, @CharIndex - 3, 4) + SUBSTRING(@Sort, @CharIndex + 1, LEN(@Sort))
 	END
 	ELSE
 	BEGIN
@@ -328,45 +342,46 @@ BEGIN
 	END
 
 	SELECT @sql = 
-	'SELECT A.*,'''' betstatus, '''' matchcode, 0 homeid, 0 awayid, 0 leagueid, 0 matchid, 0 sporttype
-	FROM
-	(
-		SELECT
-			ROW_NUMBER() OVER(ORDER BY ' + @SortTemp + ') AS RowNum,
-			b.*,
-			SUBSTRING(c.username2,  CHARINDEX(''$'',c.username2)+1, LEN(c.username2)-CHARINDEX(''$'',c.username2)) AS nickname,
-			--USD
-			stake * e.USD stakeUSD,
-			actual_stake * e.USD actual_stakeUSD,
-			winlost * e.USD winlostUSD,
-			LicenseeWL* e.USD LicenseeWLUSD,
-			comm * e.USD commUSD,
-			playercomm*e.USD PlayerCommUSD,
-			--EUR
-			stake * e.EUR stakeEUR,
-			actual_stake * e.EUR actual_stakeEUR,
-			winlost * e.EUR winlostEUR,
-			LicenseeWL * e.EUR LicenseeWLEUR,
-			comm * e.EUR commEUR,
-			playercomm*e.EUR playercommEUR,
-			--GBP
-			stake * e.GBP stakeGBP,
-			actual_stake * e.GBP actual_stakeGBP,
-			winlost * e.GBP winlostGBP,
-			LicenseeWL * e.GBP LicenseeWLGBP,
-			comm * e.GBP commGBP,
-			playercomm*e.GBP playercommGBP
-		FROM #AgWinlossMP AS b
-			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
-			INNER JOIN #TempExchange e ON b.currency = e.exchangeID AND b.winlostdate = e.exchangeDate
-	) A WHERE A.RowNum BETWEEN ' + CAST(@RowStart AS VARCHAR(50)) + ' AND ' + CAST(@RowEnd AS VARCHAR(50))
-	+' ORDER BY A.RowNum'
+		'SELECT A.*,'''' betstatus, '''' matchcode, 0 homeid, 0 awayid, 0 leagueid, 0 matchid, 0 sporttype
+		FROM
+		(
+			SELECT
+				ROW_NUMBER() OVER(ORDER BY ' + @SortTemp + ') AS RowNum,
+				b.*,
+				SUBSTRING(c.username2, CHARINDEX(''$'',c.username2) + 1, LEN(c.username2) - CHARINDEX(''$'',c.username2)) AS nickname,
+				--USD
+				stake * e.USD stakeUSD,
+				actual_stake * e.USD actual_stakeUSD,
+				winlost * e.USD winlostUSD,
+				LicenseeWL* e.USD LicenseeWLUSD,
+				comm * e.USD commUSD,
+				playercomm*e.USD PlayerCommUSD,
+				--EUR
+				stake * e.EUR stakeEUR,
+				actual_stake * e.EUR actual_stakeEUR,
+				winlost * e.EUR winlostEUR,
+				LicenseeWL * e.EUR LicenseeWLEUR,
+				comm * e.EUR commEUR,
+				playercomm*e.EUR playercommEUR,
+				--GBP
+				stake * e.GBP stakeGBP,
+				actual_stake * e.GBP actual_stakeGBP,
+				winlost * e.GBP winlostGBP,
+				LicenseeWL * e.GBP LicenseeWLGBP,
+				comm * e.GBP commGBP,
+				playercomm*e.GBP playercommGBP
+			FROM #AgWinlossMP AS b
+				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
+				INNER JOIN #TempExchange e ON b.currency = e.exchangeID AND b.winlostdate = e.exchangeDate
+		) A WHERE A.RowNum BETWEEN ' + CAST(@RowStart AS VARCHAR(50)) + ' AND ' + CAST(@RowEnd AS VARCHAR(50))
+		+' ORDER BY A.RowNum'
 
 	EXEC (@sql)
 
 	DROP TABLE #AgWinlossMP
 	DROP TABLE #TempExchange
 END
+
 
 
 GO

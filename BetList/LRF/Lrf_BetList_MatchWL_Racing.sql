@@ -44,7 +44,7 @@ AS
 		- 20110214@Jacob: Add column discount in the result SET
 		- 20110216@Jacob: Add column nickname in the result SET
 		- 20110303@Henry: Suppport based currency
-		- 20110506@Henry: Fix bug do not have data if only parameter @CustID --> change to param: @LicenseeID, @LicenseeType, @CurrencyName to get the list of agents
+		- 20110506@Henry: Change to param: @LicenseeID, @LicenseeType, @CurrencyName to get the list of agents
 		- 20110721@Henry: Add Licensee WL
 		- 20120214@Jim: Change table ExchangeDaily by function Lrf_f_GetExchangeDaily
 		- 20120726@Jim: Add playercomm value
@@ -56,6 +56,7 @@ AS
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
 		- 20161004@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
+		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
 */
 
 BEGIN
@@ -82,7 +83,7 @@ BEGIN
 		RETURN
 	END CATCH
 
-	----Get Sport Bettype Matrix------
+	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -124,14 +125,22 @@ BEGIN
 		LeagueId		INT,
 		MatchId			INT,
 		Ip				VARCHAR(30),
-		BetStatus		VARCHAR(50),
 		IsNeutral		BIT,
 		WinLostDate		DATETIME,
 		Currency		SMALLINT
 	)
 
+	-- Use local variables to avoid bad params sniffing
+	DECLARE @TempFromDate	SMALLDATETIME,
+		@TempToDate			SMALLDATETIME
+
 	IF @Todate > @MoveBetsDay
 	BEGIN
+		IF @FromDate <= @MoveBetsDay
+			SET @TempFromDate =  DATEADD(DAY, 1, @MoveBetsDay)
+		ELSE
+			SET @TempFromDate = @FromDate
+
 		INSERT INTO #Data
 		SELECT
 			l.sporttype,
@@ -164,7 +173,6 @@ BEGIN
 			l.leagueid,
 			b.matchid,
 			b.ip,
-			NULL,
 			CONVERT(BIT,0) AS IsNeutral,
 			b.winlostdate,
 			b.currency
@@ -176,7 +184,7 @@ BEGIN
 		WHERE
 			b.recommend IN (SELECT CustId FROM @TempAg)
 			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-			AND b.winlostdate BETWEEN @FromDate AND @ToDate
+			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND l.leagueid = @LeagueId
 			AND m.groupmatch = @RaceNo
 			AND b.bettype = @BetType
@@ -185,6 +193,11 @@ BEGIN
   
 	IF @Fromdate <= @MoveBetsDay
 	BEGIN
+		IF @ToDate >= @MoveBetsDay
+			SET @TempToDate = @MoveBetsDay
+		ELSE
+			SET @TempToDate = @ToDate
+
 		INSERT INTO #Data
 		SELECT
 			l.sporttype,
@@ -217,7 +230,6 @@ BEGIN
 			l.leagueid,
 			b.matchid,
 			b.ip,
-			NULL,
 			CONVERT(BIT,0) AS IsNeutral,
 			b.winlostdate,
 			b.currency
@@ -229,7 +241,7 @@ BEGIN
 		WHERE
 			b.recommend IN (SELECT CustId FROM @TempAg)
 			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-			AND b.winlostdate BETWEEN @FromDate AND @ToDate
+			AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 			AND l.leagueid = @LeagueId
 			AND m.groupmatch = @RaceNo
 			AND b.bettype = @BetType
@@ -305,7 +317,6 @@ BEGIN
 		LeagueId		INT,
 		MatchId			INT,
 		Ip				VARCHAR(30),
-		BetStatus		VARCHAR(50),
 		IsNeutral		BIT,
 		WinLostDate		DATETIME,
 		Currency		SMALLINT
@@ -334,7 +345,7 @@ BEGIN
 
 	DECLARE @Sql NVARCHAR(1000)
 
-	SET @Sql = 
+	SET @Sql =
 		'INSERT INTO #PagingData
 		SELECT A.*
 		FROM
@@ -421,7 +432,7 @@ BEGIN
 			END
 		END
 
-		SELECT * FROM @Bettransm
+		SELECT DISTINCT * FROM @Bettransm
 		ORDER BY RefNo, Bettype
 	END
 	
