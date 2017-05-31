@@ -54,6 +54,7 @@ AS
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20170830@Kos: Support Licensee Bonus System [#Redmine: 72792]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -144,7 +145,9 @@ BEGIN
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT
+		OriginalBetType	SMALLINT,
+		WalletType		TINYINT,
+		RefCode			BIGINT
 	)
 
 	IF EXISTS (SELECT TOP(1) 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchID)
@@ -199,7 +202,9 @@ BEGIN
 				CASE
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
-				END AS OriginalBetType
+				END AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK,INDEX=IXU_transid)
 				INNER JOIN bodb_licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
@@ -260,7 +265,9 @@ BEGIN
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
-				0 AS OriginalBetType
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK,INDEX=IXU_transid)
 				INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
@@ -331,7 +338,9 @@ BEGIN
 				CASE
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
-				END AS OriginalBetType
+				END AS OriginalBetType,
+				ISNULL(b.WalletType, 0) AS WalletType,
+				ISNULL(b.RefCode, 0) AS RefCode
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -392,7 +401,9 @@ BEGIN
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
-				0 AS OriginalBetType
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -463,7 +474,9 @@ BEGIN
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
-				0 AS OriginalBetType
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -536,7 +549,9 @@ BEGIN
 				CASE
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
-				END AS OriginalBetType
+				END AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
@@ -597,7 +612,9 @@ BEGIN
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
-				0 AS OriginalBetType
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
@@ -668,7 +685,9 @@ BEGIN
 				CASE
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
-				END AS OriginalBetType
+				END AS OriginalBetType,
+				ISNULL(b.WalletType, 0) AS WalletType,
+				ISNULL(b.RefCode, 0) AS RefCode
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK) 
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
@@ -729,7 +748,9 @@ BEGIN
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
-				0 AS OriginalBetType
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
@@ -800,7 +821,9 @@ BEGIN
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
-				0 AS OriginalBetType
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK) 
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
@@ -821,6 +844,65 @@ BEGIN
 				b.transid
 		END
 	END
+
+	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
+	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
+	BEGIN
+		DECLARE @RefCodeTmp TABLE (
+			RefCode		BIGINT,
+			TransId		BIGINT,
+			Stake		MONEY,
+			WinLost		MONEY,
+			LicenseeWL	MONEY,
+			Comm		MONEY,
+			PlayerComm	MONEY
+		)
+
+		-- Prepare temp table
+		INSERT INTO @RefCodeTmp
+		SELECT
+			RefCode,
+			MIN(TransId) AS TransId,
+			SUM(Stake) AS Stake,
+			SUM(WinLost) AS WinLost,
+			SUM(LicenseeWL) AS LicenseeWL,
+			SUM(Comm) AS Comm,
+			SUM(PlayerComm) AS PlayerComm
+		FROM #Data
+		WHERE RefCode <> 0
+		GROUP BY RefCode
+		HAVING COUNT(*) > 1
+
+		IF EXISTS (SELECT 1 FROM @RefCodeTmp)
+		BEGIN
+			-- Update data for summmary ticket
+			UPDATE b
+			SET
+				b.Stake = r.Stake,
+				b.WinLost = r.WinLost,
+				b.LicenseeWL = r.LicenseeWL,
+				b.Comm = r.Comm,
+				b.PlayerComm = r.PlayerComm,
+				b.WalletType = 0
+			FROM #Data AS b
+				INNER JOIN @RefCodeTmp AS r ON b.RefCode = r.RefCode AND b.TransId = r.TransId
+
+			-- Delete 2nd Bonus/Cash tickets
+			DELETE #Data
+			WHERE WalletType <> 0
+				AND RefCode IN (SELECT RefCode FROM @RefCodeTmp)
+		END
+	END
+
+	-- Display detail link for ticket from Bonus Wallet only
+	UPDATE #Data
+	SET RefCode = TransId
+	WHERE WalletType = 1 AND RefCode = 0
+
+	-- Don't display Cash text for ticket from Cash Wallet only
+	UPDATE #Data
+	SET WalletType = 0
+	WHERE WalletType = 2 AND RefCode = 0
 
 	DECLARE @Fromdate DATETIME
 	DECLARE @Todate DATETIME
@@ -940,6 +1022,9 @@ BEGIN
 	DROP TABLE #Data
 	DROP TABLE #TempExchange
 END
+
+
+
 
 
 

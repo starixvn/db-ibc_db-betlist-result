@@ -45,11 +45,12 @@ AS
 		- 20160801@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20170227@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
+		- 20170602@Kos: Support Licensee Bonus System [#Redmine: 72792]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
 		- @CustID : Customer Number
-		- @Odds : decimals odds, default >=0
+		- @Odds : decimals odds, default >= 0
 		- @LeagueID : LeagueID, Number
 		- @PageSize : Number rows of one fage, for faging
 		- @PageIndex : Index of paging
@@ -87,9 +88,6 @@ BEGIN
 		RETURN
 	END CATCH
 
-	DECLARE @TempFromDate SMALLDATETIME
-	DECLARE @TempToDate SMALLDATETIME
-
 	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID INT, Bettype INT, EventType INT)
 
@@ -102,15 +100,11 @@ BEGIN
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE BetType NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 
-	DECLARE @IFromdate DATETIME
-	DECLARE @ITodate DATETIME
-	DECLARE @TempBettype AS TABLE (bettype INT PRIMARY KEY)
-
 	CREATE TABLE #Data (
 		SportType		INT,
 		Username		NVARCHAR(50),
 		CustId			INT,
-		Bettype			INT,
+		BetType			INT,
 		LeagueId		INT,
 		TransId			BIGINT,
 		MatchCode		VARCHAR(50),
@@ -146,7 +140,9 @@ BEGIN
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT
+		OriginalBetType	SMALLINT,
+		WalletType		TINYINT,
+		RefCode			BIGINT
 	)
 
 	DECLARE @Status AS TABLE (StatusID INT)
@@ -173,6 +169,9 @@ BEGIN
 		INSERT INTO @status
 		SELECT 111
 
+	DECLARE @TempFromDate SMALLDATETIME
+	DECLARE @TempToDate SMALLDATETIME
+
 	IF @Todate > @MoveBetsDay
 	BEGIN
 		IF @FromDate <= @MoveBetsDay
@@ -188,13 +187,13 @@ BEGIN
 				b.username,
 				b.custid,
 				b.bettype,
-				m.leagueID,
+				m.leagueid,
 				b.transid,
 				m.matchcode,
 				m.homeid,
 				m.awayid,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				CASE
 					WHEN ( b.bettype IN (1, 2, 3, 7, 12, 8, 20)
@@ -209,7 +208,7 @@ BEGIN
 										WHEN b.odds >= 0 THEN (1 + b.odds)
 									END
 								WHEN b.oddstype = 5 THEN --american odds to decimal
-									CASE 
+									CASE
 										WHEN (b.odds * 100) < 0 THEN (1 - CAST(1 AS FLOAT) / CAST(b.odds AS FLOAT))
 										WHEN (b.odds * 100) % 2 = 0 THEN 2
 										WHEN (b.odds * 100) > 0 THEN (1 + b.odds)
@@ -219,7 +218,7 @@ BEGIN
 				END AS odds2,
 				b.status,
 				b.stake,
-				(b.winlost - b.actual_stake) winlost,
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -232,7 +231,7 @@ BEGIN
 				b.matchid,
 				b.statusID,
 				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				b.oddstype,
 				b.betid,
 				b.currency,
@@ -250,7 +249,9 @@ BEGIN
 				CASE
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
-				END AS OriginalBetType
+				END AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
@@ -258,9 +259,9 @@ BEGIN
 			WHERE m.leagueid = @LeagueID
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (SELECT * FROM @status)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.custid = @CustID
-				AND b.tpositiontaking = 0 --getBA
+				AND b.tpositiontaking = 0	-- getBA
 				AND (@MatchId = 0 OR m.matchid = @MatchId)
 			ORDER BY b.status,
 				b.transid
@@ -279,8 +280,8 @@ BEGIN
 				m.matchcode,
 				m.homeid,
 				m.awayid,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				CASE
 					WHEN ( b.bettype IN (1, 2, 3, 7, 12, 8, 20)
@@ -305,11 +306,8 @@ BEGIN
 				END odds2,
 				b.status,
 				b.stake,
-				(b.winlost - actual_stake) AS WinLost,
-				CASE
-					WHEN b.tpositiontaking <> 0 THEN - (b.winlost - b.actual_stake)
-					ELSE 0
-				END AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -339,7 +337,9 @@ BEGIN
 				CASE
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
-				END AS OriginalBetType
+				END AS OriginalBetType,
+				ISNULL(b.WalletType, 0) AS WalletType,
+				ISNULL(b.RefCode, 0) AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
@@ -347,9 +347,9 @@ BEGIN
 			WHERE m.leagueid = @LeagueID
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN ( SELECT * FROM @status )
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.custid = @CustID
-				AND tpositiontaking <> 0
+				AND b.tpositiontaking <> 0
 				AND (@MatchId = 0 OR m.matchid = @MatchId)
 			ORDER BY b.status,
 				b.transid
@@ -376,8 +376,8 @@ BEGIN
 				m.matchcode,
 				m.homeID,
 				m.awayID,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.Odds,
 				CASE
 					WHEN ( b.bettype IN (1, 2, 3, 7, 12, 8, 20)
@@ -402,7 +402,7 @@ BEGIN
 				END odds2,
 				b.status,
 				b.stake,
-				(b.winlost - actual_stake) AS WinLost,
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -415,7 +415,7 @@ BEGIN
 				b.matchid,
 				b.statusID,
 				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				b.oddstype,
 				b.betid,
 				b.currency,
@@ -436,7 +436,9 @@ BEGIN
 				CASE
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
-				END AS OriginalBetType
+				END AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
@@ -444,7 +446,7 @@ BEGIN
 			WHERE m.leagueid = @leagueID
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN ( SELECT * FROM @status )
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.custid = @CustID
 				AND b.tpositiontaking = 0
 				AND (@MatchId = 0 OR m.matchid = @MatchId)
@@ -460,13 +462,13 @@ BEGIN
 				b.username,
 				b.custid,
 				b.bettype,
-				m.leagueID,
+				m.leagueid,
 				b.transid,
 				m.matchcode,
-				m.homeID,
-				m.awayID,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				m.homeid,
+				m.awayid,
+				b.hdp1,
+				b.hdp2,
 				b.Odds,
 				CASE
 					WHEN ( b.bettype IN (1, 2, 3, 7, 12, 8, 20)
@@ -491,11 +493,8 @@ BEGIN
 				END odds2,
 				b.status,
 				b.stake,
-				(b.winlost - actual_stake) AS WinLost,
-				CASE 
-					WHEN b.tpositiontaking <> 0 THEN - (b.winlost - b.actual_stake)
-					ELSE 0
-				END AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -508,7 +507,7 @@ BEGIN
 				b.statusID,
 				m.betstatus,
 				ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
-				b.OddsType,
+				b.oddstype,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -528,7 +527,9 @@ BEGIN
 				CASE
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
-				END AS OriginalBetType
+				END AS OriginalBetType,
+				ISNULL(b.WalletType, 0) AS WalletType,
+				ISNULL(b.RefCode, 0) AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
@@ -536,7 +537,7 @@ BEGIN
 			WHERE m.leagueid = @leagueID
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (SELECT * FROM @status)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.custid = @CustID
 				AND b.tpositiontaking <> 0
 				AND (@MatchId = 0 OR m.matchid = @MatchId)
@@ -547,13 +548,13 @@ BEGIN
 
 	IF @FromDate < @BalanceUpDay
 	BEGIN
-		IF @todate >= DATEADD(dd, - 1, @BalanceUpDay)
-			SET @TempToDate = DATEADD(dd, - 1, @BalanceUpDay)
+		IF @todate >= DATEADD(dd, -1, @BalanceUpDay)
+			SET @TempToDate = DATEADD(dd, -1, @BalanceUpDay)
 		ELSE
 			SET @TempToDate = @todate
 
-		DECLARE @sql NVARCHAR(MAX)
-		DECLARE @OPENQUERY	NVARCHAR(4000),
+		DECLARE @sql		NVARCHAR(MAX),
+			@OPENQUERY		NVARCHAR(4000),
 			@TSQL			NVARCHAR(4000),
 			@LinkedServer	NVARCHAR(40)
 
@@ -570,7 +571,7 @@ BEGIN
 					m.ShowTime,m.isNeutral
 				FROM bodb_archive.dbo.match_bk m WITH(NOLOCK)
 				WHERE m.leagueid =' + CAST(@leagueid AS VARCHAR) + '
-					AND EventDate BETWEEN ''''' + CAST(@fromdate AS VARCHAR) + '''''' + ' AND ''''' + CAST(@todate AS VARCHAR) + ''''')
+					AND EventDate BETWEEN ''''' + CAST(@fromdate AS VARCHAR) + ''''' AND ''''' + CAST(@todate AS VARCHAR) + ''''')
 
 				SELECT m.sporttype,
 					'''''''' username,
@@ -639,17 +640,19 @@ BEGIN
 					CASE
 						WHEN b.stake <> 0 THEN -1
 						ELSE 0
-					END AS OriginalBetType
+					END AS OriginalBetType,
+					0 AS WalletType,
+					0 AS RefCode
 				FROM
 					bodb_archive.dbo.bettrans_bk b WITH (NOLOCK, INDEX=IX_CUSTID)
 					INNER JOIN cte_match m ON b.matchid = m.matchid
 				WHERE b.winlostdate BETWEEN ''''' 
-					+ CAST(@fromdate AS VARCHAR) + '''''' + ' AND ''''' + CAST(@TempToDate AS VARCHAR) + '''''
-					AND (b.bettype<31
+					+ CAST(@FromDate AS VARCHAR) + '''''' + ' AND ''''' + CAST(@TempToDate AS VARCHAR) + '''''
+					AND (b.bettype < 31
 						OR (b.bettype BETWEEN 121 AND 999)
 						OR (b.bettype BETWEEN 1301 AND 1399))
-					AND b.statusID IN (111,112,113,114,115)
-					AND b.Custid =' + CAST(@custid AS VARCHAR) + '
+					AND b.statusID IN (111, 112, 113, 114, 115)
+					AND b.Custid =' + CAST(@CustId AS VARCHAR) + '
 					AND b.tpositiontaking = 0
 					AND (' + CAST(@MatchId AS VARCHAR) + '=0 OR m.matchid=' + CAST(@MatchId AS VARCHAR) + ')
 					'')'
@@ -657,7 +660,7 @@ BEGIN
 			SELECT @sql = @OPENQUERY + @TSQL
 
 			INSERT INTO #Data
-			EXEC (@sql)
+			EXEC(@sql)
 		END
 
 		IF @ShowSB = 1
@@ -707,9 +710,7 @@ BEGIN
 					b.status,
 					b.stake,
 					(b.winlost-actual_stake) winlost,
-					CASE WHEN b.tpositiontaking <> 0 THEN - (b.winlost-b.actual_stake)
-						ELSE 0 
-					END AS LicenseeWL,
+					- (b.winlost-b.actual_stake) AS LicenseeWL,
 					b.comm,
 					b.playercomm,
 					b.transdate,
@@ -739,17 +740,19 @@ BEGIN
 					CASE
 						WHEN b.stake <> 0 THEN -1
 						ELSE 0
-					END AS OriginalBetType
+					END AS OriginalBetType,
+					ISNULL(b.WalletType, 0) AS WalletType,
+					ISNULL(b.RefCode, 0) AS RefCode
 				FROM bodb_archive.dbo.bettrans_bk b WITH (NOLOCK, INDEX=IX_CUSTID)
 					INNER JOIN cte_match m ON b.matchid = m.matchid
 				WHERE b.winlostdate between ''''' 
 					+ CAST(@fromdate AS VARCHAR) + '''''' + ' AND ''''' + CAST(@TempToDate AS VARCHAR) + '''''
-					AND (b.bettype<31
+					AND (b.bettype < 31
 						OR (b.bettype BETWEEN 121 AND 999)
 						OR (b.bettype BETWEEN 1301 AND 1399))
 					AND b.statusID IN (111,112,113,114,115)
 					AND b.Custid =' + CAST(@custid AS VARCHAR) + '
-					AND b.tpositiontaking<>0
+					AND b.tpositiontaking <> 0
 					AND (' + CAST(@MatchId AS VARCHAR) + '=0 OR m.matchid=' + CAST(@MatchId AS VARCHAR) + ')
 				'')'
 
@@ -760,23 +763,86 @@ BEGIN
 		END
 	END
 
-	DECLARE @RowStart INT
-		,@RowEnd INT
-		,@TotalRow INT
+	DELETE #Data
+	WHERE odds2 < @Odds
+		OR StatusID NOT IN ( SELECT * FROM @Status )
 
-	SELECT @PageIndex = @PageIndex - 1
-		,@RowStart = @PageSize * @PageIndex + 1
-		,@RowEnd = @RowStart + @PageSize - 1
+	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
+	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
+	BEGIN
+		DECLARE @RefCodeTmp TABLE (
+			RefCode		BIGINT,
+			TransId		BIGINT,
+			Stake		MONEY,
+			WinLost		MONEY,
+			LicenseeWL	MONEY,
+			Comm		MONEY,
+			PlayerComm	MONEY
+		)
+
+		-- Prepare temp table
+		INSERT INTO @RefCodeTmp
+		SELECT
+			RefCode,
+			MIN(TransId) AS TransId,
+			SUM(Stake) AS Stake,
+			SUM(WinLost) AS WinLost,
+			SUM(LicenseeWL) AS LicenseeWL,
+			SUM(Comm) AS Comm,
+			SUM(PlayerComm) AS PlayerComm
+		FROM #Data
+		WHERE RefCode <> 0
+		GROUP BY RefCode
+		HAVING COUNT(*) > 1
+
+		IF EXISTS (SELECT 1 FROM @RefCodeTmp)
+		BEGIN
+			-- Update data for summmary ticket
+			UPDATE b
+			SET
+				b.Stake = r.Stake,
+				b.WinLost = r.WinLost,
+				b.LicenseeWL = r.LicenseeWL,
+				b.Comm = r.Comm,
+				b.PlayerComm = r.PlayerComm,
+				b.WalletType = 0
+			FROM #Data AS b
+				INNER JOIN @RefCodeTmp AS r ON b.RefCode = r.RefCode AND b.TransId = r.TransId
+
+			-- Delete 2nd Bonus/Cash tickets
+			DELETE #Data
+			WHERE WalletType <> 0
+				AND RefCode IN (SELECT RefCode FROM @RefCodeTmp)
+		END
+	END
+
+	-- Display detail link for ticket from Bonus Wallet only
+	UPDATE #Data
+	SET RefCode = TransId
+	WHERE WalletType = 1 AND RefCode = 0
+
+	-- Don't display Cash text for ticket from Cash Wallet only
+	UPDATE #Data
+	SET WalletType = 0
+	WHERE WalletType = 2 AND RefCode = 0
+
+	DECLARE @RowStart	INT,
+		@RowEnd			INT,
+		@TotalRow		INT
+
+	SELECT @PageIndex = @PageIndex - 1,
+		@RowStart = @PageSize * @PageIndex + 1,
+		@RowEnd = @RowStart + @PageSize - 1
 
 	DECLARE @Today SMALLDATETIME
 
 	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 
-	SELECT @FromDate =	CASE 
+	SELECT @FromDate =	CASE
 							WHEN MIN(winlostdate) > @Today THEN @Today
 							ELSE MIN(winlostdate)
 						END
-		,@Todate =	CASE 
+		,@Todate =	CASE
 						WHEN MAX(winlostdate) > @Today THEN @Today
 						ELSE MAX(winlostdate)
 					END
@@ -792,13 +858,11 @@ BEGIN
 
 	SELECT @TotalRows = COUNT(1)
 	FROM #Data
-	WHERE odds2 >= @Odds
-		AND StatusID IN ( SELECT * FROM @Status )
 
 	SELECT A.*
 	FROM (
 		SELECT
-			ROW_NUMBER() OVER (ORDER BY b.STATUS, b.transid) AS RowNum,
+			ROW_NUMBER() OVER (ORDER BY b.Status, b.transid) AS RowNum,
 			b.*,
 			SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS NickName,
 			-- USD
@@ -824,15 +888,9 @@ BEGIN
 			b.OriginalStake	* e.GBP AS OriginalStakeGBP
 		FROM #Data AS b
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = (
-					CASE 
-						WHEN b.winlostdate <= @Today THEN b.winlostdate
-						ELSE @Today
-					END
-					)
+			INNER JOIN #TempExchange AS e
+				ON e.ExchangeDate = CASE WHEN b.winlostdate <= @Today THEN b.winlostdate ELSE @Today END
 				AND e.exchangeid = b.Currency
-		WHERE b.odds2 >= @Odds
-			AND b.StatusID IN ( SELECT * FROM @Status )
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 

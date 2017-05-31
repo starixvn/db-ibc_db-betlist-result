@@ -27,6 +27,7 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
+		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
 
 	Param's explanation:
 		- BetChoice: one of the following list: 'All','Home', 'Away', 'Over', 'Under'
@@ -34,7 +35,7 @@ AS
 			+ Half: List all tickets bet on HT Handicap or HT Over/Under (@bettype must be 0)
 			+ Home: List all Tickets bet on Home team
 			+ Away: List all tickets bet on Away team
-			+ Over: List all tickets bet on 'Over' 
+			+ Over: List all tickets bet on 'Over'
 			+ Under: List all tickets bet on 'Under'
 */
 
@@ -57,7 +58,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -80,6 +81,7 @@ BEGIN
 		Odds			MONEY,
 		Status			NVARCHAR(50),
 		Stake			MONEY,
+		Actual_Stake	MONEY,
 		TransDate		DATETIME,
 		BetTeam			VARCHAR(50),
 		LiveIndicator	INT,
@@ -92,13 +94,14 @@ BEGIN
 		BetId			BIGINT,
 		WinLostDate		DATETIME,
 		Currency		SMALLINT,
-		PlayerComm		MONEY,
 		RefNo			BIGINT,
 		ShowTime		NVARCHAR(50),
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT
+		OriginalBetType	SMALLINT,
+		WalletType		TINYINT,
+		RefCode			BIGINT
 	)
 
 	INSERT INTO #Data
@@ -121,6 +124,7 @@ BEGIN
 			ELSE b.status
 		END AS status,
 		b.stake,
+		b.actual_stake,
 		b.transdate,
 		b.betteam,
 		b.liveindicator,
@@ -128,12 +132,11 @@ BEGIN
 		b.liveawayscore,
 		b.discount,
 		b.ip,
-		ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 		b.oddstype,
 		b.betid,
 		b.winlostdate,
 		b.currency,
-		b.playercomm,
 		b.refno,
 		ISNULL(m.showtime,'') AS showtime,
 		ISNULL(b.betdaqid, -1) AS BetdaqId,
@@ -146,7 +149,9 @@ BEGIN
 		CASE
 			WHEN b.stake <> 0 THEN -1
 			ELSE 0
-		END AS OriginalBetType
+		END AS OriginalBetType,
+		ISNULL(b.WalletType, 0) AS WalletType,
+		ISNULL(b.RefCode, 0) AS RefCode
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid 
 	WHERE b.matchid = @MatchId
@@ -163,17 +168,6 @@ BEGIN
 	ORDER BY
 		b.status,
 		b.transid
-
-	DECLARE @RowStart INT,
-		@RowEnd INT
-
-	SELECT @PageIndex = @PageIndex - 1,
-		@RowStart = @PageSize * @PageIndex + 1,
-		@RowEnd = @RowStart + @PageSize - 1
-
-	DECLARE @Today SMALLDATETIME
-
-	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 
 	-- Filter data by BetChoice
 	IF @BetChoice LIKE 'Home'
@@ -211,6 +205,67 @@ BEGIN
 		DELETE FROM #Data WHERE hdp2-hdp1 != @handicap
 	END
 
+	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
+	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
+	BEGIN
+		DECLARE @RefCodeTmp TABLE (
+			RefCode			BIGINT,
+			TransId			BIGINT,
+			Stake			MONEY,
+			Actual_Stake	MONEY
+		)
+
+		-- Prepare temp table
+		INSERT INTO @RefCodeTmp
+		SELECT
+			RefCode,
+			MIN(TransId) AS TransId,
+			SUM(Stake) AS Stake,
+			SUM(Actual_Stake) AS Actual_Stake
+		FROM #Data
+		WHERE RefCode <> 0
+		GROUP BY RefCode
+		HAVING COUNT(*) > 1
+
+		IF EXISTS (SELECT 1 FROM @RefCodeTmp)
+		BEGIN
+			-- Update data for summmary ticket
+			UPDATE b
+			SET
+				b.Stake = r.Stake,
+				b.Actual_Stake = r.Actual_Stake,
+				b.WalletType = 0
+			FROM #Data AS b
+				INNER JOIN @RefCodeTmp AS r ON b.RefCode = r.RefCode AND b.TransId = r.TransId
+
+			-- Delete 2nd Bonus/Cash tickets
+			DELETE #Data
+			WHERE WalletType <> 0
+				AND RefCode IN (SELECT RefCode FROM @RefCodeTmp)
+		END
+	END
+
+	-- Display detail link for ticket from Bonus Wallet only
+	UPDATE #Data
+	SET RefCode = TransId
+	WHERE WalletType = 1 AND RefCode = 0
+
+	-- Don't display Cash text for ticket from Cash Wallet only
+	UPDATE #Data
+	SET WalletType = 0
+	WHERE WalletType = 2 AND RefCode = 0
+
+	DECLARE @RowStart INT,
+		@RowEnd INT
+
+	SELECT @PageIndex = @PageIndex - 1,
+		@RowStart = @PageSize * @PageIndex + 1,
+		@RowEnd = @RowStart + @PageSize - 1
+
+	DECLARE @Today SMALLDATETIME
+
+	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
+
 	IF @TotalRows = 0
 	BEGIN
 		SELECT @TotalRows = COUNT(TransId) FROM #Data
@@ -226,9 +281,9 @@ BEGIN
 				b.Stake * e.USD AS StakeUSD,
 				b.Stake * e.EUR AS StakeEUR,
 				b.Stake * e.GBP AS StakeGBP,
-				b.PlayerComm * e.USD AS PlayerCommUSD,
-				b.PlayerComm * e.EUR AS PlayerCommEUR,
-				b.PlayerComm * e.GBP AS PlayerCommGBP,
+				b.Actual_Stake * e.USD AS Actual_StakeUSD,
+				b.Actual_Stake * e.EUR AS Actual_StakeEUR,
+				b.Actual_Stake * e.GBP AS Actual_StakeGBP,
 				b.OriginalStake * e.USD AS OriginalStakeUSD,
 				b.OriginalStake * e.EUR AS OriginalStakeEUR,
 				b.OriginalStake * e.GBP AS OriginalStakeGBP
@@ -247,4 +302,3 @@ GRANT EXECUTE ON [dbo].[Lrf_BetList_Forecast_SelByMatch] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_Forecast_SelByMatch] TO vnteam
 GO
-

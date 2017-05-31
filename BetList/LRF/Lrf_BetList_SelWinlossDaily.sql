@@ -94,6 +94,7 @@ AS
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
+		- 20170608@Kos: Support Licensee Bonus System [#Redmine: 72792]
 
 	Param's Explanation:
 */
@@ -174,6 +175,8 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		BetdaqId			BIGINT,
 		ExtraInfo			VARCHAR(1000),
+		WalletType			TINYINT,
+		RefCode				BIGINT,
 		StakeUSD			MONEY,
 		WinLostUSD			MONEY,
 		LicenseeWLUSD		MONEY,
@@ -196,7 +199,6 @@ BEGIN
 
 	DECLARE @DataSum TABLE (
 		Currency		INT,
-		TotalRows		INT,
 		SumWinLost		MONEY,
 		SumLicenseeWL	MONEY,
 		SumComm			MONEY,
@@ -338,7 +340,6 @@ BEGIN
 			INSERT INTO @DataSum
 			SELECT
 				b.currency,
-				COUNT(b.transid),
 				SUM(ISNULL(b.winlost - b.actual_stake, 0)),
 				0,
 				SUM(ISNULL(b.comm, 0)),
@@ -361,14 +362,13 @@ BEGIN
 			INSERT INTO @DataSum
 			SELECT
 				b.currency,
-				COUNT(b.transid),
 				SUM(ISNULL(b.winlost - b.actual_stake, 0)),
 				-SUM(ISNULL(CASE WHEN b.bettype IN (31, 32, 33) THEN b.awinlost
 								ELSE (b.winlost - b.actual_stake) 
 							END, 0)),
 				SUM(ISNULL(b.comm, 0)),
 				SUM(b.playercomm) AS SumPlayerComm
-			FROM dbo.bettrans AS b WITH (NOLOCK) 
+			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #SportBettype AS sbt ON sbt.Bettype = b.bettype
 				INNER JOIN #TempAg AS ag ON b.recommend = ag.custid AND b.currency = ag.Currency
 			WHERE
@@ -424,6 +424,8 @@ BEGIN
 			OriginalBetType		SMALLINT,
 			BetdaqId			BIGINT,
 			ExtraInfo			VARCHAR(1000),
+			WalletType			TINYINT,
+			RefCode				BIGINT,
 			StakeUSD			MONEY,
 			WinLostUSD			MONEY,
 			LicenseeWLUSD		MONEY,
@@ -470,7 +472,7 @@ BEGIN
 			b.stake,
 			(b.winlost - b.actual_stake) AS WinLost,
 			CASE
-				WHEN b.bettype NOT IN (31,32,33) THEN - (b.winlost-b.actual_stake)
+				WHEN b.bettype NOT IN (31,32,33) THEN - (b.winlost - b.actual_stake)
 				ELSE awinlost
 			END AS LicenseeWL,
 			b.comm,
@@ -509,6 +511,8 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			ISNULL(b.ExtraInfo, '''') AS ExtraInfo,
+			ISNULL(b.WalletType, 0) AS WalletType,
+			ISNULL(b.RefCode, 0) AS RefCode,
 			-- USD
 			b.stake * e.USD stakeUSD,'
 			+ @Winlost + ' * e.USD WinlostUSD,'
@@ -554,11 +558,11 @@ BEGIN
 			END + CHAR(13) +
 		'WHERE
 			b.winlostdate = ''' + CAST(@wldate AS VARCHAR(50)) + '''' + CHAR(13) +
-			'AND b.status=''' + CAST(@status AS VARCHAR(15)) + '''' + CHAR(13) +
+			'AND b.status = ''' + CAST(@status AS VARCHAR(15)) + '''' + CHAR(13) +
 			'AND b.bettype NOT IN (9, 29, 10, 2799)
 			AND b.ruben = 1' + CHAR(13) +
 			CASE
-				WHEN @Product = 'SB' THEN 'AND b.tpositiontaking<>0'
+				WHEN @Product = 'SB' THEN 'AND b.tpositiontaking <> 0'
 				ELSE ''
 			END + CHAR(13)
 
@@ -605,6 +609,8 @@ BEGIN
 			OriginalBetType,
 			BetdaqId,
 			ExtraInfo,
+			WalletType,
+			RefCode,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
@@ -723,6 +729,8 @@ BEGIN
 			OriginalBetType,
 			BetdaqId,
 			ExtraInfo,
+			WalletType,
+			RefCode,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
@@ -746,7 +754,7 @@ BEGIN
 		DROP TABLE #BetData1
 	END
 
-	IF @wldate <= @MoveBetsDay_ AND @wldate >=@BalanceUpDay_
+	IF @wldate <= @MoveBetsDay_ AND @wldate >= @BalanceUpDay_
 	BEGIN
 		IF @Product = 'VS'
 		BEGIN
@@ -778,7 +786,7 @@ BEGIN
 				m.TeamID,
 				0 BetStatus,
 				'' ShowTime,
-				NULL AS  AwayID,
+				NULL AS AwayID,
 				CONVERT(BIT,0) AS IsNeutral
 			FROM dbo.Outright14 AS m WITH (NOLOCK) 
 				 INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
@@ -790,7 +798,6 @@ BEGIN
 			INSERT INTO @DataSum
 			SELECT
 				b.currency,
-				COUNT(b.transid),
 				SUM(ISNULL(b.winlost - b.actual_stake, 0)),
 				0,
 				SUM(ISNULL(b.comm, 0)),
@@ -811,7 +818,6 @@ BEGIN
 			INSERT INTO @DataSum
 			SELECT
 				b.currency,
-				COUNT(b.transid),
 				SUM(ISNULL(b.winlost - b.actual_stake, 0)),
 				-SUM(ISNULL(CASE WHEN b.bettype IN (31,32,33) THEN b.awinlost ELSE (b.winlost - b.actual_stake) END, 0)),
 				SUM(ISNULL(b.comm, 0)),
@@ -871,6 +877,8 @@ BEGIN
 			OriginalBetType		SMALLINT,
 			BetdaqId			BIGINT,
 			ExtraInfo			VARCHAR(1000),
+			WalletType			TINYINT,
+			RefCode				BIGINT,
 			StakeUSD			MONEY,
 			WinLostUSD			MONEY,
 			LicenseeWLUSD		MONEY,
@@ -956,6 +964,8 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			ISNULL(b.ExtraInfo, '''') AS ExtraInfo,
+			ISNULL(b.WalletType, 0) AS WalletType,
+			ISNULL(b.RefCode, 0) AS RefCode,
 			-- USD
 			b.stake * e.USD stakeUSD,'
 			+ @Winlost + ' * e.USD WinlostUSD,'
@@ -1052,6 +1062,8 @@ BEGIN
 			OriginalBetType,
 			BetdaqId,
 			ExtraInfo,
+			WalletType,
+			RefCode,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
@@ -1170,6 +1182,8 @@ BEGIN
 			OriginalBetType,
 			BetdaqId,
 			ExtraInfo,
+			WalletType,
+			RefCode,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
@@ -1193,6 +1207,110 @@ BEGIN
 		DROP TABLE #BetData14
 	END
 
+	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
+	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
+	BEGIN
+		DECLARE @RefCodeTmp TABLE (
+			RefCode			BIGINT,
+			TransId			BIGINT,
+			Stake			MONEY,
+			WinLost			MONEY,
+			LicenseeWL		MONEY,
+			Comm			MONEY,
+			PlayerComm		MONEY,
+			StakeUSD		MONEY,
+			WinLostUSD		MONEY,
+			LicenseeWLUSD	MONEY,
+			CommUSD			MONEY,
+			PlayerCommUSD	MONEY,
+			StakeEUR		MONEY,
+			WinLostEUR		MONEY,
+			LicenseeWLEUR	MONEY,
+			CommEUR			MONEY,
+			PlayerCommEUR	MONEY,
+			StakeGBP		MONEY,
+			WinLostGBP		MONEY,
+			LicenseeWLGBP	MONEY,
+			CommGBP			MONEY,
+			PlayerCommGBP	MONEY
+		)
+
+		-- Prepare temp table
+		INSERT INTO @RefCodeTmp
+		SELECT
+			RefCode,
+			MIN(TransId) AS TransId,
+			SUM(Stake) AS Stake,
+			SUM(WinLost) AS WinLost,
+			SUM(LicenseeWL) AS LicenseeWL,
+			SUM(Comm) AS Comm,
+			SUM(PlayerComm) AS PlayerComm,
+			SUM(StakeUSD) AS StakeUSD,
+			SUM(WinLostUSD) AS WinLostUSD,
+			SUM(LicenseeWLUSD) AS LicenseeWLUSD,
+			SUM(CommUSD) AS CommUSD,
+			SUM(PlayerCommUSD) AS PlayerCommUSD,
+			SUM(StakeEUR) AS StakeEUR,
+			SUM(WinLostEUR) AS WinLostEUR,
+			SUM(LicenseeWLEUR) AS LicenseeWLEUR,
+			SUM(CommEUR) AS CommEUR,
+			SUM(PlayerCommEUR) AS PlayerCommEUR,
+			SUM(StakeGBP) AS StakeGBP,
+			SUM(WinLostGBP) AS WinLostGBP,
+			SUM(LicenseeWLGBP) AS LicenseeWLGBP,
+			SUM(CommGBP) AS CommGBP,
+			SUM(PlayerCommGBP) AS PlayerCommGBP
+		FROM #Data
+		WHERE RefCode <> 0
+		GROUP BY RefCode
+		HAVING COUNT(*) > 1
+
+		IF EXISTS (SELECT 1 FROM @RefCodeTmp)
+		BEGIN
+			-- Update data for summmary ticket
+			UPDATE b
+			SET
+				b.Stake = r.Stake,
+				b.WinLost = r.WinLost,
+				b.LicenseeWL = r.LicenseeWL,
+				b.Comm = r.Comm,
+				b.PlayerComm = r.PlayerComm,
+				b.StakeUSD = r.StakeUSD,
+				b.WinLostUSD = r.WinLostUSD,
+				b.LicenseeWLUSD = r.LicenseeWLUSD,
+				b.CommUSD = r.CommUSD,
+				b.PlayerCommUSD = r.PlayerCommUSD,
+				b.StakeEUR = r.StakeEUR,
+				b.WinLostEUR = r.WinLostEUR,
+				b.LicenseeWLEUR = r.LicenseeWLEUR,
+				b.CommEUR = r.CommEUR,
+				b.PlayerCommEUR = r.PlayerCommEUR,
+				b.StakeGBP = r.StakeGBP,
+				b.WinLostGBP = r.WinLostGBP,
+				b.LicenseeWLGBP = r.LicenseeWLGBP,
+				b.CommGBP = r.CommGBP,
+				b.PlayerCommGBP = r.PlayerCommGBP,
+				b.WalletType = 0
+			FROM #Data AS b
+				INNER JOIN @RefCodeTmp AS r ON b.RefCode = r.RefCode AND b.TransId = r.TransId
+
+			-- Delete 2nd Bonus/Cash tickets
+			DELETE #Data
+			WHERE WalletType <> 0
+				AND RefCode IN (SELECT RefCode FROM @RefCodeTmp)
+		END
+	END
+
+	-- Display detail link for ticket from Bonus Wallet only
+	UPDATE #Data
+	SET RefCode = TransId
+	WHERE WalletType = 1 AND RefCode = 0
+
+	-- Don't display Cash text for ticket from Cash Wallet only
+	UPDATE #Data
+	SET WalletType = 0
+	WHERE WalletType = 2 AND RefCode = 0
+
 	CREATE NONCLUSTERED INDEX IDX_Currency ON #Data(Currency)
 
 	SET @sql = 
@@ -1210,12 +1328,14 @@ BEGIN
 	EXEC (@sql)
 
 	--SUM
-	SELECT * INTO #TempExchangeSum 
+	SELECT * INTO #TempExchangeSum
 	FROM Lrf_f_GetExchangeDaily(@wldate, @wldate)
 	WHERE exchangeid IN (SELECT DISTINCT Currency FROM @DataSum)
 
+	SELECT @TotalRows = COUNT(1)
+	FROM #Data
+
 	SELECT
-		@TotalRows		= SUM(b.TotalRows),
 		@SumWinlost		= SUM(b.SumWinLost),
 		@SumLicenseeWL	= SUM(b.SumLicenseeWL),
 		@SumComm		= SUM(b.SumComm),

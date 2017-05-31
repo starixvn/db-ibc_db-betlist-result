@@ -25,6 +25,7 @@ AS
 		- 20161003@Kos: Remove Live Casino code [Redmine: #65045]
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
+		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
 */
 
 BEGIN
@@ -46,7 +47,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -54,10 +55,10 @@ BEGIN
 	IF ISNULL(@BetType, '') = ''
 		SET @BetType = ''
 
-	DECLARE @tblbettype AS TABLE (bettype INT)
+	DECLARE @tblbettype AS TABLE (BetType INT)
 
-	INSERT INTO @tblbettype (bettype)
-	SELECT CONVERT(INT,VAL) AS bettype
+	INSERT INTO @tblbettype (BetType)
+	SELECT CONVERT(INT,VAL) AS BetType
 	FROM strSplit(@BetType, ',')
 
 	CREATE TABLE #Data (
@@ -91,13 +92,14 @@ BEGIN
 		WinLostDate		DATETIME,
 		Currency		SMALLINT,
 		StatusId		INT,
-		PlayerComm		MONEY,
 		ShowTime		NVARCHAR(50),
 		BetCheck		NVARCHAR(50),
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT
+		OriginalBetType	SMALLINT,
+		WalletType		TINYINT,
+		RefCode			BIGINT
 	)
 
 	IF EXISTS (SELECT 1 FROM @tblbettype WHERE bettype IN (9, 29))
@@ -137,20 +139,21 @@ BEGIN
 			b.winlostdate,
 			b.currency,
 			b.statusid,
-			b.playercomm,
 			'' AS ShowTime,
 			ISNULL(b.betcheck, '') AS BetCheck,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo,
 			0 AS OriginalStake,
-			0 AS OriginalBetType
+			0 AS OriginalBetType,
+			0 AS WalletType,
+			0 AS RefCode
 		FROM dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN @tblbettype AS bt ON b.bettype = bt.bettype
+			INNER JOIN @tblbettype AS bt ON b.bettype = bt.BetType
 		WHERE
 			b.recommend IN (SELECT CustId FROM @TempAg)
 			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 			AND b.bettype IN (9, 29)
-			AND b.matchid = bt.bettype
+			AND b.matchid = bt.BetType
 			AND b.statusID IN (0, 1)
 			AND b.ruben = 0
 		ORDER BY
@@ -191,13 +194,14 @@ BEGIN
 			b.winlostdate,
 			b.currency,
 			b.statusid,
-			b.playercomm,
 			'' AS ShowTime,
 			'' AS BetCheck,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo,
 			0 AS OriginalStake,
-			0 AS OriginalBetType
+			0 AS OriginalBetType,
+			0 AS WalletType,
+			0 AS RefCode
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON  b.matchid = m.orid
@@ -248,7 +252,6 @@ BEGIN
 			b.winlostdate,
 			b.currency,
 			b.statusid,
-			b.playercomm,
 			ISNULL(m.showtime, '') AS showtime,
 			b.betcheck,
 			ISNULL(b.betdaqid, -1) AS BetdaqId,
@@ -261,7 +264,9 @@ BEGIN
 			CASE
 				WHEN b.stake <> 0 THEN -1
 				ELSE 0
-			END AS OriginalBetType
+			END AS OriginalBetType,
+			ISNULL(b.WalletType, 0) AS WalletType,
+			ISNULL(b.RefCode, 0) AS RefCode
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -277,6 +282,56 @@ BEGIN
 			b.transid
 	END
 
+	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
+	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
+	BEGIN
+		DECLARE @RefCodeTmp TABLE (
+			RefCode			BIGINT,
+			TransId			BIGINT,
+			Stake			MONEY,
+			Actual_Stake	MONEY
+		)
+
+		-- Prepare temp table
+		INSERT INTO @RefCodeTmp
+		SELECT
+			RefCode,
+			MIN(TransId) AS TransId,
+			SUM(Stake) AS Stake,
+			SUM(Actual_Stake) AS Actual_Stake
+		FROM #Data
+		WHERE RefCode <> 0
+		GROUP BY RefCode
+		HAVING COUNT(*) > 1
+
+		IF EXISTS (SELECT 1 FROM @RefCodeTmp)
+		BEGIN
+			-- Update data for summmary ticket
+			UPDATE b
+			SET
+				b.Stake = r.Stake,
+				b.Actual_Stake = r.Actual_Stake,
+				b.WalletType = 0
+			FROM #Data AS b
+				INNER JOIN @RefCodeTmp AS r ON b.RefCode = r.RefCode AND b.TransId = r.TransId
+
+			-- Delete 2nd Bonus/Cash tickets
+			DELETE #Data
+			WHERE WalletType <> 0
+				AND RefCode IN (SELECT RefCode FROM @RefCodeTmp)
+		END
+	END
+
+	-- Display detail link for ticket from Bonus Wallet only
+	UPDATE #Data
+	SET RefCode = TransId
+	WHERE WalletType = 1 AND RefCode = 0
+
+	-- Don't display Cash text for ticket from Cash Wallet only
+	UPDATE #Data
+	SET WalletType = 0
+	WHERE WalletType = 2 AND RefCode = 0
+
 	DECLARE @RowStart	INT,
 		@RowEnd			INT
 
@@ -286,7 +341,7 @@ BEGIN
 
 	DECLARE @Today SMALLDATETIME
 
-	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120) 
+	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 
 	IF @TotalRows = 0
 	BEGIN
@@ -307,9 +362,6 @@ BEGIN
 				b.Actual_Stake * e.USD AS Actual_StakeUSD,
 				b.Actual_Stake * e.EUR AS Actual_StakeEUR,
 				b.Actual_Stake * e.GBP AS Actual_StakeGBP,
-				b.PlayerComm * e.USD AS PlayerCommUSD,
-				b.PlayerComm * e.EUR AS PlayerCommEUR,
-				b.PlayerComm * e.GBP AS PlayerCommGBP,
 				b.OriginalStake * e.USD AS OriginalStakeUSD,
 				b.OriginalStake * e.EUR AS OriginalStakeEUR,
 				b.OriginalStake * e.GBP AS OriginalStakeGBP
@@ -321,6 +373,7 @@ BEGIN
 
 	DROP TABLE #Data
 END
+
 
 
 

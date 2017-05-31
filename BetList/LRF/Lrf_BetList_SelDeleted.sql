@@ -53,6 +53,7 @@ AS
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
+		- 20170830@Kos: Support Licensee Bonus System [#Redmine: 72792]
 
 	Param's Explanation:
 		- @AgentList: Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -134,7 +135,9 @@ BEGIN
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT
+		OriginalBetType	SMALLINT,
+		WalletType		TINYINT,
+		RefCode			BIGINT
 	)
 
 	-- Keno, Lottery
@@ -180,7 +183,9 @@ BEGIN
 		-1 AS BetdaqId,
 		'' AS ExtraInfo,
 		0 AS OriginalStake,
-		0 AS OriginalBetType
+		0 AS OriginalBetType,
+		0 AS WalletType,
+		0 AS RefCode
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
@@ -242,7 +247,15 @@ BEGIN
 				ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
 			ELSE 0
 		END AS OriginalStake,
-		0 AS OriginalBetType
+		0 AS OriginalBetType,
+		CASE
+			WHEN sbt.ProductID = 1 THEN ISNULL(b.WalletType, 0)
+			ELSE 0
+		END AS WalletType,
+		CASE
+			WHEN sbt.ProductID = 1 THEN ISNULL(b.RefCode, 0)
+			ELSE 0
+		END AS RefCode
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN
@@ -308,7 +321,9 @@ BEGIN
 		-1 AS BetdaqId,
 		'' AS ExtraInfo,
 		0 AS OriginalStake,
-		0 AS OriginalBetType
+		0 AS OriginalBetType,
+		0 AS WalletType,
+		0 AS RefCode
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN
@@ -371,7 +386,9 @@ BEGIN
 		-1 AS BetdaqId,
 		'' AS ExtraInfo,
 		0 AS OriginalStake,
-		0 AS OriginalBetType
+		0 AS OriginalBetType,
+		0 AS WalletType,
+		0 AS RefCode
 	FROM 
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
@@ -446,6 +463,53 @@ BEGIN
 
 	DELETE #Data
 	WHERE BetType IN (903, 913)
+
+	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
+	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
+	BEGIN
+		DECLARE @RefCodeTmp TABLE (
+			RefCode	BIGINT,
+			TransId	BIGINT,
+			Stake	MONEY
+		)
+
+		-- Prepare temp table
+		INSERT INTO @RefCodeTmp
+		SELECT
+			RefCode,
+			MIN(TransId) AS TransId,
+			SUM(Stake) AS Stake
+		FROM #Data
+		WHERE RefCode <> 0
+		GROUP BY RefCode
+		HAVING COUNT(*) > 1
+
+		IF EXISTS (SELECT 1 FROM @RefCodeTmp)
+		BEGIN
+			-- Update data for summmary ticket
+			UPDATE b
+			SET
+				b.Stake = r.Stake,
+				b.WalletType = 0
+			FROM #Data AS b
+				INNER JOIN @RefCodeTmp AS r ON b.RefCode = r.RefCode AND b.TransId = r.TransId
+
+			-- Delete 2nd Bonus/Cash tickets
+			DELETE #Data
+			WHERE WalletType <> 0
+				AND RefCode IN (SELECT RefCode FROM @RefCodeTmp)
+		END
+	END
+
+	-- Display detail link for ticket from Bonus Wallet only
+	UPDATE #Data
+	SET RefCode = TransId
+	WHERE WalletType = 1 AND RefCode = 0
+
+	-- Don't display Cash text for ticket from Cash Wallet only
+	UPDATE #Data
+	SET WalletType = 0
+	WHERE WalletType = 2 AND RefCode = 0
 
 	DECLARE @Fromdate	DATETIME,
 		@Todate			DATETIME
@@ -590,6 +654,7 @@ BEGIN
 	DROP TABLE #TempExchange
 	DROP TABLE #Data
 END
+
 
 
 
