@@ -44,6 +44,7 @@ AS
 		- 20160407@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20170321@Kos: Support CashOut [#Redmine: 71963]
+		- 20170602@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 	
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -956,6 +957,7 @@ BEGIN
 	BEGIN
 		UPDATE b
 		SET b.Odds = ob.odds,
+			b.LiveIndicator = ob.liveindicator,
 			b.LiveHomeScore = ob.livehomescore,
 			b.LiveAwayScore = ob.liveawayscore,
 			b.OriginalBetType = ob.bettype,
@@ -966,6 +968,7 @@ BEGIN
 
 		UPDATE b
 		SET b.Odds = ob.odds,
+			b.LiveIndicator = ob.liveindicator,
 			b.LiveHomeScore = ob.livehomescore,
 			b.LiveAwayScore = ob.liveawayscore,
 			b.OriginalBetType = ob.bettype,
@@ -979,6 +982,7 @@ BEGIN
 	BEGIN
 		UPDATE b
 		SET b.Odds = ob.odds,
+			b.LiveIndicator = ob.liveindicator,
 			b.LiveHomeScore = ob.livehomescore,
 			b.LiveAwayScore = ob.liveawayscore,
 			b.OriginalBetType = ob.bettype,
@@ -993,6 +997,7 @@ BEGIN
 
 		UPDATE b
 		SET b.Odds = ob.odds,
+			b.LiveIndicator = ob.liveindicator,
 			b.LiveHomeScore = ob.livehomescore,
 			b.LiveAwayScore = ob.liveawayscore,
 			b.OriginalBetType = ob.bettype,
@@ -1047,6 +1052,8 @@ BEGIN
 
 	SELECT DISTINCT * FROM @DetailData
 END
+
+
 
 
 GO

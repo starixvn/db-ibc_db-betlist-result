@@ -74,6 +74,7 @@ AS
 		- 20161019@Kos: Support Fishing World [#Redmine: 65934]
 		- 20170228@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170315@Kos: Support CashOut [#Redmine: 71963]
+		- 20170602@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 */
 
 BEGIN
@@ -983,6 +984,7 @@ BEGIN
 	BEGIN
 		UPDATE b
 		SET b.Odds = ob.odds,
+			b.LiveIndicator = ob.liveindicator,
 			b.LiveHomeScore = ob.livehomescore,
 			b.LiveAwayScore = ob.liveawayscore,
 			b.OriginalBetType = ob.bettype,
@@ -996,6 +998,7 @@ BEGIN
 	BEGIN
 		UPDATE b
 		SET b.Odds = ob.odds,
+			b.LiveIndicator = ob.liveindicator,
 			b.LiveHomeScore = ob.livehomescore,
 			b.LiveAwayScore = ob.liveawayscore,
 			b.OriginalBetType = ob.bettype,
