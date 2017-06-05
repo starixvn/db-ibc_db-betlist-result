@@ -114,6 +114,7 @@ AS
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170330@Kos: Support CashOut [#Redmine: 71963]
+		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 */
 
 BEGIN
@@ -813,6 +814,7 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET b.Odds = ob.odds,
+					b.LiveIndicator = ob.liveindicator,
 					b.LiveHomeScore = ob.livehomescore,
 					b.LiveAwayScore = ob.liveawayscore,
 					b.OriginalBetType = ob.bettype,
@@ -826,6 +828,7 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET b.Odds = ob.odds,
+					b.LiveIndicator = ob.liveindicator,
 					b.LiveHomeScore = ob.livehomescore,
 					b.LiveAwayScore = ob.liveawayscore,
 					b.OriginalBetType = ob.bettype,
@@ -2037,6 +2040,7 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET b.Odds = ob.odds,
+					b.LiveIndicator = ob.liveindicator,
 					b.LiveHomeScore = ob.livehomescore,
 					b.LiveAwayScore = ob.liveawayscore,
 					b.OriginalBetType = ob.bettype,
@@ -2050,6 +2054,7 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET b.Odds = ob.odds,
+					b.LiveIndicator = ob.liveindicator,
 					b.LiveHomeScore = ob.livehomescore,
 					b.LiveAwayScore = ob.liveawayscore,
 					b.OriginalBetType = ob.bettype,
@@ -2992,6 +2997,7 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET b.Odds = ob.odds,
+					b.LiveIndicator = ob.liveindicator,
 					b.LiveHomeScore = ob.livehomescore,
 					b.LiveAwayScore = ob.liveawayscore,
 					b.OriginalBetType = ob.bettype,
@@ -3005,6 +3011,7 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET b.Odds = ob.odds,
+					b.LiveIndicator = ob.liveindicator,
 					b.LiveHomeScore = ob.livehomescore,
 					b.LiveAwayScore = ob.liveawayscore,
 					b.OriginalBetType = ob.bettype,

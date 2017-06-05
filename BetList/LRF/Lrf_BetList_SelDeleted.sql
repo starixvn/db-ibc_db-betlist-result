@@ -49,6 +49,7 @@ AS
 		- 20170228@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170329@Kos: Support CashOut [#Redmine: 71963]
+		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 
 	Param's Explanation:
 		- @AgentList: Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -407,6 +408,7 @@ BEGIN
 	BEGIN
 		UPDATE b
 		SET b.Odds = ob.odds,
+			b.LiveIndicator = ob.liveindicator,
 			b.LiveHomeScore = ob.livehomescore,
 			b.LiveAwayScore = ob.liveawayscore,
 			b.OriginalBetType = ob.bettype,
@@ -420,6 +422,7 @@ BEGIN
 	BEGIN
 		UPDATE b
 		SET b.Odds = ob.odds,
+			b.LiveIndicator = ob.liveindicator,
 			b.LiveHomeScore = ob.livehomescore,
 			b.LiveAwayScore = ob.liveawayscore,
 			b.OriginalBetType = ob.bettype,
