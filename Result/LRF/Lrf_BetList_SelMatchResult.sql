@@ -5,10 +5,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
- 
+
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResult]
-	@LicenseeId	INT,
-	@UserId		INT,
 	@MatchId	INT,
 	@RaceNo		VARCHAR(50)	= NULL,
 	@BetType	SMALLINT	= NULL,
@@ -40,6 +38,8 @@ AS
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170120@Kos: Get result detail of bet type 221 in case of 225 [#Redmine: 56589]
 		- 20170418@Kos: Support Basketball AIO [#Redmine: 73033]
+		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
+					- Remove params @LicenseeId and @UserId
 
 		*******************
 		sample test case:
@@ -291,11 +291,11 @@ BEGIN
 				m.homeID,
 				m.awayID,
 				m.matchcode,
-				m.eventdate,
 				CASE
 					WHEN m.sporttype NOT IN (162,161) THEN m.GlobalShowTime
 					ELSE m.kickofftime
 				END AS KickOffTime,
+				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
 				m.livehomescore,
@@ -327,16 +327,16 @@ BEGIN
 				ISNULL(mr.IsPending, 0) AS IsPending,
 				ISNULL(m.showtime, '') AS showtime,
 				m.homeid2
-			FROM DBARC.bodb_archive.dbo.match_bk AS m WITH (NOLOCK)
-				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-				LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
+			FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
+				LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+				LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId
 			ORDER BY m.eventdate,
 				m.matchcode
 
 			-- Get sport type
 			SELECT @SportType = Sporttype
-			FROM DBARC.bodb_archive.dbo.match_bk WITH (NOLOCK)
+			FROM DBARC.bodb_Archive.dbo.match_bk WITH (NOLOCK)
 			WHERE matchid = @MatchId
 
 			IF @SportType = 5
@@ -674,6 +674,7 @@ BEGIN
 		DROP TABLE #tmpresult
 	END
 END
+
 
 
 

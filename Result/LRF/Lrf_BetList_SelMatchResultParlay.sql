@@ -24,6 +24,7 @@ AS
 		- 20161011@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170418@Kos: Support Basketball AIO [#Redmine: 73033]
+		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
 */
 
 BEGIN
@@ -193,7 +194,7 @@ BEGIN
 			m.finalhomescore,
 			m.finalawayscore,
 			CASE
-				WHEN m.sporttype NOT IN (162,161) THEN m.GlobalShowTime
+				WHEN m.sporttype NOT IN (162, 161) THEN m.GlobalShowTime
 				ELSE m.kickofftime
 			END AS KickOffTime,
 			m.eventdate,
@@ -335,9 +336,9 @@ BEGIN
 				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo ) AS bm
-			INNER JOIN DBARC.bodb_archive.dbo.match_BK AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
+			INNER JOIN DBARC.bodb_Archive.dbo.match_BK AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 		
 		INSERT INTO @tmpResultDetail
 		SELECT
@@ -376,17 +377,18 @@ BEGIN
 							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
-	--- GET DATA 
+	-- Get data
 	SELECT * FROM @tmpParlay
 	ORDER BY LeagueId,
 		BetType,
 		EventDate,
 		MatchCode
-	
+
 	SELECT DISTINCT * FROM @tmpResultDetail
 	ORDER BY MatchId,
 		ResourceId
 END
+
 
 
 
