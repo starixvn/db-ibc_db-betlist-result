@@ -29,6 +29,7 @@ AS
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170120@Kos: Get result detail of bet type 221 in case of 225 [#Redmine: 56589]
 		- 20170419@Kos: Support Basketball AIO [#Redmine: 73033]
+		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
 */
 
 BEGIN
@@ -286,11 +287,11 @@ BEGIN
 				m.homeID,
 				m.awayID,
 				m.matchcode,
-				m.eventdate,
 				CASE
 					WHEN m.sporttype = 162 THEN m.kickofftime
 					ELSE ISNULL(m.GlobalShowTime, m.kickofftime)
 				END AS KickOffTime,
+				m.eventdate,
 				m.finalhomescore,
 				m.finalawayscore,
 				m.livehomescore,
@@ -323,9 +324,9 @@ BEGIN
 				m.showtime,
 				m.homeid2,
 				m.awayid2
-			FROM DBARC.bodb_archive.dbo.match_bk AS m WITH (NOLOCK)
-				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-				LEFT JOIN DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
+			FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
+				LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+				LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 					ON d.matchID = M.MatchID AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId
 			ORDER BY m.eventdate,

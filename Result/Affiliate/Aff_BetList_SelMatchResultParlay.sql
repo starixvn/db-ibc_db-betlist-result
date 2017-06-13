@@ -22,6 +22,7 @@ AS
 		- 20161007@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161014@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
+		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
 */
 
 BEGIN
@@ -207,7 +208,7 @@ BEGIN
 			m.finalawayscore,
 			ISNULL(m.globalshowtime, m.kickofftime), -- kickofftime
 			m.eventdate,
-			m.isNeutral,
+			m.IsNeutral,
 			m.betstatus,
 			CASE m.Sporttype
 				WHEN 5 THEN
@@ -350,8 +351,8 @@ BEGIN
 				WHERE b.refno = @RefNo
 			) AS bm 
 			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
+			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchid = m.matchid AND d.ResourceId = '00'
 
 		-- select from result detail
 		INSERT INTO @tmpResultDetail
@@ -363,9 +364,9 @@ BEGIN
 			d.ResultStatusID,
 			d.SettlementStatusID,
 			d.OtherInfo
-		FROM DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
+		FROM DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 			INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
-			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f 
+			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f
 				ON	f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
 		WHERE ((p.Sporttype = 5								-- Tennis
 					AND d.SettlementStatusID > 0
