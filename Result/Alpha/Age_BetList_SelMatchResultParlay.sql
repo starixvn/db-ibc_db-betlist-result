@@ -23,6 +23,7 @@ AS
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170209@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
+		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
 */
 
 BEGIN
@@ -338,7 +339,7 @@ BEGIN
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo ) bm
 			INNER JOIN DBARC.bodb_Archive.dbo.match_BK AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 
 		INSERT INTO @tmpResultDetail
