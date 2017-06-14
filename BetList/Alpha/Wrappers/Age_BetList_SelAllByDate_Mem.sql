@@ -7,31 +7,12 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelAllByDate_Mem]
-	@CustId				INT				= NULL
-	, @AgID				INT				= 0
-	, @FromDate			DATETIME
-	, @ToDate			DATETIME
-	, @Language			VARCHAR(2)		= 'E'
-	, @username			VARCHAR(50)		= NULL -- for API
-	, @ShowSB			BIT = 1
-	, @ShowCasino		BIT = 0
-	, @ShowP2P			BIT = 0
-	, @ShowRB			BIT = 0
-	, @ShowFI			BIT = 0
-	, @ShowNG			BIT = 0
-	, @ShowBI			BIT = 0
-	, @ShowLiveCasino	BIT = 0
-	, @ShowVS			BIT = 0
-	, @ShowKeno			BIT = 0
-	, @ShowGD			BIT = 0
-	, @ShowCB			BIT = 0
-	, @ShowCF			BIT = 0
-	, @ShowAB			BIT = 0
-	, @ShowVB			BIT = 0
-	, @ShowNG2			BIT = 0
-	, @ShowFW			BIT = 0
-	, @Error			INT				= 0
-	, @ErrorMsg			NVARCHAR(250)	= NULL
+	@CustId			INT			= NULL
+	, @FromDate		DATETIME
+	, @ToDate		DATETIME
+	, @Language		VARCHAR(2)	= 'E'
+	, @username		VARCHAR(50)	= NULL -- for API
+	, @ProductIds	VARCHAR(MAX)
 AS
 
 /*
@@ -100,6 +81,7 @@ AS
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160811@Kos: Support NG2
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
+		- 20170327@Kos: Change input params for Microsite bet list [#Redmine: 66992]
 */
 
 BEGIN
@@ -120,77 +102,8 @@ BEGIN
 
 	INSERT INTO @BettypeMatrix
 	SELECT ProductID, BetType, EventType, SubProduct
-	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrixByProduct_Sel(@ProductIds, @IsTest)
 
-	-- ADD exception bettype for pending funds tickets
-	;WITH CteExtBettype (ProductID, Bettype, EventType)
-	AS (
-		-- @ShowCasino
-		SELECT 6, 23001, 0
-		UNION ALL
-		SELECT 6, 23002, 0
-	)
-	INSERT INTO @BettypeMatrix
-	SELECT ProductID, Bettype, EventType, '' AS SubProduct
-	FROM CteExtBettype
-	
-	-- DO filtering bettype by product
-	DECLARE @ProductFilter TABLE ( ProductID TINYINT )
-
-	IF @ShowSB = 1
-		INSERT INTO @ProductFilter VALUES (1)
-	IF @ShowRB = 1
-		INSERT INTO @ProductFilter VALUES (2)
-	IF @ShowNG = 1
-		INSERT INTO @ProductFilter VALUES (3)
-	IF @ShowLiveCasino = 1
-		INSERT INTO @ProductFilter VALUES (4)
-	IF @ShowVS = 1
-		INSERT INTO @ProductFilter VALUES (5)
-	IF @ShowCasino = 1
-		INSERT INTO @ProductFilter VALUES (6)
-	IF @ShowBI = 1
-		INSERT INTO @ProductFilter VALUES (7)
-	IF @ShowKeno = 1
-		INSERT INTO @ProductFilter VALUES (8)
-	IF @ShowP2P = 1
-		INSERT INTO @ProductFilter VALUES (9)
-	IF @ShowGD = 1
-		INSERT INTO @ProductFilter VALUES (12)
-	IF @ShowCB = 1
-		INSERT INTO @ProductFilter VALUES (15)
-	IF @ShowCF = 1
-		INSERT INTO @ProductFilter VALUES (19)
-	IF @ShowAB = 1
-		INSERT INTO @ProductFilter VALUES (21)
-	IF @ShowVB = 1
-		INSERT INTO @ProductFilter VALUES (22)
-	IF @ShowNG2 = 1
-		INSERT INTO @ProductFilter VALUES (23)
-	IF @ShowFW = 1
-		INSERT INTO @ProductFilter VALUES (24)
-
-	-- DELETE bettypes 
-	DELETE bt
-	FROM @BettypeMatrix bt
-		LEFT JOIN @ProductFilter p ON bt.ProductID = p.ProductID
-	WHERE p.ProductID IS NULL
-	
-	/*DELETE bt
-	FROM @BettypeMatrix bt
-	WHERE ProductID		= CASE WHEN @ShowSB			= 0 	THEN 1 END
-		OR ProductID	= CASE WHEN @ShowRB			= 0 	THEN 2 END
-		OR ProductID	= CASE WHEN @ShowNG			= 0 	THEN 3 END
-		OR ProductID	= CASE WHEN @ShowLiveCasino	= 0 	THEN 4 END
-		OR ProductID	= CASE WHEN @ShowVS			= 0 	THEN 5 END
-		OR ProductID	= CASE WHEN @ShowCasino		= 0		THEN 6 END
-		OR ProductID	= CASE WHEN @ShowBI			= 0 	THEN 7 END
-		OR ProductID	= CASE WHEN @ShowKeno		= 0 	THEN 8 END
-		OR ProductID	= CASE WHEN @ShowP2P		= 0 	THEN 9 END
-		OR ProductID	= CASE WHEN @ShowGD			= 0 	THEN 12 END
-		OR ProductID	= CASE WHEN @ShowCB			= 0 	THEN 15 END
-	*/
-	
 	-- CALL to core bet list
 	EXEC [bodb02].[dbo].[Age_CoreBetList_MemTransDate_SelBetTicket]
 		@CustId				= @CustId
@@ -251,7 +164,6 @@ BEGIN
 
 	RETURN;
 END
-
 
 GO
 GRANT  EXECUTE  ON [dbo].[Age_BetList_SelAllByDate_Mem]  TO [bodbDownlineNet]
