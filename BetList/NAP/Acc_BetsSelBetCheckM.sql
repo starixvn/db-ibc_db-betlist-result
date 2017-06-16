@@ -8,17 +8,17 @@ AS
 	Created by: [Creator]
 	Date: 2008
 	Task: Get info of Mix Parlay Bets
-	DB: DBAGE.BODB02
+	DB: DBAGE.bodb02
 	Original: SP mteamlist
-	
+
 	Revisions:
 		- 20060222@[]: remove refno
 		- 20060310@[]: remove odds depend
-		- 20090408@PhuongDao: Get checktime as SettleTime 
+		- 20090408@PhuongDao: Get checktime as SettleTime
 		- 20090514@Simon: Remove RefNo
-		- 20091003@Jamie: Remove comstatus out 
+		- 20091003@Jamie: Remove comstatus out
 		- 20091125@Henry: Select appropriate info to avoid redundant data
-		- 20091128@Daniel: Fix the issue Mix Parlay Tennis - Cross Day - Move Bet problems: get more data in bettransm14 for Refno in Bettrans 
+		- 20091128@Daniel: Fix the issue Mix Parlay Tennis - Cross Day - Move Bet problems: get more data in bettransm14 for Refno in Bettrans
 		- 20091204@Henry: Change logic to get data for future Mix Parlay (combine Acc_BetsSelBetCheckM & Acc_BetsSelBetCheckM_History)
 		- 20101007@Henry: Change column transid from INT to BIGINT
 		- 20110513@Lukas: re-arrange bettype
@@ -29,12 +29,13 @@ AS
 		- 20160119@Kos: Return transdesc to support PH All In One 1.2 [#Redmine: 50897]
 		- 20160407@Kos: Add TransId param, support Combo Parlay [#Redmine: 55282]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	-- Get Sport Bettype Matrix (support Sportsbook only)
+	-- Get Sport Bettype Matrix (support Sportsbook, Betradar Virtual Sports only)
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -43,7 +44,8 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
-	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (1, 27)
 
 	DECLARE @BetListMP TABLE(
 		TransId			BIGINT,
@@ -65,6 +67,7 @@ BEGIN
 		IsNeutral		BIT,
 		MatchId			INT,
 		MatchCode		NVARCHAR(50),
+		ShowTime		NVARCHAR(50),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(200)
 	)
@@ -87,7 +90,7 @@ BEGIN
 		IF @CurrencyName IS NULL
 		BEGIN
 			SELECT @CurrencyName = ex.currency
-			FROM DBACC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			WHERE b.transid = @TransId
 		END
@@ -120,7 +123,11 @@ BEGIN
 			m.isNeutral,
 			m.matchid,
 			m.matchcode,
-			b.Betcheck,
+			CASE
+				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE m.showtime
+			END AS ShowTime,
+			b.betcheck,
 			b.transdesc
 		FROM 
 			(SELECT
@@ -137,10 +144,11 @@ BEGIN
 				bm.liveawayscore,
 				bm.liveindicator,
 				bm.betcheck,
-				bm.transdesc
+				bm.transdesc,
+				sbt.ProductId
 			FROM dbo.bettransm AS bm WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-			WHERE bm.refno = @refno ) AS b
+			WHERE bm.refno = @RefNo ) AS b
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
@@ -170,7 +178,11 @@ BEGIN
 			m.isNeutral,
 			m.matchid,
 			m.matchcode,
-			b.Betcheck,
+			CASE
+				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE m.showtime
+			END AS ShowTime,
+			b.betcheck,
 			b.transdesc
 		FROM 
 			(SELECT
@@ -187,16 +199,20 @@ BEGIN
 				bm.liveawayscore,
 				bm.liveindicator,
 				bm.betcheck,
-				bm.transdesc
+				bm.transdesc,
+				sbt.ProductId
 			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-			WHERE bm.refno = @refno) AS b
+			WHERE bm.refno = @RefNo) AS b
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
-	SELECT * FROM @BetListMP
+	SELECT DISTINCT * FROM @BetListMP
 	ORDER BY TransID DESC
 END
+
+
+
 
 
 

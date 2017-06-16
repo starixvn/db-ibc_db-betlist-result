@@ -23,12 +23,13 @@ AS
 		- 20160407@Kos: Add TransId param, support Combo Parlay [#Redmine: 55282]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170207@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
+		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	-- Get Sport Bettype Matrix (support Sportsbook only)
+	-- Get Sport Bettype Matrix (support Sportsbook, Betradar Virtual Sports only)
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -37,7 +38,8 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
-	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (1, 27)
 
 	DECLARE @BetListMP TABLE (
 		TransId			BIGINT,
@@ -59,6 +61,7 @@ BEGIN
 		IsNeutral		BIT,
 		MatchId			INT,
 		MatchCode		NVARCHAR(50),
+		ShowTime		NVARCHAR(50),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(200)
 	)
@@ -81,7 +84,7 @@ BEGIN
 		IF @CurrencyName IS NULL
 		BEGIN
 			SELECT @CurrencyName = ex.currency
-			FROM DBACC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			WHERE b.transid = @TransId
 		END
@@ -111,12 +114,16 @@ BEGIN
 			b.liveindicator,
 			m.leagueid,
 			m.sporttype,
-			m.isNeutral,
+			m.IsNeutral,
 			m.matchid,
 			m.matchcode,
+			CASE
+				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE m.showtime
+			END AS ShowTime,
 			b.betcheck,
 			b.transdesc
-		FROM 
+		FROM
 			(SELECT
 				bm.transid,
 				bm.bettype,
@@ -131,7 +138,8 @@ BEGIN
 				bm.liveawayscore,
 				bm.liveindicator,
 				bm.betcheck,
-				bm.transdesc
+				bm.transdesc,
+				sbt.ProductId
 			FROM dbo.bettransm AS bm WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 			WHERE bm.refno = @RefNo ) AS b
@@ -161,12 +169,16 @@ BEGIN
 			b.liveindicator,
 			m.leagueid,
 			m.sporttype,
-			m.isNeutral,
+			m.IsNeutral,
 			m.matchid,
 			m.matchcode,
+			CASE
+				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE m.showtime
+			END AS ShowTime,
 			b.betcheck,
 			b.transdesc
-		FROM 
+		FROM
 			(SELECT
 				bm.transid,
 				bm.bettype,
@@ -181,7 +193,8 @@ BEGIN
 				bm.liveawayscore,
 				bm.liveindicator,
 				bm.betcheck,
-				bm.transdesc
+				bm.transdesc,
+				sbt.ProductId
 			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 			WHERE bm.refno = @RefNo) AS b
@@ -214,9 +227,13 @@ BEGIN
 			m.isNeutral,
 			m.matchid,
 			m.matchcode,
+			CASE
+				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE m.showtime
+			END AS ShowTime,
 			b.betcheck,
 			b.transdesc
-		FROM 
+		FROM
 			(SELECT
 				bm.transid,
 				bm.bettype,
@@ -231,8 +248,9 @@ BEGIN
 				bm.liveawayscore,
 				bm.liveindicator,
 				bm.betcheck,
-				bm.transdesc
-			FROM DBARC.bodb_archive.dbo.bettransm AS bm WITH (NOLOCK)
+				bm.transdesc,
+				sbt.ProductId
+			FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 			WHERE bm.refno = @RefNo) AS b
 		INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid

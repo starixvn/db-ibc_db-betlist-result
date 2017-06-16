@@ -50,6 +50,7 @@ AS
 		- 20170228@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170315@Kos: Support CashOut [#Redmine: 71963]
 		- 20170602@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 */
 
 BEGIN
@@ -64,7 +65,7 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
-	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE BetType NOT IN (903, 904, 913, 914)
 
 	DECLARE
@@ -74,7 +75,7 @@ BEGIN
 		@CustId			INT
 
 	-- FROM translog
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.translogid,
 		@BetType = b.gameID,
 		@WinLostDate = b.winlostdate,
@@ -89,7 +90,7 @@ BEGIN
 	-- FROM bettrans (exclude Metric Gaming running ticket)
 	IF @WinLostDate IS NULL
 	BEGIN
-		SELECT TOP 1
+		SELECT TOP(1)
 			@TransId = b.transid,
 			@BetType = b.bettype,
 			@WinLostDate = b.winlostdate,
@@ -106,7 +107,7 @@ BEGIN
 	-- FROM bettrans14
 	IF @WinlostDate IS NULL
 	BEGIN
-		SELECT TOP 1
+		SELECT TOP(1)
 			@TransId = b.transid,
 			@BetType = b.bettype,
 			@WinLostDate = b.winlostdate,
@@ -121,7 +122,7 @@ BEGIN
 	-- FROM bettrans_bk
 	IF @WinlostDate IS NULL
 	BEGIN
-		SELECT TOP 1
+		SELECT TOP(1)
 			@TransId = b.transid,
 			@BetType = b.bettype,
 			@WinLostDate = b.winlostdate,
@@ -234,8 +235,8 @@ BEGIN
 		-- Bettrans
 		IF @WinlostDate > @MoveBetsDay
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports (EventType = 1)
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType)
+			-- Sportbooks, Number Game, Live Casino, Virtual Sports, BetRadar Virtual Sports (EventType = 1)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -297,7 +298,7 @@ BEGIN
 					b.mwinlost,
 					b.swinlost,
 					CASE
-						WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 						ELSE m.showtime
 					END AS ShowTime,
 					b.winlostdate,
@@ -346,7 +347,7 @@ BEGIN
 					END AS OddsType,
 					b.status,
 					'' AS comstatus,
-					stake,
+					b.stake,
 					b.actual_stake,
 					b.transdate,
 					'' AS betteam,
@@ -393,7 +394,7 @@ BEGIN
 					AND s.BetType BETWEEN 801 AND 899
 
 				-- Get more info for BetTrade tickets
-				IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE SportType = 1 AND BetType = 901)
+				IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE SportType = 1 AND BetType = 901)
 				BEGIN
 					UPDATE b
 					SET b.Odds = ob.odds,
@@ -406,7 +407,7 @@ BEGIN
 					WHERE b.SportType = 1 AND b.BetType = 901
 				END
 
-				IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE SportType = 1 AND BetType = 902)
+				IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE SportType = 1 AND BetType = 902)
 				BEGIN
 					UPDATE b
 					SET b.Odds = ob.odds,
@@ -426,7 +427,7 @@ BEGIN
 				END
 
 				-- Get more info for CashOut tickets
-				IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 911)
+				IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)
 				BEGIN
 					UPDATE b
 					SET b.Odds = ob.odds,
@@ -440,7 +441,7 @@ BEGIN
 					WHERE b.BetType = 911
 				END
 
-				IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 912)
+				IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 912)
 				BEGIN
 					UPDATE b
 					SET b.Odds = ob.odds,
@@ -463,8 +464,8 @@ BEGIN
 				END
 			END
 
-			-- Mix Parlay, Combination Mix Parlay
-			IF @BetType IN (9, 29)
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports)
+			IF @BetType IN (9, 29, 2799)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -534,7 +535,7 @@ BEGIN
 					-1 AS BetdaqId,
 					'' AS ExtraInfo
 				FROM dbo.bettrans AS b WITH (NOLOCK)
-				WHERE b.transid = @TransId AND b.bettype IN (9, 29)
+				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799)
 			END
 
 			-- Outright
@@ -611,7 +612,7 @@ BEGIN
 			END
 
 			-- Horse Racing
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 2 AND Bettype = @BetType)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 2 AND Bettype = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -700,7 +701,7 @@ BEGIN
 			END
 
 			-- Casino, Gold Deluxe, Microgaming Live Casino, Cockfighting, NG2
-			IF EXISTS (SELECT TOP 1 1 FROM  @SportBettype
+			IF EXISTS (SELECT TOP(1) 1 FROM  @SportBettype
 						WHERE BetType = @BetType
 							AND (ProductID IN (12, 13, 19, 23)
 								OR (ProductID = 6 AND SubProduct = '')))
@@ -773,6 +774,7 @@ BEGIN
 						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
 						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
 						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
+						ELSE 0
 					END AS SportType,
 					b.ip,
 					b.betfrom,
@@ -812,7 +814,7 @@ BEGIN
 			END
 
 			-- Keno
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 8 AND BetType = @BetType)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 8 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -893,9 +895,9 @@ BEGIN
 					'' AS eventdate,
 					0,
 					0,
-					sdiscount,
-					adiscount,
-					discount,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
 					0 AS homeid,
 					0 AS awayid,
 					'' settleTime,
@@ -955,7 +957,7 @@ BEGIN
 			END
 
 			-- Virtual Horse Racing
-			IF EXISTS(SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND BetType = @BetType)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -982,7 +984,7 @@ BEGIN
 					b.OddsType,
 					b.status,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-					stake,
+					b.stake,
 					b.actual_stake,
 					b.transdate,
 					'' AS betteam,
@@ -1044,7 +1046,7 @@ BEGIN
 			END
 
 			-- Gold Deluxe, Microgaming Live Casino, Cockfighting, Colossus Bet (translog)
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID IN (12, 13, 15, 19) AND Bettype = @BetType)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (12, 13, 15, 19) AND Bettype = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -1100,6 +1102,7 @@ BEGIN
 						WHEN s.ProductID = 13 THEN 203
 						WHEN s.ProductID = 15 THEN 204
 						WHEN s.ProductID = 19 THEN 206
+						ELSE 0
 					END AS SportType,
 					b.ip,
 					b.betfrom,
@@ -1140,7 +1143,7 @@ BEGIN
 			END
 
 			-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
-			IF EXISTS (	SELECT TOP 1 1 FROM @SportBettype
+			IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType
 							AND (ProductID IN (17, 22, 24)
 								OR (ProductID = 6 AND SubProduct <> '')))
@@ -1197,6 +1200,7 @@ BEGIN
 							WHEN s.ProductID = 17 THEN 205
 							WHEN s.ProductID = 22 THEN 212
 							WHEN s.ProductID = 24 THEN 219
+							ELSE 0
 						END AS Sporttype,
 						b.ip,
 						b.betfrom,
@@ -1268,9 +1272,9 @@ BEGIN
 						0 AS finalodds2,
 						'' OddsType,
 						CASE 
-							WHEN SUM(brng.winlost - brng.actual_stake) = 0 THEN 'Draw'
 							WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
 							WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
+							ELSE 'Draw'
 						END AS Status,
 						CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 						SUM(brng.stake) AS stake,
@@ -1296,6 +1300,7 @@ BEGIN
 							WHEN s.ProductID = 17 THEN 205
 							WHEN s.ProductID = 22 THEN 212
 							WHEN s.ProductID = 24 THEN 219
+							ELSE 0
 						END AS Sporttype,
 						b.ip,
 						b.betfrom,
@@ -1393,6 +1398,7 @@ BEGIN
 							WHEN s.ProductID = 17 THEN 205
 							WHEN s.ProductID = 22 THEN 212
 							WHEN s.ProductID = 24 THEN 219
+							ELSE 0
 						END AS Sporttype,
 						b.ip,
 						b.betfrom,
@@ -1426,7 +1432,7 @@ BEGIN
 			END
 
 			-- AG Casino, AllBet
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID IN (11, 21) AND Bettype = @BetType)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (11, 21) AND Bettype = @BetType)
 			BEGIN
 				IF @WinlostDate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)	-- yesterday and today
@@ -1478,6 +1484,7 @@ BEGIN
 						CASE
 							WHEN s.ProductID = 11 THEN 250
 							WHEN s.ProductID = 21 THEN 211
+							ELSE 0
 						END AS Sporttype,
 						b.ip,
 						b.betfrom,
@@ -1543,9 +1550,9 @@ BEGIN
 						0 AS finalodds2,
 						0 AS OddsType,
 						CASE 
-							WHEN SUM(blc.winlost - blc.actual_stake) = 0 THEN 'Draw'
 							WHEN SUM(blc.winlost - blc.actual_stake) > 0 THEN 'Won'
 							WHEN SUM(blc.winlost - blc.actual_stake) < 0 THEN 'Lose'
+							ELSE 'Draw'
 						END AS Status,
 						CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 						SUM(blc.stake) AS stake,
@@ -1569,6 +1576,7 @@ BEGIN
 						CASE
 							WHEN s.ProductID = 11 THEN 250
 							WHEN s.ProductID = 21 THEN 211
+							ELSE 0
 						END AS Sporttype,
 						b.ip,
 						b.betfrom,
@@ -1658,6 +1666,7 @@ BEGIN
 						CASE
 							WHEN s.ProductID = 11 THEN 250
 							WHEN s.ProductID = 21 THEN 211
+							ELSE 0
 						END AS Sporttype,
 						b.ip,
 						b.betfrom,
@@ -1687,7 +1696,7 @@ BEGIN
 			END
 
 			-- Colossus Bet
-			IF EXISTS (SELECT TOP 1 1 FROM  @SportBettype WHERE ProductID = 15 AND Bettype = @BetType)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 15 AND Bettype = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -1764,8 +1773,8 @@ BEGIN
 		-- Bettrans14
 		ELSE IF @WinlostDate <= @MoveBetsDay AND @WinlostDate >= @BalanceUpDay
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType )
+			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType )
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -1824,7 +1833,7 @@ BEGIN
 					b.mwinlost,
 					b.swinlost,
 					CASE
-						WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 						ELSE m.showtime
 					END AS ShowTime,
 					b.winlostdate,
@@ -1847,7 +1856,7 @@ BEGIN
 			END
 
 			-- Get more info for BetTrade tickets
-			IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE SportType = 1 AND BetType = 901)
+			IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE SportType = 1 AND BetType = 901)
 			BEGIN
 				UPDATE b
 				SET b.Odds = ob.odds,
@@ -1860,7 +1869,7 @@ BEGIN
 				WHERE b.SportType = 1 AND b.BetType = 901
 			END
 
-			IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE SportType = 1 AND BetType = 902)
+			IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE SportType = 1 AND BetType = 902)
 			BEGIN
 				UPDATE b
 				SET b.Odds = ob.odds,
@@ -1880,7 +1889,7 @@ BEGIN
 			END
 
 			-- Get more info for CashOut tickets
-			IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 911)
+			IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)
 			BEGIN
 				UPDATE b
 				SET b.Odds = ob.odds,
@@ -1894,7 +1903,7 @@ BEGIN
 				WHERE b.BetType = 911
 			END
 
-			IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 912)
+			IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 912)
 			BEGIN
 				UPDATE b
 				SET b.Odds = ob.odds,
@@ -1917,7 +1926,7 @@ BEGIN
 			END
 
 			-- Mix Parlay, Combination Mix Parlay
-			IF @BetType IN (9, 29)
+			IF @BetType IN (9, 29, 2799)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -1987,7 +1996,7 @@ BEGIN
 					-1 AS BetdaqId,
 					'' AS ExtraInfo
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				WHERE b.transid = @TransId AND b.bettype IN (9, 29)
+				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799)
 			END
 
 			-- Outright
@@ -2065,7 +2074,7 @@ BEGIN
 			END
 
 			-- Horse Racing
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 2 AND Bettype = @BetType)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 2 AND Bettype = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT 
@@ -2153,8 +2162,8 @@ BEGIN
 				WHERE s.ProductID = 2 AND b.transid = @TransId
 			END
 		
-			-- Virtual HR
-			IF EXISTS(SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND BetType = @BetType)
+			-- Virtual Horse Racing
+			IF EXISTS(SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT 
@@ -2181,7 +2190,7 @@ BEGIN
 					b.OddsType,
 					b.status,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-					stake,
+					b.stake,
 					b.actual_stake,
 					b.transdate,
 					'' betteam, 
@@ -2245,7 +2254,7 @@ BEGIN
 
 			-- RNG Casino, Gold Deluxe, Microgaming Live Casino, Cockfighting
 			-- Microgaming RNG Casino, AG Casino, AllBet, Macau Games, NG2, Fishing World
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType
 							AND ProductID IN (6, 11, 12, 13, 17, 19, 21, 22, 23, 24))
 			BEGIN
@@ -2308,8 +2317,8 @@ BEGIN
 					0 AS finalawayscore,
 					0 AS leagueid,
 					CASE
-						WHEN s.ProductID = 6 AND SubProduct <> '' THEN b.matchid
-						WHEN s.ProductID = 6 AND SubProduct = '' THEN 251
+						WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.matchid
+						WHEN s.ProductID = 6 AND s.SubProduct = '' THEN 251
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 13 THEN 203
@@ -2323,6 +2332,7 @@ BEGIN
 						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
 						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 						WHEN s.ProductID = 24 THEN 219
+						ELSE 0
 					END AS SportType,
 					b.ip,
 					b.betfrom,
@@ -2362,7 +2372,7 @@ BEGIN
 			END
 
 			-- Keno
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 8 AND Bettype = @BetType)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 8 AND Bettype = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2375,9 +2385,9 @@ BEGIN
 					'' AS eventdate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
-					sdiscount,
-					adiscount,
-					discount,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -2437,7 +2447,7 @@ BEGIN
 			END
 
 			-- Colossus Bet
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 15 AND Bettype = @BetType)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 15 AND Bettype = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2514,8 +2524,8 @@ BEGIN
 		-- Bettrans_bk
 		ELSE IF @WinlostDate < @BalanceUpDay
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType )
+			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType )
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2542,7 +2552,7 @@ BEGIN
 					b.OddsType,
 					b.status,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-					stake,
+					b.stake,
 					b.actual_stake,
 					b.transdate,
 					b.betteam,
@@ -2574,7 +2584,7 @@ BEGIN
 					b.mwinlost,
 					b.swinlost,
 					CASE
-						WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 						ELSE m.showtime
 					END AS ShowTime,
 					b.winlostdate,
@@ -2597,7 +2607,7 @@ BEGIN
 				WHERE s.EventType = 1 AND b.transid = @TransId
 
 				-- Get more info for BetTrade tickets
-				IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE SportType = 1 AND BetType = 901)
+				IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE SportType = 1 AND BetType = 901)
 				BEGIN
 					UPDATE b
 					SET b.Odds = ob.odds,
@@ -2610,7 +2620,7 @@ BEGIN
 					WHERE b.SportType = 1 AND b.BetType = 901
 				END
 
-				IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE SportType = 1 AND BetType = 902)
+				IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE SportType = 1 AND BetType = 902)
 				BEGIN
 					UPDATE b
 					SET b.Odds = ob.odds,
@@ -2630,7 +2640,7 @@ BEGIN
 				END
 
 				-- Get more info for CashOut tickets
-				IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 911)
+				IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)
 				BEGIN
 					UPDATE b
 					SET b.Odds = ob.odds,
@@ -2644,7 +2654,7 @@ BEGIN
 					WHERE b.BetType = 911
 				END
 
-				IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 912)
+				IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 912)
 				BEGIN
 					UPDATE b
 					SET b.Odds = ob.odds,
@@ -2667,8 +2677,8 @@ BEGIN
 				END
 			END
 
-			-- Mix Parlay, Combination Mix Parlay
-			IF @BetType IN (9, 29)
+			-- Mix Parlay, Combination Mix Parlay, Mix Parlay (Betradar Virtual Sports)
+			IF @BetType IN (9, 29, 2799)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2738,7 +2748,7 @@ BEGIN
 					-1 AS BetdaqId,
 					'' AS ExtraInfo
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-				WHERE b.transid = @TransId AND b.bettype IN (9, 29)
+				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799)
 			END
 
 			-- Outright
@@ -2816,7 +2826,7 @@ BEGIN
 			END
 
 			-- Horse Racing
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 2 AND Bettype = @BetType)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 2 AND Bettype = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2905,7 +2915,7 @@ BEGIN
 			END
 
 			-- Virtual Horse Racing
-			IF EXISTS(SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND BetType = @BetType)
+			IF EXISTS(SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT 
@@ -2932,7 +2942,7 @@ BEGIN
 					b.OddsType,
 					b.status,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-					stake,
+					b.stake,
 					b.actual_stake,
 					b.transdate,
 					'' betteam, 
@@ -2996,7 +3006,7 @@ BEGIN
 
 			-- RNG Casino Single Wallet, Microgaming RNG Casino, AG Casino Single Wallet, AllBet, Voidbridge, NG2
 			-- Fishing World
-			IF EXISTS (SELECT TOP 1 1 FROM @SportBettype
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType 
 							AND (ProductID IN (11, 17, 21, 22, 23, 24)
 								OR (ProductID = 6 AND SubProduct <> '')))
@@ -3057,7 +3067,7 @@ BEGIN
 					0 AS finalawayscore,
 					0 AS leagueid,
 					CASE
-						WHEN s.ProductID = 6 AND SubProduct <> '' THEN b.matchid
+						WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.matchid
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 17 THEN 205
 						WHEN s.ProductID = 21 THEN 211
@@ -3068,6 +3078,7 @@ BEGIN
 						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
 						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 						WHEN s.ProductID = 24 THEN 219
+						ELSE 0
 					END AS SportType,
 					b.ip,
 					b.betfrom,
@@ -3106,10 +3117,10 @@ BEGIN
 	END
 
 	-- Live Casino
-	IF EXISTS (	SELECT TOP 1 1
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM @SportBettype AS sp
 					INNER JOIN @Data AS d ON d.bettype = sp.bettype 
-				WHERE ProductID = 4)
+				WHERE sp.ProductID = 4)
 	BEGIN
 		IF @WinlostDate > @MoveBetsDay
 		BEGIN
@@ -3170,10 +3181,10 @@ BEGIN
 		END
 	END
 
-	IF EXISTS (	SELECT TOP 1 1
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM @SportBettype AS sp
 					INNER JOIN @Data AS d ON d.bettype = sp.bettype 
-				WHERE ProductID = 12)
+				WHERE sp.ProductID = 12)
 	BEGIN
 		IF @WinlostDate > @MoveBetsDay
 		BEGIN
@@ -3239,7 +3250,7 @@ BEGIN
 	SET @CustId = NULL
 
 	-- bettransRnG
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@BetType = b.gameID,
 		@WinLostDate = b.winlostdate,
@@ -3251,7 +3262,7 @@ BEGIN
 	-- bettransRnG14
 	IF @WinlostDate IS NULL
 	BEGIN
-		SELECT TOP 1
+		SELECT TOP(1)
 			@TransId = b.transid,
 			@BetType = b.gameID,
 			@WinLostDate = b.winlostdate,
@@ -3272,7 +3283,7 @@ BEGIN
 		IF @WinlostDate > @MoveBetsDay
 		BEGIN
 			-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
-			IF EXISTS(	SELECT TOP 1 1 FROM @SportBettype
+			IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType
 							AND (ProductID IN (17, 22, 24)
 								OR (ProductID = 6 AND SubProduct <> '')))
@@ -3356,7 +3367,7 @@ BEGIN
 		ELSE IF @WinlostDate BETWEEN @BalanceUpDay AND @MoveBetsDay
 		BEGIN
 			-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
-			IF EXISTS(	SELECT TOP 1 1 FROM @SportBettype
+			IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType
 							AND (ProductID IN (17, 22, 24)
 								OR (ProductID = 6 AND SubProduct <> '')))
@@ -3442,7 +3453,7 @@ BEGIN
 	SET @CustId = NULL
 
 	-- bettransLC
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@BetType = b.gameID,
 		@WinLostDate = b.winlostdate,
@@ -3454,7 +3465,7 @@ BEGIN
 	-- bettransLC14
 	IF @WinlostDate IS NULL
 	BEGIN
-		SELECT TOP 1
+		SELECT TOP(1)
 			@TransId = b.transid,
 			@BetType = b.gameID,
 			@WinLostDate = b.winlostdate,
@@ -3475,7 +3486,7 @@ BEGIN
 		IF @WinlostDate > @MoveBetsDay
 		BEGIN
 			-- AG Casino, AllBet
-			IF EXISTS( SELECT TOP 1 1 FROM @SportBettype WHERE ProductID IN (11, 21) AND Bettype = @BetType )
+			IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (11, 21) AND Bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -3558,7 +3569,7 @@ BEGIN
 		ELSE IF @WinlostDate BETWEEN @BalanceUpDay AND @MoveBetsDay
 		BEGIN
 			-- AG Casino, AllBet
-			IF EXISTS( SELECT TOP 1 1 FROM @SportBettype WHERE ProductID IN (11, 21) AND Bettype = @BetType )
+			IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (11, 21) AND Bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -3820,6 +3831,7 @@ END
 
 
 
+
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelByRefNo] TO [bodbDownlineNet]
 GO
@@ -3830,3 +3842,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelByRefNo] TO [bodbExtAccNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_SelByRefNo] TO [vnteam] 
+GO
