@@ -12,8 +12,8 @@ AS
 		- 20100123@Henry: Grant execute to Accounting site
 		- 20110819@Johnson: Add column kickofftime
 		- 20110831@Johnson: Correct event status when refund ticket
-		- 20110907@Sophia: Add column IsHTCal, calculate for Pending Status.
-		- 20111003@Sophia: Add column IsPending Pending Status.
+		- 20110907@Sophia: Add column IsHTCal, calculate for Pending Status
+		- 20111003@Sophia: Add column IsPending Pending Status
 		- 20130121@Dan: Change linked server DB06 to DBARC
 		- 20131010@Kathy: Turn to use GlobalShowTime for display the Kick-off-Time [redmine:#6076]
 		- 20141002@Sophia: Get the detail information of Tennis sport
@@ -24,12 +24,13 @@ AS
 		- 20170209@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
+		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	-- Get Sport Bettype Matrix (support Sportsbook only)
+	-- Get Sport Bettype Matrix (support Sportsbook, Betradar Virtual Sports only)
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -38,7 +39,9 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
-	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (1, 27)
+
 
 	DECLARE @tmpParlay TABLE(
 		SportType		INT,
@@ -405,3 +408,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultParlay] TO [bodbAdminNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelMatchResultParlay] TO [vnteam]
+GO
