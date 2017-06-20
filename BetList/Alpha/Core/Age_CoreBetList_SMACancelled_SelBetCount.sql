@@ -23,8 +23,9 @@ AS
 		- 20150504@Bobby: Create new SP
 		- 20150831@Kos: Support Colossus Bet
 		- 20150910@Bobby: Enhance performance for SP core. Apply TVP for input parameters
-		- 20151214@Kos: Support Cockfighting (#Redmine: 48850)
+		- 20151214@Kos: Support Cockfighting [#Redmine: 48850]
 		- 20160812@Kos: Support NG2
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -38,37 +39,36 @@ AS
 
 BEGIN
 	SET NOCOUNT ON;
-	
+
 	-- RESET output
 	SELECT @Error	= 0
 		, @ErrorMsg	= ''
-	
-	IF @custid IS NULL
+
+	IF @CustId IS NULL
 	BEGIN
-		SELECT @custid = custid
+		SELECT @CustId = custid
 		FROM dbo.customer WITH (NOLOCK)
-		WHERE username = @username
-			AND roleid = @roleid
+		WHERE username = @Username AND roleid = @RoleId
 	END
-	
+
 	DECLARE @MemBetCount TABLE (
-		custid 				INT
-		, recommend			INT
-		, mrecommend		INT
-		, srecommend		INT
-		, betcount			INT
+		CustId 			INT
+		, Recommend		INT
+		, MRecommend	INT
+		, SRecommend	INT
+		, BetCount		INT
 	);
 
 	CREATE TABLE #tempRawData (
-		transid 		BIGINT
-		, custid		INT
-		, recommend		INT
-		, mrecommend	INT
-		, srecommend	INT
-		, matchid		INT
-		, oddsid		INT
-		, productid		INT
-		, eventtype		TINYINT
+		TransId 		BIGINT
+		, CustId		INT
+		, Recommend		INT
+		, MRecommend	INT
+		, SRecommend	INT
+		, MatchId		INT
+		, OddsId		INT
+		, ProductId		INT
+		, EventType		TINYINT
 	)
 
 	-- CHECK for supporting cancelled ticket only
@@ -80,7 +80,7 @@ BEGIN
 	END
 
 	-- MEMBER
-	IF @roleid = 1
+	IF @RoleId = 1
 	BEGIN
 		INSERT INTO #tempRawData
 		SELECT b.transid
@@ -95,69 +95,69 @@ BEGIN
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
-		WHERE b.custid = @custid
+		WHERE b.custid = @CustId
 	END
 
 	-- AGENT
-	IF @roleid = 2
+	IF @RoleId = 2
 	BEGIN
 		INSERT INTO #tempRawData
 		SELECT b.transid
-			,b.custid
-			,b.recommend
-			,b.mrecommend
-			,b.srecommend
-			,b.matchid
-			,b.oddsid
-			,bt.ProductId
-			,bt.EventType
+			, b.custid
+			, b.recommend
+			, b.mrecommend
+			, b.srecommend
+			, b.matchid
+			, b.oddsid
+			, bt.ProductId
+			, bt.EventType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON b.recommend = c.custid
 			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
-		WHERE c.custid = @custid
+		WHERE c.custid = @CustId
 			AND c.roleid = 2
 	END
 
 	-- MASTER
-	IF @roleid = 3
+	IF @RoleId = 3
 	BEGIN
 		INSERT INTO #tempRawData
 		SELECT b.transid
-			,b.custid
-			,b.recommend
-			,b.mrecommend
-			,b.srecommend
-			,b.matchid
-			,b.oddsid
-			,bt.ProductId
-			,bt.EventType
+			, b.custid
+			, b.recommend
+			, b.mrecommend
+			, b.srecommend
+			, b.matchid
+			, b.oddsid
+			, bt.ProductId
+			, bt.EventType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON b.recommend = c.custid
 			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
-		WHERE c.mrecommend = @custid
+		WHERE c.mrecommend = @CustId
 			AND c.roleid = 2
 	END
 
 	-- SUPER
-	IF @roleid = 4
+	IF @RoleId = 4
 	BEGIN
 		INSERT INTO #tempRawData
 		SELECT b.transid
-			,b.custid
-			,b.recommend
-			,b.mrecommend
-			,b.srecommend
-			,b.matchid
-			,b.oddsid
-			,bt.ProductId
-			,bt.EventType
-		FROM dbo.bettrans b WITH (NOLOCK)
-			INNER JOIN dbo.Customer c WITH (NOLOCK) ON b.recommend = c.custid
-			INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
-			INNER JOIN @TransStatus stt ON b.statusid = stt.statusid
-		WHERE c.srecommend = @custid
+			, b.custid
+			, b.recommend
+			, b.mrecommend
+			, b.srecommend
+			, b.matchid
+			, b.oddsid
+			, bt.ProductId
+			, bt.EventType
+		FROM dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON b.recommend = c.custid
+			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+			INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
+		WHERE c.srecommend = @CustId
 			AND c.roleid = 2
 	END
 
@@ -170,8 +170,9 @@ BEGIN
 		- Colossus Bet			: ProductId = 15
 		- Cockfighting			: ProductId = 19
 		- NG2					: ProductId = 23
+		- Mix Parlay			: ProductId = 27
 	*/
-	IF EXISTS(SELECT TOP 1 1 FROM #tempRawData WHERE EventType IN (0))
+	IF EXISTS (SELECT TOP(1) 1 FROM #tempRawData WHERE EventType = 0)
 	BEGIN
 		INSERT INTO @MemBetCount
 		SELECT
@@ -179,23 +180,24 @@ BEGIN
 			, b.recommend
 			, b.mrecommend
 			, b.srecommend
-			, COUNT(1) AS betcount
+			, COUNT(1) AS BetCount
 		FROM #tempRawData AS b
 		WHERE b.EventType = 0
-			AND b.ProductID IN (6, 7, 8, 9, 12, 15, 19, 23)
+			AND b.ProductID IN (6, 7, 8, 9, 12, 15, 19, 23, 27)
 		GROUP BY b.custid
 			, b.recommend
 			, b.mrecommend
 			, b.srecommend
 	END
 
-	/* normal tickets 
-		- SB	: ProductID = 1
-		- NG	: ProductID = 3
-		- LC	: ProductID = 4
-		- VS	: ProductID = 5
+	/* normal tickets
+		- Sportsbook				: ProductId = 1
+		- Number Game				: ProductId = 3
+		- Live Casino				: ProductId = 4
+		- Virtual Sports			: ProductId = 5
+		- Betradar Virtual Sports	: ProductId = 27
 	*/
-	IF EXISTS(SELECT TOP 1 1 FROM #tempRawData s WHERE s.EventType IN (1))
+	IF EXISTS (SELECT TOP(1) 1 FROM #tempRawData WHERE EventType = 1)
 	BEGIN
 		WITH CteMatch 
 		AS(
@@ -210,7 +212,7 @@ BEGIN
 			, b.recommend
 			, b.mrecommend
 			, b.srecommend
-			, COUNT(1) AS betcount
+			, COUNT(1) AS BetCount
 		FROM #tempRawData AS b
 			INNER JOIN CteMatch AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.EventType = 1
@@ -220,16 +222,16 @@ BEGIN
 			, b.srecommend
 	END
 
-	/* 
-		- SB outright	: ProductID = 1
-		- HR			: ProductID = 2
+	/*
+		- Sportsbook outright	: ProductId = 1
+		- Horse Racing			: ProductId = 2
 	*/
-	IF EXISTS(SELECT TOP 1 1 FROM #tempRawData s WHERE s.EventType IN (2))
+	IF EXISTS (SELECT TOP(1) 1 FROM #tempRawData WHERE EventType = 2)
 	BEGIN
 		WITH CteOutright 
 		AS(
 			SELECT leagueid, orid
-			FROM dbo.outright (NOLOCK) 
+			FROM dbo.outright WITH (NOLOCK)
 			WHERE eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 		)
 
@@ -239,7 +241,7 @@ BEGIN
 			, b.recommend
 			, b.mrecommend
 			, b.srecommend
-			, COUNT(1) AS betcount
+			, COUNT(1) AS BetCount
 		FROM #tempRawData AS b
 			INNER JOIN CteOutright AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
@@ -251,16 +253,16 @@ BEGIN
 	END
 
 	/*
-		- VS	: ProductID = 3
+		- Virtual Sports	: ProductId = 5
 	*/
-	IF EXISTS(SELECT TOP 1 1 FROM #tempRawData s WHERE s.EventType IN (3))
+	IF EXISTS (SELECT TOP(1) 1 FROM #tempRawData WHERE EventType = 3)
 	BEGIN
 		WITH CteVSOutright
 		AS(
 			SELECT o.Orid
 			FROM dbo.VSOutright AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
-			WHERE EventDate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
+			WHERE o.EventDate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 		)
 
 		INSERT INTO @MemBetCount
@@ -269,28 +271,30 @@ BEGIN
 			, b.recommend
 			, b.mrecommend
 			, b.srecommend
-			, COUNT(1) AS betcount
+			, COUNT(1) AS BetCount
 		FROM #tempRawData AS b
-			INNER JOIN CteVSOutright AS o with (NOLOCK) ON b.oddsid = o.Orid
+			INNER JOIN CteVSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 		WHERE b.EventType = 3
 		GROUP BY b.custid
 			, b.recommend
 			, b.mrecommend
 			, b.srecommend
 	END
-	
+
 	;WITH SumBetcount (custid, betcount)
 	AS (
 		SELECT
-			CASE WHEN @roleid = 3 THEN b.recommend 
-				WHEN @roleid = 4 THEN b.mrecommend 
-				ELSE b.custid 
-			END	AS custid
-			, SUM(b.betcount) AS betcount
+			CASE
+				WHEN @RoleId = 3 THEN b.recommend
+				WHEN @RoleId = 4 THEN b.mrecommend
+				ELSE b.custid
+			END AS custid,
+			SUM(b.BetCount) AS BetCount
 		FROM @MemBetCount b
 		GROUP BY
-			CASE WHEN @roleid = 3 THEN b.recommend
-				WHEN @roleid = 4 THEN b.mrecommend
+			CASE
+				WHEN @RoleId = 3 THEN b.recommend
+				WHEN @RoleId = 4 THEN b.mrecommend
 				ELSE b.custid
 			END
 	)
@@ -300,11 +304,14 @@ BEGIN
 		c.username,
 		s.betcount
 	FROM SumBetcount AS s
-		INNER JOIN dbo.customer AS c WITH(NOLOCK) ON s.custid = c.custid 
+		INNER JOIN dbo.customer AS c WITH (NOLOCK) ON s.custid = c.custid 
 	ORDER BY s.betcount DESC
 
 	RETURN;
 END
+
+
+
 
 GO
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_SMACancelled_SelBetCount] TO [bodbDownlineNet]

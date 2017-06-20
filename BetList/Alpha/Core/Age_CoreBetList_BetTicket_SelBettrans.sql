@@ -16,7 +16,7 @@ AS
 	Created: Bobby.Nguyen
 	Task: Re-factor core bet list
 	DB: DBAGE.bodb02
-	Original: 
+	Original:
 
 	Revisions:
 		- 20150504@Bobby: Create new SP - Re-factor bet list
@@ -35,6 +35,7 @@ AS
 		- 20160812@Kos: Support NG2
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
 		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 
 	Param's Explanation:
 
@@ -57,6 +58,7 @@ BEGIN
 		- Macau Games			: ProductId = 22
 		- NG2					: ProductId = 23
 		- Fishing World			: ProductId = 24
+		- Mix Parlay			: ProductId = 27
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -84,28 +86,28 @@ BEGIN
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
-		, ISNULL(b.BetID, 0)
-		, CASE WHEN c.ProductID = 1 THEN b.Betteam
+		, ISNULL(b.betid, 0)
+		, CASE WHEN c.ProductID IN (1, 27) THEN b.Betteam
 				WHEN c.ProductID = 8 THEN fnc.ChoiceId
 				ELSE ''
 			END AS Betteam 
-		, CASE WHEN c.ProductID IN (1, 23) THEN b.hdp1
+		, CASE WHEN c.ProductID IN (1, 23, 27) THEN b.hdp1
 				ELSE 0
 			END AS hdp1
-		, CASE WHEN c.ProductID IN (1, 23) THEN b.hdp2
+		, CASE WHEN c.ProductID IN (1, 23, 27) THEN b.hdp2
 				ELSE 0
 			END AS hdp2
 		, CASE WHEN c.ProductID IN (8, 19) THEN b.OddsType
 			ELSE 0
 		END AS OddsType
 		, b.oddsid
-		, CASE WHEN c.ProductID IN (1, 8, 12, 19, 23) THEN b.Odds
+		, CASE WHEN c.ProductID IN (1, 8, 12, 19, 23, 27) THEN b.Odds
 				ELSE 0
 			END AS Odds
-		, CASE WHEN c.ProductID IN (1) THEN b.modds 
+		, CASE WHEN c.ProductID IN (1, 27) THEN b.modds
 				ELSE 0
 			END AS modds
-		, b.Stake
+		, b.stake
 		, b.actual_stake
 		, b.Status
 		, b.Transdate
@@ -143,7 +145,7 @@ BEGIN
 		, 0 AS finalawayscore
 		, 0 AS hthomescore
 		, 0 AS htawayscore
-		, b.IP
+		, b.ip
 		, 0 AS LeagueID
 		,CASE
 			WHEN c.ProductID = 8 THEN fnc.GameId
@@ -161,11 +163,10 @@ BEGIN
 		, '' AS Placing
 		, '' AS showtime
 		, CASE 
-			WHEN c.ProductID IN ( 9, 12 ) AND b.bettype IN ( 1000, 1701, 1702 ) THEN b.betcheck
-			WHEN c.ProductID = 19 THEN b.betcheck
-			WHEN b.bettype = 29 THEN ISNULL(b.betcheck, '')
+			WHEN c.ProductID IN (9, 12) AND b.bettype IN (1000, 1701, 1702) THEN b.betcheck
+			WHEN c.ProductID IN (1, 19, 27) THEN ISNULL(b.betcheck, '')
 			ELSE ''
-		END	AS betcheck
+		END AS betcheck
 		, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' 
 		END AS comstatus
 		, CASE
@@ -178,7 +179,7 @@ BEGIN
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 --			AND b.custid = c.custid
 		OUTER APPLY [dbo].[f_ParseTransDesc](b.transdesc, b.bettype) fnc
-	WHERE	c.WhTicket = 1
+	WHERE c.WhTicket = 1
 		AND c.EventType = 0
 		AND c.ProductID <> 15	-- not Colossus Bet
 
@@ -198,9 +199,10 @@ BEGIN
 			WHEN c.ProductID = 6 THEN b.matchid
 			WHEN c.ProductID = 22 THEN 212
 			WHEN c.ProductID = 24 THEN 219
+			ELSE 0
 		END AS Sporttype
 		, b.bettype
-		, ISNULL(b.BetID, 0)
+		, ISNULL(b.betid, 0)
 		, '' AS Betteam
 		, 0 AS hdp1
 		, 0 AS hdp2
@@ -291,6 +293,7 @@ BEGIN
 			WHEN c.ProductID = 6 THEN b.matchid
 			WHEN c.ProductID = 22 THEN 212
 			WHEN c.ProductID = 24 THEN 219
+			ELSE 0
 		END AS Sporttype
 		, b.bettype
 		, ISNULL(b.BetID, 0)
@@ -303,10 +306,10 @@ BEGIN
 		, 0 AS modds
 		, SUM(brng.stake) AS Stake
 		, SUM(brng.actual_stake) AS actual_stake 
-		, CASE 
-			WHEN SUM(brng.winlost - brng.actual_stake) = 0 THEN 'Draw'
+		, CASE
 			WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
 			WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
+			ELSE 'Draw'
 		END AS Status
 		, b.Transdate
 		, b.winlostdate
@@ -355,12 +358,12 @@ BEGIN
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
 	WHERE c.WhTicket = 4
-		AND EXISTS(SELECT TOP 1 1 FROM @TransStatus WHERE StatusId IN (111, 112, 113))
+		AND EXISTS (SELECT TOP(1) 1 FROM @TransStatus WHERE StatusId IN (111, 112, 113))
 		AND brng.statusID NOT IN (0, 1)
 	GROUP BY
 		b.transid,
-		ISNULL(b.BetID, 0),
-		b.Bettype,
+		ISNULL(b.betid, 0),
+		b.bettype,
 		b.refno,
 		b.transdate,
 		b.winlostdate,
@@ -442,11 +445,11 @@ BEGIN
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = b.transid
 	WHERE c.WhTicket = 5
-		AND EXISTS(SELECT TOP 1 1 FROM @TransStatus WHERE StatusId IN (0, 1))
+		AND EXISTS (SELECT TOP(1) 1 FROM @TransStatus WHERE StatusId IN (0, 1))
 		AND blc.statusID IN (0, 1)
 	GROUP BY
 		b.transid,
-		ISNULL(b.BetID, 0),
+		ISNULL(b.betid, 0),
 		b.Bettype,
 		b.refno,
 		b.transdate,
@@ -474,7 +477,7 @@ BEGIN
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
-		, ISNULL(b.BetID, 0)
+		, ISNULL(b.betid, 0)
 		, '' AS Betteam 
 		, 0 AS hdp1
 		, 0 AS hdp2
@@ -484,10 +487,10 @@ BEGIN
 		, 0 AS modds
 		, SUM(blc.stake) AS Stake
 		, SUM(blc.actual_stake) AS actual_stake 
-		, CASE 
-			WHEN SUM(blc.winlost - blc.actual_stake) = 0 THEN 'Draw'
+		, CASE
 			WHEN SUM(blc.winlost - blc.actual_stake) > 0 THEN 'Won'
 			WHEN SUM(blc.winlost - blc.actual_stake) < 0 THEN 'Lose'
+			ELSE 'Draw'
 		END AS Status
 		, b.Transdate
 		, b.winlostdate
@@ -533,11 +536,11 @@ BEGIN
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = b.transid
 	WHERE c.WhTicket = 5
-		AND EXISTS(SELECT TOP 1 1 FROM @TransStatus WHERE StatusId IN (111, 112, 113))
+		AND EXISTS(SELECT TOP(1) 1 FROM @TransStatus WHERE StatusId IN (111, 112, 113))
 		AND blc.statusID NOT IN (0, 1)
 	GROUP BY
 		b.transid,
-		ISNULL(b.BetID, 0),
+		ISNULL(b.betid, 0),
 		b.Bettype,
 		b.refno,
 		b.transdate,
@@ -623,10 +626,11 @@ BEGIN
 		AND c.ProductID = 15
 
 	/* 
-	- SB	: ProductID = 1
-	- NG	: ProductID = 3
-	- LC	: ProductID = 4
-	- VS	: ProductID = 5
+	- Sportsbook				: ProductID = 1
+	- Number Game				: ProductID = 3
+	- Live Casino				: ProductID = 4
+	- Virtual Sports			: ProductID = 5
+	- Betradar Virtual Sports	: ProductID = 27
 	*/
 	UNION ALL
 	SELECT
@@ -658,7 +662,7 @@ BEGIN
 		END AS status
 		, b.transdate
 		, b.winlostdate
-		, (b.winlost-actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS winlost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
@@ -692,7 +696,7 @@ BEGIN
 		, ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral
 		, '' AS Placing
 		, CASE
-			WHEN c.ProductId = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+			WHEN c.ProductId IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 			ELSE ISNULL(m.showtime, '')
 		END AS ShowTime
 		, CASE
@@ -706,14 +710,14 @@ BEGIN
 		, ISNULL(b.oddsspread, 0) AS OddsSpread
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		INNER JOIN @tempCust c ON b.transid = c.transid
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
 --			AND b.custid = c.custid
 	WHERE c.WhTicket = 1
 		AND c.EventType = 1
 
-	/* 
-	- SB outright	: ProductID = 1
-	- HR tickets	: ProductID = 2
+	/*
+	- Sportsbook outright	: ProductID = 1
+	- Horse Racing		 	: ProductID = 2
 	*/
 	UNION ALL
 	SELECT
@@ -736,7 +740,7 @@ BEGIN
 		, b.status
 		, b.transdate
 		, b.winlostdate
-		, (b.winlost - actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS winlost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
@@ -783,7 +787,7 @@ BEGIN
 		AND c.EventType = 2
 
 	/*
-	- VS ticket	: ProductID = 5
+	- Virtual Sports 	: ProductID = 5
 	*/
 	UNION ALL
 	SELECT
@@ -793,7 +797,7 @@ BEGIN
 		, b.username
 		, r.Sporttype
 		, b.Bettype
-		, ISNULL(b.BetID,0)
+		, ISNULL(b.betid, 0)
 		, '' AS betteam
 		, b.hdp1
 		, b.hdp2
@@ -806,7 +810,7 @@ BEGIN
 		, b.status
 		, b.transdate
 		, b.winlostdate
-		, (b.winlost-actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS winlost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
@@ -828,7 +832,7 @@ BEGIN
 		, 0 AS finalawayscore
 		, 0 AS hthomescore
 		, 0 AS htawayscore
-		, b.IP
+		, b.ip
 		, r.LeagueID
 		, b.MatchID
 		, CONVERT(NVARCHAR(50), o.RacerNum) AS MatchCode
@@ -854,6 +858,7 @@ BEGIN
 
 	RETURN;
 END
+
 
 
 

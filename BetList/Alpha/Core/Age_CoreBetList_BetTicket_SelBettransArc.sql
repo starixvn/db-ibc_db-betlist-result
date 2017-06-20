@@ -15,7 +15,7 @@ AS
 /*
 	Created: Bobby.Nguyen
 	Task: Re-factor core betlist and apply GD product
-	DB: DBARC.bodb_archive
+	DB: DBARC.bodb_Archive
 	Original:
 
 	Revisions:
@@ -35,30 +35,30 @@ AS
 		- 20160812@Kos: Support NG2
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
 		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 
 	Param's Explanation:
-	
+
 	Dependences:
-		- Age_CoreBetList_BetTicket_SelMainInfo
+		- Age_CoreBetList_BetTicket_SelMainInfoArc
 */
 
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @custInfo TABLE
-	(
-		CustId		INT
-		, Username	NVARCHAR(30)
+	DECLARE @CustInfo TABLE (
+		CustId		INT,
+		Username	NVARCHAR(30)
 	);
 
-	INSERT INTO @custInfo
-	SELECT c.CustId,
-		c.Username
+	INSERT INTO @CustInfo
+	SELECT c.custid,
+		c.username
 	FROM bodb02.dbo.custinfo AS c WITH (NOLOCK)
 		INNER JOIN @tempCust AS t ON c.custid = t.custid
 	GROUP BY c.custid,
 		c.username
-	
+
 	/*
 		- Mix & System Parlay	: ProductId = 1
 		- Casino				: ProductId = 6
@@ -71,6 +71,7 @@ BEGIN
 		- Macau Games			: ProductId = 22
 		- NG2					: ProductId = 23
 		- Fishing World			: ProductId = 24
+		- Mix Parlay			: ProductId = 27
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -98,18 +99,18 @@ BEGIN
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
-		, ISNULL(b.BetID, 0)
+		, ISNULL(b.betid, 0)
 		, CASE
-			WHEN c.ProductID = 1 THEN b.Betteam
+			WHEN c.ProductID IN (1, 27) THEN b.Betteam
 			WHEN c.ProductID = 8 THEN fnc.ChoiceId
 			ELSE ''
 		END AS Betteam
 		, CASE
-			WHEN c.ProductID IN (1, 23) THEN b.hdp1
+			WHEN c.ProductID IN (1, 23, 27) THEN b.hdp1
 			ELSE 0
 		END AS hdp1
 		, CASE
-			WHEN c.ProductID IN (1, 23) THEN b.hdp2
+			WHEN c.ProductID IN (1, 23, 27) THEN b.hdp2
 			ELSE 0
 		END AS hdp2
 		, CASE
@@ -118,21 +119,21 @@ BEGIN
 		END AS OddsType
 		, b.oddsid
 		, CASE
-			WHEN c.ProductID IN (1, 8, 12, 19, 23) THEN b.Odds
+			WHEN c.ProductID IN (1, 8, 12, 19, 23, 27) THEN b.Odds
 			ELSE 0
 		END AS Odds
 		, CASE
-			WHEN c.ProductID IN ( 1 ) THEN b.modds 
+			WHEN c.ProductID IN (1, 27) THEN b.modds
 			ELSE 0
 		END AS modds
-		, b.Stake
+		, b.stake
 		, b.actual_stake
-		, b.Status
+		, b.status
 		, b.Transdate
 		, b.winlostdate
-		, CASE WHEN b.bettype IN (23102, 23002, 23202) THEN 0 
+		, CASE WHEN b.bettype IN (23102, 23002, 23202) THEN 0
 				ELSE (b.winlost - b.actual_stake) 
-			END AS winlost
+			END AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
@@ -163,7 +164,7 @@ BEGIN
 		, 0 AS finalawayscore
 		, 0 AS hthomescore
 		, 0 AS htawayscore
-		, b.IP
+		, b.ip
 		, 0 AS LeagueID
 		, CASE
 			WHEN c.ProductID = 8 THEN fnc.GameId
@@ -182,8 +183,7 @@ BEGIN
 		, '' AS showtime
 		, CASE 
 			WHEN c.ProductID IN ( 9, 12 ) AND b.bettype IN ( 1000, 1701, 1702 ) THEN b.betcheck 
-			WHEN c.ProductID = 19 THEN b.betcheck
-			WHEN b.bettype = 29 THEN ISNULL(b.betcheck, '')
+			WHEN c.ProductID IN (1, 19, 27) THEN ISNULL(b.betcheck, '')
 			ELSE ''
 		END	AS betcheck
 		, CASE WHEN b.comstatus = '1' THEN '1' 
@@ -217,7 +217,7 @@ BEGIN
 		, ci.username
 		, 204 AS Sporttype
 		, b.bettype
-		, ISNULL(b.BetID, 0)
+		, ISNULL(b.betid, 0)
 		, '' AS Betteam
 		, 0 AS hdp1
 		, 0 AS hdp2
@@ -230,11 +230,11 @@ BEGIN
 		, b.Status
 		, b.Transdate
 		, b.winlostdate
-		, (b.winlost - b.actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
-		, b.PlayerComm
+		, b.playercomm
 		, (b.comm - b.playercomm)	AS comm
 		, (b.acomm - b.comm)		AS acomm
 		, (b.scomm - b.acomm)		AS scomm
@@ -252,7 +252,7 @@ BEGIN
 		, 0 AS finalawayscore
 		, 0 AS hthomescore
 		, 0 AS htawayscore
-		, b.IP
+		, b.ip
 		, 0 AS LeagueID
 		, 0 AS MatchID
 		, '' AS MatchCode
@@ -275,17 +275,18 @@ BEGIN
 		--	AND b.custid = c.custid
 		INNER JOIN @custInfo AS ci
 		--ON b.custid = ci.custid
-		ON c.custid   = ci.custid
+		ON c.custid = ci.custid
 		LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.refno AND bm.bettype = 18001
 	WHERE	c.WhTicket = 3
 		AND c.EventType = 0
 		AND c.ProductID = 15
 
 	/*
-	- SB	: ProductID = 1
-	- NG	: ProductID = 3
-	- LC	: ProductID = 4
-	- VS	: ProductID = 5
+	- Sportsbook				: ProductID = 1
+	- Number Game				: ProductID = 3
+	- Live Casino				: ProductID = 4
+	- Virtual Sports			: ProductID = 5
+	- Betradar Virtual Sports	: ProductID = 27
 	*/
 	UNION ALL
 	SELECT
@@ -314,14 +315,14 @@ BEGIN
 		, b.status
 		, b.transdate
 		, b.winlostdate
-		, (b.winlost-actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
 		, b.playercomm
-		, (b.comm - b.playercomm)	AS comm
-		, (b.acomm - b.comm)		AS acomm
-		, (b.scomm - b.acomm)		AS scomm
+		, (b.comm - b.playercomm) AS comm
+		, (b.acomm - b.comm) AS acomm
+		, (b.scomm - b.acomm) AS scomm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -348,7 +349,7 @@ BEGIN
 		, ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral
 		, '' AS Placing
 		, CASE
-			WHEN c.ProductId = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+			WHEN c.ProductId IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 			ELSE ISNULL(m.showtime, '')
 		END AS ShowTime
 		, CASE 
@@ -372,8 +373,8 @@ BEGIN
 		AND c.EventType = 1
 
 	/* 
-		- SB outright	: ProductID = 1
-		- HR tickets	: ProductID = 2
+		- Sportsbook outright	: ProductID = 1
+		- Horse Racing		 	: ProductID = 2
 	*/
 	UNION ALL
 	SELECT
@@ -383,24 +384,24 @@ BEGIN
 		, ci.username
 		, l.sporttype
 		, b.bettype
-		, ISNULL(b.BetID,0)
+		, ISNULL(b.betid, 0)
 		, '' AS Betteam
-		, 0 AS hdp1 
-		, 0 AS hdp2 
+		, 0 AS hdp1
+		, 0 AS hdp2
 		, 0 AS OddsType
 		, b.oddsid
 		, b.Odds
 		, b.modds
-		, b.Stake 
+		, b.Stake
 		, b.actual_stake
 		, b.status
 		, b.transdate
 		, b.winlostdate
-		, (b.winlost - actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
-		, b.PlayerComm
+		, b.playercomm
 		, (b.comm - b.playercomm) AS comm
 		, (b.acomm - b.comm) AS acomm
 		, (b.scomm - b.acomm) AS scomm
@@ -418,7 +419,7 @@ BEGIN
 		, 0 AS finalawayscore
 		, 0 AS hthomescore
 		, 0 AS htawayscore
-		, b.IP
+		, b.ip
 		, m.LeagueID
 		, m.OrId AS MatchID
 		, m.MatchCode
@@ -435,7 +436,7 @@ BEGIN
 		, '' AS transdesc
 		, 0 AS OddsSpread
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
-		INNER JOIN dbo.Outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
+		INNER JOIN dbo.outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		--	AND b.custid = c.custid
@@ -446,17 +447,17 @@ BEGIN
 		AND c.EventType = 2
 
 	/*
-	- VS ticket	: ProductID = 5
+	- Virtual Sports 	: ProductID = 5
 	*/
 	UNION ALL
 	SELECT
 		b.transid
 		, b.refno
 		, b.custid
-		, ci.username 
+		, ci.username
 		, r.Sporttype
 		, b.Bettype
-		, ISNULL(b.BetID,0)
+		, ISNULL(b.betid, 0)
 		, '' AS betteam
 		, b.hdp1
 		, b.hdp2
@@ -469,7 +470,7 @@ BEGIN
 		, b.status
 		, b.transdate
 		, b.winlostdate
-		, (b.winlost-actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
@@ -491,11 +492,11 @@ BEGIN
 		, 0 AS finalawayscore
 		, 0 AS hthomescore
 		, 0 AS htawayscore
-		, b.IP
+		, b.ip
 		, r.LeagueID
 		, b.MatchID
 		, CONVERT(NVARCHAR(50), o.RacerNum) AS MatchCode
-		, CONVERT(NVARCHAR(50), b.oddsid) 	AS Race
+		, CONVERT(NVARCHAR(50), b.oddsid) AS Race
 		, o.eventdate
 		, o.RacerID AS homeID
 		, 0 AS awayID
@@ -508,8 +509,8 @@ BEGIN
 		, '' AS transdesc
 		, 0 AS OddsSpread
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
-		INNER JOIN dbo.VSOutright_bk o WITH (NOLOCK) ON b.oddsid = o.Orid
-		INNER JOIN bodb02.dbo.VSRaceInfo r WITH (NOLOCK) ON r.EventID = o.EventID
+		INNER JOIN dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
+		INNER JOIN bodb02.dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		--	AND b.custid = c.custid
 		INNER JOIN @custInfo AS ci
@@ -520,6 +521,7 @@ BEGIN
 
 	RETURN
 END
+
 
 
 
