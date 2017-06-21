@@ -15,6 +15,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch]
 	@ShowBA			BIT = 0,
 	@ShowLC			BIT = 0,
 	@ShowVS			BIT = 0,
+	@ShowVS2		BIT = 0,
 	@LiveIndicator	INT = 1
 AS
 
@@ -52,6 +53,7 @@ AS
 		- 20170301@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -94,7 +96,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 4, 5) 
+	WHERE ProductID IN (1, 4, 5, 27)
 		AND Bettype NOT IN (901, 902, 903, 904)
 
 	DECLARE @RowStart INT, @RowEnd INT
@@ -145,8 +147,9 @@ BEGIN
 		OriginalBetType	SMALLINT
 	)
 
-	IF EXISTS (SELECT TOP 1 1 FROM dbo.match WITH(NOLOCK) WHERE matchid = @MatchID)
+	IF EXISTS (SELECT TOP(1) 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchID)
 	BEGIN
+		-- BA
 		IF @ShowBA = 1
 		BEGIN
 			INSERT INTO #Data
@@ -160,12 +163,12 @@ BEGIN
 				m.matchcode,
 				m.homeid,
 				m.awayid,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost - actual_stake) AS WinLost,
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -175,7 +178,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.matchid, 
+				b.matchid,
 				b.ip,
 				m.betstatus,
 				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
@@ -203,11 +206,11 @@ BEGIN
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE
-				b.matchid = @MatchId 
+				b.matchid = @MatchId
 				AND b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND sbt.ProductID = 1
-				AND sbt.EventType != 0 
+				AND sbt.EventType <> 0
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
@@ -215,7 +218,7 @@ BEGIN
 			ORDER BY
 				b.status,
 				b.transid
-		
+
 			-- BA for parlay
 			INSERT INTO #Data
 			SELECT TOP(@RowEnd)
@@ -228,12 +231,12 @@ BEGIN
 				m.matchcode,
 				m.homeID,
 				m.awayID,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake) AS WinLost,
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -243,10 +246,10 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.matchid, 
+				b.matchid,
 				b.ip,
 				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
 				b.betid,
 				b.currency,
@@ -278,6 +281,7 @@ BEGIN
 				b.transid
 		END
 
+		-- Sportsbook
 		IF @ShowSB = 1
 		BEGIN
 			INSERT INTO #Data
@@ -291,13 +295,13 @@ BEGIN
 				m.matchcode,
 				m.homeid,
 				m.awayid,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake) winlost,
-				- (b.winlost-b.actual_stake) AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -309,7 +313,7 @@ BEGIN
 				b.matchid,
 				b.ip,
 				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
 				b.betid,
 				b.currency,
@@ -335,7 +339,7 @@ BEGIN
 			WHERE
 				b.matchid = @MatchId
 				AND sbt.ProductID = 1
-				AND sbt.EventType != 0
+				AND sbt.EventType <> 0
 				AND b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.tpositiontaking <> 0
@@ -359,13 +363,13 @@ BEGIN
 				m.matchcode,
 				m.homeid,
 				m.awayid,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake) AS WinLost,
-				- (b.winlost-b.actual_stake) AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -409,8 +413,8 @@ BEGIN
 				b.transid
 		END
 
-		-- Live Casino, Virtual Sports
-		IF @ShowLC = 1 OR @ShowVS = 1
+		-- Live Casino, Virtual Sports, Betradar Virtual Sports
+		IF @ShowLC = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT TOP(@RowEnd)
@@ -423,13 +427,13 @@ BEGIN
 				m.matchcode,
 				m.homeID,
 				m.awayID,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake) AS WinLost,
-				- (b.winlost-b.actual_stake) AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -448,11 +452,14 @@ BEGIN
 				b.refno,
 				CASE
 					WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
-					WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE '' 
 				END AS ShowTime,
 				'' AS betcheck,
-				'' AS transdesc,
+				CASE
+					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					ELSE ''
+				END AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
@@ -467,6 +474,7 @@ BEGIN
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND ((@ShowVS = 1 AND sbt.ProductID = 5 AND sbt.EventType = 1)
+					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1)
 					OR (@ShowLC = 1 AND sbt.ProductID = 4))
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
@@ -478,6 +486,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
+		-- BA
 		IF @ShowBA = 1
 		BEGIN
 			INSERT INTO #Data
@@ -491,12 +500,12 @@ BEGIN
 				m.matchcode,
 				m.homeID,
 				m.awayID,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost - actual_stake) AS WinLost,
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -509,7 +518,7 @@ BEGIN
 				b.matchid,
 				b.ip,
 				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
 				b.betid,
 				b.currency,
@@ -537,9 +546,9 @@ BEGIN
 				b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.matchid = @MatchId
 				AND b.statusID IN (111, 112, 113)
-				AND tpositiontaking = 0
+				AND b.tpositiontaking = 0
 				AND sbt.ProductID = 1
-				AND sbt.EventType != 0
+				AND sbt.EventType <> 0
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))
@@ -559,12 +568,12 @@ BEGIN
 				m.matchcode,
 				m.homeid,
 				m.awayid,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake) AS WinLost,
+				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -609,6 +618,7 @@ BEGIN
 				b.transid
 		END
 
+		-- Sportsbook
 		IF @ShowSB = 1
 		BEGIN
 			INSERT INTO #Data
@@ -622,13 +632,13 @@ BEGIN
 				m.matchcode,
 				m.homeid,
 				m.awayid,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake) AS WinLost,
-				- (b.winlost-b.actual_stake) AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -640,7 +650,7 @@ BEGIN
 				b.matchid,
 				b.ip,
 				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
 				b.betid,
 				b.currency,
@@ -668,7 +678,7 @@ BEGIN
 				b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.matchid = @MatchId
 				AND sbt.ProductID = 1
-				AND sbt.EventType != 0
+				AND sbt.EventType <> 0
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
@@ -690,13 +700,13 @@ BEGIN
 				m.matchcode,
 				m.homeid,
 				m.awayid,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake) AS WinLost,
-				- (b.winlost-b.actual_stake) AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -708,7 +718,7 @@ BEGIN
 				b.matchid,
 				b.ip,
 				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
 				b.betid,
 				b.currency,
@@ -740,8 +750,8 @@ BEGIN
 				b.transid
 		END
 
-		-- Live Casino, Virtual Sports
-		IF @ShowLC = 1 OR @ShowVS = 1
+		-- Live Casino, Virtual Sports, Betradar Virtual Sports
+		IF @ShowLC = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT TOP(@RowEnd)
@@ -754,13 +764,13 @@ BEGIN
 				m.matchcode,
 				m.homeid,
 				m.awayid,
-				CONVERT(FLOAT, b.hdp1) AS hdp1,
-				CONVERT(FLOAT, b.hdp2) AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.odds,
 				b.status,
 				b.stake,
-				(b.winlost-actual_stake) AS WinLost,
-				- (b.winlost-b.actual_stake) AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -769,21 +779,24 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.matchid, 
+				b.matchid,
 				b.ip,
 				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
 				b.betid,
 				b.currency,
 				b.refno,
 				CASE
 					WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
-					WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE ''
 				END AS ShowTime,
 				'' AS betcheck,
-				'' AS transdesc,
+				CASE
+					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					ELSE ''
+				END AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
@@ -798,6 +811,7 @@ BEGIN
 				AND b.matchid = @MatchId
 				AND b.statusID IN (111, 112, 113)
 				AND ((@ShowVS = 1 AND sbt.ProductID = 5 AND sbt.EventType = 1)
+					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1)
 					OR (@ShowLC = 1 AND sbt.ProductID = 4))
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
@@ -870,12 +884,12 @@ BEGIN
 		StakeGBP		MONEY
 	)
 
-	IF EXISTS (	SELECT TOP 1 1
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM #Data AS b
 					INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 				WHERE sbt.ProductID = 4)
 	BEGIN
-		IF EXISTS(SELECT TOP 1 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchID)
+		IF EXISTS (SELECT TOP(1) 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchID)
 		BEGIN
 			INSERT INTO @BettransDetail
 			SELECT
@@ -897,7 +911,7 @@ BEGIN
 			WHERE sbt.ProductID = 4 AND sbtg.ProductId = 4
 		END
 
-		IF EXISTS(SELECT TOP 1 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchID)
+		IF EXISTS (SELECT TOP(1) 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchID)
 		BEGIN
 			INSERT INTO @BettransDetail
 			SELECT
@@ -928,7 +942,9 @@ BEGIN
 END
 
 
+
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch] TO [vnteam]
+GO

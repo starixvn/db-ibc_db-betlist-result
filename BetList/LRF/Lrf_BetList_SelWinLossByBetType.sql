@@ -44,6 +44,7 @@ AS
 		- 20170227@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170302@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 
 	Parameters:
 */
@@ -82,7 +83,7 @@ BEGIN
 	SELECT DISTINCT ProductId, Bettype, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @isTest)
 	WHERE
-		ProductID IN (1, 2, 3, 4, 5, 8)
+		ProductID IN (1, 2, 3, 4, 5, 8, 27)
 		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 		AND bettype IN (
 			SELECT bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
@@ -482,8 +483,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
-		-- Mix Parlay & System Parlay
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId = 1 AND EventType = 0 AND Bettype = @BetType)
+		-- Mix Parlay, System Parlay (Sportsbook), Mix Parlay (Betradar Virtual Sports)
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (1, 27) AND EventType = 0 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -537,19 +538,19 @@ BEGIN
 			WHERE td.WhTicket = 1
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype IN (SELECT bettype FROM @SportBettype)
-				AND b.statusID NOT IN (0,1,101, 102, 103)
+				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
-		-- Number Game, Live Casino, Virtual Sports (EventType = 1)
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 4, 5) AND EventType = 1 AND Bettype = @BetType)
+		-- Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 4, 5, 27) AND EventType = 1 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
 				td.RowNum,
 				b.transid,
 				b.refno,
-				ISNULL(b.BetID, 0) AS BetId,
+				ISNULL(b.betid, 0) AS BetId,
 				b.custid,
 				b.Username,
 				m.sporttype,
@@ -562,11 +563,11 @@ BEGIN
 				m.homeid,
 				m.awayid,
 				CASE
-					WHEN sbt.ProductId IN (3, 5) THEN b.hdp1
+					WHEN sbt.ProductId IN (3, 5, 27) THEN b.hdp1
 					ELSE 0
 				END AS Hdp1,
 				CASE
-					WHEN sbt.ProductId = 5 THEN b.hdp2
+					WHEN sbt.ProductId IN (5, 27) THEN b.hdp2
 					ELSE 0
 				END AS Hdp2,
 				b.betteam,
@@ -577,7 +578,7 @@ BEGIN
 				b.livehomescore,
 				b.liveawayscore,
 				CASE
-					WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE ISNULL(m.showtime,'')
 				END AS ShowTime,
 				b.status,
@@ -592,7 +593,10 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc,
+				CASE
+					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					ELSE ''
+				END AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
@@ -604,7 +608,7 @@ BEGIN
 			WHERE td.WhTicket = 1
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype IN (SELECT bettype FROM @SportBettype)
-				AND b.statusID NOT IN (0,1,101, 102, 103)
+				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
@@ -906,14 +910,14 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 
-		-- Mix Parlay & System Parlay
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId = 1 AND EventType = 0 AND Bettype = @BetType)
+		-- Mix Parlay, System Parlay (Sportsbook), Mix Parlay (Betradar Virtual Sports)
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (1, 27) AND EventType = 0 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
 				td.RowNum,
 				CASE
-					WHEN b.bettype = 29 AND ISNULL(b.BetID, 0) > 0 THEN b.betid
+					WHEN b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
 					ELSE b.transid
 				END AS TransId,
 				b.refno,
@@ -965,8 +969,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 
-		-- Number Game, Live Casino, Virtual Sports (EventType = 1)
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 4, 5) AND EventType = 1 AND Bettype = @BetType)
+		-- Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 4, 5, 27) AND EventType = 1 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -986,11 +990,11 @@ BEGIN
 				m.homeid,
 				m.awayid,
 				CASE
-					WHEN sbt.ProductId IN (3, 5) THEN b.hdp1
+					WHEN sbt.ProductId IN (3, 5, 27) THEN b.hdp1
 					ELSE 0
 				END AS Hdp1,
 				CASE
-					WHEN sbt.ProductId = 5 THEN b.hdp2
+					WHEN sbt.ProductId IN (5, 27) THEN b.hdp2
 					ELSE 0
 				END AS Hdp2,
 				b.betteam,
@@ -1001,7 +1005,7 @@ BEGIN
 				b.livehomescore,
 				b.liveawayscore,
 				CASE
-					WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE ISNULL(m.showtime,'')
 				END AS ShowTime,
 				b.status,
@@ -1016,7 +1020,10 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc,
+				CASE
+					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					ELSE ''
+				END AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
@@ -1396,10 +1403,6 @@ BEGIN
 END
 
 
-
-GRANT	VIEW DEFINITION	ON	Lrf_BetList_SelWinLossByBetType	TO	vnteam
-GRANT	EXECUTE	ON	Lrf_BetList_SelWinLossByBetType	TO	bodbLicenseeNet
-
 /*
 declare @p10 int
 declare @p11 money
@@ -1427,3 +1430,10 @@ exec Lrf_BetList_SelWinLossByBetType @licenseeid=1,@userid=68,@CurrencyID=0,@Lic
 @MoveBetsDay='2016-02-21 00:00:00',@BalanceUpDay='2016-02-20 00:00:00'
 select @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24, @p25, @p26
 */
+
+GO
+GRANT	VIEW DEFINITION	ON	Lrf_BetList_SelWinLossByBetType	TO	vnteam
+GO
+GRANT	EXECUTE	ON	Lrf_BetList_SelWinLossByBetType	TO	bodbLicenseeNet
+GO
+

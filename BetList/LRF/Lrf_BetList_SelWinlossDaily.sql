@@ -46,12 +46,12 @@ AS
 		- 20110712@Henry: Output Licensee WL + remove BA filter
 		- 20110729@Henry: offer 3 new bettypes for Number Game
 		- 20110927@Henry: return output params instead of secondary table
-		- 20111208@Jim: change condition bettype <31 
+		- 20111208@Jim: change condition bettype <31
 		- 20111229@Jim: change the way to get odds/oddstype/betteam to web dev
 		- 20120214@Jim: change to use  table ExchangeDaily by use function Lrf_f_GetExchangeDaily
 		- 20120723@Jim: add playercomm value
-		- 20120817@Jim: add live casino
-		- 20120912@Jim: add virtual sport
+		- 20120817@Jim: add Live Casino
+		- 20120912@Jim: add Virtual Sport
 		- 20121004@Jim: replace @currencyname input param by @currencyID
 		- 20121016@Henry: enhance SP
 		- 20130305@Jim: change input param @winlostdate by @date
@@ -91,6 +91,7 @@ AS
 		- 20170301@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 
 	Param's Explanation:
@@ -120,7 +121,7 @@ BEGIN
 		RETURN
 	END CATCH
 
-	--- to Deal With Parameter Sniffing
+	-- to Deal With Parameter Sniffing
 	DECLARE
 		@wldate			SMALLDATETIME,
 		@MoveBetsDay_	SMALLDATETIME,
@@ -144,6 +145,7 @@ BEGIN
 		Hdp1				SMALLMONEY,
 		Hdp2				SMALLMONEY,
 		Odds				MONEY,
+		MOdds				MONEY,
 		Status				NVARCHAR(50),
 		Stake				MONEY,
 		WinLost				MONEY,
@@ -256,6 +258,7 @@ BEGIN
 		OR (@Product = 'LC' AND ProductID = 4)
 		OR (@Product = 'VS' AND ProductID = 5)
 		OR (@Product = 'KN' AND ProductID = 8)
+		OR (@Product = 'VS2' AND ProductID = 27)
 
 	SET @LicenseeWL =
 					'CASE
@@ -267,21 +270,21 @@ BEGIN
 
 	IF @Sort LIKE '%USD%' OR @Sort LIKE '%EUR%' OR @Sort LIKE '%GBP%'
 	BEGIN
-		DECLARE @charindex INT
+		DECLARE @CharIndex INT
 
-		SELECT @charindex = CHARINDEX( ' ', @Sort, 1)
+		SELECT @CharIndex = CHARINDEX( ' ', @Sort, 1)
 		
 		IF @Sort LIKE '%Winlost%'
 		BEGIN
-			SELECT @SortTemp = @Winlost + '*e.' + SUBSTRING(@Sort, @charindex - 3,4) + SUBSTRING(@Sort, @charindex + 1, LEN(@Sort))
+			SELECT @SortTemp = @Winlost + '*e.' + SUBSTRING(@Sort, @CharIndex - 3,4) + SUBSTRING(@Sort, @CharIndex + 1, LEN(@Sort))
 		END
 		ELSE IF @Sort LIKE '%LicenseeWL%'
 		BEGIN
-			SELECT @SortTemp = @LicenseeWL + '*e.' + SUBSTRING(@Sort, @charindex - 3,4) + SUBSTRING(@Sort, @charindex + 1, LEN(@Sort))
+			SELECT @SortTemp = @LicenseeWL + '*e.' + SUBSTRING(@Sort, @CharIndex - 3,4) + SUBSTRING(@Sort, @CharIndex + 1, LEN(@Sort))
 		END
 		ELSE
 		BEGIN
-			SELECT @SortTemp = SUBSTRING (@Sort, 1, @charindex - 4) + '*e.' + SUBSTRING(@Sort, @charindex - 3,4) + SUBSTRING(@Sort, @charindex + 1, LEN(@Sort))
+			SELECT @SortTemp = SUBSTRING (@Sort, 1, @CharIndex - 4) + '*e.' + SUBSTRING(@Sort, @CharIndex - 3,4) + SUBSTRING(@Sort, @CharIndex + 1, LEN(@Sort))
 		END
 	END
 	ELSE
@@ -295,15 +298,15 @@ BEGIN
 		BEGIN
 			INSERT INTO @Vhr
 			SELECT
-				o.OriD
-				,r.Sporttype
-				,r.LeagueID
-				,CONVERT (VARCHAR(50),o.RacerNum) AS MatchCode
-				,o.RacerID
-				,r.BetStatus AS BetStatus
-				,r.EventTime AS ShowTime
-				,NULL AS AwayID
-				,NULL AS IsNeutral
+				o.Orid,
+				r.SportType,
+				r.LeagueID,
+				CONVERT(VARCHAR(50), o.RacerNum) AS MatchCode,
+				o.RacerID,
+				r.BetStatus,
+				r.EventTime AS ShowTime,
+				NULL AS AwayID,
+				NULL AS IsNeutral
 			FROM dbo.VSOutright AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventDate = @wldate
@@ -334,9 +337,9 @@ BEGIN
 			SELECT
 				b.currency,
 				COUNT(b.transid),
-				SUM(ISNULL(b.winlost - b.actual_stake,0)),
+				SUM(ISNULL(b.winlost - b.actual_stake, 0)),
 				0,
-				SUM(ISNULL(b.comm,0)),
+				SUM(ISNULL(b.comm, 0)),
 				SUM(b.playercomm) AS SumPlayerComm
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
@@ -354,15 +357,13 @@ BEGIN
 		IF @Product <> 'BA'
 		BEGIN
 			INSERT INTO @DataSum
-			SELECT 
+			SELECT
 				b.currency,
 				COUNT(b.transid),
-				SUM(ISNULL(b.winlost-b.actual_stake, 0)),
-				-SUM(ISNULL(CASE WHEN b.bettype IN (31, 32, 33) THEN awinlost
-								ELSE (b.winlost-b.actual_stake) 
-							END
-								,0)
-					),
+				SUM(ISNULL(b.winlost - b.actual_stake, 0)),
+				-SUM(ISNULL(CASE WHEN b.bettype IN (31, 32, 33) THEN b.awinlost
+								ELSE (b.winlost - b.actual_stake) 
+							END, 0)),
 				SUM(ISNULL(b.comm, 0)),
 				SUM(b.playercomm) AS SumPlayerComm
 			FROM dbo.bettrans AS b WITH (NOLOCK) 
@@ -370,7 +371,7 @@ BEGIN
 				INNER JOIN #TempAg AS ag ON b.recommend = ag.custid AND b.currency = ag.Currency
 			WHERE
 				b.winlostdate = @wldate
-				AND b.bettype NOT IN (9, 29, 10)
+				AND b.bettype NOT IN (9, 29, 10, 2799)
 				AND b.status = @status
 				AND b.ruben = 1
 				AND ((@Product = 'SB' AND b.tpositiontaking <> 0)
@@ -393,6 +394,7 @@ BEGIN
 			Hdp1				SMALLMONEY,
 			Hdp2				SMALLMONEY,
 			Odds				MONEY,
+			MOdds				MONEY,
 			Status				NVARCHAR(50),
 			Stake				MONEY,
 			WinLost				MONEY,
@@ -458,6 +460,7 @@ BEGIN
 			CONVERT(FLOAT, b.hdp1) AS hdp1,
 			CONVERT(FLOAT, b.hdp2) AS hdp2,
 			b.odds,
+			b.modds,
 			b.status,
 			b.stake,
 			(b.winlost-actual_stake) winlost,
@@ -547,7 +550,7 @@ BEGIN
 		'WHERE
 			b.winlostdate = ''' + CAST(@wldate AS VARCHAR(50)) + '''' + CHAR(13) +
 			'AND b.status=''' + CAST(@status AS VARCHAR(15)) + '''' + CHAR(13) +
-			'AND b.bettype NOT IN (9,29,10)
+			'AND b.bettype NOT IN (9, 29, 10, 2799)
 			AND b.ruben = 1' + CHAR(13) +
 			CASE
 				WHEN @Product = 'SB' THEN 'AND b.tpositiontaking<>0'
@@ -569,6 +572,7 @@ BEGIN
 			hdp1,
 			hdp2,
 			odds,
+			modds,
 			status,
 			stake,
 			Winlost,
@@ -645,7 +649,7 @@ BEGIN
 			IsNeutral = m.IsNeutral,
 			showtime = CASE
 							WHEN b.bettype BETWEEN 1101 AND 1199 THEN ISNULL(m.showtime, '')
-							WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+							WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 							ELSE ''
 						END
 		FROM #BetData1 AS b
@@ -695,6 +699,7 @@ BEGIN
 			hdp1,
 			hdp2,
 			odds,
+			modds,
 			status,
 			stake,
 			winlost,
@@ -754,7 +759,7 @@ BEGIN
 				o.OriD
 				,r.Sporttype
 				,r.LeagueID
-				,CONVERT(VARCHAR(50),o.RacerNum) AS MatchCode
+				,CONVERT(VARCHAR(50), o.RacerNum) AS MatchCode
 				,o.RacerID
 				,r.BetStatus
 				,r.EventTime AS ShowTime
@@ -800,7 +805,7 @@ BEGIN
 				INNER JOIN #TempAg AS ag ON b.recommend = ag.custid AND b.currency = ag.Currency
 			WHERE
 				b.winlostdate = @wldate
-				AND b.bettype NOT IN (9,29,10)
+				AND b.bettype NOT IN (9, 29, 10)
 				AND b.status = @status
 			GROUP BY b.currency
 		END
@@ -812,7 +817,7 @@ BEGIN
 				b.currency,
 				COUNT(b.transid),
 				SUM(ISNULL(b.winlost - b.actual_stake, 0)),
-				-SUM(ISNULL(CASE WHEN b.bettype IN (31,32,33) THEN awinlost ELSE (b.winlost - b.actual_stake) END, 0)),
+				-SUM(ISNULL(CASE WHEN b.bettype IN (31,32,33) THEN b.awinlost ELSE (b.winlost - b.actual_stake) END, 0)),
 				SUM(ISNULL(b.comm, 0)),
 				SUM(b.playercomm) AS SumPlayerComm
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -820,7 +825,7 @@ BEGIN
 				INNER JOIN #TempAg AS ag ON b.recommend = ag.custid AND b.currency = ag.Currency
 			WHERE
 				b.winlostdate = @wldate
-				AND b.bettype NOT IN (9, 29, 10)
+				AND b.bettype NOT IN (9, 29, 10, 2799)
 				AND b.status = @status
 				AND ((@Product = 'SB' AND b.tpositiontaking <> 0)
 					OR (@Product <> 'SB'))
@@ -842,6 +847,7 @@ BEGIN
 			Hdp1				SMALLMONEY,
 			Hdp2				SMALLMONEY,
 			Odds				MONEY,
+			MOdds				MONEY,
 			Status				NVARCHAR(50),
 			Stake				MONEY,
 			WinLost				MONEY,
@@ -906,6 +912,7 @@ BEGIN
 			CONVERT(FLOAT, b.hdp1) AS hdp1,
 			CONVERT(FLOAT, b.hdp2) AS hdp2,
 			b.odds,
+			b.modds,
 			b.status,
 			b.stake,
 			(b.winlost-actual_stake) winlost,
@@ -995,7 +1002,7 @@ BEGIN
 		'WHERE
 			b.winlostdate = ''' + CAST(@wldate AS VARCHAR(50)) + '''' + CHAR(13) +
 			'AND b.status = ''' + CAST(@status AS VARCHAR(15)) + '''' + CHAR(13) +
-			' AND b.bettype NOT IN (9,29,10)
+			' AND b.bettype NOT IN (9, 29, 10, 2799)
 			AND b.ruben = 1' + CHAR(13) +
 			CASE
 				WHEN @Product = 'SB' THEN 'AND b.tpositiontaking <> 0'
@@ -1017,6 +1024,7 @@ BEGIN
 			hdp1,
 			hdp2,
 			odds,
+			modds,
 			status,
 			stake,
 			Winlost,
@@ -1092,7 +1100,7 @@ BEGIN
 			IsNeutral = m.IsNeutral,
 			showtime = CASE
 							WHEN b.bettype BETWEEN 1101 AND 1199 THEN ISNULL(m.showtime, '')
-							WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+							WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 							ELSE ''
 						END
 		FROM #BetData14 AS b
@@ -1142,6 +1150,7 @@ BEGIN
 			hdp1,
 			hdp2,
 			odds,
+			modds,
 			status,
 			stake,
 			winlost,
@@ -1252,7 +1261,7 @@ BEGIN
 	)
 
 	-- Horse Racing
-	IF EXISTS (	SELECT TOP 1 1
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM #Data AS b
 					INNER JOIN #SportBettype AS sbt ON sbt.Bettype = b.bettype
 				WHERE sbt.ProductID = 2)
@@ -1303,7 +1312,7 @@ BEGIN
 	END
 
 	-- Live Casino
-	IF EXISTS (	SELECT TOP 1 1
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM #Data AS b
 					INNER JOIN #SportBettype AS sbt ON sbt.Bettype = b.bettype
 				WHERE sbt.ProductID = 4)
@@ -1354,7 +1363,7 @@ BEGIN
 	END
 
 	-- Virtual Sports
-	IF EXISTS (	SELECT TOP 1 1
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM #Data AS b
 					INNER JOIN #SportBettype AS sbt ON sbt.Bettype = b.bettype
 				WHERE sbt.ProductID = 5 AND sbt.EventType = 3)
@@ -1427,7 +1436,10 @@ END
 
 
 
+
+
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelWinlossDaily] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelWinlossDaily] TO [vnteam]
+GO

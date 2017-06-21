@@ -44,8 +44,8 @@ AS
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
 		- 20120319@Henry: show main transid for sub-ticket of system parlay
 		- 20120724@Jim: add player commision value
-		- 20120817@Jim: add live casino
-		- 20120913@Jim: add virtual sport
+		- 20120817@Jim: add Live Casino
+		- 20120913@Jim: add Virtual Sport
 		- 20130123@Daniel: Change link server alias
 		- 20130410@Jim: return betteam,modd value for Parlay ticket (Mix parlay & system parlay)
 		- 20130411@Jim: support base currency USD
@@ -79,6 +79,7 @@ AS
 		- 20170330@Kos: Support CashOut [#Redmine: 71963]
 		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170612@Kos: Seperate @TransType param value into 1 & 2 [#Redmine: 78117]
+		- 20170622@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 
 	Param's Explanation:
@@ -214,7 +215,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 25)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 25, 27)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -283,7 +284,7 @@ BEGIN
 			b.currency,
 			CASE 
 				WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
-				WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE '' 
 			END AS ShowTime,
 			CASE 
@@ -291,7 +292,7 @@ BEGIN
 				ELSE ''
 			END AS betcheck,
 			CASE 
-				WHEN sbt.ProductID = 1 THEN ISNULL(b.transdesc, '')
+				WHEN sbt.ProductID IN (1, 27) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS transdesc,
 			CASE 
@@ -318,7 +319,7 @@ BEGIN
 			AND sbt.EventType = 1
 
 		-- Get more info for BetTrade tickets
-		IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType IN (901, 902))
+		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType IN (901, 902))
 		BEGIN
 			UPDATE betList
 			SET betList.Odds = originBetList.odds,
@@ -335,7 +336,7 @@ BEGIN
 		END
 
 		-- Get more info for CashOut tickets
-		IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 911)
+		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)
 		BEGIN
 			UPDATE b
 			SET b.Odds = ob.odds,
@@ -349,7 +350,7 @@ BEGIN
 			WHERE b.BetType = 911
 		END
 
-		IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 912)
+		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 912)
 		BEGIN
 			UPDATE b
 			SET b.Odds = ob.odds,
@@ -486,7 +487,7 @@ BEGIN
 			AND sbt.ProductId = 5
 			AND sbt.EventType = 3
 
-		-- Mixed Parlay & System Parlay
+		-- Mix Parlay, System Parlay (Sportsbook), Mix Parlay (Betradar Virtual Sports)
 		INSERT INTO @Data
 		SELECT
 			0,
@@ -498,8 +499,8 @@ BEGIN
 			'' AS race,
 			0,
 			CASE
-				WHEN (ISNULL(b.betid, 0) = 0 OR b.bettype = 9) THEN b.transid
-				ELSE betid
+				WHEN b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
+				ELSE b.transid
 			END AS transid,
 			b.transdate,
 			b.winlostdate,
@@ -547,9 +548,9 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
-			AND b.matchid IN (0, 9, 29) -- Should not remove 0 for Archive
+			AND b.matchid IN (0, 9, 29, 2799) -- Should not remove 0 for Archive
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-			AND sbt.ProductID = 1
+			AND sbt.ProductID IN (1, 27)
 			AND sbt.EventType = 0
 
 		-- Outright
@@ -571,7 +572,7 @@ BEGIN
 			10,
 			b.hdp1,
 			b.hdp2,
-			modds,
+			b.modds,
 			0 AS OddsType,
 			b.odds,
 			'',
@@ -582,7 +583,7 @@ BEGIN
 			(b.winlost - b.actual_stake) AS WinLost,
 			CASE
 				WHEN ISNULL(ba.transid, 0) = 0 AND b.bettype = 10 THEN - (b.winlost-b.actual_stake)
-				WHEN b.bettype IN (31, 32, 33) THEN awinlost 
+				WHEN b.bettype IN (31, 32, 33) THEN b.awinlost
 				ELSE 0
 			END AS LicenseeWL,
 			b.comm,
@@ -629,6 +630,7 @@ BEGIN
 				WHEN sbt.ProductID = 21 THEN 211
 				WHEN sbt.ProductID = 22 THEN 212
 				WHEN sbt.ProductID = 24 THEN 219
+				ELSE 0
 			END AS SportType,
 			0 AS leagueid,
 			0 AS homeID,
@@ -1071,6 +1073,7 @@ BEGIN
 
 	DROP TABLE #TempExchange
 END
+
 
 
 

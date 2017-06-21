@@ -83,6 +83,7 @@ AS
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170330@Kos: Support CashOut [#Redmine: 71963]
 		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
+		- 20170622@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 
 	Param's Explanation:
@@ -218,7 +219,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 25)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 25, 27)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -244,8 +245,8 @@ BEGIN
 		SELECT
 			m.sporttype,
 			m.leagueid,
-			m.homeID,
-			m.awayID,
+			m.homeid,
+			m.awayid,
 			b.bettype,
 			m.matchcode,
 			'' AS race,
@@ -258,17 +259,17 @@ BEGIN
 			b.oddsid,
 			b.hdp1,
 			b.hdp2,
-			modds,
-			b.Oddstype,
+			b.modds,
+			b.oddstype,
 			b.odds,
 			b.betteam,
 			b.status,
 			m.betstatus,
 			b.stake,
 			b.actual_stake,
-			(b.winlost-b.actual_stake) AS winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			CASE
-				WHEN BA.transid IS NULL THEN - (b.winlost-b.actual_stake)
+				WHEN BA.transid IS NULL THEN - (b.winlost - b.actual_stake)
 				ELSE 0
 			END AS LicenseeWL,
 			CASE
@@ -290,7 +291,7 @@ BEGIN
 			b.currency,
 			CASE
 				WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
-				WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE ''
 			END AS ShowTime,
 			CASE 
@@ -317,10 +318,10 @@ BEGIN
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE
-			b.custid = @custid
+			b.custid = @CustId
 			AND b.winlostdate = @FromDate
 			AND sbt.EventType = 1
-			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+			AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
 		-- RNG Casino
 		INSERT INTO @Data
@@ -328,6 +329,7 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN 251
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.matchid
+				ELSE 0
 			END AS Sporttype,
 			0 AS leagueid,
 			0 AS homeID,
@@ -376,8 +378,8 @@ BEGIN
 			'' AS betstatus,
 			b.stake,
 			b.actual_stake,
-			(b.winlost-b.actual_stake) AS winlost,
-			- (b.winlost-b.actual_stake) AS LicenseeWL,
+			(b.winlost - b.actual_stake) AS WinLost,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -413,7 +415,7 @@ BEGIN
 			0 AS OriginalBetType
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE b.custid = @custid
+		WHERE b.custid = @CustId
 			AND b.winlostdate = @FromDate
 			AND sbt.ProductID = 6
 			AND sbt.EventType = 0
@@ -448,8 +450,8 @@ BEGIN
 				'' AS betstatus,
 				b.stake,
 				b.actual_stake,
-				(b.winlost-b.actual_stake) AS winlost,
-				- (b.winlost-b.actual_stake) AS LicenseeWL,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.discount,
@@ -476,7 +478,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) t
 			WHERE
-				b.custid = @custid
+				b.custid = @CustId
 				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 8
 				AND sbt.EventType = 0
@@ -510,8 +512,8 @@ BEGIN
 			r.betstatus,
 			b.stake,
 			b.actual_stake,
-			(b.winlost-b.actual_stake) AS winlost,
-			- (b.winlost-b.actual_stake) AS LicenseeWL,
+			(b.winlost - b.actual_stake) AS WinLost,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -539,14 +541,14 @@ BEGIN
 			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE
-			b.custid = @custid
-			AND b.winlostdate = @FromDate 
-			AND sbt.ProductId = 5 
+			b.custid = @CustId
+			AND b.winlostdate = @FromDate
+			AND sbt.ProductId = 5
 			AND sbt.EventType = 3
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Mixed Parlay, System Parlay
-		INSERT INTO @Data 
+		-- Mix Parlay, System Parlay (Sportsbook), Mix Parlay (Betradar Virtual Sports)
+		INSERT INTO @Data
 		SELECT
 			0,
 			0,
@@ -557,8 +559,8 @@ BEGIN
 			'' AS race,
 			0, 
 			CASE
-				WHEN (ISNULL(b.BetID,0) = 0 OR b.bettype = 9) THEN b.transid
-				ELSE betid
+				WHEN b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
+				ELSE b.transid
 			END AS transid,
 			b.transdate,
 			b.winlostdate,
@@ -575,9 +577,9 @@ BEGIN
 			'' betstatus,
 			b.stake,
 			b.actual_stake,
-			(b.winlost-b.actual_stake) AS winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			CASE
-				WHEN BA.transid IS NULL THEN - (b.winlost-b.actual_stake)
+				WHEN BA.transid IS NULL THEN - (b.winlost - b.actual_stake)
 				ELSE 0 END
 			AS LicenseeWL,
 			b.comm,
@@ -606,11 +608,11 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
-			b.custid = @custid
+			b.custid = @CustId
 			AND b.winlostdate = @FromDate
-			AND sbt.ProductID = 1
+			AND sbt.ProductID IN (1, 27)
 			AND sbt.EventType = 0
-			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+			AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
 		-- Outright
 		INSERT INTO @Data 
@@ -639,10 +641,10 @@ BEGIN
 			'', 
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			CASE
 				WHEN ISNULL(BA.transid, 0) = 0 AND b.bettype = 10 THEN - (b.winlost - b.actual_stake)
-				WHEN b.bettype IN (31, 32, 33) THEN awinlost
+				WHEN b.bettype IN (31, 32, 33) THEN b.awinlost
 				ELSE 0
 			END AS LicenseeWL,
 			b.comm,
@@ -673,7 +675,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
-			b.custid = @custid
+			b.custid = @CustId
 			AND b.winlostdate = @FromDate
 			AND sbt.ProductID IN (1, 2)
 			AND sbt.EventType = 2
@@ -691,6 +693,7 @@ BEGIN
 					WHEN sbt.ProductID = 21 THEN 211
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
+					ELSE 0
 				END AS sporttype,
 				0 AS leagueid,
 				0 AS homeID,
@@ -715,7 +718,7 @@ BEGIN
 				'' AS betstatus,
 				b.stake,
 				b.actual_stake,
-				(b.winlost - b.actual_stake) AS winlost,
+				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -748,7 +751,7 @@ BEGIN
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			WHERE
-				b.custid = @custid
+				b.custid = @CustId
 				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID IN (11, 13, 17, 21, 22, 24)
 				AND sbt.EventType = 0
@@ -813,7 +816,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
-				b.custid = @custid
+				b.custid = @CustId
 				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 15
 				AND sbt.EventType = 0
@@ -850,7 +853,7 @@ BEGIN
 				'' AS betstatus,
 				b.stake,
 				b.actual_stake,
-				pt.WinAmount AS winlost,
+				pt.WinAmount AS WinLost,
 				0 AS LicenseeWL,
 				0 AS comm,
 				0 AS playercomm,
@@ -878,7 +881,7 @@ BEGIN
 				INNER JOIN dbo.bettransRnG14 AS b WITH (NOLOCK) ON pt.RefNo = b.transid
 				INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.bettype
 			WHERE
-				pt.custid = @custid
+				pt.custid = @CustId
 				AND pt.winlostdate = @FromDate 
 				AND sbt.ProductID = 17
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -938,7 +941,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
-				b.custid = @custid
+				b.custid = @CustId
 				AND b.winlostdate = @FromDate
 				AND sbt.ProductID = 15
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -948,7 +951,7 @@ BEGIN
 		END
 
 		-- Get more info for BetTrade tickets
-		IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType IN (901, 902))
+		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType IN (901, 902))
 		BEGIN
 			UPDATE betList
 			SET betList.Odds = originBetList.Odds,
@@ -967,7 +970,7 @@ BEGIN
 		END
 
 		-- Get more info for CashOut tickets
-		IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 911)
+		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)
 		BEGIN
 			UPDATE b
 			SET b.Odds = ob.odds,
@@ -981,7 +984,7 @@ BEGIN
 			WHERE b.BetType = 911
 		END
 
-		IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 912)
+		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 912)
 		BEGIN
 			UPDATE b
 			SET b.Odds = ob.odds,
@@ -1038,7 +1041,7 @@ BEGIN
 			CASE
 				WHEN b.statusID NOT IN (0,1) THEN (b.winlost-b.actual_stake)
 				ELSE 0 
-			END AS winlost,
+			END AS WinLost,
 			CASE
 				WHEN b.statusID NOT IN (0,1) THEN
 					CASE WHEN BA.transid IS NULL THEN - (b.winlost-b.actual_stake) ELSE 0 END 
@@ -1065,7 +1068,7 @@ BEGIN
 			b.currency,
 			CASE
 				WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
-				WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE ''
 			END AS ShowTime,
 			CASE 
@@ -1093,7 +1096,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
-			b.custid = @custid
+			b.custid = @CustId
 			AND b.winlostdate = @FromDate
 			AND sbt.EventType = 1
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -1150,7 +1153,7 @@ BEGIN
 			0 AS OriginalBetType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-		WHERE b.custid = @custid
+		WHERE b.custid = @CustId
 			AND b.winlostdate = @FromDate
 			AND (sbt.ProductID = 6 AND sbt.SubProduct = '')
 			AND sbt.EventType = 0
@@ -1184,7 +1187,7 @@ BEGIN
 				0 AS betstatus,
 				b.stake,
 				b.actual_stake,
-				(b.winlost-b.actual_stake) AS winlost,
+				(b.winlost-b.actual_stake) AS WinLost,
 				- (b.winlost-b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -1212,7 +1215,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) t
 			WHERE
-				b.custid = @custid
+				b.custid = @CustId
 				AND b.winlostdate = @FromDate
 				AND sbt.ProductID = 8
 				AND sbt.EventType = 0
@@ -1244,7 +1247,7 @@ BEGIN
 				0 AS betstatus,
 				t.stake,
 				t.actual_stake,
-				0 AS winlost,
+				0 AS WinLost,
 				0 AS LicenseeWL,
 				0 AS comm,
 				0 AS playercomm,
@@ -1272,7 +1275,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON t.gameID = sbt.bettype
 				OUTER APPLY dbo.[f_ParseTransDesc](t.TransDesc, t.gameID) k
 			WHERE
-				t.custid = @custid
+				t.custid = @CustId
 				AND t.winlostdate = @FromDate 
 				AND sbt.ProductID = 8
 				AND sbt.EventType = 0
@@ -1305,8 +1308,8 @@ BEGIN
 			r.betstatus,
 			b.stake,
 			b.actual_stake,
-			(b.winlost-b.actual_stake) AS winlost,
-			- (b.winlost-b.actual_stake) AS LicenseeWL,
+			(b.winlost - b.actual_stake) AS WinLost,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -1321,7 +1324,7 @@ BEGIN
 			b.Username,
 			CONVERT(BIT,0) AS IsNeutral,
 			b.currency,
-			CONVERT(VARCHAR(20),r.eventTime) AS ShowTime,
+			CONVERT(VARCHAR(20), r.eventTime) AS ShowTime,
 			'' AS betcheck,
 			'' AS transdesc,
 			-1 AS BetdaqId,
@@ -1334,13 +1337,13 @@ BEGIN
 			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE
-			b.custid = @custid
+			b.custid = @CustId
 			AND b.winlostdate = @FromDate 
 			AND sbt.ProductId = 5 
 			AND sbt.EventType = 3
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Mixed parlay & system parlay
+		-- Mix Parlay, System Parlay (Sportsbook), Mix Parlay (Betradar Virtual Sports)
 		INSERT INTO @Data
 		SELECT
 			0,
@@ -1352,8 +1355,8 @@ BEGIN
 			'',
 			0,
 			CASE
-				WHEN (ISNULL(b.BetID,0) = 0 OR b.bettype = 9) THEN b.transid
-				ELSE betid
+				WHEN b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
+				ELSE b.transid
 			END AS transid,
 			b.transdate,
 			b.winlostdate,
@@ -1371,12 +1374,15 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			CASE
-				WHEN b.statusID NOT IN (0,1) THEN (b.winlost-b.actual_stake)
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
 				ELSE 0
-			END AS winlost,
-			CASE WHEN b.statusID NOT IN (0,1) THEN 
-				CASE WHEN BA.transid IS NULL THEN - (b.winlost-b.actual_stake) ELSE 0 END
-			ELSE 0 END	AS LicenseeWL,
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0,1) THEN 
+					CASE
+						WHEN BA.transid IS NULL THEN - (b.winlost-b.actual_stake) ELSE 0 END
+				ELSE 0
+			END AS LicenseeWL,
 			CASE WHEN b.statusID NOT IN (0,1) THEN b.comm ELSE 0 END AS comm,
 			b.playercomm,
 			b.discount,
@@ -1403,14 +1409,14 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
-			b.custid = @custid
+			b.custid = @CustId
 			AND b.winlostdate = @FromDate
-			AND sbt.ProductID = 1
+			AND sbt.ProductID IN (1, 27)
 			AND sbt.EventType = 0
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
 		-- Outright
-		INSERT INTO @Data 
+		INSERT INTO @Data
 		SELECT
 			l.sporttype,
 			m.leagueID,
@@ -1439,16 +1445,16 @@ BEGIN
 			CASE
 				WHEN b.statusID NOT IN (0,1) THEN (b.winlost - b.actual_stake)
 				ELSE 0
-			END AS winlost,
+			END AS WinLost,
 			CASE WHEN b.statusID NOT IN (0,1) THEN 
 				CASE
 					WHEN ISNULL(BA.transid,0) = 0 AND b.bettype = 10 THEN - (b.winlost-b.actual_stake)
-					WHEN b.bettype IN (31,32,33) THEN awinlost 
+					WHEN b.bettype IN (31,32,33) THEN b.awinlost
 					ELSE 0
 				END
 			ELSE 0 END AS LicenseeWL,
 			CASE WHEN b.statusID NOT IN (0,1) THEN b.comm ELSE 0 END AS comm,
-			b.playercomm  AS PlayerComm,
+			b.playercomm,
 			b.discount,
 			b.livehomescore,
 			b.liveawayscore,
@@ -1475,7 +1481,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
-			b.custid = @custid
+			b.custid = @CustId
 			AND b.winlostdate = @FromDate
 			AND sbt.ProductID IN (1, 2)
 			AND sbt.EventType = 2
@@ -1510,7 +1516,7 @@ BEGIN
 				0 AS betstatus,
 				b.stake,
 				b.actual_stake,
-				(b.winlost - b.actual_stake) AS winlost,
+				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
@@ -1537,7 +1543,7 @@ BEGIN
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			WHERE
-				b.custid = @custid
+				b.custid = @CustId
 				AND b.winlostdate = @FromDate
 				AND sbt.ProductID = 13
 				AND sbt.EventType = 0
@@ -1552,6 +1558,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 13 THEN 203
 					WHEN sbt.ProductId = 15 THEN 204
+					ELSE 0
 				END AS SportType,
 				0 AS LeagueId,
 				0 AS homeID,
@@ -1606,7 +1613,7 @@ BEGIN
 				dbo.translog AS t WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON t.gameID = sbt.bettype
 			WHERE
-				t.custid = @custid
+				t.custid = @CustId
 				AND t.winlostdate = @FromDate
 				AND sbt.ProductID IN (13, 15)
 				AND t.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -1624,6 +1631,7 @@ BEGIN
 						WHEN sbt.ProductID = 17 THEN 205
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
+						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -1648,7 +1656,7 @@ BEGIN
 					0 AS betstatus,
 					b.stake,
 					b.actual_stake,
-					(b.winlost - b.actual_stake) AS winlost,
+					(b.winlost - b.actual_stake) AS WinLost,
 					- (b.winlost - b.actual_stake) AS LicenseeWL,
 					b.comm,
 					b.playercomm,
@@ -1678,7 +1686,7 @@ BEGIN
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
-					b.custid = @custid
+					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
 					AND (sbt.ProductID IN (17, 22, 24)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
@@ -1694,6 +1702,7 @@ BEGIN
 						WHEN sbt.ProductID = 17 THEN 205
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
+						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -1715,9 +1724,9 @@ BEGIN
 					0 AS odds,
 					'' AS betteam,
 					CASE 
-						WHEN SUM(brng.winlost - brng.actual_stake) = 0 THEN 'Draw'
 						WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
 						WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
+						ELSE 'Draw'
 					END AS Status,
 					0 AS betstatus,
 					SUM(brng.stake) AS Stake,
@@ -1753,7 +1762,7 @@ BEGIN
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
-					b.custid = @custid
+					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
 					AND (sbt.ProductID IN (17, 22, 24)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
@@ -1785,6 +1794,7 @@ BEGIN
 						WHEN sbt.ProductID = 17 THEN 205
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
+						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -1840,7 +1850,7 @@ BEGIN
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
-					b.custid = @custid
+					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
 					AND (sbt.ProductID IN (17, 22, 24)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
@@ -1918,7 +1928,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
-				b.custid = @custid
+				b.custid = @CustId
 				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 15
 				AND sbt.EventType = 0
@@ -1980,7 +1990,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
-				b.custid = @custid
+				b.custid = @CustId
 				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 15
 				AND sbt.EventType = 0
@@ -2045,7 +2055,7 @@ BEGIN
 				INNER JOIN dbo.bettransRnG AS b WITH (NOLOCK) ON pt.RefNo = b.transid
 				INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.bettype
 			WHERE
-				pt.custid = @custid
+				pt.custid = @CustId
 				AND pt.winlostdate = @FromDate 
 				AND sbt.ProductID = 17
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -2105,7 +2115,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE
-				b.custid = @custid
+				b.custid = @CustId
 				AND b.winlostdate = @FromDate 
 				AND sbt.ProductID = 15
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -2124,6 +2134,7 @@ BEGIN
 					CASE
 						WHEN sbt.ProductID = 11 THEN 250
 						WHEN sbt.ProductID = 21 THEN 211
+						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -2148,7 +2159,7 @@ BEGIN
 					0 AS betstatus,
 					b.stake,
 					b.actual_stake,
-					(b.winlost - b.actual_stake) AS winlost,
+					(b.winlost - b.actual_stake) AS WinLost,
 					- (b.winlost - b.actual_stake) AS LicenseeWL,
 					b.comm,
 					b.playercomm,
@@ -2175,7 +2186,7 @@ BEGIN
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
-					b.custid = @custid
+					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
 					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
@@ -2188,6 +2199,7 @@ BEGIN
 					CASE
 						WHEN sbt.ProductID = 11 THEN 250
 						WHEN sbt.ProductID = 21 THEN 211
+						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -2209,9 +2221,9 @@ BEGIN
 					0 AS odds,
 					'' AS betteam,
 					CASE 
-						WHEN SUM(blc.winlost - blc.actual_stake) = 0 THEN 'Draw'
 						WHEN SUM(blc.winlost - blc.actual_stake) > 0 THEN 'Won'
 						WHEN SUM(blc.winlost - blc.actual_stake) < 0 THEN 'Lose'
+						ELSE 'Draw'
 					END AS Status,
 					0 AS betstatus,
 					SUM(blc.stake) AS Stake,
@@ -2244,7 +2256,7 @@ BEGIN
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
-					b.custid = @custid
+					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
 					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
@@ -2271,6 +2283,7 @@ BEGIN
 					CASE
 						WHEN sbt.ProductID = 11 THEN 250
 						WHEN sbt.ProductID = 21 THEN 211
+						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -2323,7 +2336,7 @@ BEGIN
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
-					b.custid = @custid
+					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
 					AND sbt.ProductID IN (11, 21)
 					AND sbt.EventType = 0
@@ -2342,7 +2355,7 @@ BEGIN
 		END
 
 		-- Get more info for BetTrade tickets
-		IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType IN (901, 902))
+		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType IN (901, 902))
 		BEGIN
 			UPDATE betList
 			SET betList.Odds = originBetList.odds,
@@ -2361,7 +2374,7 @@ BEGIN
 		END
 
 		-- Get more info for CashOut tickets
-		IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 911)
+		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)
 		BEGIN
 			UPDATE b
 			SET b.Odds = ob.odds,
@@ -2375,7 +2388,7 @@ BEGIN
 			WHERE b.BetType = 911
 		END
 
-		IF EXISTS (SELECT TOP 1 1 FROM @Data WHERE BetType = 912)
+		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 912)
 		BEGIN
 			UPDATE b
 			SET b.Odds = ob.odds,
@@ -2415,7 +2428,7 @@ BEGIN
 		@SumWinlostUSD		= SUM(ISNULL(b.WinLost		* e.USD, 0)),
 		@SumLicenseeWLUSD	= SUM(ISNULL(b.LicenseeWL	* e.USD, 0)),
 		@SumCommUSD			= SUM(ISNULL(b.Comm			* e.USD, 0)),
-		@SumPlayerCommUSD	= SUM(ISNULL(playercomm		* e.USD, 0)),
+		@SumPlayerCommUSD	= SUM(ISNULL(b.PlayerComm	* e.USD, 0)),
 		-- EUR
 		@SumWinlostEUR		= SUM(ISNULL(b.WinLost		* e.EUR, 0)),
 		@SumLicenseeWLEUR	= SUM(ISNULL(b.LicenseeWL	* e.EUR, 0)),
@@ -2630,10 +2643,10 @@ END
 
 
 
-GO 
 
+
+GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelByDayAll_Mem] TO [vnteam]
-GO 
-
+GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelByDayAll_Mem] TO [bodbLicenseeNet]
 GO 

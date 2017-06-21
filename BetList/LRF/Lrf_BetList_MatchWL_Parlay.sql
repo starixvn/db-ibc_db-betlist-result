@@ -8,6 +8,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Parlay]
 	@BetType			INT				= 9,
 	@ShowBA				BIT				= 0,
 	@ShowSB				BIT				= 0,
+	@ShowVS2			BIT				= 0,
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
 	@MoveBetsDay		SMALLDATETIME,
@@ -40,7 +41,7 @@ AS
 	Original: [Age_BetList_SelWinlossParlay_Ag]
 	Revisions:
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
-		- 20120319@Henry: show main transid for sub-ticket of system parlay
+		- 20120319@Henry: show main transid for sub-ticket of System Parlay
 		- 20120614@Jim: optimize code
 		- 20120724@Jim: add playercomm value
 		- 20121004@Jim: replace @currency input param by @currencyID
@@ -54,6 +55,7 @@ AS
 		- 20160516@Kos: Add sorting function [#Redmine: 57433]
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 
 	Param's Explanation:
 */
@@ -174,7 +176,7 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		IF @ShowSB = 1
+		IF @ShowSB = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -216,8 +218,8 @@ BEGIN
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND b.bettype = @Bettype
-				AND b.matchid = @Bettype
+				AND b.bettype = @BetType
+				AND b.matchid = @BetType
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -278,7 +280,7 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		IF @ShowSB = 1
+		IF @ShowSB = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -320,8 +322,8 @@ BEGIN
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
-				AND b.bettype = @Bettype
-				AND b.matchid = @Bettype
+				AND b.bettype = @BetType
+				AND b.matchid = @BetType
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -427,14 +429,14 @@ BEGIN
 
 	DECLARE @Sql NVARCHAR(1000)
 
-	SET @Sql = 
+	SET @Sql =
 		'INSERT INTO #PagingData
 		SELECT A.*
 		FROM
 		(
 			SELECT
 				ROW_NUMBER() OVER (ORDER BY ' + @SortExp + ') AS RowNum,
-				b.* 
+				b.*
 			FROM #Data AS b
 				INNER JOIN #TempExchange AS e ON e.exchangeid = b.Currency AND e.ExchangeDate = b.WinLostDate
 		) A
@@ -488,4 +490,5 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_MatchWL_Parlay] TO [bodbLicenseeNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_MatchWL_Parlay] TO [vnteam] 
+GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_MatchWL_Parlay] TO [vnteam]
+GO

@@ -3,6 +3,7 @@
 	@BetType		INT				= 9,
 	@ShowBA			BIT				= 0,
 	@ShowSB			BIT				= 0,
+	@ShowVS2		BIT				= 0,
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
@@ -30,14 +31,15 @@ AS
 		- 20140520@Hannah: Sort betlist
 		- 20140602@Hannah: Separate Live/ Non - Live data in Live Report
 		- 20141111@Winnie: Change from LicenseeCust to f_SelLicenseeCust
-		- 20150126@Winnie: Add base currency GBP 
+		- 20150126@Winnie: Add base currency GBP
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20170306@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 
 	Param's Explanation:
-		@Liveindicator : indicate that whether the report will get live data or not
+		@LiveIndicator : indicate that whether the report will get live data or not
 			+ 0: Non - Live data only
 			+ 1: Live data only
 			+ 2: All
@@ -157,7 +159,7 @@ BEGIN
 					OR (@LiveIndicator = 2))
 		END
 
-		IF @ShowSB = 1
+		IF @ShowSB = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #AgWinlossMP
 			SELECT
@@ -197,8 +199,8 @@ BEGIN
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND b.bettype = @Bettype
-				AND b.matchid = @Bettype
+				AND b.bettype = @BetType
+				AND b.matchid = @BetType
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
@@ -263,7 +265,7 @@ BEGIN
 					OR (@LiveIndicator = 2))
 		END
 
-		IF @ShowSB = 1
+		IF @ShowSB = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #AgWinlossMP
 			SELECT
@@ -303,8 +305,8 @@ BEGIN
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
-				AND b.bettype = @Bettype
-				AND b.matchid = @Bettype
+				AND b.bettype = @BetType
+				AND b.matchid = @BetType
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
@@ -326,7 +328,7 @@ BEGIN
 	FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)
 	WHERE exchangeid IN (SELECT DISTINCT Currency FROM #AgWinlossMP)
 
-	DECLARE @sql NVARCHAR(2500)
+	DECLARE @sql NVARCHAR(3000)
 	DECLARE @SortTemp VARCHAR(250)
 
 	IF @Sort LIKE '%USD%' OR @Sort LIKE '%EUR%' OR @Sort LIKE '%GBP%'
@@ -342,28 +344,36 @@ BEGIN
 	END
 
 	SELECT @sql = 
-		'SELECT A.*,'''' betstatus, '''' matchcode, 0 homeid, 0 awayid, 0 leagueid, 0 matchid, 0 sporttype
+		'SELECT
+			A.*,
+			'''' betstatus,
+			'''' matchcode,
+			0 homeid,
+			0 awayid,
+			0 leagueid,
+			0 matchid,
+			0 sporttype
 		FROM
 		(
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY ' + @SortTemp + ') AS RowNum,
 				b.*,
-				SUBSTRING(c.username2, CHARINDEX(''$'',c.username2) + 1, LEN(c.username2) - CHARINDEX(''$'',c.username2)) AS nickname,
-				--USD
+				SUBSTRING(c.username2, CHARINDEX(''$'', c.username2) + 1, LEN(c.username2) - CHARINDEX(''$'',c.username2)) AS nickname,
+				-- USD
 				stake * e.USD stakeUSD,
 				actual_stake * e.USD actual_stakeUSD,
 				winlost * e.USD winlostUSD,
 				LicenseeWL* e.USD LicenseeWLUSD,
 				comm * e.USD commUSD,
 				playercomm*e.USD PlayerCommUSD,
-				--EUR
+				-- EUR
 				stake * e.EUR stakeEUR,
 				actual_stake * e.EUR actual_stakeEUR,
 				winlost * e.EUR winlostEUR,
 				LicenseeWL * e.EUR LicenseeWLEUR,
 				comm * e.EUR commEUR,
 				playercomm*e.EUR playercommEUR,
-				--GBP
+				-- GBP
 				stake * e.GBP stakeGBP,
 				actual_stake * e.GBP actual_stakeGBP,
 				winlost * e.GBP winlostGBP,
@@ -387,4 +397,5 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_LiveReport_SelWinlossParlay] TO [bodbLicenseeNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_LiveReport_SelWinlossParlay] TO [vnteam] 
+GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_LiveReport_SelWinlossParlay] TO [vnteam]
+GO

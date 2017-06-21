@@ -28,6 +28,7 @@ AS
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170324@Kos: Hotfix - Mix Parlay duplciate ticket detail [Redmine: #73984]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 */
 
 BEGIN
@@ -42,7 +43,8 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
-	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (1, 27)
 
 	DECLARE @tmpParlay TABLE (
 		TransId			BIGINT,
@@ -54,6 +56,7 @@ BEGIN
 		Stake			MONEY,
 		Currency		NVARCHAR(50),
 		MatchId			INT,
+		ShowTime		NVARCHAR(50),
 		HomeId			INT,
 		AwayId			INT,
 		Hdp1			FLOAT,
@@ -93,7 +96,7 @@ BEGIN
 			SELECT @RefNo = b.refno,
 				@CustId = b.custid,
 				@CurrencyCode = CASE WHEN ex.Code <> '' THEN ex.Code ELSE ex.currency END
-			FROM DBACC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			WHERE b.transid = @TransId
 		END
@@ -115,6 +118,10 @@ BEGIN
 			b.stake,
 			@CurrencyCode AS Currency,
 			m.matchid,
+			CASE
+				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE m.showtime
+			END AS ShowTime,
 			m.homeid,
 			m.awayid,
 			CONVERT(FLOAT, b.hdp1) AS Hdp1,
@@ -125,13 +132,13 @@ BEGIN
 			b.liveawayscore,
 			b.liveindicator,
 			m.betstatus,
-			m.isNeutral,
+			m.IsNeutral,
 			b.statusID,
 			b.transdesc
 		FROM (
 			SELECT
 				bm.transid,
-				CASE WHEN bm.betcheck = '' THEN NULL ELSE betcheck END AS betcheck,
+				CASE WHEN bm.betcheck = '' THEN NULL ELSE bm.betcheck END AS betcheck,
 				bm.stake,
 				bm.matchid,
 				bm.bettype,
@@ -143,7 +150,8 @@ BEGIN
 				bm.liveawayscore,
 				bm.liveindicator,
 				bm.statusID,
-				ISNULL(bm.transdesc, '') AS transdesc
+				ISNULL(bm.transdesc, '') AS transdesc,
+				sbt.ProductId
 			FROM dbo.bettransm AS bm WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 			WHERE bm.refno = @RefNo AND bm.custid = @CustId
@@ -166,6 +174,10 @@ BEGIN
 			b.stake,
 			@CurrencyCode AS Currency,
 			m.matchid,
+			CASE
+				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE m.showtime
+			END AS ShowTime,
 			m.homeid,
 			m.awayid,
 			CONVERT(FLOAT, b.hdp1) AS Hdp1,
@@ -182,7 +194,7 @@ BEGIN
 		FROM (
 			SELECT
 				bm.transid,
-				CASE WHEN bm.betcheck = '' THEN NULL ELSE betcheck END AS betcheck,
+				CASE WHEN bm.betcheck = '' THEN NULL ELSE bm.betcheck END AS betcheck,
 				bm.stake,
 				bm.matchid,
 				bm.bettype,
@@ -194,7 +206,8 @@ BEGIN
 				bm.liveawayscore,
 				bm.liveindicator,
 				bm.statusID,
-				ISNULL(bm.transdesc, '') AS transdesc
+				ISNULL(bm.transdesc, '') AS transdesc,
+				sbt.ProductId
 			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 			WHERE bm.refno = @RefNo AND bm.custid = @CustId
@@ -203,7 +216,7 @@ BEGIN
 	END
 
 	IF EXISTS (	SELECT 1
-				FROM DBACC.bodb_Archive.dbo.bettransm WITH (NOLOCK)
+				FROM DBARC.bodb_Archive.dbo.bettransm WITH (NOLOCK)
 				WHERE refno = @RefNo )
 	BEGIN
 		INSERT INTO @tmpParlay
@@ -217,6 +230,10 @@ BEGIN
 			b.stake,
 			@CurrencyCode AS Currency,
 			m.matchid,
+			CASE
+				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				ELSE m.showtime
+			END AS ShowTime,
 			m.homeid,
 			m.awayid,
 			CONVERT(FLOAT, b.hdp1) AS Hdp1,
@@ -233,7 +250,7 @@ BEGIN
 		FROM (
 			SELECT
 				bm.transid,
-				CASE WHEN bm.betcheck = '' THEN NULL ELSE betcheck END AS betcheck,
+				CASE WHEN bm.betcheck = '' THEN NULL ELSE bm.betcheck END AS betcheck,
 				bm.stake,
 				bm.matchid,
 				bm.bettype,
@@ -245,18 +262,20 @@ BEGIN
 				bm.liveawayscore,
 				bm.liveindicator,
 				bm.statusID,
-				ISNULL(bm.transdesc, '') AS transdesc
-			FROM DBACC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+				ISNULL(bm.transdesc, '') AS transdesc,
+				sbt.ProductId
+			FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 			WHERE bm.refno = @RefNo AND bm.custid = @CustId
 			) AS b
-		INNER JOIN DBACC.bodb_archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	END
 
-	SELECT DISTINCT *
-	FROM @tmpParlay
+	SELECT DISTINCT * FROM @tmpParlay
 	ORDER BY TransId DESC
 END
+
+
 
 
 GO
@@ -265,3 +284,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelParlayDetail] TO [bodbAdminNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelParlayDetail] TO [vnteam]
+GO

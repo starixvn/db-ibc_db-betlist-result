@@ -22,6 +22,7 @@
 	@ShowAB		BIT			= 0,	-- AllBet
 	@ShowVB		BIT			= 0,	-- Voidbridge
 	@ShowFW		BIT			= 0,	-- Fishing World
+	@ShowVS2	BIT			= 0,	-- Betradar Virtual Sports
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -42,14 +43,14 @@ AS
 		- 20110729@Henry: offer 3 new bettypes for Number Game + Combination Mixed Parlay
 		- 20111118@Henry: using [creator] column as sporttype for racing ticket
 		- 20111122@Henry: Compare Checktime and CURRENT_TIMESTAMP to show waiting or running status
-		- 20111208@Jim : Change condition bettype <31 
+		- 20111208@Jim : Change condition bettype < 31
 		- 20111229@Jim : change the way to get odds/oddstype/betteam to web dev
 		- 20120214@Jim: change to use  table ExchangeDaily by use function Lrf_f_GetExchangeDaily
 		- 20120319@Henry: show main transid for sub-ticket of system parlay
 		- 20120706@Jim: get sporttype for Outright
 		- 20120726@Jim: add playercomm value
-		- 20120817@Henry: add live casino
-		- 20120924@Jim: add virtual sport
+		- 20120817@Henry: add Live Casino
+		- 20120924@Jim: add Virtual Sport
 		- 20130226@Jim: support RNG Casino, Bingo
 		- 20130326@Jim: remove input parameter @GetAll
 		- 20130514@Jim: Restrict permission of Licensee Users by currency
@@ -59,7 +60,7 @@ AS
 		- 20140319@Hannah: fix bug for showing DrawID
 		- 20140630@Hannah: offer BetRadar and Sporting Solution
 		- 20141128@Jim: add more input param @CurrencyID
-		- 20150126@Winnie: add base currency GBP 
+		- 20150126@Winnie: add base currency GBP
 		- 20150402@Bobby: Apply sporttype matrix & #32844 new 60 bettypes - betradar phase 2
 		- 20150608@Edward: Support MicroGamming
 		- 20150608@Edward: Exclude 3 transactions SOLD/BOUGHT/BetTrade Commission of BetTrade
@@ -81,6 +82,7 @@ AS
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170329@Kos: Support CashOut [#Redmine: 71963]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 */
 
 BEGIN
@@ -118,7 +120,7 @@ BEGIN
 
 	IF @CustID IS NULL
 	BEGIN
-		SELECT TOP 1
+		SELECT TOP(1)
 			@CustId = custid
 			, @Username = CASE WHEN @Username IS NULL THEN username ELSE @Username END
 		FROM dbo.customer WITH (NOLOCK)
@@ -127,7 +129,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		SELECT TOP 1
+		SELECT TOP(1)
 			@CustId = @custid
 			, @Username = CASE WHEN @Username IS NULL THEN username ELSE @Username END
 		FROM dbo.customer WITH (NOLOCK)
@@ -152,7 +154,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 27)
 
 	-- Don't support BetTrade, RNG Casino old bet type (71)
 	DELETE FROM @SportBettype
@@ -174,6 +176,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowAB = 0		THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB = 0		THEN 22 END
 		OR ProductID	= CASE WHEN @ShowFW = 0		THEN 24 END
+		OR ProductID	= CASE WHEN @ShowVS2 = 0	THEN 27 END
 	-- end filer bettypes by sporttype
 
 	CREATE TABLE #BetListSelRunningByDateMem (
@@ -405,7 +408,7 @@ BEGIN
 			b.RefNo,
 			CASE
 				WHEN (ISNULL(b.BetId, 0) = 0 OR b.BetType = 9) THEN b.transid 
-				ELSE betid 
+				ELSE b.BetId 
 			END AS transid,
 			b.BetId,
 			'' AS matchcode,
@@ -445,6 +448,7 @@ BEGIN
 		WHERE sbt.ProductID = 1 AND sbt.EventType = 0
 	END
 
+	-- Sportsbook
 	IF @ShowSB = 1
 	BEGIN
 		INSERT INTO #BetListSelRunningByDateMem
@@ -565,8 +569,11 @@ BEGIN
 			AND sbt.EventType = 2
 			AND b.statusID IN (0,1)
 			AND b.transid NOT IN (SELECT transid FROM #TempBATicket)
+	END
 
-		-- Mix Parlay & System Parlay
+	-- Mix Parlay, System Parlay (Sportsbook), Mix Parlay (Betradar Virtual Sports)
+	IF @ShowSB = 1 OR @ShowVS2 = 1
+	BEGIN
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
 			0 AS sporttype,
@@ -575,8 +582,8 @@ BEGIN
 			0 AS leagueID,
 			b.refno,
 			CASE
-				WHEN (ISNULL(b.BetID,0) = 0 OR b.bettype = 9) THEN b.transid
-				ELSE betid
+				WHEN b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
+				ELSE b.transid
 			END AS transid,
 			ISNULL(b.betid, 0),
 			'' AS matchcode,
@@ -614,9 +621,9 @@ BEGIN
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE
-			b.transdate >= @FromDate AND b.transdate <= @ToDate 
+			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.custid = @CustID
-			AND sbt.ProductID = 1
+			AND sbt.ProductID IN (1, 27)
 			AND sbt.EventType = 0
 			AND b.statusID IN (0, 1)
 			AND b.transid NOT IN (SELECT transid FROM #TempBATicket)
@@ -683,8 +690,8 @@ BEGIN
 			AND b.statusID IN (0, 1)
 	END
 	
-	-- Number Game, Live Casino, Virtual Sport
-	IF @ShowNG = 1 OR @ShowLC = 1 OR @ShowVS = 1
+	-- Number Game, Live Casino, Virtual Sport, Betradar Virtual Sport
+	IF @ShowNG = 1 OR @ShowLC = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
 	BEGIN
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
@@ -723,12 +730,15 @@ BEGIN
 			b.playercomm,
 			CASE
 				WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
-				WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE ''
 			END AS ShowTime,
 			m.matchid,
 			'' AS BetCheck,
-			'' AS TransDesc,
+			CASE
+				WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+				ELSE ''
+			END AS TransDesc,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo,
 			0 AS OriginalStake,
@@ -740,7 +750,7 @@ BEGIN
 		WHERE
 			b.transdate >= @FromDate AND b.transdate <= @ToDate 
 			AND b.custid = @CustID
-			AND sbt.ProductID IN (3, 4, 5)
+			AND sbt.ProductID IN (3, 4, 5, 27)
 			AND sbt.EventType = 1
 			AND b.statusID IN (0, 1)
 
@@ -983,6 +993,7 @@ BEGIN
 				WHEN sbt.ProductID = 17 THEN 205
 				WHEN sbt.ProductID = 22 THEN 212
 				WHEN sbt.ProductID = 24 THEN 219
+				ELSE 0
 			END AS Sporttype,
 			@Username AS UserName,
 			b.bettype,
@@ -1060,6 +1071,7 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID = 11 THEN 250
 				WHEN sbt.ProductID = 21 THEN 211
+				ELSE 0
 			END AS Sporttype,
 			@Username AS UserName,
 			b.bettype,
@@ -1317,6 +1329,7 @@ BEGIN
 	DROP TABLE #BetListSelRunningByDateMem
 	DROP TABLE #TempExchange
 END
+
 
 
 

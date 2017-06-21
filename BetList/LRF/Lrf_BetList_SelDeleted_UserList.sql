@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelDeleted_UserList]
 AS
 
 /*
-	Created by: Henry@20101210 
+	Created by: Henry@20101210
 	DB: DBEXT.bodb02
 	Original: [Age_BetList_SelDeleted_UserList_Ag]
 
@@ -31,6 +31,7 @@ AS
 		- 20160913@Kos: Don't support Colossus Bets [#Redmine: 63785]
 		- 20170301@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
+		- 20170621@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 */
 
 BEGIN
@@ -67,7 +68,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 13, 25)
+	WHERE ProductID <= 6 OR ProductID IN (8, 13, 25, 27)
 
 	DELETE FROM @SportBettype
 	WHERE Bettype IN (903, 904, 913, 914)
@@ -150,3 +151,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelDeleted_UserList] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelDeleted_UserList] TO [vnteam]
+GO

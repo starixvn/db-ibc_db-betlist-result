@@ -50,6 +50,7 @@ AS
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170329@Kos: Support CashOut [#Redmine: 71963]
 		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
+		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 
 	Param's Explanation:
@@ -90,7 +91,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 13, 25)
+	WHERE ProductID <= 6 OR ProductID IN (8, 13, 25, 27)
 
 	DELETE FROM @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -103,8 +104,8 @@ BEGIN
 		TransDate		DATETIME,
 		WinLostDate		DATETIME,
 		RefNo			NVARCHAR(50),
-		HomeId			INT, 
-		AwayId			INT, 
+		HomeId			INT,
+		AwayId			INT,
 		BetTeam			NVARCHAR(50),
 		BetType			SMALLINT,
 		Hdp1			SMALLMONEY,
@@ -163,7 +164,7 @@ BEGIN
 		t.GameId AS MatchId,
 		'' AS matchcode,
 		'' AS Race,
-		winlostdate AS eventdate,
+		b.winlostdate AS eventdate,
 		b.ip,
 		CONVERT(BIT,0) AS IsNeutral,
 		b.betid,
@@ -202,8 +203,8 @@ BEGIN
 		m.awayid,
 		b.betteam,
 		b.bettype,
-		CONVERT(FLOAT, b.hdp1) AS Hdp1,
-		CONVERT(FLOAT, b.hdp2) AS Hdp2,
+		b.hdp1,
+		b.hdp2,
 		b.modds,
 		b.oddstype,
 		b.odds,
@@ -218,11 +219,11 @@ BEGIN
 		'' AS Race,
 		m.eventdate,
 		b.ip,
-		ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 		b.betid,
 		b.currency,
 		CASE
-			WHEN sbt.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+			WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 			ELSE ''
 		END AS ShowTime,
 		b.betcheck,
@@ -262,7 +263,7 @@ BEGIN
 		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.statusID IN (101, 102)
 		AND sbt.ProductID != 8
-		AND b.bettype NOT IN (SELECT bettype FROM dbo.f_VSHorseRacingByBettype()) 
+		AND b.bettype NOT IN (SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 
 	-- Outright/Horse Racing
 	UNION ALL
@@ -394,7 +395,7 @@ BEGIN
 		AND b.statusID IN (101, 102)
 
 	-- Get more info for BetTrade tickets
-	IF EXISTS (SELECT TOP 1 1 FROM #Data WHERE BetType IN (901, 902))
+	IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType IN (901, 902))
 	BEGIN
 		UPDATE betList
 		SET betList.Odds = originBetList.Odds,
@@ -408,7 +409,7 @@ BEGIN
 	END
 
 	-- Get more info for CashOut tickets
-	IF EXISTS (SELECT TOP 1 1 FROM #Data WHERE BetType = 911)
+	IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 911)
 	BEGIN
 		UPDATE b
 		SET b.Odds = ob.odds,
@@ -422,7 +423,7 @@ BEGIN
 		WHERE b.BetType = 911
 	END
 
-	IF EXISTS (SELECT TOP 1 1 FROM #Data WHERE BetType = 912)
+	IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 912)
 	BEGIN
 		UPDATE b
 		SET b.Odds = ob.odds,
@@ -499,7 +500,7 @@ BEGIN
 		StakeGBP		MONEY)
 
 	-- Horse Racing
-	IF EXISTS (	SELECT TOP 1 1
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM #Data AS b
 					INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 				WHERE sbt.ProductID = 2)
@@ -525,7 +526,7 @@ BEGIN
 	END
 
 	-- Live Casino
-	IF EXISTS (	SELECT TOP 1 1
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM #Data AS b
 					INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 				WHERE sbt.ProductID = 4)
@@ -587,7 +588,9 @@ BEGIN
 END
 
 
+
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelDeleted] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelDeleted] TO [vnteam]
+GO
