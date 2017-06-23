@@ -16,6 +16,7 @@ AS
 		- 20160919@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170404@Kos: Support CashOut [#Redmine: 71963]
+		- 20170623@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 */
 
 BEGIN
@@ -28,12 +29,12 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	-- Support Sportsbook, Horse Racing, Number Game, Virtual Sports only
+	-- Support Sportsbook, Horse Racing, Number Game, Virtual Sports, Betradar Virtual Sports only
 	-- Don't support BetTrade
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 2, 3, 5)
+	WHERE ProductID IN (1, 2, 3, 5, 27)
 		AND BetType NOT BETWEEN 901 AND 920
 
 	DECLARE @Data TABLE (
@@ -103,13 +104,13 @@ BEGIN
 
 	DECLARE @BetType INT
 
-	SELECT TOP 1 @BetType = bt.bettype
+	SELECT TOP(1) @BetType = bt.bettype
 	FROM dbo.bettrans AS bt WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sp ON bt.bettype = sp.Bettype
 	WHERE bt.transid = @TransId
 
-	-- Sportsbook, Number Game, Virtual Sports (EventType = 1)
-	IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE EventType = 1 AND Bettype = @BetType)
+	-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+	IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND Bettype = @BetType)
 	BEGIN
 		INSERT INTO @Data
 		SELECT
@@ -172,7 +173,7 @@ BEGIN
 			b.mwinlost,
 			b.swinlost,
 			CASE
-				WHEN s.ProductID = 5 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE m.showtime
 			END AS ShowTime,
 			b.winlostdate,
@@ -194,24 +195,27 @@ BEGIN
 		WHERE s.EventType = 1 AND b.transid = @TransId
 	END
 
-	-- Mix Parlay
-	IF @BetType = 9
+	-- Mix Parlay, System Parlay (Sportsbook), Mix Parlay (Betradar Virtual Sports)
+	IF @BetType IN (9, 29, 2799)
 	BEGIN
 		INSERT INTO @Data
 		SELECT
 			b.username,
-			9 AS bettype,
-			b.transid,
-			ISNULL(b.betid,0) AS BetID,
+			b.bettype,
+			CASE
+				WHEN b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
+				ELSE b.transid
+			END AS transid,
+			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			'' AS matchcode,
 			'' AS race,
 			'' AS eventdate,
 			0 AS virtualrate,
 			0 AS isShowOTExRate,
-			sdiscount,
-			adiscount,
-			discount,
+			b.sdiscount,
+			b.adiscount,
+			b.discount,
 			0 AS homeid,
 			0 AS awayid,
 			'' AS settleTime,
@@ -245,84 +249,8 @@ BEGIN
 			b.ip,
 			b.betfrom,
 			0 matchid,
-			CONVERT(BIT,0) AS IsNeutral,
-			(b.winlost-b.actual_stake) AS WinLost,
-			b.playercomm AS commission,
-			(b.scomm - b.acomm) AS scomm,
-			(b.acomm - b.comm) AS acomm,
-			(b.comm - b.playercomm) AS comm,
-			b.awinlost,
-			b.mwinlost,
-			b.swinlost,
-			'' AS showtime,
-			b.winlostdate,
-			b.BetCheck,
-			'' AS transdesc,
-			0 AS OddsSpread,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo
-		FROM dbo.bettrans AS b WITH (NOLOCK)
-		WHERE b.matchid = 9
-			AND b.bettype = 9
-			AND b.transid = @TransId
-	END
-
-	-- Combination Mix Parlay
-	IF @BetType = 29
-	BEGIN
-		INSERT INTO @Data
-		SELECT 
-			b.username,
-			29 bettype,
-			CASE
-				WHEN ISNULL(b.betid, 0) = 0 THEN b.transid
-				ELSE b.betid
-			END AS transid,
-			ISNULL(b.betid,0) AS BetID,
-			b.refno,
-			'' AS matchcode,
-			'' AS race,
-			'' AS eventdate,
-			0 AS virtualrate,
-			0 AS isShowOTExRate,
-			b.sdiscount,
-			b.adiscount,
-			b.discount,
-			0 AS homeid,
-			0 AS awayid,
-			'' settleTime,
-			b.hdp1,
-			b.hdp2,
-			b.odds,
-			0 finalodds,
-			0 finalodds2,
-			0 AS OddsType,
-			b.status,
-			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-			b.stake,
-			b.actual_stake,
-			b.transdate,
-			b.betteam,
-			b.spositiontaking,
-			b.mpositiontaking,
-			b.apositiontaking,
-			0 spositiontaking2,
-			0 mpositiontaking2,
-			0 apositiontaking2,
-			0 liveindicator,
-			b.modds,
-			b.custid,
-			b.livehomescore,
-			b.liveawayscore,
-			0,
-			0,
-			0 AS leagueid,
-			0 AS sporttype,
-			b.ip,
-			b.betfrom,
-			0 matchid,
 			CONVERT(BIT, 0) AS IsNeutral,
-			(b.winlost-b.actual_stake) AS WinLost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -337,9 +265,9 @@ BEGIN
 			0 AS OddsSpread,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo
-		FROM dbo.bettrans b WITH(NOLOCK)
-		WHERE b.matchid = 29
-			AND bettype = 29
+		FROM dbo.bettrans AS b WITH (NOLOCK)
+		WHERE b.matchid = @BetType
+			AND b.bettype = @BetType
 			AND b.transid = @TransId
 	END
 
@@ -395,7 +323,7 @@ BEGIN
 			b.betfrom,
 			b.matchid,
 			CONVERT(BIT,0) AS IsNeutral,
-			(b.winlost-b.actual_stake) AS WinLost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -417,7 +345,7 @@ BEGIN
 	END
 
 	-- Horse Racing
-	IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 2 AND Bettype = @Bettype)
+	IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 2 AND Bettype = @Bettype)
 	BEGIN
 		INSERT INTO @Data
 		SELECT 
@@ -506,10 +434,10 @@ BEGIN
 	END
 
 	-- Virtual Horse Racing
-	IF EXISTS (SELECT TOP 1 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND Bettype = @BetType)
+	IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND Bettype = @BetType)
 	BEGIN
 		INSERT INTO @Data
-		SELECT 
+		SELECT
 			b.username,
 			b.bettype,
 			b.transid,
@@ -534,7 +462,7 @@ BEGIN
 			b.OddsType,
 			b.status,
 			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-			stake,
+			b.stake,
 			b.actual_stake,
 			b.transdate,
 			'' betteam,
@@ -606,3 +534,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_CheckBet] TO [bodbExtAccNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_CheckBet] TO [vnteam]
+GO
