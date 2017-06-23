@@ -25,6 +25,7 @@ AS
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170418@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
+		- 20170623@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 */
 
 BEGIN
@@ -39,7 +40,8 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
-	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (1, 27)
 
 	DECLARE @tmpParlay TABLE (
 		SportType		INT,
@@ -396,3 +398,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResultParlay] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelMatchResultParlay] TO [vnteam]
+GO
