@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetsSelBetCheckM_All].[Test_BetTrans_SystemParlay]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		TransId			BIGINT,
@@ -30,50 +32,45 @@ BEGIN
 		IsNeutral		BIT,
 		MatchId			INT,
 		MatchCode		NVARCHAR(50),
+		ShowTime		NVARCHAR(50),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(200)
 	)
 
-	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
+	DECLARE @TempData TABLE (
+		TransId	BIGINT
+	)
 
-	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
-	EXEC bodb02.dbo.Age_SelBalanceUpDay
+	DECLARE @TransId	BIGINT,
+		@RefNo			BIGINT
 
-	DECLARE @MoveBetsDay SMALLDATETIME,
-		@BalanceUpDay SMALLDATETIME
-
-	SELECT @MoveBetsDay = MoveBetsDay, 
-		@BalanceUpDay = BalanceUpDay
-	FROM @tmp
-
-	IF @BalanceUpDay IS NULL
-		SET @BalanceUpDay = @MoveBetsDay
-
-	DECLARE @TransId			BIGINT,
-		@RefNo					BIGINT,
-		@ExpectedNumOfSubTicket	TINYINT
-
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@RefNo = b.refno
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.bettype = 29
 
-	SELECT @ExpectedNumOfSubTicket = COUNT(*)
+	INSERT INTO @TempData
+	SELECT b.transid
 	FROM bodb02.dbo.bettransm AS b WITH (NOLOCK)
+		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	WHERE b.refno = @RefNo
 
-	IF EXISTS(SELECT 1 FROM bodb02.dbo.bettransm14 WITH (NOLOCK) WHERE refno = @RefNo)
+	IF EXISTS (SELECT 1 FROM bodb02.dbo.bettransm14 WITH (NOLOCK) WHERE refno = @RefNo)
 	BEGIN
-		SELECT @ExpectedNumOfSubTicket = COUNT(*) + @ExpectedNumOfSubTicket
+		INSERT INTO @TempData
+		SELECT b.transid
 		FROM bodb02.dbo.bettransm14 AS b WITH (NOLOCK)
+			INNER JOIN bodb02.dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.refno = @RefNo
 	END
 
-	IF EXISTS(SELECT 1 FROM DBARC.bodb_Archive.dbo.bettransm WITH (NOLOCK) WHERE refno = @RefNo)
+	IF EXISTS (SELECT 1 FROM DBARC.bodb_Archive.dbo.bettransm WITH (NOLOCK) WHERE refno = @RefNo)
 	BEGIN
-		SELECT @ExpectedNumOfSubTicket = COUNT(*) + @ExpectedNumOfSubTicket
+		INSERT INTO @TempData
+		SELECT b.transid
 		FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
+			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.refno = @RefNo
 	END
 
@@ -89,10 +86,14 @@ BEGIN
 		INSERT @Data
 		EXEC sp_executesql @Command
 
-		DECLARE @NumOfSubTicket	TINYINT
+		DECLARE @NumOfSubTicket		TINYINT,
+			@ExpectedNumOfSubTicket	TINYINT
 
 		SELECT @NumOfSubTicket = COUNT(*)
 		FROM @Data
+
+		SELECT @ExpectedNumOfSubTicket = COUNT(DISTINCT TransId)
+		FROM @TempData
 
 		-- Assert
 		EXEC tSQLt.AssertEquals @ExpectedNumOfSubTicket, @NumOfSubTicket, @Command
@@ -101,5 +102,7 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+GO
+

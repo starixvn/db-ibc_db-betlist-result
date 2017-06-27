@@ -1,6 +1,6 @@
 USE [UnitTest_Kos]
 GO
-/****** Object:  StoredProcedure [_Lrf_BetList_RNG_Detail].[Test_FishingWorld_BetTrans_All]    Script Date: 2/13/2017 1:36:45 PM ******/
+/****** Object:  StoredProcedure [_Lrf_BetList_RNG_Detail].[Test_FishingWorld_BetTrans_All]    Script Date: 6/27/2017 4:37:57 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_BetList_RNG_Detail].[Test_FishingWorld_BetTrans_All]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		TransId			BIGINT,
@@ -22,7 +24,7 @@ BEGIN
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
-		LicenseeWL 		MONEY,
+		LicenseeWL		MONEY,
 		Comm			MONEY,
 		PlayComm		MONEY,
 		IP				NVARCHAR(15),
@@ -38,10 +40,10 @@ BEGIN
 		WinLostEUR		MONEY,
 		WinLostMYR		MONEY,
 		WinLostGBP		MONEY,
-		LicenseeWLUSD		MONEY,
-		LicenseeWLEUR		MONEY,
-		LicenseeWLMYR		MONEY,
-		LicenseeWLGBP		MONEY,
+		LicenseeWLUSD	MONEY,
+		LicenseeWLEUR	MONEY,
+		LicenseeWLMYR	MONEY,
+		LicenseeWLGBP	MONEY,
 		CommUSD			MONEY,
 		CommEUR			MONEY,
 		CommMYR			MONEY,
@@ -67,14 +69,12 @@ BEGIN
 	IF @BalanceUpDay IS NULL
 		SET @BalanceUpDay = @MoveBetsDay
 
-	DECLARE @LicenseeId		INT		= 1,	-- 12Bet
-		@UserId				INT		= 68,
-		@TransId			BIGINT,
-		@RefNo				BIGINT,
-		@CustID				INT,
-		@Stake				MONEY,
-		@OutstandingStake	MONEY,
-		@TransType			TINYINT = 0
+	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
+		@UserId			INT		= 68,
+		@TransId		BIGINT,
+		@RefNo			BIGINT,
+		@CustID			INT,
+		@TransType		TINYINT = 0
 
 	SELECT CurrencyId, LicenseeId
 	INTO #Currency
@@ -83,7 +83,7 @@ BEGIN
 	DECLARE @TempAg AS TABLE (CustId INT)
 
 	INSERT INTO @TempAg
-	SELECT DISTINCT CustId
+	SELECT DISTINCT lc.CustID
 	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
 		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
 
@@ -111,8 +111,6 @@ BEGIN
 							@TransType = ' + CONVERT(VARCHAR, @TransType) + ',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
 							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
-
-							SELECT @Command
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command;

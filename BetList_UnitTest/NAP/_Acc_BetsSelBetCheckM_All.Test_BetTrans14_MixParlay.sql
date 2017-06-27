@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetsSelBetCheckM_All].[Test_BetTrans14_MixParlay]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		TransId			BIGINT,
@@ -30,6 +32,7 @@ BEGIN
 		IsNeutral		BIT,
 		MatchId			INT,
 		MatchCode		NVARCHAR(50),
+		ShowTime		NVARCHAR(50),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(200)
 	)
@@ -53,7 +56,7 @@ BEGIN
 		@RefNo						BIGINT,
 		@ExpectedNumOfSubTicket		TINYINT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@RefNo = b.refno
 	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
@@ -102,5 +105,6 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+GO

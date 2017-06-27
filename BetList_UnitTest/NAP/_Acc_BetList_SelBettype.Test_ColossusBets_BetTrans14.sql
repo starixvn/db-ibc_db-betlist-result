@@ -6,13 +6,15 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Acc_BetList_SelBettype].[Test_ColossusBets_BetTrans14]
+ALTER PROCEDURE [_Acc_BetList_SelBettype].[Test_ColossusBets_Translog]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
-		TypeId			INT,
-		Typenamee		NVARCHAR(50)
+		TypeId		INT,
+		Typenamee	NVARCHAR(50)
 	)
 
 	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
@@ -34,14 +36,15 @@ BEGIN
 		@BetType		INT,
 		@WinLostDate	SMALLDATETIME
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@CustId = b.custid,
-		@BetType = b.bettype,
+		@BetType = b.gameID,
 		@WinLostDate = b.winlostdate
-	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
-		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
+	FROM bodb02.dbo.translog AS b WITH (NOLOCK)
+		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.gameID = s.BetType
 	WHERE s.ProductID = 15
-		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
+		AND b.statusID IN (0, 1)
+		AND b.winlostdate > @MoveBetsDay
 
 	IF @BetType IS NOT NULL
 	BEGIN
@@ -49,7 +52,7 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_SelBettype] 
-							@CustId = ' + CONVERT(VARCHAR, @CustId) + ',
+							@CustId = ' + CONVERT(VARCHAR, @CustId, 11) + ',
 							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',

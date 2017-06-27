@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetsSelBetCheckM_All].[Test_BetTransBk_SystemParlay]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		TransId			BIGINT,
@@ -30,30 +32,16 @@ BEGIN
 		IsNeutral		BIT,
 		MatchId			INT,
 		MatchCode		NVARCHAR(50),
+		ShowTime		NVARCHAR(50),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(200)
 	)
-
-	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
-
-	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
-	EXEC bodb02.dbo.Age_SelBalanceUpDay
-
-	DECLARE @MoveBetsDay SMALLDATETIME,
-		@BalanceUpDay SMALLDATETIME
-
-	SELECT @MoveBetsDay = MoveBetsDay, 
-		@BalanceUpDay = BalanceUpDay
-	FROM @tmp
-
-	IF @BalanceUpDay IS NULL
-		SET @BalanceUpDay = @MoveBetsDay
 
 	DECLARE @TransId			BIGINT,
 		@RefNo					BIGINT,
 		@ExpectedNumOfSubTicket	TINYINT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@RefNo = b.refno
 	FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
@@ -63,14 +51,14 @@ BEGIN
 	FROM bodb02.dbo.bettransm AS b WITH (NOLOCK)
 	WHERE b.refno = @RefNo
 
-	IF EXISTS(SELECT 1 FROM bodb02.dbo.bettransm14 WITH (NOLOCK) WHERE refno = @RefNo)
+	IF EXISTS (SELECT 1 FROM bodb02.dbo.bettransm14 WITH (NOLOCK) WHERE refno = @RefNo)
 	BEGIN
 		SELECT @ExpectedNumOfSubTicket = COUNT(*) + @ExpectedNumOfSubTicket
 		FROM bodb02.dbo.bettransm14 AS b WITH (NOLOCK)
 		WHERE b.refno = @RefNo
 	END
 
-	IF EXISTS(SELECT 1 FROM DBARC.bodb_Archive.dbo.bettransm WITH (NOLOCK) WHERE refno = @RefNo)
+	IF EXISTS (SELECT 1 FROM DBARC.bodb_Archive.dbo.bettransm WITH (NOLOCK) WHERE refno = @RefNo)
 	BEGIN
 		SELECT @ExpectedNumOfSubTicket = COUNT(*) + @ExpectedNumOfSubTicket
 		FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
@@ -101,5 +89,6 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+GO

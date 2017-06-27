@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_BetList_SelRunningByBettypeList].[Test_DoubleChance]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		RowNum			INT,
@@ -62,6 +64,18 @@ BEGIN
 		@TransId		BIGINT,
 		@BetType		INT		= 24	-- Double Chance
 
+	DECLARE @Temp TABLE (Currency INT, CurrencyName VARCHAR(100), IsActive BIT, AgentId INT)
+
+	INSERT INTO @Temp
+	EXEC bodb02.dbo.Lrf_SelCurrencyByLicenseeUser @licenseeid=1,@userid=68
+
+	DECLARE @AgentList VARCHAR(MAX)
+
+	SELECT @AgentList = (
+	SELECT AgentId, Currency FROM @Temp
+	WHERE IsActive = 1
+	FOR XML RAW('Agent'), ROOT('ROOT'))
+
 	SELECT CurrencyId, LicenseeId
 	INTO #Currency
 	FROM bodb02.dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)
@@ -73,7 +87,7 @@ BEGIN
 	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
 		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -90,8 +104,7 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelRunningByBettypeList] 
-							@LicenseeID = ' + CONVERT(VARCHAR, @LicenseeId) + ',
-							@UserID = ' + CONVERT(VARCHAR, @UserId) + ',
+							@AgentList = ' + CONVERT(VARCHAR, @AgentList) + ',
 							@Bettype = ''' + CONVERT(VARCHAR, @BetType) + ''''
 
 		INSERT @Data
@@ -111,3 +124,5 @@ BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
 END;
+
+GO

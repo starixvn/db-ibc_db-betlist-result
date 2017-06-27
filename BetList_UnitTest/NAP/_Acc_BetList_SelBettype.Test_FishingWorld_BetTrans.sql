@@ -9,10 +9,12 @@ GO
 ALTER PROCEDURE [_Acc_BetList_SelBettype].[Test_FishingWorld_BetTrans]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
-		TypeId			INT,
-		Typenamee		NVARCHAR(50)
+		TypeId		INT,
+		Typenamee	NVARCHAR(50)
 	)
 
 	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
@@ -34,7 +36,7 @@ BEGIN
 		@BetType		INT,
 		@WinLostDate	SMALLDATETIME
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@CustId = b.custid,
 		@BetType = b.bettype,
 		@WinLostDate = b.winlostdate
@@ -48,7 +50,7 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_SelBettype] 
-							@CustId = ' + CONVERT(VARCHAR, @CustId) + ',
+							@CustId = ' + CONVERT(VARCHAR, @CustId, 11) + ',
 							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',

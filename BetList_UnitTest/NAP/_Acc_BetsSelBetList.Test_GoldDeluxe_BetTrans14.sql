@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetsSelBetList].[Test_GoldDeluxe_BetTrans14]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		BetType			INT,
@@ -70,7 +72,10 @@ BEGIN
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
-		OddsSpread		SMALLMONEY
+		OddsSpread		SMALLMONEY,
+		OriginalBetType	INT,
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
@@ -93,7 +98,7 @@ BEGIN
 		@WinLostDate	DATETIME,
 		@BetType		INT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@WinLostDate = b.winlostdate,
 		@CustId = b.custid,
@@ -109,8 +114,8 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetsSelBetList] 
-							@CustID = ' + CONVERT(VARCHAR, @CustId) + ',
-							@Bettype = ' + CONVERT(VARCHAR, @BetType) + ',
+							@CustID = ' + CONVERT(VARCHAR, @CustId, 11) + ',
+							@Bettype = ' + CONVERT(VARCHAR, @BetType, 6) + ',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
 							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''''
@@ -131,5 +136,6 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+GO

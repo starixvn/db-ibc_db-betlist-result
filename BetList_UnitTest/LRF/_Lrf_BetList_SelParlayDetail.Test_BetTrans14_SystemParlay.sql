@@ -6,9 +6,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Lrf_BetList_SelParlayDetail].[Test_BetTrans14_MixParlay]
+ALTER PROCEDURE [_Lrf_BetList_SelParlayDetail].[Test_BetTrans14_SystemParlay]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		TransId			BIGINT,
@@ -20,6 +22,7 @@ BEGIN
 		Stake			MONEY,
 		Currency		NVARCHAR(50),
 		MatchId			INT,
+		ShowTime		NVARCHAR(50),
 		HomeId			INT,
 		AwayId			INT,
 		Hdp1			FLOAT,
@@ -54,25 +57,25 @@ BEGIN
 		@RefNo					BIGINT,
 		@ExpectedNumOfSubTicket	TINYINT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@RefNo = b.refno
 	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
-	WHERE b.bettype = 9
+	WHERE b.bettype = 29
 		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 	SELECT @ExpectedNumOfSubTicket = COUNT(*)
 	FROM bodb02.dbo.bettransm AS b WITH (NOLOCK)
 	WHERE b.refno = @RefNo
 
-	IF EXISTS(SELECT 1 FROM bodb02.dbo.bettransm14 WITH (NOLOCK) WHERE refno = @RefNo)
+	IF EXISTS (SELECT 1 FROM bodb02.dbo.bettransm14 WITH (NOLOCK) WHERE refno = @RefNo)
 	BEGIN
 		SELECT @ExpectedNumOfSubTicket = COUNT(*) + @ExpectedNumOfSubTicket
 		FROM bodb02.dbo.bettransm14 AS b WITH (NOLOCK)
 		WHERE b.refno = @RefNo
 	END
 
-	IF EXISTS(SELECT 1 FROM DBARC.bodb_Archive.dbo.bettransm WITH (NOLOCK) WHERE refno = @RefNo)
+	IF EXISTS (SELECT 1 FROM DBARC.bodb_Archive.dbo.bettransm WITH (NOLOCK) WHERE refno = @RefNo)
 	BEGIN
 		SELECT @ExpectedNumOfSubTicket = COUNT(*) + @ExpectedNumOfSubTicket
 		FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
@@ -102,5 +105,7 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+
+GO

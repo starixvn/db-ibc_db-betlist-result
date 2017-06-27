@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_BetList_SelParlayDetail].[Test_BetTrans_SystemParlay]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		TransId			BIGINT,
@@ -20,6 +22,7 @@ BEGIN
 		Stake			MONEY,
 		Currency		NVARCHAR(50),
 		MatchId			INT,
+		ShowTime		NVARCHAR(50),
 		HomeId			INT,
 		AwayId			INT,
 		Hdp1			FLOAT,
@@ -39,7 +42,7 @@ BEGIN
 		@RefNo					BIGINT,
 		@ExpectedNumOfSubTicket	TINYINT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@RefNo = b.refno
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
@@ -86,5 +89,6 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+GO

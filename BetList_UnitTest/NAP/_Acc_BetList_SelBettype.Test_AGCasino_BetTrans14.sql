@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetList_SelBettype].[Test_AGCasino_BetTrans14]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		TypeId			INT,
@@ -48,8 +50,8 @@ BEGIN
 		-- Act
 		DECLARE @Command NVARCHAR(MAX)
 
-		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_SelBettype] 
-							@CustId = ' + CONVERT(VARCHAR, @CustId) + ',
+		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_SelBettype]
+							@CustId = ' + CONVERT(VARCHAR, @CustId, 11) + ',
 							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
