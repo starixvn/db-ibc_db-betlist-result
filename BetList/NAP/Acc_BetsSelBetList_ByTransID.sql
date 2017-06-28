@@ -90,6 +90,7 @@ AS
 		- 20170315@Kos: Support CashOut [#Redmine: 71963]
 		- 20170602@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20170628@Kos: Support Keno Lottery [#Redmine: 77929]
 */
 
 BEGIN
@@ -208,7 +209,7 @@ BEGIN
 	WHERE bt.custid = @CustId
 		AND bt.translogid = @TransId
 		AND bt.statusID = 0
-		AND ( sp.productid IN (8, 12, 13, 15, 19)
+		AND ( sp.productid IN (8, 12, 13, 15, 19, 28)
 			OR sp.bettype BETWEEN 801 AND 899 )
 
 	-- FROM bettrans
@@ -223,7 +224,7 @@ BEGIN
 		WHERE bt.custid = @CustId
 			AND ( bt.transid = @TransId
 				OR ( bt.refno = @TransId
-					AND (sp.productid IN (6, 8, 12, 13, 15, 19)
+					AND (sp.productid IN (6, 8, 12, 13, 15, 19, 28)
 						OR sp.bettype BETWEEN 801 AND 899)))
 			--exclude metric gaming running ticket
 			AND (bt.bettype NOT BETWEEN 801 AND 806
@@ -242,7 +243,7 @@ BEGIN
 		WHERE bt.custid = @CustId
 			AND ( bt.transid = @TransId
 				OR ( bt.refno = @TransId
-					AND (sp.productid IN (6, 8, 12, 13, 15, 19)
+					AND (sp.productid IN (6, 8, 12, 13, 15, 19, 28)
 						OR sp.bettype BETWEEN 801 AND 899)))
 	END
 
@@ -258,7 +259,7 @@ BEGIN
 		WHERE bt.custid = @CustId
 			AND ( bt.transid = @TransId
 				OR ( bt.refno = @TransId
-					AND (sp.productid IN (6, 7, 8, 9, 12, 13, 15, 19)
+					AND (sp.productid IN (6, 7, 8, 9, 12, 13, 15, 19, 28)
 						OR sp.bettype BETWEEN 801 AND 899)))
 	END
 
@@ -596,9 +597,9 @@ BEGIN
 					AND b.transid = @TransID
 			END
 
-			-- Casino, Gold Deluxe, Microgaming Live Casino, Cockfighting
+			-- Casino, Gold Deluxe, Microgaming Live Casino, Cockfighting, Lottery
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
-						WHERE (ProductID IN (12, 13, 19)
+						WHERE (ProductID IN (12, 13, 19, 28)
 								OR (ProductID = 6 AND SubProduct = ''))
 							AND Bettype = @Bettype)
 			BEGIN
@@ -622,7 +623,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (12, 19) THEN b.odds
+						WHEN s.ProductID IN (12, 19, 28) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -656,6 +657,7 @@ BEGIN
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 13 THEN 203
 						WHEN s.ProductID = 19 THEN 206
+						WHEN s.ProductID = 28 THEN 220
 						ELSE 0
 					END AS sporttype,
 					b.ip,
@@ -682,7 +684,7 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
-						WHEN s.ProductID = 19 THEN b.transdesc
+						WHEN s.ProductID IN (19, 28) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread,
@@ -692,7 +694,7 @@ BEGIN
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
-					AND (s.ProductId IN (12, 13, 19)
+					AND (s.ProductId IN (12, 13, 19, 28)
 						OR (s.ProductId = 6 AND s.SubProduct = ''))
 					AND b.refno = @RefNo
 			END
@@ -1201,8 +1203,8 @@ BEGIN
 					AND b.transid = @TransID
 			END
 
-			-- Gold Deluxe, Microgaming Live Casino, Cockfighting, Colossus Bet (translog)
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (12, 13, 15, 19) AND Bettype = @Bettype)
+			-- Gold Deluxe, Microgaming Live Casino, Cockfighting, Colossus Bet, Lottery (translog)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (12, 13, 15, 19, 28) AND Bettype = @Bettype)
 			BEGIN
 				INSERT INTO @Data
 				SELECT 
@@ -1224,7 +1226,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (12, 13, 19) THEN b.odds
+						WHEN s.ProductID IN (12, 13, 19, 28) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -1258,6 +1260,7 @@ BEGIN
 						WHEN s.ProductID = 13 THEN 203
 						WHEN s.ProductID = 15 THEN 204
 						WHEN s.ProductID = 19 THEN 206
+						WHEN s.ProductID = 28 THEN 220
 						ELSE 0
 					END AS sporttype,
 					b.ip,
@@ -1285,7 +1288,7 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
-						WHEN s.ProductID = 19 THEN b.transdesc
+						WHEN s.ProductID IN (19, 28) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread,
@@ -1295,7 +1298,7 @@ BEGIN
 				FROM dbo.translog AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.custid = @CustId
-					AND s.ProductID IN (12, 13, 15, 19)
+					AND s.ProductID IN (12, 13, 15, 19, 28)
 					AND b.statusID = 0
 					AND b.translogid = @RefNo
 			END
@@ -2196,10 +2199,10 @@ BEGIN
 					AND b.transid = @TransID
 			END
 
-			-- RNG Casino, Gold Deluxe, Microgaming Live Casino, Cockfighting
+			-- RNG Casino, Gold Deluxe, Microgaming Live Casino, Cockfighting, Lottery
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @Bettype
-							AND (ProductID IN (12, 13, 19)
+							AND (ProductID IN (12, 13, 19, 28)
 								OR (ProductID = 6 AND SubProduct = '')))
 			BEGIN
 				INSERT INTO @Data
@@ -2222,7 +2225,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (12, 19) THEN b.odds
+						WHEN s.ProductID IN (12, 19, 28) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -2256,6 +2259,7 @@ BEGIN
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 13 THEN 203
 						WHEN s.ProductID = 19 THEN 206
+						WHEN s.ProductID = 28 THEN 220
 						ELSE 0
 					END AS sporttype,
 					b.ip,
@@ -2282,7 +2286,7 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
-						WHEN s.ProductID = 19 THEN b.transdesc
+						WHEN s.ProductID IN (19, 28) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread,
@@ -2292,7 +2296,7 @@ BEGIN
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
-					AND (s.ProductID IN (12, 13, 19)
+					AND (s.ProductID IN (12, 13, 19, 28)
 						OR (s.ProductID = 6 AND s.SubProduct = ''))
 					AND b.refno = @RefNo
 			END
@@ -3063,10 +3067,10 @@ BEGIN
 					AND b.transid = @TransID
 			END
 
-			-- RNG Casino, Bingo, Gold Deluxe, Microgaming Live Casino, Cockfighting
+			-- RNG Casino, Bingo, Gold Deluxe, Microgaming Live Casino, Cockfighting, Lottery
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @Bettype 
-							AND (ProductID IN (7, 12, 13, 19)
+							AND (ProductID IN (7, 12, 13, 19, 28)
 								OR (ProductID = 6 AND SubProduct = '')))
 			BEGIN
 				INSERT INTO @Data
@@ -3089,7 +3093,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (12, 19) THEN b.odds
+						WHEN s.ProductID IN (12, 19, 28) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -3124,6 +3128,7 @@ BEGIN
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 13 THEN 203
 						WHEN s.ProductID = 19 THEN 206
+						WHEN s.ProductID = 28 THEN 220
 						ELSE 0
 					END AS sporttype,
 					b.ip,
@@ -3150,7 +3155,7 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
-						WHEN s.ProductID = 19 THEN b.transdesc
+						WHEN s.ProductID IN (19, 28) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread,
@@ -3160,7 +3165,7 @@ BEGIN
 				FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
-					AND (s.ProductID IN (7, 12, 13, 19)
+					AND (s.ProductID IN (7, 12, 13, 19, 28)
 						OR (s.ProductID = 6 AND s.SubProduct = ''))
 					AND b.refno = @RefNo
 			END
@@ -4484,6 +4489,7 @@ BEGIN
 
 	SELECT * FROM @DetailData
 END
+
 
 
 

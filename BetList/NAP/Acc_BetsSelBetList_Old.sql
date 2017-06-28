@@ -76,6 +76,7 @@ AS
 		- 20170315@Kos: Support CashOut [#Redmine: 71963]
 		- 20170602@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
 */
 
 BEGIN
@@ -428,8 +429,8 @@ BEGIN
 	END
 
 	-- RNG Casino, Bingo, P2P, Gold Deluxe, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, Cockfighting, AllBet
-	-- Voidbridge, NG2, Fishing World
-	IF EXISTS(SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 9, 11, 12, 13, 17, 19, 21, 22, 23, 24))
+	-- Voidbridge, NG2, Fishing World, Lottery
+	IF EXISTS(SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 9, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28))
 	BEGIN
 		INSERT INTO #BetListData
 		SELECT
@@ -457,7 +458,7 @@ BEGIN
 				ELSE 0
 			END AS hdp2,
 			CASE
-				WHEN s.ProductId IN (12, 19, 23) THEN b.odds
+				WHEN s.ProductId IN (12, 19, 23, 28) THEN b.odds
 				ELSE 0
 			END AS odds,
 			0 AS finalodds,
@@ -507,6 +508,7 @@ BEGIN
 				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
 				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 				WHEN s.ProductId = 24 THEN 219
+				WHEN s.ProductID = 28 THEN 220
 				ELSE 0
 			END AS sporttype,
 			b.ip,
@@ -534,7 +536,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.transdesc
-				WHEN s.ProductId IN (19, 22, 23, 24) THEN b.transdesc
+				WHEN s.ProductId IN (19, 22, 23, 24, 28) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			0 AS OddsSpread,
@@ -545,7 +547,7 @@ BEGIN
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
-			AND s.ProductId IN (6, 7, 9, 11, 12, 13, 17, 19, 21, 22, 23, 24)
+			AND s.ProductId IN (6, 7, 9, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28)
 	END
 
 	-- Keno

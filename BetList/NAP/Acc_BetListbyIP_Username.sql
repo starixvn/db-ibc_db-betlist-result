@@ -27,6 +27,7 @@ AS
 		- 20160711@Kos: Change to use inline function for SportBettypeMatrix
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20170315@Kos: Exclude bet type 913, 914 [#Redmine: 71963]
+		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
 */
 
  BEGIN
@@ -41,7 +42,7 @@ AS
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
-	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID NOT IN (7, 9)
 	
 	DECLARE @UserTicketTmp TABLE (
@@ -74,7 +75,7 @@ AS
 	WHERE tl.winlostdate = @FromDate
 		AND tl.ip = @Ip
 		AND tl.statusID = 0
-		AND (sp.ProductID IN (8, 12, 13, 15, 19)
+		AND (sp.ProductID IN (8, 12, 13, 15, 19, 28)
 			OR tl.gameid BETWEEN 801 AND 899)
 	GROUP BY tl.custid
 
@@ -135,7 +136,7 @@ AS
 										ELSE 0 END
 							AND b.winlostdate = @FromDate
 							AND b.ip = @Ip
-							AND b.refno IN (SELECT refno
+							AND b.refno IN (SELECT bm.refno
 											FROM dbo.bettransm AS bm WITH (NOLOCK) 
 												INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 											WHERE m.sporttype = 1)
@@ -199,7 +200,7 @@ AS
 										ELSE 0 END
 							AND b.winlostdate = @FromDate
 							AND b.ip = @Ip
-							AND b.refno IN (SELECT refno
+							AND b.refno IN (SELECT bm.refno
 											FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 												INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 											WHERE m.sporttype = 1)
@@ -245,3 +246,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetListbyIP_Username] TO [bodbAdminNet] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetListbyIP_Username] TO [vnteam] AS [dbo]
+GO
