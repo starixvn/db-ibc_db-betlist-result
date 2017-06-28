@@ -83,6 +83,7 @@ AS
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170330@Kos: Support CashOut [#Redmine: 71963]
 		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
+		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 
 	Param's Explanation:
 		+ @TransType:
@@ -297,7 +298,10 @@ BEGIN
 				ELSE '' 
 			END AS betcheck,
 			ISNULL(b.transdesc, '') AS transdesc,
-			ISNULL(b.betdaqid, -1) AS BetdaqId,
+			CASE 
+				WHEN sbt.ProductID = 1 THEN ISNULL(b.betdaqid, -1)
+				ELSE -1
+			END AS BetdaqId,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE '%p25%' THEN
@@ -1069,7 +1073,10 @@ BEGIN
 				ELSE '' 
 			END AS betcheck,
 			ISNULL(b.transdesc, '') AS transdesc,
-			ISNULL(b.betdaqid, -1) AS BetdaqId,
+			CASE 
+				WHEN sbt.ProductID = 1 THEN ISNULL(b.betdaqid, -1)
+				ELSE -1
+			END AS BetdaqId,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE '%p25%' THEN
@@ -2620,7 +2627,6 @@ BEGIN
 
 	DROP TABLE #TempExchange
 END
-
 
 
 

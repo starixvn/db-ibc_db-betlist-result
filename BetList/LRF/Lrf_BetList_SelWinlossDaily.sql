@@ -91,6 +91,7 @@ AS
 		- 20170301@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
+		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 
 	Param's Explanation:
 */
@@ -487,7 +488,7 @@ BEGIN
 			b.betcheck,
 			ISNULL(b.transdesc, '''') AS transdesc,
 			CASE
-				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE ''%p25%'' THEN
 					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
 				ELSE 0
 			END AS OriginalStake,
@@ -495,7 +496,10 @@ BEGIN
 				WHEN b.stake <> 0 THEN -1
 				ELSE 0
 			END AS OriginalBetType,
-			ISNULL(b.betdaqid, -1) AS BetdaqId,
+			CASE
+				WHEN sbt.ProductID = 1 THEN ISNULL(b.betdaqid, -1)
+				ELSE -1
+			END AS BetdaqId,
 			ISNULL(b.ExtraInfo, '''') AS ExtraInfo,
 			-- USD
 			b.stake * e.USD stakeUSD,'
@@ -504,7 +508,7 @@ BEGIN
 			b.comm * e.USD commUSD,
 			b.playercomm * e.USD AS PlayerCommUSD,
 			CASE
-				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE ''%p25%'' THEN
 					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
 				ELSE 0
 			END * e.USD AS OriginalStakeUSD,
@@ -515,7 +519,7 @@ BEGIN
 			b.comm * e.EUR commEUR,
 			b.playercomm * e.EUR AS PlayerCommEUR,
 			CASE
-				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE ''%p25%'' THEN
 					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
 				ELSE 0
 			END * e.EUR AS OriginalStakeEUR,
@@ -526,7 +530,7 @@ BEGIN
 			b.comm * e.GBP AS commGBP,
 			b.playercomm * e.GBP AS PlayerCommGBP,
 			CASE
-				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE ''%p25%'' THEN
 					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
 				ELSE 0
 			END * e.GBP AS OriginalStakeGBP
@@ -940,7 +944,10 @@ BEGIN
 				WHEN b.stake <> 0 THEN -1
 				ELSE 0
 			END AS OriginalBetType,
-			ISNULL(b.betdaqid, -1) AS BetdaqId,
+			CASE
+				WHEN sbt.ProductID = 1 THEN ISNULL(b.betdaqid, -1)
+				ELSE -1
+			END AS BetdaqId,
 			ISNULL(b.ExtraInfo, '''') AS ExtraInfo,
 			-- USD
 			b.stake * e.USD stakeUSD,'
@@ -949,7 +956,7 @@ BEGIN
 			b.comm * e.USD commUSD,
 			b.playercomm * e.USD AS PlayerCommUSD,
 			CASE
-				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE ''%p25%'' THEN
 					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
 				ELSE 0
 			END * e.USD AS OriginalStakeUSD,
@@ -960,7 +967,7 @@ BEGIN
 			b.comm * e.EUR commEUR,
 			b.playercomm * e.EUR AS PlayerCommEUR,
 			CASE
-				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE ''%p25%'' THEN
 					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
 				ELSE 0
 			END * e.EUR AS OriginalStakeEUR,
@@ -971,7 +978,7 @@ BEGIN
 			b.comm * e.GBP commGBP,
 			b.playercomm * e.GBP AS PlayerCommGBP,
 			CASE
-				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE ''%p25%'' THEN
 					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
 				ELSE 0
 			END * e.GBP AS OriginalStakeGBP
@@ -1413,6 +1420,7 @@ BEGIN
 	DROP TABLE #BettransDetail
 	DROP TABLE #TempAg
 END
+
 
 
 

@@ -50,6 +50,7 @@ AS
 		- 20170303@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170329@Kos: Support CashOut [#Redmine: 71963]
 		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
+		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 
 	Param's Explanation:
 		- @AgentList: Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -226,7 +227,10 @@ BEGIN
 		END AS ShowTime,
 		b.betcheck,
 		ISNULL(b.transdesc, '') AS transdesc,
-		ISNULL(b.betdaqid, -1) AS BetdaqId,
+		CASE
+			WHEN sbt.ProductID = 1 THEN ISNULL(b.betdaqid, -1)
+			ELSE -1
+		END AS BetdaqId,
 		ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 		CASE
 			WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE '%p25%' THEN
@@ -581,7 +585,6 @@ BEGIN
 	DROP TABLE #TempExchange
 	DROP TABLE #Data
 END
-
 
 
 GO
