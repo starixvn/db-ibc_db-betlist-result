@@ -24,8 +24,9 @@ AS
 		- 20150831@Kos: Support Colossus Bet
 		- 20150910@Bobby: Enhance performance for SP core. Apply TVP for input parameters
 		- 20151214@Kos: Support Cockfighting [#Redmine: 48850]
-		- 20160812@Kos: Support NG2
+		- 20160812@Kos: Support NG2 [#Redmine: 61397]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -171,6 +172,7 @@ BEGIN
 		- Cockfighting			: ProductId = 19
 		- NG2					: ProductId = 23
 		- Mix Parlay			: ProductId = 27
+		- Keno Lottery			: ProductId = 28
 	*/
 	IF EXISTS (SELECT TOP(1) 1 FROM #tempRawData WHERE EventType = 0)
 	BEGIN
@@ -183,7 +185,7 @@ BEGIN
 			, COUNT(1) AS BetCount
 		FROM #tempRawData AS b
 		WHERE b.EventType = 0
-			AND b.ProductID IN (6, 7, 8, 9, 12, 15, 19, 23, 27)
+			AND b.ProductID IN (6, 7, 8, 9, 12, 15, 19, 23, 27, 28)
 		GROUP BY b.custid
 			, b.recommend
 			, b.mrecommend

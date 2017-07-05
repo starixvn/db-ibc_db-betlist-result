@@ -36,6 +36,7 @@ AS
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
 		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
 
 	Param's Explanation:
 
@@ -72,6 +73,7 @@ BEGIN
 		- NG2					: ProductId = 23
 		- Fishing World			: ProductId = 24
 		- Mix Parlay			: ProductId = 27
+		- Lottery				: ProductId = 28
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -96,6 +98,7 @@ BEGIN
 			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 			WHEN c.ProductId = 24 THEN 219
+			WHEN c.ProductId = 28 THEN 220
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
@@ -119,7 +122,7 @@ BEGIN
 		END AS OddsType
 		, b.oddsid
 		, CASE
-			WHEN c.ProductID IN (1, 8, 12, 19, 23, 27) THEN b.Odds
+			WHEN c.ProductID IN (1, 8, 12, 19, 23, 27, 28) THEN b.Odds
 			ELSE 0
 		END AS Odds
 		, CASE
@@ -191,7 +194,7 @@ BEGIN
 			END AS comstatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
-			WHEN c.ProductId IN (19, 22, 23, 24) THEN b.transdesc
+			WHEN c.ProductId IN (19, 22, 23, 24, 28) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, 0 AS OddsSpread
@@ -202,7 +205,7 @@ BEGIN
 		--ON b.custid = ci.custid
 		ON c.custid = ci.custid
 		OUTER APPLY [dbo].[f_ParseTransDesc](b.transdesc, b.bettype) fnc
-	WHERE	c.WhTicket = 3
+	WHERE c.WhTicket = 3
 		AND c.EventType = 0
 		AND c.ProductID <> 15	-- not Colossus Bet
 

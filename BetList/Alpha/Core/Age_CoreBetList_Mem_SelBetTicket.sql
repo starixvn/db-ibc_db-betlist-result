@@ -54,6 +54,7 @@ AS
 		- 20160404@Kos: Support Macau Games [Redmine: #54925]
 		- 20160518@Francis: Use local variables to avoid bad parameter sniffing
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
+		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -163,6 +164,7 @@ BEGIN
 				- Gold Deluxe	: ProductId = 12
 				- Colossus Bet	: ProductId = 15
 				- Cockfighting	: ProductId = 19
+				- Lottery		: ProductId = 28
 				- Sportsbook	: Metric Gaming bettype(801-899)
 			*/
 			IF EXISTS (SELECT TOP 1 1 FROM @TransStatus WHERE StatusId IN (0, 1))
@@ -188,7 +190,7 @@ BEGIN
 					INNER JOIN @TransStatus AS st ON b.statusID = st.StatusID
 				WHERE b.winlostdate BETWEEN @fromdate AND @todate 
 					AND b.custid = @CustID
-					AND	(bt.ProductId IN (8, 12, 15, 19)
+					AND	(bt.ProductId IN (8, 12, 15, 19, 28)
 						OR bt.Bettype BETWEEN 801 AND 899
 					)
 					AND b.statusID IN (0, 1)
@@ -347,6 +349,7 @@ BEGIN
 
 	RETURN;
 END
+
 
 
 GO

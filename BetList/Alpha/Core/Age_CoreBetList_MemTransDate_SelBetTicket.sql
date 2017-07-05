@@ -38,7 +38,8 @@ AS
 		- 20160216@Kos: Support yesterday running ticket for Casino products
 		- 20160217@Kos: Support AllBet [Redmine: #50864]
 		- 20160404@Kos: Support Macau Games [Redmine: #54925]
-		- 20161101@Kos: Support Fishing World [Redmine: #54925]
+		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
+		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -155,7 +156,7 @@ BEGIN
 			INNER JOIN @TransStatus AS st ON b.statusID = st.StatusID
 		WHERE b.transdate BETWEEN @fromdate AND @todate 
 			AND b.custid = @CustID
-			AND (bt.ProductId IN (8, 12, 15, 19) 
+			AND (bt.ProductId IN (8, 12, 15, 19, 28) 
 				OR bt.bettype BETWEEN 801 AND 899)
 			AND b.statusID IN (0, 1)
 	END
@@ -168,6 +169,7 @@ BEGIN
 
 	RETURN;
 END
+
 
 
 
