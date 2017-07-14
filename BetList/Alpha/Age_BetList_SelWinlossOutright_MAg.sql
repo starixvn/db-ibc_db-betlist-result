@@ -2,181 +2,196 @@
 GO
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossOutright_MAg]
-	@CustID int=null, --superID
-	@FromDate smalldatetime,
-	@ToDate smalldatetime,
-	@leagueID int=NULL,
-	@Language varchar(2) = 'E',
-	@MoveBetsDay smalldatetime
+	@CustId			INT				= NULL,		--Master CustId
+	@FromDate		SMALLDATETIME,
+	@ToDate			SMALLDATETIME,
+	@LeagueId		INT				= NULL,
+	@Language		VARCHAR(2)		= 'E',
+	@MoveBetsDay	SMALLDATETIME
 AS
+
 /*
-Created:
-Task : get bet tickets for outright, horse racing
-DB: DB05.bodb02
-Original: 
+	Created:
+	Task: get bet tickets for outright, horse racing
+	DB: DBAGE.bodb02
+	Original: 
 
-Revisions:    
-	- 20090407@[HanhVu]: remove redundant transid field
-	- 20090421@[HiepVo]: Include more columns: comm, acomm, scomm, awinlost, mwinlost, swinlost
-	- 20090505@HiepVo: Change formula of commission
-	- 20090618@AnhPham: Remove 'Customer' table
-	- 20090710@Phuc: unhide IP for TB currency.
-	- 20101007@Henry: Change column transid from INT to BIGINT
-	- 20101224@Johnson: change type of bettype to smallint in temporary table
-	- 20111216@Sophia: Remove function f_GetOddsByBettype , f_GetChoice , f_ShowOddsByBettype
-	- 20120927@Sophia: Get comstatus
-	- 20150420@Tom: Add @leagueID parameter
-	- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
+	Revisions:
+		- 20090407@[HanhVu]: remove redundant transid field
+		- 20090421@[HiepVo]: Include more columns: comm, acomm, scomm, awinlost, mwinlost, swinlost
+		- 20090505@HiepVo: Change formula of commission
+		- 20090618@AnhPham: Remove 'Customer' table
+		- 20090710@Phuc: unhide IP for TB currency
+		- 20101007@Henry: Change column transid from INT to BIGINT
+		- 20101224@Johnson: change type of bettype to SMALLINT in temporary table
+		- 20111216@Sophia: Remove function f_GetOddsByBettype, f_GetChoice, f_ShowOddsByBettype
+		- 20120927@Sophia: Get comstatus
+		- 20150420@Tom: Add @leagueID parameter
+		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
+		- 20170605@Kos: Return column CustId for Microsite bet list [#Redmine: 66992]
+					- Prevent data duplication during Move Bet process
 */
-SET NOCOUNT ON
-DECLARE @MAgWinlossOutright TABLE(
-	sporttype smallint,
-	username nvarchar(30), 
-	bettype smallint,				
-	transid bigint,
-	matchcode varchar(30),
-	homeID int,
-	awayID int,
-	hdp1 smallmoney,
-	hdp2 smallmoney,
-	odds money,
-	status nvarchar(10),
-	stake money,
-	winlost money,
-	awinlost money,
-	mwinlost money,
-	swinlost money,
-	
-	playercomm money,
-	comm money,
-	acomm money,
-	scomm money,
-	
-	transdate datetime,
-	betteam nvarchar(25),
-	apositiontaking smallmoney,
-	mpositiontaking smallmoney,	
-	adiscount smallmoney,
-	mdiscount smallmoney,	
-	liveindicator bit,
-	livehomescore smallint,
-	liveawayscore smallint,
-	leagueID int,
-	matchid int, 
-	IP varchar(20),
-	betstatus varchar(20),
-	isNeutral bit,
-	comstatus NVARCHAR(20)
-)
-IF @Todate > @MoveBetsDay
+
 BEGIN
-	INSERT INTO @MAgWinlossOutright SELECT
-		l.sporttype,
-		b.username,
-		b.bettype,					
-		b.transid,
-		m.matchcode,
-		m.teamID,
-		0,
-		b.hdp1,
-		b.hdp2,
-		b.odds,
-		b.status,
-		b.stake,
-		(b.winlost-actual_stake),
-		b.awinlost,
-		b.mwinlost,
-		b.swinlost,
-		
-		b.playercomm,
-		(b.comm - b.playercomm) as comm,
-		(b.acomm - b.comm) as acomm ,
-		(b.scomm - b.acomm) as scomm,
-		
-		b.transdate,
-		b.betteam,
-		b.apositiontaking,
-		b.mpositiontaking,		
-		b.discount as adiscount,
-		b.adiscount as mdiscount,			
-		b.liveindicator,
-		b.livehomescore,
-		b.liveawayscore,
-		l.leagueID,
-		b.matchid, 
-		b.IP as IP,
-		NULL,
-		CONVERT(BIT,0) as IsNeutral,
-		CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
-	FROM
-		bettrans b with (nolock) 
-		inner join outright m with (nolock) on b.matchid=m.orid	
-		inner join League l with (nolock) on m.leagueID=l.leagueID		
-	WHERE
-		b.MRecommend=@CustID AND
-		b.Winlostdate>=@FromDate AND
-		b.Winlostdate<=@ToDate AND
-		b.Bettype=10 AND
-		b.Ruben=1AND
-		(@leagueID IS NULL OR m.leagueID = @leagueID)
+	SET NOCOUNT ON
+
+	DECLARE @MAgWinlossOutright TABLE (
+		SportType		SMALLINT,
+		CustId			INT,
+		Username		NVARCHAR(30),
+		BetType			SMALLINT,
+		TransId			BIGINT,
+		MatchCode		VARCHAR(30),
+		HomeId			INT,
+		AwayId			INT,
+		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
+		Odds			MONEY,
+		Status			NVARCHAR(10),
+		Stake			MONEY,
+		WinLost			MONEY,
+		AWinLost		MONEY,
+		MWinLost		MONEY,
+		SWinLost		MONEY,
+		PlayerComm		MONEY,
+		Comm			MONEY,
+		AComm			MONEY,
+		SComm			MONEY,
+		TransDate		DATETIME,
+		BetTeam			NVARCHAR(25),
+		APositionTaking	SMALLMONEY,
+		MPositionTaking	SMALLMONEY,
+		ADiscount		SMALLMONEY,
+		MDiscount		SMALLMONEY,
+		LiveIndicator	BIT,
+		LiveHomeScore	SMALLINT,
+		LiveAwayScore	SMALLINT,
+		LeagueId		INT,
+		MatchId			INT,
+		Ip				VARCHAR(20),
+		BetStatus		VARCHAR(20),
+		IsNeutral		BIT,
+		ComStatus		NVARCHAR(20)
+	)
+
+	DECLARE @TempFromDate	SMALLDATETIME,
+		@TempToDate			SMALLDATETIME
+
+	IF @Todate > @MoveBetsDay
+	BEGIN
+		IF @FromDate <= @MoveBetsDay
+			SET @TempFromDate =  DATEADD(DAY, 1, @MoveBetsDay)
+		ELSE
+			SET @TempFromDate = @FromDate
+
+		INSERT INTO @MAgWinlossOutright
+		SELECT
+			l.sporttype,
+			b.custid,
+			b.username,
+			b.bettype,
+			b.transid,
+			m.matchcode,
+			m.teamid AS HomeId,
+			0 AS AwayId,
+			b.hdp1,
+			b.hdp2,
+			b.odds,
+			b.status,
+			b.stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			b.awinlost,
+			b.mwinlost,
+			b.swinlost,
+			b.playercomm,
+			(b.comm - b.playercomm) AS comm,
+			(b.acomm - b.comm) AS acomm,
+			(b.scomm - b.acomm) AS scomm,
+			b.transdate,
+			b.betteam,
+			b.apositiontaking,
+			b.mpositiontaking,
+			b.discount AS adiscount,
+			b.adiscount AS mdiscount,
+			b.liveindicator,
+			b.livehomescore,
+			b.liveawayscore,
+			l.leagueid,
+			b.matchid,
+			b.ip,
+			NULL,
+			CONVERT(BIT,0) AS IsNeutral,
+			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+		FROM dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
+		WHERE b.mrecommend = @CustId
+			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
+			AND b.bettype = 10
+			AND b.ruben = 1
+			AND (@LeagueId IS NULL OR m.leagueid = @LeagueId)
+	END
+
+	IF @Fromdate <= @MoveBetsDay
+	BEGIN
+		IF @ToDate >= @MoveBetsDay
+			SET @TempToDate = @MoveBetsDay
+		ELSE
+			SET @TempToDate = @ToDate
+
+		INSERT INTO @MAgWinlossOutright
+		SELECT
+			l.sporttype,
+			b.custid,
+			b.username,
+			b.bettype,
+			b.transid,
+			m.matchcode,
+			m.teamid AS HomeId,
+			0 AS AwayId,
+			b.hdp1,
+			b.hdp2,
+			b.odds,
+			b.status,
+			b.stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			b.awinlost,
+			b.mwinlost,
+			b.swinlost,
+			b.playercomm,
+			(b.comm - b.playercomm) AS comm,
+			(b.acomm - b.comm) AS acomm,
+			(b.scomm - b.acomm) AS scomm,
+			b.transdate,
+			b.betteam,
+			b.apositiontaking,
+			b.mpositiontaking,
+			b.discount AS adiscount,
+			b.adiscount AS mdiscount,
+			b.liveindicator,
+			b.livehomescore,
+			b.liveawayscore,
+			l.leagueid,
+			b.matchid,
+			b.ip,
+			NULL,
+			CONVERT(BIT,0) AS IsNeutral,
+			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
+		WHERE b.mrecommend = @CustId
+			AND b.winlostdate BETWEEN @FromDate AND @TempToDate
+			AND b.bettype = 10
+			AND b.ruben = 1
+			AND (@LeagueId IS NULL OR m.leagueid = @LeagueId)
+	END
+
+	SELECT * FROM @MAgWinlossOutright
+	ORDER BY Status, Transid
 END
 
-IF @Fromdate <= @MoveBetsDay
-BEGIN
-	INSERT INTO @MAgWinlossOutright SELECT
-		l.sporttype,
-		b.username,
-		b.bettype,					
-		b.transid,
-		m.matchcode,
-		m.teamID,
-		0,
-		b.hdp1,
-		b.hdp2,
-		b.odds,
-		b.status,
-		b.stake,
-		(b.winlost-actual_stake),
-		b.awinlost,
-		b.mwinlost,
-		b.swinlost,
-		
-		b.playercomm,
-		(b.comm - b.playercomm) as comm,
-		(b.acomm - b.comm) as acomm ,
-		(b.scomm - b.acomm) as scomm,
-		
-		b.transdate,
-		b.betteam, 
-		b.apositiontaking,
-		b.mpositiontaking,		
-		b.discount as adiscount,
-		b.adiscount as mdiscount,		
-		b.liveindicator,
-		b.livehomescore,
-		b.liveawayscore,
-		l.leagueID,
-		b.matchid, 
-		b.IP as IP,
-		NULL,
-		CONVERT(BIT,0) as IsNeutral,
-		CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
-	FROM
-		bettrans14 b with (nolock) 
-		inner join outright14 m with (nolock) on b.matchid=m.orid	
-		inner join League l with (nolock) on m.leagueID=l.leagueID
-	WHERE
-		b.MRecommend=@CustID AND
-		b.Winlostdate>=@FromDate AND
-		b.Winlostdate<=@ToDate AND
-		b.Bettype=10 AND
-		b.Ruben=1	AND
-		(@leagueID IS NULL OR m.leagueID = @leagueID)
-END
 
-SELECT * FROM @MAgWinlossOutright ORDER BY Status, Transid
-
-		
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossOutright_MAg] TO [bodbDownlineNet]
 GO
