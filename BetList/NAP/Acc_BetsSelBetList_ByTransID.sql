@@ -92,6 +92,7 @@ AS
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20170717@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
+		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 */
 
 BEGIN
@@ -269,7 +270,7 @@ BEGIN
 		-- Bettrans
 		IF @WinlostDate > @MoveBetsDay
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports, BetRadar Virtual Sports
+			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Lucky 3, BetRadar Virtual Sports
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -283,9 +284,18 @@ BEGIN
 					m.eventdate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
-					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN s.ProductID = 26 THEN 0
+						ELSE b.sdiscount
+					END AS SDiscount,
+					CASE
+						WHEN s.ProductID = 26 THEN 0
+						ELSE b.adiscount
+					END AS ADiscount,
+					CASE
+						WHEN s.ProductID = 26 THEN 0
+						ELSE b.discount
+					END AS Discount,
 					m.homeid,
 					m.awayid,
 					ISNULL(b.checktime,'') settleTime,
@@ -1817,7 +1827,7 @@ BEGIN
 		-- Bettrans14
 		ELSE IF @WinlostDate <= @MoveBetsDay AND @WinlostDate >= @BalanceUpDay
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports
+			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Lucky 3, Betradar Virtual Sports
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -1831,9 +1841,18 @@ BEGIN
 					m.eventdate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
-					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN s.ProductID = 26 THEN 0
+						ELSE b.sdiscount
+					END AS SDiscount,
+					CASE
+						WHEN s.ProductID = 26 THEN 0
+						ELSE b.adiscount
+					END AS ADiscount,
+					CASE
+						WHEN s.ProductID = 26 THEN 0
+						ELSE b.discount
+					END AS Discount,
 					m.homeid,
 					m.awayid,
 					ISNULL(b.checktime,'') settleTime,
@@ -2608,7 +2627,7 @@ BEGIN
 		-- bettrans_bk
 		ELSE IF @WinlostDate < @BalanceUpDay 
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports
+			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Lucky 3, Betradar Virtual Sports
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -2622,9 +2641,18 @@ BEGIN
 					m.eventdate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
-					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN s.ProductID = 26 THEN 0
+						ELSE b.sdiscount
+					END AS SDiscount,
+					CASE
+						WHEN s.ProductID = 26 THEN 0
+						ELSE b.adiscount
+					END AS ADiscount,
+					CASE
+						WHEN s.ProductID = 26 THEN 0
+						ELSE b.discount
+					END AS Discount,
 					m.homeid,
 					m.awayid,
 					ISNULL(b.checktime,'') settleTime,

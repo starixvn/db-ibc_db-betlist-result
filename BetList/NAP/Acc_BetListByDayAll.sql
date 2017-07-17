@@ -108,6 +108,7 @@ AS
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
+		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 
 	Param's Explanation:
 		+ @TransType: 
@@ -252,7 +253,14 @@ BEGIN
 
 	IF @Fromdate <= @MoveBetsDay
 	BEGIN
-		-- single bet
+		/* normal tickets
+			- Sportsbook		: ProductID = 1
+			- Number Game		: ProductID = 3
+			- Live Casino		: ProductID = 4
+			- Virtual Sports	: ProductID = 5
+			- Cash Out			: ProductID = 25
+			- Lucky 3			: ProductID = 26
+		*/
 		INSERT INTO @Data
 		SELECT
 			m.sporttype,
@@ -264,9 +272,18 @@ BEGIN
 			'' AS eventdate,
 			0,
 			0,
-			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.sdiscount
+			END AS SDiscount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.adiscount
+			END AS ADiscount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.discount
+			END AS Discount,
 			ISNULL(b.checktime, '') AS settletime,
 			m.matchid,
 			b.transid,
@@ -1010,7 +1027,14 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		-- single bet
+		/* normal tickets
+			- Sportsbook		: ProductID = 1
+			- Number Game		: ProductID = 3
+			- Live Casino		: ProductID = 4
+			- Virtual Sports	: ProductID = 5
+			- Cash Out			: ProductID = 25
+			- Lucky 3			: ProductID = 26
+		*/
 		INSERT INTO @Data
 		SELECT
 			m.sporttype,
@@ -1022,9 +1046,18 @@ BEGIN
 			'' AS eventdate,
 			0,
 			0,
-			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.sdiscount
+			END AS SDiscount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.adiscount
+			END AS ADiscount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.discount
+			END AS Discount,
 			ISNULL(b.checktime, '') AS settletime,
 			m.matchid,
 			b.transid,
@@ -2727,12 +2760,22 @@ BEGIN
 	FROM @Data AS tblTemp
 		INNER JOIN dbo.Customer AS cu WITH (NOLOCK) ON cu.custid = tblTemp.Creator;
 
+	-- Get currency name
+	DECLARE @CurrencyName NVARCHAR(50)
+
+	SELECT @CurrencyName = ex.currency
+	FROM dbo.custInfo AS ci WITH (NOLOCK)
+		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON ci.currency = ex.exchangeid
+	WHERE ci.custid = @CustId
+
 	IF @transid = 0
-		SELECT *
+		SELECT *,
+			@CurrencyName AS Currency
 		FROM @Data
 		ORDER BY transid;
 	ELSE
-		SELECT *
+		SELECT *,
+			@CurrencyName AS Currency
 		FROM @Data
 		WHERE transid = @transid;
 

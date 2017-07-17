@@ -80,6 +80,7 @@ AS
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
+		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -268,9 +269,18 @@ BEGIN
 				'' AS eventdate,
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
-				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN s.ProductID = 26 THEN 0
+					ELSE b.sdiscount
+				END AS SDiscount,
+				CASE
+					WHEN s.ProductID = 26 THEN 0
+					ELSE b.adiscount
+				END AS ADiscount,
+				CASE
+					WHEN s.ProductID = 26 THEN 0
+					ELSE b.discount
+				END AS Discount,
 				m.homeid,
 				m.awayid,
 				ISNULL(b.checktime,'') checktime,
@@ -416,9 +426,18 @@ BEGIN
 				'' AS eventdate,
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
-				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN s.ProductID = 26 THEN 0
+					ELSE b.sdiscount
+				END AS SDiscount,
+				CASE
+					WHEN s.ProductID = 26 THEN 0
+					ELSE b.adiscount
+				END AS ADiscount,
+				CASE
+					WHEN s.ProductID = 26 THEN 0
+					ELSE b.discount
+				END AS Discount,
 				m.homeid,
 				m.awayid,
 				ISNULL(b.checktime,'') checktime,
@@ -1894,7 +1913,17 @@ BEGIN
 		WHERE sp.Productid = 12 AND bg.CustID = @CustID
 	END
 
-	SELECT * FROM @Data
+	-- Get currency name
+	DECLARE @CurrencyName NVARCHAR(50)
+
+	SELECT @CurrencyName = ex.currency
+	FROM dbo.custInfo AS ci WITH (NOLOCK)
+		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON ci.currency = ex.exchangeid
+	WHERE ci.custid = @CustId
+
+	SELECT *,
+		@CurrencyName AS Currency
+	FROM @Data
 	ORDER BY 4, 26
 
 	SELECT DISTINCT * FROM @DetailData

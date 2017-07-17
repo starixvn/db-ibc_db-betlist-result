@@ -79,6 +79,7 @@ AS
 		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 		- 20170722@Kos: Hotfix - Does not show Betradar Virtual Sports ticket [#Redmine: 81925]
+		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 */
 
 BEGIN
@@ -181,7 +182,7 @@ BEGIN
 	DELETE FROM #SportBettype
 	WHERE Bettype IN (904, 914)
 
-	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (1, 3, 4, 5, 25, 27))
+	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (1, 3, 4, 5, 25, 26, 27))
 	BEGIN
 		/*
 			EventType = 1
@@ -190,6 +191,7 @@ BEGIN
 			- Live Casino				: ProductID = 4
 			- Virtual Sports			: ProductID = 5
 			- Cash Out					: ProductID = 25
+			- Lucky 3			: ProductID = 26
 			- Betradar Virtual Sports	: ProductID = 27
 		*/
 		INSERT INTO #BetListData
@@ -203,9 +205,18 @@ BEGIN
 			m.eventdate,
 			0,
 			0,
-			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.sdiscount
+			END AS SDiscount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.adiscount
+			END AS ADiscount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.discount
+			END AS Discount,
 			m.homeid,
 			m.awayid,
 			ISNULL(b.checktime, '') settleTime,
@@ -873,8 +884,18 @@ BEGIN
 		WHERE Bettype = 913
 	END
 
-	SELECT * FROM #BetListData
-	ORDER BY transid
+	-- Get currency name
+	DECLARE @CurrencyName NVARCHAR(50)
+
+	SELECT @CurrencyName = ex.currency
+	FROM bodb02.dbo.custInfo AS ci WITH (NOLOCK)
+		INNER JOIN bodb02.dbo.Exchange AS ex WITH (NOLOCK) ON ci.currency = ex.exchangeid
+	WHERE ci.custid = @CustId
+
+	SELECT *,
+		@CurrencyName AS Currency
+	FROM #BetListData
+	ORDER BY TransId
 
 	-- Live Casino
 	IF EXISTS (	SELECT TOP(1) 1 
