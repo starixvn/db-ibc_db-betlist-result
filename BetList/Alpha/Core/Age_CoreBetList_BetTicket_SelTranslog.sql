@@ -8,7 +8,7 @@ GO
 ALTER PROCEDURE [dbo].[Age_CoreBetList_BetTicket_SelTranslog]
 (
 	@tempCust		[dbo].[TVP_TicketSportBettype]	READONLY
-	, @TransStatus 	[dbo].[TVP_BetTicketStatus]		READONLY
+	, @TransStatus	[dbo].[TVP_BetTicketStatus]		READONLY
 )
 AS
 
@@ -28,6 +28,7 @@ AS
 		- 20151214@Kos: Support Cockfighting (#Redmine: 48850)
 		- 20160111@Kos: Add @TransStatus param
 		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
+		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 
 	Param's Explanation:
 	
@@ -60,10 +61,7 @@ BEGIN
 		END AS Sporttype
 		, b.GameId AS bettype
 		, 0 AS betid
-		, CASE
-			WHEN c.ProductID = 8 THEN fnc.ChoiceId
-			ELSE ''
-		END AS betteam
+		, '' AS betteam
 		, 0 AS hdp1
 		, 0 AS hdp2
 		, CASE
@@ -103,7 +101,6 @@ BEGIN
 		, b.ip
 		, 0 AS LeagueID
 		, CASE
-			WHEN c.ProductID = 8 THEN fnc.GameId
 			WHEN c.ProductID = 12 THEN 255
 			WHEN c.ProductID = 19 THEN b.Gameid3rd
 			ELSE 0
@@ -125,14 +122,13 @@ BEGIN
 		END AS betcheck
 		, 0 AS comstatus
 		, CASE
-			WHEN c.ProductID IN (15, 19, 28) THEN b.transdesc
+			WHEN c.ProductID IN (8, 15, 19, 28) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, 0 AS OddsSpread
 	FROM dbo.translog AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.translogid = c.transid
 --			AND b.custid	= c.custid
-		OUTER APPLY [dbo].[f_ParseTransDesc](b.transdesc, b.gameid) AS fnc
 	WHERE c.WhTicket = 0
 		AND c.EventType = 0
 		AND b.StatusID IN (0, 1)

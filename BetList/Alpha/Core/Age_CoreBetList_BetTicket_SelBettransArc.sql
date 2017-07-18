@@ -37,6 +37,7 @@ AS
 		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
+		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 
 	Param's Explanation:
 
@@ -105,7 +106,6 @@ BEGIN
 		, ISNULL(b.betid, 0)
 		, CASE
 			WHEN c.ProductID IN (1, 27) THEN b.Betteam
-			WHEN c.ProductID = 8 THEN fnc.ChoiceId
 			ELSE ''
 		END AS Betteam
 		, CASE
@@ -170,7 +170,6 @@ BEGIN
 		, b.ip
 		, 0 AS LeagueID
 		, CASE
-			WHEN c.ProductID = 8 THEN fnc.GameId
 			WHEN c.ProductID = 12 THEN 255
 			WHEN c.ProductID IN (19, 23) THEN b.betdaqid
 			ELSE 0
@@ -194,7 +193,7 @@ BEGIN
 			END AS comstatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
-			WHEN c.ProductId IN (19, 22, 23, 24, 28) THEN b.transdesc
+			WHEN c.ProductId IN (8, 19, 22, 23, 24, 28) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, 0 AS OddsSpread
@@ -204,7 +203,6 @@ BEGIN
 		INNER JOIN @custInfo AS ci
 		--ON b.custid = ci.custid
 		ON c.custid = ci.custid
-		OUTER APPLY [dbo].[f_ParseTransDesc](b.transdesc, b.bettype) fnc
 	WHERE c.WhTicket = 3
 		AND c.EventType = 0
 		AND c.ProductID <> 15	-- not Colossus Bet
