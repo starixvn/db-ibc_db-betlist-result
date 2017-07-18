@@ -79,6 +79,7 @@ AS
 		- 20170321@Kos: Support CashOut [#Redmine: 71963]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
+		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -709,7 +710,7 @@ BEGIN
 				AND b.custid = @CustId
 				AND l.sporttype <> 1 
 
-			-- Casino, Gold Deluxe, Cockfighting, Microgaming Live Casino, NG2, Lottery bettrans
+			-- Casino, Keno, Gold Deluxe, Cockfighting, Microgaming Live Casino, NG2, Lottery bettrans
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -740,7 +741,7 @@ BEGIN
 					ELSE 0
 				END AS hdp2,
 				CASE
-					WHEN s.ProductID IN (12, 19, 23, 28) THEN b.odds
+					WHEN s.ProductID IN (8, 12, 19, 23, 28) THEN b.odds
 					ELSE 0
 				END AS odds,
 				0 AS modds,
@@ -771,6 +772,7 @@ BEGIN
 				b.ip,
 				CASE
 					WHEN s.ProductID = 6 THEN 251
+					WHEN s.ProductID = 8 THEN 202
 					WHEN s.ProductID = 12 THEN 255
 					WHEN s.ProductID = 13 THEN 203
 					WHEN s.ProductID = 19 THEN 206
@@ -799,7 +801,7 @@ BEGIN
 					ELSE ''
 				END AS betcheck,
 				CASE
-					WHEN s.ProductID IN (19, 23, 28) THEN b.transdesc
+					WHEN s.ProductID IN (8, 19, 23, 28) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				0 AS OddsSpread,
@@ -810,10 +812,10 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
-				AND (s.ProductID IN (12, 13, 19, 23, 28)
+				AND (s.ProductID IN (8, 12, 13, 19, 23, 28)
 					OR (s.ProductId = 6 AND s.SubProduct = ''))
 
-			-- Casino, Gold Deluxe, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Cockfighting, AllBet 
+			-- Casino, Keno, Gold Deluxe, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, Cockfighting, AllBet 
 			-- Voidbridge, NG2, Fishing World, Lottery bettrans14
 			UNION ALL
 			SELECT
@@ -845,7 +847,7 @@ BEGIN
 					ELSE 0
 				END AS hdp2,
 				CASE
-					WHEN s.ProductID IN (12, 19, 23, 28) THEN b.odds
+					WHEN s.ProductID IN (8, 12, 19, 23, 28) THEN b.odds
 					ELSE 0
 				END AS odds,
 				0 AS modds,
@@ -874,6 +876,7 @@ BEGIN
 				CASE
 					WHEN s.ProductID = 6 AND s.SubProduct = '' THEN 251
 					WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.matchid
+					WHEN s.ProductID = 8 THEN 202
 					WHEN s.ProductID = 11 THEN 250
 					WHEN s.ProductID = 12 THEN 255
 					WHEN s.ProductID = 13 THEN 203
@@ -908,7 +911,7 @@ BEGIN
 				END AS betcheck,
 				CASE
 					WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.transdesc
-					WHEN s.ProductID IN (19, 22, 23, 24, 28) THEN b.transdesc
+					WHEN s.ProductID IN (8, 19, 22, 23, 24, 28) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				0 AS OddsSpread,
@@ -919,208 +922,7 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
-				AND s.ProductID IN (6, 7, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28)
-
-			-- Keno
-			UNION ALL
-			SELECT
-				0 finalhomescore,
-				0 finalawayscore,
-				0 oddsid,
-				0 leagueid,
-				b.bettype,
-				b.transid,
-				ISNULL(b.BetID,0) AS BetID,
-				b.refno,
-				'' AS matchcode,
-				'' AS race,
-				'' AS eventdate,
-				0 AS virtualrate,
-				0 AS isShowOTExRate,
-				b.sdiscount,
-				b.adiscount,
-				b.discount,
-				0 homeid,
-				0 awayid,
-				ISNULL(b.checktime,'') checktime,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.modds,
-				0 finalodds,
-				0 finalodds2, 
-				0 AS OddsType, 
-				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-				b.stake,
-				b.actual_stake,
-				b.transdate,
-				d.ChoiceId betteam,
-				b.livehomescore,
-				b.liveawayscore, 
-				0 liveindicator, 
-				(b.winlost-b.actual_stake) AS winlost,
-				b.playercomm AS commission, 
-				CASE b.custid WHEN b.creator THEN b.username ELSE '' END creator,
-				b.username,
-				0 hthomescore,
-				0 htawayscore,
-				b.ip,
-				202 AS sporttype,
-				d.GameId matchid,
-				0 IsNeutral,
-				'' AS showtime,
-				b.awinlost,
-				b.mwinlost,
-				b.swinlost,
-				b.betfrom,
-				b.winlostdate,
-				b.betcheck,
-				'' AS transdesc,
-				0 AS OddsSpread,
-				0 AS OriginalBetType,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo
-			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) d
-			WHERE s.ProductID = 8
-				AND b.winlostdate = @Date
-				AND b.custid = @CustId
-
-			UNION ALL -- keno translog
-			SELECT
-				0 finalhomescore,
-				0 finalawayscore,
-				0 oddsid,
-				0 leagueid,
-				b.gameid,
-				0 transid,
-				0 AS BetID,
-				b.translogid,
-				'' matchcode,
-				'' AS race,
-				'' AS eventdate,
-				0 AS virtualrate,
-				0 AS isShowOTExRate,
-				b.sdiscount,
-				b.adiscount,
-				b.discount,
-				0 homeid,
-				0 awayid,
-				'' checktime,
-				0 hdp1,
-				0 hdp2,
-				b.odds,
-				0 modds,
-				0 finalodds,
-				0 finalodds2, 
-				' ' OddsType,
-				b.status,
-				0 AS comstatus,
-				b.stake, 
-				b.actual_stake,
-				b.transdate, 
-				d.ChoiceId betteam,
-				0 livehomescore,
-				0 liveawayscore, 
-				0 liveindicator, 
-				(-b.actual_stake) AS winlost,
-				0 commission, 
-				CASE b.custid WHEN b.creator THEN b.username ELSE '' END creator, 
-				b.username,
-				0 hthomescore,
-				0 htawayscore,
-				b.ip,
-				202 AS sporttype, 
-				d.GameId matchid,
-				0 IsNeutral,
-				'' AS showtime,
-				0 awinlost,
-				0 mwinlost,
-				0 swinlost,
-				b.betfrom,
-				b.winlostdate,
-				'' betcheck,
-				'' AS transdesc,
-				0 AS OddsSpread,
-				0 AS OriginalBetType,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo
-			FROM dbo.translog b WITH (NOLOCK)
-				INNER JOIN @SportBettype s ON s.Bettype = b.gameID
-				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.gameid) d
-			WHERE s.ProductID = 8
-				AND b.winlostdate = @Date
-				AND b.custid = @CustId
-				AND b.statusID = 0
-
-			-- Keno14
-			UNION ALL
-			SELECT	
-				0 finalhomescore,
-				0 finalawayscore, 
-				0 oddsid, 
-				0 leagueid,
-				b.bettype, 
-				b.betid transid,
-				ISNULL(b.BetID, 0) AS BetID,
-				b.refno,
-				CONVERT(VARCHAR(50),b.refno) matchcode,
-				'' AS race, 
-				'' AS eventdate, 
-				0 AS virtualrate,
-				0 AS isShowOTExRate,
-				b.sdiscount,
-				b.adiscount,
-				b.discount,
-				0 homeid,
-				0 awayid,
-				ISNULL(b.checktime, '') checktime, 
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.modds,
-				0 finalodds,
-				0 finalodds2,
-				0 AS OddsType,
-				b.status, 
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,  
-				b.stake, 
-				b.actual_stake,
-				b.transdate, 
-				d.ChoiceId betteam,
-				b.livehomescore, 
-				b.liveawayscore,
-				0 liveindicator, 
-				(b.winlost - b.actual_stake) winlost,
-				b.playercomm AS commission,
-				CASE b.custid WHEN b.creator THEN b.username ELSE '' END creator, 
-				b.username,
-				0 hthomescore,
-				0 htawayscore,
-				b.ip,
-				202 sporttype,
-				d.GameId matchid,
-				0 IsNeutral,
-				'' AS showtime,
-				b.awinlost,
-				b.mwinlost,
-				b.swinlost,
-				b.betfrom,
-				b.winlostdate,
-				b.betcheck,
-				'' AS transdesc,
-				0 AS OddsSpread,
-				0 AS OriginalBetType,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo
-			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) d
-			WHERE s.ProductID = 8
-				AND b.winlostdate = @Date
-				AND b.custid = @CustId
+				AND s.ProductID IN (6, 7, 8, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28)
 
 			-- Virtual Horse Racing
 			UNION ALL
@@ -1260,7 +1062,7 @@ BEGIN
 				AND b.winlostdate = @Date
 				AND b.custid = @CustId
 
-			-- Gold Deluxe, Microgaming Live Casino, Colossus Bet, Cockfighting, Lottery translog
+			-- Keno, Gold Deluxe, Microgaming Live Casino, Colossus Bet, Cockfighting, Lottery translog
 			UNION ALL 
 			SELECT
 				0 AS finalhomescore,
@@ -1285,7 +1087,7 @@ BEGIN
 				0 AS hdp1,
 				0 AS hdp2,
 				CASE
-					WHEN s.ProductID IN (12, 19, 28) THEN b.odds
+					WHEN s.ProductID IN (8, 12, 19, 28) THEN b.odds
 					ELSE 0
 				END AS odds,
 				0 AS modds,
@@ -1312,6 +1114,7 @@ BEGIN
 				0 AS htawayscore,
 				b.ip,
 				CASE
+					WHEN s.ProductID = 8 THEN 202
 					WHEN s.ProductID = 12 THEN 255
 					WHEN s.ProductID = 13 THEN 203
 					WHEN s.ProductID = 15 THEN 204
@@ -1336,7 +1139,7 @@ BEGIN
 					ELSE ''
 				END AS betcheck,
 				CASE
-					WHEN s.ProductID IN (19, 28) THEN b.transdesc
+					WHEN s.ProductID IN (8, 19, 28) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				0 AS OddsSpread,
@@ -1345,7 +1148,7 @@ BEGIN
 				'' AS ExtraInfo
 			FROM dbo.translog AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
-			WHERE s.ProductID IN (12, 13, 15, 19, 28)
+			WHERE s.ProductID IN (8, 12, 13, 15, 19, 28)
 				AND b.winlostdate = @Date
 				AND b.custid = @CustId
 				AND b.statusID = 0
@@ -2096,6 +1899,7 @@ BEGIN
 
 	SELECT DISTINCT * FROM @DetailData
 END
+
 
 
 

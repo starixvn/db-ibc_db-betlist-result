@@ -77,6 +77,7 @@ AS
 		- 20170602@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
+		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 */
 
 BEGIN
@@ -428,9 +429,9 @@ BEGIN
 		END
 	END
 
-	-- RNG Casino, Bingo, P2P, Gold Deluxe, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, Cockfighting, AllBet
-	-- Voidbridge, NG2, Fishing World, Lottery
-	IF EXISTS(SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 9, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28))
+	-- RNG Casino, Bingo, Keno, P2P, Gold Deluxe, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, Cockfighting
+	-- AllBet, Voidbridge, NG2, Fishing World, Lottery
+	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 8, 9, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28))
 	BEGIN
 		INSERT INTO #BetListData
 		SELECT
@@ -458,7 +459,7 @@ BEGIN
 				ELSE 0
 			END AS hdp2,
 			CASE
-				WHEN s.ProductId IN (12, 19, 23, 28) THEN b.odds
+				WHEN s.ProductId IN (8, 12, 19, 23, 28) THEN b.odds
 				ELSE 0
 			END AS odds,
 			0 AS finalodds,
@@ -494,6 +495,7 @@ BEGIN
 				WHEN s.ProductID = 6 AND s.SubProduct = '' THEN 251
 				WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.matchid
 				WHEN s.ProductId = 7 THEN 252
+				WHEN s.ProductId = 8 THEN 202
 				WHEN s.ProductId = 9 THEN 253
 				WHEN s.ProductId = 11 THEN 250
 				WHEN s.ProductId = 12 THEN 255
@@ -536,7 +538,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.transdesc
-				WHEN s.ProductId IN (19, 22, 23, 24, 28) THEN b.transdesc
+				WHEN s.ProductId IN (8, 19, 22, 23, 24, 28) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			0 AS OddsSpread,
@@ -547,83 +549,7 @@ BEGIN
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
-			AND s.ProductId IN (6, 7, 9, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28)
-	END
-
-	-- Keno
-	IF EXISTS(SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID = 8)
-	BEGIN
-		INSERT INTO #BetListData
-		SELECT 
-			b.bettype,
-			b.transid,
-			ISNULL(b.betid,0),
-			b.refno,
-			'' AS matchcode,
-			'' AS race,
-			'' AS eventdate,
-			0,
-			0,
-			b.sdiscount,
-			b.adiscount,
-			b.discount,
-			0 AS homeid,
-			0 AS awayid,
-			'' AS settleTime,
-			b.hdp1,
-			b.hdp2,
-			b.odds,
-			0 AS finalodds,
-			0 AS finalodds2,
-			0 AS OddsType,
-			b.status,
-			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-			b.stake,
-			b.actual_stake,
-			b.transdate,
-			d.ChoiceId AS betteam,
-			b.spositiontaking,
-			b.mpositiontaking,
-			b.apositiontaking,
-			0 AS spositiontaking2,
-			0 AS mpositiontaking2,
-			0 AS apositiontaking2,
-			b.liveindicator,
-			b.modds,
-			b.custid,
-			b.livehomescore,
-			b.liveawayscore,
-			0 AS finalhomescore,
-			0 AS finalawayscore,
-			0 AS leagueid,
-			202 AS sporttype,
-			b.ip,
-			b.betfrom,
-			d.GameId matchid,
-			CONVERT(BIT,0) AS IsNeutral,
-			0 AS allowdelete,
-			(b.winlost - b.actual_stake) AS winlost,
-			b.playercomm AS commission,
-			(b.scomm - b.acomm) AS scomm,
-			(b.acomm - b.comm) AS acomm,
-			(b.comm - b.playercomm) AS comm,
-			b.awinlost,
-			b.mwinlost,
-			b.swinlost,
-			'' AS showtime,
-			b.winlostdate,
-			b.BetCheck,
-			'' AS transdesc,
-			0 AS OddsSpread,
-			0 AS OriginalBetType,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo
-		FROM dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
-			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
-			OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) d
-		WHERE b.custid = @CustId
-			AND b.winlostdate BETWEEN @FromDate AND @ToDate
-			AND s.ProductId = 8
+			AND s.ProductId IN (6, 7, 8, 9, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28)
 	END
 
 	-- Horse Racing

@@ -91,6 +91,7 @@ AS
 		- 20170602@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Support Keno Lottery [#Redmine: 77929]
+		- 20170717@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 */
 
 BEGIN
@@ -597,9 +598,9 @@ BEGIN
 					AND b.transid = @TransID
 			END
 
-			-- Casino, Gold Deluxe, Microgaming Live Casino, Cockfighting, Lottery
+			-- Casino, Keno, Gold Deluxe, Microgaming Live Casino, Cockfighting, Lottery
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
-						WHERE (ProductID IN (12, 13, 19, 28)
+						WHERE (ProductID IN (8, 12, 13, 19, 28)
 								OR (ProductID = 6 AND SubProduct = ''))
 							AND Bettype = @Bettype)
 			BEGIN
@@ -623,7 +624,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (12, 19, 28) THEN b.odds
+						WHEN s.ProductID IN (8, 12, 19, 28) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -654,6 +655,7 @@ BEGIN
 					0 AS leagueid,
 					CASE
 						WHEN s.ProductID = 6 THEN 251
+						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 13 THEN 203
 						WHEN s.ProductID = 19 THEN 206
@@ -684,7 +686,7 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (19, 28) THEN b.transdesc
+						WHEN s.ProductID IN (8, 19, 28) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread,
@@ -694,7 +696,7 @@ BEGIN
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
-					AND (s.ProductId IN (12, 13, 19, 28)
+					AND (s.ProductId IN (8, 12, 13, 19, 28)
 						OR (s.ProductId = 6 AND s.SubProduct = ''))
 					AND b.refno = @RefNo
 			END
@@ -779,155 +781,6 @@ BEGIN
 				WHERE b.custid = @CustId
 					AND s.ProductId = 23
 					AND b.transid = @transid
-			END
-
-			-- Keno
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 8 AND Bettype = @Bettype)
-			BEGIN
-				INSERT INTO @Data
-				SELECT
-					b.bettype,
-					b.transid,
-					ISNULL(b.BetID,0) AS BetID,
-					b.refno,
-					'' AS matchcode,
-					'' AS race,
-					'' AS eventdate,
-					0 AS virtualrate,
-					0 AS isShowOTExRate,
-					b.sdiscount,
-					b.adiscount,
-					b.discount,
-					0 AS homeid,
-					0 AS awayid,
-					'' settleTime,
-					b.hdp1,
-					b.hdp2,
-					b.odds,
-					0 finalodds,
-					0 finalodds2,
-					0 AS OddsType,
-					b.status,  
-					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-					b.stake,
-					b.actual_stake,
-					b.transdate,
-					d.ChoiceId AS betteam,
-					b.spositiontaking,
-					b.mpositiontaking,
-					b.apositiontaking,
-					0 AS spositiontaking2,
-					0 AS mpositiontaking2,
-					0 AS apositiontaking2,
-					b.liveindicator,
-					b.modds,
-					b.custid,
-					b.livehomescore,
-					b.liveawayscore,
-					0,
-					0,
-					0 AS leagueid,
-					202 AS sporttype,
-					b.ip,
-					b.betfrom,
-					d.GameId matchid,
-					CONVERT(BIT,0) AS IsNeutral,
-					0 AS allowdelete,
-					(b.winlost-b.actual_stake)  winlost,
-					b.playercomm AS commission,
-					(b.scomm - b.acomm) AS scomm,
-					(b.acomm - b.comm) AS acomm,
-					(b.comm - b.playercomm) AS comm,
-					b.awinlost,
-					b.mwinlost,
-					b.swinlost,
-					'' AS showtime,
-					b.winlostdate,
-					b.BetCheck,
-					'' AS transdesc,
-					0 AS OddsSpread,
-					0 AS OriginalBetType,
-					-1 AS BetdaqId,
-					'' AS ExtraInfo
-				FROM dbo.bettrans AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-					OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) d
-				WHERE
-					b.custid = @CustId
-					AND s.ProductID = 8
-					AND b.refno = @RefNo
-				UNION ALL	-- translog
-				SELECT 
-					b.gameid AS BetType,
-					0 AS transid,
-					0 AS betid,
-					b.translogid,
-					'' AS matchcode,
-					'' AS race,
-					'' AS eventdate,
-					0,
-					0,
-					b.sdiscount,
-					b.adiscount,
-					b.discount,
-					0 AS homeid,
-					0 AS awayid,
-					'' settleTime,
-					0 AS hdp1,
-					0 AS hdp2,
-					b.odds,
-					0 AS finalodds,
-					0 AS finalodds2,
-					0 AS OddsType,
-					b.status,
-					0 AS comstatus,
-					b.stake,
-					b.actual_stake,
-					b.transdate,
-					d.ChoiceId betteam,
-					b.spositiontaking,
-					b.mpositiontaking,
-					b.apositiontaking,
-					0 AS spositiontaking2,
-					0 AS mpositiontaking2,
-					0 AS apositiontaking2,
-					0 AS liveindicator,
-					0 AS modds,
-					b.custid,
-					0 AS livehomescore,
-					0 AS liveawayscore,
-					0 AS finalhomescore,
-					0 AS finalawayscore,
-					0 AS leagueid,
-					202 AS sporttype,
-					b.ip,
-					b.betfrom,
-					d.GameId matchid,
-					CONVERT(BIT,0) AS IsNeutral,
-					0 AS allowdelete,
-					(-b.actual_stake) AS winlost,
-					0 AS commission,
-					0,
-					0,
-					0,
-					0,
-					0,
-					0,
-					'' AS showtime,
-					b.winlostdate,
-					'' AS BetCheck,
-					'' AS transdesc,
-					0 AS OddsSpread,
-					0 AS OriginalBetType,
-					-1 AS BetdaqId,
-					'' AS ExtraInfo
-				FROM dbo.translog AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
-					OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.gameid) d
-				WHERE	b.custid = @CustId
-					AND s.ProductID = 8
-					AND b.statusID = 0
-					AND b.translogid = @TransID
 			END
 
 			-- Outright
@@ -1203,11 +1056,11 @@ BEGIN
 					AND b.transid = @TransID
 			END
 
-			-- Gold Deluxe, Microgaming Live Casino, Cockfighting, Colossus Bet, Lottery (translog)
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (12, 13, 15, 19, 28) AND Bettype = @Bettype)
+			-- Keno, Gold Deluxe, Microgaming Live Casino, Cockfighting, Colossus Bet, Lottery (translog)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (8, 12, 13, 15, 19, 28) AND Bettype = @Bettype)
 			BEGIN
 				INSERT INTO @Data
-				SELECT 
+				SELECT
 					b.gameid AS BetType,
 					b.translogid AS transid,
 					0 AS betid,
@@ -1226,7 +1079,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (12, 13, 19, 28) THEN b.odds
+						WHEN s.ProductID IN (8, 12, 13, 19, 28) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -1256,6 +1109,7 @@ BEGIN
 					0 AS finalawayscore,
 					0 AS leagueid,
 					CASE
+						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 13 THEN 203
 						WHEN s.ProductID = 15 THEN 204
@@ -1288,7 +1142,7 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (19, 28) THEN b.transdesc
+						WHEN s.ProductID IN (8, 19, 28) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread,
@@ -1298,7 +1152,7 @@ BEGIN
 				FROM dbo.translog AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.custid = @CustId
-					AND s.ProductID IN (12, 13, 15, 19, 28)
+					AND s.ProductID IN (8, 12, 13, 15, 19, 28)
 					AND b.statusID = 0
 					AND b.translogid = @RefNo
 			END
@@ -2199,7 +2053,7 @@ BEGIN
 					AND b.transid = @TransID
 			END
 
-			-- RNG Casino, Gold Deluxe, Microgaming Live Casino, Cockfighting, Lottery
+			-- RNG Casino, Keno, Gold Deluxe, Microgaming Live Casino, Cockfighting, Lottery
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @Bettype
 							AND (ProductID IN (12, 13, 19, 28)
@@ -2225,7 +2079,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (12, 19, 28) THEN b.odds
+						WHEN s.ProductID IN (8, 12, 19, 28) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -2256,6 +2110,7 @@ BEGIN
 					0 AS leagueid,
 					CASE
 						WHEN s.ProductID = 6 THEN 251
+						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 13 THEN 203
 						WHEN s.ProductID = 19 THEN 206
@@ -2286,7 +2141,7 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (19, 28) THEN b.transdesc
+						WHEN s.ProductID IN (8, 19, 28) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread,
@@ -2296,87 +2151,9 @@ BEGIN
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
-					AND (s.ProductID IN (12, 13, 19, 28)
+					AND (s.ProductID IN (8, 12, 13, 19, 28)
 						OR (s.ProductID = 6 AND s.SubProduct = ''))
 					AND b.refno = @RefNo
-			END
-
-			-- Keno
-			IF EXISTS (SELECT TOP(1) 1 FROM  @SportBettype WHERE ProductID = 8 AND Bettype = @Bettype)
-			BEGIN
-				INSERT INTO @Data
-				SELECT
-					b.bettype,
-					b.transid,
-					ISNULL(b.BetID,0) AS BetID,
-					b.refno,
-					'' AS matchcode,
-					'' AS race,
-					'' AS eventdate,
-					0 AS virtualrate,
-					0 AS isShowOTExRate,
-					b.sdiscount,
-					b.adiscount,
-					b.discount,
-					0 AS homeid,
-					0 AS awayid,
-					'' AS settleTime,
-					b.hdp1,
-					b.hdp2,
-					b.odds,
-					0 AS finalodds,
-					0 AS finalodds2,
-					0 AS OddsType,
-					b.status,
-					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-					b.stake,
-					b.actual_stake,
-					b.transdate,
-					d.ChoiceId betteam,
-					b.spositiontaking,
-					b.mpositiontaking,
-					b.apositiontaking,
-					0 AS spositiontaking2,
-					0 AS mpositiontaking2,
-					0 AS apositiontaking2,
-					b.liveindicator,
-					b.modds,
-					b.custid,
-					b.livehomescore,
-					b.liveawayscore,
-					0, 
-					0,
-					0 AS leagueid,
-					202 AS sporttype,
-					b.ip,
-					b.betfrom,
-					d.GameId matchid,
-					CONVERT(BIT,0) AS IsNeutral,
-					0 AS allowdelete,
-					(b.winlost-b.actual_stake) AS winlost,
-					b.playercomm AS commission,
-					(b.scomm - b.acomm) AS scomm,
-					(b.acomm - b.comm) AS acomm,
-					(b.comm - b.playercomm) AS comm,
-					b.awinlost,
-					b.mwinlost,
-					b.swinlost,
-					'' AS showtime,
-					b.winlostdate,
-					b.BetCheck,
-					'' AS transdesc,
-					0 AS OddsSpread,
-					0 AS OriginalBetType,
-					-1 AS BetdaqId,
-					'' AS ExtraInfo
-				FROM dbo.bettrans14 AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-					OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) d
-				WHERE
-					b.custid = @CustId
-					AND b.refno = @RefNo
-					AND s.ProductID = 8
-					AND b.statusID NOT IN (0,1)
 			END
 
 			-- Outright
@@ -3067,10 +2844,10 @@ BEGIN
 					AND b.transid = @TransID
 			END
 
-			-- RNG Casino, Bingo, Gold Deluxe, Microgaming Live Casino, Cockfighting, Lottery
+			-- RNG Casino, Bingo, Keno, Gold Deluxe, Microgaming Live Casino, Cockfighting, Lottery
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @Bettype 
-							AND (ProductID IN (7, 12, 13, 19, 28)
+							AND (ProductID IN (7, 8, 12, 13, 19, 28)
 								OR (ProductID = 6 AND SubProduct = '')))
 			BEGIN
 				INSERT INTO @Data
@@ -3093,7 +2870,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (12, 19, 28) THEN b.odds
+						WHEN s.ProductID IN (8, 12, 19, 28) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -3125,6 +2902,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 6 THEN 251
 						WHEN s.ProductID = 7 THEN 252
+						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 13 THEN 203
 						WHEN s.ProductID = 19 THEN 206
@@ -3155,7 +2933,7 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (19, 28) THEN b.transdesc
+						WHEN s.ProductID IN (8, 19, 28) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread,
@@ -3165,85 +2943,8 @@ BEGIN
 				FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
-					AND (s.ProductID IN (7, 12, 13, 19, 28)
+					AND (s.ProductID IN (7, 8, 12, 13, 19, 28)
 						OR (s.ProductID = 6 AND s.SubProduct = ''))
-					AND b.refno = @RefNo
-			END
-
-			-- Keno
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 8 AND Bettype = @Bettype)
-			BEGIN
-				INSERT INTO @Data
-				SELECT
-					b.bettype,
-					b.transid,
-					ISNULL(b.BetID,0) AS BetID,
-					b.refno,
-					'' AS matchcode,
-					'' AS race,
-					'' AS eventdate,
-					0 AS virtualrate,
-					0 AS isShowOTExRate,
-					b.sdiscount,
-					b.adiscount,
-					b.discount,
-					0 AS homeid,
-					0 AS awayid,
-					'' settleTime,
-					b.hdp1,
-					b.hdp2,
-					b.odds,
-					0 finalodds,
-					0 finalodds2,
-					0 AS OddsType,
-					b.status,
-					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-					b.stake,
-					b.actual_stake,
-					b.transdate,
-					d.ChoiceId betteam,
-					b.spositiontaking,
-					b.mpositiontaking,
-					b.apositiontaking,
-					0 spositiontaking2,
-					0 mpositiontaking2,
-					0 apositiontaking2,
-					b.liveindicator,
-					b.modds,
-					b.custid,
-					b.livehomescore,
-					b.liveawayscore,
-					0,
-					0,
-					0 AS leagueid,
-					202 AS sporttype,
-					b.ip,
-					b.betfrom,
-					d.GameId matchid,
-					CONVERT(BIT,0) AS IsNeutral,
-					0 AS allowdelete,
-					(b.winlost-b.actual_stake)  winlost,
-					b.playercomm AS commission,
-					(b.scomm - b.acomm) AS scomm,
-					(b.acomm - b.comm) AS acomm,
-					(b.comm - b.playercomm) AS comm,
-					b.awinlost,
-					b.mwinlost,
-					b.swinlost,
-					'' AS showtime,
-					b.winlostdate,
-					b.BetCheck,
-					'' AS transdesc,
-					0 AS OddsSpread,
-					0 AS OriginalBetType,
-					-1 AS BetdaqId,
-					'' AS ExtraInfo
-				FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype s ON s.Bettype = b.bettype
-					OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) d
-				WHERE
-					b.custid = @CustId
-					AND s.ProductID = 8
 					AND b.refno = @RefNo
 			END
 
