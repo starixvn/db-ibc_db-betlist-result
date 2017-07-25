@@ -52,6 +52,7 @@ AS
 		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
+		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
 
 	Param's Explanation:
 		- @AgentList: Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -91,7 +92,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 13, 25, 27)
+	WHERE ProductID <= 6 OR ProductID IN (8, 25, 27, 28)
 
 	DELETE FROM @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -136,10 +137,14 @@ BEGIN
 		OriginalBetType	SMALLINT
 	)
 
-	-- Keno
+	-- Keno, Lottery
 	INSERT INTO #Data
 	SELECT
-		202 AS Sporttype,
+		CASE
+			WHEN sbt.ProductID = 8 THEN 202
+			WHEN sbt.ProductID = 28 THEN 220
+			ELSE 0
+		END AS SportType,
 		b.Username,
 		b.custid,
 		b.transid,
@@ -148,12 +153,12 @@ BEGIN
 		b.refno,
 		0 AS HomeID,
 		0 AS AwayID,
-		t.ChoiceId AS betteam,
+		'' AS betteam,
 		b.bettype,
 		0 AS Hdp1,
 		0 AS Hdp2,
-		b.modds,
-		b.oddstype,
+		0 AS MOdds,
+		0 AS OddsYype,
 		b.odds,
 		b.stake,
 		b.status,
@@ -161,7 +166,7 @@ BEGIN
 		b.livehomescore,
 		b.liveawayscore,
 		0 AS LeagueId,
-		t.GameId AS MatchId,
+		0 AS MatchId,
 		'' AS matchcode,
 		'' AS Race,
 		b.winlostdate AS eventdate,
@@ -171,14 +176,13 @@ BEGIN
 		b.currency,
 		'' AS ShowTime,
 		'' AS betcheck,
-		'' AS transdesc,
+		ISNULL(b.transdesc, '') AS transdesc,
 		-1 AS BetdaqId,
 		'' AS ExtraInfo,
 		0 AS OriginalStake,
 		0 AS OriginalBetType
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
-		CROSS APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) AS t
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 	WHERE
 		b.custid = @CustID
@@ -186,7 +190,7 @@ BEGIN
 		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.statusID IN (101, 102)
 		AND b.winlostdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
-		AND sbt.productId = 8
+		AND sbt.productId IN (8, 28)
 		AND b.ruben = 1
 
 	-- Others

@@ -23,6 +23,7 @@
 	@ShowVB		BIT			= 0,	-- Voidbridge
 	@ShowFW		BIT			= 0,	-- Fishing World
 	@ShowVS2	BIT			= 0,	-- Betradar Virtual Sports
+	@ShowLT		BIT			= 0,	-- Lottery
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -83,6 +84,7 @@ AS
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170329@Kos: Support CashOut [#Redmine: 71963]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20170724@Kos: Support Keno Lottery [#Redmine: 79997]
 */
 
 BEGIN
@@ -116,7 +118,7 @@ BEGIN
 		, @Yesterday = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 		, @TotalRows = 0
 		, @ErrorCode = 0
-		, @ErrorMsg	= ''
+		, @ErrorMsg = ''
 
 	IF @CustID IS NULL
 	BEGIN
@@ -154,7 +156,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 27)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 27, 28)
 
 	-- Don't support BetTrade, RNG Casino old bet type (71)
 	DELETE FROM @SportBettype
@@ -177,6 +179,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowVB = 0		THEN 22 END
 		OR ProductID	= CASE WHEN @ShowFW = 0		THEN 24 END
 		OR ProductID	= CASE WHEN @ShowVS2 = 0	THEN 27 END
+		OR ProductID	= CASE WHEN @ShowLT = 0		THEN 28 END
 	-- end filer bettypes by sporttype
 
 	CREATE TABLE #BetListSelRunningByDateMem (
@@ -867,69 +870,16 @@ BEGIN
 			AND b.statusID IN (0, 1)
 	END
 
-	-- Keno
-	IF @ShowKN = 1
-	BEGIN
-		INSERT INTO #BetListSelRunningByDateMem
-		SELECT
-			202 AS sporttype,
-			@Username AS UserName,
-			t.gameid AS bettype,
-			0 AS leagueID,
-			t.translogid AS refno,
-			t.translogid AS transid,
-			0 AS BetID,
-			'' AS matchcode,
-			'' AS Race,
-			0 AS homeID,
-			0 AS awayID,
-			0 AS hdp1,
-			0 AS hdp2,
-			t.odds,
-			0 AS modds,
-			t.status,
-			t.stake,
-			t.actual_stake,
-			t.transdate,
-			fnc.ChoiceId AS betteam,
-			t.discount,
-			0 AS liveindicator,
-			0 AS livehomescore,
-			0 AS liveawayscore,
-			t.ip,
-			CONVERT(BIT,0) AS IsNeutral,
-			0 AS oddstype,
-			t.winlostdate,
-			t.currency,
-			0 AS playercomm,
-			'' AS ShowTime,
-			fnc.GameId AS matchid,
-			'' AS betcheck,
-			'' AS transdesc,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo,
-			0 AS OriginalStake,
-			0 AS OriginalBetType
-		FROM 
-			dbo.translog AS t WITH (NOLOCK)
-			INNER JOIN @SportBettype AS sbt ON t.gameID = sbt.Bettype
-			CROSS APPLY dbo.f_ParseTransDesc(t.transdesc, t.gameid) fnc
-		WHERE
-			t.transdate >= @FromDate AND t.transdate <= @ToDate 
-			AND t.custid = @CustID 
-			AND sbt.ProductID = 8
-			AND sbt.EventType = 0
-			AND t.statusID IN (0, 1)
-	END
-
-	-- Microgaming Live Casino, Colossus Bets (translog)
-	IF @ShowMGCLC = 1 OR @ShowCB = 1
+	-- Keno, Microgaming Live Casino, Colossus Bets, Lottery (translog)
+	IF @ShowKN = 1 OR @ShowMGCLC = 1 OR @ShowCB = 1 OR @ShowLT = 1
 	BEGIN
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
 			CASE
+				WHEN sbt.ProductID = 8 THEN 202
 				WHEN sbt.ProductID = 13 THEN 203
 				WHEN sbt.ProductID = 15 THEN 204
+				WHEN sbt.ProductID = 28 THEN 220
 				ELSE 0
 			END AS SportType,
 			@Username AS UserName,
@@ -944,7 +894,10 @@ BEGIN
 			0 AS AwayId,
 			0 AS hdp1,
 			0 AS hdp2,
-			0 AS Odds,
+			CASE
+				WHEN sbt.ProductID IN (8, 28) THEN t.odds
+				ELSE 0
+			END AS Odds,
 			0 AS MOdds,
 			t.status,
 			t.stake,
@@ -967,7 +920,10 @@ BEGIN
 				WHEN sbt.ProductID = 15 THEN t.Tranid3rd
 				ELSE '' 
 			END AS BetCheck,
-			'' AS transdesc,
+			CASE
+				WHEN sbt.ProductID IN (8, 28) THEN ISNULL(t.transdesc, '')
+				ELSE ''
+			END AS TransDesc,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo,
 			0 AS OriginalStake,
@@ -979,7 +935,7 @@ BEGIN
 			t.transdate BETWEEN @FromDate AND @ToDate
 			AND t.custid = @CustID
 			AND t.statusID IN (0, 1)
-			AND sbt.ProductID IN (13, 15)
+			AND sbt.ProductID IN (8, 13, 15, 28)
 	END
 
 	-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World

@@ -81,6 +81,7 @@ AS
 		- 20170612@Kos: Seperate @TransType param value into 1 & 2 [#Redmine: 78117]
 		- 20170622@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
+		- 20170724@Kos: Support Keno Lottery [#Redmine: 79997]
 
 	Param's Explanation:
 		+ @TransType:
@@ -215,7 +216,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 25, 27)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -369,64 +370,6 @@ BEGIN
 		END
 
 		DELETE @Data WHERE BetType IN (903, 913)
-
-		-- Keno
-		INSERT INTO @Data
-		SELECT
-			202 AS sporttype,
-			0 AS leagueid,
-			0 AS homeID,
-			0 AS awayID,
-			b.bettype,
-			'' AS MatchCode,
-			'' AS race,
-			fnc.GameId AS matchid,
-			b.transid,
-			b.transdate,
-			b.winlostdate,
-			b.refno,
-			b.betid,
-			b.oddsid,
-			b.hdp1,
-			b.hdp2,
-			0 AS modds,
-			0 AS Oddstype,
-			b.Odds,
-			fnc.ChoiceId AS BetTeam,
-			b.status,
-			'' AS BetStatus,
-			b.stake,
-			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
-			b.comm,
-			b.playercomm,
-			b.livehomescore,
-			b.liveawayscore,
-			b.liveindicator,
-			0 AS FinalHomeScore,
-			0 AS FinalAwayScore,
-			0 AS hthomescore,
-			0 AS htawayscore,
-			b.ip,
-			@Username,
-			CONVERT(BIT,0) AS IsNeutral,
-			b.currency,
-			'' AS ShowTime,
-			'' AS betcheck,
-			'' AS transdesc,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo,
-			0 AS OriginalStake,
-			0 AS OriginalBetType
-		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-			CROSS APPLY dbo.f_ParseTransDesc(b.transdesc, b.bettype) AS fnc
-		WHERE b.custid = @CustId
-			AND b.winlostdate = @TempFromDate
-			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-			AND sbt.ProductID = 8
-			AND sbt.EventType = 0
 
 		-- Virtual Horse Racing
 		INSERT INTO @Data
@@ -618,18 +561,21 @@ BEGIN
 			AND sbt.ProductID IN (1, 2)
 			AND sbt.EventType = 2
 
-		-- RNG Casino, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, AllBet, Macau Games, Fishing World
+		-- RNG Casino, Keno, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, AllBet, Macau Games, Fishing World
+		-- Lottery
 		INSERT INTO @Data
 		SELECT
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN 251
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.matchid
+				WHEN sbt.ProductID = 8 THEN 202
 				WHEN sbt.ProductID = 11 THEN 250
 				WHEN sbt.ProductID = 13 THEN 203
 				WHEN sbt.ProductID = 17 THEN 205
 				WHEN sbt.ProductID = 21 THEN 211
 				WHEN sbt.ProductID = 22 THEN 212
 				WHEN sbt.ProductID = 24 THEN 219
+				WHEN sbt.ProductID = 28 THEN 220
 				ELSE 0
 			END AS SportType,
 			0 AS leagueid,
@@ -669,6 +615,7 @@ BEGIN
 			END AS Oddstype,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
+				WHEN sbt.ProductID IN (8, 28) THEN b.Odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -710,7 +657,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-				WHEN sbt.ProductID IN (22, 24) THEN b.transdesc
+				WHEN sbt.ProductID IN (8, 22, 24, 28) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			-1 AS BetdaqId,
@@ -722,7 +669,7 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-			AND sbt.ProductID IN (6, 11, 13, 17, 21, 22, 24)
+			AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28)
 			AND sbt.EventType = 0
 
 		-- Colossus Bets

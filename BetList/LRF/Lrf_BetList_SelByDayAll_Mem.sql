@@ -85,6 +85,7 @@ AS
 		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170622@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
+		- 20170724@Kos: Support Keno Lottery [#Redmine: 79997]
 
 	Param's Explanation:
 		+ @TransType:
@@ -219,7 +220,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 25, 27)
+	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -421,70 +422,6 @@ BEGIN
 			AND sbt.EventType = 0
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Keno
-		IF @TransType = 1 OR @TransType = 2
-		BEGIN
-			INSERT INTO @Data 
-			SELECT
-				202 AS sporttype,
-				0 AS leagueid,
-				0 AS homeID,
-				0 AS awayID,
-				b.bettype,
-				'' AS matchcode,
-				'' AS race,
-				t.gameid AS matchid,
-				b.transid,
-				b.transdate,
-				b.winlostdate,
-				b.refno,
-				0 AS betid,
-				0 AS oddsid,
-				0 AS hdp1,
-				0 AS hdp2,
-				b.modds,
-				0 AS Oddstype,
-				b.odds,
-				t.choiceid AS betteam,
-				b.status,
-				'' AS betstatus,
-				b.stake,
-				b.actual_stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.discount,
-				0 AS livehomescore,
-				0 AS liveawayscore,
-				0 AS liveindicator,
-				0 AS FinalHomeScore,
-				0 AS FinalAwayScore,
-				0 AS hthomescore,
-				0 AS htawayscore,
-				b.ip,
-				b.Username,
-				CONVERT(BIT,0) AS IsNeutral,
-				b.currency,
-				'' AS ShowTime,
-				'' AS betcheck,
-				'' AS transdesc,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo,
-				0 AS OriginalStake,
-				0 AS OriginalBetType
-			FROM 
-				dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) t
-			WHERE
-				b.custid = @CustId
-				AND b.winlostdate = @FromDate 
-				AND sbt.ProductID = 8
-				AND sbt.EventType = 0
-				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
-		END
-
 		-- Virtual Horse Racing
 		INSERT INTO @Data 
 		SELECT
@@ -681,20 +618,22 @@ BEGIN
 			AND sbt.EventType = 2
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet, Macau Games, Fishing World
+		-- Keno, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet, Macau Games, Fishing World, Lottery
 		IF @TransType = 1 OR @TransType = 2
 		BEGIN
 			INSERT INTO @Data 
 			SELECT
 				CASE
+					WHEN sbt.ProductID = 8 THEN 202
 					WHEN sbt.ProductID = 11 THEN 250
 					WHEN sbt.ProductID = 13 THEN 203
 					WHEN sbt.ProductID = 17 THEN 205
 					WHEN sbt.ProductID = 21 THEN 211
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
+					WHEN sbt.ProductID = 28 THEN 220
 					ELSE 0
-				END AS sporttype,
+				END AS SportType,
 				0 AS leagueid,
 				0 AS homeID,
 				0 AS awayID,
@@ -712,7 +651,10 @@ BEGIN
 				0 AS hdp2,
 				0 AS modds,
 				0 AS Oddstype,
-				0 AS odds,
+				CASE
+					WHEN sbt.ProductID IN (8, 28) THEN b.odds
+					ELSE 0
+				END AS Odds,
 				'' AS betteam,
 				b.status,
 				'' AS betstatus,
@@ -740,7 +682,7 @@ BEGIN
 					ELSE ''
 				END AS betcheck,
 				CASE
-					WHEN sbt.ProductID IN (22, 24) THEN b.transdesc
+					WHEN sbt.ProductID IN (8, 22, 24, 28) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				-1 AS BetdaqId,
@@ -753,7 +695,7 @@ BEGIN
 			WHERE
 				b.custid = @CustId
 				AND b.winlostdate = @FromDate 
-				AND sbt.ProductID IN (11, 13, 17, 21, 22, 24)
+				AND sbt.ProductID IN (8, 11, 13, 17, 21, 22, 24, 28)
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 				AND @TransType <> 4
@@ -1159,128 +1101,6 @@ BEGIN
 			AND sbt.EventType = 0
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Keno
-		IF @TransType = 1 OR @TransType = 2
-			INSERT INTO @Data
-			SELECT
-				202 AS sporttype,
-				0 AS leagueid,
-				0 AS homeID,
-				0 AS awayID,
-				b.bettype,
-				'' AS matchcode,
-				'' AS race,
-				t.gameid AS matchid,
-				b.transid,
-				b.transdate,
-				b.winlostdate,
-				b.refno,
-				0 AS betid,
-				0 AS oddsid,
-				0 AS hdp1,
-				0 AS hdp2,
-				b.modds, 
-				0 AS Oddstype,
-				b.odds,
-				t.choiceid AS betteam,
-				b.status,
-				0 AS betstatus,
-				b.stake,
-				b.actual_stake,
-				(b.winlost-b.actual_stake) AS WinLost,
-				- (b.winlost-b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.discount,
-				0 AS livehomescore,
-				0 AS liveawayscore,
-				0 AS liveindicator,
-				0 AS FinalHomeScore,
-				0 AS FinalAwayScore,
-				0 AS hthomescore,
-				0 AS htawayscore,
-				b.ip,
-				b.Username,
-				CONVERT(BIT,0) AS IsNeutral,
-				b.currency,
-				'' AS ShowTime,
-				'' AS betcheck,
-				'' AS transdesc,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo,
-				0 AS OriginalStake,
-				0 AS OriginalBetType
-			FROM 
-				dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-				OUTER APPLY dbo.[f_ParseTransDesc](b.TransDesc, b.bettype) t
-			WHERE
-				b.custid = @CustId
-				AND b.winlostdate = @FromDate
-				AND sbt.ProductID = 8
-				AND sbt.EventType = 0
-				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
-		ELSE
-			INSERT INTO @Data
-			SELECT
-				202 AS sporttype,
-				0 AS leagueid,
-				0 AS homeID,
-				0 AS awayID,
-				t.gameID AS bettype,
-				'' AS matchcode,
-				'' AS race,
-				k.GameId AS matchid,
-				t.translogid,
-				t.transdate,
-				t.winlostdate,
-				t.translogid,
-				0 AS betid,
-				0 AS oddsid,
-				0 AS hdp1,
-				0 AS hdp2,
-				0 AS modds,
-				0 AS OddsType,
-				t.odds,
-				k.ChoiceId AS betteam,
-				t.status,
-				0 AS betstatus,
-				t.stake,
-				t.actual_stake,
-				0 AS WinLost,
-				0 AS LicenseeWL,
-				0 AS comm,
-				0 AS playercomm,
-				t.discount,
-				0 AS livehomescore,
-				0 AS liveawayscore,
-				0 AS liveindicator,
-				0 AS FinalHomeScore,
-				0 AS FinalAwayScore,
-				0 AS hthomescore,
-				0 AS htawayscore,
-				t.ip,
-				t.Username,
-				CONVERT(BIT,0) AS IsNeutral,
-				t.currency,
-				'' AS ShowTime,
-				'' AS betcheck,
-				'' AS transdesc,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo,
-				0 AS OriginalStake,
-				0 AS OriginalBetType
-			FROM 
-				dbo.translog AS t WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sbt ON t.gameID = sbt.bettype
-				OUTER APPLY dbo.[f_ParseTransDesc](t.TransDesc, t.gameID) k
-			WHERE
-				t.custid = @CustId
-				AND t.winlostdate = @FromDate 
-				AND sbt.ProductID = 8
-				AND sbt.EventType = 0
-				AND t.statusID IN (SELECT [statusID] FROM @tmpStatus)
-
 		-- Virtual Horse Racing
 		INSERT INTO @Data
 		SELECT
@@ -1487,12 +1307,17 @@ BEGIN
 			AND sbt.EventType = 2
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Microgaming Live Casino
+		-- Keno, Microgaming Live Casino, Lottery (bettrans)
 		IF @TransType = 1 OR @TransType = 2
 		BEGIN
-			INSERT INTO @Data 
+			INSERT INTO @Data
 			SELECT
-				203 AS sporttype,
+				CASE
+					WHEN sbt.ProductId = 8 THEN 202
+					WHEN sbt.ProductId = 13 THEN 203
+					WHEN sbt.ProductId = 28 THEN 220
+					ELSE 0
+				END AS SportType,
 				0 AS leagueid,
 				0 AS homeID,
 				0 AS awayID,
@@ -1510,7 +1335,10 @@ BEGIN
 				0 AS hdp2,
 				b.modds,
 				0 AS Oddstype,
-				0 AS odds,
+				CASE
+					WHEN sbt.ProductID IN (8, 28) THEN b.odds
+					ELSE 0
+				END AS Odds,
 				'' AS betteam,
 				b.status,
 				0 AS betstatus,
@@ -1533,8 +1361,14 @@ BEGIN
 				CONVERT(BIT, 0) AS IsNeutral,
 				b.currency,
 				'' AS ShowTime,
-				b.betcheck,
-				'' AS transdesc,
+				CASE
+					WHEN sbt.ProductId = 13 THEN b.betcheck
+					ELSE ''
+				END AS BetCheck,
+				CASE
+					WHEN sbt.ProductID IN (8, 28) THEN b.transdesc
+					ELSE ''
+				END AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
@@ -1545,19 +1379,21 @@ BEGIN
 			WHERE
 				b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND sbt.ProductID = 13
+				AND sbt.ProductID IN (8, 13, 28)
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 
-		-- Microgaming Live Casino, Colossus Bets (translog)
+		-- Keno, Microgaming Live Casino, Colossus Bets, Lottery (translog)
 		IF @TransType = 3
 		BEGIN
 			INSERT INTO @Data
 			SELECT
 				CASE
+					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 13 THEN 203
 					WHEN sbt.ProductId = 15 THEN 204
+					WHEN sbt.ProductId = 28 THEN 220
 					ELSE 0
 				END AS SportType,
 				0 AS LeagueId,
@@ -1577,7 +1413,10 @@ BEGIN
 				0 AS hdp2,
 				0 AS modds,
 				0 AS OddsType,
-				0 AS odds,
+				CASE
+					WHEN sbt.ProductID IN (8, 28) THEN t.odds
+					ELSE 0
+				END AS Odds,
 				'' AS betteam,
 				t.status,
 				0 AS betstatus,
@@ -1604,7 +1443,10 @@ BEGIN
 					WHEN sbt.ProductId = 15 THEN t.Tranid3rd
 					ELSE ''
 				END AS BetCheck,
-				'' AS transdesc,
+				CASE
+					WHEN sbt.ProductID IN (8, 28) THEN t.transdesc
+					ELSE ''
+				END AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
@@ -1615,7 +1457,7 @@ BEGIN
 			WHERE
 				t.custid = @CustId
 				AND t.winlostdate = @FromDate
-				AND sbt.ProductID IN (13, 15)
+				AND sbt.ProductID IN (8, 13, 15, 28)
 				AND t.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 

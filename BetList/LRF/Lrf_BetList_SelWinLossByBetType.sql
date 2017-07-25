@@ -45,6 +45,7 @@ AS
 		- 20170302@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20170726@Kos: Support Keno Lottery [#Redmine: 79997]
 
 	Parameters:
 */
@@ -83,7 +84,7 @@ BEGIN
 	SELECT DISTINCT ProductId, Bettype, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @isTest)
 	WHERE
-		ProductID IN (1, 2, 3, 4, 5, 8, 27)
+		ProductID IN (1, 2, 3, 4, 5, 8, 27, 28)
 		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 		AND bettype IN (
 			SELECT bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
@@ -728,8 +729,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
-		-- Keno
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId = 8 AND Bettype = @BetType)
+		-- Keno, Lottery
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (8, 28) AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -739,18 +740,22 @@ BEGIN
 				ISNULL(b.betid, 0) AS BetId,
 				b.custid,
 				b.Username,
-				202 AS SportType,
+				CASE
+					WHEN sbt.ProductId = 8 THEN 202
+					WHEN sbt.ProductId = 28 THEN 220
+					ELSE 0
+				END AS SportType,
 				b.bettype,
 				b.currency,
 				0 AS LeagueId,
-				fnc.GameId AS MatchId,
+				0 AS MatchId,
 				'' AS MatchCode,
 				CONVERT(BIT, 0) AS IsNeutral,
 				0 AS HomeId,
 				0 AS AwayId,
 				0 AS Hdp1,
 				0 AS Hdp2,
-				fnc.ChoiceId AS BetTeam,
+				'' AS BetTeam,
 				b.odds,
 				b.oddstype,
 				0 AS Modds,
@@ -770,18 +775,17 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc,
+				ISNULL(b.transdesc, '') AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
-				CROSS APPLY dbo.f_ParseTransDesc(b.transdesc, b.bettype) AS fnc
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE td.WhTicket = 1
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND b.bettype IN (SELECT bettype FROM @SportBettype)
-				AND b.statusID NOT IN (0,1,101, 102, 103)
+				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 	END
@@ -1155,8 +1159,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 
-		-- Keno
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId = 8 AND Bettype = @BetType)
+		-- Keno, Lottery
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (8, 28) AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1166,18 +1170,22 @@ BEGIN
 				ISNULL(b.betid, 0) AS BetId,
 				b.custid,
 				b.Username,
-				202 AS SportType,
+				CASE
+					WHEN sbt.ProductId = 8 THEN 202
+					WHEN sbt.ProductId = 28 THEN 220
+					ELSE 0
+				END AS SportType,
 				b.bettype,
 				b.currency,
 				0 AS LeagueId,
-				fnc.GameId AS MatchId,
+				0 AS MatchId,
 				'' AS MatchCode,
 				CONVERT(BIT, 0) AS IsNeutral,
 				0 AS HomeId,
 				0 AS AwayId,
 				0 AS Hdp1,
 				0 AS Hdp2,
-				fnc.ChoiceId AS BetTeam,
+				'' AS BetTeam,
 				b.odds,
 				b.oddstype,
 				0 AS Modds,
@@ -1197,17 +1205,16 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				'' AS BetCheck,
-				'' AS TransDesc,
+				ISNULL(b.transdesc, '') AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
-				CROSS APPLY dbo.f_ParseTransDesc(b.transdesc, b.bettype) AS fnc
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE td.WhTicket = 2
 				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
-				AND b.bettype IN (SELECT bettype FROM @SportBettype)
 				AND b.statusID NOT IN (101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
@@ -1401,6 +1408,7 @@ BEGIN
 	DROP TABLE #Data
 	DROP TABLE #TempData
 END
+
 
 
 /*

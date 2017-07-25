@@ -32,6 +32,7 @@ AS
 		- 20170301@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170621@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
 */
 
 BEGIN
@@ -68,7 +69,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 13, 25, 27)
+	WHERE ProductID <= 6 OR ProductID IN (8, 25, 27, 28)
 
 	DELETE FROM @SportBettype
 	WHERE Bettype IN (903, 904, 913, 914)
@@ -84,7 +85,7 @@ BEGIN
 		INNER JOIN @TempAg AS ag ON b.recommend = ag.CustId AND b.Currency = ag.Currency
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 	WHERE b.statusID IN (101, 102)
-		AND (sbt.ProductID NOT IN (1, 2, 5, 8)
+		AND (sbt.ProductID NOT IN (1, 2, 5, 8, 28)
 			OR (sbt.ProductID = 1 AND sbt.EventType <> 2)
 			OR (sbt.ProductID = 5 AND sbt.EventType <> 3))
 		AND m.eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
@@ -119,7 +120,7 @@ BEGIN
 		AND m.eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 	GROUP BY b.custid
 
-	-- Keno
+	-- Keno, Lottery
 	INSERT INTO @bc
 	SELECT b.custid,
 		SUM(1) AS BetCount
@@ -130,7 +131,7 @@ BEGIN
 	WHERE 
 		b.statusID IN (101, 102)
 		AND b.winlostdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
-		AND sbt.ProductID = 8
+		AND sbt.ProductID IN (8, 28)
 	GROUP BY b.custid
 
 	SELECT

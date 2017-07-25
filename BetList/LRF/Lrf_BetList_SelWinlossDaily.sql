@@ -93,6 +93,7 @@ AS
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
+		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
 
 	Param's Explanation:
 */
@@ -259,6 +260,7 @@ BEGIN
 		OR (@Product = 'VS' AND ProductID = 5)
 		OR (@Product = 'KN' AND ProductID = 8)
 		OR (@Product = 'VS2' AND ProductID = 27)
+		OR (@Product = 'LT' AND ProductID = 28)
 
 	SET @LicenseeWL =
 					'CASE
@@ -403,7 +405,7 @@ BEGIN
 			PlayerComm			MONEY,
 			TransDate			DATETIME,
 			WinLostDate			DATETIME,
-			BetTeam				VARCHAR(300),
+			BetTeam				NVARCHAR(10),
 			LiveIndicator		INT,
 			LiveHomeScore		SMALLINT,
 			LiveAwayScore		SMALLINT,
@@ -446,24 +448,27 @@ BEGIN
 		SET @sql = 
 		'SELECT
 			b.oddsid,
-			CAST(NULL AS INT) AS SportType,
+			CASE
+				WHEN sbt.ProductID = 8 THEN 202
+				WHEN sbt.ProductID = 28 THEN 220
+				ELSE 0
+			END AS SportType,
 			b.username,
-			SUBSTRING(c.username2, CHARINDEX(''$'', c.username2) + 1,
-			LEN(c.username2) - CHARINDEX(''$'', c.username2)) AS Nickname,
+			SUBSTRING(c.username2, CHARINDEX(''$'', c.username2) + 1, LEN(c.username2) - CHARINDEX(''$'', c.username2)) AS Nickname,
 			b.bettype,
-			CAST(NULL AS INT) AS leagueID,
+			0 AS leagueID,
 			b.transid,
-			CAST(NULL AS NVARCHAR(50)) AS matchcode,
-			CAST('''' AS NVARCHAR(20)) AS Race,
-			CAST(NULL AS INT) AS homeID,
-			CAST(NULL AS INT) AS awayID,
-			CONVERT(FLOAT, b.hdp1) AS hdp1,
-			CONVERT(FLOAT, b.hdp2) AS hdp2,
+			'''' AS matchcode,
+			'''' AS Race,
+			0 AS homeID,
+			0 AS awayID,
+			b.hdp1,
+			b.hdp2,
 			b.odds,
 			b.modds,
 			b.status,
 			b.stake,
-			(b.winlost-actual_stake) winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			CASE
 				WHEN b.bettype NOT IN (31,32,33) THEN - (b.winlost-b.actual_stake)
 				ELSE awinlost
@@ -473,21 +478,21 @@ BEGIN
 			b.transdate,
 			b.winlostdate,
 			CASE
-				WHEN b.bettype BETWEEN 1501 AND 1599 THEN b.transdesc
-				ELSE b.betteam
-			END AS betteam,
+				WHEN sbt.ProductID IN (1, 2, 3, 4, 5, 27) THEN b.betteam
+				ELSE ''''
+			END AS BetTeam,
 			b.liveindicator,
 			b.livehomescore,
 			b.liveawayscore,
 			b.matchid,
-			CAST(NULL AS NVARCHAR(50)) AS betstatus,
+			'''' AS betstatus,
 			CONVERT(BIT,0) AS IsNeutral,
 			b.OddsType,
 			b.betid,
 			b.currency,
 			b.refno,
 			b.custid,
-			CAST('''' AS NVARCHAR(50)) AS showtime,
+			'''' AS showtime,
 			b.betcheck,
 			ISNULL(b.transdesc, '''') AS transdesc,
 			CASE
@@ -538,10 +543,10 @@ BEGIN
 				ELSE 0
 			END * e.GBP AS OriginalStakeGBP
 		FROM
-			dbo.bettrans b WITH (NOLOCK)
-			INNER JOIN dbo.customer c WITH (NOLOCK) ON b.custid = c.custid
-			INNER JOIN #TempAg ag ON b.recommend = ag.custid AND b.currency = ag.Currency
-			INNER JOIN #SportBettype sbt ON sbt.Bettype = b.bettype
+			dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN dbo.customer AS c WITH (NOLOCK) ON b.custid = c.custid
+			INNER JOIN #TempAg AS ag ON b.recommend = ag.custid AND b.currency = ag.Currency
+			INNER JOIN #SportBettype AS sbt ON sbt.Bettype = b.bettype
 			INNER JOIN #TempExchange e ON  e.exchangeid = b.currency' + CHAR(13) +
 			CASE
 				WHEN @Product = 'BA' THEN 'INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction BA WITH (NOLOCK) ON b.transid = BA.transid'
@@ -629,15 +634,6 @@ BEGIN
 		FROM #BetData1 AS b
 			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 
-		UPDATE b
-		SET
-			BetTeam = t.ChoiceId,
-			MatchId = t.GameId,
-			b.SportType = 202
-		FROM #BetData1 b
-			CROSS APPLY dbo.[f_ParseTransDesc](b.betteam, b.bettype) t
-		WHERE b.bettype BETWEEN 1501 AND 1599
-
 		-- Update data with match table
 		UPDATE b
 		SET sporttype = m.sporttype,
@@ -655,7 +651,7 @@ BEGIN
 		FROM #BetData1 AS b
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN #SportBettype AS s WITH (NOLOCK) ON b.BetType = s.Bettype
-		WHERE b.bettype NOT BETWEEN 1501 AND 1599 -- exclude Keno
+		WHERE s.EventType = 1
 
 		-- Update data with @vhr table
 		UPDATE b
@@ -856,7 +852,7 @@ BEGIN
 			PlayerComm			MONEY,
 			TransDate			DATETIME,
 			WinLostDate			DATETIME,
-			BetTeam				VARCHAR(300),
+			BetTeam				NVARCHAR(10),
 			LiveIndicator		INT,
 			LiveHomeScore		SMALLINT,
 			LiveAwayScore		SMALLINT,
@@ -899,23 +895,27 @@ BEGIN
 		SET @sql = 
 		'SELECT
 			b.oddsid,
-			CAST(NULL AS INT) AS sporttype,
+			CASE
+				WHEN sbt.ProductID = 8 THEN 202
+				WHEN sbt.ProductID = 28 THEN 220
+				ELSE 0
+			END AS SportType,
 			b.username,
-			SUBSTRING(c.username2,  CHARINDEX(''$'',c.username2)+1, len(c.username2)-CHARINDEX(''$'',c.username2)) AS nickname,
+			SUBSTRING(c.username2, CHARINDEX(''$'', c.username2) + 1, LEN(c.username2) - CHARINDEX(''$'', c.username2)) AS Nickname,
 			b.bettype,
-			CAST(NULL AS INT) AS leagueID,
+			0 AS leagueID,
 			b.transid,
-			CAST(NULL AS NVARCHAR(50)) AS matchcode,
-			CAST('''' AS NVARCHAR(20)) AS Race,
-			CAST(NULL AS INT) AS homeID,
-			CAST(NULL AS INT) AS awayID,
-			CONVERT(FLOAT, b.hdp1) AS hdp1,
-			CONVERT(FLOAT, b.hdp2) AS hdp2,
+			'''' AS matchcode,
+			'''' AS Race,
+			0 AS homeID,
+			0 AS awayID,
+			b.hdp1,
+			b.hdp2,
 			b.odds,
 			b.modds,
 			b.status,
 			b.stake,
-			(b.winlost-actual_stake) winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			CASE
 				WHEN b.bettype NOT IN (31,32,33) THEN - (b.winlost-b.actual_stake)
 				ELSE awinlost
@@ -925,25 +925,25 @@ BEGIN
 			b.transdate,
 			b.winlostdate,
 			CASE
-				WHEN b.bettype BETWEEN 1501 AND 1599 THEN b.transdesc
-				ELSE b.betteam
-			END AS betteam,
+				WHEN sbt.ProductID IN (1, 2, 3, 4, 5, 27) THEN b.betteam
+				ELSE ''''
+			END AS BetTeam,
 			b.liveindicator,
 			b.livehomescore,
 			b.liveawayscore,
 			b.matchid,
-			CAST(NULL AS NVARCHAR(50)) AS betstatus,
+			'''' AS betstatus,
 			CONVERT(BIT,0) AS IsNeutral,
 			b.OddsType,
 			b.betid,
 			b.currency,
 			b.refno,
 			b.custid,
-			CAST('''' AS NVARCHAR(50)) AS showtime,
+			'''' AS showtime,
 			b.betcheck,
 			ISNULL(b.transdesc, '''') AS transdesc,
 			CASE
-				WHEN b.ExtraInfo LIKE ''%p25%'' THEN
+				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE ''%p25%'' THEN
 					ISNULL(CAST((''<xml>'' + b.ExtraInfo + ''</xml>'') AS XML).value(''data(/xml/p25/@s)[1]'',''MONEY''), 0)
 				ELSE 0
 			END AS OriginalStake,
@@ -990,11 +990,11 @@ BEGIN
 				ELSE 0
 			END * e.GBP AS OriginalStakeGBP
 		FROM
-			dbo.bettrans14 b WITH (NOLOCK) 
-			INNER JOIN dbo.customer c WITH (NOLOCK) ON b.custid = c.custid
-			INNER JOIN #TempAg ag ON b.recommend = ag.custid AND b.currency = ag.Currency
-			INNER JOIN #TempExchange e ON  e.exchangeid = b.currency' + CHAR(13) +
-			'INNER JOIN #SportBettype sbt ON sbt.Bettype = b.bettype' + CHAR(13) +
+			dbo.bettrans14 AS b WITH (NOLOCK) 
+			INNER JOIN dbo.customer AS c WITH (NOLOCK) ON b.custid = c.custid
+			INNER JOIN #TempAg AS ag ON b.recommend = ag.custid AND b.currency = ag.Currency
+			INNER JOIN #TempExchange AS e ON e.exchangeid = b.currency
+			INNER JOIN #SportBettype AS sbt ON sbt.Bettype = b.bettype' + CHAR(13) +
 			CASE
 				WHEN @Product = 'BA' THEN 'INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction BA WITH (NOLOCK) ON b.transid = BA.transid'	
 				ELSE ''
@@ -1081,14 +1081,6 @@ BEGIN
 		FROM #BetData14 AS b
 			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 
-		UPDATE b
-		SET betteam = t.ChoiceId,
-			matchid = t.GameId,
-			b.sporttype = 202
-		FROM #BetData14 AS b
-			CROSS APPLY dbo.[f_ParseTransDesc](b.betteam, b.bettype) AS t
-		WHERE b.bettype BETWEEN 1501 AND 1599
-
 		-- Update data with match14 table
 		UPDATE b
 		SET sporttype = m.sporttype,
@@ -1106,7 +1098,7 @@ BEGIN
 		FROM #BetData14 AS b
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN #SportBettype AS s WITH (NOLOCK) ON b.BetType = s.Bettype
-		WHERE b.bettype NOT BETWEEN 1501 AND 1599 -- exclude Keno
+		WHERE s.EventType = 1
 
 		-- Update data with @vhr table
 		UPDATE b
@@ -1120,7 +1112,7 @@ BEGIN
 		FROM #BetData14 AS b
 			INNER JOIN @vhr AS v ON b.oddsid = v.OrID
 		WHERE b.bettype IN (1231, 1232, 1233, 1237, 1238)
-	
+
 		-- Update data with @hr table
 		UPDATE b
 		SET sporttype = r.sporttype,
