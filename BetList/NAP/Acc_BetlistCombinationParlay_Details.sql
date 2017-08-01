@@ -37,6 +37,7 @@ AS
 		- 20160408@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170210@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
+		- 20170801@Kos: Return TransId instead of 0 [Redmine: #73545]
 */
 
 BEGIN
@@ -344,7 +345,7 @@ BEGIN
 	-- Return combo detail
 	SELECT DISTINCT
 		WinLostDate,
-		0 AS transid,
+		TransId,
 		Serial,
 		StatusId,
 		CASE StatusId
