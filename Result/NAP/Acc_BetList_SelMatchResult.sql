@@ -32,6 +32,7 @@ AS
 		- 20170116@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170120@Kos: Get result detail of bet type 221 in case of 225 [#Redmine: 56589]
 		- 20170323@Kos: Support Basketball AIO [#Redmine: 73033]
+		- 20170802@Kos: Change sporttype data type to SMALLINT [Redmine: #73545]
 */
 
 BEGIN
@@ -40,7 +41,7 @@ BEGIN
 	IF @RaceNo IS NULL
 	BEGIN
 		DECLARE @ResourceId	VARCHAR(20),
-			@SportType		TINYINT
+			@SportType		SMALLINT
 
 		-- Get result detail of bet type 221 in case of 225
 		IF @BetType = 225
@@ -148,7 +149,7 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY ResourceId
+			ORDER BY d.ResourceID
 
 			RETURN
 		END
@@ -254,7 +255,7 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY ResourceId
+			ORDER BY d.ResourceID
 
 			RETURN
 		END
@@ -263,9 +264,9 @@ BEGIN
 			SELECT
 				m.sporttype,
 				m.betstatus,
-				hthomescore,
-				htawayscore,
-				DATEDIFF(MINUTE, kickofftime, CURRENT_TIMESTAMP) playtime,
+				m.hthomescore,
+				m.htawayscore,
+				DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP) playtime,
 				m.LeagueID,
 				m.matchid,
 				m.homeID,
@@ -304,7 +305,7 @@ BEGIN
 				ISNULL(mr.IsPending, 0) AS IsPending,
 				m.showtime
 			FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
-				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+				LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_bk AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId
 			ORDER BY m.eventdate,
@@ -452,23 +453,23 @@ BEGIN
 			WHERE orid = @MatchId 
 
 			SELECT
-				matchcode,
-				placing,
+				bk.matchcode,
+				bk.placing,
 				l.sporttype,
-				teamid AS runner,
+				bk.teamid AS runner,
 				bk.leagueid,
 				'' EventTime,
 				'' HorseNo,
 				'' WinOdds,
 				'' PlaceOdds,
 				'' IsFavor
-			FROM DBARC.bodb_Archive.dbo.Outright_bk bk WITH (NOLOCK)
+			FROM DBARC.bodb_Archive.dbo.Outright_bk AS bk WITH (NOLOCK)
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = bk.leagueid
 			WHERE bk.leagueid = @LeagueId
-				AND groupmatch = @RaceNo
-				AND eventdate = @EventDate
-				AND ISNULL(placing, 0) <> 0
-			ORDER BY placing
+				AND bk.groupmatch = @RaceNo
+				AND bk.eventdate = @EventDate
+				AND ISNULL(bk.placing, 0) <> 0
+			ORDER BY bk.placing
 
 			SELECT
 				matchcode,
@@ -535,19 +536,19 @@ BEGIN
 		BEGIN
 			SELECT
 				'' AS matchcode,
-				placing,
+				o.placing,
 				r.sporttype,
-				RacerID AS runner,
+				o.RacerID AS runner,
 				r.leagueid,
 				r.EventTime,
-				RacerNum AS HorseNo,
+				o.RacerNum AS HorseNo,
 				o.WinOdds,
 				o.PlaceOdds,
 				o.IsFavor
 			FROM DBARC.bodb_archive.dbo.VSOutright_bk AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
-			WHERE o.EventID = @MatchId AND ISNULL(placing, 0) <> 0
-			ORDER BY placing
+			WHERE o.EventID = @MatchId AND ISNULL(o.placing, 0) <> 0
+			ORDER BY o.placing
 
 			SELECT
 				'' AS matchcode,
@@ -562,9 +563,15 @@ END
 
 
 
+
+
+
+
+
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelMatchResult] TO [bodbExtAccNet]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelMatchResult] TO [bodbAdminNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_SelMatchResult] TO [vnteam]
+GO

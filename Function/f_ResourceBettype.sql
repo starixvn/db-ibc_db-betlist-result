@@ -1,7 +1,7 @@
 ALTER FUNCTION [dbo].[f_ResourceBettype]
 (
 )
-RETURNS @ResourceBettype TABLE (Sporttype TINYINT, ResultGroup TINYINT, ResultGroupDesc VARCHAR(500), Bettype SMALLINT, ResourceID VARCHAR(20))
+RETURNS @ResourceBettype TABLE (Sporttype SMALLINT, ResultGroup TINYINT, ResultGroupDesc VARCHAR(500), Bettype SMALLINT, ResourceID VARCHAR(20))
 AS
 
 /*
@@ -13,7 +13,7 @@ AS
 		- 20160505@Kos: Support Fast Market [#Redmine: 56589]
 		- 20160829@Kos: Support PH All In One phase 2b [#Redmine: 62882]
 		- 20170323@Kos: Support Basketball AIO [#Redmine: 73033]
-
+		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 */
 
 BEGIN
@@ -241,4 +241,4 @@ GO
 GRANT SELECT ON [dbo].[f_ResourceBettype] TO [bodbDownlineNet]
 GO 
 GRANT SELECT ON [dbo].[f_ResourceBettype] TO [bodbDownlineNetView]
-GO 
+GO
