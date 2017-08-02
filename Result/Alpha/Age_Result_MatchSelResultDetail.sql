@@ -14,12 +14,13 @@ AS
 		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
+		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @SportType TINYINT
+	DECLARE @SportType SMALLINT
 
 	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)
 	BEGIN
@@ -144,7 +145,7 @@ BEGIN
 					END
 			END AS EventStatus,
 			m.showtime,
-			ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
+			ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 			m.goalrecord,
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
@@ -192,6 +193,7 @@ BEGIN
 			ResourceId
 	END
 END
+
 
 
 

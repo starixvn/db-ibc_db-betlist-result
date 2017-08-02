@@ -36,6 +36,7 @@ AS
 		- 20170120@Kos: Support Fast Market, get result detail of bet type 221 in case of 225 [#Redmine: 56589]
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
+		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 */
 
 BEGIN
@@ -44,7 +45,7 @@ BEGIN
 	IF @RaceNo IS NULL
 	BEGIN
 		DECLARE @ResourceId	VARCHAR(20),
-			@SportType		TINYINT
+			@SportType		SMALLINT
 
 		-- Get result detail of bet type 221 in case of 225
 		IF @BetType = 225
@@ -78,7 +79,7 @@ BEGIN
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(d.SettlementStatusID, 0)
-							WHEN 1 THEN 'Refund' 
+							WHEN 1 THEN 'Refund'
 							WHEN 2 THEN 'Refund HT'
 							WHEN 3 THEN 'Refund FT'
 							ELSE m.eventstatus
@@ -153,7 +154,7 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY ResourceId
+			ORDER BY d.ResourceID
 
 			RETURN
 		END
@@ -185,7 +186,7 @@ BEGIN
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(d.SettlementStatusID, 0)
-							WHEN 1 THEN 'Refund' 
+							WHEN 1 THEN 'Refund'
 							WHEN 2 THEN 'Refund HT'
 							WHEN 3 THEN 'Refund FT'
 							ELSE m.eventstatus
@@ -260,7 +261,7 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY ResourceId
+			ORDER BY d.ResourceID
 
 			RETURN
 		END
@@ -366,7 +367,7 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY ResourceId
+			ORDER BY d.ResourceId
 		END
 	END
 	ELSE
@@ -400,7 +401,7 @@ BEGIN
 			WHERE o.leagueid = @LeagueId
 				AND o.groupmatch = @RaceNo
 				AND o.eventdate = @EventDate
-				AND ( ISNULL(o.Placing, 0) <> 0 OR o.IsSCR = 1)
+				AND (ISNULL(o.Placing, 0) <> 0 OR o.IsSCR = 1)
 			ORDER BY o.Placing
 		END
 		ELSE IF EXISTS (SELECT 1 FROM dbo.Outright14 WITH (NOLOCK) WHERE orid = @MatchId)
@@ -415,7 +416,7 @@ BEGIN
 				CAST(o.groupmatch AS INT) AS racename,
 				o.Placing AS place,
 				l.sporttype, 
-				teamid horseid,
+				o.teamid AS horseid,
 				o.odds,
 				o.placeodds,
 				o.leagueid AS meetingid,
@@ -439,11 +440,11 @@ BEGIN
 			WHERE orid = @MatchId
 
 			SELECT
-				matchcode AS horseNo,
+				bk.matchcode AS horseNo,
 				CAST(bk.groupmatch AS INT) AS racename,
-				placing AS place,
+				bk.placing AS place,
 				l.sporttype,
-				teamid AS horseid,
+				bk.teamid AS horseid,
 				bk.odds,
 				bk.placeodds,
 				bk.leagueid AS meetingid,
@@ -452,12 +453,12 @@ BEGIN
 				bk.IsSCR,
 				bk.FOddsStatus
 			FROM DBARC.bodb_Archive.dbo.Outright_bk AS bk WITH (NOLOCK)
-				INNER JOIN dbo.league AS l WITH(NOLOCK) ON l.leagueid = bk.leagueid
+				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = bk.leagueid
 			WHERE bk.leagueid = @LeagueId
-				AND groupmatch = @RaceNo
-				AND eventdate = @EventDate
-				AND (ISNULL(placing, 0) <> 0 OR isScr = 1)
-			ORDER BY placing
+				AND bk.groupmatch = @RaceNo
+				AND bk.eventdate = @EventDate
+				AND (ISNULL(bk.placing, 0) <> 0 OR bk.isScr = 1)
+			ORDER BY bk.placing
 		END
 		-- Virtual Horse Racing
 		ELSE IF EXISTS (SELECT 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE orid = @RaceNo)
@@ -503,9 +504,9 @@ BEGIN
 		ELSE
 		BEGIN
 			SELECT
-				RacerNum AS horseNo,
+				o.RacerNum AS horseNo,
 				r.EventTime AS racename,
-				placing AS place,
+				o.placing AS place,
 				r.SportType,
 				o.RacerID AS horseid,
 				o.WinOdds AS odds,
@@ -517,8 +518,8 @@ BEGIN
 				'' AS FOddsStatus
 			FROM DBARC.bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
-			WHERE o.EventID = @MatchId AND (ISNULL(placing, 0) <> 0)
-			ORDER BY placing
+			WHERE o.EventID = @MatchId AND (ISNULL(o.placing, 0) <> 0)
+			ORDER BY o.placing
 		END
 	END
 END
@@ -535,3 +536,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResult] TO [bodbAdminNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelMatchResult] TO [vnteam]
+GO
