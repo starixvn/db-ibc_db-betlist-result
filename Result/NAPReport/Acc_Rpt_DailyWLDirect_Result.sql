@@ -16,12 +16,13 @@ AS
 		- 20170123@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70731]
 		- 20170209@Kos: Don't support result detail anymore [#Redmine: 70731]
 		- 20170323@Kos: Support Basketball AIO [#Redmine: 73033]
+		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @SportType TINYINT
+	DECLARE @SportType SMALLINT
 
 	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)		-- Bettrans range
 	BEGIN
@@ -78,14 +79,14 @@ BEGIN
 			INNER JOIN dbo.customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
 		WHERE o.matchid = @MatchId
 			AND @Bettype = CASE
-								WHEN bettype IN (1, 5) AND OperatorType = 1 THEN 1
-								WHEN bettype = 1 AND OperatorType = 2 THEN 7
-								WHEN bettype = 2 AND OperatorType = 1 THEN 3
-								WHEN bettype = 2 AND OperatorType = 2 THEN 8
-								WHEN bettype = 3 AND OperatorType = 1 THEN 5
-								WHEN bettype = 3 AND OperatorType = 2 THEN 15
-								WHEN bettype = 4 AND OperatorType = 1 THEN 2
-								WHEN bettype = 4 AND OperatorType = 2 THEN 12
+								WHEN o.bettype IN (1, 5) AND o.OperatorType = 1 THEN 1
+								WHEN o.bettype = 1 AND o.OperatorType = 2 THEN 7
+								WHEN o.bettype = 2 AND o.OperatorType = 1 THEN 3
+								WHEN o.bettype = 2 AND o.OperatorType = 2 THEN 8
+								WHEN o.bettype = 3 AND o.OperatorType = 1 THEN 5
+								WHEN o.bettype = 3 AND o.OperatorType = 2 THEN 15
+								WHEN o.bettype = 4 AND o.OperatorType = 1 THEN 2
+								WHEN o.bettype = 4 AND o.OperatorType = 2 THEN 12
 							END
 
 		-- Get sport type
@@ -164,14 +165,14 @@ BEGIN
 			INNER JOIN dbo.customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
 		WHERE o.matchid = @MatchId
 			AND @Bettype = CASE
-								WHEN bettype IN (1, 5) AND OperatorType = 1 THEN 1
-								WHEN bettype = 1 AND OperatorType = 2 THEN 7
-								WHEN bettype = 2 AND OperatorType = 1 THEN 3
-								WHEN bettype = 2 AND OperatorType = 2 THEN 8
-								WHEN bettype = 3 AND OperatorType = 1 THEN 5
-								WHEN bettype = 3 AND OperatorType = 2 THEN 15
-								WHEN bettype = 4 AND OperatorType = 1 THEN 2
-								WHEN bettype = 4 AND OperatorType = 2 THEN 12
+								WHEN o.bettype IN (1, 5) AND o.OperatorType = 1 THEN 1
+								WHEN o.bettype = 1 AND o.OperatorType = 2 THEN 7
+								WHEN o.bettype = 2 AND o.OperatorType = 1 THEN 3
+								WHEN o.bettype = 2 AND o.OperatorType = 2 THEN 8
+								WHEN o.bettype = 3 AND o.OperatorType = 1 THEN 5
+								WHEN o.bettype = 3 AND o.OperatorType = 2 THEN 15
+								WHEN o.bettype = 4 AND o.OperatorType = 1 THEN 2
+								WHEN o.bettype = 4 AND o.OperatorType = 2 THEN 12
 							END
 
 		-- Get sport type
@@ -203,3 +204,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_Rpt_DailyWLDirect_Result] TO [bodbAdminNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Rpt_DailyWLDirect_Result] TO [vnteam]
+GO

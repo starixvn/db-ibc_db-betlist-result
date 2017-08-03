@@ -27,6 +27,7 @@ AS
 					- Don't support result detail anymore [#Redmine: 70731]
 					- Move SP from DBDW2.bodb_dwrs to DBACC.bodb02
 		- 20170323@Kos: Support Basketball AIO [#Redmine: 73033]
+		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 */
 
 BEGIN
@@ -74,7 +75,7 @@ BEGIN
 		ISNULL(mr.calculate, 0) AS Calculate,
 		ISNULL(mr.IsPending, 0) AS IsPending
 	FROM bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
-		LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+		LEFT OUTER JOIN bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 		LEFT JOIN bodb_Archive.dbo.ResultDetail_bk AS r WITH (NOLOCK) ON r.MatchId = m.matchid AND r.ResourceId = '00'
 	WHERE m.matchid = @MatchId
 
@@ -83,7 +84,8 @@ BEGIN
 	FROM bodb_Archive.dbo.Dot_Admin_Assignment_Operator_bk AS o WITH (NOLOCK)
 		INNER JOIN dbo.customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
 	WHERE o.matchid = @MatchId
-		AND @BetType = CASE WHEN o.bettype IN (1, 5) AND o.OperatorType = 1 THEN 1
+		AND @BetType = CASE
+							WHEN o.bettype IN (1, 5) AND o.OperatorType = 1 THEN 1
 							WHEN o.bettype = 1 AND o.OperatorType = 2 THEN 7
 							WHEN o.bettype = 2 AND o.OperatorType = 1 THEN 3
 							WHEN o.bettype = 2 AND o.OperatorType = 2 THEN 8
@@ -93,7 +95,7 @@ BEGIN
 							WHEN o.bettype = 4 AND o.OperatorType = 2 THEN 12
 						END
 
-	DECLARE @SportType TINYINT
+	DECLARE @SportType SMALLINT
 
 	-- Get sport type
 	SELECT @SportType = sporttype
@@ -126,3 +128,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_Rpt_DailyWLDirect_Result_Old] TO [bodbAdminNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Rpt_DailyWLDirect_Result_Old] TO [vnteam]
+GO
