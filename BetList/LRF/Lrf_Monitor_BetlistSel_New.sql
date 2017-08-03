@@ -30,34 +30,36 @@ AS
 		- 20130806@Jim: Add betting platform to Last bets monitoring
 		- 20140620@Florent: Offer Sporting Solution (36 new bettypes)
 		- 20141021@Florent: Apply for the change in Sporting Solution structure (#24478)
-		- 20141120@Jim: Expand data range for @transid param to covert big datatype
+		- 20141120@Jim: Expand data range for @TransId param to covert big datatype
 		- 20150128@Jim: base on GBP
-		- 20150415@Jim: support betradar
-		- 20151210@Kos: support PH All In One 4 new bet types 401, 402, 403, 404 (O/U bettypes)
+		- 20150415@Jim: Support betradar
+		- 20151210@Kos: Support PH All In One 4 new bet types 401, 402, 403, 404 (O/U bettypes)
 		- 20160115@Joseph: Redefine values of parameter betfrom
 		- 20160413@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160919@Kos: Add column transdesc to support PH AIO phase 2b [#Redmine: 62878]
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170331@Kos: Support CashOut [#Redmine: 71963]
 		- 20170419@Kos: Support BAIO [#Redmine: 73030]
+		- 20170803@Kos: Support more betfrom value [#Redmine: 80687]
 
 	Parameter's Explanation:
 		- @BetType:
 			+ HDP: 1, 7, 1303, 17, 183, 609
-			+ Others: NOT IN 1,3,7,8,17,18,178,183,1303,1306, 401, 402, 403, 404
+			+ Others: NOT IN 1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404
 			+ OU: 3, 18, 8, 178, 1306, 401, 402, 403, 404, 610, 615, 616
-			+ ALL: <=19000
-		- @TransId: lastest transid 
+			+ ALL: <= 19000
+		- @TransId: lastest transid
 		- @LimitRowCount: max record return (10,20,30)
-		- @SportID = 999 -> Parlay and System Parlay
+		- @SportId = 999 -> Parlay and System Parlay
 		- @LiveIndicator (0 : non live, 1 : live , 2 : mix non live & live)
 		- @IncludeBetFrom: 1: show column betfrom, 0: hide
-		- @BetFrom: 0: All
-					1: Asia (d)
-					2: New Asia (a)
-					3: Euro (e) and Euro 12bet (u)
-					4: WAP (m)
-					5: Smartphone (s) and Smartphone - Licensee (l)
+		- @BetFrom: 0 - All: All
+					1 - Asia: d (mobile), g (MG Download only), x (dep2-Asia)
+					2 - China: a (dep-Singbet), z (dep2-SingBet)
+					3 - Euro: e (Europe), u (dep-Euro), y (dep2-Euro)
+					4 - WAP: m (dep-wap)
+					5 - Smart Site: s (smartphone), l (dep-smart)
+					6 - Tablet: r (dep2-tablet)
 	Excecute sample :
 		[Lrf_Monitor_BetlistSel_New]
 			@LicenseeID = 14,
@@ -65,9 +67,9 @@ AS
 			@LicenseeType='Normal',
 			@Currency='1,2,3,4,5,6,7,8,9,10',
 			@SpecialLevel='0,1,2,3,4,5,6,7,8,9',
-			@transid=0,
+			@TransId=0,
 			@LimitRowCount=10,
-			@SportID=1,
+			@SportId=1,
 			@LeagueID=3,
 			@Matchid=3874470,
 			@MinStake=100,
@@ -114,7 +116,7 @@ BEGIN
 	IF @MaxStake IS NULL
 		SET @MaxStake = 0
 
-	IF @SportID > 0 AND @SportID <> 999
+	IF @SportId > 0 AND @SportId <> 999
 	BEGIN
 		SET @SQL =
 			'DECLARE @match TABLE(matchid INT primary key)' + CHAR(13) +
@@ -133,7 +135,7 @@ BEGIN
 			'UNION ALL' + CHAR(13) +
 			'SELECT o.orid' + CHAR(13) +
 			'FROM (SELECT orid, leagueid FROM dbo.outright WITH (NOLOCK) WHERE oddsstatus = ''running'') AS o ' + CHAR(13) +
-				'CROSS APPLY (SELECT l.leagueid FROM dbo.league l WITH (NOLOCK) WHERE o.leagueid = l.leagueid AND l.sporttype = ' + CONVERT(VARCHAR(10),@SportID) + ') AS l2' + CHAR(13) +
+				'CROSS APPLY (SELECT l.leagueid FROM dbo.league l WITH (NOLOCK) WHERE o.leagueid = l.leagueid AND l.sporttype = ' + CONVERT(VARCHAR(10),@SportId) + ') AS l2' + CHAR(13) +
 			'WHERE (1=1)' + CHAR(13) +
 			CASE
 				WHEN @LeagueID > 0 THEN 'AND o.leagueid = ' + CONVERT(VARCHAR(10), @LeagueId)
@@ -183,10 +185,10 @@ BEGIN
 			END + CHAR(13) +
 			'''running'' AS status,' + CHAR(13) +
 			'b.betteam,' + CHAR(13) +
-			'CONVERT(BIT,0) AS isNeutral,' + CHAR(13) +
+			'CONVERT(BIT,0) AS IsNeutral,' + CHAR(13) +
 			'b.OddsType,' + CHAR(13) +
-			'b.currency AS currencyid,' + CHAR(13) +
-			''''' AS currencyname,' + CHAR(13) +
+			'b.currency AS CurrencyId,' + CHAR(13) +
+			''''' AS CurrencyName,' + CHAR(13) +
 			'b.SpecialLevel,' + CHAR(13) +
 			'ISNULL(b.betcheck, '''') AS BetCheck,' + CHAR(13) +
 			'ISNULL(b.transdesc, '''') AS TransDesc,' + CHAR(13) +
@@ -210,17 +212,18 @@ BEGIN
 			'INNER JOIN Lrf_f_GetExchangeDaily(CONVERT(VARCHAR(10), GETDATE(), 111),CONVERT(VARCHAR(10), GETDATE(), 111)) ex ON ex.exchangeid = b.currency ' + CHAR(13) +
 			'INNER JOIN #TempAg a WITH (NOLOCK) ON b.Recommend = a.CustId AND b.Currency = a.Currency'+ CHAR(13) +
 			CASE
-				WHEN @SportID > 0 AND @Sportid <> 999 THEN 'INNER JOIN @Match m ON b.matchid = m.matchid '
+				WHEN @SportId > 0 AND @SportId <> 999 THEN 'INNER JOIN @Match m ON b.matchid = m.matchid '
 				ELSE ' '
 			END + CHAR(13) +
-		'WHERE Transid >' + CONVERT(VARCHAR(20), @transid) + '  ' + CHAR(13) +
+		'WHERE Transid >' + CONVERT(VARCHAR(20), @TransId) + '  ' + CHAR(13) +
 			'AND Statusid = 0' + CHAR(13) +
 			CASE
-				WHEN @betfrom = 1 THEN 'AND betfrom=''d'''
-				WHEN @betfrom = 2 THEN 'AND betfrom=''a'''
-				WHEN @betfrom = 3 THEN 'AND betfrom IN (''e'',''u'')'
-				WHEN @betfrom = 4 THEN 'AND betfrom=''m'''
-				WHEN @betfrom = 5 THEN 'AND betfrom IN (''s'',''l'')'
+				WHEN @BetFrom = 1 THEN 'AND betfrom IN (''d'',''g'',''x'')'
+				WHEN @BetFrom = 2 THEN 'AND betfrom IN (''a'',''z'')'
+				WHEN @BetFrom = 3 THEN 'AND betfrom IN (''e'',''u'',''y'')'
+				WHEN @BetFrom = 4 THEN 'AND betfrom = ''m'''
+				WHEN @BetFrom = 5 THEN 'AND betfrom IN (''s'',''l'')'
+				WHEN @BetFrom = 6 THEN 'AND betfrom = ''r'''
 				ELSE ''
 			END + CHAR(13) +
 			CASE
@@ -256,34 +259,34 @@ BEGIN
 			CASE WHEN @Currency <> 'ALL' THEN 'AND b.currency IN (' + @Currency + ') ' ELSE ' ' END + CHAR(13) +
 			CASE WHEN @SpecialLevel <> 'ALL' THEN 'AND SpecialLevel IN (' + @SpecialLevel + ')' ELSE ' ' END + CHAR(13) +
 			CASE
-				WHEN @SportID > 0 AND @SportID < 999 AND @LiveIndicator IN (0,1) THEN 'AND Liveindicator = '+CONVERT(VARCHAR(10),@LiveIndicator)
-				WHEN @SportID > 0 AND @SportID < 999 AND @LiveIndicator = 2 THEN 'AND b.bettype = 9 AND b.Livehomescore=' + CONVERT(VARCHAR(10),@LiveIndicator)
-				WHEN @SportID > 0 AND @Sportid <> 999 AND @LiveIndicator = 3 THEN'AND ( b.bettype < 31 OR b.bettype BETWEEN 121 AND 999 OR (b.Bettype BETWEEN 1301 AND 1399) )'
+				WHEN @SportId > 0 AND @SportId < 999 AND @LiveIndicator IN (0,1) THEN 'AND Liveindicator = ' + CONVERT(VARCHAR(10), @LiveIndicator)
+				WHEN @SportId > 0 AND @SportId < 999 AND @LiveIndicator = 2 THEN 'AND b.bettype = 9 AND b.Livehomescore=' + CONVERT(VARCHAR(10), @LiveIndicator)
+				WHEN @SportId > 0 AND @SportId <> 999 AND @LiveIndicator = 3 THEN'AND ( b.bettype < 31 OR b.bettype BETWEEN 121 AND 999 OR (b.Bettype BETWEEN 1301 AND 1399) )'
 				ELSE ' '
 			END + CHAR(13) +
 			CASE
-				WHEN @SportID = 0 THEN
+				WHEN @SportId = 0 THEN
 					CASE
-						WHEN @LiveIndicator = 3 THEN 'AND ( b.bettype < 31 OR b.bettype BETWEEN 121 AND 999 OR (b.Bettype BETWEEN 1301 AND 1399))' 
-						WHEN @LiveIndicator = 2 THEN 'AND b.bettype = 9 AND b.Livehomescore=' + CONVERT(VARCHAR(10),@LiveIndicator) + ' '
+						WHEN @LiveIndicator = 3 THEN 'AND ( b.bettype < 31 OR b.bettype BETWEEN 121 AND 999 OR (b.Bettype BETWEEN 1301 AND 1399))'
+						WHEN @LiveIndicator = 2 THEN 'AND b.bettype = 9 AND b.Livehomescore=' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
 						WHEN @LiveIndicator IN (0,1) THEN 
 						'AND (
 							(Liveindicator=' + CONVERT(VARCHAR(10), @LiveIndicator) +
 								' AND ((b.bettype < 31 AND b.bettype NOT IN (9,29))
 									OR b.bettype BETWEEN 121 AND 999
 									OR b.Bettype BETWEEN 1301 AND 1399)) ' +
-							'OR (b.bettype IN (9,29) AND b.Livehomescore=' + CONVERT(VARCHAR(10),@LiveIndicator) + ')) '
+							'OR (b.bettype IN (9,29) AND b.Livehomescore=' + CONVERT(VARCHAR(10), @LiveIndicator) + ')) '
 						ELSE ' '
 					END
 				ELSE ' '
 			END + CHAR(13) +
 			CASE
-				WHEN @BetType = 'HDP' AND @SportID <> 999 THEN 'AND b.bettype IN (1, 7, 1303, 17, 183, 609)'
-				WHEN @BetType = 'OU' AND @SportID <> 999 THEN ' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 610, 615, 616)'
-				WHEN @BetType = 'Others' AND @SportID <> 999 THEN ' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 609, 610, 615, 616)'
+				WHEN @BetType = 'HDP' AND @SportId <> 999 THEN 'AND b.bettype IN (1, 7, 1303, 17, 183, 609)'
+				WHEN @BetType = 'OU' AND @SportId <> 999 THEN ' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 610, 615, 616)'
+				WHEN @BetType = 'Others' AND @SportId <> 999 THEN ' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 609, 610, 615, 616)'
 				ELSE ' '
 			END + CHAR(13)+
-			CASE @SportID
+			CASE @SportId
 				WHEN 999 THEN 
 					CASE @LiveIndicator 
 						WHEN 3 THEN 'AND b.bettype IN (9,29) '
@@ -305,7 +308,8 @@ END
 
 
 
+
 GO
-GRANT EXECUTE ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [bodbLicenseeNet]  
+GRANT EXECUTE ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [bodbLicenseeNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [vnteam]  
+GRANT VIEW DEFINITION ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [vnteam]
