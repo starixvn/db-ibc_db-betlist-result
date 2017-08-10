@@ -1,114 +1,110 @@
 USE [bodb02]
 GO
-/****** Object:  StoredProcedure [dbo].[U3_BetList_SelBettype]    Script Date: 5/5/2017 5:21:06 AM ******/
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-/****** Object:  Stored Procedure dbo.U3_BetList_SelBettype    Script Date: 1/15/2015 10:22:01 PM ******/
-/****** Object:  Stored Procedure dbo.U3_BetList_SelBettype    Script Date: 1/14/2015 2:40:23 PM ******/
+
 ALTER PROCEDURE [dbo].[U3_BetList_SelBettype]
-	@CustID int
-	,@FromDate datetime
-	,@ToDate datetime
-	,@MoveBetsDay datetime 
-	,@BalanceUpDay datetime 
-AS 
+	@CustId			INT,
+	@FromDate		DATETIME,
+	@ToDate			DATETIME,
+	@MoveBetsDay	DATETIME,
+	@BalanceUpDay	DATETIME
+AS
 
-/*	Created: Dom
-	Date:05/01/2015
-	DB: DBAGE/BODB02
-	Task: Get bettype in bettrans table
+/*
+	Created: Dom@20150105
+	DB: DBAGE.bodb02
+	Task: Get bettype in bettrans table for U3
 	Revisions:
-	
+		- 20170814@Kos: Support Lucky 3 [#Redmine: 75277]
 */
+
 BEGIN
+	SET NOCOUNT ON
 
-SET NOCOUNT ON  
+	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
 
-	DECLARE @SportBettype TABLE(ProductID INT, Bettype INT,EventType INT)
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
 	INSERT INTO @SportBettype
-	EXEC bodb02.dbo.Acc_SportBettypeMatrix_Sel @mode=4
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (3, 4, 7, 26)
 
-	DECLARE @BettypeTable TABLE (bettype INT)
+	DECLARE @BetTypeTable TABLE (bettype INT)
 
-	Declare @TempFromDate datetime
-	Declare @TempToDate datetime
+	DECLARE @TempFromDate DATETIME,
+		@TempToDate DATETIME
 
 	IF @Todate > @MoveBetsDay
 	BEGIN
-		IF @FromDate <= @MoveBetsDay 
-			SET @TempFromDate =  dateadd(day,1,@MoveBetsDay)
+		IF @FromDate <= @MoveBetsDay
+			SET @TempFromDate =  DATEADD(DAY, 1, @MoveBetsDay)
 		ELSE
 			SET @TempFromDate = @FromDate
-		
-		INSERT INTO @BettypeTable
-		SELECT 
-			DISTINCT bettype 
-			FROM dbo.bettrans (nolock)
-		WHERE 
-			bettype < 19001 
-			AND custid = @CustID
+
+		INSERT INTO @BetTypeTable
+		SELECT DISTINCT bettype
+		FROM dbo.bettrans WITH (NOLOCK)
+		WHERE bettype < 19001
+			AND custid = @CustId
 			AND winlostdate BETWEEN @TempFromDate AND @todate
-		UNION 
-		SELECT 
-			DISTINCT gameID bettype 
-			FROM dbo.translog (nolock)
-		WHERE 
-			winlostdate BETWEEN @TempFromDate AND @todate
+		UNION
+		SELECT DISTINCT gameID AS bettype
+		FROM dbo.translog WITH (NOLOCK)
+		WHERE winlostdate BETWEEN @TempFromDate AND @todate
 			AND statusID = 0
-		
-			
 	END
-	IF @Fromdate <= @MoveBetsDay
+
+	IF @FromDate <= @MoveBetsDay
 	BEGIN
 		IF @ToDate >= @MoveBetsDay
-			set @TempToDate = @MoveBetsDay
+			SET @TempToDate = @MoveBetsDay
 		ELSE
-			set  @TempToDate = @ToDate
-	
-		IF @BalanceUpDay < @FromDate 
-			SELECT @BalanceUpDay=@FromDate
-	
-		INSERT INTO @BettypeTable
-		SELECT 
-			DISTINCT bettype 
-			FROM dbo.bettrans14 (nolock)
-		WHERE 
-			bettype < 19001 
-			AND custid = @CustID
+			SET @TempToDate = @ToDate
+
+		IF @BalanceUpDay < @FromDate
+			SELECT @BalanceUpDay = @FromDate
+
+		INSERT INTO @BetTypeTable
+		SELECT DISTINCT bettype
+		FROM dbo.bettrans14 WITH (NOLOCK)
+		WHERE bettype < 19001
+			AND custid = @CustId
 			AND winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 	END
 
 	IF @FromDate < @BalanceUpDay
 	BEGIN
-		IF @todate >= DATEADD(dd, -1, @BalanceUpDay)
+		IF @ToDate >= DATEADD(dd, -1, @BalanceUpDay)
 			SET @TempToDate = DATEADD(dd, -1, @BalanceUpDay)
 		ELSE
-			SET @TempToDate = @todate
+			SET @TempToDate = @ToDate
 	
-		INSERT INTO @BettypeTable
-		SELECT 
-			DISTINCT bettype
-		FROM DBARC.bodb_archive.dbo.bettrans_bk with (nolock)
-		WHERE 
-			bettype < 19001
-			AND custid = @CustID
-			AND winlostdate BETWEEN @fromdate AND @TempToDate 
+		INSERT INTO @BetTypeTable
+		SELECT DISTINCT bettype
+		FROM DBARC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
+		WHERE bettype < 19001
+			AND custid = @CustId
+			AND winlostdate BETWEEN @FromDate AND @TempToDate
 	END
 
-
-	SELECT 
-		typeid,
-		typenamee
-	FROM bettype bt (nolock)
-	INNER JOIN (SELECT DISTINCT bettype FROM  @BettypeTable) btt on bt.typeid = btt.bettype
-	INNER JOIN @SportBettype mtx ON mtx.bettype = bt.typeid
-	WHERE mtx.ProductID IN(3,4,7)
-
+	SELECT
+		bt.typeid,
+		bt.typenamee
+	FROM dbo.bettype AS bt WITH (NOLOCK)
+		INNER JOIN (SELECT DISTINCT bettype FROM @BettypeTable) AS btt ON bt.typeid = btt.bettype
+		INNER JOIN @SportBettype AS mtx ON mtx.bettype = bt.typeid
 END
 
 
+GO
 GRANT	EXECUTE	ON	U3_BetList_SelBettype	TO	bodbAdminNet
 GRANT	VIEW DEFINITION	ON	U3_BetList_SelBettype	TO	vnteam
 GRANT	EXECUTE	ON	U3_BetList_SelBettype	TO	bodbExtAccNet
+GO
