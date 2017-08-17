@@ -1,37 +1,39 @@
 ﻿ALTER PROCEDURE [dbo].[Age_Monitor_MatchSel]
-	@matchid	INT	= 0	
- AS
+	@MatchId	INT	= 0
+AS
 
-/*	
-	Created	: Johnson
+/*
+	Created: Johnson@20110628
 	Task: Monitor lastest bets list- get match running
-	Date: 28/06/2011
-	DB: DB053.BODB02
+	DB: DBAGE.bodb02
 
 	Revision:
-		- 20120301@Jamie: Retrieve showtime for LiveCasino 
+		- 20120301@Jamie: Retrieve showtime for LiveCasino
+		- 20170817@Kos: Return IsNeutral [#Redmine: 66992]
 	
-	Parameter's Explanation:		
-		- @matchid: lastest match's ID running get 
-*/ 
+	Parameter's Explanation:
+		- @@Matchid: lastest match's ID running get 
+*/
 
- BEGIN
+BEGIN
 	SET NOCOUNT ON
 	
-	SELECT 
-		sporttype AS sporttype,
-		eventstatus AS status,
+	SELECT
+		sporttype,
+		eventstatus AS Status,
 		matchid,
 		leagueid,
 		matchcode,
 		homeid,
 		awayid,
-		'' AS race,
-		showtime
-	FROM MATCH WITH(NOLOCK)
-	WHERE eventstatus <> 'completed' 
-		AND matchid >=@matchid
- END
+		'' AS Race,
+		showtime,
+		IsNeutral
+	FROM dbo.match WITH (NOLOCK)
+	WHERE eventstatus <> 'completed'
+		AND matchid >= @MatchId
+END
+
  
  
  
@@ -41,3 +43,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_Monitor_MatchSel] TO [bodbDownlineNetView]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_Monitor_MatchSel] TO [vnteam]
+GO
