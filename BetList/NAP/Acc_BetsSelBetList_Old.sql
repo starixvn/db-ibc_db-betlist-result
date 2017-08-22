@@ -78,6 +78,7 @@ AS
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
+		- 20170722@Kos: Hotfix - Does not show Betradar Virtual Sports ticket [#Redmine: 81925]
 */
 
 BEGIN
@@ -180,7 +181,7 @@ BEGIN
 	DELETE FROM #SportBettype
 	WHERE Bettype IN (904, 914)
 
-	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (1, 3, 4, 5, 25))
+	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (1, 3, 4, 5, 25, 27))
 	BEGIN
 		/*
 			EventType = 1
@@ -290,9 +291,9 @@ BEGIN
 				'' AS eventdate,
 				0,
 				0,
-				sdiscount,
-				adiscount,
-				discount,
+				b.sdiscount,
+				b.adiscount,
+				b.discount,
 				0 AS homeid,
 				0 AS awayid,
 				'' AS settleTime,
@@ -879,7 +880,7 @@ BEGIN
 	IF EXISTS (	SELECT TOP(1) 1 
 				FROM #SportBettype AS sp
 					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype 
-				WHERE ProductID = 4)
+				WHERE sp.ProductID = 4)
 	BEGIN
 		INSERT INTO #BetListDetailData
 		SELECT
@@ -903,7 +904,7 @@ BEGIN
 	IF EXISTS (	SELECT TOP(1) 1 
 				FROM #SportBettype AS sp
 					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype 
-				WHERE ProductID = 12)
+				WHERE sp.ProductID = 12)
 	BEGIN
 		INSERT INTO #BetListDetailData
 		SELECT
@@ -935,14 +936,10 @@ END
 
 
 
-
-
-
-
-
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetsSelBetList_Old] TO [bodbAdminNet]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetsSelBetList_Old] TO [bodbExtAccNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetsSelBetList_Old] TO [vnteam]
+GO
