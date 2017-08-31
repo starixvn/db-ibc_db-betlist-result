@@ -17,6 +17,7 @@ AS
 		- 20170301@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
 		- 20170404@Kos: Support CashOut [#Redmine: 71963]
 		- 20170623@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20170831@Kos: Support Lucky 3 [#Redmine: 75277]
 */
 
 BEGIN
@@ -29,12 +30,12 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	-- Support Sportsbook, Horse Racing, Number Game, Virtual Sports, Betradar Virtual Sports only
+	-- Support Sportsbook, Horse Racing, Number Game, Virtual Sports, Lucky 3, Betradar Virtual Sports only
 	-- Don't support BetTrade
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 2, 3, 5, 27)
+	WHERE ProductID IN (1, 2, 3, 5, 26, 27)
 		AND BetType NOT BETWEEN 901 AND 920
 
 	DECLARE @Data TABLE (
@@ -109,7 +110,7 @@ BEGIN
 		INNER JOIN @SportBettype AS sp ON bt.bettype = sp.Bettype
 	WHERE bt.transid = @TransId
 
-	-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+	-- Sportsbook, Number Game, Virtual Sports, Lucky 3, Betradar Virtual Sports (EventType = 1)
 	IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND Bettype = @BetType)
 	BEGIN
 		INSERT INTO @Data
@@ -124,9 +125,18 @@ BEGIN
 			m.eventdate,
 			0 AS virtualrate,
 			0 AS isShowOTExRate,
-			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.sdiscount
+			END AS SDiscount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.adiscount
+			END AS ADiscount,
+			CASE
+				WHEN s.ProductID = 26 THEN 0
+				ELSE b.discount
+			END AS Discount,
 			m.homeid,
 			m.awayid,
 			ISNULL(b.checktime,'') settleTime,
@@ -522,7 +532,11 @@ BEGIN
 			AND b.transid = @TransId
 	END
 
-	SELECT * FROM @Data
+	SELECT b.*,
+		ex.currency
+	FROM @Data AS b
+		LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON b.CustId = ci.custid
+		LEFT JOIN dbo.Exchange AS ex WITH (NOLOCK) ON ci.currency = ex.exchangeid
 END
 
 
