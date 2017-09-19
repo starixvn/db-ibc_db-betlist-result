@@ -21,6 +21,7 @@ AS
 		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
+		- 20170919@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 
 	-------
 	EXEC Lrf_Result_MatchSelByLeague_Detail_xtest
@@ -30,7 +31,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @SportType TINYINT
+	DECLARE @SportType SMALLINT
 
 	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)
 	BEGIN
@@ -51,7 +52,7 @@ BEGIN
 			m.htawayscore,
 			m.finalhomescore,
 			m.finalawayscore,
-			CASE m.Sporttype
+			CASE m.sporttype
 				WHEN 5 THEN
 					CASE ISNULL(r.SettlementStatusID, 0)
 						WHEN 1 THEN 'Refund'
@@ -82,7 +83,7 @@ BEGIN
 		WHERE m.matchid = @MatchId
 
 		-- Get sport type
-		SELECT @SportType = Sporttype
+		SELECT @SportType = sporttype
 		FROM dbo.match WITH (NOLOCK)
 		WHERE matchid = @MatchId
 
@@ -205,3 +206,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelByLeague_Detail] TO [bodbLicenseeNet] 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelByLeague_Detail] TO [vnteam] 
+GO

@@ -40,6 +40,7 @@ AS
 		- 20170418@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
 					- Remove params @LicenseeId and @UserId
+		- 20170919@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 
 		*******************
 		sample test case:
@@ -53,7 +54,7 @@ BEGIN
 	IF @RaceNo IS NULL
 	BEGIN
 		DECLARE @ResourceId	VARCHAR(20),
-			@SportType		TINYINT
+			@SportType		SMALLINT
 
 		-- Get result detail of bet type 221 in case of 225
 		IF @BetType = 225
@@ -87,7 +88,7 @@ BEGIN
 				CASE m.Sporttype
 					WHEN 5 THEN
 						CASE ISNULL(d.SettlementStatusID, 0)
-							WHEN 1 THEN 'Refund' 
+							WHEN 1 THEN 'Refund'
 							WHEN 2 THEN 'Refund HT'
 							WHEN 3 THEN 'Refund FT'
 							ELSE m.eventstatus
@@ -292,7 +293,7 @@ BEGIN
 				m.awayID,
 				m.matchcode,
 				CASE
-					WHEN m.sporttype NOT IN (162,161) THEN m.GlobalShowTime
+					WHEN m.sporttype NOT IN (162, 161) THEN m.GlobalShowTime
 					ELSE m.kickofftime
 				END AS KickOffTime,
 				m.eventdate,
@@ -683,3 +684,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResult] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelMatchResult] TO [vnteam]
+GO
