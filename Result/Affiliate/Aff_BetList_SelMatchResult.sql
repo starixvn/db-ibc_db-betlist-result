@@ -30,6 +30,7 @@ AS
 		- 20170120@Kos: Get result detail of bet type 221 in case of 225 [#Redmine: 56589]
 		- 20170419@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
+		- 20170919@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 */
 
 BEGIN
@@ -38,7 +39,7 @@ BEGIN
 	IF @RaceNo IS NULL
 	BEGIN
 		DECLARE @ResourceId VARCHAR(20),
-			@SportType		TINYINT
+			@SportType		SMALLINT
 
 		-- Get result detail of bet type 221 in case of 225
 		IF @BetType = 225
@@ -327,7 +328,7 @@ BEGIN
 			FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 				LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
-					ON d.matchID = M.MatchID AND d.ResourceId = '00'
+					ON d.matchID = m.MatchID AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId
 			ORDER BY m.eventdate,
 				m.matchcode
@@ -670,6 +671,7 @@ BEGIN
 	END
 	RETURN;
 END
+
 
 
 GO
