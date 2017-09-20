@@ -41,12 +41,13 @@ AS
 		- 20170331@Kos: Support CashOut [#Redmine: 71963]
 		- 20170419@Kos: Support BAIO [#Redmine: 73030]
 		- 20170803@Kos: Support more betfrom value [#Redmine: 80687]
+		- 20170920@Kos: Support new bet types 461-464 [#Redmine: 83260]
 
 	Parameter's Explanation:
 		- @BetType:
 			+ HDP: 1, 7, 1303, 17, 183, 609
-			+ Others: NOT IN 1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404
-			+ OU: 3, 18, 8, 178, 1306, 401, 402, 403, 404, 610, 615, 616
+			+ OU: 3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616
+			+ Others: NOT IN 1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 461, 462, 463, 464
 			+ ALL: <= 19000
 		- @TransId: lastest transid
 		- @LimitRowCount: max record return (10,20,30)
@@ -282,8 +283,8 @@ BEGIN
 			END + CHAR(13) +
 			CASE
 				WHEN @BetType = 'HDP' AND @SportId <> 999 THEN 'AND b.bettype IN (1, 7, 1303, 17, 183, 609)'
-				WHEN @BetType = 'OU' AND @SportId <> 999 THEN ' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 610, 615, 616)'
-				WHEN @BetType = 'Others' AND @SportId <> 999 THEN ' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 609, 610, 615, 616)'
+				WHEN @BetType = 'OU' AND @SportId <> 999 THEN ' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616)'
+				WHEN @BetType = 'Others' AND @SportId <> 999 THEN ' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616)'
 				ELSE ' '
 			END + CHAR(13)+
 			CASE @SportId
@@ -313,3 +314,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [vnteam]
+GO
