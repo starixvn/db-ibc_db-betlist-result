@@ -28,6 +28,7 @@ AS
 					- Move SP from DBDW2.bodb_dwrs to DBACC.bodb02
 		- 20170323@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
+		- 20171004@Kos: Use table TradingBettypeMapping instead of hardcode [Redmine: #83679]
 */
 
 BEGIN
@@ -83,17 +84,9 @@ BEGIN
 	SELECT @TraderName = c.username
 	FROM bodb_Archive.dbo.Dot_Admin_Assignment_Operator_bk AS o WITH (NOLOCK)
 		INNER JOIN dbo.customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
-	WHERE o.matchid = @MatchId
-		AND @BetType = CASE
-							WHEN o.bettype IN (1, 5) AND o.OperatorType = 1 THEN 1
-							WHEN o.bettype = 1 AND o.OperatorType = 2 THEN 7
-							WHEN o.bettype = 2 AND o.OperatorType = 1 THEN 3
-							WHEN o.bettype = 2 AND o.OperatorType = 2 THEN 8
-							WHEN o.bettype = 3 AND o.OperatorType = 1 THEN 5
-							WHEN o.bettype = 3 AND o.OperatorType = 2 THEN 15
-							WHEN o.bettype = 4 AND o.OperatorType = 1 THEN 2
-							WHEN o.bettype = 4 AND o.OperatorType = 2 THEN 12
-						END
+		INNER JOIN DBDW.bodb_Account.dbo.TradingBettypeMapping AS m WITH (NOLOCK)
+			ON o.OperatorType = m.OperatorType AND o.bettype = m.TradingBetType
+	WHERE o.matchid = @MatchId AND m.TicketBetType = @BetType
 
 	DECLARE @SportType SMALLINT
 
