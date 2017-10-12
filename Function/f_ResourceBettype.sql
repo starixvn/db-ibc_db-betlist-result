@@ -1,7 +1,7 @@
 ALTER FUNCTION [dbo].[f_ResourceBettype]
 (
 )
-RETURNS @ResourceBettype TABLE (Sporttype SMALLINT, ResultGroup TINYINT, ResultGroupDesc VARCHAR(500), Bettype SMALLINT, ResourceID VARCHAR(20))
+RETURNS @ResourceBettype TABLE (SportType SMALLINT, ResultGroup TINYINT, ResultGroupDesc VARCHAR(500), BetType SMALLINT, ResourceID VARCHAR(20))
 AS
 
 /*
@@ -14,6 +14,7 @@ AS
 		- 20160829@Kos: Support PH All In One phase 2b [#Redmine: 62882]
 		- 20170323@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
+		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 */
 
 BEGIN
@@ -24,12 +25,12 @@ BEGIN
 	---
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 2, 'Goal Record', 180, '180%')
-	 
-	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
-	VALUES (1, 2, 'Goal Record', 160, '160%')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
-	VALUES (1, 2, 'Goal Record', 172, '160%')
+	VALUES (1, 2, 'Goal Record', 22, '160%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 2, 'Goal Record', 160, '160%')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 2, 'Goal Record', 164, '164%')
@@ -43,6 +44,9 @@ BEGIN
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 3, 'Goal Time', 169, '169%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 3, 'Goal Time', 455, '455')
 
 	---
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
