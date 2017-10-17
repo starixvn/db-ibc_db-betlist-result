@@ -15,6 +15,7 @@ AS
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
+		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 */
 
 BEGIN
@@ -60,7 +61,7 @@ BEGIN
 					END
 			END AS EventStatus,
 			m.showtime,
-			ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
+			ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 			m.goalrecord,
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
@@ -89,7 +90,7 @@ BEGIN
 		WHERE MatchID = @MatchId
 			AND ((@SportType = 1
 					AND SettlementStatusID > 0
-					AND (ResourceId NOT IN ('00', '01', '08')
+					AND (ResourceId NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
 						OR (ResourceId = '08'
 							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
 					AND ResourceID NOT LIKE '217%'
@@ -174,7 +175,7 @@ BEGIN
 		WHERE MatchID = @MatchId
 			AND ((@SportType = 1
 					AND SettlementStatusID > 0
-					AND (ResourceId NOT IN ('00', '01', '08')
+					AND (ResourceId NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
 						OR (ResourceId = '08'
 							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
 					AND ResourceID NOT LIKE '217%'

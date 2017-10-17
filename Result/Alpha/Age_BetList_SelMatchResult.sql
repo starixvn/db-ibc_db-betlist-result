@@ -16,17 +16,17 @@ AS
 		- 20091130@Jamie: Get the HR results history (archive)
 		- 20100123@Henry: Grant execute to Accounting site
 		- 20100730@Henry: Grant execute to bodbExtAccNet
-		- 20110307@Lukas: get more sporttype (152,153) & change column name (horseid -> runnerid)
-		- 20110721@Johnson: get more columns for HR
-		- 20110825@Johnson: get info horses scratched
+		- 20110307@Lukas: Get more sporttype (152,153) & change column name (horseid -> runnerid)
+		- 20110721@Johnson: Get more columns for HR
+		- 20110825@Johnson: Get info horses scratched
 		- 20110831@Johnson: correct event status when refund ticket
 		- 20110907@Sophia: Add column IsHTCal, calculate for Pending Status
 		- 20111003@Sophia: Add column IsPending Pending Status
 		- 20120119@Sophia: Add Showtime for Table - hand - Shoe of Live Casino
-		- 20130121@Dan: change linked server DB06 to DBARC
+		- 20130121@Dan: Change linked server DB06 to DBARC
 		- 20130226@Elodie: Show the results of Virtual HR
-		- 20130826@Kathy: change Status column name
-		- 20130925@Lukas: revert column alias eventstatus -> status for horse racing product
+		- 20130826@Kathy: Change Status column name
+		- 20130925@Lukas: Revert column alias eventstatus -> status for horse racing product
 		- 20131010@Kathy: Turn to use GlobalShowTime for display the Kick-off-Time [redmine:#6076] (exclusive LiveCasino)
 		- 20140930@Sophia: Get the detail information of Tennis sport
 		- 20140403@Sophia: Support BetRadar
@@ -37,6 +37,7 @@ AS
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
 		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
+		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 */
 
 BEGIN
@@ -130,13 +131,13 @@ BEGIN
 				d.OtherInfo
 			FROM dbo.ResultDetail AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
-					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+					ON f.Bettype = @BetType AND d.ResourceID LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
 				AND ((@SportType = 5		-- Tennis
 						AND d.SettlementStatusID > 0
-						AND CASE WHEN @BetType NOT IN (1324) THEN 2 ELSE
-								CASE WHEN @BetType IN (1324) AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
-									ELSE 0 END END = LEN(d.ResourceId))
+						AND CASE WHEN @BetType <> 1324 THEN 2 ELSE
+								CASE WHEN @BetType = 1324 AND LEFT(d.ResourceID, 2) = @ResourceId THEN 4
+									ELSE 0 END END = LEN(d.ResourceID))
 					OR (@SportType = 1		-- Soccer
 						AND (d.SettlementStatusID > 0
 							OR d.ResourceID LIKE '221%'
@@ -144,19 +145,17 @@ BEGIN
 							OR d.ResourceID LIKE '223%'
 							OR d.ResourceID LIKE '224%'
 							OR d.ResourceID LIKE '225%')
-						AND (d.ResourceId NOT IN ('00', '01', '08')
-							OR (d.ResourceId = '08'
-								AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
-						AND d.ResourceId LIKE f.ResourceID)
+						AND (d.ResourceID <> '08'
+							OR d.HomeValue LIKE '%a%'	-- Return '08' - Goal Sequence only if at least a goal scored
+							OR d.HomeValue LIKE '%h%')
+						AND d.ResourceID LIKE f.ResourceID)
 					OR (@SportType = 2		-- Basketball
 						AND (LEN(d.ResourceId) = 2
 							OR (d.SettlementStatusID > 0
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
-									OR d.ResourceId LIKE '%' + @ResourceId)))))
+									OR d.ResourceID LIKE '%' + @ResourceId)))))
 			ORDER BY d.ResourceID
-
-			RETURN
 		END
 		ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)
 		BEGIN
@@ -183,7 +182,7 @@ BEGIN
 				m.finalawayscore,
 				m.livehomescore,
 				m.liveawayscore,
-				CASE m.Sporttype
+				CASE m.sporttype
 					WHEN 5 THEN
 						CASE ISNULL(d.SettlementStatusID, 0)
 							WHEN 1 THEN 'Refund'
@@ -241,8 +240,8 @@ BEGIN
 			WHERE d.MatchId = @MatchId
 				AND ((@SportType = 5		-- Tennis
 						AND d.SettlementStatusID > 0
-						AND CASE WHEN @BetType NOT IN (1324) THEN 2 ELSE
-								CASE WHEN @BetType IN (1324) AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
+						AND CASE WHEN @BetType <> 1324 THEN 2 ELSE
+								CASE WHEN @BetType = 1324 AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
 									ELSE 0 END END = LEN(d.ResourceId))
 					OR (@SportType = 1		-- Soccer
 						AND (d.SettlementStatusID > 0
@@ -251,9 +250,9 @@ BEGIN
 							OR d.ResourceID LIKE '223%'
 							OR d.ResourceID LIKE '224%'
 							OR d.ResourceID LIKE '225%')
-						AND (d.ResourceId NOT IN ('00', '01', '08')
-							OR (d.ResourceId = '08'
-								AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+						AND (d.ResourceID <> '08'
+							OR d.HomeValue LIKE '%a%'	-- Return '08' - Goal Sequence only if at least a goal scored
+							OR d.HomeValue LIKE '%h%')
 						AND d.ResourceId LIKE f.ResourceID)
 					OR (@SportType = 2		-- Basketball
 						AND (LEN(d.ResourceId) = 2
@@ -262,8 +261,6 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
 			ORDER BY d.ResourceID
-
-			RETURN
 		END
 		ELSE
 		BEGIN
@@ -274,8 +271,8 @@ BEGIN
 				m.htawayscore,
 				CASE
 					WHEN m.sporttype = 162 THEN DATEDIFF(MINUTE, m.kickofftime ,CURRENT_TIMESTAMP) 
-					ELSE DATEDIFF(MINUTE, m.GlobalShowTime ,CURRENT_TIMESTAMP) 
-				END playtime,
+					ELSE DATEDIFF(MINUTE, m.GlobalShowTime ,CURRENT_TIMESTAMP)
+				END AS playtime,
 				m.LeagueID,
 				m.matchid,
 				m.homeID,
@@ -292,7 +289,7 @@ BEGIN
 				m.liveawayscore,
 				CASE m.Sporttype
 					WHEN 5 THEN
-						CASE ISNULL(d.SettlementStatusID,0)
+						CASE ISNULL(d.SettlementStatusID, 0)
 							WHEN 1 THEN 'Refund' 
 							WHEN 2 THEN 'Refund HT'
 							WHEN 3 THEN 'Refund FT'
@@ -315,16 +312,16 @@ BEGIN
 				ISNULL(mr.calculate, 0) AS calculate,
 				ISNULL(mr.IsPending, 0) AS IsPending,
 				m.showtime
-			FROM DBARC.bodb_Archive.dbo.Match_BK AS m WITH(NOLOCK)
+			FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH(NOLOCK)
 				LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
-				LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
+				LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId
 			ORDER BY m.eventdate,
 				m.matchcode
 
 			-- Get sport type
 			SELECT @SportType = Sporttype
-			FROM DBARC.bodb_archive.dbo.match_bk WITH (NOLOCK)
+			FROM DBARC.bodb_Archive.dbo.match_bk WITH (NOLOCK)
 			WHERE matchid = @MatchId
 
 			IF @SportType = 5
@@ -341,14 +338,14 @@ BEGIN
 				d.ResultStatusID,
 				d.SettlementStatusID,
 				d.OtherInfo
-			FROM DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
+			FROM DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
 				AND ((@SportType = 5		-- Tennis
 						AND d.SettlementStatusID > 0
-						AND CASE WHEN @BetType NOT IN (1324) THEN 2 ELSE
-								CASE WHEN @BetType IN (1324) AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
+						AND CASE WHEN @BetType <> 1324 THEN 2 ELSE
+								CASE WHEN @BetType = 1324 AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
 									ELSE 0 END END = LEN(d.ResourceId))
 					OR (@SportType = 1		-- Soccer
 						AND (d.SettlementStatusID > 0
@@ -357,9 +354,9 @@ BEGIN
 							OR d.ResourceID LIKE '223%'
 							OR d.ResourceID LIKE '224%'
 							OR d.ResourceID LIKE '225%')
-						AND (d.ResourceId NOT IN ('00', '01', '08')
-							OR (d.ResourceId = '08'
-								AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+						AND (d.ResourceID <> '08'
+							OR d.HomeValue LIKE '%a%'	-- Return '08' - Goal Sequence only if at least a goal scored
+							OR d.HomeValue LIKE '%h%')
 						AND d.ResourceId LIKE f.ResourceID)
 					OR (@SportType = 2		-- Basketball
 						AND (LEN(d.ResourceId) = 2
@@ -396,8 +393,8 @@ BEGIN
 				o.IsFavor,
 				o.IsSCR,
 				o.FOddsStatus
-			FROM dbo.Outright AS o WITH (NOLOCK)
-				INNER JOIN dbo.league AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+			FROM dbo.outright AS o WITH (NOLOCK)
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 			WHERE o.leagueid = @LeagueId
 				AND o.groupmatch = @RaceNo
 				AND o.eventdate = @EventDate
@@ -415,7 +412,7 @@ BEGIN
 				o.matchcode AS horseNo,
 				CAST(o.groupmatch AS INT) AS racename,
 				o.Placing AS place,
-				l.sporttype, 
+				l.sporttype,
 				o.teamid AS horseid,
 				o.odds,
 				o.placeodds,
@@ -424,8 +421,8 @@ BEGIN
 				o.IsFavor,
 				o.IsSCR,
 				o.FOddsStatus
-			FROM dbo.Outright14 AS o WITH (NOLOCK)
-				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = o.leagueid
+			FROM dbo.outright14 AS o WITH (NOLOCK)
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = o.leagueid
 			WHERE o.leagueid = @LeagueId
 				AND o.groupmatch = @RaceNo
 				AND o.eventdate = @EventDate
@@ -472,7 +469,7 @@ BEGIN
 				o.WinOdds AS odds,
 				o.placeodds,
 				'' AS meetingid,
-				o.EventStatus eventstatus,
+				o.EventStatus,
 				o.IsFavor,
 				'' AS IsSCR,
 				'' AS FOddsStatus
@@ -492,7 +489,7 @@ BEGIN
 				o.WinOdds AS odds,
 				o.placeodds,
 				'' AS meetingid,
-				o.EventStatus eventstatus,
+				o.EventStatus,
 				o.IsFavor,
 				'' AS IsSCR,
 				'' AS FOddsStatus

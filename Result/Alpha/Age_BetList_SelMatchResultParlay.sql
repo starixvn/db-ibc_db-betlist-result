@@ -25,6 +25,7 @@ AS
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 */
 
 BEGIN
@@ -41,7 +42,6 @@ BEGIN
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 27)
-
 
 	DECLARE @tmpParlay TABLE(
 		SportType		INT,
@@ -141,7 +141,7 @@ BEGIN
 				WHERE bm.refno = @RefNo ) AS bm
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
+			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceID = '00'
 
 		INSERT INTO @tmpResultDetail
 		SELECT
@@ -159,25 +159,25 @@ BEGIN
 		WHERE ((p.SportType = 5
 				AND d.SettlementStatusID > 0
 				AND CASE
-						WHEN p.BetType NOT IN (1324) THEN 2
+						WHEN p.BetType <> 1324 THEN 2
 						ELSE CASE
-								WHEN p.BetType IN (1324)
-									AND LEFT(d.ResourceId, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+								WHEN p.BetType = 1324
+									AND LEFT(d.ResourceID, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
 								ELSE 0
 							END
-					END = LEN(d.ResourceId))
+					END = LEN(d.ResourceID))
 			OR (p.SportType = 1
 				AND d.SettlementStatusID > 0
-				AND (d.ResourceId NOT IN ('00', '01', '08')
-					OR (d.ResourceId = '08'
-						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND (d.ResourceID <> '08'
+					OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+					OR d.HomeValue LIKE '%h%')
 				AND d.ResourceId LIKE f.ResourceID)
 			OR (p.SportType = 2
-				AND (LEN(d.ResourceId) = 2
+				AND (LEN(d.ResourceID) = 2
 					OR (d.SettlementStatusID > 0
-						AND d.ResourceId LIKE f.ResourceID
+						AND d.ResourceID LIKE f.ResourceID
 						AND (p.BetType NOT IN (606, 607, 613, 617)
-							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
+							OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
 	-- Bettrans14 range
@@ -260,25 +260,25 @@ BEGIN
 		WHERE ((p.SportType = 5
 				AND d.SettlementStatusID > 0
 				AND CASE
-						WHEN p.BetType NOT IN (1324) THEN 2
+						WHEN p.BetType <> 1324 THEN 2
 						ELSE CASE
-								WHEN p.BetType IN (1324)
-									AND LEFT(d.ResourceId, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
+								WHEN p.BetType = 1324
+									AND LEFT(d.ResourceID, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
 								ELSE 0
 							END
 					END = LEN(d.ResourceId))
 			OR (p.SportType = 1
 				AND d.SettlementStatusID > 0
-				AND (d.ResourceId NOT IN ('00', '01', '08')
-					OR (d.ResourceId = '08'
-						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND (d.ResourceID <> '08'
+					OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+					OR d.HomeValue LIKE '%h%')
 				AND d.ResourceId LIKE f.ResourceID)
 			OR (p.SportType = 2
-				AND (LEN(d.ResourceId) = 2
+				AND (LEN(d.ResourceID) = 2
 					OR (d.SettlementStatusID > 0
-						AND d.ResourceId LIKE f.ResourceID
+						AND d.ResourceID LIKE f.ResourceID
 						AND (p.BetType NOT IN (606, 607, 613, 617)
-							OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
+							OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 	END
 
 	-- Bettrans_bk range
@@ -303,7 +303,7 @@ BEGIN
 				ELSE m.GlobalShowTime
 			END AS kickofftime,
 			m.eventdate,
-			m.isNeutral,
+			m.IsNeutral,
 			m.betstatus,
 			CASE m.Sporttype
 				WHEN 5 THEN
@@ -336,12 +336,12 @@ BEGIN
 			(
 				SELECT
 					bm.matchId,
-					bm.Bettype,
-					REPLACE(ISNULL(bm.Betcheck,''),'8','') AS BetCheck
+					bm.bettype,
+					bm.betcheck
 				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo ) bm
-			INNER JOIN DBARC.bodb_Archive.dbo.match_BK AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 
@@ -354,25 +354,25 @@ BEGIN
 			d.ResultStatusID,
 			d.SettlementStatusID,
 			d.OtherInfo
-		FROM DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
+		FROM DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 			INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 				ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
 		WHERE ((p.SportType = 5
 				AND d.SettlementStatusID > 0
 				AND CASE
-						WHEN p.BetType NOT IN (1324) THEN 2
+						WHEN p.BetType <> 1324 THEN 2
 						ELSE CASE
-								WHEN p.BetType IN (1324)
+								WHEN p.BetType = 1324
 									AND LEFT(d.ResourceId, 2) = LEFT(REPLACE(ISNULL(p.BetCheck, ''), '8', ''), 2) THEN 4
 								ELSE 0
 							END
 					END = LEN(d.ResourceId))
 			OR (p.SportType = 1
 				AND d.SettlementStatusID > 0
-				AND (d.ResourceId NOT IN ('00', '01', '08')
-					OR (d.ResourceId = '08'
-						AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+				AND (d.ResourceID <> '08'
+					OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+					OR d.HomeValue LIKE '%h%')
 				AND d.ResourceId LIKE f.ResourceID)
 			OR (p.SportType = 2
 				AND (LEN(d.ResourceId) = 2
