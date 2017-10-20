@@ -26,7 +26,7 @@ AS
 		- 20150506@Bobby: Add transdesc column for metric gaming bettypes (801-899)
 		- 20150615@Edward: Support for BetTrade
 		- 20150707@Bobby: Exclude Metric Gaming running ticket from bettrans table
-		- 20150805@Bobby: 
+		- 20150805@Bobby:
 			+ Dis-allow to get ticket detail by refno 
 			+ remove checking product when selecting ticket's eventtype = 1 from bettrans_bk
 		- 20150814@Bobby: Fix bug #41544 - Exclude CS, BG, GD, KN, MG, MGC tickets
@@ -54,6 +54,7 @@ AS
 		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
+		- 20171024@Kos: Support Bullfighting [#Redmine: 84961]
 */
 
 BEGIN
@@ -86,8 +87,8 @@ BEGIN
 	FROM dbo.translog AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
 	WHERE b.translogid = @RefNo
-		AND b.statusID = 0
-		AND ( sp.productid IN (8, 12, 13, 15, 19, 28)
+		AND b.statusID IN (0, 1)
+		AND ( sp.productid IN (8, 12, 13, 15, 19, 28, 30)
 			OR sp.bettype BETWEEN 801 AND 899 )
 
 	-- FROM bettrans (exclude Metric Gaming running ticket)
@@ -103,12 +104,14 @@ BEGIN
 		WHERE
 			( b.transid = @RefNo
 				OR ( b.refno = @RefNo
-					AND (sp.productid IN (6, 8, 12, 13, 15, 19, 28) OR sp.bettype BETWEEN 801 AND 899) ) )
-			AND (b.bettype NOT BETWEEN 801 AND 806 OR b.statusID NOT IN (0, 1))
+					AND (sp.productid IN (6, 8, 12, 13, 15, 19, 28, 30)
+						OR sp.bettype BETWEEN 801 AND 899) ) )
+			AND (b.bettype NOT BETWEEN 801 AND 806
+				OR b.statusID NOT IN (0, 1))
 	END
 
 	-- FROM bettrans14
-	IF @WinlostDate IS NULL
+	IF @WinLostDate IS NULL
 	BEGIN
 		SELECT TOP(1)
 			@TransId = b.transid,
@@ -119,11 +122,12 @@ BEGIN
 			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
 		WHERE b.transid = @RefNo
 			OR ( b.refno = @RefNo
-				AND (sp.productid IN (6, 8, 12, 13, 15, 19, 28) OR sp.bettype BETWEEN 801 AND 899))
+				AND (sp.productid IN (6, 8, 12, 13, 15, 19, 28, 30)
+					OR sp.bettype BETWEEN 801 AND 899))
 	END
 
 	-- FROM bettrans_bk
-	IF @WinlostDate IS NULL
+	IF @WinLostDate IS NULL
 	BEGIN
 		SELECT TOP(1)
 			@TransId = b.transid,
@@ -179,7 +183,7 @@ BEGIN
 		LeagueId			INT,
 		SportType			SMALLINT,
 		Ip					NVARCHAR(15),
-		BetFrom				NVARCHAR (1),
+		BetFrom				NVARCHAR(1),
 		MatchId				INT,
 		IsNeutral			BIT,
 		WinLost				MONEY,
@@ -228,7 +232,7 @@ BEGIN
 	INSERT INTO @DeniedSite
 	EXEC (@Sql)
 
-	IF @WinlostDate IS NOT NULL
+	IF @WinLostDate IS NOT NULL
 		AND NOT EXISTS ( SELECT 1
 						FROM dbo.customer AS c WITH (NOLOCK)
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
@@ -236,7 +240,7 @@ BEGIN
 							AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- Bettrans
-		IF @WinlostDate > @MoveBetsDay
+		IF @WinLostDate > @MoveBetsDay
 		BEGIN
 			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Lucky 3, BetRadar Virtual Sports (EventType = 1)
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType)
@@ -1001,7 +1005,7 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (8, 19, 28) THEN b.transdesc
+						WHEN s.ProductID IN (8, 19, 28) THEN ISNULL(b.transdesc, '')
 						ELSE ''
 					END AS TransDesc,
 					0 AS OddsSpread,
@@ -1011,8 +1015,172 @@ BEGIN
 				FROM dbo.translog AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.translogid = @TransId
-					AND b.statusID = 0
+					AND b.statusID IN (0, 1)
 					AND s.ProductID IN (8, 12, 13, 15, 19, 28)
+			END
+
+			-- Bullfighting (EventType = 5) (bettrans)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 5 AND bettype = @BetType )
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					ISNULL(b.betid, 0) AS BetId,
+					b.refno,
+					m.MatchNo AS MatchCode,
+					'' AS Race,
+					m.EventDate,
+					0 AS virtualrate,
+					0 AS isShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					m.HomeId,
+					m.AwayId,
+					ISNULL(b.checktime, '') settleTime,
+					0 AS Hdp1,
+					0 AS Hdp2,
+					b.odds,
+					0 AS FinalOdds,
+					0 AS FinalOdds2,
+					b.oddstype,
+					b.status,
+					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 AS spositiontaking2,
+					0 AS mpositiontaking2,
+					0 AS apositiontaking2,
+					b.liveindicator,
+					0 AS MOdds,
+					b.custid,
+					0 AS LiveHomeScore,
+					0 AS LiveAwayScore,
+					0 AS FinalHomeScore,
+					0 AS FinalAwayScore,
+					m.League3rdId AS LeagueId,
+					m.SportType,
+					b.ip,
+					b.betfrom,
+					b.matchid,
+					0 AS IsNeutral,
+					(b.winlost - b.actual_stake) AS WinLost,
+					b.playercomm AS Commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					'' AS ShowTime,
+					b.winlostdate,
+					ISNULL(b.betcheck, '') AS BetCheck,
+					ISNULL(b.transdesc, '') AS TransDesc,
+					0 AS OddsSpread,
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					'' AS ExtraInfo
+				FROM
+					dbo.bettrans AS b WITH (NOLOCK)
+					INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
+					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+				WHERE b.transid = @TransId AND s.EventType = 5
+			END
+
+			-- Bullfighting (EventType = 5) (translog)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 30 AND Bettype = @BetType)
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.gameid AS BetType,
+					b.translogid AS TransId,
+					0 AS betid,
+					b.translogid AS RefNo,
+					m.MatchNo AS MatchCode,
+					'' AS Race,
+					m.EventDate,
+					0 AS virtualrate,
+					0 AS isShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					m.HomeId,
+					m.AwayId,
+					'' AS SettleTime,
+					0 AS Hdp1,
+					0 AS Hdp2,
+					b.odds,
+					0 AS FinalOdds,
+					0 AS FinalOdds2,
+					CASE
+						WHEN s.ProductID = 30 THEN CONVERT(TINYINT, ISNULL(b.custom1, 0))
+						ELSE 0
+					END AS OddsType,
+					b.status,
+					0 AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					CASE
+						WHEN s.ProductID = 30 THEN b.custom3
+						ELSE ''
+					END AS BetTeam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 AS spositiontaking2,
+					0 AS mpositiontaking2,
+					0 AS apositiontaking2,
+					b.liveindicator,
+					0 AS MOdds,
+					b.custid,
+					0 AS LiveHomeScore,
+					0 AS LiveAwayScore,
+					0 AS FinalHomeScore,
+					0 AS FinalAwayScore,
+					m.League3rdId AS LeagueId,
+					m.SportType,
+					b.ip,
+					b.betfrom,
+					CASE
+						WHEN s.ProductID = 30 THEN b.eventid
+						ELSE 0
+					END AS MatchId,
+					0 AS IsNeutral,
+					0 AS WinLost,
+					0 AS commission,
+					0,
+					0,
+					0,
+					0,
+					0,
+					0,
+					'' AS ShowTime,
+					b.winlostdate,
+					CASE
+						WHEN s.ProductID = 30 THEN ISNULL(b.Tranid3rd, '')
+						ELSE ''
+					END AS BetCheck,
+					CASE
+						WHEN s.ProductID = 30 THEN ISNULL(b.transdesc, '')
+						ELSE ''
+					END AS TransDesc,
+					0 AS OddsSpread,
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					'' AS ExtraInfo
+				FROM dbo.translog AS b WITH (NOLOCK)
+					INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.eventid = m.Match3rdId
+					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
+				WHERE b.translogid = @TransId
+					AND b.statusID IN (0, 1)
+					AND s.ProductID = 30
 			END
 
 			-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
@@ -1021,7 +1189,7 @@ BEGIN
 							AND (ProductID IN (17, 22, 24)
 								OR (ProductID = 6 AND SubProduct <> '')))
 			BEGIN
-				IF @WinlostDate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
+				IF @WinLostDate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)	-- yesterday and today
 				BEGIN
 					-- Yesterday and today running ticket
@@ -1307,7 +1475,7 @@ BEGIN
 			-- AG Casino, AllBet
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (11, 21) AND Bettype = @BetType)
 			BEGIN
-				IF @WinlostDate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
+				IF @WinLostDate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)	-- yesterday and today
 				BEGIN
 					-- Yesterday and today running ticket
@@ -1644,7 +1812,7 @@ BEGIN
 		END
 
 		-- Bettrans14
-		ELSE IF @WinlostDate <= @MoveBetsDay AND @WinlostDate >= @BalanceUpDay
+		ELSE IF @WinLostDate <= @MoveBetsDay AND @WinLostDate >= @BalanceUpDay
 		BEGIN
 			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Lucky 3, Betradar Virtual Sports
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType )
@@ -2255,6 +2423,80 @@ BEGIN
 					AND s.ProductID IN (6, 8, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28)
 			END
 
+			-- Bullfighting (EventType = 5) (bettrans14)
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 5 AND bettype = @BetType )
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					ISNULL(b.betid, 0) AS BetID,
+					b.refno,
+					m.MatchNo AS MatchCode,
+					'' AS Race,
+					m.EventDate,
+					0 AS virtualrate,
+					0 AS isShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					m.HomeId,
+					m.AwayId,
+					ISNULL(b.checktime, '') settleTime,
+					0 AS Hdp1,
+					0 AS Hdp2,
+					b.odds,
+					0 AS FinalOdds,
+					0 AS FinalOdds2,
+					b.oddstype,
+					b.status,
+					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 AS spositiontaking2,
+					0 AS mpositiontaking2,
+					0 AS apositiontaking2,
+					b.liveindicator,
+					0 AS MOdds,
+					b.custid,
+					0 AS LiveHomeScore,
+					0 AS LiveAwayScore,
+					0 AS FinalHomeScore,
+					0 AS FinalAwayScore,
+					m.League3rdId AS LeagueId,
+					m.SportType,
+					b.ip,
+					b.betfrom,
+					b.matchid,
+					0 AS IsNeutral,
+					(b.winlost - b.actual_stake) AS WinLost,
+					b.playercomm AS Commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					'' AS ShowTime,
+					b.winlostdate,
+					ISNULL(b.betcheck, '') AS BetCheck,
+					ISNULL(b.transdesc, '') AS TransDesc,
+					0 AS OddsSpread,
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					'' AS ExtraInfo
+				FROM
+					dbo.bettrans14 AS b WITH (NOLOCK)
+					INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
+					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+				WHERE b.transid = @TransId AND s.EventType = 5
+			END
+
 			-- Colossus Bet
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 15 AND Bettype = @BetType)
 			BEGIN
@@ -2331,7 +2573,7 @@ BEGIN
 		END
 
 		-- Bettrans_bk
-		ELSE IF @WinlostDate < @BalanceUpDay
+		ELSE IF @WinLostDate < @BalanceUpDay
 		BEGIN
 			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Lucky 3, Betradar Virtual Sports
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType )
@@ -2940,7 +3182,7 @@ BEGIN
 					INNER JOIN @Data AS d ON d.bettype = sp.bettype 
 				WHERE sp.ProductID = 4)
 	BEGIN
-		IF @WinlostDate > @MoveBetsDay
+		IF @WinLostDate > @MoveBetsDay
 		BEGIN
 			INSERT INTO @DetailData
 			SELECT
@@ -2959,7 +3201,7 @@ BEGIN
 				INNER JOIN @Data AS b1 ON bg.refno = b1.refno AND bg.bettype = b1.bettype
 			WHERE sp.Productid = 4
 		END
-		ELSE IF @WinlostDate <= @MoveBetsDay AND @WinlostDate >= @BalanceUpDay
+		ELSE IF @WinLostDate <= @MoveBetsDay AND @WinLostDate >= @BalanceUpDay
 		BEGIN
 			INSERT INTO @DetailData
 			SELECT
@@ -3004,7 +3246,7 @@ BEGIN
 					INNER JOIN @Data AS d ON d.bettype = sp.bettype 
 				WHERE sp.ProductID = 12)
 	BEGIN
-		IF @WinlostDate > @MoveBetsDay
+		IF @WinLostDate > @MoveBetsDay
 		BEGIN
 			INSERT INTO @DetailData
 			SELECT
@@ -3023,7 +3265,7 @@ BEGIN
 				INNER JOIN @Data AS b2 ON bg.refno = b2.transid AND bg.bettype = b2.bettype
 			WHERE sp.Productid = 12
 		END
-		ELSE IF @WinlostDate <= @MoveBetsDay AND @WinlostDate >= @BalanceUpDay
+		ELSE IF @WinLostDate <= @MoveBetsDay AND @WinLostDate >= @BalanceUpDay
 		BEGIN
 			INSERT INTO @DetailData
 			SELECT
@@ -3064,7 +3306,7 @@ BEGIN
 	END
 
 	-- BettransRnG tables
-	SET @WinlostDate = NULL
+	SET @WinLostDate = NULL
 	SET @CustId = NULL
 
 	-- bettransRnG
@@ -3078,7 +3320,7 @@ BEGIN
 	WHERE b.transid = @RefNo
 
 	-- bettransRnG14
-	IF @WinlostDate IS NULL
+	IF @WinLostDate IS NULL
 	BEGIN
 		SELECT TOP(1)
 			@TransId = b.transid,
@@ -3090,7 +3332,7 @@ BEGIN
 		WHERE b.transid = @RefNo
 	END
 
-	IF @WinlostDate IS NOT NULL
+	IF @WinLostDate IS NOT NULL
 		AND NOT EXISTS ( SELECT 1
 						FROM dbo.customer AS c WITH (NOLOCK)
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
@@ -3098,7 +3340,7 @@ BEGIN
 								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- bettransRnG
-		IF @WinlostDate > @MoveBetsDay
+		IF @WinLostDate > @MoveBetsDay
 		BEGIN
 			-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
 			IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
@@ -3182,7 +3424,7 @@ BEGIN
 		END
 
 		-- bettransRnG14
-		ELSE IF @WinlostDate BETWEEN @BalanceUpDay AND @MoveBetsDay
+		ELSE IF @WinLostDate BETWEEN @BalanceUpDay AND @MoveBetsDay
 		BEGIN
 			-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
 			IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
@@ -3267,7 +3509,7 @@ BEGIN
 	END
 
 	-- BettransLC tables
-	SET @WinlostDate = NULL
+	SET @WinLostDate = NULL
 	SET @CustId = NULL
 
 	-- bettransLC
@@ -3281,7 +3523,7 @@ BEGIN
 	WHERE b.transid = @RefNo
 
 	-- bettransLC14
-	IF @WinlostDate IS NULL
+	IF @WinLostDate IS NULL
 	BEGIN
 		SELECT TOP(1)
 			@TransId = b.transid,
@@ -3293,7 +3535,7 @@ BEGIN
 		WHERE b.transid = @RefNo
 	END
 
-	IF @WinlostDate IS NOT NULL
+	IF @WinLostDate IS NOT NULL
 		AND NOT EXISTS ( SELECT 1
 						FROM dbo.customer AS c WITH (NOLOCK)
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
@@ -3301,7 +3543,7 @@ BEGIN
 								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- bettransLC
-		IF @WinlostDate > @MoveBetsDay
+		IF @WinLostDate > @MoveBetsDay
 		BEGIN
 			-- AG Casino, AllBet
 			IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (11, 21) AND Bettype = @BetType )
@@ -3384,7 +3626,7 @@ BEGIN
 		END
 
 		-- bettransLC14
-		ELSE IF @WinlostDate BETWEEN @BalanceUpDay AND @MoveBetsDay
+		ELSE IF @WinLostDate BETWEEN @BalanceUpDay AND @MoveBetsDay
 		BEGIN
 			-- AG Casino, AllBet
 			IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (11, 21) AND Bettype = @BetType )
@@ -3468,13 +3710,13 @@ BEGIN
 	END
 
 	-- Get AllBet related tickets (same game)
-	IF @WinlostDate IS NOT NULL
+	IF @WinLostDate IS NOT NULL
 		AND EXISTS (SELECT 1
 					FROM @Data AS b
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					WHERE s.ProductID = 21 AND b.MatchCode <> '')
 	BEGIN
-		IF @WinlostDate > @MoveBetsDay
+		IF @WinLostDate > @MoveBetsDay
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -3555,7 +3797,7 @@ BEGIN
 		END
 
 		-- bettransLC14
-		ELSE IF @WinlostDate BETWEEN @BalanceUpDay AND @MoveBetsDay
+		ELSE IF @WinLostDate BETWEEN @BalanceUpDay AND @MoveBetsDay
 		BEGIN
 			INSERT INTO @Data
 			SELECT

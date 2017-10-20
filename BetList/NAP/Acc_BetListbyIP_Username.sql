@@ -12,9 +12,9 @@ AS
 
 	Revisions:
 		- 20100611@Henry: Change mix-parlay match from 0 to 9
-		- 20110516@Lukas: re-arrange bettype
+		- 20110516@Lukas: Rearrange bettype
 		- 20110802@Johnson: Add new bettype combination mix parlay
-		- 20120626@Lukas: check case of matchid = orid
+		- 20120626@Lukas: Check case of matchid = orid
 		- 20130904@Daniel: Remove condition bettype < 19001 when querying bettrans14 since it's useless => optimize performance
 		- 20140303@Elodie: Add Keno product [Redmine:#12756]
 		- 20150506@Tom: Support Gold Deluxe Product [#34847]
@@ -28,6 +28,8 @@ AS
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20170315@Kos: Exclude bet type 913, 914 [#Redmine: 71963]
 		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
+		- 20171025@Kos: Support Bullfighting [#Redmine: 84961]
+					- Don't support Live Casino anymore
 */
 
  BEGIN
@@ -43,12 +45,12 @@ AS
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID NOT IN (7, 9)
+	WHERE ProductID NOT IN (4, 7, 9)
 	
 	DECLARE @UserTicketTmp TABLE (
 		CustId		INT,
 		TotalBet	INT,
-		Type		TINYINT) --Type: 1: Ticket in bettrans, 2: Ticket in translog (for Keno)
+		Type		TINYINT) --Type: 1: Ticket in bettrans, 2: Ticket in translog
 
 	INSERT INTO @UserTicketTmp
 	SELECT custid,
@@ -74,8 +76,8 @@ AS
 		INNER JOIN @SportBettype AS sp ON tl.gameid = sp.BetType
 	WHERE tl.winlostdate = @FromDate
 		AND tl.ip = @Ip
-		AND tl.statusID = 0
-		AND (sp.ProductID IN (8, 12, 13, 15, 19, 28)
+		AND tl.statusID IN (0, 1)
+		AND (sp.ProductID IN (8, 12, 13, 15, 19, 28, 30)
 			OR tl.gameid BETWEEN 801 AND 899)
 	GROUP BY tl.custid
 
@@ -131,9 +133,11 @@ AS
 						UNION ALL
 						SELECT b.custid
 						FROM dbo.bettrans AS b WITH (NOLOCK) 
-						WHERE 1 = CASE WHEN b.bettype = 9 AND b.matchid = 9 THEN 1
-										WHEN b.bettype = 29 AND b.matchid = 29 THEN 1
-										ELSE 0 END
+						WHERE 1 = CASE
+									WHEN b.bettype = 9 AND b.matchid = 9 THEN 1
+									WHEN b.bettype = 29 AND b.matchid = 29 THEN 1
+									ELSE 0
+								END
 							AND b.winlostdate = @FromDate
 							AND b.ip = @Ip
 							AND b.refno IN (SELECT bm.refno
@@ -147,7 +151,7 @@ AS
 						WHERE winlostdate = @FromDate
 							AND gameid BETWEEN 801 AND 899
 							AND ip = @Ip
-							AND statusid = 0
+							AND statusID IN (0, 1)
 					) Bet
 				GROUP BY custid
 			) tmpSoccerBet ON tmpSoccerBet.custid = u.custid
@@ -195,9 +199,11 @@ AS
 						UNION ALL
 						SELECT b.custid
 						FROM dbo.bettrans14 AS b WITH (NOLOCK)
-						WHERE 1 = CASE WHEN b.bettype = 9 AND b.matchid = 9 THEN 1
+						WHERE 1 = CASE
+										WHEN b.bettype = 9 AND b.matchid = 9 THEN 1
 										WHEN b.bettype = 29 AND b.matchid = 29 THEN 1
-										ELSE 0 END
+										ELSE 0
+									END
 							AND b.winlostdate = @FromDate
 							AND b.ip = @Ip
 							AND b.refno IN (SELECT bm.refno
@@ -219,7 +225,7 @@ AS
 	SET @Sql = 'SELECT * 
 				FROM OPENQUERY(DBPOLICY,
 					''SELECT siteid, site, SpecialGroup
-					FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + CAST(@Userid AS VARCHAR(50)) + ''''')'')'
+					FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + CAST(@UserId AS VARCHAR(50)) + ''''')'')'
 
 	INSERT INTO @DeniedSite
 	EXEC (@Sql)

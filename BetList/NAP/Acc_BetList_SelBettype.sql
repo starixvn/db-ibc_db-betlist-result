@@ -8,20 +8,20 @@ AS
 
 /*
 	Created: Henry@20091228
-	Date:28/12/2009
 	DB: DBAGE.bodb02
-	
+
 	Revisions:
 		- 20100113@Henry: Newly created
 		- 20110516@Lukas: Re-arrange bettype
 		- 20110524@Henry: Change to use winlostdate instead of transdate
 		- 20130121@Dan: Change linked server DB06 to DBARC
-		- 20140311@Dom: Add keno translog
+		- 20140311@Dom: Add Keno translog
 		- 20150615@Edward: Remove bettype 903 of BetTrade
 		- 20150529@Tom: Add filter by custid on translog
 		- 20150707@Bobby: Exclude Metric Gaming running ticket from bettrans table
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20170315@Kos: Exclude bet type 913, 914 [#Redmine: 71963]
+		- 20171019@Kos: Include Waiting tickets in translog [#Redmine: 84961]
 */
 
 BEGIN
@@ -54,7 +54,7 @@ BEGIN
 		FROM dbo.translog WITH (NOLOCK)
 		WHERE winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND custid = @CustId
-			AND statusID = 0
+			AND statusID IN (0, 1)
 	END
 
 	IF @Fromdate <= @MoveBetsDay

@@ -28,8 +28,8 @@ AS
 		- 20110516@Lukas: re-arrange bettype
 		- 20110524@Henry: change to use winlostdate instead of transdate
 		- 20110711@Johnson: show exchange rate for SA Tote(Pool Currency)
-		- 20110802@Johnson: - Add new column actual_stake into betlist
-							- Add new bettype combination mix parlay
+		- 20110802@Johnson: Add new column actual_stake into betlist
+						- Add new bettype combination mix parlay
 		- 20111207@Sophia: Add P2P
 		- 20120120@Sophia: Add Showtime for Table-hand-shoe of Live Casino
 						   Add sub detail for Live Casino
@@ -38,10 +38,10 @@ AS
 		- 20120418@Sophia: Edit sub detail for Live Casino
 		- 20120423@Lukas: show transid of main ticket for all subticket of system parlay
 		- 20120606@Sophia: Change datatype of stake to money
-		- 20120626@Lukas: exclude outright from sportbook ( in case of matchid = orid)
-		- 20120629@Sophia: Remove function f_GetOddsByBettype, f_ShowOddsByBettype,f_GetChoice for odds, Oddstype, betteam
+		- 20120626@Lukas: exclude outright from sportbook (in case of matchid = orid)
+		- 20120629@Sophia: Remove function f_GetOddsByBettype, f_ShowOddsByBettype, f_GetChoice for odds, Oddstype, betteam
 		- 20120927@Johnson: get commstatus column to check double comm losing
-		- 20130226@Lukas: Move SP to bodb_archive	
+		- 20130226@Lukas: Move SP to bodb_archive
 		- 20130227@Elodie: Add Virtual HR product
 		- 20130408@Lukas: return value odds.teamid to alias name homeid instead of awayid
 		- 20130724@Elodie: Get winlostdate field
@@ -80,6 +80,7 @@ AS
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 		- 20170722@Kos: Hotfix - Does not show Betradar Virtual Sports ticket [#Redmine: 81925]
 		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
+		- 20171023@Kos: Support Bullfighting [#Redmine: 84961]
 */
 
 BEGIN
@@ -186,12 +187,12 @@ BEGIN
 	BEGIN
 		/*
 			EventType = 1
-			- Sportsbook		: ProductID = 1
+			- Sportsbook				: ProductID = 1
 			- Number Game				: ProductID = 3
 			- Live Casino				: ProductID = 4
 			- Virtual Sports			: ProductID = 5
 			- Cash Out					: ProductID = 25
-			- Lucky 3			: ProductID = 26
+			- Lucky 3					: ProductID = 26
 			- Betradar Virtual Sports	: ProductID = 27
 		*/
 		INSERT INTO #BetListData
@@ -252,7 +253,7 @@ BEGIN
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			0 AS allowdelete,
-			(b.winlost-b.actual_stake) AS winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -340,7 +341,7 @@ BEGIN
 				0 matchid,
 				CONVERT(BIT,0) AS IsNeutral,
 				0 AS allowdelete,
-				(b.winlost - b.actual_stake) AS winlost,
+				(b.winlost - b.actual_stake) AS WinLost,
 				b.playercomm AS commission,
 				(b.scomm - b.acomm) AS scomm,
 				(b.acomm - b.comm) AS acomm,
@@ -416,7 +417,7 @@ BEGIN
 				b.matchid,
 				CONVERT(BIT,0) AS IsNeutral,
 				0 AS allowdelete,
-				(b.winlost-b.actual_stake) AS winlost,
+				(b.winlost - b.actual_stake) AS WinLost,
 				b.playercomm AS commission,
 				(b.scomm - b.acomm) AS scomm,
 				(b.acomm - b.comm) AS acomm,
@@ -433,7 +434,7 @@ BEGIN
 				-1 AS BetdaqId,
 				'' AS ExtraInfo
 			FROM dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
-				INNER JOIN dbo.Outright_bk AS odds WITH (NOLOCK) ON b.matchid = odds.orid
+				INNER JOIN dbo.outright_bk AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 				INNER JOIN bodb02.dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @ToDate
@@ -534,7 +535,7 @@ BEGIN
 			END AS matchid,
 			CONVERT(BIT, 0) AS IsNeutral,
 			0 AS allowdelete,
-			(b.winlost - b.actual_stake) AS winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -573,15 +574,15 @@ BEGIN
 			b.transid,
 			ISNULL(b.betid,0),
 			b.refno,
-			odds.matchcode,
-			odds.groupmatch AS race,
-			odds.eventdate,
+			o.matchcode,
+			o.groupmatch AS race,
+			o.eventdate,
 			b.virtualrate,
 			CASE WHEN b.currency2 IS NULL THEN CONVERT(BIT,0) ELSE CONVERT(BIT,1) END AS isShowOTExRate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
-			odds.teamid AS homeid,
+			o.teamid AS homeid,
 			0 AS awayid,
 			'' AS settleTime,
 			b.hdp1,
@@ -609,14 +610,14 @@ BEGIN
 			b.liveawayscore,
 			0 AS finalhomescore,
 			0 AS finalawayscore,
-			odds.leagueid,
+			o.leagueid,
 			l.sporttype,
 			b.ip,
 			b.betfrom,
 			b.matchid,
 			CONVERT(BIT,0) AS IsNeutral,
 			0 AS allowdelete,
-			(b.winlost-b.actual_stake)  winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -633,8 +634,8 @@ BEGIN
 			-1 AS BetdaqId,
 			'' AS ExtraInfo
 		FROM dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
-			INNER JOIN dbo.outright_bk AS odds WITH (NOLOCK) ON b.matchid = odds.orid
-			INNER JOIN bodb02.dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
+			INNER JOIN dbo.outright_bk AS o WITH (NOLOCK) ON b.matchid = o.orid
+			INNER JOIN bodb02.dbo.league AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 			OUTER APPLY (
 				SELECT
@@ -650,8 +651,8 @@ BEGIN
 				FROM dbo.bettransm AS t WITH (NOLOCK)
 					INNER JOIN dbo.bettransm AS f WITH (NOLOCK) ON t.refno = f.refno
 				WHERE t.refno = b.transid
-					AND t.bettype IN (31,41)
-					AND f.bettype IN (32,42)
+					AND t.bettype IN (31, 41)
+					AND f.bettype IN (32, 42)
 			) bm
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
@@ -710,7 +711,7 @@ BEGIN
 			b.matchid,
 			CONVERT(BIT, 0) AS IsNeutral,
 			0 AS allowdelete,
-			(b.winlost-b.actual_stake) AS winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm),
 			(b.acomm - b.comm),
@@ -718,9 +719,9 @@ BEGIN
 			b.awinlost,
 			b.mwinlost,
 			b.swinlost,
-			r.EventTime showtime, -- Race Name
+			r.EventTime AS showtime, -- Race Name
 			b.winlostdate,
-			b.BetCheck,
+			b.betcheck,
 			'' AS transdesc,
 			0 AS OddSpread,
 			0 AS OriginalBetType,
@@ -742,8 +743,8 @@ BEGIN
 				FROM dbo.bettransm AS t WITH (NOLOCK)
 					INNER JOIN dbo.bettransm AS f WITH (NOLOCK) ON t.refno = f.refno
 				WHERE t.refno = b.refno
-					AND t.bettype = 1231 
-					AND f.bettype = 1232 
+					AND t.bettype = 1231
+					AND f.bettype = 1232
 			) bm
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
@@ -803,7 +804,7 @@ BEGIN
 			0 AS matchid,
 			CONVERT(BIT, 0) AS IsNeutral,
 			0 AS allowdelete,
-			(b.winlost - b.actual_stake) AS winlost,
+			(b.winlost - b.actual_stake) AS WinLost,
 			b.playercomm AS commission,
 			(b.scomm - b.acomm) AS scomm,
 			(b.acomm - b.comm) AS acomm,
@@ -825,6 +826,83 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
 			AND s.ProductId = 15
+	END
+
+	-- Bullfighting (EventType = 5) (bettrans_bk)
+	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE EventType = 5)
+	BEGIN
+		INSERT INTO #BetListData
+		SELECT
+			b.bettype,
+			b.transid,
+			ISNULL(b.betid, 0) AS BetId,
+			b.refno,
+			m.MatchNo AS MatchCode,
+			'' AS Race,
+			m.EventDate,
+			0,
+			0,
+			b.sdiscount,
+			b.adiscount,
+			b.discount,
+			m.HomeId,
+			m.AwayId,
+			ISNULL(b.checktime, '') AS settleTime,
+			0 AS Hdp1,
+			0 AS Hdp2,
+			b.odds,
+			0 AS FinalOdds,
+			0 AS FinalOdds2,
+			b.OddsType,
+			b.status,
+			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+			b.stake,
+			b.actual_stake,
+			b.transdate,
+			b.betteam,
+			b.spositiontaking,
+			b.mpositiontaking,
+			b.apositiontaking,
+			0 AS spositiontaking2,
+			0 AS mpositiontaking2,
+			0 AS apositiontaking2,
+			b.liveindicator,
+			0 AS MOdds,
+			b.custid,
+			0 AS LiveHomeScore,
+			0 AS LiveAwayScore,
+			0 AS FinalHomeScore,
+			0 AS FinalAwayScore,
+			m.League3rdId AS LeagueId,
+			m.SportType,
+			b.ip,
+			b.betfrom,
+			b.matchid,
+			0 AS IsNeutral,
+			0 AS allowdelete,
+			(b.winlost - b.actual_stake) AS WinLost,
+			b.playercomm AS commission,
+			(b.scomm - b.acomm) AS scomm,
+			(b.acomm - b.comm) AS acomm,
+			(b.comm - b.playercomm) AS comm,
+			b.awinlost,
+			b.mwinlost,
+			b.swinlost,
+			'' AS ShowTime,
+			b.winlostdate,
+			ISNULL(b.betcheck, '') AS BetCheck,
+			ISNULL(b.transdesc, '') AS TransDesc,
+			0 AS OddsSpread,
+			0 AS OriginalBetType,
+			-1 AS BetdaqId,
+			'' AS ExtraInfo
+		FROM 
+			dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
+			INNER JOIN dbo.Match3rd_bk AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
+			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
+		WHERE b.custid = @CustId
+			AND b.winlostdate BETWEEN @FromDate AND @ToDate
+			AND s.EventType = 5
 	END
 
 	-- Get more info for BetTrade tickets
@@ -898,9 +976,9 @@ BEGIN
 	ORDER BY TransId
 
 	-- Live Casino
-	IF EXISTS (	SELECT TOP(1) 1 
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM #SportBettype AS sp
-					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype 
+					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype
 				WHERE sp.ProductID = 4)
 	BEGIN
 		INSERT INTO #BetListDetailData
@@ -922,9 +1000,9 @@ BEGIN
 	END
 
 	-- Gold Deluxe
-	IF EXISTS (	SELECT TOP(1) 1 
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM #SportBettype AS sp
-					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype 
+					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype
 				WHERE sp.ProductID = 12)
 	BEGIN
 		INSERT INTO #BetListDetailData
@@ -952,6 +1030,8 @@ BEGIN
 	DROP TABLE #BetListDetailData;
 	DROP TABLE #SportBettype
 END
+
+
 
 
 
