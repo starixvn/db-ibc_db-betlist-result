@@ -42,6 +42,7 @@ AS
 		- 20170419@Kos: Support BAIO [#Redmine: 73030]
 		- 20170803@Kos: Support more betfrom value [#Redmine: 80687]
 		- 20170920@Kos: Support new bet types 461-464 [#Redmine: 83260]
+		- 20171020@Kos: Support new platform New Asia [#Redmine: 85203]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -55,13 +56,14 @@ AS
 		- @LiveIndicator (0 : non live, 1 : live , 2 : mix non live & live)
 		- @IncludeBetFrom: 1: show column betfrom, 0: hide
 		- @BetFrom: 0 - All: All
-					1 - Asia: d (mobile), g (MG Download only), x (dep2-Asia)
+					1 - Asia: d (mobile), g (MG Download only)
 					2 - China: a (dep-Singbet), z (dep2-SingBet)
 					3 - Euro: e (Europe), u (dep-Euro), y (dep2-Euro)
 					4 - WAP: m (dep-wap)
 					5 - Smart Site: s (smartphone), l (dep-smart)
 					6 - Tablet: r (dep2-tablet)
-	Excecute sample :
+					7 - New Asia: x (dep2-Asia)
+	Excecute sample:
 		[Lrf_Monitor_BetlistSel_New]
 			@LicenseeID = 14,
 			@BetType='HDP',
@@ -71,7 +73,7 @@ AS
 			@TransId=0,
 			@LimitRowCount=10,
 			@SportId=1,
-			@LeagueID=3,
+			@LeagueId=3,
 			@Matchid=3874470,
 			@MinStake=100,
 			@LiveIndicator=0
@@ -139,11 +141,11 @@ BEGIN
 				'CROSS APPLY (SELECT l.leagueid FROM dbo.league l WITH (NOLOCK) WHERE o.leagueid = l.leagueid AND l.sporttype = ' + CONVERT(VARCHAR(10),@SportId) + ') AS l2' + CHAR(13) +
 			'WHERE (1=1)' + CHAR(13) +
 			CASE
-				WHEN @LeagueID > 0 THEN 'AND o.leagueid = ' + CONVERT(VARCHAR(10), @LeagueId)
+				WHEN @LeagueId > 0 THEN 'AND o.leagueid = ' + CONVERT(VARCHAR(10), @LeagueId)
 				ELSE ''
 			END + CHAR(13) +
 			CASE
-				WHEN @Matchid > 0 THEN 'AND o.orid = ' + CONVERT(VARCHAR(10), @MatchId)
+				WHEN @MatchId > 0 THEN 'AND o.orid = ' + CONVERT(VARCHAR(10), @MatchId)
 				ELSE ''
 			END + CHAR(13)
 	END
@@ -219,12 +221,13 @@ BEGIN
 		'WHERE Transid >' + CONVERT(VARCHAR(20), @TransId) + '  ' + CHAR(13) +
 			'AND Statusid = 0' + CHAR(13) +
 			CASE
-				WHEN @BetFrom = 1 THEN 'AND betfrom IN (''d'',''g'',''x'')'
-				WHEN @BetFrom = 2 THEN 'AND betfrom IN (''a'',''z'')'
-				WHEN @BetFrom = 3 THEN 'AND betfrom IN (''e'',''u'',''y'')'
+				WHEN @BetFrom = 1 THEN 'AND betfrom IN (''d'', ''g'')'
+				WHEN @BetFrom = 2 THEN 'AND betfrom IN (''a'', ''z'')'
+				WHEN @BetFrom = 3 THEN 'AND betfrom IN (''e'', ''u'', ''y'')'
 				WHEN @BetFrom = 4 THEN 'AND betfrom = ''m'''
-				WHEN @BetFrom = 5 THEN 'AND betfrom IN (''s'',''l'')'
+				WHEN @BetFrom = 5 THEN 'AND betfrom IN (''s'', ''l'')'
 				WHEN @BetFrom = 6 THEN 'AND betfrom = ''r'''
+				WHEN @BetFrom = 7 THEN 'AND betfrom = ''x'''
 				ELSE ''
 			END + CHAR(13) +
 			CASE
@@ -289,7 +292,7 @@ BEGIN
 			END + CHAR(13)+
 			CASE @SportId
 				WHEN 999 THEN 
-					CASE @LiveIndicator 
+					CASE @LiveIndicator
 						WHEN 3 THEN 'AND b.bettype IN (9,29) '
 						WHEN 2 THEN 'AND b.bettype = 9 AND b.Livehomescore = ' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
 						ELSE 'AND b.bettype IN (9, 29) AND b.Livehomescore = ' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
