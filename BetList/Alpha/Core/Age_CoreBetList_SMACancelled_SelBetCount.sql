@@ -2,19 +2,19 @@ USE bodb02
 GO
 
 ALTER PROCEDURE [dbo].[Age_CoreBetList_SMACancelled_SelBetCount]
-	@CustId				INT 			= NULL
-	, @Username			NVARCHAR(30)	= NULL
+	@CustId				INT				= NULL
+	, @Username			NVARCHAR(50)	= NULL
 	, @RoleId			INT
 	-- PRODUCT - BETTYPE - STATUS
 	, @TransStatus		[dbo].[TVP_BetTicketStatus]		READONLY
 	, @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]	READONLY
 	, @Language			VARCHAR(2)		= 'E'
-	, @Error			INT 			= 0
+	, @Error			INT				= 0
 	, @ErrorMsg			NVARCHAR(250)	= NULL
 AS
 
 /*
-	Created: Bobby.Nguyen
+	Created: Bobby
 	Task: Aphla site - refactor betlist core
 	DB: DBAGE.bodb02
 	Original:
@@ -27,6 +27,8 @@ AS
 		- 20160812@Kos: Support NG2 [#Redmine: 61397]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
+		- 20171030@Kos: Support Bullfighting [#Redmine: 84961]
+					- Don't support Live Casino, Bingo, P2P anymore
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -42,8 +44,8 @@ BEGIN
 	SET NOCOUNT ON;
 
 	-- RESET output
-	SELECT @Error	= 0
-		, @ErrorMsg	= ''
+	SELECT @Error	= 0,
+		@ErrorMsg	= ''
 
 	IF @CustId IS NULL
 	BEGIN
@@ -73,7 +75,7 @@ BEGIN
 	)
 
 	-- CHECK for supporting cancelled ticket only
-	IF NOT EXISTS (SELECT TOP 1 1 FROM @TransStatus WHERE StatusId IN (101, 102))
+	IF NOT EXISTS (SELECT TOP(1) 1 FROM @TransStatus WHERE StatusId IN (101, 102))
 	BEGIN
 		SELECT * FROM @MemBetCount
 
@@ -95,7 +97,7 @@ BEGIN
 			, bt.EventType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-			INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
+			INNER JOIN @TransStatus AS stt ON b.statusID = stt.statusid
 		WHERE b.custid = @CustId
 	END
 
@@ -115,7 +117,7 @@ BEGIN
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON b.recommend = c.custid
 			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-			INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
+			INNER JOIN @TransStatus AS stt ON b.statusID = stt.statusid
 		WHERE c.custid = @CustId
 			AND c.roleid = 2
 	END
@@ -136,7 +138,7 @@ BEGIN
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON b.recommend = c.custid
 			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-			INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
+			INNER JOIN @TransStatus AS stt ON b.statusID = stt.statusid
 		WHERE c.mrecommend = @CustId
 			AND c.roleid = 2
 	END
@@ -157,15 +159,14 @@ BEGIN
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON b.recommend = c.custid
 			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-			INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
+			INNER JOIN @TransStatus AS stt ON b.statusID = stt.statusid
 		WHERE c.srecommend = @CustId
 			AND c.roleid = 2
 	END
 
-	/*	- Mix & System Parlay	: ProductId = 1
-		- P2P tickets			: ProductId = 9
+	/*
+		- Mix & System Parlay	: ProductId = 1
 		- Casino				: ProductId = 6
-		- Bingo					: ProductId = 7
 		- Keno					: ProductId = 8
 		- Gold Deluxe			: ProductId = 12
 		- Colossus Bet			: ProductId = 15
@@ -185,7 +186,7 @@ BEGIN
 			, COUNT(1) AS BetCount
 		FROM #tempRawData AS b
 		WHERE b.EventType = 0
-			AND b.ProductID IN (6, 7, 8, 9, 12, 15, 19, 23, 27, 28)
+			AND b.ProductID IN (6, 8, 12, 15, 19, 23, 27, 28)
 		GROUP BY b.custid
 			, b.recommend
 			, b.mrecommend
@@ -195,13 +196,12 @@ BEGIN
 	/* normal tickets
 		- Sportsbook				: ProductId = 1
 		- Number Game				: ProductId = 3
-		- Live Casino				: ProductId = 4
 		- Virtual Sports			: ProductId = 5
 		- Betradar Virtual Sports	: ProductId = 27
 	*/
 	IF EXISTS (SELECT TOP(1) 1 FROM #tempRawData WHERE EventType = 1)
 	BEGIN
-		WITH CteMatch 
+		WITH CteMatch
 		AS(
 			SELECT matchid
 			FROM dbo.match WITH (NOLOCK)
@@ -230,7 +230,7 @@ BEGIN
 	*/
 	IF EXISTS (SELECT TOP(1) 1 FROM #tempRawData WHERE EventType = 2)
 	BEGIN
-		WITH CteOutright 
+		WITH CteOutright
 		AS(
 			SELECT leagueid, orid
 			FROM dbo.outright WITH (NOLOCK)
@@ -283,6 +283,35 @@ BEGIN
 			, b.srecommend
 	END
 
+	/*
+		EventType = 5
+		- Bullfighting	: ProductId = 30
+	*/
+	IF EXISTS (SELECT TOP(1) 1 FROM #tempRawData WHERE EventType = 5)
+	BEGIN
+		WITH CteMatch
+		AS(
+			SELECT Match3rdId
+			FROM dbo.Match3rd WITH (NOLOCK)
+			WHERE EventDate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
+		)
+
+		INSERT INTO @MemBetCount
+		SELECT
+			b.custid
+			, b.recommend
+			, b.mrecommend
+			, b.srecommend
+			, COUNT(1) AS BetCount
+		FROM #tempRawData AS b
+			INNER JOIN CteMatch AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
+		WHERE b.EventType = 5
+		GROUP BY b.custid
+			, b.recommend
+			, b.mrecommend
+			, b.srecommend
+	END
+
 	;WITH SumBetcount (custid, betcount)
 	AS (
 		SELECT
@@ -308,8 +337,6 @@ BEGIN
 	FROM SumBetcount AS s
 		INNER JOIN dbo.customer AS c WITH (NOLOCK) ON s.custid = c.custid 
 	ORDER BY s.betcount DESC
-
-	RETURN;
 END
 
 

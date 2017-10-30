@@ -13,7 +13,7 @@ ALTER PROCEDURE [dbo].[Age_CoreBetList_BetTicket_SelBettrans14]
 AS
 
 /*
-	Created: Bobby.Nguyen
+	Created: Bobby
 	Task: Re-factor core betlist and apply GD product
 	DB: DBAGE.bodb02
 	Original:
@@ -39,6 +39,7 @@ AS
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 					- Don't support Bingo and P2P anymore [#Redmine: 53988]
+		- 20171031@Kos: Support Bullfighting [#Redmine: 84961]
 
 	Param's Explanation:
 
@@ -125,9 +126,9 @@ BEGIN
 		, b.mwinlost
 		, b.swinlost
 		, b.PlayerComm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -183,7 +184,6 @@ BEGIN
 		, 0 AS OddsSpread
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
---			AND b.custid = c.custid
 	WHERE c.WhTicket = 2
 		AND c.EventType = 0
 		AND c.ProductID <> 15	-- not Colossus Bet
@@ -217,9 +217,9 @@ BEGIN
 		, b.mwinlost
 		, b.swinlost
 		, b.PlayerComm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -254,13 +254,12 @@ BEGIN
 		, 0 AS OddsSpread
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
---			AND b.custid = c.custid
 		LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON bm.refno = b.refno AND bm.bettype = 18001
 	WHERE c.WhTicket = 2
 		AND c.EventType = 0
 		AND c.ProductID = 15
 
-	/* 
+	/*
 	- Sportsbook				: ProductID = 1
 	- Number Game				: ProductID = 3
 	- Live Casino				: ProductID = 4
@@ -304,9 +303,9 @@ BEGIN
 		, b.mwinlost
 		, b.swinlost
 		, b.playercomm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -364,7 +363,6 @@ BEGIN
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
---			AND b.custid = c.custid
 	WHERE c.WhTicket = 2
 		AND c.EventType = 1
 
@@ -398,9 +396,9 @@ BEGIN
 		, b.mwinlost
 		, b.swinlost
 		, b.PlayerComm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -415,13 +413,13 @@ BEGIN
 		, 0 AS finalawayscore
 		, 0 AS hthomescore
 		, 0 AS htawayscore
-		, b.IP
-		, m.LeagueID
-		, m.OrId AS MatchID
-		, m.MatchCode
-		, m.GroupMatch AS Race
+		, b.ip
+		, m.leagueid
+		, m.orid AS MatchID
+		, m.matchcode
+		, m.groupmatch AS Race
 		, m.eventdate
-		, m.TeamID AS HomeID
+		, m.teamid AS HomeID
 		, 0 AS AwayID
 		, '' AS Betstatus
 		, CONVERT(BIT,0) AS IsNeutral
@@ -435,12 +433,11 @@ BEGIN
 		INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
---			AND b.custid = c.custid
 	WHERE c.WhTicket = 2
 		AND c.EventType = 2
 
 	/*
-	- Virtual Sports 	: ProductID = 5
+	- Virtual Sports : ProductID = 5
 	*/
 	UNION ALL
 	SELECT
@@ -467,10 +464,10 @@ BEGIN
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
-		, b.PlayerComm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
+		, b.playercomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -505,9 +502,80 @@ BEGIN
 		INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 		INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
---			AND b.custid = c.custid
 	WHERE c.WhTicket = 2
 		AND c.EventType = 3
+
+	/*
+		EventType = 5
+		- Bullfighting	: ProductID = 30
+	*/
+	UNION ALL
+	SELECT
+		b.transid
+		, b.refno
+		, b.custid
+		, b.username
+		, m.sporttype
+		, b.bettype
+		, ISNULL(b.betid, 0) AS BetId
+		, b.betteam
+		, 0 AS Hdp1
+		, 0 AS Hdp2
+		, b.oddstype
+		, 0 AS OddsId
+		, b.odds
+		, 0 AS MOdds
+		, b.stake
+		, b.actual_stake
+		, b.status
+		, b.transdate
+		, b.winlostdate
+		, (b.winlost - b.actual_stake) AS WinLost
+		, b.awinlost
+		, b.mwinlost
+		, b.swinlost
+		, b.playercomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
+		, b.apositiontaking
+		, b.mpositiontaking
+		, b.spositiontaking
+		, b.tpositiontaking
+		, b.discount AS ADiscount
+		, b.adiscount AS MDiscount
+		, b.sdiscount AS SDiscount
+		, b.liveindicator
+		, 0 AS LiveHomeScore
+		, 0 AS LiveAwayScore
+		, 0 AS FinalHomeScore
+		, 0 AS FinalAwayScore
+		, 0 AS HtHomeScore
+		, 0 AS HtAwayScore
+		, b.ip
+		, m.League3rdId AS LeagueId
+		, m.Match3rdId
+		, m.MatchNo AS MatchCode
+		, '' AS Race
+		, m.EventDate
+		, m.HomeId
+		, m.AwayId
+		, '' AS BetStatus
+		, 0 AS IsNeutral
+		, '' AS Placing
+		, '' AS ShowTime
+		, ISNULL(b.betcheck, '') AS BetCheck
+		, CASE
+			WHEN b.comstatus = '1' THEN '1'
+			ELSE '0'
+		END AS comstatus
+		, ISNULL(b.transdesc, '') AS TransDesc
+		, 0 AS OddsSpread
+	FROM dbo.bettrans14 AS b WITH (NOLOCK)
+		INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
+	WHERE c.WhTicket = 2
+		AND c.EventType = 5
 
 	RETURN
 END

@@ -13,7 +13,7 @@ ALTER PROCEDURE [dbo].[Age_CoreBetList_BetTicket_SelBettrans]
 AS
 
 /*
-	Created: Bobby.Nguyen
+	Created: Bobby
 	Task: Re-factor core bet list
 	DB: DBAGE.bodb02
 	Original:
@@ -40,6 +40,7 @@ AS
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 					- Don't support Bingo and P2P anymore [#Redmine: 53988]
+		- 20171031@Kos: Support Bullfighting [#Redmine: 84961]
 
 	Param's Explanation:
 
@@ -113,16 +114,16 @@ BEGIN
 		, b.Status
 		, b.Transdate
 		, b.winlostdate
-		, CASE WHEN b.bettype IN (23102, 23002, 23202) THEN 0 
+		, CASE WHEN b.bettype IN (23102, 23002, 23202) THEN 0
 				ELSE (b.winlost - b.actual_stake)
-			END AS winlost
+			END AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
 		, b.PlayerComm
-		, (b.comm - b.playercomm)	AS comm
-		, (b.acomm - b.comm)		AS acomm
-		, (b.scomm - b.acomm)		AS scomm
+		, (b.comm - b.playercomm)	AS Comm
+		, (b.acomm - b.comm)		AS AComm
+		, (b.scomm - b.acomm)		AS SComm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -177,7 +178,6 @@ BEGIN
 		, 0 AS OddsSpread
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
---			AND b.custid = c.custid
 	WHERE c.WhTicket = 1
 		AND c.EventType = 0
 		AND c.ProductID <> 15	-- not Colossus Bet
@@ -214,14 +214,14 @@ BEGIN
 		, 'Running' AS Status
 		, b.Transdate
 		, b.winlostdate
-		, 0 AS winlost
+		, 0 AS WinLost
 		, 0 AS awinlost
 		, 0 AS mwinlost
 		, 0 AS swinlost
 		, 0 AS PlayerComm
-		, 0 AS comm
-		, 0 AS acomm
-		, 0 AS scomm
+		, 0 AS Comm
+		, 0 AS AComm
+		, 0 AS SComm
 		, AVG(brng.APositiontaking)
 		, AVG(brng.MPositiontaking)
 		, AVG(brng.SPositiontaking)
@@ -259,7 +259,7 @@ BEGIN
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
 	WHERE c.WhTicket = 4
-		AND EXISTS(SELECT TOP 1 1 FROM @TransStatus WHERE StatusId IN (0, 1))
+		AND EXISTS(SELECT TOP(1) 1 FROM @TransStatus WHERE StatusId IN (0, 1))
 		AND brng.statusID IN (0, 1)
 	GROUP BY
 		b.transid,
@@ -312,14 +312,14 @@ BEGIN
 		END AS Status
 		, b.Transdate
 		, b.winlostdate
-		, SUM(brng.winlost - brng.actual_stake) AS winlost
+		, SUM(brng.winlost - brng.actual_stake) AS WinLost
 		, SUM(brng.awinlost) AS awinlost
 		, SUM(brng.mwinlost) AS mwinlost
 		, SUM(brng.swinlost) AS swinlost
 		, SUM(brng.playercomm) AS PlayerComm
-		, SUM(brng.comm - brng.playercomm) AS comm
-		, SUM(brng.acomm - brng.comm) AS acomm
-		, SUM(brng.scomm - brng.acomm) AS scomm
+		, SUM(brng.comm - brng.playercomm) AS Comm
+		, SUM(brng.acomm - brng.comm) AS AComm
+		, SUM(brng.scomm - brng.acomm) AS SComm
 		, AVG(brng.APositiontaking)
 		, AVG(brng.MPositiontaking)
 		, AVG(brng.SPositiontaking)
@@ -402,14 +402,14 @@ BEGIN
 		, 'Running' AS Status
 		, b.Transdate
 		, b.winlostdate
-		, 0 AS winlost
+		, 0 AS WinLost
 		, 0 AS awinlost
 		, 0 AS mwinlost
 		, 0 AS swinlost
 		, 0 AS PlayerComm
-		, 0 AS comm
-		, 0 AS acomm
-		, 0 AS scomm
+		, 0 AS Comm
+		, 0 AS AComm
+		, 0 AS SComm
 		, AVG(blc.APositiontaking)
 		, AVG(blc.MPositiontaking)
 		, AVG(blc.SPositiontaking)
@@ -493,14 +493,14 @@ BEGIN
 		END AS Status
 		, b.Transdate
 		, b.winlostdate
-		, SUM(blc.winlost - blc.actual_stake) AS winlost
+		, SUM(blc.winlost - blc.actual_stake) AS WinLost
 		, SUM(blc.awinlost) AS awinlost
 		, SUM(blc.mwinlost) AS mwinlost
 		, SUM(blc.swinlost) AS swinlost
 		, SUM(blc.playercomm) AS PlayerComm
-		, SUM(blc.comm - blc.playercomm) AS comm
-		, SUM(blc.acomm - blc.comm) AS acomm 
-		, SUM(blc.scomm - blc.acomm) AS scomm
+		, SUM(blc.comm - blc.playercomm) AS Comm
+		, SUM(blc.acomm - blc.comm) AS AComm 
+		, SUM(blc.scomm - blc.acomm) AS SComm
 		, AVG(blc.APositiontaking)
 		, AVG(blc.MPositiontaking)
 		, AVG(blc.SPositiontaking)
@@ -576,14 +576,14 @@ BEGIN
 		, b.Status
 		, b.Transdate
 		, b.winlostdate
-		, (b.winlost - b.actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
 		, b.PlayerComm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -613,18 +613,17 @@ BEGIN
 		, ISNULL(bm.betcheck, '') AS BetCheck
 		, CASE WHEN b.comstatus = '1' THEN '1'
 				ELSE '0'
-		END		AS comstatus
+		END AS comstatus
 		, '' AS transdesc
 		, 0 AS OddsSpread
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
---				AND b.custid = c.custid
 		LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.refno AND bm.bettype = 18001
 	WHERE c.WhTicket = 1
 		AND c.EventType = 0
 		AND c.ProductID = 15
 
-	/* 
+	/*
 	- Sportsbook				: ProductID = 1
 	- Number Game				: ProductID = 3
 	- Live Casino				: ProductID = 4
@@ -662,14 +661,14 @@ BEGIN
 		END AS status
 		, b.transdate
 		, b.winlostdate
-		, (b.winlost - b.actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
 		, b.playercomm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -702,7 +701,7 @@ BEGIN
 		, m.homeid
 		, m.awayid
 		, m.betstatus
-		, ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral
+		, ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral
 		, '' AS Placing
 		, CASE
 			WHEN c.ProductId IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
@@ -726,13 +725,12 @@ BEGIN
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
---			AND b.custid = c.custid
 	WHERE c.WhTicket = 1
 		AND c.EventType = 1
 
 	/*
 	- Sportsbook outright	: ProductID = 1
-	- Horse Racing		 	: ProductID = 2
+	- Horse Racing			: ProductID = 2
 	*/
 	UNION ALL
 	SELECT
@@ -755,14 +753,14 @@ BEGIN
 		, b.status
 		, b.transdate
 		, b.winlostdate
-		, (b.winlost - b.actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
 		, b.PlayerComm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -794,15 +792,14 @@ BEGIN
 		, '' AS transdesc
 		, 0 AS OddsSpread
 	FROM dbo.bettrans AS b WITH (NOLOCK)
-		INNER JOIN dbo.Outright AS m WITH (NOLOCK) ON b.matchid = m.orid
+		INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
---			AND b.custid = c.custid
 	WHERE c.WhTicket = 1
 		AND c.EventType = 2
 
 	/*
-	- Virtual Sports 	: ProductID = 5
+	- Virtual Sports	: ProductID = 5
 	*/
 	UNION ALL
 	SELECT
@@ -825,14 +822,14 @@ BEGIN
 		, b.status
 		, b.transdate
 		, b.winlostdate
-		, (b.winlost - b.actual_stake) AS winlost
+		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
 		, b.PlayerComm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
 		, b.APositiontaking
 		, b.MPositiontaking
 		, b.SPositiontaking
@@ -867,9 +864,79 @@ BEGIN
 		INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 		INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
---			AND b.custid = c.custid
 	WHERE c.WhTicket = 1
 		AND c.EventType = 3
+
+	/*
+		EventType = 5
+		- Bullfighting	: ProductID = 30
+	*/
+	UNION ALL
+	SELECT
+		b.transid
+		, b.refno
+		, b.custid
+		, b.username
+		, m.SportType
+		, b.bettype
+		, ISNULL(b.betid, 0) AS BetId
+		, b.betteam
+		, 0 AS Hdp1
+		, 0 AS Hdp2
+		, b.oddstype
+		, 0 AS OddsId
+		, b.odds
+		, 0 AS MOdds
+		, b.stake
+		, b.actual_stake
+		, b.status
+		, b.transdate
+		, b.winlostdate
+		, (b.winlost - b.actual_stake) AS WinLost
+		, b.awinlost
+		, b.mwinlost
+		, b.swinlost
+		, b.playercomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
+		, b.apositiontaking
+		, b.mpositiontaking
+		, b.spositiontaking
+		, b.tpositiontaking
+		, b.discount AS ADiscount
+		, b.adiscount AS MDiscount
+		, b.sdiscount AS SDiscount
+		, b.liveindicator
+		, 0 AS LiveHomeScore
+		, 0 AS LiveAwayScore
+		, 0 AS FinalHomeScore
+		, 0 AS FinalAwayScore
+		, 0 AS HtHomeScore
+		, 0 AS HtAwayScore
+		, b.ip
+		, m.League3rdId AS LeagueId
+		, m.Match3rdId
+		, m.MatchNo AS MatchCode
+		, '' AS Race
+		, m.EventDate
+		, m.HomeId
+		, m.AwayId
+		, '' AS BetStatus
+		, 0 AS IsNeutral
+		, '' AS Placing
+		, '' AS ShowTime
+		, ISNULL(b.betcheck, '') AS BetCheck
+		, CASE WHEN b.comstatus = '1' THEN '1' 
+			ELSE '0' 
+		END AS comstatus
+		, ISNULL(b.transdesc, '') AS TransDesc
+		, 0 AS OddsSpread
+	FROM dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
+	WHERE c.WhTicket = 1
+		AND c.EventType = 5
 
 	RETURN;
 END

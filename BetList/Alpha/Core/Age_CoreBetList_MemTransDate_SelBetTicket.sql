@@ -8,7 +8,7 @@ GO
 ALTER PROCEDURE [dbo].[Age_CoreBetList_MemTransDate_SelBetTicket]
 	-- MEM INFO
 	@CustId				INT
-	, @Username			NVARCHAR(30)
+	, @Username			NVARCHAR(50)
 	, @FromDate			DATETIME
 	, @ToDate			DATETIME
 	-- PRODUCT - BETTYPE - STATUS
@@ -20,18 +20,18 @@ ALTER PROCEDURE [dbo].[Age_CoreBetList_MemTransDate_SelBetTicket]
 AS
 
 /*
-	Created: Bobby.Nguyen
-	Task : Aphla site - refactor betlist core 
+	Created: Bobby
+	Task: Aphla site - refactor betlist core
 	DB: DBAGE.bodb02
-	Original: 
+	Original:
 
 	Revisions:
-		- 20150504@Bobby.Nguyen: Create new SP
+		- 20150504@Bobby: Create new SP
 		- 20150706@Bobby: Exclude Metric Gaming running ticket from bettrans table
 		- 20150814@Bobby: #41600 - Update time range to datetime formation
 		- 20150831@Kos: Support Colossus Bet
 		- 20150910@Bobby: Enhance performance for SP core. Apply TVP for input parameters
-		- 20151214@Kos: Support Cockfighting (#Redmine: 48850)
+		- 20151214@Kos: Support Cockfighting [#Redmine: 48850]
 		- 20160111@Kos: Add column list in INSERT statement
 		- 20160111@Kos: Add @TransStatus param to support RNG Casino Single Wallet [#Redmine: 48958]
 		- 20160125@Kos: Fix performance issue with today RNG Casino Single Wallet ticket [#Redmine: 51388]
@@ -40,6 +40,7 @@ AS
 		- 20160404@Kos: Support Macau Games [Redmine: #54925]
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
 		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
+		- 20171030@Kos: Support Bullfighting [#Redmine: 84961]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -57,28 +58,28 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @Recommend	INT
-		, @tempCust		dbo.TVP_TicketSportBettype
+	DECLARE @Recommend	INT,
+		@tempCust		dbo.TVP_TicketSportBettype
 
-	SELECT @Error = 0
-		, @ErrorMsg = ''
+	SELECT @Error = 0,
+		@ErrorMsg = ''
 
 	-- CHECK member info
-	IF @CustID IS NULL AND @UserName IS NOT NULL
+	IF @CustId IS NULL AND @UserName IS NOT NULL
 	BEGIN
-		SELECT @CustID = CustID
-			, @Recommend = Recommend 
+		SELECT @CustId = CustID,
+			@Recommend = Recommend
 		FROM dbo.custinfo WITH (NOLOCK)
 		WHERE UserName = @UserName
 	END
 	
-	IF @CustID > 0
+	IF @CustId > 0
 		AND (@Recommend IS NULL OR @UserName IS NULL)
 	BEGIN
-		SELECT @Recommend	= Recommend
-			,@UserName		= UserName
+		SELECT @Recommend	= Recommend,
+			@UserName		= UserName
 		FROM dbo.custinfo WITH (NOLOCK)
-		WHERE CustID = @CustID
+		WHERE CustID = @CustId
 	END
 	
 	IF @Recommend IS NULL
@@ -97,7 +98,7 @@ BEGIN
 		Bettype,
 		EventType,
 		WhTicket )
-	SELECT 
+	SELECT
 		b.transid
 		, b.refno
 		, b.custid
@@ -105,7 +106,7 @@ BEGIN
 		, b.bettype
 		, bt.EventType
 		, CASE
-			WHEN b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) 
+			WHEN b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 				AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0) THEN		-- Yesterday and today summary ticket
 				CASE
 					WHEN bt.ProductId = 6 AND bt.SubProduct <> '' THEN 4	-- RNG Casino Single Wallet
@@ -118,11 +119,11 @@ BEGIN
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 		INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
-	WHERE b.transdate BETWEEN @fromdate AND @todate 
-		AND b.recommend = @Recommend 
-		AND b.custid = @CustID
+	WHERE b.transdate BETWEEN @FromDate AND @ToDate
+		AND b.recommend = @Recommend
+		AND b.custid = @CustId
 		--exclude running tickets of MetricGaming
-		AND ( bt.SubProduct NOT IN ('MG-SuperLive') 
+		AND ( bt.SubProduct NOT IN ('MG-SuperLive')
 			OR ( bt.SubProduct	IN ('MG-SuperLive') AND b.StatusId NOT IN (0, 1) )
 		)
 
@@ -131,9 +132,11 @@ BEGIN
 		- Gold Deluxe	: ProductId = 12
 		- Colossus Bet	: ProductId = 15
 		- Cockfighting	: ProductId = 19
+		- Lottery		: ProductId = 28
+		- Bullfighting	: ProductId = 30
 		- Metric Gaming	: Bettype(801-899)
 	*/
-	IF EXISTS(SELECT TOP 1 1 FROM @TransStatus WHERE StatusId IN (0, 1))
+	IF EXISTS (SELECT TOP(1) 1 FROM @TransStatus WHERE StatusId IN (0, 1))
 	BEGIN
 		INSERT INTO @tempCust (
 			TransID,
@@ -143,7 +146,7 @@ BEGIN
 			Bettype,
 			EventType,
 			WhTicket )
-		SELECT 
+		SELECT
 			b.translogid AS transid
 			, b.translogid AS refno
 			, b.custid
@@ -154,20 +157,18 @@ BEGIN
 		FROM dbo.translog AS b WITH (NOLOCK)
 			INNER JOIN @BettypeMatrix AS bt ON b.gameid = bt.Bettype
 			INNER JOIN @TransStatus AS st ON b.statusID = st.StatusID
-		WHERE b.transdate BETWEEN @fromdate AND @todate 
-			AND b.custid = @CustID
-			AND (bt.ProductId IN (8, 12, 15, 19, 28) 
+		WHERE b.transdate BETWEEN @FromDate AND @ToDate
+			AND b.custid = @CustId
+			AND (bt.ProductId IN (8, 12, 15, 19, 28, 30)
 				OR bt.bettype BETWEEN 801 AND 899)
 			AND b.statusID IN (0, 1)
 	END
 
-	--CALL to get ticket info
+	-- Get ticket info
 	EXEC [dbo].[Age_CoreBetList_BetTicket_SelMainInfo]
 		@tempCust = @tempCust
 		, @TransStatus = @TransStatus
 		, @ColumnOutput = @ColumnOutput
-
-	RETURN;
 END
 
 
