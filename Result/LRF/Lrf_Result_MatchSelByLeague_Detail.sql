@@ -22,6 +22,7 @@ AS
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170919@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
+		- 20171106@Kos: Support PH AIO 3 [#Redmine: 83970]
 
 	-------
 	EXEC Lrf_Result_MatchSelByLeague_Detail_xtest
@@ -100,7 +101,9 @@ BEGIN
 		WHERE MatchID = @MatchId
 			AND ((@SportType = 1							-- Soccer
 					AND SettlementStatusID > 0
-					AND ResourceID NOT IN ('00', '01', '08')
+					AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
+						OR (ResourceID = '08'
+							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
 					AND ResourceID NOT LIKE '217%'
 					AND ResourceID NOT LIKE '216%'
 					AND ResourceID NOT LIKE '221%'
@@ -183,7 +186,9 @@ BEGIN
 		WHERE MatchID = @MatchId
 			AND ((@SportType = 1							-- Soccer
 					AND SettlementStatusID > 0
-					AND ResourceID NOT IN ('00', '01', '08')
+					AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
+						OR (ResourceID = '08'
+							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
 					AND ResourceID NOT LIKE '217%'
 					AND ResourceID NOT LIKE '216%'
 					AND ResourceID NOT LIKE '221%'
@@ -200,7 +205,6 @@ BEGIN
 			ResourceID
 	END
 END
-
 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelByLeague_Detail] TO [bodbLicenseeNet] 
