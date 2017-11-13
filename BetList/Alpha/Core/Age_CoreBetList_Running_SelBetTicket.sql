@@ -41,6 +41,7 @@ AS
 		- 20151217@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20151217@Kos: Support Cockfighting (#Redmine: 48850)
 		- 20171109@Kos: Return IsNeutral for neutral match [#Redmine: 86312]
+		- 20171113@Kos: Wrong column name [#Redmine: 86508]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -71,30 +72,30 @@ BEGIN
 		, Race				NVARCHAR(20)
 		, MatchId			INT
 		, HomeId			INT
-		, AwayId			INT 
-		, Hdp1				SMALLMONEY 
-		, Hdp2				SMALLMONEY 
-		, Odds				MONEY 
-		, MOdds				MONEY 
+		, AwayId			INT
+		, Hdp1				SMALLMONEY
+		, Hdp2				SMALLMONEY
+		, Odds				MONEY
+		, MOdds				MONEY
 		, Status			NVARCHAR(10)
-		, Stake				MONEY 
-		, Actual_Stake		MONEY 
-		, Transdate			DATETIME
+		, Stake				MONEY
+		, Actual_Stake		MONEY
+		, TransDate			DATETIME
 		, BetTeam			NVARCHAR(20)
 		, APositionTaking	SMALLMONEY
 		, MPositionTaking	SMALLMONEY
 		, SPositionTaking	SMALLMONEY
-		, TPositionTaking	SMALLMONEY 
+		, TPositionTaking	SMALLMONEY
 		, ADiscount			SMALLMONEY
 		, MDiscount			SMALLMONEY
 		, SDiscount			SMALLMONEY
 		, LiveIndicator		BIT
 		, LiveHomeScore		SMALLINT
-		, LivAawayScore		SMALLINT
+		, LiveAwayScore		SMALLINT
 		, Ip				NVARCHAR(15)
 		, IsNeutral			BIT
 		, OddsType			TINYINT
-		, ShowTime			NVARCHAR(50) 
+		, ShowTime			NVARCHAR(50)
 		, ComStatus			NVARCHAR(20)
 		, BetCheck			NVARCHAR(50)
 		, TransDesc			NVARCHAR(300)
@@ -319,7 +320,7 @@ BEGIN
 			, b.hdp2
 			, b.Odds
 			, b.Modds
-			,CASE
+			, CASE
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status
