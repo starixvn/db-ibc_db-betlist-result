@@ -2,6 +2,7 @@
 	@FromDate	DATETIME,
 	@LeagueId	INT,
 	@Language	NVARCHAR(2)	= 'E',
+	@SportType	SMALLINT	= 0,
 	@IsShowAll	BIT			= 1		-- 1: Show All; 0: NOT show Test
 AS
 
@@ -18,6 +19,7 @@ AS
 		- 20110901@Jamie: Get Refund Result
 		- 20151014@Sophia: Show internal match [#45531]
 		- 20170525@Kos: Support Lucky 3 [#Redmine: 75277]
+		- 20171115@Kos: Add new param SportType to separate Lucky 3 and Number Game match [#Redmine: 86655]
 */
 
 BEGIN
@@ -63,7 +65,7 @@ BEGIN
 				finalhomescore
 			FROM dbo.match WITH (NOLOCK)
 			WHERE eventdate = @FromDate
-				AND sporttype IN (160, 161)
+				AND sporttype = @SportType
 				AND (@LeagueId = 0 OR leagueid = @LeagueId)
 			UNION ALL
 			SELECT
@@ -80,7 +82,7 @@ BEGIN
 				finalhomescore
 			FROM dbo.match14 WITH (NOLOCK)
 			WHERE eventdate = @FromDate
-				AND sporttype IN (160, 161)
+				AND sporttype = @SportType
 				AND (@LeagueId = 0 OR leagueid = @LeagueId)
 		) AS m
 		LEFT JOIN (
@@ -111,5 +113,3 @@ GRANT EXECUTE ON [dbo].[Age_Result_MatchSelNumberGameByLeague] TO [bodbDownlineN
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_Result_MatchSelNumberGameByLeague] TO [vnteam]
 GO
-
-
