@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_BetList_PlatformWinLoss_Mem].[Test_Sportsbook_BetTrans14_Normal]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		RowNum			INT,
@@ -96,7 +98,6 @@ BEGIN
 		@CustId			INT,
 		@TransId		BIGINT,
 		@CurrencyId		INT,
-		@BetFrom		NVARCHAR(1),
 		@PlatformType	TINYINT,
 		@WinLostDate	SMALLDATETIME
 
@@ -111,11 +112,10 @@ BEGIN
 	FROM OPENQUERY(DBLIC, 'SELECT * FROM bodb_licensee.dbo.f_SelLicenseeCust(0)') lc
 		INNER JOIN #currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@CustId = b.custid,
 		@CurrencyId = b.currency,
-		@BetFrom = b.betfrom,
 		@PlatformType = CASE 
 							WHEN b.betfrom = 'd' THEN 1
 							WHEN b.betfrom = 'a' THEN 2
@@ -172,3 +172,4 @@ BEGIN
 	END
 END;
 
+GO

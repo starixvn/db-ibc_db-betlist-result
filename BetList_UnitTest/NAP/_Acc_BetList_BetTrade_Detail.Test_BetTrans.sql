@@ -1,14 +1,8 @@
-USE [UnitTest_Kos]
-GO
-/****** Object:  StoredProcedure [_Acc_BetList_BetTrade_Detail].[Test_BetTrans]    Script Date: 1/10/2017 8:41:00 AM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
 ALTER PROCEDURE [_Acc_BetList_BetTrade_Detail].[Test_BetTrans]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		BetType				INT,
@@ -67,7 +61,7 @@ BEGIN
 	DECLARE @TransId	BIGINT,
 		@RefNo			BIGINT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@RefNo = b.refno
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
@@ -81,24 +75,28 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_BetTrade_Detail] 
-							@TransId = ' + CONVERT(VARCHAR, @TransId) + ',
-							@RefNo = ' + CONVERT(VARCHAR, @RefNo)
+							@TransId = ' + CONVERT(VARCHAR(20), @TransId) + ',
+							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo)
 
 		INSERT @Data
 		EXEC sp_executesql @Command
 
-		DECLARE @Expected INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE TransId = @RefNo
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
+
+GO

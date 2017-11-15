@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_BetList_PlatformWinLoss_Mem].[Test_Keno_BetTrans14]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		RowNum			INT,
@@ -96,7 +98,6 @@ BEGIN
 		@CustId			INT,
 		@TransId		BIGINT,
 		@CurrencyId		INT,
-		@BetFrom		NVARCHAR(1),
 		@PlatformType	TINYINT,
 		@WinLostDate	SMALLDATETIME
 
@@ -115,8 +116,7 @@ BEGIN
 		@TransId = b.transid,
 		@CustId = b.custid,
 		@CurrencyId = b.currency,
-		@BetFrom = b.betfrom,
-		@PlatformType = CASE 
+		@PlatformType = CASE
 							WHEN b.betfrom = 'd' THEN 1
 							WHEN b.betfrom = 'a' THEN 2
 							WHEN b.betfrom IN ('e','u') THEN 3
@@ -171,3 +171,4 @@ BEGIN
 	END
 END;
 
+GO

@@ -130,3 +130,5 @@ BEGIN
 	END
 
 END;
+
+GO

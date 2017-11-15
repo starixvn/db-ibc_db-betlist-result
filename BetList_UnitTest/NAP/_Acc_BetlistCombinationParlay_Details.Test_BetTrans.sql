@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetlistCombinationParlay_Details].[Test_BetTrans]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		WinLostDate			SMALLDATETIME,
@@ -87,5 +89,6 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+GO

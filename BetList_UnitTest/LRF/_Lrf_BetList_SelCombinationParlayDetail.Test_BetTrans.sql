@@ -126,3 +126,5 @@ BEGIN
 	END
 
 END;
+
+GO

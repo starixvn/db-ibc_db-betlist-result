@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_BetList_RNG_Detail].[Test_MacauGames_BetTrans_All]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		TransId			BIGINT,
@@ -38,10 +40,10 @@ BEGIN
 		WinLostEUR		MONEY,
 		WinLostMYR		MONEY,
 		WinLostGBP		MONEY,
-		LicenseeWLUSD		MONEY,
-		LicenseeWLEUR		MONEY,
-		LicenseeWLMYR		MONEY,
-		LicenseeWLGBP		MONEY,
+		LicenseeWLUSD	MONEY,
+		LicenseeWLEUR	MONEY,
+		LicenseeWLMYR	MONEY,
+		LicenseeWLGBP	MONEY,
 		CommUSD			MONEY,
 		CommEUR			MONEY,
 		CommMYR			MONEY,
@@ -67,14 +69,12 @@ BEGIN
 	IF @BalanceUpDay IS NULL
 		SET @BalanceUpDay = @MoveBetsDay
 
-	DECLARE @LicenseeId		INT		= 1,	-- 12Bet
-		@UserId				INT		= 68,
-		@TransId			BIGINT,
-		@RefNo				BIGINT,
-		@CustID				INT,
-		@Stake				MONEY,
-		@OutstandingStake	MONEY,
-		@TransType			TINYINT = 0
+	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
+		@UserId			INT		= 68,
+		@TransId		BIGINT,
+		@RefNo			BIGINT,
+		@CustID			INT,
+		@TransType		TINYINT = 0
 
 	SELECT CurrencyId, LicenseeId
 	INTO #Currency
@@ -83,11 +83,11 @@ BEGIN
 	DECLARE @TempAg AS TABLE (CustId INT)
 
 	INSERT INTO @TempAg
-	SELECT DISTINCT CustId
+	SELECT DISTINCT lc.CustID
 	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
 		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@RefNo = b.transid,
 		@CustID = b.custid,
 		@TransId = brng.transid
@@ -112,8 +112,6 @@ BEGIN
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
 							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
 
-							SELECT @Command
-
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command;
 
@@ -130,5 +128,6 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+GO

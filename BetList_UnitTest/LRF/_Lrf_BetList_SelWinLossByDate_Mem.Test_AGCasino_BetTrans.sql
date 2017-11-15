@@ -153,3 +153,5 @@ BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
 END;
+
+GO
