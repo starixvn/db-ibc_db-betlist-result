@@ -75,7 +75,8 @@ BEGIN
 		OddsSpread		SMALLMONEY,
 		OriginalBetType	INT,
 		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000)
+		ExtraInfo		VARCHAR(1000),
+		Currency		NVARCHAR(50)
 	)
 
 	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
@@ -96,7 +97,7 @@ BEGIN
 	DECLARE @TransId	BIGINT,
 		@CustId			INT,
 		@WinLostDate	DATETIME,
-		@BetType		INT
+		@BetType		SMALLINT
 
 	SELECT TOP(1)
 		@TransId = b.transid,
@@ -113,8 +114,8 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetsSelBetList] 
-							@CustID = ' + CONVERT(VARCHAR, @CustId, 11) + ',
-							@Bettype = ' + CONVERT(VARCHAR, @BetType, 6) + ',
+							@CustID = ' + CONVERT(VARCHAR(10), @CustId, 11) + ',
+							@Bettype = ' + CONVERT(VARCHAR(5), @BetType, 6) + ',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
 							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''''
@@ -122,18 +123,21 @@ BEGIN
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command;
 
-		DECLARE @Expected INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE TransId = @TransId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals @Expected, 1, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
 END;
 

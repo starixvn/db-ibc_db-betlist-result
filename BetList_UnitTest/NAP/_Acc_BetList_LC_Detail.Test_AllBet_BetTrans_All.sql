@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetList_LC_Detail].[Test_AllBet_BetTrans_All]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		RowNum			INT,

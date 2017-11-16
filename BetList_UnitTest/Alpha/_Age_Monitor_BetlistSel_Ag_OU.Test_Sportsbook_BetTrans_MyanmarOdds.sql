@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Age_Monitor_BetlistSel_Ag_OU].[Test_Sportsbook_BetTrans_MyanmarOdds]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		SportType			SMALLINT,
@@ -39,25 +41,10 @@ BEGIN
 		OddsSpread			SMALLMONEY
 	)
 
-	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
-
-	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
-	EXEC bodb02.dbo.Age_SelBalanceUpDay
-
-	DECLARE @MoveBetsDay SMALLDATETIME,
-		@BalanceUpDay SMALLDATETIME
-
-	SELECT @MoveBetsDay = MoveBetsDay, 
-		@BalanceUpDay = BalanceUpDay
-	FROM @tmp
-
-	IF @BalanceUpDay IS NULL
-		SET @BalanceUpDay = @MoveBetsDay
-
 	DECLARE @TransId	BIGINT,
 		@CustId			INT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@CustId = ci.recommend
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
@@ -72,24 +59,28 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Age_Monitor_BetlistSel_Ag_OU]
-							@CustId = ' + CONVERT(VARCHAR, @CustId) + ',
-							@TransId = ' + CONVERT(VARCHAR, @TransId - 1) + ''
+							@CustId = ' + CONVERT(VARCHAR(10), @CustId) + ',
+							@TransId = ' + CONVERT(VARCHAR(20), @TransId - 1) + ''
 
 		INSERT @Data
 		EXEC sp_executesql @Command
 
-		DECLARE @Expected INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE TransId = @TransId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
+
+GO

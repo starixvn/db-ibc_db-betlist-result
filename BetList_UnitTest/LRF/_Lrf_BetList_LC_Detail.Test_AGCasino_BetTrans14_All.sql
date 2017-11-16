@@ -99,13 +99,13 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_LC_Detail]
-							@LicenseeID = ' + CONVERT(VARCHAR, @LicenseeId) + ',
-							@UserID = ' + CONVERT(VARCHAR, @UserId) + ',
-							@RefNo = ' + CONVERT(VARCHAR, @RefNo) + ',
-							@CustId = ' + CONVERT(VARCHAR, @CustID) + ',
-							@TransType = ' + CONVERT(VARCHAR, @TransType) + ',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
+							@LicenseeID = ' + CONVERT(VARCHAR(10), @LicenseeId) + ',
+							@UserID = ' + CONVERT(VARCHAR(10), @UserId) + ',
+							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo) + ',
+							@CustId = ' + CONVERT(VARCHAR(10), @CustID) + ',
+							@TransType = ' + CONVERT(VARCHAR(3), @TransType) + ',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
+							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command;

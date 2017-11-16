@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetListByIP_Soccer].[Test_BetTrans_MixParlay]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		FinalHomeScore	INT,
@@ -73,7 +75,10 @@ BEGIN
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
-		OddsSpread		SMALLMONEY
+		OddsSpread		SMALLMONEY,
+		OriginalBetType	INT,
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
@@ -96,7 +101,7 @@ BEGIN
 		@Ip				VARCHAR(15),
 		@WinLostDate	DATETIME
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@CustId = b.custid,
 		@Ip = b.ip,
@@ -135,5 +140,7 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+GO
+

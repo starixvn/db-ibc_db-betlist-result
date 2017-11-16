@@ -9,10 +9,13 @@ GO
 ALTER PROCEDURE [_Age_BetList_SelRunningByDate_Mem].[Test_MacauGames_BetTrans_GetAll]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		SportType		SMALLINT,
-		Username		NVARCHAR(30),
+		CustId			INT,
+		Username		NVARCHAR(50),
 		BetType			SMALLINT,
 		LeagueId		INT,
 		RefNo			BIGINT,
@@ -49,7 +52,8 @@ BEGIN
 		ComStatus		NVARCHAR(20),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
-		OddsSpread		SMALLMONEY
+		OddsSpread		SMALLMONEY,
+		Currency		NVARCHAR(50)
 	)
 
 	DECLARE @TransId	BIGINT,
@@ -58,7 +62,7 @@ BEGIN
 		@Yesterday		SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0),
 		@Today			SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@CustId = b.custid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
@@ -74,25 +78,29 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb_Age.dbo.[Age_BetList_SelRunningByDate_Mem]
-							@CustId = ' + CONVERT(VARCHAR, @CustId) + ',
-							@GetAll = ' + CONVERT(VARCHAR, @GetAll) + ',
-							@ShowVB = 1'
+							@CustId = ' + CONVERT(VARCHAR(10), @CustId) + ',
+							@GetAll = ' + CONVERT(VARCHAR(1), @GetAll) + ',
+							@ProductIDs = ''22'''
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command;
 
-		DECLARE @Expected INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE TransId = @TransId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals @Expected, 1, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
+
+GO

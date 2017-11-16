@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetlistCombinationParlay_ByTransID].[Test_BetTrans]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		TransId			BIGINT,
@@ -60,7 +62,7 @@ BEGIN
 	DECLARE @TransId	BIGINT,
 		@CustId			INT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@CustId = b.custid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
@@ -72,8 +74,8 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetlistCombinationParlay_ByTransID] 
-							@TransId = ' + CONVERT(VARCHAR, @TransId) + ',
-							@CustId = ' + CONVERT(VARCHAR, @CustId) + ',
+							@TransId = ' + CONVERT(VARCHAR(20), @TransId) + ',
+							@CustId = ' + CONVERT(VARCHAR(10), @CustId) + ',
 							@MoveBetDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
 							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
 
@@ -93,5 +95,6 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+GO

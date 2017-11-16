@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetListCB_Details].[Test_BetTrans14]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		TransId		BIGINT,
@@ -47,7 +49,7 @@ BEGIN
 		@CustId					INT,
 		@ExpectedNumOfSubTicket	TINYINT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@RefNo = b.refno,
 		@CustId = b.custid
@@ -84,8 +86,8 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetListCB_Details] 
-							@RefNo = ' + CONVERT(VARCHAR, @RefNo) + ',
-							@CustId = ' + CONVERT(VARCHAR, @CustId)
+							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo) + ',
+							@CustId = ' + CONVERT(VARCHAR(10), @CustId)
 
 		INSERT @Data
 		EXEC sp_executesql @Command
@@ -102,5 +104,6 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
+
+GO
