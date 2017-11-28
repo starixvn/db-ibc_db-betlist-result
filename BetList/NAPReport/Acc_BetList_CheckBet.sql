@@ -20,6 +20,7 @@ AS
 		- 20170831@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20171101@Kos: Support Bullfighting [#Redmine: 85382]
 					- Change param @TransId into @RefNo
+					- Don't support Metric Gaming
 */
 
 BEGIN
@@ -33,12 +34,13 @@ BEGIN
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	-- Support Sportsbook, Horse Racing, Number Game, Virtual Sports, Lucky 3, Betradar Virtual Sports, Bullfighting only
-	-- Don't support BetTrade
+	-- Don't support BetTrade, CashOut, Metric Gaming
 	INSERT INTO @SportBetType
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 2, 3, 5, 26, 27, 30)
 		AND BetType NOT BETWEEN 901 AND 920
+		AND BetType NOT BETWEEN 801 AND 806
 
 	DECLARE @Data TABLE (
 		Username		NVARCHAR(50),
@@ -144,84 +146,6 @@ BEGIN
 	-- Get ticket info
 	IF @WhTicket = 1	-- translog
 	BEGIN
-		-- Sportsbook (Metric Gaming) (EventType = 1)
-		IF @EventType = 1
-		BEGIN
-			INSERT INTO @Data
-			SELECT
-				b.username,
-				b.gameid AS BetType,
-				b.translogid AS TransId,
-				0 AS BetId,
-				b.translogid AS RefNo,
-				m.matchcode,
-				'' AS Race,
-				m.eventdate,
-				0 AS VirtualRate,
-				0 AS IsShowOTExRate,
-				b.sdiscount,
-				b.adiscount,
-				b.discount,
-				m.homeid,
-				m.awayid,
-				'' AS SettleTime,
-				0 AS Hdp1,
-				0 AS Hdp2,
-				b.odds,
-				0 AS FinalOdds,
-				0 AS FinalOdds2,
-				CASE
-					WHEN @ProductId = 1 THEN CONVERT(TINYINT, ISNULL(b.custom1, 0))
-					ELSE 0
-				END AS OddsType,
-				b.status,
-				'' AS comstatus,
-				b.stake,
-				b.actual_stake,
-				b.transdate,
-				'' AS BetTeam,
-				b.spositiontaking,
-				b.mpositiontaking,
-				b.apositiontaking,
-				0 AS spositiontaking2,
-				0 AS mpositiontaking2,
-				0 AS apositiontaking2,
-				b.liveindicator,
-				0 AS MOdds,
-				b.custid,
-				0 AS LiveHomeScore,
-				0 AS LiveAwayScore,
-				m.finalhomescore,
-				m.finalawayscore,
-				m.leagueid,
-				m.sporttype,
-				b.ip,
-				b.betfrom,
-				m.matchid,
-				ISNULL(m.IsNeutral, 0) AS IsNeutral,
-				(-b.actual_stake) AS WinLost,
-				0 AS commission,
-				0 AS scomm,
-				0 AS acomm,
-				0 AS comm,
-				0 AS AWinLost,
-				0 AS MWinLost,
-				0 AS SWinLost,
-				m.showtime,
-				b.winlostdate,
-				'' AS BetCheck,
-				CASE
-					WHEN @ProductId = 1 THEN ISNULL(b.transdesc, '')
-					ELSE ''
-				END AS TransDesc,
-				0 AS OddsSpread,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo
-			FROM dbo.translog AS b WITH (NOLOCK)
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
-			WHERE b.translogid = @TransId
-		END
-
 		-- Bullfighting (EventType = 5)
 		IF @EventType = 5
 		BEGIN
