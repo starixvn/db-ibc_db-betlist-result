@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_BetList_SelCombinationParlayDetail].[Test_BetTrans]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		[Order]			INT,
@@ -63,6 +65,21 @@ BEGIN
 		@Stake				MONEY,
 		@OutstandingStake	MONEY
 
+	DECLARE @Temp TABLE (Currency INT, CurrencyName VARCHAR(100), IsActive BIT, AgentId INT)
+
+	INSERT INTO @Temp
+	EXEC bodb02.dbo.Lrf_SelCurrencyByLicenseeUser 
+		@LicenseeID = @LicenseeId,
+		@UserID = @UserId
+
+	DECLARE @AgentList VARCHAR(MAX)
+
+	SELECT @AgentList = (
+		SELECT AgentId, Currency FROM @Temp
+		WHERE IsActive = 1
+		FOR XML RAW('Agent'), ROOT('ROOT')
+	)
+
 	SELECT CurrencyId, LicenseeId
 	INTO #Currency
 	FROM bodb02.dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)
@@ -74,7 +91,7 @@ BEGIN
 	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
 		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@RefNo = b.refno,
 		@CustID = b.custid,
@@ -92,9 +109,8 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelCombinationParlayDetail] 
-							@LicenseeID = ' + CONVERT(VARCHAR, @LicenseeId) + ',
-							@UserID = ' + CONVERT(VARCHAR, @UserId) + ',
-							@RefNo = ' + CONVERT(VARCHAR, @RefNo) + ',
+							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
+							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo) + ',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
 							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
 
@@ -102,8 +118,7 @@ BEGIN
 		EXEC tSQLt.ResultSetFilter 1, @Command;
 
 		EXEC bodb02.dbo.[Lrf_BetList_SelCombinationParlayDetail] 
-			@LicenseeID = @LicenseeId,
-			@UserID = @UserId,
+			@AgentList = @AgentList,
 			@RefNo = @RefNo,
 			@MoveBetsDay = @MoveBetsDay,
 			@BalanceUpDay = @BalanceUpDay,
@@ -118,13 +133,15 @@ BEGIN
 		SET @SumStake = @SettledStake + @OutstandingStake
 
 		-- Assert
-		EXEC tSQLt.AssertEquals @Stake, @SumStake, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = @Stake,
+			@Actual = @SumStake,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
 
 GO

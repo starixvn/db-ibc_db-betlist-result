@@ -67,14 +67,17 @@ BEGIN
 	DECLARE @Temp TABLE (Currency INT, CurrencyName VARCHAR(100), IsActive BIT, AgentId INT)
 
 	INSERT INTO @Temp
-	EXEC bodb02.dbo.Lrf_SelCurrencyByLicenseeUser @licenseeid=1,@userid=68
+	EXEC bodb02.dbo.Lrf_SelCurrencyByLicenseeUser
+		@LicenseeID = @LicenseeId,
+		@UserID = @UserId
 
 	DECLARE @AgentList VARCHAR(MAX)
 
 	SELECT @AgentList = (
-	SELECT AgentId, Currency FROM @Temp
-	WHERE IsActive = 1
-	FOR XML RAW('Agent'), ROOT('ROOT'))
+		SELECT AgentId, Currency FROM @Temp
+		WHERE IsActive = 1
+		FOR XML RAW('Agent'), ROOT('ROOT')
+	)
 
 	SELECT CurrencyId, LicenseeId
 	INTO #Currency
@@ -104,24 +107,27 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelRunningByBettypeList] 
-							@AgentList = ' + CONVERT(VARCHAR, @AgentList) + ',
-							@Bettype = ''' + CONVERT(VARCHAR, @BetType) + ''''
+							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
+							@Bettype = ' + CONVERT(VARCHAR(5), @BetType)
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command
 
-		DECLARE @Expected INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE TransId = @TransId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
 END;
 

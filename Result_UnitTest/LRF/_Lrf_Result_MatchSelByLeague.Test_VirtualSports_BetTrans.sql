@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_Result_MatchSelByLeague].[Test_VirtualSports_BetTrans]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		SportType		TINYINT,
@@ -48,11 +50,11 @@ BEGIN
 	FROM @tmp
 
 	DECLARE @EventDate	DATETIME,
-		@SportType		TINYINT,
+		@SportType		SMALLINT,
 		@LeagueId		INT,
 		@MatchId		INT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@EventDate = m.eventdate,
 		@SportType = m.sporttype,
 		@LeagueId = m.leagueid,
@@ -70,26 +72,29 @@ BEGIN
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_Result_MatchSelByLeague]
 							@FromDate = ''' + CONVERT(VARCHAR, @EventDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@LeagueId = ' + CONVERT(VARCHAR, @LeagueId) + ',
-							@SportType = ' + CONVERT(VARCHAR, @SportType) + ',
+							@LeagueId = ' + CONVERT(VARCHAR(10), @LeagueId) + ',
+							@SportType = ' + CONVERT(VARCHAR(5), @SportType) + ',
 							@IsShowAll = 1'
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command;
 
-		DECLARE @Expected	INT
+		DECLARE @Actual	INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE MatchId = @MatchId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
 
+GO

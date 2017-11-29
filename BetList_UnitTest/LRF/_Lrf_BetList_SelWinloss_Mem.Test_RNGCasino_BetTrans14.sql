@@ -1,16 +1,14 @@
 USE [UnitTest_Kos]
 GO
-/****** Object:  StoredProcedure [_Lrf_BetList_PlatformWinLoss_Mem].[Test_Sportsbook_BetTrans14_MixParlay]    Script Date: 1/12/2017 2:13:12 PM ******/
+/****** Object:  StoredProcedure [_Lrf_BetList_SelWinloss_Mem].[Test_RNGCasino_BetTrans14]    Script Date: 12/7/2017 2:22:23 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Lrf_BetList_PlatformWinLoss_Mem].[Test_Sportsbook_BetTrans14_MixParlay]
+ALTER PROCEDURE [_Lrf_BetList_SelWinloss_Mem].[Test_RNGCasino_BetTrans14]
 AS
 BEGIN
-	SET NOCOUNT ON
-
 	-- Arrange
 	DECLARE @Data TABLE (
 		RowNum			INT,
@@ -20,7 +18,7 @@ BEGIN
 		BetType			INT,
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
-		Modds			MONEY,
+		MOdds			MONEY,
 		OddsType		TINYINT,
 		Odds			MONEY,
 		Stake			MONEY,
@@ -49,7 +47,7 @@ BEGIN
 		VirtualRate		FLOAT,
 		IsShowOTExRate	BIT,
 		Currency		INT,
-		ShowTime		NVARCHAR(50),
+		ShowTime		NVARCHAR(50), -- table - shoe - hand of Live Casino
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
 		StakeMYR		MONEY,
@@ -97,8 +95,7 @@ BEGIN
 		@UserId			INT		= 68,
 		@CustId			INT,
 		@TransId		BIGINT,
-		@CurrencyId		INT,
-		@PlatformType	TINYINT,
+		@BetType		INT,
 		@WinLostDate	SMALLDATETIME
 
 	SELECT CurrencyId, LicenseeId
@@ -112,23 +109,15 @@ BEGIN
 	FROM OPENQUERY(DBLIC, 'SELECT * FROM bodb_licensee.dbo.f_SelLicenseeCust(0)') lc
 		INNER JOIN #currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
 
-	SELECT TOP(1)
+	SELECT TOP 1
 		@TransId = b.transid,
 		@CustId = b.custid,
-		@CurrencyId = b.currency,
-		@PlatformType = CASE 
-							WHEN b.betfrom = 'd' THEN 1
-							WHEN b.betfrom = 'a' THEN 2
-							WHEN b.betfrom IN ('e','u') THEN 3
-							WHEN b.betfrom = 'm' THEN 4
-							WHEN b.betfrom IN ('s','l') THEN 5
-							ELSE 1
-						END,
+		@BetType = b.bettype,
 		@WinLostDate = b.winlostdate
 	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.Customer AS c WITH (NOLOCK) ON b.custid = c.custid
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE b.bettype = 9
+	WHERE s.ProductID = 6
 		AND b.currency IN (SELECT CurrencyId FROM #Currency)
 		AND b.recommend IN (SELECT CustId FROM @TempAg)
 		AND b.statusID IN (111, 112, 113)
@@ -141,13 +130,11 @@ BEGIN
 		-- Act
 		DECLARE @Command NVARCHAR(MAX)
 
-		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_PlatformWinLoss_Mem] 
+		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelWinloss_Mem] 
 							@LicenseeID = ' + CONVERT(VARCHAR, @LicenseeId) + ',
 							@UserID = ' + CONVERT(VARCHAR, @UserId) + ',
 							@CustID = ' + CONVERT(VARCHAR, @CustId) + ',
-							@CurrencyId = ' + CONVERT(VARCHAR, @CurrencyId) + ',
-							@ShowSB = 1,
-							@PlatformType = ' + CONVERT(VARCHAR, @PlatformType) + ',
+							@ShowCS = 1,
 							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
@@ -171,4 +158,3 @@ BEGIN
 	END
 END;
 
-GO

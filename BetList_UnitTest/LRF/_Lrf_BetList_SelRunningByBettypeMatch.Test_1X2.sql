@@ -9,47 +9,56 @@ GO
 ALTER PROCEDURE [_Lrf_BetList_SelRunningByBettypeMatch].[Test_1X2]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
-		RowNum			INT,
-		Nickname		NVARCHAR(50),
-		CustId			INT,
-		SportType		INT,
-		Username		NVARCHAR(50),
-		BetType			SMALLINT,
-		TransId			BIGINT,
-		MatchCode		VARCHAR(50),
-		Race			VARCHAR(50),
-		LeagueId		INT,
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		Status			NVARCHAR(50),
-		Stake			MONEY,
-		TransDate		DATETIME,
-		BetTeam			VARCHAR(50),
-		LiveIndicator	INT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		Discount		DECIMAL(9,8),
-		Ip				NVARCHAR(20),
-		IsNeutral		BIT,
-		OddsType		TINYINT,
-		BetId			BIGINT,
-		WinLostDate		DATETIME,
-		Currency		SMALLINT,
-		PlayerComm		MONEY,
-		RefNo			BIGINT,
-		ShowTime		NVARCHAR(50),
-		BetCheck		NVARCHAR(50),
-		StakeUSD		MONEY,
-		StakeEUR		MONEY,
-		StakeGBP		MONEY,
-		PlayerCommUSD	MONEY,
-		PlayerCommEUR	MONEY,
-		PlayerCommGBP	MONEY
+		RowNum				INT,
+		Nickname			NVARCHAR(50),
+		CustId				INT,
+		SportType			INT,
+		Username			NVARCHAR(50),
+		BetType				SMALLINT,
+		TransId				BIGINT,
+		MatchCode			VARCHAR(50),
+		Race				VARCHAR(50),
+		LeagueId			INT,
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		Status				NVARCHAR(50),
+		Stake				MONEY,
+		TransDate			DATETIME,
+		BetTeam				VARCHAR(50),
+		LiveIndicator		INT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		Discount			DECIMAL(9,8),
+		Ip					NVARCHAR(20),
+		IsNeutral			BIT,
+		OddsType			TINYINT,
+		BetId				BIGINT,
+		WinLostDate			DATETIME,
+		Currency			SMALLINT,
+		PlayerComm			MONEY,
+		RefNo				BIGINT,
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(50),
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		OriginalStake		MONEY,
+		OriginalBetType		SMALLINT,
+		StakeUSD			MONEY,
+		StakeEUR			MONEY,
+		StakeGBP			MONEY,
+		PlayerCommUSD		MONEY,
+		PlayerCommEUR		MONEY,
+		PlayerCommGBP		MONEY,
+		OriginalStakeUSD	MONEY,
+		OriginalStakeEUR	MONEY,
+		OriginalStakeGBP	MONEY
 	)
 
 	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
@@ -57,6 +66,21 @@ BEGIN
 		@TransId		BIGINT,
 		@MatchId		INT,
 		@BetType		INT		= 5		-- 1X2
+
+	DECLARE @Temp TABLE (Currency INT, CurrencyName VARCHAR(100), IsActive BIT, AgentId INT)
+
+	INSERT INTO @Temp
+	EXEC bodb02.dbo.Lrf_SelCurrencyByLicenseeUser
+		@LicenseeID = @LicenseeId,
+		@UserID = @UserId
+
+	DECLARE @AgentList VARCHAR(MAX)
+
+	SELECT @AgentList = (
+		SELECT AgentId, Currency FROM @Temp
+		WHERE IsActive = 1
+		FOR XML RAW('Agent'), ROOT('ROOT')
+	)
 
 	SELECT CurrencyId, LicenseeId
 	INTO #Currency
@@ -69,7 +93,7 @@ BEGIN
 	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
 		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@MatchId = b.matchid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
@@ -88,25 +112,27 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelRunningByBettypeMatch] 
-							@MatchID = ' + CONVERT(VARCHAR, @MatchId) + ',
-							@LicenseeID = ' + CONVERT(VARCHAR, @LicenseeId) + ',
-							@UserID = ' + CONVERT(VARCHAR, @UserId) + ',
-							@Bettype = ' + CONVERT(VARCHAR, @BetType)
+							@MatchID = ' + CONVERT(VARCHAR(10), @MatchId) + ',
+							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
+							@Bettype = ' + CONVERT(VARCHAR(5), @BetType)
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command
 
-		DECLARE @Expected INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE TransId = @TransId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
 END;

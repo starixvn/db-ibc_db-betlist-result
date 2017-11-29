@@ -1,66 +1,75 @@
 USE [UnitTest_Kos]
 GO
-/****** Object:  StoredProcedure [_Lrf_BetList_SelWinLossByBetType].[Test_Sportsbook_BetTrans_MixParlay]    Script Date: 1/12/2017 1:16:46 PM ******/
+/****** Object:  StoredProcedure [_Lrf_BetList_SelWinloss_Mem].[Test_MicrogamingLiveCasino_BetTrans14]    Script Date: 12/7/2017 2:20:32 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Lrf_BetList_SelWinLossByBetType].[Test_Sportsbook_BetTrans_MixParlay]
+ALTER PROCEDURE [_Lrf_BetList_SelWinloss_Mem].[Test_MicrogamingLiveCasino_BetTrans14]
 AS
 BEGIN
 	-- Arrange
 	DECLARE @Data TABLE (
 		RowNum			INT,
-		TransId			BIGINT,
-		RefNo			BIGINT,
-		BetId			BIGINT,
-		CustId			INT,
-		Username		NVARCHAR(50),
 		SportType		INT,
+		TransId			BIGINT,
+		BetId			BIGINT,
 		BetType			INT,
-		Currency		SMALLINT,
-		LeagueId		INT,
-		MatchId			INT,
-		MatchCode		VARCHAR(50),
-		IsNeutral		BIT,
-		HomeId			INT,
-		AwayId			INT,
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
-		BetTeam			NVARCHAR(10),
-		Odds			MONEY,
+		MOdds			MONEY,
 		OddsType		TINYINT,
-		Modds			MONEY,
-		LiveIndicator	BIT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		ShowTime		NVARCHAR(50),
-		Status			NVARCHAR(10),
-		BetStatus		NVARCHAR(50),
-		TransDate		DATETIME,
-		WinLostDate		DATETIME,
+		Odds			MONEY,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
+		BetTeam			NVARCHAR(20),
+		Status			NVARCHAR(10),
+		RefNo			BIGINT,
+		TransDate		DATETIME,
+		WinLostDate		DATETIME,
 		WinLost			MONEY,
 		LicenseeWL		MONEY,
 		Comm			MONEY,
 		PlayerComm		MONEY,
-		Race			VARCHAR(20),
+		LiveIndicator	BIT,
+		LiveHomeScore	SMALLINT,
+		LiveAwayScore	SMALLINT,
+		Ip				NVARCHAR(15),
+		LeagueId		INT,
+		MatchId			INT,
+		MatchCode		NVARCHAR(50),
+		Race			NVARCHAR(20),
+		HomeId			INT,
+		AwayId			INT,
+		BetStatus		NVARCHAR(50),
+		IsNeutral		BIT,
+		VirtualRate		FLOAT,
+		IsShowOTExRate	BIT,
+		Currency		INT,
+		ShowTime		NVARCHAR(50), -- table - shoe - hand of Live Casino
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
-		Nickname		NVARCHAR(50),
+		StakeMYR		MONEY,
+		Actual_StakeMYR	MONEY,
+		WinLostMYR		MONEY,
+		LicenseeWLMYR	MONEY,
+		CommMYR			MONEY,
+		PlayerCommMYR	MONEY,
 		StakeUSD		MONEY,
+		Actual_StakeUSD	MONEY,
 		WinLostUSD		MONEY,
 		LicenseeWLUSD	MONEY,
 		CommUSD			MONEY,
 		PlayerCommUSD	MONEY,
 		StakeEUR		MONEY,
+		Actual_StakeEUR	MONEY,
 		WinLostEUR		MONEY,
 		LicenseeWLEUR	MONEY,
 		CommEUR			MONEY,
 		PlayerCommEUR	MONEY,
 		StakeGBP		MONEY,
+		Actual_StakeGBP	MONEY,
 		WinLostGBP		MONEY,
 		LicenseeWLGBP	MONEY,
 		CommGBP			MONEY,
@@ -84,6 +93,7 @@ BEGIN
 
 	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
 		@UserId			INT		= 68,
+		@CustId			INT,
 		@TransId		BIGINT,
 		@BetType		INT,
 		@WinLostDate	SMALLDATETIME
@@ -95,20 +105,23 @@ BEGIN
 	DECLARE @TempAg AS TABLE (CustId INT)
 
 	INSERT INTO @TempAg
-	SELECT DISTINCT CustId
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
+	SELECT DISTINCT CustID
+	FROM OPENQUERY(DBLIC, 'SELECT * FROM bodb_licensee.dbo.f_SelLicenseeCust(0)') lc
+		INNER JOIN #currency AS c ON lc.LicenseeID = c.LicenseeID AND lc.Currency = c.CurrencyID
 
 	SELECT TOP 1
 		@TransId = b.transid,
+		@CustId = b.custid,
 		@BetType = b.bettype,
 		@WinLostDate = b.winlostdate
-	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
+	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.Customer AS c WITH (NOLOCK) ON b.custid = c.custid
-	WHERE b.bettype = 9
+		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
+	WHERE s.ProductID = 13
 		AND b.currency IN (SELECT CurrencyId FROM #Currency)
 		AND b.recommend IN (SELECT CustId FROM @TempAg)
-		AND b.statusID NOT IN (0, 1, 101, 102, 103)
+		AND b.statusID IN (111, 112, 113)
+		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 	DROP TABLE #Currency
 
@@ -117,10 +130,11 @@ BEGIN
 		-- Act
 		DECLARE @Command NVARCHAR(MAX)
 
-		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelWinLossByBetType] 
+		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelWinloss_Mem] 
 							@LicenseeID = ' + CONVERT(VARCHAR, @LicenseeId) + ',
 							@UserID = ' + CONVERT(VARCHAR, @UserId) + ',
-							@Bettype = ' + CONVERT(VARCHAR, @BetType) + ',
+							@CustID = ' + CONVERT(VARCHAR, @CustId) + ',
+							@ShowMGCLC = 1,
 							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
@@ -143,3 +157,4 @@ BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
 END;
+

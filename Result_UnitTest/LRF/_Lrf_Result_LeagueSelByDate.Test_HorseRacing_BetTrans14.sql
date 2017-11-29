@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_Result_LeagueSelByDate].[Test_HorseRacing_BetTrans14]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		LeagueName	NVARCHAR(1000),
@@ -33,7 +35,7 @@ BEGIN
 		@SportType		TINYINT,
 		@LeagueId		INT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@EventDate = o.eventdate,
 		@SportType = l.sporttype,
 		@LeagueId = l.leagueid
@@ -41,7 +43,7 @@ BEGIN
 		INNER JOIN bodb02.dbo.outright14 AS o WITH (NOLOCK) ON l.leagueid = o.leagueid
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH(NOLOCK) ON l.sporttype = s.SportType
 	WHERE s.ProductID = 2
-		AND o.oddsstatus ='completed'
+		AND o.oddsstatus = 'completed'
 
 	IF @SportType IS NOT NULL
 	BEGIN
@@ -51,24 +53,28 @@ BEGIN
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_Result_LeagueSelByDate]
 							@EventDate = ''' + CONVERT(VARCHAR, @EventDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@SportType = ' + CONVERT(VARCHAR, @SportType) + ',
+							@SportType = ' + CONVERT(VARCHAR(5), @SportType) + ',
 							@IsShowAll = 1'
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command;
 
-		DECLARE @Expected	INT
+		DECLARE @Actual	INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE LeagueId = @LeagueId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
+
+GO

@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_Result_LeagueSelByDate].[Test_Sportsbook_BetTrans_Normal]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		LeagueName	NVARCHAR(1000),
@@ -33,7 +35,7 @@ BEGIN
 		@SportType		TINYINT,
 		@LeagueId		INT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@EventDate = m.eventdate,
 		@SportType = m.sporttype,
 		@LeagueId = m.leagueid
@@ -50,24 +52,28 @@ BEGIN
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_Result_LeagueSelByDate]
 							@EventDate = ''' + CONVERT(VARCHAR, @EventDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@SportType = ' + CONVERT(VARCHAR, @SportType) + ',
+							@SportType = ' + CONVERT(VARCHAR(5), @SportType) + ',
 							@IsShowAll = 1'
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command;
 
-		DECLARE @Expected	INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE LeagueId = @LeagueId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
+
+GO

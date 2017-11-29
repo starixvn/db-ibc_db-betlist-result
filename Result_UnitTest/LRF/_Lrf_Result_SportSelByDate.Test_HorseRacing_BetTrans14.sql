@@ -9,9 +9,11 @@ GO
 ALTER PROCEDURE [_Lrf_Result_SportSelByDate].[Test_HorseRacing_BetTrans14]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
-		SportType	TINYINT,
+		SportType	SMALLINT,
 		SportName	NVARCHAR(50)
 	)
 
@@ -28,9 +30,9 @@ BEGIN
 	FROM @tmp
 
 	DECLARE @EventDate	DATETIME,
-		@SportType		TINYINT
+		@SportType		SMALLINT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@EventDate = o.eventdate,
 		@SportType = l.sporttype
 	FROM bodb02.dbo.league AS l WITH (NOLOCK)
@@ -52,18 +54,22 @@ BEGIN
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command;
 
-		DECLARE @Expected	INT
+		DECLARE @Actual	INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE SportType = @SportType
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
+
+GO

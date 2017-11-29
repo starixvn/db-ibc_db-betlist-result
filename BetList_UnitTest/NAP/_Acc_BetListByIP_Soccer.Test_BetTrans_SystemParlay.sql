@@ -6,7 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Acc_BetListByIP_Soccer].[Test_BetTrans_MixParlay]
+ALTER PROCEDURE [_Acc_BetListByIP_Soccer].[Test_BetTrans_SystemParlay]
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -108,7 +108,7 @@ BEGIN
 		@WinLostDate = b.winlostdate
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
-	WHERE b.bettype = 9
+	WHERE b.bettype = 29
 		AND b.refno IN (SELECT RefNo
 						FROM bodb02.dbo.bettransm AS bm WITH (NOLOCK)
 							INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
@@ -120,7 +120,7 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetListByIP_Soccer]
-							@CustId = ' + CONVERT(VARCHAR, @CustId) + ',
+							@CustId = ' + CONVERT(VARCHAR(10), @CustId) + ',
 							@Ip = ''' + @Ip + ''',
 							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''''
 
