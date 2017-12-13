@@ -3659,4 +3659,5 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelWinloss_Mem] TO [bodbLicenseeNet] 
 GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelWinloss_Mem] TO [vnteam] 
+GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelWinloss_Mem] TO [vnteam]
+GO

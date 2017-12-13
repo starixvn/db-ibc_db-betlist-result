@@ -44,3 +44,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelMatchResultSS] TO [bodbExtAccNet] 
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_SelMatchResultSS] TO [vnteam]
+GO

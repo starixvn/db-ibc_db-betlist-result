@@ -300,9 +300,10 @@ BEGIN
 END
 
 
-
+GO
 GRANT	VIEW DEFINITION	ON	Acc_BetList_RNG_Detail	TO	vnteam
 GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbExtAccNet
 GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbDownlineNetView
 GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbDownlineNet
 GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbAdminNet
+GO

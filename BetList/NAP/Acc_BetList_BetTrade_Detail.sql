@@ -281,9 +281,10 @@ BEGIN
 	SELECT * FROM @Data
 END
 
-
+GO
 GRANT	VIEW DEFINITION	ON	[Acc_BetList_BetTrade_Detail]	TO	vnteam
 GRANT	EXECUTE	ON	[Acc_BetList_BetTrade_Detail]	TO	bodbExtAccNet
 GRANT	EXECUTE	ON	[Acc_BetList_BetTrade_Detail]	TO	bodbDownlineNetView
 GRANT	EXECUTE	ON	[Acc_BetList_BetTrade_Detail]	TO	bodbDownlineNet
 GRANT	EXECUTE	ON	[Acc_BetList_BetTrade_Detail]	TO	bodbAdminNet
+GO

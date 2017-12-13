@@ -844,3 +844,4 @@ END
 GO
 GRANT	VIEW DEFINITION	ON	Lrf_BetList_WinlostByLeague_Mem	TO	vnteam
 GRANT	EXECUTE	ON	Lrf_BetList_WinlostByLeague_Mem	TO	bodbLicenseeNet
+GO

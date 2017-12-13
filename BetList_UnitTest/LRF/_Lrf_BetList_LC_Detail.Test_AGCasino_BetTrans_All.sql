@@ -87,8 +87,7 @@ BEGIN
 		@TransId = brng.transid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.bettransLC AS brng WITH (NOLOCK) ON brng.refno = b.transid
-		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE s.ProductID = 11
+	WHERE b.bettype BETWEEN 1800 AND 1804
 		AND b.currency IN (SELECT CurrencyId FROM #Currency)
 		AND b.recommend IN (SELECT CustId FROM @TempAg)
 
@@ -107,7 +106,9 @@ BEGIN
 							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter 
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Expected INT
 

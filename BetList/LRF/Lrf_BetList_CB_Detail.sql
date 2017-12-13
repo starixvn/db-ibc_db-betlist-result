@@ -197,3 +197,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_CB_Detail] TO [bodbLicenseeNet] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_CB_Detail] TO [vnteam] AS [dbo]
+GO

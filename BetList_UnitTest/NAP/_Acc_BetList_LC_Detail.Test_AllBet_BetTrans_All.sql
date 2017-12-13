@@ -6,71 +6,109 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Acc_BetList_LC_Detail].[Test_AllBet_BetTrans_All]
+ALTER PROCEDURE [_Lrf_BetList_LC_Detail].[Test_AllBet_BetTrans_All]
 AS
 BEGIN
 	SET NOCOUNT ON
 
 	-- Arrange
 	DECLARE @Data TABLE (
-		RowNum			INT,
 		TransId			BIGINT,
-		SportType		INT,
-		BetType			INT,
+		SportType		SMALLINT,
+		BetType			SMALLINT,
 		TransDate		DATETIME,
-		WinLostDate		DATETIME,
-		Status			NVARCHAR(10),
+		WinLostDate		SMALLDATETIME,
+		Status			VARCHAR(10),
 		StatusId		TINYINT,
 		Odds			MONEY,
-		Currency		NVARCHAR(50),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
+		StakeUSD		MONEY,
+		StakeEUR		MONEY,
+		StakeMYR		MONEY,
+		StakeGBP		MONEY,
 		WinLost			MONEY,
-		Commission		MONEY,
-		SPositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		APositionTaking SMALLMONEY,
-		SWinLost		MONEY,
-		MWinLost		MONEY,
-		AWinLost		MONEY,
-		SDiscount		DECIMAL(9, 8),
-		ADiscount		DECIMAL(9, 8),
-		Discount		DECIMAL(9, 8),
-		SComm			MONEY,
-		AComm			MONEY,
+		WinLostUSD		MONEY,
+		WinLostEUR		MONEY,
+		WinLostMYR		MONEY,
+		WinLostGBP		MONEY,
 		Comm			MONEY,
-		Ip				NVARCHAR(15),
-		TransDesc		NVARCHAR(300),
+		CommUSD			MONEY,
+		CommEUR			MONEY,
+		CommMYR			MONEY,
+		CommGBP			MONEY,
+		PlayComm		MONEY,
+		PlayerCommUSD	MONEY,
+		PlayerCommEUR	MONEY,
+		PlayerCommMYR	MONEY,
+		PlayerCommGBP	MONEY,
+		IP				NVARCHAR(15),
+		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(50),
 		MatchCode		VARCHAR(50)
 	)
 
-	DECLARE @RefNo	BIGINT,
-		@CustID		INT,
-		@TransType	TINYINT = 0,
-		@TransId	BIGINT
+	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
 
-	SELECT TOP 1
+	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
+	EXEC bodb02.dbo.Age_SelBalanceUpDay
+
+	DECLARE @MoveBetsDay SMALLDATETIME,
+		@BalanceUpDay SMALLDATETIME
+
+	SELECT @MoveBetsDay = MoveBetsDay, 
+		@BalanceUpDay = BalanceUpDay
+	FROM @tmp
+
+	IF @BalanceUpDay IS NULL
+		SET @BalanceUpDay = @MoveBetsDay
+
+	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
+		@UserId			INT		= 68,
+		@TransId		BIGINT,
+		@RefNo			BIGINT,
+		@CustID			INT,
+		@TransType		TINYINT = 0
+
+	SELECT CurrencyId, LicenseeId
+	INTO #Currency
+	FROM bodb02.dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)
+
+	DECLARE @TempAg AS TABLE (CustId INT)
+
+	INSERT INTO @TempAg
+	SELECT DISTINCT lc.CustID
+	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
+		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
+
+	SELECT TOP(1)
 		@RefNo = b.transid,
 		@CustID = b.custid,
 		@TransId = brng.transid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.bettransLC AS brng WITH (NOLOCK) ON brng.refno = b.transid
-		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE s.ProductID = 21
+	WHERE b.bettype BETWEEN 2401 AND 2499
+		AND b.currency IN (SELECT CurrencyId FROM #Currency)
+		AND b.recommend IN (SELECT CustId FROM @TempAg)
 
 	IF @TransId IS NOT NULL
 	BEGIN
 		-- Act
 		DECLARE @Command NVARCHAR(MAX)
 
-		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_LC_Detail]
-							@RefNo = ' + CONVERT(VARCHAR, @RefNo) + ',
-							@CustId = ' + CONVERT(VARCHAR, @CustID) + ',
-							@TransType = ' + CONVERT(VARCHAR, @TransType)
+		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_LC_Detail]
+							@LicenseeID = ' + CONVERT(VARCHAR(10), @LicenseeId) + ',
+							@UserID = ' + CONVERT(VARCHAR(10), @UserId) + ',
+							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo) + ',
+							@CustId = ' + CONVERT(VARCHAR(10), @CustID) + ',
+							@TransType = ' + CONVERT(VARCHAR(3), @TransType) + ',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
+							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter 
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Expected INT
 
@@ -85,6 +123,6 @@ BEGIN
 	BEGIN
 		EXEC tSQLt.Fail 'No available test data'
 	END
-
 END;
 
+GO

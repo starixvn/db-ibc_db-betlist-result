@@ -67,3 +67,5 @@ BEGIN
 	END
 
 END;
+
+GO

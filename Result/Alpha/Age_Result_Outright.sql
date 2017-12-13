@@ -46,3 +46,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_Result_Outright] TO [bodbDownlineNetView]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_Result_Outright] TO vnteam
+GO

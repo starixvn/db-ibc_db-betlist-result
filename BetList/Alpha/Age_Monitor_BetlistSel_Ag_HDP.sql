@@ -70,3 +70,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_HDP] TO [bodbDownlineNetView]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_Monitor_BetlistSel_Ag_HDP] TO [vnteam]
+GO

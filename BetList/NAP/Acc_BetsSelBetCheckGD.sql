@@ -93,3 +93,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetsSelBetCheckGD] TO [bodbExtAccNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetsSelBetCheckGD] TO [vnteam]
+GO

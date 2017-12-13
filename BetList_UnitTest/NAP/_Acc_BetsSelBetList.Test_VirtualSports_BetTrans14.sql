@@ -105,8 +105,7 @@ BEGIN
 		@CustId = b.custid,
 		@BetType = b.bettype
 	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
-		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE s.ProductID = 5
+	WHERE b.bettype BETWEEN 1201 AND 1299
 		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 	IF @TransId IS NOT NULL
@@ -117,12 +116,14 @@ BEGIN
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetsSelBetList] 
 							@CustID = ' + CONVERT(VARCHAR(10), @CustId) + ',
 							@Bettype = ' + CONVERT(VARCHAR(5), @BetType) + ',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''''
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
+							@FromDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@ToDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter 
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual INT
 

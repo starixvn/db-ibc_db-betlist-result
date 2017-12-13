@@ -58,3 +58,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_Result_Outright] TO [vnteam] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_Result_Outright] TO [vnteam] AS [dbo]
+GO

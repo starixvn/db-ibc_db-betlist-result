@@ -50,14 +50,13 @@ BEGIN
 		@TransType	TINYINT = 0,
 		@TransId	BIGINT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@RefNo = b.transid,
 		@CustID = b.custid,
 		@TransId = blc.transid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.bettransLC AS blc WITH (NOLOCK) ON blc.refno = b.transid
-		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE s.ProductID = 11
+	WHERE b.bettype BETWEEN 1800 AND 1804
 
 	IF @TransId IS NOT NULL
 	BEGIN

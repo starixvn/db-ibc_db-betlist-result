@@ -488,3 +488,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelWinLossRacingByDate_Mem] TO [bodbLicenseeNet] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelWinLossRacingByDate_Mem] TO [vnteam] AS [dbo]
+GO

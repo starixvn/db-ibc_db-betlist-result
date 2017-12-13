@@ -107,7 +107,9 @@ BEGIN
 							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter 
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Expected INT
 

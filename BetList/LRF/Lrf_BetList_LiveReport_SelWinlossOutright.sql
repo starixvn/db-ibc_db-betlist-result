@@ -336,4 +336,5 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_LiveReport_SelWinlossOutright] TO [bodbLicenseeNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_LiveReport_SelWinlossOutright] TO [VNTeam] 
+GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_LiveReport_SelWinlossOutright] TO [VNTeam]
+GO

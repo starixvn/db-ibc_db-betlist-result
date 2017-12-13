@@ -105,4 +105,5 @@ GRANT EXECUTE ON [dbo].[Acc_BetList_SelBettype] TO [bodbAdminNet]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelBettype] TO [bodbExtAccNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_SelBettype] TO [vnteam] 
+GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_SelBettype] TO [vnteam]
+GO

@@ -91,3 +91,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelNumberGameByLeague] TO [bodbLicenseeNet]
 GO
 GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelNumberGameByLeague] TO [vnteam]
+GO

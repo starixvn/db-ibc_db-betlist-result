@@ -6,69 +6,76 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Acc_BetList_SelMatchResult].[Test_VirtualSports_BetTrans]
+ALTER PROCEDURE [_Acc_BetList_SelBettype].[Test_VirtualSports_BetTrans]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
-		MatchCode	VARCHAR(10),
-		Placing		TINYINT,
-		SportType	INT,
-		Runner		INT,
-		LeagueId	INT,
-		EventTime	NVARCHAR(50),
-		HorseNo		NVARCHAR(50),
-		WinOdds		NVARCHAR(50),
-		PlaceOdds	NVARCHAR(50),
-		IsFavor		NVARCHAR(50)
+		TypeId		INT,
+		Typenamee	NVARCHAR(50)
 	)
 
-	DECLARE @MatchId	INT,
-		@BetType		SMALLINT = 31,
-		@BetId			BIGINT,
-		@RaceNo			VARCHAR(50),
-		@LeagueId		INT,
-		@EventDate		DATETIME
+	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
 
-	SELECT TOP 1
-		@MatchId = o.EventID,
-		@RaceNo = o.Orid
-	FROM bodb02.dbo.VSOutright AS o WITH (NOLOCK)
-		INNER JOIN bodb02.dbo.VSRaceInfo AS r WITH(NOLOCK) ON o.EventID = r.EventID
-	WHERE r.EventStatus = 'completed'
-		AND o.Orid IS NOT NULL
+	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
+	EXEC bodb02.dbo.Age_SelBalanceUpDay
 
-	IF @MatchId IS NOT NULL
+	DECLARE @MoveBetsDay SMALLDATETIME,
+		@BalanceUpDay SMALLDATETIME
+
+	SELECT @MoveBetsDay = MoveBetsDay, 
+		@BalanceUpDay = BalanceUpDay
+	FROM @tmp
+
+	IF @BalanceUpDay IS NULL
+		SET @BalanceUpDay = @MoveBetsDay
+
+	DECLARE @CustId		INT,
+		@BetType		INT,
+		@WinLostDate	SMALLDATETIME
+
+	SELECT TOP(1)
+		@CustId = b.custid,
+		@BetType = b.bettype,
+		@WinLostDate = b.winlostdate
+	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
+	WHERE b.bettype BETWEEN 1201 AND 1299
+
+	IF @BetType IS NOT NULL
 	BEGIN
 		-- Act
 		DECLARE @Command NVARCHAR(MAX)
 
-		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_SelMatchResult]
-							@MatchId = ' + CONVERT(VARCHAR, @MatchId) + ',
-							@BetType = ' + CONVERT(VARCHAR, @BetType) + ',
-							@RaceNo = ''' + @RaceNo + ''''
+		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_SelBettype] 
+							@CustId = ' + CONVERT(VARCHAR(10), @CustId, 11) + ',
+							@FromDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@ToDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
+							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter 
+			@ResultsetNo = 1,
+			@Command = @Command;
 
-		DECLARE @Count	INT,
-			@Expected	INT
+		DECLARE @Actual INT
 
-		SELECT @Count = COUNT(*)
-		FROM bodb02.dbo.VSOutright AS o WITH (NOLOCK)
-			INNER JOIN bodb02.dbo.VSRaceInfo AS r WITH(NOLOCK) ON o.EventID = r.EventID
-		WHERE o.EventID = @MatchId
-			AND ISNULL(o.placing, 0) <> 0
-
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
+		WHERE TypeId = @BetType
 
 		-- Assert
-		EXEC tSQLt.AssertEquals @Count, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
+
+GO

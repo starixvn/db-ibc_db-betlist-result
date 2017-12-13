@@ -101,6 +101,7 @@ BEGIN
 	SELECT * FROM @Data
 END
 
+
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetListCB_Details] TO [bodbDownlineNet]
 GO
@@ -111,3 +112,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetListCB_Details] TO [bodbExtAccNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetListCB_Details] TO [vnteam] 
+GO

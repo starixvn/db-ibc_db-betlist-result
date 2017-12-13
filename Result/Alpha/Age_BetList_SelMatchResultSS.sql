@@ -41,3 +41,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultSS] TO [bodbDownlineNet] 
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultSS] TO [bodbDownlineNetView]
+GO

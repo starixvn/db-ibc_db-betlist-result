@@ -50,14 +50,13 @@ BEGIN
 		@TransType	TINYINT = 0,
 		@TransId	BIGINT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@RefNo = b.transid,
 		@CustID = b.custid,
 		@TransId = brng.transid
 	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.bettransLC14 AS brng WITH (NOLOCK) ON brng.refno = b.transid
-		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE s.ProductID = 11
+	WHERE b.bettype BETWEEN 1800 AND 1804
 
 	IF @TransId IS NOT NULL
 	BEGIN
@@ -65,27 +64,29 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_LC_Detail]
-							@RefNo = ' + CONVERT(VARCHAR, @RefNo) + ',
-							@CustId = ' + CONVERT(VARCHAR, @CustID) + ',
-							@TransType = ' + CONVERT(VARCHAR, @TransType)
+							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo) + ',
+							@CustId = ' + CONVERT(VARCHAR(10), @CustID) + ',
+							@TransType = ' + CONVERT(VARCHAR(3), @TransType)
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter 1, @Command;
 
-		DECLARE @Expected INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE TransId = @TransId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
 
 GO

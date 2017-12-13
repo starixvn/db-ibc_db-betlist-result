@@ -221,3 +221,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetsSelBetCheckM] TO [bodbAdminNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetsSelBetCheckM] TO [vnteam]
+GO

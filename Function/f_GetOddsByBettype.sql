@@ -34,3 +34,4 @@ END
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[f_GetOddsByBettype] TO [vnteam]
+GO

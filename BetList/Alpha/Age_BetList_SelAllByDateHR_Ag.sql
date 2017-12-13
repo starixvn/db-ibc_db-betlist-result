@@ -126,3 +126,5 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelAllByDateHR_Ag] TO [bodbDownlineNetView]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelAllByDateHR_Ag] TO [vnteam]
+GO
+

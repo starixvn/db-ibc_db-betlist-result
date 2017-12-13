@@ -72,3 +72,5 @@ BEGIN
 	END
 
 END;
+
+GO

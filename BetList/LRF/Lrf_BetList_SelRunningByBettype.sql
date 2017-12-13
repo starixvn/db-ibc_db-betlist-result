@@ -336,3 +336,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelRunningByBettype] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelRunningByBettype] TO [vnteam]
+GO

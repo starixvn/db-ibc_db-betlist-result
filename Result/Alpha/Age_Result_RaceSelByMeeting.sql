@@ -60,3 +60,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_Result_RaceSelByMeeting] TO [bodbDownlineNetView]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_Result_RaceSelByMeeting] TO [vnteam]
+GO

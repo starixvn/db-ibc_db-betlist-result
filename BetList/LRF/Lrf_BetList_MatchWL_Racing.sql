@@ -445,4 +445,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_MatchWL_Racing] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_MatchWL_Racing] TO [vnteam]
-
+GO

@@ -517,4 +517,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_MatchWL_Outright] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_MatchWL_Outright] TO [VNTeam] 
-
+GO

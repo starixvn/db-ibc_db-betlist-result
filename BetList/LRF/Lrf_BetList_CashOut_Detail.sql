@@ -559,3 +559,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_CashOut_Detail] TO [bodbLicenseeNet] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_CashOut_Detail] TO [vnteam] AS [dbo]
+GO

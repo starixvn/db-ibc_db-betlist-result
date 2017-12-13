@@ -510,3 +510,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelCombinationParlayDetail] TO [bodbLicenseeNet] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelCombinationParlayDetail] TO [vnteam] AS [dbo]
+GO

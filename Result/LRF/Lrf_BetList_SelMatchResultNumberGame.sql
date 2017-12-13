@@ -76,3 +76,4 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResultNumberGame] TO [bodbLicenseeNet] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelMatchResultNumberGame] TO [vnteam] AS [dbo]
+GO

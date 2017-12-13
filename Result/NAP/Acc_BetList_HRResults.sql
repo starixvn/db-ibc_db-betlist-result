@@ -61,9 +61,11 @@ BEGIN
 		exec dbo.Acc_Set_HR_ResultSCRSel @leagueid=@leagueid,@raceNo=@raceNo,@eventdate=@eventdate
 	END 
 END
+
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_HRResults] TO [bodbAdminNet]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_HRResults] TO [bodbExtAccNet]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_HRResults] TO [vnteam]
+GO

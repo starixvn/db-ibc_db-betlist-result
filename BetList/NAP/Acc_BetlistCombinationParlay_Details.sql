@@ -397,4 +397,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetlistCombinationParlay_Details] TO [bodbExtAccNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetlistCombinationParlay_Details] TO [vnteam] 
-
+GO

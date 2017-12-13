@@ -204,3 +204,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossOutright_SAg] TO [bodbDownlineNetView]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelWinlossOutright_SAg] TO [VNTeam]
+GO

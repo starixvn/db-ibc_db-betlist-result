@@ -501,9 +501,10 @@ END
 
 
 
-
+GO
 GRANT	VIEW DEFINITION	ON	[Acc_BetList_CashOut_Detail]	TO	vnteam
 GRANT	EXECUTE	ON	[Acc_BetList_CashOut_Detail]	TO	bodbExtAccNet
 GRANT	EXECUTE	ON	[Acc_BetList_CashOut_Detail]	TO	bodbDownlineNetView
 GRANT	EXECUTE	ON	[Acc_BetList_CashOut_Detail]	TO	bodbDownlineNet
 GRANT	EXECUTE	ON	[Acc_BetList_CashOut_Detail]	TO	bodbAdminNet
+GO

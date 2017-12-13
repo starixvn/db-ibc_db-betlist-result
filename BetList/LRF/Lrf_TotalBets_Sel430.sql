@@ -192,4 +192,5 @@ GO
 GRANT EXECUTE ON [dbo].[Lrf_TotalBets_Sel430] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_TotalBets_Sel430] TO vnteam
+GO
  

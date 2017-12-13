@@ -81,3 +81,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_TotalBets_Sel430_Ag] TO [bodbDownlineNetView]
 GO
 GRANT VIEW definition ON [dbo].[Age_TotalBets_Sel430_Ag] TO vnteam
+GO

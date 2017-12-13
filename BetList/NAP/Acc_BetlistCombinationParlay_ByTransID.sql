@@ -710,3 +710,4 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetlistCombinationParlay_ByTransID] TO [vnteam]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetlistCombinationParlay_ByTransID] TO [bodbAdminNet]
+GO

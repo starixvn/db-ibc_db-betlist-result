@@ -775,3 +775,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelByProduct] TO [bodbExtAccNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_SelByProduct] TO [vnteam] 
+GO

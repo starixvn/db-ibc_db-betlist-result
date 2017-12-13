@@ -395,7 +395,8 @@ SET NOCOUNT ON
 	FROM @DetailData
 END
 
-
+GO
 GRANT	EXECUTE	ON	U3_BetsSelBetList_ByTransID_Advance	TO	bodbAdminNet
 GRANT	VIEW DEFINITION	ON	U3_BetsSelBetList_ByTransID_Advance	TO	vnteam
 GRANT	EXECUTE	ON	U3_BetsSelBetList_ByTransID_Advance	TO	bodbExtAccNet
+GO

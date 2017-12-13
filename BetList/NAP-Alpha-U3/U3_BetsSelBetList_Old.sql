@@ -324,6 +324,7 @@ BEGIN
 	SELECT * FROM @DetailData
 END
 
+
 GO
 GRANT	EXECUTE	ON	U3_BetsSelBetList_Old	TO	bodbAdminNet
 GRANT	VIEW DEFINITION	ON	U3_BetsSelBetList_Old	TO	vnteam

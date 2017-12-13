@@ -95,17 +95,6 @@ BEGIN
 		FOR XML RAW('Agent'), ROOT('ROOT')
 	)
 
-	SELECT CurrencyId, LicenseeId
-	INTO #Currency
-	FROM bodb02.dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)
-
-	DECLARE @TempAg AS TABLE (CustId INT)
-
-	INSERT INTO @TempAg
-	SELECT DISTINCT lc.CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
-
 	SELECT TOP(1)
 		@TransId = b.transid,
 		@BetType = b.bettype,
@@ -113,13 +102,10 @@ BEGIN
 		@WinLostDate = b.winlostdate
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE s.ProductID = 3
-		AND b.currency IN (SELECT CurrencyId FROM #Currency)
-		AND b.recommend IN (SELECT CustId FROM @TempAg)
+	WHERE b.bettype BETWEEN 81 AND 90
+		AND b.currency IN (SELECT DISTINCT Currency FROM @Temp)
+		AND b.recommend IN (SELECT DISTINCT AgentId FROM @Temp)
 		AND b.statusID IN (111, 112, 113)
-
-	DROP TABLE #Currency
 
 	IF @TransId IS NOT NULL
 	BEGIN
@@ -131,10 +117,12 @@ BEGIN
 							@Bettype = ' + CONVERT(VARCHAR(5), @BetType) + ',
 							@MatchId = ' + CONVERT(VARCHAR(10), @MatchId) + ',
 							@ShowNG = 1,
-							@Date = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''''
+							@Date = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command
+		EXEC tSQLt.ResultSetFilter 
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual INT
 

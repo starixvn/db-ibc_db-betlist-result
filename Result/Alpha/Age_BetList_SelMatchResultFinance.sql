@@ -71,3 +71,4 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelMatchResultFinance] TO [vnteam]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultFinance] TO [bodbAdminNet]
+GO

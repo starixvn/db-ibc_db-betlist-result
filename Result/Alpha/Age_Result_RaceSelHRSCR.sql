@@ -56,10 +56,12 @@ BEGIN
 				AND FOddsStatus = 'completed'
 		ORDER BY matchcode 
 	END
-END 
+END
+
 GO
 GRANT EXECUTE ON [dbo].[Age_Result_RaceSelHRSCR] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_Result_RaceSelHRSCR] TO [bodbDownlineNetView]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_Result_RaceSelHRSCR] TO [vnteam]
+GO

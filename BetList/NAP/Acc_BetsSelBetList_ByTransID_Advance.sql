@@ -2307,3 +2307,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetsSelBetList_ByTransID_Advance] TO [bodbExtAccNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_BetsSelBetList_ByTransID_Advance] TO [vnteam]
+GO

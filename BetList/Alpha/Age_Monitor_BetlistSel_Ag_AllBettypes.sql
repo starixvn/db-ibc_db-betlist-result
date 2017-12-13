@@ -89,3 +89,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_AllBettypes] TO [bodbDownlineNetView] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_Monitor_BetlistSel_Ag_AllBettypes] TO [vnteam] AS [dbo]
+GO
