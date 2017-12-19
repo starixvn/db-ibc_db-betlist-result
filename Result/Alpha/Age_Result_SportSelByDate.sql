@@ -24,7 +24,8 @@ AS
 		- 201600829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
-		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
+		- 20171012@Kos: Support PH AIO Phase 3 [#Redmine: 82403]
+		- 20171219@Kos: Enhance performance [#Redmine: 88410]
 */
 
 BEGIN
@@ -32,12 +33,12 @@ BEGIN
 
 	DECLARE @ToDate DATETIME
  
-	SELECT @ToDate = DATEADD(s,-1, DATEADD(d, 1, @EventDate))
+	SELECT @ToDate = DATEADD(s, -1, DATEADD(d, 1, @EventDate))
 
 	SELECT DISTINCT
 		s.SportType,
 		s.SportName
-	FROM dbo.sports AS s WITH (NOLOCK)
+	FROM dbo.Sports AS s WITH (NOLOCK)
 		INNER JOIN
 			(	SELECT matchid, eventdate, eventstatus, sporttype, leagueid
 				FROM dbo.match WITH (NOLOCK)
@@ -103,7 +104,7 @@ BEGIN
 		s.SportName
 	FROM (
 		SELECT ROW_NUMBER() OVER (PARTITION BY l.sporttype ORDER BY l.leagueid) AS RowNumber, l.sporttype, l.leagueid, l.isTest
-		FROM dbo.league AS l WITH (NOLOCK)
+		FROM dbo.League AS l WITH (NOLOCK)
 			INNER JOIN
 			(	SELECT DISTINCT leagueid
 				FROM dbo.outright WITH (NOLOCK)
@@ -116,7 +117,7 @@ BEGIN
 					AND oddsstatus = 'completed'
 			) o ON o.leagueid = l.leagueid
 		WHERE l.sporttype BETWEEN 151 AND 153 ) AS t
-		INNER JOIN dbo.sports AS s WITH (NOLOCK) ON t.sporttype = s.sporttype
+		INNER JOIN dbo.Sports AS s WITH (NOLOCK) ON t.sporttype = s.sporttype
 	WHERE t.RowNumber < 2
 		AND t.isTest = CASE WHEN @IsShowAll = 1 THEN t.isTest ELSE @IsShowAll END
 
@@ -126,24 +127,22 @@ BEGIN
 		s.SportType,
 		s.SportName
 	FROM (
-		SELECT ROW_NUMBER() OVER (PARTITION BY l.sporttype ORDER BY l.leagueid) AS RowNumber, l.sporttype, l.leagueid, l.isTest
-		FROM dbo.league l WITH (NOLOCK)
-			INNER JOIN
-				(	SELECT DISTINCT r.LeagueID
-					FROM dbo.VSOutright AS o WITH (NOLOCK)
-						INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
-					WHERE o.EventDate >= @EventDate AND o.EventDate <= @ToDate
-						AND r.eventstatus = 'completed'
+			SELECT ROW_NUMBER() OVER (PARTITION BY l.sporttype ORDER BY l.leagueid) AS RowNumber, l.sporttype, l.leagueid, l.isTest
+			FROM (
+					SELECT DISTINCT EventID
+					FROM dbo.VSOutright WITH (NOLOCK)
+					WHERE EventDate >= @EventDate AND EventDate <= @ToDate
 					UNION ALL
-					SELECT DISTINCT r.LeagueID
+					SELECT DISTINCT EventID
 					FROM dbo.VSOutright14 AS o WITH (NOLOCK)
-						INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
-					WHERE o.EventDate >= @EventDate AND o.EventDate <= @ToDate
-						AND r.eventstatus = 'completed'
-				) o ON o.leagueid = l.leagueid
-		WHERE l.sporttype IN (181, 182, 183, 185, 184)
+					WHERE EventDate >= @EventDate AND EventDate <= @ToDate
+				) o
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON r.LeagueID = l.leagueid
+			WHERE l.sporttype IN (181, 182, 183, 184, 185)
+				AND r.eventstatus = 'completed'
 		) AS t
-		INNER JOIN dbo.sports AS s WITH (NOLOCK) ON t.sporttype = s.sporttype
+		INNER JOIN dbo.Sports AS s WITH (NOLOCK) ON t.sporttype = s.sporttype
 	WHERE t.RowNumber < 2
 		AND t.isTest = CASE WHEN @IsShowAll = 1 THEN t.isTest ELSE @IsShowAll END 
 	ORDER BY s.SportType,
