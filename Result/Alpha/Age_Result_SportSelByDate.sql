@@ -1,6 +1,6 @@
 ﻿ALTER PROCEDURE [dbo].[Age_Result_SportSelByDate]
-	@EventDate		DATETIME,
-	@MoveBetsDay	DATETIME,
+	@EventDate		SMALLDATETIME,
+	@MoveBetsDay	SMALLDATETIME,
 	@IsShowAll		BIT			= 0
 AS
 
@@ -24,133 +24,189 @@ AS
 		- 201600829@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
 		- 20161021@Kos: Exclude Fast Market result [#Redmine: 56589]
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
-		- 20171012@Kos: Support PH AIO Phase 3 [#Redmine: 82403]
-		- 20171219@Kos: Enhance performance [#Redmine: 88410]
+		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
+		- 20171219@Sophia: Enhance performance [Redmine: #88410]
 */
 
 BEGIN
 	SET NOCOUNT ON
+	 
+	DECLARE @MatchDate DATETIME
+	SELECT @MatchDate = @EventDate
 
-	DECLARE @ToDate DATETIME
- 
-	SELECT @ToDate = DATEADD(s, -1, DATEADD(d, 1, @EventDate))
+	IF @EventDate > @MoveBetsDay
+	BEGIN 	
+			SELECT DISTINCT s.SportType, s.SportName 
+			FROM dbo.Sports s WITH (NOLOCK)
+			INNER JOIN ( 
+	 
+					--- #1. From Match Table 
+					SELECT	m.sporttype
+					FROM	dbo.match m WITH (NOLOCK)
+					WHERE   m.EventDate = @MatchDate	
+							AND m.sporttype NOT IN (201, 162)	
+							AND (  
+									m.eventstatus NOT IN ('closed', 'running')
+									OR EXISTS (	SELECT	1
+												FROM	dbo.match_remark AS mr WITH (NOLOCK) 
+												WHERE	m.matchid = mr.matchid
+														AND (
+																( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed') )
+																OR ( mr.IsHTCal = 1 AND m.eventstatus = 'running')
+															)
+											   )
+									OR EXISTS (	SELECT 1
+												FROM dbo.ResultDetail SS WITH (NOLOCK)
+												WHERE SettlementStatusID > 0
+													AND m.matchid = SS.MatchId AND m.sporttype IN (2, 5)
+													AND ( ISNULL(SS.MatchID, 0) <> 0 AND m.eventstatus = 'running')
+												)
+									OR EXISTS (	SELECT 1
+												FROM dbo.ResultDetail BR WITH (NOLOCK)
+												WHERE SettlementStatusID > 0
+													AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
+														OR (ResourceID = '08'
+															AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
+													AND ResourceID NOT LIKE '217%'
+													AND ResourceID NOT LIKE '216%'
+													AND ResourceID NOT LIKE '221%'
+													AND ResourceID NOT LIKE '222%'
+													AND ResourceID NOT LIKE '223%'
+													AND ResourceID NOT LIKE '224%'
+													AND ResourceID NOT LIKE '225%'	
+													AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')
+													AND m.matchid = BR.MatchId
+												)
+								)	
+							AND EXISTS ( 	SELECT 1
+											FROM dbo.League l WITH (NOLOCK)
+											WHERE l.leagueid = m.leagueid
+												  AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
 
-	SELECT DISTINCT
-		s.SportType,
-		s.SportName
-	FROM dbo.Sports AS s WITH (NOLOCK)
-		INNER JOIN
-			(	SELECT matchid, eventdate, eventstatus, sporttype, leagueid
-				FROM dbo.match WITH (NOLOCK)
-				UNION ALL
-				SELECT matchid, eventdate, eventstatus, sporttype, leagueid
-				FROM dbo.match14 WITH (NOLOCK)
-			) AS m ON m.sporttype = s.sporttype
-		LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-		INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
-		LEFT JOIN
-			(	SELECT DISTINCT MatchID
-				FROM dbo.ResultDetail WITH (NOLOCK)
-				WHERE SettlementStatusID > 0
-				UNION ALL
-				SELECT DISTINCT MatchID
-				FROM dbo.ResultDetail14 WITH (NOLOCK)
-				WHERE SettlementStatusID > 0
-			) AS SS ON m.matchid = SS.MatchId AND m.sporttype IN (2, 5)
-		LEFT JOIN
-			(	SELECT DISTINCT MatchID
-				FROM dbo.ResultDetail WITH (NOLOCK)
-				WHERE SettlementStatusID > 0
-					AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-						OR (ResourceID = '08'
-							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-					AND ResourceID NOT LIKE '217%'
-					AND ResourceID NOT LIKE '216%'
-					AND ResourceID NOT LIKE '221%'
-					AND ResourceID NOT LIKE '222%'
-					AND ResourceID NOT LIKE '223%'
-					AND ResourceID NOT LIKE '224%'
-					AND ResourceID NOT LIKE '225%'
-				UNION ALL
-				SELECT DISTINCT MatchID
-				FROM dbo.ResultDetail14 WITH (NOLOCK)
-				WHERE SettlementStatusID > 0
-					AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-						OR (ResourceID = '08'
-							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-					AND ResourceID NOT LIKE '217%'
-					AND ResourceID NOT LIKE '216%'
-					AND ResourceID NOT LIKE '221%'
-					AND ResourceID NOT LIKE '222%'
-					AND ResourceID NOT LIKE '223%'
-					AND ResourceID NOT LIKE '224%'
-					AND ResourceID NOT LIKE '225%'
-			) AS BR ON m.matchid = BR.MatchID AND m.sporttype = 1
-	WHERE m.eventdate >= @EventDate
-		AND m.eventdate <= @ToDate
-		AND ( m.eventstatus NOT IN ('closed', 'running')
-			OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed') )
-			OR ( mr.IsHTCal = 1 AND m.eventstatus = 'running')
-			OR ( ISNULL(SS.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution, BAIO show running Match but settled least one type
-			OR ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for BetRadar show running Match but settled least one type
-		)
-		AND s.sporttype NOT IN (201, 162)
-		AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
-
-	UNION ALL
-
-	SELECT
-		s.SportType,
-		s.SportName
-	FROM (
-		SELECT ROW_NUMBER() OVER (PARTITION BY l.sporttype ORDER BY l.leagueid) AS RowNumber, l.sporttype, l.leagueid, l.isTest
-		FROM dbo.League AS l WITH (NOLOCK)
-			INNER JOIN
-			(	SELECT DISTINCT leagueid
-				FROM dbo.outright WITH (NOLOCK)
-				WHERE eventdate >= @EventDate AND eventdate <= @ToDate
-					AND oddsstatus = 'completed'
-				UNION ALL
-				SELECT DISTINCT leagueid
-				FROM dbo.outright14 WITH (NOLOCK)
-				WHERE eventdate >= @EventDate AND eventdate <= @ToDate
-					AND oddsstatus = 'completed'
-			) o ON o.leagueid = l.leagueid
-		WHERE l.sporttype BETWEEN 151 AND 153 ) AS t
-		INNER JOIN dbo.Sports AS s WITH (NOLOCK) ON t.sporttype = s.sporttype
-	WHERE t.RowNumber < 2
-		AND t.isTest = CASE WHEN @IsShowAll = 1 THEN t.isTest ELSE @IsShowAll END
-
-	UNION ALL
-
-	SELECT
-		s.SportType,
-		s.SportName
-	FROM (
-			SELECT ROW_NUMBER() OVER (PARTITION BY l.sporttype ORDER BY l.leagueid) AS RowNumber, l.sporttype, l.leagueid, l.isTest
-			FROM (
-					SELECT DISTINCT EventID
-					FROM dbo.VSOutright WITH (NOLOCK)
-					WHERE EventDate >= @EventDate AND EventDate <= @ToDate
+										)
+		
 					UNION ALL
-					SELECT DISTINCT EventID
-					FROM dbo.VSOutright14 AS o WITH (NOLOCK)
-					WHERE EventDate >= @EventDate AND EventDate <= @ToDate
-				) o
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON r.LeagueID = l.leagueid
-			WHERE l.sporttype IN (181, 182, 183, 184, 185)
-				AND r.eventstatus = 'completed'
-		) AS t
-		INNER JOIN dbo.Sports AS s WITH (NOLOCK) ON t.sporttype = s.sporttype
-	WHERE t.RowNumber < 2
-		AND t.isTest = CASE WHEN @IsShowAll = 1 THEN t.isTest ELSE @IsShowAll END 
-	ORDER BY s.SportType,
-		s.SportName
+
+					 --- #2. From outright table  
+					SELECT l.sporttype
+					FROM dbo.league AS l WITH (NOLOCK)
+					WHERE EXISTS (	SELECT 1
+									FROM dbo.outright o WITH (NOLOCK)
+									WHERE o.eventdate = @EventDate 
+										AND o.oddsstatus = 'completed'	
+										AND o.leagueid =  l.leagueid				
+									)  
+						AND l.sporttype BETWEEN 151 AND 153 
+						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
+
+					UNION ALL
+
+					--- #3. From outright table 
+
+					SELECT l.sporttype
+					FROM dbo.league AS l WITH (NOLOCK)
+					WHERE EXISTS (	SELECT 1
+									FROM dbo.VSOutright AS o WITH (NOLOCK)
+										INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+									WHERE o.EventDate = @EventDate 
+										AND r.eventstatus = 'completed'	
+										AND r.leagueid = l.leagueid
+									)
+						AND l.sporttype IN (181, 182, 183, 185, 184)
+						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
+			 
+			  ) t
+			  ON s.Sporttype = t.Sporttype
+		ORDER BY s.SportType, s.SportName
+		
+	END 
+	ELSE 
+	BEGIN 
+			SELECT DISTINCT s.SportType, s.SportName 
+			FROM dbo.Sports s WITH (NOLOCK)
+			INNER JOIN ( 	 
+					--- #1. From Match Table 
+					SELECT	m.sporttype
+					FROM	dbo.match14 m WITH (NOLOCK)
+					WHERE   m.EventDate = @MatchDate	
+							AND m.sporttype NOT IN (201, 162)	
+							AND (  
+									m.eventstatus NOT IN ('closed', 'running')
+									OR EXISTS (	SELECT	1
+												FROM	dbo.match_remark AS mr WITH (NOLOCK) 
+												WHERE	m.matchid = mr.matchid
+														AND (
+																( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed') )
+																OR ( mr.IsHTCal = 1 AND m.eventstatus = 'running')
+															)
+											   )
+									OR EXISTS (	SELECT 1
+												FROM dbo.ResultDetail14 SS WITH (NOLOCK)
+												WHERE SettlementStatusID > 0
+													AND m.matchid = SS.MatchId AND m.sporttype IN (2, 5)
+													AND ( ISNULL(SS.MatchID, 0) <> 0 AND m.eventstatus = 'running')
+												)
+									OR EXISTS (	SELECT 1
+												FROM dbo.ResultDetail14 BR WITH (NOLOCK)
+												WHERE SettlementStatusID > 0
+													AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
+														OR (ResourceID = '08'
+															AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
+													AND ResourceID NOT LIKE '217%'
+													AND ResourceID NOT LIKE '216%'
+													AND ResourceID NOT LIKE '221%'
+													AND ResourceID NOT LIKE '222%'
+													AND ResourceID NOT LIKE '223%'
+													AND ResourceID NOT LIKE '224%'
+													AND ResourceID NOT LIKE '225%'	
+													AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')
+													AND m.matchid = BR.MatchId
+												)
+								)	
+							AND EXISTS ( 	SELECT 1
+											FROM dbo.League l WITH (NOLOCK)
+											WHERE l.leagueid = m.leagueid
+												  AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
+
+										)
+		
+					UNION ALL
+
+					 --- #2. From outright table  
+					SELECT l.sporttype
+					FROM dbo.league AS l WITH (NOLOCK)
+					WHERE EXISTS (	SELECT 1
+									FROM dbo.outright14 o WITH (NOLOCK)
+									WHERE o.eventdate = @EventDate 
+										AND o.oddsstatus = 'completed'	
+										AND o.leagueid =  l.leagueid				
+									)  
+						AND l.sporttype BETWEEN 151 AND 153 
+						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
+
+					UNION ALL
+
+					--- #3. From outright table 
+
+					SELECT l.sporttype
+					FROM dbo.league AS l WITH (NOLOCK)
+					WHERE EXISTS (	SELECT 1
+									FROM dbo.VSOutright14 AS o WITH (NOLOCK)
+										INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+									WHERE o.EventDate = @EventDate 
+										AND r.eventstatus = 'completed'	
+										AND r.leagueid = l.leagueid
+									)
+						AND l.sporttype IN (181, 182, 183, 185, 184)
+						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
+			 
+			  ) t
+			  ON s.Sporttype = t.Sporttype
+			  ORDER BY s.SportType, s.SportName
+	END
+	
+	
 END
-
-
-
  
 GO
 GRANT EXECUTE ON [dbo].[Age_Result_SportSelByDate] TO [bodbDownlineNet] AS [dbo]
@@ -159,3 +215,4 @@ GRANT EXECUTE ON [dbo].[Age_Result_SportSelByDate] TO [bodbDownlineNetView] AS [
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_Result_SportSelByDate] TO [vnteam] AS [dbo]
 GO
+ 
