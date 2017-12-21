@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Age_BetList_SelMatchResult].[Test_Sportsbook_BetTrans14_Normal]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		SportType		INT,
@@ -39,11 +41,9 @@ BEGIN
 	)
 
 	DECLARE @MatchId	INT,
-		@BetType		SMALLINT = 1,
-		@BetId			BIGINT,
-		@RaceNo			VARCHAR(50)
+		@BetType		SMALLINT = 1
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@MatchId = m.matchid
 	FROM bodb02.dbo.match14 AS m WITH (NOLOCK)
 	WHERE m.eventstatus NOT IN ('closed','running')
@@ -55,16 +55,18 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Age_BetList_SelMatchResult]
-							@MatchId = ' + CONVERT(VARCHAR, @MatchId) + ',
-							@BetType = ' + CONVERT(VARCHAR, @BetType)
+							@MatchId = ' + CONVERT(VARCHAR(10), @MatchId) + ',
+							@BetType = ' + CONVERT(VARCHAR(5), @BetType)
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
-		DECLARE @Count	INT,
+		DECLARE @Actual	INT,
 			@Expected	INT
 
-		SELECT @Count = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM bodb02.dbo.match14 AS m WITH(NOLOCK)
 			LEFT OUTER JOIN bodb02.dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN bodb02.dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
@@ -74,13 +76,15 @@ BEGIN
 		FROM @Data
 
 		-- Assert
-		EXEC tSQLt.AssertEquals @Count, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Actual = @Actual,
+			@Expected = @Expected,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
 
 GO

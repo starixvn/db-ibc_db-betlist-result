@@ -40,7 +40,6 @@ BEGIN
 		LeagueId		INT,
 		MatchId			INT, 
 		Ip				VARCHAR(30),
-		BetStatus		VARCHAR(50),
 		IsNeutral		BIT,
 		WinLostDate		DATETIME,
 		Currency		SMALLINT,
@@ -77,7 +76,7 @@ BEGIN
 	IF @BalanceUpDay IS NULL
 		SET @BalanceUpDay = @MoveBetsDay
 
-	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
+	DECLARE @LicenseeId	INT		= 26,	-- Athena000
 		@UserId			INT		= 68,
 		@TransId		BIGINT,
 		@WinLostDate	SMALLDATETIME
@@ -97,28 +96,15 @@ BEGIN
 		FOR XML RAW('Agent'), ROOT('ROOT')
 	)
 
-	SELECT CurrencyId, LicenseeId
-	INTO #Currency
-	FROM bodb02.dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)
-
-	DECLARE @TempAg AS TABLE (CustId INT)
-
-	INSERT INTO @TempAg
-	SELECT DISTINCT lc.CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
-
 	SELECT TOP(1)
 		@TransId = b.transid,
 		@WinLostDate = b.winlostdate
 	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
 	WHERE b.bettype = 10
-		AND b.currency IN (SELECT CurrencyId FROM #Currency)
-		AND b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT DISTINCT Currency FROM @Temp)
+		AND b.recommend IN (SELECT DISTINCT AgentId FROM @Temp)
 		AND b.ruben = 1
 		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
-
-	DROP TABLE #Currency
 
 	IF @TransId IS NOT NULL
 	BEGIN
@@ -129,12 +115,14 @@ BEGIN
 							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
 							@ShowSB = 1,
 							@ShowBA = 1,
-							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''''
+							@FromDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@ToDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual INT
 

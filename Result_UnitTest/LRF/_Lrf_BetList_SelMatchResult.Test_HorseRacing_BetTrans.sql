@@ -33,18 +33,17 @@ BEGIN
 
 	DECLARE @MatchId	INT,
 		@BetType		SMALLINT = 31,
-		@BetId			BIGINT,
 		@RaceNo			VARCHAR(50),
 		@LeagueId		INT,
 		@EventDate		DATETIME
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@MatchId = o.orid,
 		@RaceNo = o.groupmatch,
 		@LeagueId = o.leagueid,
 		@EventDate = o.eventdate
 	FROM bodb02.dbo.outright AS o WITH (NOLOCK)
-		INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON o.leagueid = l.leagueid
+		INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON o.leagueid = l.leagueid
 	WHERE o.oddsstatus = 'completed'
 		AND o.groupmatch IS NOT NULL
 		AND (ISNULL(o.Placing, 0) <> 0 OR o.IsSCR = 1)
@@ -60,7 +59,9 @@ BEGIN
 							@RaceNo = ''' + @RaceNo + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual	INT,
 			@Expected	INT

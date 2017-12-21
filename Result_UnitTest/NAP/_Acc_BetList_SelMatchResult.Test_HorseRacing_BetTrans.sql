@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetList_SelMatchResult].[Test_HorseRacing_BetTrans]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		MatchCode	VARCHAR(10),
@@ -25,12 +27,11 @@ BEGIN
 
 	DECLARE @MatchId	INT,
 		@BetType		SMALLINT = 31,
-		@BetId			BIGINT,
 		@RaceNo			VARCHAR(50),
 		@LeagueId		INT,
 		@EventDate		DATETIME
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@MatchId = o.orid,
 		@RaceNo = o.groupmatch,
 		@LeagueId = o.leagueid,
@@ -46,17 +47,19 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_SelMatchResult]
-							@MatchId = ' + CONVERT(VARCHAR, @MatchId) + ',
-							@BetType = ' + CONVERT(VARCHAR, @BetType) + ',
+							@MatchId = ' + CONVERT(VARCHAR(10), @MatchId) + ',
+							@BetType = ' + CONVERT(VARCHAR(5), @BetType) + ',
 							@RaceNo = ''' + @RaceNo + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
-		DECLARE @Count	INT,
+		DECLARE @Actual	INT,
 			@Expected	INT
 
-		SELECT @Count = COUNT(*)
+		SELECT @Expected = COUNT(*)
 		FROM bodb02.dbo.outright AS o WITH (NOLOCK)
 			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON o.leagueid = l.leagueid
 		WHERE o.leagueid = @LeagueId
@@ -64,17 +67,19 @@ BEGIN
 			AND o.eventdate = @EventDate
 			AND ISNULL(o.placing, 0) <> 0
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 
 		-- Assert
-		EXEC tSQLt.AssertEquals @Count, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = @Expected,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
 
 GO

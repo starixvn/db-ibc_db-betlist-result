@@ -101,7 +101,7 @@ BEGIN
 	IF @BalanceUpDay IS NULL
 		SET @BalanceUpDay = @MoveBetsDay
 
-	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
+	DECLARE @LicenseeId	INT		= 26,	-- Athena000
 		@UserId			INT		= 68,
 		@CustId			INT,
 		@TransId		BIGINT,
@@ -141,7 +141,7 @@ BEGIN
 		INNER JOIN bodb02.dbo.Customer AS c WITH (NOLOCK) ON b.custid = c.custid
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
 	WHERE s.ProductID = 1
-		AND s.EventType = 0
+		AND s.EventType = 1
 		AND b.currency IN (SELECT Currency FROM @Temp)
 		AND b.recommend IN (SELECT AgentId FROM @Temp)
 		AND b.statusID IN (111, 112, 113)
@@ -156,10 +156,10 @@ BEGIN
 							@CustID = ' + CONVERT(VARCHAR(10), @CustId) + ',
 							@ShowSB = 1,
 							@PlatformType = ' + CONVERT(VARCHAR(2), @PlatformType) + ',
-							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
+							@FromDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@ToDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
+							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter

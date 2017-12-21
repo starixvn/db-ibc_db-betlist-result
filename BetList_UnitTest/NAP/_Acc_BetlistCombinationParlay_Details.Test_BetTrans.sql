@@ -13,15 +13,15 @@ BEGIN
 
 	-- Arrange
 	DECLARE @Data TABLE (
-		WinLostDate			SMALLDATETIME,
-		TransId				BIGINT,
-		Serial				BIGINT,
-		StatusId			INT,
-		Status				NVARCHAR(50),
-		Modds				MONEY,
-		Stake				MONEY,
-		WinLost				MONEY,
-		PlayComm			MONEY
+		WinLostDate	SMALLDATETIME,
+		TransId		BIGINT,
+		Serial		BIGINT,
+		StatusId	INT,
+		Status		NVARCHAR(50),
+		Modds		MONEY,
+		Stake		MONEY,
+		WinLost		MONEY,
+		PlayComm	MONEY
 	)
 
 	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
@@ -45,7 +45,7 @@ BEGIN
 		@Stake				MONEY,
 		@OutstandingStake	MONEY
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@RefNo = b.refno,
 		@CustID = b.custid,
@@ -59,13 +59,15 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetlistCombinationParlay_Details] 
-							@RefNo = ' + CONVERT(VARCHAR, @RefNo) + ',
-							@CustId = ' + CONVERT(VARCHAR, @CustID) + ',
-							@MoveBetDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
+							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo) + ',
+							@CustId = ' + CONVERT(VARCHAR(10), @CustID) + ',
+							@MoveBetDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
+							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		EXEC bodb02.dbo.[Acc_BetlistCombinationParlay_Details] 
 			@RefNo = @RefNo,
@@ -83,11 +85,14 @@ BEGIN
 		SET @SumStake = @SettledStake + @OutstandingStake
 
 		-- Assert
-		EXEC tSQLt.AssertEquals @Stake, @SumStake, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = @Stake,
+			@Actual = @SumStake,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
 END;
 

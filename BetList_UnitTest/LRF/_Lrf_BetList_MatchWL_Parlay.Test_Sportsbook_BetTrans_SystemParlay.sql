@@ -86,7 +86,7 @@ BEGIN
 	IF @BalanceUpDay IS NULL
 		SET @BalanceUpDay = @MoveBetsDay
 
-	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
+	DECLARE @LicenseeId	INT		= 26,	-- Athena000
 		@UserId			INT		= 68,
 		@TransId		BIGINT,
 		@BetType		INT,
@@ -140,12 +140,14 @@ BEGIN
 							@Bettype = ' + CONVERT(VARCHAR(5), @BetType) + ',
 							@ShowSB = 1,
 							@ShowBA = 1,
-							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''''
+							@FromDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@ToDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual INT
 

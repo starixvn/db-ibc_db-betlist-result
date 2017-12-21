@@ -71,8 +71,8 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetsSelBetCheckM_All] 
-							@TransId = ' + CONVERT(VARCHAR, @TransId) + ',
-							@RefNo = ' + CONVERT(VARCHAR, @RefNo)
+							@TransId = ' + CONVERT(VARCHAR(20), @TransId) + ',
+							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo)
 
 		INSERT @Data
 		EXEC sp_executesql @Command
@@ -83,11 +83,14 @@ BEGIN
 		FROM @Data
 
 		-- Assert
-		EXEC tSQLt.AssertEquals @ExpectedNumOfSubTicket, @NumOfSubTicket, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = @ExpectedNumOfSubTicket,
+			@Actual = @NumOfSubTicket,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
 END;
 

@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Acc_BetList_SelByProduct].[Test_GoldDeluxe_BetTrans_SearchByBetId]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		BetType				INT,
@@ -93,7 +95,7 @@ BEGIN
 		@BetId			VARCHAR(100),
 		@WinLostDate	SMALLDATETIME
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@CustID = b.custid,
 		@BetId = bg.BetID3rd,
@@ -112,30 +114,36 @@ BEGIN
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetList_SelByProduct] @UserId = 8,
 							@ProductId = 12,
-							@CustId = ''' + CONVERT(VARCHAR, @CustID) + ''',
+							@CustId = ''' + CONVERT(VARCHAR(10), @CustID) + ''',
 							@Username = ''''' + ',
 							@GameId = '''',
 							@BetId = ''' + @BetId + ''',
-							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
+							@FromDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@ToDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
+							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
-		DECLARE @Expected INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE TransId = @TransId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals @Expected, 1, @Command
+		EXEC tSQLt.AssertEquals
+			@Actual = @Actual,
+			@Expected = 1,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
+
+GO

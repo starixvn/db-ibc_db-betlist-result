@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Lrf_BetList_SelCombinationParlayDetail].[Test_BetTrans14]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		[Order]			INT,
@@ -55,7 +57,7 @@ BEGIN
 	IF @BalanceUpDay IS NULL
 		SET @BalanceUpDay = @MoveBetsDay
 
-	DECLARE @LicenseeId		INT		= 1,	-- 12Bet
+	DECLARE @LicenseeId		INT		= 26,	-- Athena000
 		@UserId				INT		= 68,
 		@TransId			BIGINT,
 		@RefNo				BIGINT,
@@ -78,17 +80,6 @@ BEGIN
 		FOR XML RAW('Agent'), ROOT('ROOT')
 	)
 
-	SELECT CurrencyId, LicenseeId
-	INTO #Currency
-	FROM bodb02.dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)
-
-	DECLARE @TempAg AS TABLE (CustId INT)
-
-	INSERT INTO @TempAg
-	SELECT DISTINCT CustId
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
-
 	SELECT TOP(1)
 		@TransId = b.transid,
 		@RefNo = b.refno,
@@ -98,8 +89,8 @@ BEGIN
 		INNER JOIN bodb02.dbo.bettransm14 AS bm WITH (NOLOCK) ON b.refno = bm.refno
 		INNER JOIN bodb02.dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 	WHERE b.bettype = 29
-		AND b.currency IN (SELECT CurrencyId FROM #Currency)
-		AND b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT Currency FROM @Temp)
+		AND b.recommend IN (SELECT AgentId FROM @Temp)
 		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 	IF @TransId IS NOT NULL
@@ -110,11 +101,13 @@ BEGIN
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelCombinationParlayDetail] 
 							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
 							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo) + ',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
+							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command
 
 		EXEC bodb02.dbo.[Lrf_BetList_SelCombinationParlayDetail] 
 			@AgentList = @AgentList,

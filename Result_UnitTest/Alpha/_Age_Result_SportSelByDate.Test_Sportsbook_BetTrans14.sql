@@ -9,6 +9,8 @@ GO
 ALTER PROCEDURE [_Age_Result_SportSelByDate].[Test_Sportsbook_BetTrans14]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
 		SportType	TINYINT,
@@ -20,17 +22,15 @@ BEGIN
 	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
 	EXEC bodb02.dbo.Age_SelBalanceUpDay
 
-	DECLARE @MoveBetsDay SMALLDATETIME,
-		@BalanceUpDay SMALLDATETIME
+	DECLARE @MoveBetsDay SMALLDATETIME
 
-	SELECT @MoveBetsDay = MoveBetsDay, 
-		@BalanceUpDay = BalanceUpDay
+	SELECT @MoveBetsDay = MoveBetsDay
 	FROM @tmp
 
 	DECLARE @EventDate	DATETIME,
 		@SportType		TINYINT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@EventDate = m.eventdate,
 		@SportType = m.sporttype
 	FROM bodb02.dbo.match14 AS m WITH (NOLOCK)
@@ -45,27 +45,31 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Age_Result_SportSelByDate]
-							@EventDate = ''' + CONVERT(VARCHAR, @EventDate, 23) + ''',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
+							@EventDate = ''' + CONVERT(VARCHAR(10), @EventDate, 23) + ''',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
 							@IsShowAll = 1'
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
-		DECLARE @Expected	INT
+		DECLARE @Actual	INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE SportType = @SportType
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
 
 GO

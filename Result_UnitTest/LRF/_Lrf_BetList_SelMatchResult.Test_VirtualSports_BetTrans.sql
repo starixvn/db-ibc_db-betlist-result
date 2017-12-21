@@ -54,7 +54,9 @@ BEGIN
 							@RaceNo = ''' + @RaceNo + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual	INT,
 			@Expected	INT

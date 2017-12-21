@@ -1,6 +1,6 @@
 USE [UnitTest_Kos]
 GO
-/****** Object:  StoredProcedure [_Lrf_BetList_SelRunningByMultipleBettypeMatch].[Test_TotalGoal]    Script Date: 1/12/2017 1:10:59 PM ******/
+/****** Object:  StoredProcedure [_Lrf_BetList_SelRunningByMultipleBettypeMatch].[Test_FirstGoalLastGoal]    Script Date: 1/12/2017 1:10:41 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -61,7 +61,7 @@ BEGIN
 		OriginalStakeGBP	MONEY
 	)
 
-	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
+	DECLARE @LicenseeId	INT		= 26,	-- Athena000
 		@UserId			INT		= 68,
 		@TransId		BIGINT,
 		@MatchId		INT,
@@ -82,28 +82,15 @@ BEGIN
 		FOR XML RAW('Agent'), ROOT('ROOT')
 	)
 
-	SELECT CurrencyId, LicenseeId
-	INTO #Currency
-	FROM bodb02.dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)
-
-	DECLARE @TempAg AS TABLE (CustId INT)
-
-	INSERT INTO @TempAg
-	SELECT DISTINCT CustId
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
-
 	SELECT TOP(1)
 		@TransId = b.transid,
 		@MatchId = b.matchid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	WHERE b.bettype = @BetType
-		AND b.currency IN (SELECT CurrencyId FROM #Currency)
-		AND b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT DISTINCT Currency FROM @Temp)
+		AND b.recommend IN (SELECT DISTINCT AgentId FROM @Temp)
 		AND b.statusID = 0
-
-	DROP TABLE #Currency
 
 	IF @TransId IS NOT NULL
 	BEGIN
@@ -116,7 +103,9 @@ BEGIN
 							@Bettype = ''' + CONVERT(VARCHAR(5), @BetType) + ''''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual INT
 

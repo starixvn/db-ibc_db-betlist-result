@@ -54,42 +54,29 @@ BEGIN
 		PlayerCommGBP	MONEY
 	)
 
-	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
+	DECLARE @LicenseeId	INT		= 26,	-- Athena000
+		@UserId			INT		= 68,
+		@TransId		BIGINT,
+		@RefNo			BIGINT,
+		@CustID			INT,
+		@TransType		TINYINT = 0
 
-	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
-	EXEC bodb02.dbo.Age_SelBalanceUpDay
+	DECLARE @Temp TABLE (Currency INT, CurrencyName VARCHAR(100), IsActive BIT, AgentId INT)
 
-	DECLARE @MoveBetsDay SMALLDATETIME,
-		@BalanceUpDay SMALLDATETIME
+	INSERT INTO @Temp
+	EXEC bodb02.dbo.Lrf_SelCurrencyByLicenseeUser
+		@LicenseeID = @LicenseeId,
+		@UserID = @UserId
 
-	SELECT @MoveBetsDay = MoveBetsDay, 
-		@BalanceUpDay = BalanceUpDay
-	FROM @tmp
+	DECLARE @AgentList VARCHAR(MAX)
 
-	IF @BalanceUpDay IS NULL
-		SET @BalanceUpDay = @MoveBetsDay
+	SELECT @AgentList = (
+		SELECT AgentId, Currency FROM @Temp
+		WHERE IsActive = 1
+		FOR XML RAW('Agent'), ROOT('ROOT')
+	)
 
-	DECLARE @LicenseeId		INT		= 1,	-- 12Bet
-		@UserId				INT		= 68,
-		@TransId			BIGINT,
-		@RefNo				BIGINT,
-		@CustID				INT,
-		@Stake				MONEY,
-		@OutstandingStake	MONEY,
-		@TransType			TINYINT = 0
-
-	SELECT CurrencyId, LicenseeId
-	INTO #Currency
-	FROM bodb02.dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)
-
-	DECLARE @TempAg AS TABLE (CustId INT)
-
-	INSERT INTO @TempAg
-	SELECT DISTINCT lc.CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
-
-	SELECT TOP 1
+	SELECT TOP(1)
 		@RefNo = b.transid,
 		@CustID = b.custid,
 		@TransId = brng.transid
@@ -97,8 +84,8 @@ BEGIN
 		INNER JOIN DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK) ON brng.refno = b.transid
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
 	WHERE s.ProductID = 24
-		AND b.currency IN (SELECT CurrencyId FROM #Currency)
-		AND b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT Currency FROM @Temp)
+		AND b.recommend IN (SELECT AgentId FROM @Temp)
 
 	IF @TransId IS NOT NULL
 	BEGIN
@@ -106,31 +93,32 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_RNG_Detail]
-							@LicenseeID = ' + CONVERT(VARCHAR, @LicenseeId) + ',
-							@UserID = ' + CONVERT(VARCHAR, @UserId) + ',
-							@RefNo = ' + CONVERT(VARCHAR, @RefNo) + ',
-							@CustId = ' + CONVERT(VARCHAR, @CustID) + ',
-							@TransType = ' + CONVERT(VARCHAR, @TransType) + ',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
+							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
+							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo) + ',
+							@CustId = ' + CONVERT(VARCHAR(10), @CustID) + ',
+							@TransType = ' + CONVERT(VARCHAR(1), @TransType) + ''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command
 
-		DECLARE @Expected INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE TransId = @TransId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
 
 GO

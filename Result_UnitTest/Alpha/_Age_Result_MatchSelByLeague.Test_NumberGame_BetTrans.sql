@@ -1,20 +1,40 @@
 ﻿USE [UnitTest_Kos]
 GO
-/****** Object:  StoredProcedure [_Age_Result_LeagueSelByDate].[Test_NumberGame_BetTrans]    Script Date: 1/13/2017 2:21:43 PM ******/
+/****** Object:  StoredProcedure [_Age_Result_MatchSelByLeague].[Test_NumberGame_BetTrans14]    Script Date: 1/13/2017 1:28:40 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Age_Result_LeagueSelByDate].[Test_NumberGame_BetTrans]
+ALTER PROCEDURE [_Age_Result_MatchSelByLeague].[Test_NumberGame_BetTrans]
 AS
 BEGIN
+	SET NOCOUNT ON
+
 	-- Arrange
 	DECLARE @Data TABLE (
-		LeagueName	NVARCHAR(1000),
-		LeagueId	INT,
-		EventDate	DATETIME,
-		SportType	SMALLINT
+		SportType		TINYINT,
+		BetStatus		NVARCHAR(50),
+		LeagueId		INT,
+		MatchId			INT,
+		Lcolor			NVARCHAR(50),
+		MatchCode		NVARCHAR(50),
+		EventDate		DATETIME,
+		KickOffTime		DATETIME,
+		HomeId			INT,
+		AwayId			INT,
+		HtHomeScore		INT,
+		HtAwayScore		INT,
+		FinalHomeScore	INT,
+		FinalAwayScore	INT,
+		EventStatus		NVARCHAR(50),
+		ShowTime		NVARCHAR(50),
+		HomeId2			INT,
+		IsNeutral		BIT,
+		GoalRecord		VARCHAR(50),
+		IsHTCal			BIT,
+		Calculate		BIT,
+		IsPending		BIT
 	)
 
 	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
@@ -22,21 +42,21 @@ BEGIN
 	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
 	EXEC bodb02.dbo.Age_SelBalanceUpDay
 
-	DECLARE @MoveBetsDay SMALLDATETIME,
-		@BalanceUpDay SMALLDATETIME
+	DECLARE @MoveBetsDay SMALLDATETIME
 
-	SELECT @MoveBetsDay = MoveBetsDay, 
-		@BalanceUpDay = BalanceUpDay
+	SELECT @MoveBetsDay = MoveBetsDay
 	FROM @tmp
 
 	DECLARE @EventDate	DATETIME,
 		@SportType		TINYINT,
-		@LeagueId		INT
+		@LeagueId		INT,
+		@MatchId		INT
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@EventDate = m.eventdate,
 		@SportType = m.sporttype,
-		@LeagueId = m.leagueid
+		@LeagueId = m.leagueid,
+		@MatchId = m.matchid
 	FROM bodb02.dbo.match AS m WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH(NOLOCK) ON m.sporttype = s.SportType
 	WHERE s.ProductID = 3
@@ -47,29 +67,34 @@ BEGIN
 		-- Act
 		DECLARE @Command NVARCHAR(MAX)
 
-		SET @Command = 'EXEC bodb02.dbo.[Age_Result_LeagueSelByDate]
-							@EventDate = ''' + CONVERT(VARCHAR, @EventDate, 23) + ''',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@SportType = ' + CONVERT(VARCHAR, @SportType) + ',
+		SET @Command = 'EXEC bodb02.dbo.[Age_Result_MatchSelByLeague]
+							@FromDate = ''' + CONVERT(VARCHAR(10), @EventDate, 23) + ''',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
+							@LeagueId = ' + CONVERT(VARCHAR(10), @LeagueId) + ',
+							@SportType = ' + CONVERT(VARCHAR(3), @SportType) + ',
 							@IsShowAll = 1'
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
-		DECLARE @Expected	INT
+		DECLARE @Actual	INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
-		WHERE LeagueId = @LeagueId
+		WHERE MatchId = @MatchId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
-
 END;
 
 GO

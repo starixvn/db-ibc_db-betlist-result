@@ -63,23 +63,27 @@ BEGIN
 	IF @BalanceUpDay IS NULL
 		SET @BalanceUpDay = @MoveBetsDay
 
-	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
+	DECLARE @LicenseeId	INT		= 26,	-- Athena000
 		@UserId			INT		= 68,
 		@TransId		BIGINT,
 		@RefNo			BIGINT,
 		@CustID			INT,
 		@TransType		TINYINT = 0
 
-	SELECT CurrencyId, LicenseeId
-	INTO #Currency
-	FROM bodb02.dbo.Lrf_f_GetCurrencybyUser(@LicenseeId, @UserId, 1)
+	DECLARE @Temp TABLE (Currency INT, CurrencyName VARCHAR(100), IsActive BIT, AgentId INT)
 
-	DECLARE @TempAg AS TABLE (CustId INT)
+	INSERT INTO @Temp
+	EXEC bodb02.dbo.Lrf_SelCurrencyByLicenseeUser
+		@LicenseeID = @LicenseeId,
+		@UserID = @UserId
 
-	INSERT INTO @TempAg
-	SELECT DISTINCT lc.CustID
-	FROM bodb_Licensee.dbo.f_SelLicenseeCust(0) AS lc
-		INNER JOIN #Currency AS c ON lc.LicenseeID = c.LicenseeId AND lc.Currency = c.CurrencyId
+	DECLARE @AgentList VARCHAR(MAX)
+
+	SELECT @AgentList = (
+		SELECT AgentId, Currency FROM @Temp
+		WHERE IsActive = 1
+		FOR XML RAW('Agent'), ROOT('ROOT')
+	)
 
 	SELECT TOP(1)
 		@RefNo = b.transid,
@@ -88,8 +92,8 @@ BEGIN
 	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.bettransLC14 AS brng WITH (NOLOCK) ON brng.refno = b.transid
 	WHERE b.bettype BETWEEN 2401 AND 2499
-		AND b.currency IN (SELECT CurrencyId FROM #Currency)
-		AND b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT Currency FROM @Temp)
+		AND b.recommend IN (SELECT AgentId FROM @Temp)
 		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 	IF @TransId IS NOT NULL
@@ -98,31 +102,31 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_LC_Detail]
-							@LicenseeID = ' + CONVERT(VARCHAR(10), @LicenseeId) + ',
-							@UserID = ' + CONVERT(VARCHAR(10), @UserId) + ',
+							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
 							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo) + ',
 							@CustId = ' + CONVERT(VARCHAR(10), @CustID) + ',
-							@TransType = ' + CONVERT(VARCHAR(3), @TransType) + ',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
-							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
+							@TransType = ' + CONVERT(VARCHAR(1), @TransType) + ''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 
+		EXEC tSQLt.ResultSetFilter
 			@ResultsetNo = 1,
-			@Command = @Command;
+			@Command = @Command
 
-		DECLARE @Expected INT
+		DECLARE @Actual INT
 
-		SELECT @Expected = COUNT(*)
+		SELECT @Actual = COUNT(*)
 		FROM @Data
 		WHERE TransId = @TransId
 
 		-- Assert
-		EXEC tSQLt.AssertEquals 1, @Expected, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = 1,
+			@Actual = @Actual,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
 END;
 

@@ -42,11 +42,9 @@ BEGIN
 	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
 	EXEC bodb02.dbo.Age_SelBalanceUpDay
 
-	DECLARE @MoveBetsDay SMALLDATETIME,
-		@BalanceUpDay SMALLDATETIME
+	DECLARE @MoveBetsDay SMALLDATETIME
 
-	SELECT @MoveBetsDay = MoveBetsDay, 
-		@BalanceUpDay = BalanceUpDay
+	SELECT @MoveBetsDay = MoveBetsDay
 	FROM @tmp
 
 	DECLARE @EventDate	DATETIME,
@@ -72,14 +70,16 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_Result_MatchSelByLeague]
-							@FromDate = ''' + CONVERT(VARCHAR, @EventDate, 23) + ''',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
+							@FromDate = ''' + CONVERT(VARCHAR(10), @EventDate, 23) + ''',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
 							@LeagueId = ' + CONVERT(VARCHAR(10), @LeagueId) + ',
 							@SportType = ' + CONVERT(VARCHAR(5), @SportType) + ',
 							@IsShowAll = 1'
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual	INT
 

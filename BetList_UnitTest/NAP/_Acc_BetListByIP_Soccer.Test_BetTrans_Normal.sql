@@ -86,15 +86,10 @@ BEGIN
 	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
 	EXEC bodb02.dbo.Age_SelBalanceUpDay
 
-	DECLARE @MoveBetsDay SMALLDATETIME,
-		@BalanceUpDay SMALLDATETIME
+	DECLARE @MoveBetsDay SMALLDATETIME
 
-	SELECT @MoveBetsDay = MoveBetsDay, 
-		@BalanceUpDay = BalanceUpDay
+	SELECT @MoveBetsDay = MoveBetsDay
 	FROM @tmp
-
-	IF @BalanceUpDay IS NULL
-		SET @BalanceUpDay = @MoveBetsDay
 
 	DECLARE @TransId	BIGINT,
 		@CustId			INT,
