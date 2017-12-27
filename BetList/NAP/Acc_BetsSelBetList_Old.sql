@@ -11,7 +11,7 @@ AS
 /*
 	Created: 20100123@Henry
 	Task: Get Bet List from Archive
-	DB: DBARC.bodb_archive
+	DB: DBARC.bodb_Archive
 	Original:
 
 	Revisions:
@@ -81,6 +81,7 @@ AS
 		- 20170722@Kos: Hotfix - Does not show Betradar Virtual Sports ticket [#Redmine: 81925]
 		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20171023@Kos: Support Bullfighting [#Redmine: 84961]
+		- 20171227@Kos: Return ticket detail of Racing and Virtual Horse Racing [#Redmine: 88775]
 */
 
 BEGIN
@@ -150,19 +151,6 @@ BEGIN
 		OriginalBetType	INT,
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000)
-	)
-
-	CREATE TABLE #BetListDetailData (
-		RefNo			VARCHAR(50),
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			VARCHAR(50),
-		APositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		SPositionTaking SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(50),
-		TransDesc		VARCHAR(300)
 	)
 
 	-- Get Sport Bettype Matrix
@@ -279,7 +267,7 @@ BEGIN
 				ELSE ''
 			END AS ExtraInfo
 		FROM 
-			dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
+			dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @CustId
@@ -357,7 +345,7 @@ BEGIN
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo
-			FROM dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
+			FROM dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @ToDate
@@ -633,7 +621,7 @@ BEGIN
 			0 AS OriginalBetType,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo
-		FROM dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
+		FROM dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN dbo.outright_bk AS o WITH (NOLOCK) ON b.matchid = o.orid
 			INNER JOIN bodb02.dbo.league AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
@@ -727,7 +715,7 @@ BEGIN
 			0 AS OriginalBetType,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo
-		FROM dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
+		FROM dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 			INNER JOIN bodb02.dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			INNER JOIN #SportBettype AS s ON s.BetType = b.BetType 
@@ -820,7 +808,7 @@ BEGIN
 			0 AS OriginalBetType,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo
-		FROM dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
+		FROM dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 			LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 		WHERE b.custid = @CustId
@@ -897,7 +885,7 @@ BEGIN
 			-1 AS BetdaqId,
 			'' AS ExtraInfo
 		FROM 
-			dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
+			dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN dbo.Match3rd_bk AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @CustId
@@ -975,6 +963,44 @@ BEGIN
 	FROM #BetListData
 	ORDER BY TransId
 
+	-- Get ticket detail
+	CREATE TABLE #BetListDetailData (
+		RefNo			VARCHAR(50),
+		Odds			MONEY,
+		Stake			MONEY,
+		Status			VARCHAR(50),
+		APositionTaking SMALLMONEY,
+		MPositionTaking SMALLMONEY,
+		SPositionTaking SMALLMONEY,
+		BetType			SMALLINT,
+		BetTeam			NVARCHAR(50),
+		TransDesc		VARCHAR(300)
+	)
+
+	-- Horse Racing
+	IF EXISTS (	SELECT TOP(1) 1
+				FROM #SportBettype AS sp
+					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype
+				WHERE sp.ProductID = 2)
+	BEGIN
+		INSERT INTO #BetListDetailData
+		SELECT
+			bm.refno,
+			bm.odds,
+			bm.stake,
+			bm.status,
+			bm.apositiontaking,
+			bm.mpositiontaking,
+			bm.spositiontaking,
+			bm.bettype,
+			bm.betteam,
+			'' AS TransDesc
+		FROM dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN bodb02.dbo.SportBettypeMatrix AS sp WITH (NOLOCK) ON bm.bettype = sp.bettype
+			INNER JOIN #BetListData AS b ON bm.refno = b.TransId
+		WHERE sp.Productid = 2 AND bm.custid = @CustId
+	END
+
 	-- Live Casino
 	IF EXISTS (	SELECT TOP(1) 1
 				FROM #SportBettype AS sp
@@ -997,6 +1023,32 @@ BEGIN
 			INNER JOIN #SportBettype AS sp ON bg.bettype = sp.bettype
 			INNER JOIN #BetListData AS b ON bg.refno = b.RefNo AND bg.custid = b.CustId
 		WHERE sp.Productid = 4
+	END
+
+	-- Virtual Sports
+	IF EXISTS (	SELECT TOP(1) 1
+				FROM #SportBettype AS sp
+					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype
+				WHERE sp.ProductID = 5 AND sp.EventType = 3)
+	BEGIN
+		INSERT INTO #BetListDetailData
+		SELECT
+			bm.refno,
+			bm.odds,
+			bm.stake,
+			bm.status,
+			bm.apositiontaking,
+			bm.mpositiontaking,
+			bm.spositiontaking,
+			bm.bettype,
+			bm.betteam,
+			'' AS TransDesc
+		FROM dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN bodb02.dbo.SportBettypeMatrix AS sp WITH (NOLOCK) ON bm.bettype = sp.bettype
+			INNER JOIN #BetListData AS b ON bm.refno = b.RefNo
+		WHERE sp.ProductID = 5
+			AND sp.EventType = 3
+			AND bm.custid = @CustId
 	END
 
 	-- Gold Deluxe
@@ -1024,7 +1076,7 @@ BEGIN
 	END
 
 	SELECT * FROM #BetListDetailData
-	ORDER BY refno
+	ORDER BY RefNo
 
 	DROP TABLE #BetListData;
 	DROP TABLE #BetListDetailData;

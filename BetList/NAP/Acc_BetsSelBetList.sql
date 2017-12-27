@@ -111,6 +111,8 @@ AS
 		- 20170717@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20171020@Kos: Support Bullfighting [#Redmine: 84961]
+		- 20171227@Kos: Return ticket detail of Racing and Virtual Horse Racing [#Redmine: 88775]
+					- Don't support Live Casino in bettrans and bettrans14 anymore
 */
 
 BEGIN
@@ -142,6 +144,7 @@ BEGIN
 
 	DELETE FROM #SportBettype
 	WHERE Bettype IN (904, 914)
+		OR ProductID = 4
 
 	DECLARE @Today	SMALLDATETIME,
 		@Yesterday	SMALLDATETIME
@@ -215,31 +218,17 @@ BEGIN
 		ExtraInfo		VARCHAR(1000)
 	)
 
-	CREATE TABLE #BetListDetailData (
-		RefNo			VARCHAR(50),
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			VARCHAR(50),
-		APositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		SPositionTaking SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(50),
-		TransDesc		VARCHAR(300)
-	)
-
 	IF @Todate > @MoveBetsDay
 	BEGIN
 		/* normal tickets
 			- Sportsbook				: ProductID = 1
 			- Number Game				: ProductID = 3
-			- Live Casino				: ProductID = 4
 			- Virtual Sports			: ProductID = 5
 			- Cash Out					: ProductID = 25
 			- Lucky 3					: ProductID = 26
 			- Betradar Virtual Sports	: ProductID = 27
 		*/
-		IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (1, 3, 4, 5, 25, 26, 27))
+		IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (1, 3, 5, 25, 26, 27))
 		BEGIN
 			INSERT INTO #BetListData
 			SELECT
@@ -479,7 +468,7 @@ BEGIN
 					b.betfrom,
 					0 matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
-					CASE WHEN statusID IN (0, 1) THEN 1 ELSE 0 END AS allowdelete,
+					CASE WHEN b.statusID IN (0, 1) THEN 1 ELSE 0 END AS allowdelete,
 					(b.winlost - b.actual_stake)  winlost,
 					b.playercomm AS commission,
 					(b.scomm - b.acomm),
@@ -1876,13 +1865,12 @@ BEGIN
 		/* normal tickets 
 			- Sportsbook				: ProductID = 1
 			- Number Game				: ProductID = 3
-			- Live Casino				: ProductID = 4
 			- Virtual Sports			: ProductID = 5
 			- Cash Out					: ProductID = 25
 			- Lucky 3					: ProductID = 26
 			- Betradar Virtual Sports	: ProductID = 27
 		*/
-		IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (1, 3, 4, 5, 25, 26, 27))
+		IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (1, 3, 5, 25, 26, 27))
 		BEGIN
 			INSERT INTO #BetListData
 			SELECT 
@@ -1993,9 +1981,9 @@ BEGIN
 					'' AS eventdate,
 					0,
 					0,
-					sdiscount,
-					adiscount,
-					discount,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
 					0 AS homeid,
 					0 AS awayid,
 					'' settleTime,
@@ -2030,7 +2018,7 @@ BEGIN
 					b.betfrom,
 					0 matchid,
 					CONVERT(BIT,0) AS IsNeutral,
-					CASE WHEN statusID IN (0, 1) THEN 1 ELSE 0 END AS allowdelete,
+					CASE WHEN b.statusID IN (0, 1) THEN 1 ELSE 0 END AS allowdelete,
 					(b.winlost - b.actual_stake) AS winlost,
 					b.playercomm AS commission,
 					(b.scomm - b.acomm) AS scomm,
@@ -2670,57 +2658,122 @@ BEGIN
 	FROM #BetListData
 	ORDER BY TransId
 
-	-- Live Casino
-	IF EXISTS (	SELECT TOP(1) 1 
+	-- Get ticket detail
+	CREATE TABLE #BetListDetailData (
+		RefNo			VARCHAR(50),
+		Odds			MONEY,
+		Stake			MONEY,
+		Status			VARCHAR(50),
+		APositionTaking SMALLMONEY,
+		MPositionTaking SMALLMONEY,
+		SPositionTaking SMALLMONEY,
+		BetType			SMALLINT,
+		BetTeam			NVARCHAR(50),
+		TransDesc		VARCHAR(300)
+	)
+
+	-- Horse Racing
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM #SportBettype AS sp
-					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype 
-				WHERE sp.ProductID = 4)
+					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype
+				WHERE sp.ProductID = 2)
 	BEGIN
 		IF @Todate > @MoveBetsDay
 		BEGIN
 			INSERT INTO #BetListDetailData
 			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.mpositiontaking,
-				bg.spositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.TransDesc
-			FROM dbo.bettransg AS bg WITH (NOLOCK)
-				INNER JOIN #SportBettype AS sp ON bg.bettype = sp.bettype
-				INNER JOIN #BetListData AS b1 ON bg.refno = b1.refno AND bg.bettype = b1.bettype
-			WHERE sp.Productid = 4
+				bm.refno,
+				bm.odds,
+				bm.stake,
+				bm.status,
+				bm.apositiontaking,
+				bm.mpositiontaking,
+				bm.spositiontaking,
+				bm.bettype,
+				bm.betteam,
+				'' AS TransDesc
+			FROM dbo.bettransm AS bm WITH (NOLOCK)
+				INNER JOIN dbo.SportBettypeMatrix AS sp WITH (NOLOCK) ON bm.bettype = sp.bettype
+				INNER JOIN #BetListData AS b ON bm.refno = b.TransId
+			WHERE sp.ProductID = 2 AND bm.custid = @CustId
 		END
 
 		IF @Fromdate <= @MoveBetsDay
 		BEGIN
 			INSERT INTO #BetListDetailData
-			SELECT 
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.[status],
-				bg.apositiontaking,
-				bg.mpositiontaking,
-				bg.spositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.TransDesc
-			FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-				INNER JOIN #SportBettype AS sp ON bg.bettype = sp.bettype
-				INNER JOIN #BetListData AS b1 ON bg.refno = b1.refno AND bg.bettype = b1.bettype
-			WHERE sp.Productid = 4
+			SELECT
+				bm.refno,
+				bm.odds,
+				bm.stake,
+				bm.status,
+				bm.apositiontaking,
+				bm.mpositiontaking,
+				bm.spositiontaking,
+				bm.bettype,
+				bm.betteam,
+				'' AS TransDesc
+			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+				INNER JOIN dbo.SportBettypeMatrix AS sp WITH (NOLOCK) ON bm.bettype = sp.bettype
+				INNER JOIN #BetListData AS b ON bm.refno = b.TransId
+			WHERE sp.ProductID = 2 AND bm.custid = @CustId
+		END
+	END
+
+	-- Virtual Sports
+	IF EXISTS (	SELECT TOP(1) 1
+				FROM #SportBettype AS sp
+					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype
+				WHERE sp.ProductID = 5 AND sp.EventType = 3)
+	BEGIN
+		IF @Todate > @MoveBetsDay
+		BEGIN
+			INSERT INTO #BetListDetailData
+			SELECT
+				bm.refno,
+				bm.odds,
+				bm.stake,
+				bm.status,
+				bm.apositiontaking,
+				bm.mpositiontaking,
+				bm.spositiontaking,
+				bm.bettype,
+				bm.betteam,
+				'' AS TransDesc
+			FROM dbo.bettransm AS bm WITH (NOLOCK)
+				INNER JOIN dbo.SportBettypeMatrix AS sp WITH (NOLOCK) ON bm.bettype = sp.bettype
+				INNER JOIN #BetListData AS b ON bm.refno = b.RefNo
+			WHERE sp.ProductID = 5
+				AND sp.EventType = 3
+				AND bm.custid = @CustId
+		END
+
+		IF @Fromdate <= @MoveBetsDay
+		BEGIN
+			INSERT INTO #BetListDetailData
+			SELECT
+				bm.refno,
+				bm.odds,
+				bm.stake,
+				bm.status,
+				bm.apositiontaking,
+				bm.mpositiontaking,
+				bm.spositiontaking,
+				bm.bettype,
+				bm.betteam,
+				'' AS TransDesc
+			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+				INNER JOIN dbo.SportBettypeMatrix AS sp WITH (NOLOCK) ON bm.bettype = sp.bettype
+				INNER JOIN #BetListData AS b ON bm.refno = b.RefNo
+			WHERE sp.ProductID = 5
+				AND sp.EventType = 3
+				AND bm.custid = @CustId
 		END
 	END
 
 	-- Gold Deluxe
-	IF EXISTS (	SELECT TOP(1) 1 
+	IF EXISTS (	SELECT TOP(1) 1
 				FROM #SportBettype AS sp
-					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype 
+					INNER JOIN #BetListData AS d ON d.bettype = sp.bettype
 				WHERE sp.ProductID = 12)
 	BEGIN
 		IF @Todate > @MoveBetsDay
@@ -2736,12 +2789,12 @@ BEGIN
 				bg.spositiontaking,
 				bg.bettype,
 				bg.betteam,
-				bg.TransDesc 
+				bg.TransDesc
 			FROM dbo.bettransg AS bg WITH (NOLOCK)
-				INNER JOIN #SportBettype AS sp ON bg.bettype = sp.bettype
-				INNER JOIN #BetListData AS b2 ON bg.refno = b2.transid AND bg.bettype = b2.bettype
-			WHERE sp.Productid = 12
-		END 
+				INNER JOIN #SportBettype AS sp ON bg.bettype = sp.Bettype
+				INNER JOIN #BetListData AS b ON bg.refno = b.TransId AND bg.bettype = b.BetType
+			WHERE sp.ProductID = 12
+		END
 
 		IF @Fromdate <= @MoveBetsDay
 		BEGIN
@@ -2758,9 +2811,9 @@ BEGIN
 				bg.betteam,
 				bg.TransDesc
 			FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-				INNER JOIN #SportBettype AS sp ON bg.bettype = sp.bettype
-				INNER JOIN #BetListData AS b2 ON bg.refno = b2.transid AND bg.bettype = b2.bettype
-			WHERE sp.Productid = 12
+				INNER JOIN #SportBettype AS sp ON bg.bettype = sp.Bettype
+				INNER JOIN #BetListData AS b ON bg.refno = b.TransId AND bg.bettype = b.BetType
+			WHERE sp.ProductID = 12
 		END 
 	END
 

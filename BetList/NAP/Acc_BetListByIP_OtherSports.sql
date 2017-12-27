@@ -83,6 +83,8 @@ AS
 		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20171025@Kos: Support Bullfighting [#Redmine: 84961]
 					- Don't support Live Casino anymore
+		- 20171227@Kos: Return ticket detail of Racing and Virtual Horse Racing [#Redmine: 88775]
+					- Don't support Live Casino in bettrans and bettrans14 anymore
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -174,19 +176,6 @@ BEGIN
 		OriginalBetType	INT,
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000)
-	)
-
-	DECLARE @DetailData TABLE (
-		RefNo			NVARCHAR(50),
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			NVARCHAR(50),
-		APositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		SPositionTaking SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(50),
-		TransDesc		VARCHAR(300)
 	)
 
 	INSERT INTO @Data
@@ -2061,10 +2050,111 @@ BEGIN
 	WHERE ip = @ip
 	ORDER BY 4, 26
 
+	-- Get ticket detail
+	DECLARE @DetailData TABLE (
+		RefNo			NVARCHAR(50),
+		Odds			MONEY,
+		Stake			MONEY,
+		Status			NVARCHAR(50),
+		APositionTaking SMALLMONEY,
+		MPositionTaking SMALLMONEY,
+		SPositionTaking SMALLMONEY,
+		BetType			SMALLINT,
+		BetTeam			NVARCHAR(50),
+		TransDesc		VARCHAR(300)
+	)
+
+	-- Horse Racing
 	IF EXISTS (	SELECT TOP(1) 1
 				FROM @SportBettype AS sp
 					INNER JOIN @Data AS d ON d.bettype = sp.bettype 
-				WHERE sp.ProductID IN (4,12))
+				WHERE sp.ProductID = 2)
+	BEGIN
+		INSERT INTO @DetailData
+		SELECT
+			bm.refno,
+			bm.odds,
+			bm.stake,
+			bm.status,
+			bm.apositiontaking,
+			bm.mpositiontaking,
+			bm.spositiontaking,
+			bm.bettype,
+			bm.betteam,
+			'' AS TransDesc
+		FROM dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sp ON bm.bettype = sp.Bettype
+			INNER JOIN @Data AS b ON bm.refno = b.TransId
+		WHERE sp.ProductID = 2 AND bm.custid = @CustId
+
+		INSERT INTO @DetailData
+		SELECT
+			bm.refno,
+			bm.odds,
+			bm.stake,
+			bm.status,
+			bm.apositiontaking,
+			bm.mpositiontaking,
+			bm.spositiontaking,
+			bm.bettype,
+			bm.betteam,
+			'' AS TransDesc
+		FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sp ON bm.bettype = sp.Bettype
+			INNER JOIN @Data AS b ON bm.refno = b.TransId
+		WHERE sp.ProductID = 2 AND bm.custid = @CustId
+	END
+
+	-- Virtual Horse Racing
+	IF EXISTS (	SELECT TOP(1) 1
+				FROM @SportBettype AS sp
+					INNER JOIN @Data AS d ON d.bettype = sp.bettype 
+				WHERE sp.ProductID = 5 AND sp.EventType = 3)
+	BEGIN
+		INSERT INTO @DetailData
+		SELECT
+			bm.refno,
+			bm.odds,
+			bm.stake,
+			bm.status,
+			bm.apositiontaking,
+			bm.mpositiontaking,
+			bm.spositiontaking,
+			bm.bettype,
+			bm.betteam,
+			'' AS TransDesc
+		FROM dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sp ON bm.bettype = sp.Bettype
+			INNER JOIN @Data AS b ON bm.refno = b.RefNo
+		WHERE sp.ProductID = 5
+			AND sp.EventType = 3
+			AND bm.custid = @CustId
+
+		INSERT INTO @DetailData
+		SELECT
+			bm.refno,
+			bm.odds,
+			bm.stake,
+			bm.status,
+			bm.apositiontaking,
+			bm.mpositiontaking,
+			bm.spositiontaking,
+			bm.bettype,
+			bm.betteam,
+			'' AS TransDesc
+		FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sp ON bm.bettype = sp.Bettype
+			INNER JOIN @Data AS b ON bm.refno = b.RefNo
+		WHERE sp.ProductID = 5
+			AND sp.EventType = 3
+			AND bm.custid = @CustId
+	END
+
+	-- Gold Deluxe
+	IF EXISTS (	SELECT TOP(1) 1
+				FROM @SportBettype AS sp
+					INNER JOIN @Data AS d ON d.bettype = sp.bettype 
+				WHERE sp.ProductID = 12)
 	BEGIN
 		INSERT INTO @DetailData
 		SELECT
@@ -2079,28 +2169,12 @@ BEGIN
 			bg.betteam,
 			bg.TransDesc
 		FROM dbo.bettransg AS bg WITH (NOLOCK)
-			INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
-			INNER JOIN @Data AS b ON bg.refno = b.refno AND bg.bettype = b.bettype
-		WHERE sp.Productid = 4 AND bg.CustID = @CustID
-		UNION ALL
-		SELECT 
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			bg.status,
-			bg.apositiontaking,
-			bg.mpositiontaking,
-			bg.spositiontaking,
-			bg.bettype,
-			bg.betteam,
-			bg.TransDesc
-		FROM dbo.bettransg AS bg WITH (NOLOCK)
-			INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
-			INNER JOIN @Data AS b ON bg.refno = b.transid AND bg.bettype = b.bettype
-		WHERE sp.Productid = 12 AND bg.CustID = @CustID
+			INNER JOIN @SportBettype AS sp ON bg.bettype = sp.Bettype
+			INNER JOIN @Data AS b ON bg.refno = b.TransId AND bg.bettype = b.bettype
+		WHERE sp.ProductID = 12 AND bg.custid = @CustId
 
 		INSERT INTO @DetailData
-		SELECT 
+		SELECT
 			bg.refno,
 			bg.odds,
 			bg.stake,
@@ -2112,25 +2186,9 @@ BEGIN
 			bg.betteam,
 			bg.TransDesc
 		FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-			INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
-			INNER JOIN @Data AS b ON bg.refno = b.refno
-		WHERE sp.Productid = 4 AND bg.CustID = @CustID
-		UNION ALL
-		SELECT 
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			bg.status,
-			bg.apositiontaking,
-			bg.mpositiontaking,
-			bg.spositiontaking,
-			bg.bettype,
-			bg.betteam,
-			bg.TransDesc
-		FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-			INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
-			INNER JOIN @Data AS b ON bg.refno = b.transid
-		WHERE sp.Productid = 12 AND bg.CustID = @CustID
+			INNER JOIN @SportBettype AS sp ON bg.bettype = sp.Bettype
+			INNER JOIN @Data AS b ON bg.refno = b.TransId AND bg.bettype = b.bettype
+		WHERE sp.ProductID = 12 AND bg.custid = @CustId
 	END
 
 	-- Get currency name

@@ -93,6 +93,8 @@ AS
 		- 20170717@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20171019@Kos: Support Bullfighting [#Redmine: 84961]
+		- 20171227@Kos: Return ticket detail of Racing and Virtual Horse Racing [#Redmine: 88775]
+					- Don't support Live Casino in bettrans and bettrans14 anymore
 */
 
 BEGIN
@@ -274,7 +276,7 @@ BEGIN
 		-- Bettrans
 		IF @WinLostDate > @MoveBetsDay
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Lucky 3, BetRadar Virtual Sports
+			-- Sportbooks, Number Game, Virtual Sports, Lucky 3, BetRadar Virtual Sports
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -1967,7 +1969,7 @@ BEGIN
 		-- Bettrans14
 		ELSE IF @WinLostDate <= @MoveBetsDay AND @WinLostDate >= @BalanceUpDay
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Lucky 3, Betradar Virtual Sports
+			-- Sportbooks, Number Game, Virtual Sports, Lucky 3, Betradar Virtual Sports
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -3762,90 +3764,79 @@ BEGIN
 		END
 	END
 
+	-- Horse Racing
 	IF EXISTS (	SELECT TOP(1) 1
 				FROM @SportBettype AS sp
 					INNER JOIN @Data AS d ON d.bettype = sp.bettype 
-				WHERE sp.ProductID IN (4, 12))
+				WHERE sp.ProductID = 2)
 	BEGIN
 		IF @WinLostDate > @MoveBetsDay
 		BEGIN
-			-- Live Casino
 			INSERT INTO @DetailData
 			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.mpositiontaking,
-				bg.spositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.TransDesc
-			FROM dbo.bettransg AS bg WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
-				INNER JOIN @Data AS b ON bg.custid = b.CustId AND bg.refno = b.refno AND bg.bettype = b.bettype
-			WHERE sp.Productid = 4
-
-			-- Gold Deluxe
-			UNION ALL
-			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.mpositiontaking,
-				bg.spositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.TransDesc
-			FROM dbo.bettransg AS bg WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
-				INNER JOIN @Data AS b ON bg.custid = b.CustID AND bg.refno = b.transid AND bg.bettype = b.bettype
-			WHERE sp.Productid = 12
+				bm.refno,
+				bm.odds,
+				bm.stake,
+				bm.status,
+				bm.apositiontaking,
+				bm.mpositiontaking,
+				bm.spositiontaking,
+				bm.bettype,
+				bm.betteam,
+				'' AS TransDesc
+			FROM dbo.bettransm AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sp ON bm.bettype = sp.bettype
+				INNER JOIN @Data AS b ON bm.custid = b.CustId AND bm.refno = b.transid
+			WHERE sp.ProductID = 2
 		END
 		ELSE IF @WinLostDate <= @MoveBetsDay AND @WinLostDate >= @BalanceUpDay
 		BEGIN
-			-- Live Casino
 			INSERT INTO @DetailData
 			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.mpositiontaking,
-				bg.spositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.TransDesc
-			FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
-				INNER JOIN @Data AS b ON bg.custid = b.CustID AND bg.refno = b.refno AND bg.bettype = b.bettype
-			WHERE sp.Productid = 4
-
-			-- Gold Deluxe
-			UNION ALL
-			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.mpositiontaking,
-				bg.spositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.TransDesc
-			FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
-				INNER JOIN @Data AS b ON bg.custid = b.CustID AND bg.refno = b.transid AND bg.bettype = b.bettype
-			WHERE sp.Productid = 12
+				bm.refno,
+				bm.odds,
+				bm.stake,
+				bm.status,
+				bm.apositiontaking,
+				bm.mpositiontaking,
+				bm.spositiontaking,
+				bm.bettype,
+				bm.betteam,
+				'' AS TransDesc
+			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sp ON bm.bettype = sp.bettype
+				INNER JOIN @Data AS b ON bm.custid = b.CustId AND bm.refno = b.transid
+			WHERE sp.ProductID = 2
 		END
 		ELSE
 		BEGIN
-			-- Live Casino
+			INSERT INTO @DetailData
+			SELECT
+				bm.refno,
+				bm.odds,
+				bm.stake,
+				bm.status,
+				bm.apositiontaking,
+				bm.mpositiontaking,
+				bm.spositiontaking,
+				bm.bettype,
+				bm.betteam,
+				'' AS TransDesc
+			FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sp ON bm.bettype = sp.bettype
+				INNER JOIN @Data AS b ON bm.custid = b.CustId AND bm.refno = b.transid
+			WHERE sp.ProductID = 2
+		END
+	END
+
+	-- Live Casino
+	IF EXISTS (	SELECT TOP(1) 1
+				FROM @SportBettype AS sp
+					INNER JOIN @Data AS d ON d.bettype = sp.bettype 
+				WHERE sp.ProductID = 4)
+	BEGIN
+		IF @WinLostDate < @BalanceUpDay
+		BEGIN
 			INSERT INTO @DetailData
 			SELECT
 				bg.refno,
@@ -3861,10 +3852,122 @@ BEGIN
 			FROM DBARC.bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
 				INNER JOIN @Data AS b ON bg.custid = b.CustID AND bg.refno = b.refno AND bg.bettype = b.bettype
-			WHERE sp.Productid = 4
+			WHERE sp.ProductID = 4
+		END
+	END
 
-			-- Gold Deluxe
-			UNION ALL
+	-- Virtual Sports
+	IF EXISTS (	SELECT TOP(1) 1
+				FROM @SportBettype AS sp
+					INNER JOIN @Data AS d ON d.bettype = sp.bettype
+				WHERE sp.ProductID = 5 AND sp.EventType = 3)
+	BEGIN
+		IF @WinLostDate > @MoveBetsDay
+		BEGIN
+			INSERT INTO @DetailData
+			SELECT
+				bm.refno,
+				bm.odds,
+				bm.stake,
+				bm.status,
+				bm.apositiontaking,
+				bm.mpositiontaking,
+				bm.spositiontaking,
+				bm.bettype,
+				bm.betteam,
+				'' AS TransDesc
+			FROM dbo.bettransm AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sp ON bm.bettype = sp.bettype
+				INNER JOIN @Data AS b ON bm.custid = b.CustId AND bm.refno = b.RefNo
+			WHERE sp.ProductID = 5 AND sp.EventType = 3
+		END
+		ELSE IF @WinLostDate <= @MoveBetsDay AND @WinLostDate >= @BalanceUpDay
+		BEGIN
+			INSERT INTO @DetailData
+			SELECT
+				bm.refno,
+				bm.odds,
+				bm.stake,
+				bm.status,
+				bm.apositiontaking,
+				bm.mpositiontaking,
+				bm.spositiontaking,
+				bm.bettype,
+				bm.betteam,
+				'' AS TransDesc
+			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sp ON bm.bettype = sp.bettype
+				INNER JOIN @Data AS b ON bm.custid = b.CustId AND bm.refno = b.RefNo
+			WHERE sp.ProductID = 5 AND sp.EventType = 3
+		END
+		ELSE
+		BEGIN
+			INSERT INTO @DetailData
+			SELECT
+				bm.refno,
+				bm.odds,
+				bm.stake,
+				bm.status,
+				bm.apositiontaking,
+				bm.mpositiontaking,
+				bm.spositiontaking,
+				bm.bettype,
+				bm.betteam,
+				'' AS TransDesc
+			FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sp ON bm.bettype = sp.bettype
+				INNER JOIN @Data AS b ON bm.custid = b.CustId AND bm.refno = b.RefNo
+			WHERE sp.ProductID = 5 AND sp.EventType = 3
+		END
+	END
+
+	-- Gold Deluxe
+	IF EXISTS (	SELECT TOP(1) 1
+				FROM @SportBettype AS sp
+					INNER JOIN @Data AS d ON d.bettype = sp.bettype 
+				WHERE sp.ProductID = 12)
+	BEGIN
+		IF @WinLostDate > @MoveBetsDay
+		BEGIN
+			INSERT INTO @DetailData
+			SELECT
+				bg.refno,
+				bg.odds,
+				bg.stake,
+				bg.status,
+				bg.apositiontaking,
+				bg.mpositiontaking,
+				bg.spositiontaking,
+				bg.bettype,
+				bg.betteam,
+				bg.TransDesc
+			FROM dbo.bettransg AS bg WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
+				INNER JOIN @Data AS b ON bg.custid = b.CustId AND bg.refno = b.transid AND bg.bettype = b.bettype
+			WHERE sp.ProductID = 12
+		END
+		ELSE IF @WinLostDate <= @MoveBetsDay AND @WinLostDate >= @BalanceUpDay
+		BEGIN
+			INSERT INTO @DetailData
+			SELECT
+				bg.refno,
+				bg.odds,
+				bg.stake,
+				bg.status,
+				bg.apositiontaking,
+				bg.mpositiontaking,
+				bg.spositiontaking,
+				bg.bettype,
+				bg.betteam,
+				bg.TransDesc
+			FROM dbo.bettransg14 AS bg WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
+				INNER JOIN @Data AS b ON bg.custid = b.CustId AND bg.refno = b.transid AND bg.bettype = b.bettype
+			WHERE sp.ProductID = 12
+		END
+		ELSE
+		BEGIN
+			INSERT INTO @DetailData
 			SELECT
 				bg.refno,
 				bg.odds,
@@ -3878,8 +3981,8 @@ BEGIN
 				bg.TransDesc
 			FROM DBARC.bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
-				INNER JOIN @Data AS b ON bg.custid = b.CustID AND bg.refno = b.transid AND bg.bettype = b.bettype
-			WHERE sp.Productid = 12
+				INNER JOIN @Data AS b ON bg.custid = b.CustId AND bg.refno = b.TransId AND bg.bettype = b.bettype
+			WHERE sp.ProductID = 12
 		END
 	END
 	
