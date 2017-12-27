@@ -119,6 +119,7 @@ AS
 		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170623@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
+		- 20171227@Kos: Add index hint for Cash Out in bk range [#Redmine: 88753]
 */
 
 BEGIN
@@ -1724,9 +1725,9 @@ BEGIN
 				b.refno,
 				b.Transdate,
 				b.winlostdate,
-				(b.winlost-actual_stake),
-				ABS(b.winlost-actual_stake),
-				- (b.winlost-b.actual_stake) AS LicenseeWL,
+				(b.winlost - b.actual_stake),
+				ABS(b.winlost - b.actual_stake),
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				0 AS LiveIndicator,
@@ -2804,11 +2805,11 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType
 			FROM
-				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE
-				b.winlostdate BETWEEN @fromdate AND @TempToDate 
+				b.winlostdate BETWEEN @fromdate AND @TempToDate
 				AND b.recommend = @Recommend
 				AND b.custid = @CustId
 				AND sbt.ProductID = 25
