@@ -122,8 +122,7 @@ BEGIN
 		@WinLostDate = b.winlostdate
 	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.Customer AS c WITH (NOLOCK) ON b.custid = c.custid
-		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE s.ProductID = 21
+	WHERE b.bettype BETWEEN 2401 AND 2499
 		AND b.currency IN (SELECT Currency FROM @Temp)
 		AND b.recommend IN (SELECT AgentId FROM @Temp)
 		AND b.statusID IN (111, 112, 113)

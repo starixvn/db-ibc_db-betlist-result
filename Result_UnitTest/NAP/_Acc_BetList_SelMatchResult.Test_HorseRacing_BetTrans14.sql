@@ -1,4 +1,6 @@
-﻿USE [UnitTest_Kos]
+﻿/*<info serverAlias="DBAGETEST-UnitTest_Kos" executers="vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
+USE [UnitTest_Kos]
 GO
 /****** Object:  StoredProcedure [_Acc_BetList_SelMatchResult].[Test_HorseRacing_BetTrans14]    Script Date: 1/13/2017 11:21:09 AM ******/
 SET ANSI_NULLS ON
@@ -8,6 +10,16 @@ GO
 
 ALTER PROCEDURE [_Acc_BetList_SelMatchResult].[Test_HorseRacing_BetTrans14]
 AS
+
+/*
+	Created: Kos@20180116
+	Task: Unit Test
+	DB: DBEXT.UnitTest_Kos
+
+	Revisions:
+		- 20180116@Kos: Create new [#Redmine: 89580]
+*/
+
 BEGIN
 	SET NOCOUNT ON
 
@@ -59,7 +71,7 @@ BEGIN
 		DECLARE @Actual	INT,
 			@Expected	INT
 
-		SELECT @Actual = COUNT(*)
+		SELECT @Expected = COUNT(*)
 		FROM bodb02.dbo.outright14 AS o WITH (NOLOCK)
 			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON o.leagueid = l.leagueid
 		WHERE o.leagueid = @LeagueId

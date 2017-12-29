@@ -60,8 +60,8 @@ BEGIN
 		DECLARE @Command NVARCHAR(MAX)
 
 		SET @Command = 'EXEC bodb02.dbo.[Acc_BetlistCombinationParlay_Details] 
-							@RefNo = ' + CONVERT(VARCHAR, @RefNo) + ',
-							@CustId = ' + CONVERT(VARCHAR, @CustID) + ',
+							@RefNo = ' + CONVERT(VARCHAR(20), @RefNo) + ',
+							@CustId = ' + CONVERT(VARCHAR(10), @CustID) + ',
 							@MoveBetDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
 							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 

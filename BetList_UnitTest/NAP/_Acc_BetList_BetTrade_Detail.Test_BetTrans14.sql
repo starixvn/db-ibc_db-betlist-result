@@ -1,5 +1,17 @@
+/*<info serverAlias="DBAGETEST-UnitTest_Kos" executers="vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [_Acc_BetList_BetTrade_Detail].[Test_BetTrans14]
 AS
+
+/*
+	Created: Kos@20180116
+	Task: Unit Test
+	DB: DBEXT.UnitTest_Kos
+
+	Revisions:
+		- 20180116@Kos: Create new [#Redmine: 89580]
+*/
+
 BEGIN
 	SET NOCOUNT ON
 

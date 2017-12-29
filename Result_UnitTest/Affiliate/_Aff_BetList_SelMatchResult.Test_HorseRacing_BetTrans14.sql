@@ -1,4 +1,6 @@
-﻿USE [UnitTest_Kos]
+﻿/*<info serverAlias="DBEXTTEST-UnitTest_Kos" executers="vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
+USE [UnitTest_Kos]
 GO
 /****** Object:  StoredProcedure [_Aff_BetList_SelMatchResult].[Test_HorseRacing_BetTrans14]    Script Date: 1/13/2017 12:51:47 PM ******/
 SET ANSI_NULLS ON
@@ -8,6 +10,16 @@ GO
 
 ALTER PROCEDURE [_Aff_BetList_SelMatchResult].[Test_HorseRacing_BetTrans14]
 AS
+
+/*
+	Created: Kos@20180116
+	Task: Unit Test
+	DB: DBEXT.UnitTest_Kos
+
+	Revisions:
+		- 20180116@Kos: Create new [#Redmine: 89580]
+*/
+
 BEGIN
 	-- Arrange
 	DECLARE @Data TABLE (

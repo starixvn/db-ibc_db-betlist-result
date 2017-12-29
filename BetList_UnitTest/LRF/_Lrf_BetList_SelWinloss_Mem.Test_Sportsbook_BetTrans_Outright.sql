@@ -101,7 +101,7 @@ BEGIN
 	IF @BalanceUpDay IS NULL
 		SET @BalanceUpDay = @MoveBetsDay
 
-	DECLARE @LicenseeId	INT		= 1,	-- 12Bet
+	DECLARE @LicenseeId	INT		= 26,	-- Athena000
 		@UserId			INT		= 68,
 		@CustId			INT,
 		@TransId		BIGINT,
@@ -123,7 +123,7 @@ BEGIN
 		FOR XML RAW('Agent'), ROOT('ROOT')
 	)
 
-	SELECT TOP 1
+	SELECT TOP(1)
 		@TransId = b.transid,
 		@CustId = b.custid,
 		@BetType = b.bettype,
@@ -144,10 +144,10 @@ BEGIN
 							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
 							@CustID = ' + CONVERT(VARCHAR(10), @CustId) + ',
 							@ShowSB = 1,
-							@FromDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@ToDate = ''' + CONVERT(VARCHAR, @WinLostDate, 23) + ''',
-							@MoveBetsDay = ''' + CONVERT(VARCHAR, @MoveBetsDay, 23) + ''',
-							@BalanceUpDay = ''' + CONVERT(VARCHAR, @BalanceUpDay, 23) + ''''
+							@FromDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@ToDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
+							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
+							@BalanceUpDay = ''' + CONVERT(VARCHAR(10), @BalanceUpDay, 23) + ''''
 
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter

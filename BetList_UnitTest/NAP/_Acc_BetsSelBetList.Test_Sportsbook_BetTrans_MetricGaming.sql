@@ -107,6 +107,7 @@ BEGIN
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.bettype BETWEEN 801 AND 806
 		AND b.statusID NOT IN (0, 1)
+		AND b.winlostdate > @MoveBetsDay
 
 	IF @TransId IS NOT NULL
 	BEGIN

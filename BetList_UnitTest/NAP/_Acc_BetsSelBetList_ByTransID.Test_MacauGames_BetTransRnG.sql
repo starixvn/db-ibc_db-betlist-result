@@ -1,12 +1,12 @@
 USE [UnitTest_Kos]
 GO
-/****** Object:  StoredProcedure [_Acc_BetsSelBetList_ByTransID].[Test_AllBet_BetTransRnG]    Script Date: 12/18/2017 11:02:37 AM ******/
+/****** Object:  StoredProcedure [_Acc_BetsSelBetList_ByTransID].[Test_MacauGames_BetTrans14]    Script Date: 12/18/2017 1:06:11 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Acc_BetsSelBetList_ByTransID].[Test_AllBet_BetTransRnG]
+ALTER PROCEDURE [_Acc_BetsSelBetList_ByTransID].[Test_MacauGames_BetTransRnG]
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -103,8 +103,8 @@ BEGIN
 		@RefNo = brng.transid,
 		@CustId = b.custid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
-		INNER JOIN bodb02.dbo.bettransLC AS brng WITH (NOLOCK) ON brng.refno = b.transid
-	WHERE b.bettype BETWEEN 2401 AND 2499
+		INNER JOIN bodb02.dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.refno = b.transid
+	WHERE b.bettype BETWEEN 4001 AND 4099
 
 	IF @TransId IS NOT NULL
 	BEGIN

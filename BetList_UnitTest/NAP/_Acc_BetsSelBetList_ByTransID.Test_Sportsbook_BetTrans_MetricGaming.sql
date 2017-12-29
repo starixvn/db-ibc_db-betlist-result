@@ -100,11 +100,12 @@ BEGIN
 
 	SELECT TOP(1)
 		@TransId = b.transid,
-		@RefNo = b.transid,
+		@RefNo = b.refno,
 		@CustId = b.custid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.bettype BETWEEN 801 AND 806
 		AND b.statusID NOT IN (0, 1)
+		AND b.winlostdate > @MoveBetsDay
 
 	IF @TransId IS NOT NULL
 	BEGIN

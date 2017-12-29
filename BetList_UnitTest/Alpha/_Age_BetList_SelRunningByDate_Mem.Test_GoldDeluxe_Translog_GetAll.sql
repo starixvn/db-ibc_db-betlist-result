@@ -1,3 +1,5 @@
+/*<info serverAlias="DBAGETEST-UnitTest_Kos" executers="vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 USE [UnitTest_Kos]
 GO
 /****** Object:  StoredProcedure [_Age_BetList_SelRunningByDate_Mem].[Test_GoldDeluxe_Translog_GetAll]    Script Date: 1/11/2017 10:46:54 AM ******/
@@ -8,6 +10,16 @@ GO
 
 ALTER PROCEDURE [_Age_BetList_SelRunningByDate_Mem].[Test_GoldDeluxe_Translog_GetAll]
 AS
+
+/*
+	Created: Kos@20180116
+	Task: Unit Test
+	DB: DBEXT.UnitTest_Kos
+
+	Revisions:
+		- 20180116@Kos: Create new [#Redmine: 89580]
+*/
+
 BEGIN
 	SET NOCOUNT ON
 
@@ -79,7 +91,9 @@ BEGIN
 							@ProductIDs = ''12'''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual INT
 

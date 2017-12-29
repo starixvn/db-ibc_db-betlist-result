@@ -29,21 +29,6 @@ BEGIN
 		OddsSpread	MONEY
 	)
 
-	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
-
-	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
-	EXEC bodb02.dbo.Age_SelBalanceUpDay
-
-	DECLARE @MoveBetsDay SMALLDATETIME,
-		@BalanceUpDay SMALLDATETIME
-
-	SELECT @MoveBetsDay = MoveBetsDay, 
-		@BalanceUpDay = BalanceUpDay
-	FROM @tmp
-
-	IF @BalanceUpDay IS NULL
-		SET @BalanceUpDay = @MoveBetsDay
-
 	DECLARE @TransId			BIGINT,
 		@RefNo					BIGINT,
 		@CustId					INT,
@@ -97,11 +82,14 @@ BEGIN
 		FROM @Data
 
 		-- Assert
-		EXEC tSQLt.AssertEquals @ExpectedNumOfSubTicket, @NumOfSubTicket, @Command
+		EXEC tSQLt.AssertEquals
+			@Expected = @ExpectedNumOfSubTicket,
+			@Actual = @NumOfSubTicket,
+			@Message = @Command
 	END
 	ELSE
 	BEGIN
-		EXEC tSQLt.Fail 'No available test data'
+		EXEC tSQLt.Fail @Message0 = 'No available test data'
 	END
 END;
 

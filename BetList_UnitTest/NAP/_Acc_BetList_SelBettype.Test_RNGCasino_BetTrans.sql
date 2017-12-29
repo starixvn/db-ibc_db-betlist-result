@@ -41,7 +41,8 @@ BEGIN
 		@BetType = b.bettype,
 		@WinLostDate = b.winlostdate
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
-	WHERE b.bettype BETWEEN 2101 AND 2999
+	WHERE (b.bettype BETWEEN 2101 AND 2399
+		OR b.bettype BETWEEN 2901 AND 2999)
 
 	IF @BetType IS NOT NULL
 	BEGIN

@@ -81,16 +81,6 @@ BEGIN
 		ExtraInfo		VARCHAR(1000)
 	)
 
-	DECLARE @tmp TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME) 
-
-	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
-	EXEC bodb02.dbo.Age_SelBalanceUpDay
-
-	DECLARE @MoveBetsDay SMALLDATETIME
-
-	SELECT @MoveBetsDay = MoveBetsDay
-	FROM @tmp
-
 	DECLARE @TransId	BIGINT,
 		@CustId			INT,
 		@Ip				VARCHAR(15),

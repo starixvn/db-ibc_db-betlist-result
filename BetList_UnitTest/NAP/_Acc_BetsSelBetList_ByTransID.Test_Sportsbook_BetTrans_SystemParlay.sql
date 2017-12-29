@@ -104,6 +104,7 @@ BEGIN
 		@CustId = b.custid
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.bettype = 29
+		AND b.winlostdate > @MoveBetsDay
 
 	IF @TransId IS NOT NULL
 	BEGIN

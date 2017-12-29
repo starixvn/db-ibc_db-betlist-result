@@ -1,3 +1,5 @@
+/*<info serverAlias="DBAGETEST-UnitTest_Kos" executers="vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 USE [UnitTest_Kos]
 GO
 /****** Object:  StoredProcedure [_Age_BetList_SelRunningByDate_Mem].[Test_AllBet_BetTrans]    Script Date: 1/10/2017 10:24:07 AM ******/
@@ -8,6 +10,16 @@ GO
 
 ALTER PROCEDURE [_Age_BetList_SelRunningByDate_Mem].[Test_AllBet_BetTrans]
 AS
+
+/*
+	Created: Kos@20180116
+	Task: Unit Test
+	DB: DBEXT.UnitTest_Kos
+
+	Revisions:
+		- 20180116@Kos: Create new [#Redmine: 89580]
+*/
+
 BEGIN
 	SET NOCOUNT ON
 
@@ -69,9 +81,9 @@ BEGIN
 		@TransDate = b.transdate
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-		INNER JOIN bodb02.dbo.bettransLC AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
+		INNER JOIN bodb02.dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = b.transid
 	WHERE s.ProductID = 21
-		AND b.statusID IN (0, 1)
+		AND blc.statusID IN (0, 1)
 		AND b.winlostdate BETWEEN @Yesterday AND @Today
 
 	IF @TransId IS NOT NULL
@@ -82,12 +94,14 @@ BEGIN
 		SET @Command = 'EXEC bodb_Age.dbo.[Age_BetList_SelRunningByDate_Mem]
 							@CustId = ' + CONVERT(VARCHAR(10), @CustId) + ',
 							@GetAll = ' + CONVERT(VARCHAR(1), @GetAll) + ',
-							@FromDate = ''' + CONVERT(VARCHAR, DATEADD(DAY, DATEDIFF(DAY, 0, @TransDate), 0), 23) + ''',
-							@ToDate = ''' + CONVERT(VARCHAR, DATEADD(DAY, DATEDIFF(DAY, -1, @TransDate), 0), 23) + ''',
+							@FromDate = ''' + CONVERT(VARCHAR(10), DATEADD(DAY, DATEDIFF(DAY, 0, @TransDate), 0), 23) + ''',
+							@ToDate = ''' + CONVERT(VARCHAR(10), DATEADD(DAY, DATEDIFF(DAY, -1, @TransDate), 0), 23) + ''',
 							@ProductIDs = ''21'''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual INT
 

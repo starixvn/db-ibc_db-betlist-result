@@ -1,3 +1,5 @@
+/*<info serverAlias="DBAGETEST-UnitTest_Kos" executers="vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 USE [UnitTest_Kos]
 GO
 /****** Object:  StoredProcedure [_Age_BetList_SelRunningByDate_Mem].[Test_RNGCasinoSingleWallet_BetTrans]    Script Date: 1/11/2017 10:58:44 AM ******/
@@ -8,6 +10,16 @@ GO
 
 ALTER PROCEDURE [_Age_BetList_SelRunningByDate_Mem].[Test_RNGCasinoSingleWallet_BetTrans_GetAll]
 AS
+
+/*
+	Created: Kos@20180116
+	Task: Unit Test
+	DB: DBEXT.UnitTest_Kos
+
+	Revisions:
+		- 20180116@Kos: Create new [#Redmine: 89580]
+*/
+
 BEGIN
 	SET NOCOUNT ON
 
@@ -70,7 +82,7 @@ BEGIN
 		INNER JOIN bodb02.dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
 	WHERE s.ProductID = 6
 		AND s.SubProduct <> ''
-		AND b.statusID IN (0, 1)
+		AND brng.statusID IN (0, 1)
 		AND b.winlostdate BETWEEN @Yesterday AND @Today
 
 	IF @TransId IS NOT NULL
@@ -84,7 +96,9 @@ BEGIN
 							@ProductIDs = ''6'''
 
 		INSERT @Data
-		EXEC tSQLt.ResultSetFilter 1, @Command;
+		EXEC tSQLt.ResultSetFilter
+			@ResultsetNo = 1,
+			@Command = @Command;
 
 		DECLARE @Actual INT
 

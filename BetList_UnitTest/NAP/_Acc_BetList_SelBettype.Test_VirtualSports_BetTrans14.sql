@@ -6,7 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Acc_BetList_SelBettype].[Test_VirtualSports_BetTrans14]
+ALTER PROCEDURE [_Acc_BetList_SelBettype].[Test_BetradarVirtualSports_BetTrans14]
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -41,7 +41,7 @@ BEGIN
 		@BetType = b.bettype,
 		@WinLostDate = b.winlostdate
 	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
-	WHERE b.bettype BETWEEN 1201 AND 1299
+	WHERE b.bettype BETWEEN 2701 AND 2799
 
 	IF @BetType IS NOT NULL
 	BEGIN

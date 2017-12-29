@@ -84,15 +84,10 @@ BEGIN
 	INSERT INTO @tmp(BalanceUpDay, MoveBetsDay)
 	EXEC bodb02.dbo.Age_SelBalanceUpDay
 
-	DECLARE @MoveBetsDay SMALLDATETIME,
-		@BalanceUpDay SMALLDATETIME
+	DECLARE @MoveBetsDay SMALLDATETIME
 
-	SELECT @MoveBetsDay = MoveBetsDay, 
-		@BalanceUpDay = BalanceUpDay
+	SELECT @MoveBetsDay = MoveBetsDay
 	FROM @tmp
-
-	IF @BalanceUpDay IS NULL
-		SET @BalanceUpDay = @MoveBetsDay
 
 	DECLARE @TransId	BIGINT,
 		@CustId			INT,
@@ -108,6 +103,7 @@ BEGIN
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
 	WHERE s.ProductID = 1
 		AND s.EventType = 1
+		AND b.winlostdate > @MoveBetsDay
 
 	IF @TransId IS NOT NULL
 	BEGIN

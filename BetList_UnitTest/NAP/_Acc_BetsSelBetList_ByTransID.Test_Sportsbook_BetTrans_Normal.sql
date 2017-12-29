@@ -106,6 +106,7 @@ BEGIN
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
 	WHERE s.ProductID = 1
 		AND s.EventType = 1
+		AND b.winlostdate > @MoveBetsDay
 
 	IF @TransId IS NOT NULL
 	BEGIN

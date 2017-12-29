@@ -1,4 +1,6 @@
-﻿USE [UnitTest_Kos]
+﻿/*<info serverAlias="DBAGETEST-UnitTest_Kos" executers="vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
+USE [UnitTest_Kos]
 GO
 /****** Object:  StoredProcedure [_Age_BetList_SelMatchResultParlay].[Test_BetTrans14]    Script Date: 12/14/2017 5:00:41 PM ******/
 SET ANSI_NULLS ON
@@ -8,6 +10,16 @@ GO
 
 ALTER PROCEDURE [_Age_BetList_SelMatchResultParlay].[Test_BetTrans14]
 AS
+
+/*
+	Created: Kos@20180116
+	Task: Unit Test
+	DB: DBEXT.UnitTest_Kos
+
+	Revisions:
+		- 20180116@Kos: Create new [#Redmine: 89580]
+*/
+
 BEGIN
 	SET NOCOUNT ON
 

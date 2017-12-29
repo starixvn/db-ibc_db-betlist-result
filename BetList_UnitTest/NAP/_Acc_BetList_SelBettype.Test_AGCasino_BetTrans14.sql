@@ -1,3 +1,5 @@
+/*<info serverAlias="DBAGETEST-UnitTest_Kos" executers="vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 USE [UnitTest_Kos]
 GO
 /****** Object:  StoredProcedure [_Acc_BetList_SelBettype].[Test_AGCasino_BetTrans14]    Script Date: 1/10/2017 8:46:08 AM ******/
@@ -8,6 +10,16 @@ GO
 
 ALTER PROCEDURE [_Acc_BetList_SelBettype].[Test_AGCasino_BetTrans14]
 AS
+
+/*
+	Created: Kos@20180116
+	Task: Unit Test
+	DB: DBEXT.UnitTest_Kos
+
+	Revisions:
+		- 20180116@Kos: Create new [#Redmine: 89580]
+*/
+
 BEGIN
 	SET NOCOUNT ON
 

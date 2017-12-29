@@ -51,6 +51,7 @@ BEGIN
 		@CustID = b.custid,
 		@Stake = b.stake
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN bodb02.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno
 	WHERE b.bettype = 29
 
 	IF @TransId IS NOT NULL

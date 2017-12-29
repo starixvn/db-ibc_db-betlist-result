@@ -42,7 +42,8 @@ BEGIN
 		@WinLostDate = b.winlostdate
 	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE b.bettype BETWEEN 2101 AND 2999
+	WHERE (b.bettype BETWEEN 2101 AND 2399
+			OR b.bettype BETWEEN 2901 AND 2999)
 		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 	IF @BetType IS NOT NULL

@@ -37,6 +37,10 @@ BEGIN
 		TransDesc		NVARCHAR(200)
 	)
 
+	DECLARE @SubTicket TABLE (
+		TransId	BIGINT
+	)
+
 	DECLARE @TransId			BIGINT,
 		@RefNo					BIGINT,
 		@ExpectedNumOfSubTicket	TINYINT
@@ -47,23 +51,29 @@ BEGIN
 	FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 	WHERE b.bettype = 29
 
-	SELECT @ExpectedNumOfSubTicket = COUNT(*)
+	INSERT INTO @SubTicket
+	SELECT b.transid
 	FROM bodb02.dbo.bettransm AS b WITH (NOLOCK)
 	WHERE b.refno = @RefNo
 
 	IF EXISTS (SELECT 1 FROM bodb02.dbo.bettransm14 WITH (NOLOCK) WHERE refno = @RefNo)
 	BEGIN
-		SELECT @ExpectedNumOfSubTicket = COUNT(*) + @ExpectedNumOfSubTicket
+		INSERT INTO @SubTicket
+		SELECT b.transid
 		FROM bodb02.dbo.bettransm14 AS b WITH (NOLOCK)
 		WHERE b.refno = @RefNo
 	END
 
 	IF EXISTS (SELECT 1 FROM DBARC.bodb_Archive.dbo.bettransm WITH (NOLOCK) WHERE refno = @RefNo)
 	BEGIN
-		SELECT @ExpectedNumOfSubTicket = COUNT(*) + @ExpectedNumOfSubTicket
+		INSERT INTO @SubTicket
+		SELECT b.transid
 		FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 		WHERE b.refno = @RefNo
 	END
+
+	SELECT @ExpectedNumOfSubTicket = COUNT(DISTINCT TransId)
+	FROM @SubTicket
 
 	IF @TransId IS NOT NULL
 	BEGIN
