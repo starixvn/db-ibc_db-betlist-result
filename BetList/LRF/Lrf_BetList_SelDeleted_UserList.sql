@@ -33,6 +33,7 @@ AS
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170621@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
+		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 */
 
 BEGIN
@@ -69,7 +70,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 25, 27, 28)
+	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 25, 27, 28)
 
 	DELETE FROM @SportBettype
 	WHERE Bettype IN (903, 904, 913, 914)

@@ -95,6 +95,7 @@ AS
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
 		- 20170608@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 
 	Param's Explanation:
 */
@@ -258,7 +259,6 @@ BEGIN
 	WHERE (@Product IN ('SB', 'BA') AND (ProductID = 1 AND Bettype NOT IN (901, 902, 903, 904)))
 		OR (@Product = 'NG' AND ProductID = 3)
 		OR (@Product = 'RB' AND ProductID = 2)
-		OR (@Product = 'LC' AND ProductID = 4)
 		OR (@Product = 'VS' AND ProductID = 5)
 		OR (@Product = 'KN' AND ProductID = 8)
 		OR (@Product = 'VS2' AND ProductID = 27)
@@ -480,7 +480,7 @@ BEGIN
 			b.transdate,
 			b.winlostdate,
 			CASE
-				WHEN sbt.ProductID IN (1, 2, 3, 4, 5, 27) THEN b.betteam
+				WHEN sbt.ProductID IN (1, 2, 3, 5, 27) THEN b.betteam
 				ELSE ''''
 			END AS BetTeam,
 			b.liveindicator,
@@ -933,7 +933,7 @@ BEGIN
 			b.transdate,
 			b.winlostdate,
 			CASE
-				WHEN sbt.ProductID IN (1, 2, 3, 4, 5, 27) THEN b.betteam
+				WHEN sbt.ProductID IN (1, 2, 3, 5, 27) THEN b.betteam
 				ELSE ''''
 			END AS BetTeam,
 			b.liveindicator,
@@ -1420,57 +1420,6 @@ BEGIN
 				INNER JOIN #SportBettype AS sbt ON b.Bettype = sbt.BetType
 				INNER JOIN #SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
 			WHERE sbt.ProductId = 2 AND sbtm.ProductId = 2
-		END
-	END
-
-	-- Live Casino
-	IF EXISTS (	SELECT TOP(1) 1
-				FROM #Data AS b
-					INNER JOIN #SportBettype AS sbt ON sbt.Bettype = b.bettype
-				WHERE sbt.ProductID = 4)
-	BEGIN
-		IF @wldate > @MoveBetsDay_
-		BEGIN
-			INSERT INTO #BettransDetail
-			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.stake * e.EUR AS StakeEUR,
-				bg.stake * e.USD AS StakeUSD,
-				bg.stake * e.GBP AS StakeGBP
-			FROM dbo.bettransg AS bg WITH (NOLOCK)
-				INNER JOIN #Data AS b ON bg.refno = b.refno AND bg.custid = b.CustID
-				INNER JOIN #TempExchange AS e ON b.currency = e.exchangeid
-				INNER JOIN #SportBettype AS sbt ON b.Bettype = sbt.BetType
-				INNER JOIN #SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
-			WHERE sbt.ProductID = 4 AND sbtg.ProductId = 4
-		END
-
-		IF @wldate <= @MoveBetsDay_
-		BEGIN
-			INSERT INTO #BettransDetail
-			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.stake * e.EUR AS StakeEUR,
-				bg.stake * e.USD AS StakeUSD,
-				bg.stake * e.GBP AS StakeGBP
-			FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-				INNER JOIN #Data AS b ON bg.refno = b.refno AND bg.custid = b.CustID
-				INNER JOIN #TempExchange AS e ON b.currency = e.exchangeid
-				INNER JOIN #SportBettype AS sbt ON b.Bettype = sbt.BetType
-				INNER JOIN #SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
-			WHERE sbt.ProductID = 4 AND sbtg.ProductId = 4
 		END
 	END
 

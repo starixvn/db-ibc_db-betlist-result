@@ -39,7 +39,6 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByDate_Mem]
 	@ShowRB				BIT				= 0,
 	@ShowNG				BIT				= 0,
 	@ShowBA				BIT				= 0,
-	@ShowLC				BIT				= 0,
 	@ShowVS				BIT				= 0,
 	@ShowCS				BIT				= 0,	-- RNG Casino
 	@ShowKN				BIT				= 0,	-- Keno
@@ -122,6 +121,7 @@ AS
 		- 20171227@Kos: Add index hint for Cash Out in bk range [#Redmine: 88753]
 		- 20180205@Kos: Add more condition for SB in Parlay [#Redmine: 90492]
 		- 20180226@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 */
 
 BEGIN
@@ -158,7 +158,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 17, 21, 22, 24, 25, 27, 28)
+	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 11, 13, 17, 21, 22, 24, 25, 27, 28)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -173,7 +173,6 @@ BEGIN
 	WHERE (ProductID	= CASE WHEN @ShowSB = 0 AND @ShowBA = 0 THEN 1 END AND Bettype NOT IN (901, 902, 903))
 		OR ProductID	= CASE WHEN @ShowRB = 0		THEN 2 END
 		OR ProductID	= CASE WHEN @ShowNG = 0		THEN 3 END
-		OR ProductID	= CASE WHEN @ShowLC = 0		THEN 4 END
 		OR ProductID	= CASE WHEN @ShowVS = 0		THEN 5 END
 		OR ProductID	= CASE WHEN @ShowCS = 0		THEN 6 END
 		OR ProductID	= CASE WHEN @ShowKN = 0		THEN 8 END
@@ -936,8 +935,8 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF @ShowNG = 1 OR @ShowLC = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+		IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
@@ -977,7 +976,6 @@ BEGIN
 				CONVERT(BIT,0) AS IsNeutral,
 				b.currency,
 				CASE
-					WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime,'')
 					WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE ''
 				END AS ShowTime,
@@ -1000,7 +998,7 @@ BEGIN
 				b.winlostdate BETWEEN @TempFromDate AND @todate
 				AND b.recommend = @Recommend --to improve performance
 				AND b.custid = @CustID
-				AND sbt.ProductID IN (3, 4, 5, 27)
+				AND sbt.ProductID IN (3, 5, 27)
 				AND sbt.EventType = 1
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -2104,8 +2102,8 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF @ShowNG = 1 OR @ShowLC = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+		IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
@@ -2145,7 +2143,6 @@ BEGIN
 				CONVERT(BIT,0) AS IsNeutral,
 				b.currency,
 				CASE
-					WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime,'')
 					WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE ''
 				END AS ShowTime,
@@ -2168,7 +2165,7 @@ BEGIN
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 				AND b.recommend = @Recommend --to improve performance
 				AND b.custid = @CustID 
-				AND sbt.ProductID IN (3, 4, 5, 27)
+				AND sbt.ProductID IN (3, 5, 27)
 				AND sbt.EventType = 1
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -2993,8 +2990,8 @@ BEGIN
 				AND sbt.ProductID = 2 
 		END
 
-		-- Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF @ShowNG = 1 OR @ShowLC = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+		IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
@@ -3034,7 +3031,6 @@ BEGIN
 				CONVERT(BIT, 0) AS IsNeutral,
 				b.currency,
 				CASE
-					WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime,'')
 					WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE ''
 				END AS ShowTime,
@@ -3057,7 +3053,7 @@ BEGIN
 				b.winlostdate BETWEEN @fromdate AND @TempToDate
 				AND b.custid = @CustID
 				AND b.recommend = @Recommend
-				AND sbt.ProductID IN (3, 4, 5, 27)
+				AND sbt.ProductID IN (3, 5, 27)
 				AND sbt.EventType = 1
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -3487,85 +3483,6 @@ BEGIN
 			WHERE bm.custid = @CustId
 				AND sbt.ProductID = 2
 				AND sbtm.ProductID = 2
-		END
-	END
-
-	-- Live Casino
-	IF EXISTS (	SELECT 1
-				FROM #BetListByDateMem AS b
-					INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
-				WHERE sbt.ProductId = 4 )
-	BEGIN
-		IF @Todate > @MoveBetsDay
-		BEGIN
-			INSERT INTO @BettransDetail
-			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.stake * e.EUR,
-				bg.stake * e.USD,
-				bg.stake * e.GBP
-			FROM dbo.bettransg AS bg WITH (NOLOCK)
-				INNER JOIN #BetListByDateMem AS b ON bg.refno = b.RefNo
-				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
-				INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
-				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.bettype
-			WHERE bg.custid = @CustId
-				AND sbt.ProductID = 4
-				AND sbtg.ProductID = 4
-		END
-
-		IF @Fromdate <= @MoveBetsDay AND @ToDate >= @BalanceUpDay
-		BEGIN
-			INSERT INTO @BettransDetail
-			SELECT 
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.stake * e.EUR,
-				bg.stake * e.USD,
-				bg.stake * e.GBP
-			FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-				INNER JOIN #BetListByDateMem AS b ON bg.refno = b.RefNo
-				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
-				INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
-				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.bettype
-			WHERE bg.custid = @CustId
-				AND sbt.ProductID = 4
-				AND sbtg.ProductID = 4
-		END
-
-		IF @FromDate < @BalanceUpDay
-		BEGIN
-			INSERT INTO @BettransDetail
-			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.stake * e.EUR,
-				bg.stake * e.USD,
-				bg.stake * e.GBP
-			FROM bodb_archive.dbo.bettransg AS bg WITH (NOLOCK)
-				INNER JOIN #BetListByDateMem AS b ON bg.refno = b.RefNo
-				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
-				INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
-				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.bettype
-			WHERE bg.custid = @CustId
-				AND sbt.ProductID = 4
-				AND sbtg.ProductID = 4
 		END
 	END
 

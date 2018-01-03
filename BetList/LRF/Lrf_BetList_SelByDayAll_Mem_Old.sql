@@ -83,6 +83,7 @@ AS
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 		- 20170724@Kos: Support Keno Lottery [#Redmine: 79997]
 		- 20170830@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 
 	Param's Explanation:
 		+ @TransType:
@@ -219,7 +220,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28)
+	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -287,7 +288,6 @@ BEGIN
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			b.currency,
 			CASE 
-				WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
 				WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE '' 
 			END AS ShowTime,
@@ -684,7 +684,7 @@ BEGIN
 			0 AS OriginalBetType,
 			0 AS WalletType,
 			0 AS RefCode
-		FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
+		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
@@ -1043,34 +1043,6 @@ BEGIN
 		WHERE bm.custid = @CustId
 			AND sbt.ProductID = 2
 			AND sbtm.ProductID = 2
-	END
-
-	-- Live Casino
-	IF EXISTS (	SELECT 1
-				FROM @Data AS b
-					INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
-				WHERE sbt.ProductId = 4 )
-	BEGIN
-		INSERT INTO @BettransDetail
-		SELECT
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			bg.status,
-			bg.apositiontaking,
-			bg.bettype,
-			bg.betteam,
-			bg.stake * e.EUR,
-			bg.stake * e.USD,
-			bg.stake * e.GBP
-		FROM bodb_Archive.dbo.bettransG AS bg WITH (NOLOCK)
-			INNER JOIN @Data AS b ON bg.refno = b.RefNo
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-			INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
-		WHERE bg.custid = @CustId
-			AND sbt.ProductID = 4
-			AND sbtg.ProductID = 4
 	END
 
 	-- Virtual Sports

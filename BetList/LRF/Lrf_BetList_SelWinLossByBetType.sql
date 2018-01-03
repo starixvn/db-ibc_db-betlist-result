@@ -47,6 +47,7 @@ AS
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170726@Kos: Support Keno Lottery [#Redmine: 79997]
 		- 20170905@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 
 	Parameters:
 */
@@ -85,7 +86,7 @@ BEGIN
 	SELECT DISTINCT ProductId, Bettype, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @isTest)
 	WHERE
-		ProductID IN (1, 2, 3, 4, 5, 8, 27, 28)
+		ProductID IN (1, 2, 3, 5, 8, 27, 28)
 		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 		AND bettype IN (
 			SELECT bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
@@ -673,8 +674,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
-		-- Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 4, 5, 27) AND EventType = 1 AND Bettype = @BetType)
+		-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 5, 27) AND EventType = 1 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1117,8 +1118,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 
-		-- Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 4, 5, 27) AND EventType = 1 AND Bettype = @BetType)
+		-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 5, 27) AND EventType = 1 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1457,51 +1458,6 @@ BEGIN
 		WHERE sbt.ProductId = 2 AND sbtm.ProductId = 2
 	END
 
-	-- Live Casino
-	IF EXISTS (	SELECT 1
-				FROM #Data AS b
-					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-				WHERE sbt.ProductId = 4 )
-	BEGIN
-		INSERT INTO @BettransDetail
-		SELECT
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			bg.status,
-			bg.apositiontaking,
-			bg.bettype,
-			bg.betteam,
-			bg.stake * e.EUR,
-			bg.stake * e.USD,
-			bg.stake * e.GBP
-		FROM dbo.bettransg AS bg WITH (NOLOCK)
-			INNER JOIN #Data AS b ON bg.refno = b.refno AND bg.custid = b.custid
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.Exchangeid = b.Currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
-		WHERE sbt.ProductId = 4 AND sbtg.ProductId = 4
-
-		INSERT INTO @BettransDetail
-		SELECT
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			bg.status,
-			bg.apositiontaking,
-			bg.bettype,
-			bg.betteam,
-			bg.stake * e.EUR,
-			bg.stake * e.USD,
-			bg.stake * e.GBP
-		FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-			INNER JOIN #Data AS b ON bg.refno = b.refno AND bg.custid = b.custid
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.Exchangeid = b.Currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
-		WHERE sbt.ProductId = 4 AND sbtg.ProductId = 4
-	END
-	
 	-- Virtual Sports
 	IF EXISTS (	SELECT 1
 				FROM #Data AS b

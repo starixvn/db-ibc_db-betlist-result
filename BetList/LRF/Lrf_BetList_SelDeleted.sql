@@ -54,6 +54,7 @@ AS
 		- 20170628@Kos: Hotfix - CashOut Details link in Racing tickets [#Redmine: 79076]
 		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
 		- 20170830@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 
 	Param's Explanation:
 		- @AgentList: Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -93,7 +94,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 6 OR ProductID IN (8, 25, 27, 28)
+	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 25, 27, 28)
 
 	DELETE FROM @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -279,7 +280,7 @@ BEGIN
 		AND b.recommend IN (SELECT CustId FROM @TempAg)
 		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.statusID IN (101, 102)
-		AND sbt.ProductID != 8
+		AND sbt.ProductID <> 8
 		AND b.bettype NOT IN (SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 
 	-- Outright/Horse Racing
@@ -591,32 +592,6 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
 			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
 		WHERE sbt.ProductId = 2 AND sbtm.ProductId = 2
-	END
-
-	-- Live Casino
-	IF EXISTS (	SELECT TOP(1) 1
-				FROM #Data AS b
-					INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-				WHERE sbt.ProductID = 4)
-	BEGIN
-		INSERT INTO @BettransDetail
-		SELECT
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			bg.status,
-			bg.apositiontaking,
-			bg.bettype,
-			bg.betteam,
-			bg.stake * e.EUR AS StakeEUR,
-			bg.stake * e.USD AS StakeUSD,
-			bg.stake * e.GBP AS StakeGBP
-		FROM dbo.bettransg AS bg WITH (NOLOCK)
-			INNER JOIN #Data AS b ON bg.refno = b.RefNo AND bg.custid = b.CustId
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
-			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.BetType
-			INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
-		WHERE sbt.ProductID = 4 AND sbtg.ProductId = 4
 	END
 
 	-- Virtual Sports

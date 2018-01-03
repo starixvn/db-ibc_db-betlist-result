@@ -13,7 +13,6 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch]
 	@PageIndex		INT = 1,
 	@ShowSB			BIT = 0,
 	@ShowBA			BIT = 0,
-	@ShowLC			BIT = 0,
 	@ShowVS			BIT = 0,
 	@ShowVS2		BIT = 0,
 	@LiveIndicator	INT = 1
@@ -55,6 +54,7 @@ AS
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170830@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -97,7 +97,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 4, 5, 27)
+	WHERE ProductID IN (1, 5, 27)
 		AND Bettype NOT IN (901, 902, 903, 904)
 
 	DECLARE @RowStart INT, @RowEnd INT
@@ -424,8 +424,8 @@ BEGIN
 				b.transid
 		END
 
-		-- Live Casino, Virtual Sports, Betradar Virtual Sports
-		IF @ShowLC = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Virtual Sports, Betradar Virtual Sports
+		IF @ShowVS = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT TOP(@RowEnd)
@@ -462,7 +462,6 @@ BEGIN
 				b.currency,
 				b.refno,
 				CASE
-					WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
 					WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE '' 
 				END AS ShowTime,
@@ -487,8 +486,7 @@ BEGIN
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND ((@ShowVS = 1 AND sbt.ProductID = 5 AND sbt.EventType = 1)
-					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1)
-					OR (@ShowLC = 1 AND sbt.ProductID = 4))
+					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1))
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))
@@ -771,8 +769,8 @@ BEGIN
 				b.transid
 		END
 
-		-- Live Casino, Virtual Sports, Betradar Virtual Sports
-		IF @ShowLC = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Virtual Sports, Betradar Virtual Sports
+		IF @ShowVS = 1 OR @ShowVS2 = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT TOP(@RowEnd)
@@ -809,7 +807,6 @@ BEGIN
 				b.currency,
 				b.refno,
 				CASE
-					WHEN sbt.ProductID = 4 THEN ISNULL(m.showtime, '')
 					WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE ''
 				END AS ShowTime,
@@ -834,8 +831,7 @@ BEGIN
 				AND b.matchid = @MatchId
 				AND b.statusID IN (111, 112, 113)
 				AND ((@ShowVS = 1 AND sbt.ProductID = 5 AND sbt.EventType = 1)
-					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1)
-					OR (@ShowLC = 1 AND sbt.ProductID = 4))
+					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1))
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))
@@ -951,73 +947,6 @@ BEGIN
 				INNER JOIN #TempExchange AS e ON b.Currency = e.exchangeID AND b.WinLostDate = e.exchangeDate
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
-
-	-- Get sub tickets
-	DECLARE @BettransDetail TABLE (
-		RefNo			BIGINT,
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			NVARCHAR(10),
-		APositionTaking	SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(10),
-		StakeEUR		MONEY,
-		StakeUSD		MONEY,
-		StakeGBP		MONEY
-	)
-
-	IF EXISTS (	SELECT TOP(1) 1
-				FROM #Data AS b
-					INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-				WHERE sbt.ProductID = 4)
-	BEGIN
-		IF EXISTS (SELECT TOP(1) 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchID)
-		BEGIN
-			INSERT INTO @BettransDetail
-			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.stake * e.EUR,
-				bg.stake * e.USD,
-				bg.stake * e.GBP
-			FROM dbo.bettransg AS bg WITH (NOLOCK)
-				INNER JOIN #Data AS b ON bg.refno = b.RefNo AND bg.custid = b.CustId
-				INNER JOIN #TempExchange AS e ON b.Currency = e.exchangeID AND b.WinLostDate = e.exchangeDate
-				INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
-				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
-			WHERE sbt.ProductID = 4 AND sbtg.ProductId = 4
-		END
-
-		IF EXISTS (SELECT TOP(1) 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchID)
-		BEGIN
-			INSERT INTO @BettransDetail
-			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.bettype,
-				bg.Betteam,
-				bg.stake * e.EUR,
-				bg.stake * e.USD,
-				bg.stake * e.GBP
-			FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-				INNER JOIN #Data AS b ON bg.refno = b.RefNo AND bg.custid = b.CustId
-				INNER JOIN #TempExchange AS e ON b.Currency = e.exchangeID AND b.WinLostDate = e.exchangeDate
-				INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
-				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.Bettype
-			WHERE sbt.ProductID = 4 AND sbtg.ProductId = 4
-		END
-	END
-
-	SELECT DISTINCT * FROM @BettransDetail
-	ORDER BY RefNo, Bettype
 
 	DROP TABLE #Data
 	DROP TABLE #TempExchange
