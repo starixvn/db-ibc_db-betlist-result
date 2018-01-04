@@ -1,4 +1,6 @@
-﻿USE [bodb02]
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
+USE [bodb02]
 GO
 /****** Object:  StoredProcedure [dbo].[Lrf_Result_SportSelByDate]    Script Date: 12/02/2014 10:07:48 AM ******/
 SET ANSI_NULLS ON
@@ -37,6 +39,7 @@ AS
 		- 20161026@Kos: Separate bettrans and bettrans14 range, exclude Fast Market result [#Redmine: 56589]
 		- 20170418@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20171103@Kos: Support PH AIO 3 [#Redmine: 83970]
+		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 
 	Sample test case:
 		exec Lrf_Result_SportSelByDate @EventDate='2013-10-06 00:00:00',@licenseeid=1
@@ -54,7 +57,7 @@ BEGIN
 
 	IF @EventDate > @MoveBetsDay
 	BEGIN
-		-- Sportsbook, Number Game, Live Casino, Virtual Sports
+		-- Sportsbook, Number Game, Virtual Sports
 		INSERT INTO @Sport
 		SELECT DISTINCT m.sporttype
 		FROM dbo.match AS m WITH (NOLOCK)
@@ -80,6 +83,7 @@ BEGIN
 						AND ResourceID NOT LIKE '225%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
 		WHERE m.eventdate = @EventDate
+			AND m.sporttype <> 162
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
 				OR (mr.IsHTCal = 1 AND m.eventstatus = 'running')
@@ -105,19 +109,20 @@ BEGIN
 		BEGIN
 			INSERT INTO @Sport
 			SELECT DISTINCT l.sporttype
-			FROM dbo.league AS l WITH (NOLOCK)
-				INNER JOIN (
-					SELECT DISTINCT vsr.LeagueID
-					FROM dbo.VSOutright AS vso WITH (NOLOCK)
-						INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
-					WHERE vso.eventdate = @EventDate AND vsr.eventstatus = 'completed'
-					) AS o ON o.leagueid = l.leagueid
+			FROM (
+					SELECT DISTINCT EventID
+					FROM dbo.VSOutright WITH (NOLOCK)
+					WHERE EventDate = @EventDate
+				) AS o
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON r.LeagueID = l.leagueid
 			WHERE l.sporttype IN (181, 183, 185)
+				AND r.EventStatus = 'completed'
 		END
 	END
 	ELSE
 	BEGIN
-		-- Sportsbook, Number Game, Live Casino, Virtual Sports
+		-- Sportsbook, Number Game, Virtual Sports
 		INSERT INTO @Sport
 		SELECT DISTINCT m.sporttype
 		FROM dbo.match14 AS m WITH (NOLOCK)
@@ -143,6 +148,7 @@ BEGIN
 						AND ResourceID NOT LIKE '225%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
 		WHERE m.eventdate = @EventDate
+			AND m.sporttype <> 162
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
 				OR (mr.IsHTCal = 1 AND m.eventstatus = 'running')
@@ -168,14 +174,15 @@ BEGIN
 		BEGIN
 			INSERT INTO @Sport
 			SELECT DISTINCT l.sporttype
-			FROM dbo.league AS l WITH (NOLOCK)
-				INNER JOIN (
-					SELECT DISTINCT vsr.LeagueID
-					FROM dbo.VSOutright14 AS vso WITH (NOLOCK)
-						INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
-					WHERE vso.eventdate = @EventDate AND vsr.eventstatus = 'completed'
-					) AS o ON o.leagueid = l.leagueid
+			FROM (
+					SELECT DISTINCT EventID
+					FROM dbo.VSOutright14 WITH (NOLOCK)
+					WHERE EventDate = @EventDate
+				) AS o
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON r.LeagueID = l.leagueid
 			WHERE l.sporttype IN (181, 183, 185)
+				AND r.EventStatus = 'completed'
 		END
 	END
 
@@ -184,7 +191,6 @@ BEGIN
 	FROM dbo.Sports WITH (NOLOCK)
 	WHERE SportType IN (SELECT SportType FROM @Sport)
 		AND (SportType <> 161 OR EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 2))
-		AND (SportType <> 162 OR EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 4))
 	ORDER BY SportType,
 		SportName
 

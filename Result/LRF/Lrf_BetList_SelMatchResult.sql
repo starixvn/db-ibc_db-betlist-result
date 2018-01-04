@@ -1,4 +1,6 @@
-﻿USE [bodb02]
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
+USE [bodb02]
 GO
  
 SET ANSI_NULLS ON
@@ -41,10 +43,11 @@ AS
 		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
 					- Remove params @LicenseeId and @UserId
 		- 20170919@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
+		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 
 		*******************
 		sample test case:
-			exec Lrf_BetList_SelMatchResult_xtest @MatchID=10514601, @RaceNo=default, @BetType = 1324,
+			exec Lrf_BetList_SelMatchResult @MatchID=10514601, @RaceNo=default, @BetType = 1324,
 				@Betid='801', @LicenseeID=1, @UserID=10
 */
 
@@ -68,7 +71,7 @@ BEGIN
 				m.hthomescore,
 				m.htawayscore,
 				CASE
-					WHEN m.sporttype NOT IN (162, 161) THEN DATEDIFF(MINUTE, m.GlobalShowTime, CURRENT_TIMESTAMP)
+					WHEN m.sporttype <> 161 THEN DATEDIFF(MINUTE, m.GlobalShowTime, CURRENT_TIMESTAMP)
 					ELSE DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP)
 				END AS PlayTime,
 				m.leagueid,
@@ -77,7 +80,7 @@ BEGIN
 				m.awayid,
 				m.matchcode,
 				CASE
-					WHEN m.sporttype NOT IN (162, 161) THEN m.GlobalShowTime
+					WHEN m.sporttype <> 161 THEN m.GlobalShowTime
 					ELSE m.kickofftime
 				END AS KickOffTime,
 				m.eventdate,
@@ -105,7 +108,7 @@ BEGIN
 				END AS EventStatus,
 				ISNULL(mr.refund, 0) AS IsRefund,
 				ISNULL(mr.calrefund, 0) AS IsCalRefund,
-				ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				m.goalrecord,
 				ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 				ISNULL(mr.calculate, 0) AS calculate,
@@ -164,7 +167,7 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY ResourceId
+			ORDER BY d.ResourceID
 
 			RETURN
 		END
@@ -176,7 +179,7 @@ BEGIN
 				m.hthomescore,
 				m.htawayscore,
 				CASE
-					WHEN m.sporttype NOT IN (162,161) THEN DATEDIFF(MINUTE, m.globalshowtime, CURRENT_TIMESTAMP)
+					WHEN m.sporttype <> 161 THEN DATEDIFF(MINUTE, m.globalshowtime, CURRENT_TIMESTAMP)
 					ELSE DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP)
 				END AS playtime,
 				m.leagueid,
@@ -185,7 +188,7 @@ BEGIN
 				m.awayid,
 				m.matchcode,
 				CASE
-					WHEN m.sporttype NOT IN (162, 161) THEN m.GlobalShowTime
+					WHEN m.sporttype <> 161 THEN m.GlobalShowTime
 					ELSE m.kickofftime
 				END AS KickOffTime,
 				m.eventdate,
@@ -272,7 +275,7 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY ResourceId
+			ORDER BY d.ResourceID
 
 			RETURN
 		END
@@ -284,7 +287,7 @@ BEGIN
 				m.hthomescore,
 				m.htawayscore,
 				CASE
-					WHEN m.sporttype NOT IN (162, 161) THEN DATEDIFF(MINUTE, m.GlobalShowTime, CURRENT_TIMESTAMP)
+					WHEN m.sporttype <> 161 THEN DATEDIFF(MINUTE, m.GlobalShowTime, CURRENT_TIMESTAMP)
 					ELSE DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP)
 				END AS PlayTime,
 				m.LeagueID,
@@ -293,7 +296,7 @@ BEGIN
 				m.awayID,
 				m.matchcode,
 				CASE
-					WHEN m.sporttype NOT IN (162, 161) THEN m.GlobalShowTime
+					WHEN m.sporttype <> 161 THEN m.GlobalShowTime
 					ELSE m.kickofftime
 				END AS KickOffTime,
 				m.eventdate,
@@ -380,7 +383,7 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY ResourceId
+			ORDER BY d.ResourceID
 		END
 	END
 	ELSE
@@ -472,30 +475,30 @@ BEGIN
 
 			INSERT INTO #tmpresult
 			SELECT
-				matchcode AS horseNo,
+				bk.matchcode AS horseNo,
 				NULL,
 				CAST(bk.groupmatch AS INT) AS racename,
-				CASE WHEN placing = 0 THEN 5 ELSE ISNULL(placing, 5) END place,
+				CASE WHEN bk.placing = 0 THEN 5 ELSE ISNULL(bk.placing, 5) END place,
 				l.sporttype,
-				teamid horseid,
+				bk.teamid horseid,
 				bk.odds,
 				bk.placeodds,
 				bk.leagueid AS meetingid,
 				bk.oddsstatus status,
-				CONVERT(VARCHAR(10),IsFavor),
+				CONVERT(VARCHAR(10), bk.IsFavor),
 				bk.IsSCR,
 				bk.FOddsStatus
 			FROM DBARC.bodb_Archive.dbo.Outright_bk AS bk WITH (NOLOCK)
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = bk.leagueid
 			WHERE bk.leagueid = @LeagueId 
-				AND groupmatch = @RaceNo
-				AND eventdate = @EventDate 
-				AND (ISNULL(placing, 0)<> 0  OR isScr = 1)
-			ORDER BY placing
+				AND bk.groupmatch = @RaceNo
+				AND bk.eventdate = @EventDate 
+				AND (ISNULL(bk.placing, 0) <> 0 OR bk.isScr = 1)
+			ORDER BY bk.placing
 		END 
 
 		-- Virtual Horse Racing
-		IF EXISTS (SELECT TOP 1 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE EventID = @MatchID)
+		IF EXISTS (SELECT TOP(1) 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE EventID = @MatchID)
 		BEGIN
 			INSERT INTO #tmpresult
 			SELECT
@@ -517,7 +520,7 @@ BEGIN
 			WHERE o.EventID = @MatchID AND (ISNULL(o.Placing, 0) <> 0)
 			ORDER BY o.Placing
 		END
-		ELSE IF EXISTS (SELECT TOP 1 1 FROM dbo.VSOutright14 WITH (NOLOCK) WHERE EventID = @MatchID)
+		ELSE IF EXISTS (SELECT TOP(1) 1 FROM dbo.VSOutright14 WITH (NOLOCK) WHERE EventID = @MatchID)
 		BEGIN
 			INSERT INTO #tmpresult
 			SELECT
@@ -537,7 +540,7 @@ BEGIN
 			FROM dbo.VSOutright14 AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventID = @MatchID AND (ISNULL(o.Placing, 0) <> 0)
-			ORDER BY placing
+			ORDER BY o.Placing
 		END
 		ELSE
 		BEGIN
@@ -559,14 +562,15 @@ BEGIN
 			FROM DBARC.bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventID = @MatchID AND (ISNULL(o.Placing, 0) <> 0)
-			ORDER BY placing
+			ORDER BY o.Placing
 		END
 
 		IF EXISTS (SELECT 1 FROM #tmpresult WHERE sporttype IN (151, 152, 153))
 		BEGIN
 			SELECT meetingid,
 				racename,
-				COUNT(place) rc INTO #DataSUM
+				COUNT(place) rc
+			INTO #DataSUM
 			FROM #tmpresult
 			WHERE place < 5
 			GROUP BY meetingid, racename
@@ -603,7 +607,8 @@ BEGIN
 						, 1, 2, ''
 						)
 					)temp2(results2)
-			ORDER BY d.meetingid,
+			ORDER BY
+				d.meetingid,
 				d.racename,
 				d.place
 
@@ -661,9 +666,9 @@ BEGIN
 				INNER JOIN #DataSumVHR AS d2 ON d.kickofftime = d2.kickofftime
 			WHERE (d.place < 5 AND d.sporttype <> 183)
 				OR (d.place < 2 AND d.sporttype = 183)
-			ORDER BY meetingid,
-				kickofftime,
-				place
+			ORDER BY d.MeetingId,
+				d.KickOffTime,
+				d.Place
 
 			DROP TABLE #DataSumVHR
 		END

@@ -1,3 +1,5 @@
+/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 USE [bodb02]
 GO
 
@@ -23,9 +25,10 @@ AS
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170919@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 		- 20171106@Kos: Support PH AIO 3 [#Redmine: 83970]
+		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 
 	-------
-	EXEC Lrf_Result_MatchSelByLeague_Detail_xtest
+	EXEC Lrf_Result_MatchSelByLeague_Detail
 		@MatchId = 10860032
 */
 
@@ -44,7 +47,7 @@ BEGIN
 			m.matchcode,
 			m.eventdate,
 			CASE
-				WHEN m.sporttype NOT IN (162, 161, 180, 186) THEN m.GlobalShowTime
+				WHEN m.sporttype NOT IN (161, 180, 186) THEN m.GlobalShowTime
 				ELSE m.kickofftime
 			END AS KickOffTime,
 			m.homeid,
@@ -129,7 +132,7 @@ BEGIN
 			m.matchcode,
 			m.eventdate,
 			CASE
-				WHEN m.sporttype NOT IN (162, 161, 180, 186) THEN m.GlobalShowTime
+				WHEN m.sporttype NOT IN (161, 180, 186) THEN m.GlobalShowTime
 				ELSE m.kickofftime
 			END kickofftime,
 			m.homeid,

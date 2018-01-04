@@ -1,8 +1,8 @@
 ﻿/*<info serverAlias="DBEXTTEST-UnitTest_Kos" executers="vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
-USE [UnitTest_Kos]
+USE [bodb02]
 GO
-/****** Object:  StoredProcedure [_Lrf_BetList_SelMatchResult].[Test_Sportsbook_BetTrans_Normal]    Script Date: 12/1/2017 10:19:20 AM ******/
+ 
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -17,7 +17,7 @@ AS
 	DB: DBEXT.UnitTest_Kos
 
 	Revisions:
-		- 20180116@Kos: Create new [#Redmine: 89580]
+		- 20180116@Kos: Create new [#Redmine: 89579]
 */
 
 BEGIN
@@ -100,4 +100,12 @@ BEGIN
 	END
 END;
 
+
+
+
+ 
+GO
+GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResult] TO [bodbLicenseeNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelMatchResult] TO [vnteam]
 GO

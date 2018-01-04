@@ -1,4 +1,6 @@
-﻿USE [bodb02]
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
+USE [bodb02]
 GO
  
 SET ANSI_NULLS ON
@@ -26,6 +28,7 @@ AS
 		- 20170418@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
 		- 20170623@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 */
 
 BEGIN
@@ -96,7 +99,7 @@ BEGIN
 			m.finalhomescore,
 			m.finalawayscore,
 			CASE
-				WHEN m.sporttype NOT IN (162, 161) THEN m.GlobalShowTime
+				WHEN m.sporttype <> 161 THEN m.GlobalShowTime
 				ELSE m.kickofftime
 			END AS KickOffTime,
 			m.eventdate,
@@ -196,7 +199,7 @@ BEGIN
 			m.finalhomescore,
 			m.finalawayscore,
 			CASE
-				WHEN m.sporttype NOT IN (162, 161) THEN m.GlobalShowTime
+				WHEN m.sporttype <> 161 THEN m.GlobalShowTime
 				ELSE m.kickofftime
 			END AS KickOffTime,
 			m.eventdate,
@@ -296,7 +299,7 @@ BEGIN
 			m.finalhomescore,
 			m.finalawayscore,
 			CASE
-				WHEN m.sporttype NOT IN (162,161) THEN m.GlobalShowTime
+				WHEN m.sporttype <> 161 THEN m.GlobalShowTime
 				ELSE m.kickofftime
 			END AS kickofftime,
 			m.eventdate,
@@ -304,7 +307,7 @@ BEGIN
 			m.betstatus,
 			CASE m.Sporttype
 				WHEN 5 THEN
-					CASE ISNULL(d.SettlementStatusID,0)
+					CASE ISNULL(d.SettlementStatusID, 0)
 						WHEN 1 THEN 'Refund' 
 						WHEN 2 THEN 'Refund HT'
 						WHEN 3 THEN 'Refund FT'
@@ -380,7 +383,7 @@ BEGIN
 	END
 
 	-- Get data
-	SELECT * FROM @tmpParlay
+	SELECT DISTINCT * FROM @tmpParlay
 	ORDER BY LeagueId,
 		BetType,
 		EventDate,
