@@ -87,6 +87,7 @@ AS
 					- Don't support Live Casino in bettrans and bettrans14 anymore
 		- 20180118@Kos: Support Licensee Bonus System [#Redmine: 74978]
 		- 20180305@Kos: Don't support Racing, Cockfighting, RNG Casino (bettype 71, 72) anymore [#Redmine: 86086]
+		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 
 	Param's Explanation:
 		• @FromDate = @winlostdate
@@ -885,7 +886,7 @@ BEGIN
 					ELSE 0
 				END AS hdp2,
 				CASE
-					WHEN s.ProductID IN (8, 12, 23, 28) THEN b.odds
+					WHEN s.ProductID IN (6, 8, 12, 23, 28) THEN b.odds
 					ELSE 0
 				END AS odds,
 				0 AS modds,
@@ -946,7 +947,10 @@ BEGIN
 					WHEN s.ProductID IN (6, 8, 22, 23, 24, 28) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread,
+				CASE
+					WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+					ELSE 0
+				END AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
@@ -1547,7 +1551,7 @@ BEGIN
 				AND s.ProductID = 15
 
 			-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World
-			-- (not yesterday and today ticket)
+			-- (before yesterday ticket)
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -1571,7 +1575,10 @@ BEGIN
 				ISNULL(b.checktime, '') AS checktime,
 				0 AS hdp1,
 				0 AS hdp2,
-				0 AS odds,
+				CASE
+					WHEN s.ProductID = 6 THEN b.odds
+					ELSE 0
+				END AS Odds,
 				0 AS modds,
 				0 AS finalodds,
 				0 AS finalodds2,
@@ -1612,7 +1619,10 @@ BEGIN
 					WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread,
+				CASE
+					WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+					ELSE 0
+				END AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
@@ -1626,7 +1636,7 @@ BEGIN
 				AND s.ProductId IN (6, 17, 22, 24)
 
 			-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
-			-- (yesterday and today running ticket)
+			-- (yesterday and later running ticket)
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -1650,7 +1660,7 @@ BEGIN
 				ISNULL(b.checktime, '') AS checktime,
 				0 AS hdp1,
 				0 AS hdp2,
-				0 AS odds,
+				0 AS Odds,
 				0 AS modds,
 				0 AS finalodds,
 				0 AS finalodds2,
@@ -1702,8 +1712,7 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
-				AND @Date BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
-					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)	-- yesterday and today
+				AND @Date >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- yesterday and later
 				AND s.ProductId IN (6, 17, 22, 24)
 				AND brng.statusID IN (0, 1)
 			GROUP BY
@@ -1749,7 +1758,11 @@ BEGIN
 				ISNULL(b.checktime, '') AS checktime,
 				0 AS hdp1,
 				0 AS hdp2,
-				0 AS odds,
+				CASE
+					WHEN s.ProductID = 6
+						THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+					ELSE 0
+				END AS Odds,
 				0 AS modds,
 				0 AS finalodds,
 				0 AS finalodds2,
@@ -1794,7 +1807,10 @@ BEGIN
 					WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread,
+				CASE
+					WHEN s.ProductID = 6 THEN ISNULL(SUM(brng.BetStake), 0)
+					ELSE 0
+				END AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
@@ -1827,7 +1843,7 @@ BEGIN
 				b.transdesc,
 				s.ProductID
 
-			-- AG Casino, AllBet (not yesterday and today ticket)
+			-- AG Casino, AllBet (before yesterday ticket)
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -1900,7 +1916,7 @@ BEGIN
 				AND @Date < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
 				AND s.ProductID IN (11, 21)
 
-			-- AG Casino, AllBet (yesterday and today running ticket)
+			-- AG Casino, AllBet (yesterday and later running ticket)
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -1971,8 +1987,7 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
-				AND @Date BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
-					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
+				AND @Date >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- yesterday and later
 				AND s.ProductID IN (11, 21)
 				AND blc.statusID IN (0, 1)
 			GROUP BY

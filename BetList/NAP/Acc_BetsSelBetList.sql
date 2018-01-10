@@ -116,6 +116,7 @@ AS
 		- 20180118@Kos: Support Licensee Bonus System [#Redmine: 74978]
 		- 20180305@Kos: Don't support Racing, Cockfighting, RNG Casino (bettype 71, 72) anymore [#Redmine: 86086]
 		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 */
 
 BEGIN
@@ -1153,7 +1154,7 @@ BEGIN
 		-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World
 		IF EXISTS (	SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 17, 22, 24))
 		BEGIN
-			-- Not yesterday and today settled ticket
+			-- Before yesterday settled ticket
 			INSERT INTO #BetListData
 			SELECT
 				b.bettype,
@@ -1173,7 +1174,10 @@ BEGIN
 				'' AS settleTime,
 				0 AS hdp1,
 				0 AS hdp2,
-				0 AS odds,
+				CASE
+					WHEN s.ProductID = 6 THEN b.odds
+					ELSE 0
+				END AS Odds,
 				0 AS finalodds,
 				0 AS finalodds2,
 				0 AS OddsType,
@@ -1224,7 +1228,10 @@ BEGIN
 					WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread,
+				CASE
+					WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+					ELSE 0
+				END AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
@@ -1235,11 +1242,11 @@ BEGIN
 			WHERE b.custid = @CustId 
 				AND s.ProductId IN (6, 17, 22, 24)
 				AND b.winlostdate BETWEEN @FromDate AND @ToDate
-				AND b.winlostdate < @Yesterday	-- not yesterday and today
+				AND b.winlostdate < @Yesterday	-- before yesterday
 
-			IF @ToDate >= @Yesterday AND @FromDate <= @Today
+			IF @ToDate >= @Yesterday
 			BEGIN
-				-- Yesterday and today running ticket
+				-- Yesterday and later running ticket
 				INSERT INTO #BetListData
 				SELECT
 					b.bettype,
@@ -1259,7 +1266,7 @@ BEGIN
 					'' AS settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					0 AS odds,
+					0 AS Odds,
 					0 AS finalodds,
 					0 AS finalodds2,
 					0 AS OddsType,
@@ -1322,7 +1329,7 @@ BEGIN
 				WHERE b.custid = @CustId 
 					AND s.ProductId IN (6, 17, 22, 24)
 					AND b.winlostdate BETWEEN @FromDate AND @ToDate
-					AND b.winlostdate BETWEEN @Yesterday AND @Today
+					AND b.winlostdate >= @Yesterday
 					AND brng.statusID IN (0, 1)
 				GROUP BY
 					b.transid,
@@ -1339,7 +1346,10 @@ BEGIN
 					b.transdesc,
 					s.ProductID
 				OPTION (RECOMPILE)
+			END
 
+			IF @ToDate >= @Yesterday AND @FromDate <= @Today
+			BEGIN
 				-- Yesterday and today settled ticket
 				INSERT INTO #BetListData
 				SELECT
@@ -1360,7 +1370,11 @@ BEGIN
 					'' settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					0 AS odds,
+					CASE
+						WHEN s.ProductID = 6
+							THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+						ELSE 0
+					END AS Odds,
 					0 AS finalodds,
 					0 AS finalodds2,
 					0 AS OddsType,
@@ -1415,7 +1429,10 @@ BEGIN
 						WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
-					0 AS OddsSpread,
+					CASE
+						WHEN s.ProductID = 6 THEN ISNULL(SUM(brng.BetStake), 0)
+						ELSE 0
+					END AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					'' AS ExtraInfo,
@@ -1450,7 +1467,7 @@ BEGIN
 		-- AG Casino, AllBet
 		IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (11, 21))
 		BEGIN
-			-- AG Casino, AllBet (not yesterday and today settled ticket)
+			-- Before yesterday settled ticket
 			INSERT INTO #BetListData
 			SELECT
 				b.bettype,
@@ -1529,9 +1546,9 @@ BEGIN
 				AND b.winlostdate BETWEEN @FromDate AND @ToDate
 				AND b.winlostdate < @Yesterday
 
-			IF @ToDate >= @Yesterday AND @FromDate <= @Today
+			IF @ToDate >= @Yesterday
 			BEGIN
-				-- Yesterday and today running ticket
+				-- Yesterday and later running ticket
 				INSERT INTO #BetListData
 				SELECT
 					b.bettype,
@@ -1609,7 +1626,7 @@ BEGIN
 				WHERE b.custid = @CustId 
 					AND s.ProductId IN (11, 21)
 					AND b.winlostdate BETWEEN @FromDate AND @ToDate
-					AND b.winlostdate BETWEEN @Yesterday AND @Today
+					AND b.winlostdate >= @Yesterday
 					AND blc.statusID IN (0, 1)
 				GROUP BY
 					b.transid,
@@ -1624,7 +1641,10 @@ BEGIN
 					b.comstatus,
 					s.ProductID
 				OPTION (RECOMPILE)
+			END
 
+			IF @ToDate >= @Yesterday AND @FromDate <= @Today
+			BEGIN
 				-- Yesterday and today settled ticket
 				INSERT INTO #BetListData
 				SELECT
@@ -2159,7 +2179,7 @@ BEGIN
 					ELSE 0
 				END AS hdp2,
 				CASE
-					WHEN s.ProductId IN (8, 12, 23, 28) THEN b.odds
+					WHEN s.ProductID IN (6, 8, 12, 23, 28) THEN b.odds
 					ELSE 0
 				END AS odds,
 				0 AS finalodds,
@@ -2233,7 +2253,10 @@ BEGIN
 					WHEN s.ProductId IN (6, 8, 22, 23, 24, 28) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
-				0 AS OddsSpread,
+				CASE
+					WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+					ELSE 0
+				END AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,

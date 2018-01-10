@@ -60,6 +60,7 @@ AS
 		- 20180118@Kos: Support Licensee Bonus System [#Redmine: 74978]
 		- 20180130@Kos: Don't support Racing and RNG Casino (bettype 71, 72) in bettrans and bettrans14 [#Redmine: 86086]
 					- Don't support Cockfighting anymore
+		- 20180302@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 */
 
 BEGIN
@@ -1102,10 +1103,9 @@ BEGIN
 							AND (ProductID IN (17, 22, 24)
 								OR (ProductID = 6 AND SubProduct <> '')))
 			BEGIN
-				IF @WinLostDate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
-					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)	-- yesterday and today
+				IF @WinLostDate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)		-- yesterday and later
 				BEGIN
-					-- Yesterday and today running ticket
+					-- Yesterday and later running ticket
 					INSERT INTO @Data
 					SELECT
 						b.bettype,
@@ -1187,7 +1187,7 @@ BEGIN
 					WHERE b.transid = @TransId
 						AND (s.ProductId IN (17, 22, 24)
 							OR (s.ProductId = 6 AND s.SubProduct <> ''))
-						AND brng.statusid = 0
+						AND brng.statusid IN (0, 1)
 					GROUP BY
 						b.transid,
 						ISNULL(b.betid, 0),
@@ -1203,7 +1203,7 @@ BEGIN
 						b.transdesc,
 						s.ProductID
 
-					-- Yesterday and today settled ticket
+					-- Yesterday and later settled ticket
 					INSERT INTO @Data
 					SELECT
 						b.bettype,
@@ -1223,10 +1223,14 @@ BEGIN
 						'' AS settleTime,
 						0 AS hdp1,
 						0 AS hdp2,
-						0 AS odds,
+						CASE
+							WHEN s.ProductID = 6
+								THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+							ELSE 0
+						END AS Odds,
 						0 AS finalodds,
 						0 AS finalodds2,
-						'' OddsType,
+						0 AS OddsType,
 						CASE 
 							WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
 							WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
@@ -1277,7 +1281,10 @@ BEGIN
 							WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
 							ELSE ''
 						END AS TransDesc,
-						0 AS OddsSpread,
+						CASE
+							WHEN s.ProductID = 6 THEN ISNULL(SUM(brng.BetStake), 0)
+							ELSE 0
+						END AS OddsSpread,
 						0 AS OriginalBetType,
 						-1 AS BetdaqId,
 						'' AS ExtraInfo,
@@ -1289,7 +1296,7 @@ BEGIN
 					WHERE b.transid = @TransId
 						AND (s.ProductId IN (17, 22, 24)
 							OR (s.ProductId = 6 AND s.SubProduct <> ''))
-						AND brng.statusid <> 0
+						AND brng.statusid NOT IN (0, 1)
 					GROUP BY
 						b.transid,
 						ISNULL(b.betid, 0),
@@ -1307,7 +1314,7 @@ BEGIN
 				END
 				ELSE
 				BEGIN
-					-- Not yesterday and today settled ticket
+					-- Before yesterday settled ticket
 					INSERT INTO @Data
 					SELECT
 						b.bettype,
@@ -1327,7 +1334,10 @@ BEGIN
 						'' AS settleTime,
 						0 AS hdp1,
 						0 AS hdp2,
-						0 AS odds,
+						CASE
+							WHEN s.ProductID = 6 THEN b.odds
+							ELSE 0
+						END AS Odds,
 						0 AS finalodds,
 						0 AS finalodds2,
 						0 AS OddsType,
@@ -1377,7 +1387,10 @@ BEGIN
 							WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
 							ELSE ''
 						END AS TransDesc,
-						0 AS OddsSpread,
+						CASE
+							WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+							ELSE 0
+						END AS OddsSpread,
 						0 AS OriginalBetType,
 						-1 AS BetdaqId,
 						'' AS ExtraInfo,
@@ -1394,10 +1407,9 @@ BEGIN
 			-- AG Casino, AllBet
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (11, 21) AND Bettype = @BetType)
 			BEGIN
-				IF @WinLostDate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
-					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)	-- yesterday and today
+				IF @WinLostDate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)		-- yesterday and later
 				BEGIN
-					-- Yesterday and today running ticket
+					-- Yesterday and later running ticket
 					INSERT INTO @Data
 					SELECT
 						b.bettype,
@@ -1487,7 +1499,7 @@ BEGIN
 						b.comstatus,
 						s.ProductID
 
-					-- Yesterday and today settled ticket
+					-- Yesterday and later settled ticket
 					INSERT INTO @Data
 					SELECT
 						b.bettype,
@@ -1583,7 +1595,7 @@ BEGIN
 				END
 				ELSE
 				BEGIN
-					-- Not yesterday and today settled ticket
+					-- Before yesterday settled ticket
 					INSERT INTO @Data
 					SELECT
 						b.bettype,
@@ -2265,7 +2277,7 @@ BEGIN
 						ELSE 0
 					END AS hdp2,
 					CASE
-						WHEN s.ProductID IN (8, 12, 23, 28) THEN b.odds
+						WHEN s.ProductID IN (6, 8, 12, 23, 28) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -2338,7 +2350,10 @@ BEGIN
 						WHEN s.ProductID IN (6, 8, 22, 23, 24, 28) THEN b.transdesc
 						ELSE ''
 					END AS TransDesc,
-					0 AS OddsSpread,
+					CASE
+						WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+						ELSE 0
+					END AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					'' AS ExtraInfo,
@@ -3123,7 +3138,7 @@ BEGIN
 						ELSE 0
 					END AS hdp2,
 					CASE
-						WHEN s.ProductId = 23 THEN b.odds
+						WHEN s.ProductId IN (6, 23) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -3189,7 +3204,10 @@ BEGIN
 						WHEN s.ProductID IN (22, 23, 24) THEN b.transdesc
 						ELSE ''
 					END AS TransDesc,
-					0 AS OddsSpread,
+					CASE
+						WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+						ELSE 0
+					END AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					'' AS ExtraInfo,
@@ -3555,7 +3573,10 @@ BEGIN
 					'' AS settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					b.odds,
+					CASE
+						WHEN s.ProductID = 6 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+						ELSE b.odds
+					END AS Odds,
 					0 AS finalodds,
 					0 AS finalodds2,
 					0 AS OddsType,
@@ -3596,10 +3617,19 @@ BEGIN
 					b.winlostdate,
 					b.TranId3rd AS BetCheck,
 					b.transdesc,
-					0 AS OddsSpread,
+					CASE
+						WHEN s.ProductID = 6 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+						ELSE 0
+					END AS OddsSpread,
 					0 AS OriginalBetType,
-					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					CASE
+						WHEN s.ProductID = 6 THEN ISNULL(b.RefNo2, -1)
+						ELSE -1
+					END AS BetdaqId,
+					CASE
+						WHEN s.ProductID = 6 THEN ISNULL(b.JackpotInfo, '')
+						ELSE ''
+					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
 				FROM dbo.bettransRnG AS b WITH (NOLOCK)
@@ -3641,7 +3671,10 @@ BEGIN
 					'' AS settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					b.odds,
+					CASE
+						WHEN s.ProductID = 6 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+						ELSE b.odds
+					END AS Odds,
 					0 AS finalodds,
 					0 AS finalodds2,
 					0 AS OddsType,
@@ -3682,10 +3715,19 @@ BEGIN
 					b.winlostdate,
 					b.TranId3rd AS BetCheck,
 					b.transdesc,
-					0 AS OddsSpread,
+					CASE
+						WHEN s.ProductID = 6 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+						ELSE 0
+					END AS OddsSpread,
 					0 AS OriginalBetType,
-					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					CASE
+						WHEN s.ProductID = 6 THEN ISNULL(b.RefNo2, -1)
+						ELSE -1
+					END AS BetdaqId,
+					CASE
+						WHEN s.ProductID = 6 THEN ISNULL(b.JackpotInfo, '')
+						ELSE ''
+					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
 				FROM dbo.bettransRnG14 AS b WITH (NOLOCK)

@@ -29,6 +29,7 @@ AS
 		- 20160704@Kos: Include Void/Rejected detail ticket in TransType = 1 [Redmine: #59366]
 		- 20161020@Kos: Support Fishing World [#Redmine: 65934]
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
+		- 20180330@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 
 	Parameters:
 		- @TransType
@@ -51,7 +52,7 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
-	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (17, 22, 24)
 		OR (ProductID = 6 AND SubProduct <> '')
 
@@ -93,7 +94,7 @@ BEGIN
 	END
 
 	-- Create temp table
-	CREATE TABLE #Data (
+	DECLARE @Data TABLE (
 		TransId			BIGINT,
 		SportType		INT,
 		BetType			INT,
@@ -122,7 +123,10 @@ BEGIN
 		Ip				NVARCHAR(15),
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(50),
-		MatchCode		VARCHAR(1000)
+		MatchCode		VARCHAR(1000),
+		OddsSpread		MONEY,
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	-- Get currency name
@@ -156,7 +160,7 @@ BEGIN
 	-- Get ticket
 	IF @WhTicket = 1
 	BEGIN
-		INSERT INTO #Data
+		INSERT INTO @Data
 		SELECT
 			brng.transid,
 			brng.productID AS SportType,
@@ -165,7 +169,10 @@ BEGIN
 			brng.winlostdate,
 			brng.status,
 			brng.statusID,
-			brng.odds,
+			CASE
+				WHEN sbt.ProductID = 6 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				ELSE brng.odds
+			END AS Odds,
 			@CurrencyName AS Currency,
 			brng.stake,
 			brng.actual_stake,
@@ -192,7 +199,19 @@ BEGIN
 			CASE
 				WHEN sbt.productID = 24 THEN brng.Additional
 				ELSE ''
-			END AS MatchCode
+			END AS MatchCode,
+			CASE
+				WHEN sbt.ProductID = 6 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
+			CASE
+				WHEN sbt.ProductID = 6 THEN ISNULL(brng.RefNo2, -1)
+				ELSE -1
+			END AS BetdaqId,
+			CASE
+				WHEN sbt.ProductID = 6 THEN ISNULL(brng.JackpotInfo, '')
+				ELSE ''
+			END AS ExtraInfo
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId 
@@ -201,7 +220,7 @@ BEGIN
 	END
 	ELSE IF @WhTicket = 2
 	BEGIN
-		INSERT INTO #Data
+		INSERT INTO @Data
 		SELECT
 			brng.transid,
 			brng.productID AS SportType,
@@ -210,7 +229,10 @@ BEGIN
 			brng.winlostdate,
 			brng.status,
 			brng.statusID,
-			brng.odds,
+			CASE
+				WHEN sbt.ProductID = 6 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				ELSE brng.odds
+			END AS Odds,
 			@CurrencyName AS Currency,
 			brng.stake,
 			brng.actual_stake,
@@ -237,14 +259,26 @@ BEGIN
 			CASE
 				WHEN sbt.productID = 24 THEN brng.Additional
 				ELSE ''
-			END AS MatchCode
+			END AS MatchCode,
+			CASE
+				WHEN sbt.ProductID = 6 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
+			CASE
+				WHEN sbt.ProductID = 6 THEN ISNULL(brng.RefNo2, -1)
+				ELSE -1
+			END AS BetdaqId,
+			CASE
+				WHEN sbt.ProductID = 6 THEN ISNULL(brng.JackpotInfo, '')
+				ELSE ''
+			END AS ExtraInfo
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
 	END
 	ELSE IF @WhTicket = 3
 	BEGIN
-		INSERT INTO #Data
+		INSERT INTO @Data
 		SELECT
 			brng.transid,
 			brng.productID AS SportType,
@@ -253,7 +287,10 @@ BEGIN
 			brng.winlostdate,
 			brng.status,
 			brng.statusID,
-			brng.odds,
+			CASE
+				WHEN sbt.ProductID = 6 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				ELSE brng.odds
+			END AS Odds,
 			@CurrencyName AS Currency,
 			brng.stake,
 			brng.actual_stake,
@@ -280,7 +317,19 @@ BEGIN
 			CASE
 				WHEN sbt.productID = 24 THEN brng.Additional
 				ELSE ''
-			END AS MatchCode
+			END AS MatchCode,
+			CASE
+				WHEN sbt.ProductID = 6 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
+			CASE
+				WHEN sbt.ProductID = 6 THEN ISNULL(brng.RefNo2, -1)
+				ELSE -1
+			END AS BetdaqId,
+			CASE
+				WHEN sbt.ProductID = 6 THEN ISNULL(brng.JackpotInfo, '')
+				ELSE ''
+			END AS ExtraInfo
 		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
@@ -288,16 +337,17 @@ BEGIN
 
 	-- Paging
 	SELECT @TotalRows = COUNT(1)
-	FROM #Data
+	FROM @Data
 
 	SELECT *
 	FROM (
-		SELECT ROW_NUMBER() OVER(ORDER BY TransId) AS RowNum, *
-		FROM #Data ) AS t
+		SELECT
+			ROW_NUMBER() OVER(ORDER BY TransId) AS RowNum,
+			@CustId AS CustId,
+			*
+		FROM @Data ) AS t
 	WHERE t.RowNum BETWEEN ((@PageIndex - 1) * @PageSize + 1) AND (@PageSize * @PageIndex)
 	ORDER BY t.TransId
-
-	DROP TABLE #Data
 END
 
 

@@ -85,6 +85,7 @@ AS
 		- 20180118@Kos: Support Licensee Bonus System [#Redmine: 74978]
 		- 20180305@Kos: Don't support Cockfighting anymore [#Redmine: 86086]
 		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 */
 
 BEGIN
@@ -493,7 +494,7 @@ BEGIN
 				ELSE 0
 			END AS hdp2,
 			CASE
-				WHEN s.ProductId IN (8, 12, 23, 28) THEN b.odds
+				WHEN s.ProductId IN (6, 8, 12, 23, 28) THEN b.odds
 				ELSE 0
 			END AS odds,
 			0 AS finalodds,
@@ -571,7 +572,10 @@ BEGIN
 				WHEN s.ProductId IN (8, 22, 23, 24, 28) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
-			0 AS OddsSpread,
+			CASE
+				WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+				ELSE 0
+			END AS OddsSpread,
 			0 AS OriginalBetType,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo,
