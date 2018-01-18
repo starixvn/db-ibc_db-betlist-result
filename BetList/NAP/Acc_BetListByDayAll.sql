@@ -113,10 +113,11 @@ AS
 		- 20171227@Kos: Return ticket detail of Racing and Virtual Horse Racing [#Redmine: 88775]
 					- Don't support Live Casino in bettrans and bettrans14 anymore
 		- 20180118@Kos: Support Licensee Bonus System [#Redmine: 74978]
-		- 20180305@Kos: Don't support Racing, Cockfighting, RNG Casino (bettype 71, 72) anymore [#Redmine: 86086]
+		- 20180305@Kos: Don't support Racing, Cockfighting, RNG Casino (bettype 71, 72) anymore [#Redmine: 86086]	
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20180509@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
+		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 
 	Param's Explanation:
 		+ @TransType:
@@ -763,7 +764,7 @@ BEGIN
 				b.transdate,
 				0 AS OddsId,
 				b.bettype,
-				0 AS Hdp1,
+				b.hdp1,
 				0 AS Hdp2,
 				b.odds,
 				0 AS MOdds,
@@ -1923,7 +1924,10 @@ BEGIN
 					b.transdate,
 					0 AS OddsId,
 					b.gameID AS BetType,
-					0 AS Hdp1,
+					CASE
+						WHEN s.ProductID = 30 THEN CONVERT(SMALLMONEY, ISNULL(b.custom2, 0))
+						ELSE 0
+					END AS Hdp1,
 					0 AS Hdp2,
 					b.odds,
 					0 AS MOdds,
@@ -2018,7 +2022,7 @@ BEGIN
 					b.transdate,
 					0 AS OddsId,
 					b.bettype,
-					0 AS Hdp1,
+					b.hdp1,
 					0 AS Hdp2,
 					b.odds,
 					0 AS MOdds,

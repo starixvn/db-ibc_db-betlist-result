@@ -88,6 +88,7 @@ AS
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20180509@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
+		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 */
 
 BEGIN
@@ -881,7 +882,7 @@ BEGIN
 			m.HomeId,
 			m.AwayId,
 			ISNULL(b.checktime, '') AS settleTime,
-			0 AS Hdp1,
+			b.hdp1,
 			0 AS Hdp2,
 			b.odds,
 			0 AS FinalOdds,
