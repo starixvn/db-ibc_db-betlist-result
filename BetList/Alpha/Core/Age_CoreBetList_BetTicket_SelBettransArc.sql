@@ -44,6 +44,7 @@ AS
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180418@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
+		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 
 	Param's Explanation:
 
@@ -550,7 +551,7 @@ BEGIN
 		, b.bettype
 		, ISNULL(b.betid, 0)
 		, b.betteam
-		, 0 AS Hdp1
+		, b.hdp1
 		, 0 AS Hdp2
 		, b.oddstype
 		, 0 AS OddsId

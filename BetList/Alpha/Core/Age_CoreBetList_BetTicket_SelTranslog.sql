@@ -33,6 +33,7 @@ AS
 		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
 		- 20180323@Kos: Return BetdaqId to support ONERnG Jackpot [#Redmine: 88652]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
+		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 
 	Param's Explanation:
 
@@ -223,7 +224,10 @@ BEGIN
 			WHEN c.ProductID = 30 THEN b.custom3
 			ELSE ''
 		END AS BetTeam
-		, 0 AS Hdp1
+		, CASE
+			WHEN c.ProductID = 30 THEN CONVERT(SMALLMONEY, ISNULL(b.custom2, 0))
+			ELSE 0
+		END AS Hdp1
 		, 0 AS Hdp2
 		, CASE
 			WHEN c.ProductID = 30 THEN CONVERT(TINYINT, ISNULL(b.custom1, 0))

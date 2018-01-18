@@ -11,6 +11,8 @@ AS
 	Task: Bet list of Total Bets of Bullfighting
 	DB: DBAGE.bodb02
 	Revisions:
+		- 20171108@Kos: Create new [#Redmine: 84961]
+		- 20180117@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 */
 
 BEGIN
@@ -39,6 +41,7 @@ BEGIN
 		SportType		SMALLINT,
 		BetType			SMALLINT,
 		BetTeam			NVARCHAR(10),
+		Hdp1			SMALLMONEY,
 		Odds			MONEY,
 		OddsType		TINYINT,
 		Status			NVARCHAR(10),
@@ -74,6 +77,7 @@ BEGIN
 		m.SportType,
 		b.gameID AS BetType,
 		b.custom3 AS BetTeam,
+		CONVERT(SMALLMONEY, ISNULL(b.custom2, 0)) AS Hdp1,
 		b.odds,
 		CONVERT(TINYINT, ISNULL(b.custom1, 0)) AS OddsType,
 		b.status,
