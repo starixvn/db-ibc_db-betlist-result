@@ -8,7 +8,7 @@ AS
 /*
 	Created by: 20160510@Kos
 	Task: NAP Report - Bet List of Check Bet report
-	DB: DBAGE.bodb02
+	DB: DBACC.bodb02
 	Original: Acc_BetsSelBetList_ByTransID_Advance
 	
 	Revisions:
@@ -21,6 +21,9 @@ AS
 		- 20171101@Kos: Support Bullfighting [#Redmine: 85382]
 					- Change param @TransId into @RefNo
 					- Don't support Metric Gaming
+		- 20180119@Kos: Add Match No for Bullfighting [#Redmine: 85382]
+					- Move SP from DBAGE to DBACC
+					- Don't support Racing anymore
 */
 
 BEGIN
@@ -33,12 +36,12 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	-- Support Sportsbook, Horse Racing, Number Game, Virtual Sports, Lucky 3, Betradar Virtual Sports, Bullfighting only
+	-- Support Sportsbook, Number Game, Virtual Sports, Lucky 3, Betradar Virtual Sports, Bullfighting only
 	-- Don't support BetTrade, CashOut, Metric Gaming
 	INSERT INTO @SportBetType
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 2, 3, 5, 26, 27, 30)
+	WHERE ProductID IN (1, 3, 5, 26, 27, 30)
 		AND BetType NOT BETWEEN 901 AND 920
 		AND BetType NOT BETWEEN 801 AND 806
 
@@ -167,7 +170,10 @@ BEGIN
 				m.HomeId,
 				m.AwayId,
 				'' AS SettleTime,
-				0 AS Hdp1,
+				CASE
+					WHEN @ProductId = 30 THEN CONVERT(SMALLMONEY, ISNULL(b.custom2, 0))
+					ELSE 0
+				END AS Hdp1,
 				0 AS Hdp2,
 				b.odds,
 				0 AS FinalOdds,
@@ -474,94 +480,6 @@ BEGIN
 			WHERE b.transid = @TransId
 		END
 
-		-- Horse Racing
-		IF @ProductId = 2
-		BEGIN
-			INSERT INTO @Data
-			SELECT
-				b.username,
-				b.bettype,
-				b.transid,
-				ISNULL(b.betid, 0) AS BetID,
-				b.refno,
-				odds.matchcode,
-				odds.groupmatch AS race,
-				odds.eventdate,
-				b.virtualrate,
-				CASE WHEN b.currency2 IS NULL THEN CONVERT(BIT, 0) ELSE CONVERT(BIT, 1) END AS isShowOTExRate,
-				b.sdiscount,
-				b.adiscount,
-				b.discount,
-				odds.teamid AS homeid,
-				0 AS awayid,
-				'' settleTime,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				bm.finalodds,
-				bm.finalodds2,
-				0 AS OddsType,
-				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-				b.stake,
-				b.actual_stake,
-				b.transdate,
-				b.betteam,
-				CASE WHEN b.bettype IN (33,43) THEN bm.spositiontaking ELSE b.spositiontaking END,
-				CASE WHEN b.bettype IN (33,43) THEN bm.mpositiontaking ELSE b.mpositiontaking END,
-				CASE WHEN b.bettype IN (33,43) THEN bm.apositiontaking ELSE b.apositiontaking END,
-				CASE WHEN b.bettype IN (33,43) THEN bm.spositiontaking2 ELSE 0 END,
-				CASE WHEN b.bettype IN (33,43) THEN bm.mpositiontaking2 ELSE 0 END,
-				CASE WHEN b.bettype IN (33,43) THEN bm.apositiontaking2 ELSE 0 END,
-				b.liveindicator,
-				b.modds,
-				b.custid,
-				b.livehomescore,
-				b.liveawayscore,
-				0,
-				0,
-				odds.leagueid,
-				l.sporttype,
-				b.ip,
-				b.betfrom,
-				b.matchid,
-				CONVERT(BIT, 0) AS IsNeutral,
-				(b.winlost - b.actual_stake) AS WinLost,
-				b.playercomm AS commission,
-				(b.scomm - b.acomm) AS scomm,
-				(b.acomm - b.comm) AS acomm,
-				(b.comm - b.playercomm) AS comm,
-				b.awinlost,
-				b.mwinlost,
-				b.swinlost,
-				'' AS showtime,
-				b.winlostdate,
-				b.BetCheck,
-				'' AS transdesc,
-				0 AS OddsSpread,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo
-			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
-				INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
-				LEFT JOIN (
-					SELECT
-						t.refno,
-						t.apositiontaking,
-						t.mpositiontaking,
-						t.spositiontaking,
-						t.finalodds,
-						f.apositiontaking apositiontaking2,
-						f.mpositiontaking mpositiontaking2,
-						f.spositiontaking spositiontaking2,
-						f.finalodds finalodds2
-					FROM dbo.bettransm AS t WITH (NOLOCK)
-						INNER JOIN dbo.bettransm AS f WITH (NOLOCK) ON t.refno = f.refno
-					WHERE t.bettype IN (31, 41) AND f.bettype IN (32, 42)
-				) bm ON b.transid = bm.refno
-			WHERE b.transid = @TransId
-		END
-
 		-- Virtual Horse Racing (EventType = 3)
 		IF @EventType = 3
 		BEGIN
@@ -670,7 +588,7 @@ BEGIN
 				m.HomeId,
 				m.AwayId,
 				'' AS SettleTime,
-				0 AS Hdp1,
+				b.hdp1,
 				0 AS Hdp2,
 				b.odds,
 				0 AS FinalOdds,
