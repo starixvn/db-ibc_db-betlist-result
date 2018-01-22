@@ -115,6 +115,7 @@ AS
 		- 20170605@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170623@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170724@Kos: Support Keno Lottery [#Redmine: 79997]
+		- 20180122@Kos: HotFix - Show wrong Total in case of all Running tickets [#Redmine: 89852]
 */
 
 BEGIN
@@ -308,7 +309,10 @@ BEGIN
 		END AS status,
 		b.stake,
 		b.actual_stake,
-		(b.winlost - b.actual_stake) AS WinLost,
+		CASE
+			WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+			ELSE 0
+		END AS WinLost,
 		0 AS LicenseeWL,
 		b.comm,
 		b.playercomm,
@@ -532,8 +536,14 @@ BEGIN
 			END AS status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -600,8 +610,14 @@ BEGIN
 			b.status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			 - (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -664,8 +680,14 @@ BEGIN
 			b.status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -727,8 +749,14 @@ BEGIN
 			END AS status,
 			ob.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			CASE
 				WHEN b.bettype = 903 THEN b.awinlost
 				ELSE b.comm
@@ -809,8 +837,14 @@ BEGIN
 			END AS status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			CASE
 				WHEN b.bettype = 913 THEN b.awinlost
 				ELSE b.comm
@@ -910,8 +944,14 @@ BEGIN
 			END AS status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS winlost,
-			b.awinlost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN b.awinlost
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -973,8 +1013,14 @@ BEGIN
 			END AS status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -1043,8 +1089,14 @@ BEGIN
 			END AS status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -1106,8 +1158,14 @@ BEGIN
 			END AS status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -1246,8 +1304,14 @@ BEGIN
 			b.status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -1311,7 +1375,10 @@ BEGIN
 			b.status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
 			0 AS LicenseeWL,
 			b.comm,
 			b.playercomm,
@@ -1376,8 +1443,14 @@ BEGIN
 			b.status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS winlost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -1610,8 +1683,14 @@ BEGIN
 			b.status,
 			b.stake,
 			b.actual_stake,
-			(b.winlost - b.actual_stake) AS winlost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS WinLost,
+			CASE
+				WHEN b.statusID NOT IN (0, 1) THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.discount,
@@ -1837,7 +1916,6 @@ BEGIN
 		INNER JOIN #TempExchange AS e
 			ON e.ExchangeDate = (CASE WHEN b.winlostdate > @Today THEN @Today ELSE b.winlostdate END) 
 				AND e.exchangeid = b.currency
-	WHERE b.[status] <> 'running'
 
 	-- return betlist single ticket
 	SELECT T.*
