@@ -19,6 +19,7 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160907@Kos: Extend length of transdesc to 1000 to support NG2
 		- 20170508@Kos: Support Lucky 3 [#Redmine: 75277]
+		- 20180126@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 
 	Param's Explanation:
 
@@ -96,10 +97,11 @@ BEGIN
 		, ComStatus			NVARCHAR(20)
 		, TransDesc			NVARCHAR(1000)
 		, OddsSpread		SMALLMONEY
+		, BetdaqId			BIGINT
 	);
 
 	-- CHECK for selecting from bettrans_bk
-	IF EXISTS (SELECT TOP(1) 1 FROM @tempCust WHERE WhTicket = 3)
+	IF EXISTS (SELECT TOP(1) 1 FROM @tempCust WHERE WhTicket IN (3, 8))
 	BEGIN
 		INSERT INTO #MemBetTicket
 		EXEC [dbo].[Age_CoreBetList_BetTicket_SelBettransArc] @tempCust = @tempCust

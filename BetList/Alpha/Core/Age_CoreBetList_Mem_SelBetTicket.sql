@@ -57,6 +57,7 @@ AS
 		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20171030@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
+		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -84,7 +85,7 @@ BEGIN
 		FROM bodb02.dbo.bettrans14 WITH (NOLOCK)
 	END
 
-	-- RESTET output
+	-- RESET output
 	SELECT @TotalRows	= 0,
 		@Error			= 0,
 		@ErrorMsg		= ''
@@ -115,11 +116,9 @@ BEGIN
 		RETURN;
 	END
 
-	DECLARE @Yesterday	SMALLDATETIME,
-		@Today			SMALLDATETIME
+	DECLARE @Yesterday	SMALLDATETIME
 
-	SELECT @Yesterday = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0),
-		@Today = DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
+	SELECT @Yesterday = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 
 	-- bettrans
 	IF @ToDate > @MoveBetsDay
@@ -157,7 +156,7 @@ BEGIN
 				AND ( bt.SubProduct NOT IN ('MG-SuperLive')
 					OR ( bt.SubProduct IN ('MG-SuperLive') AND b.StatusId NOT IN (0, 1) )
 				)
-				AND ((bt.ProductId NOT IN (21, 22, 24)		-- not yesterday and today AllBet, RNG Casino Single Wallet, Macau Games, Fishing World
+				AND ((bt.ProductId NOT IN (21, 22, 24)		-- before yesterday AllBet, RNG Casino Single Wallet, Macau Games, Fishing World
 					AND (bt.ProductId <> 6 OR bt.SubProduct = ''))
 						OR b.winlostdate < @Yesterday)
 
@@ -198,7 +197,7 @@ BEGIN
 			END
 
 			/*
-				Yesterday and today RNG Casino/Live Casino summary ticket
+				Yesterday and later RNG Casino/Live Casino summary ticket
 				+ RNG Casino (WhTicket = 4)
 					- RNG Casino Single Wallet	: ProductId = 6 AND bettype <> 71
 					- Macau Games				: ProductId = 22
@@ -207,7 +206,6 @@ BEGIN
 					- AllBet	: ProductId = 21
 			*/
 			IF @ToDate >= @Yesterday
-				AND @FromDate <= @Today
 				AND EXISTS(SELECT TOP(1) 1 FROM @TransStatus WHERE StatusId IN (0, 1, 111, 112, 113))
 			BEGIN
 				INSERT INTO @tempCust (
@@ -234,7 +232,7 @@ BEGIN
 				FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 				WHERE b.winlostdate BETWEEN @FDate AND @ToDate
-					AND b.winlostdate BETWEEN @Yesterday AND @Today
+					AND b.winlostdate >= @Yesterday
 					AND b.recommend = @Recommend
 					AND b.custid = @CustId
 					AND (bt.ProductId IN (21, 22, 24)
@@ -245,6 +243,37 @@ BEGIN
 		-- Grand Prize ticket
 		IF @TransType = 4
 		BEGIN
+			-- ONERnG Jackpot
+			IF EXISTS (SELECT TOP(1) 1 FROM @BettypeMatrix WHERE ProductID = 6)
+			BEGIN
+				INSERT INTO @tempCust (
+					TransID
+					, Refno
+					, CustID
+					, ProductID
+					, Bettype
+					, EventType
+					, WhTicket)
+				SELECT 
+					b.transid
+					, b.refno
+					, b.custid
+					, bt.ProductId
+					, b.gameID
+					, bt.EventType
+					, 6 AS WhTicket
+				FROM bodb02.dbo.bettransRnG AS b WITH (NOLOCK)
+					INNER JOIN @BettypeMatrix AS bt ON b.gameID = bt.bettype
+					INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
+				WHERE b.winlostdate BETWEEN @FDate AND @ToDate
+					AND b.recommend = @Recommend
+					AND b.custid = @CustId
+					AND bt.ProductID = 6
+					AND EXISTS (	SELECT 1
+									FROM DBACC.bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
+									WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
+			END
+
 			-- Colossus Bets
 			IF EXISTS (SELECT TOP(1) 1 FROM @BettypeMatrix WHERE ProductID = 15)
 			BEGIN
@@ -270,6 +299,7 @@ BEGIN
 				WHERE b.winlostdate BETWEEN @FDate AND @ToDate
 					AND b.recommend = @Recommend
 					AND b.custid = @CustId
+					AND bt.ProductID = 15
 					AND EXISTS (	SELECT 1
 									FROM DBACC.bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
 									WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
@@ -314,6 +344,37 @@ BEGIN
 		-- Grand Prize ticket
 		IF @TransType = 4
 		BEGIN
+			-- ONERnG Jackpot
+			IF EXISTS (SELECT TOP(1) 1 FROM @BettypeMatrix WHERE ProductID = 6)
+			BEGIN
+				INSERT INTO @tempCust (
+					TransID
+					, Refno
+					, CustID
+					, ProductID
+					, Bettype
+					, EventType
+					, WhTicket)
+				SELECT 
+					b.transid
+					, b.refno
+					, b.custid
+					, bt.ProductId
+					, b.gameID
+					, bt.EventType
+					, 7 AS WhTicket
+				FROM bodb02.dbo.bettransRnG14 AS b WITH (NOLOCK)
+					INNER JOIN @BettypeMatrix AS bt ON b.gameID = bt.bettype
+					INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
+				WHERE b.winlostdate BETWEEN @FromDate AND @TDate
+					AND b.recommend = @Recommend
+					AND b.custid = @CustId
+					AND bt.ProductID = 6
+					AND EXISTS (	SELECT 1
+									FROM DBACC.bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
+									WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
+			END
+
 			-- Colossus Bets
 			IF EXISTS (SELECT TOP(1) 1 FROM @BettypeMatrix WHERE ProductID = 15)
 			BEGIN
@@ -339,6 +400,7 @@ BEGIN
 				WHERE b.winlostdate BETWEEN @FromDate AND @TDate
 					AND b.recommend = @Recommend
 					AND b.custid = @CustId
+					AND bt.ProductID = 15
 					AND EXISTS (	SELECT 1
 									FROM DBACC.bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
 									WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))

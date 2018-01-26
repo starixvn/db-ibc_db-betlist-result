@@ -41,6 +41,7 @@ AS
 					- Don't support Bingo and P2P anymore [#Redmine: 53988]
 		- 20171031@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180202@Kos: Don't support Racing, Live Casino, RNG Casino (bettype 71, 72), Cockfighting [#Redmine: 86086]
+		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 
 	Param's Explanation:
 
@@ -105,7 +106,7 @@ BEGIN
 		END AS OddsType
 		, b.oddsid
 		, CASE
-			WHEN c.ProductID IN (1, 8, 12, 23, 27, 28) THEN b.Odds
+			WHEN c.ProductID IN (1, 6, 8, 12, 23, 27, 28) THEN b.Odds
 			ELSE 0
 		END AS Odds
 		, CASE
@@ -176,7 +177,11 @@ BEGIN
 			WHEN c.ProductId IN (6, 8, 22, 23, 24, 28) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
-		, 0 AS OddsSpread
+		, CASE
+			WHEN c.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+			ELSE 0
+		END AS OddsSpread
+		, -1 AS BetdaqId
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 	WHERE c.WhTicket = 2
@@ -247,6 +252,7 @@ BEGIN
 		END AS comstatus
 		, '' AS transdesc
 		, 0 AS OddsSpread
+		, -1 AS BetdaqId
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON bm.refno = b.refno AND bm.bettype = 18001
@@ -351,6 +357,7 @@ BEGIN
 			WHEN c.ProductID = 1 THEN ISNULL(b.oddsspread, 0)
 			ELSE 0
 		END AS OddsSpread
+		, -1 AS BetdaqId
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
@@ -419,6 +426,7 @@ BEGIN
 		, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 		, '' AS transdesc
 		, 0 AS OddsSpread
+		, -1 AS BetdaqId
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
@@ -488,6 +496,7 @@ BEGIN
 		, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 		, '' AS transdesc
 		, 0 AS OddsSpread
+		, -1 AS BetdaqId
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 		INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -561,11 +570,80 @@ BEGIN
 		END AS comstatus
 		, ISNULL(b.transdesc, '') AS TransDesc
 		, 0 AS OddsSpread
+		, -1 AS BetdaqId
 	FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 	WHERE c.WhTicket = 2
 		AND c.EventType = 5
+
+	/*
+		WhTicket = 7
+		- ONERnG Jackpot	: ProductID = 6
+	*/
+	UNION ALL
+	SELECT
+		b.transid
+		, b.refno
+		, b.custid
+		, b.username
+		, b.productID AS SportType
+		, b.gameID AS BetType
+		, 0 AS BetId
+		, '' AS BetTeam
+		, 0 AS Hdp1
+		, 0 AS Hdp2
+		, 0 AS OddsType
+		, 0 AS OddsId
+		, b.odds
+		, 0 AS MOdds
+		, b.stake
+		, b.actual_stake
+		, b.status
+		, b.transdate
+		, b.winlostdate
+		, (b.winlost - b.actual_stake) AS WinLost
+		, b.awinlost
+		, b.mwinlost
+		, b.swinlost
+		, b.playercomm
+		, (b.comm - b.playercomm) AS Comm
+		, (b.acomm - b.comm) AS AComm
+		, (b.scomm - b.acomm) AS SComm
+		, b.apositiontaking
+		, b.mpositiontaking
+		, b.spositiontaking
+		, b.tpositiontaking
+		, b.discount AS ADiscount
+		, b.adiscount AS MDiscount
+		, b.sdiscount AS SDiscount
+		, 0 AS LiveIndicator
+		, 0 AS LiveHomeScore
+		, 0 AS LiveAwayScore
+		, 0 AS FinalHomeScore
+		, 0 AS FinalAwayScore
+		, 0 AS HtHomeScore
+		, 0 AS HtAwayScore
+		, b.ip
+		, 0 AS LeagueId
+		, 0 AS MatchId
+		, '' AS MatchCode
+		, '' AS Race
+		, '' AS EventDate
+		, 0 AS HomeId
+		, 0 AS AwayId
+		, '' AS BetStatus
+		, 0 AS IsNeutral
+		, '' AS Placing
+		, '' AS ShowTime
+		, b.TranId3rd AS BetCheck
+		, '0' AS comstatus
+		, ISNULL(b.transdesc, '') AS TransDesc
+		, 0 AS OddsSpread
+		, ISNULL(b.RefNo2, -1) AS BetdaqId
+	FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
+		INNER JOIN @tempCust AS c ON b.transid = c.transid
+	WHERE c.WhTicket = 7
 
 	RETURN
 END

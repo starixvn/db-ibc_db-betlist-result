@@ -38,6 +38,7 @@ AS
 		- 20160111@Kos: Add column list in INSERT statement
 		- 20160323@Kos: Support Colossus Bet Grand Prize [Redmine: #54643]
 		- 20160328@Kos: Support Grand Prize ticket which status is Expired
+		- 20180126@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 
 	Param's Explanation:
 		- @TransStatus		: string formation (0,1,102,103,111,112,113)
@@ -55,21 +56,19 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @Recommend	INT
-		, @Username		NVARCHAR(30)
 		, @tempCust		dbo.TVP_TicketSportBettype
 
 	SELECT @Error	= 0
 		, @ErrorMsg	= ''
 
-	SELECT @Recommend	= Recommend
-		,@UserName		= UserName
+	SELECT @Recommend = Recommend
 	FROM bodb02.dbo.custinfo WITH (NOLOCK)
-	WHERE CustID = @CustID
+	WHERE CustID = @CustId
 
 	IF @Recommend IS NULL
 	BEGIN
-		SELECT @Error 	= 100
-			, @ErrorMsg	= 'The customer was not found.'
+		SELECT @Error = 100
+			, @ErrorMsg = 'The customer was not found.'
 
 		RETURN;
 	END
@@ -102,8 +101,8 @@ BEGIN
 	-- Grand Prize ticket
 	IF @TransType = 4
 	BEGIN
-		-- Colossus Bet
-		IF EXISTS(SELECT TOP 1 1 FROM @BettypeMatrix WHERE ProductID = 15)
+		-- ONERnG Jackpot
+		IF EXISTS (SELECT TOP(1) 1 FROM @BettypeMatrix WHERE ProductID = 6)
 		BEGIN
 			INSERT INTO @tempCust (
 				TransID
@@ -118,6 +117,36 @@ BEGIN
 				, b.refno
 				, b.custid
 				, bt.ProductId
+				, b.gameID
+				, bt.EventType
+				, 8 AS WhTicket
+			FROM dbo.bettransRnG_bk AS b WITH (NOLOCK)
+				INNER JOIN @BettypeMatrix AS bt ON b.gameID = bt.bettype
+				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
+			WHERE b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.recommend = @Recommend
+				AND b.custid = @CustId
+				AND EXISTS (	SELECT 1
+								FROM bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
+								WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
+		END
+
+		-- Colossus Bet
+		IF EXISTS (SELECT TOP(1) 1 FROM @BettypeMatrix WHERE ProductID = 15)
+		BEGIN
+			INSERT INTO @tempCust (
+				TransID
+				, Refno
+				, CustID
+				, ProductID
+				, Bettype
+				, EventType
+				, WhTicket)
+			SELECT
+				b.transid
+				, b.refno
+				, b.custid
+				, bt.ProductId
 				, b.bettype
 				, bt.EventType
 				, 3 AS WhTicket
@@ -126,16 +155,16 @@ BEGIN
 				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 			WHERE b.winlostdate BETWEEN @FromDate AND @ToDate
 				AND b.custid = @CustId
-				AND EXISTS (	SELECT 1 
+				AND EXISTS (	SELECT 1
 								FROM bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
 								WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
 		END
 	END
 
 	--CALL to get ticket info
-	EXEC [dbo].[Age_CoreBetList_BetTicket_SelMainInfoArc] @tempCust = @tempCust, @ColumnOutput = @ColumnOutput
-
-	RETURN;
+	EXEC [dbo].[Age_CoreBetList_BetTicket_SelMainInfoArc]
+		@tempCust = @tempCust,
+		@ColumnOutput = @ColumnOutput
 END
 
 

@@ -31,6 +31,7 @@ AS
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 		- 20171031@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
+		- 20180323@Kos: Return BetdaqId to support ONERnG Jackpot [#Redmine: 88652]
 
 	Param's Explanation:
 
@@ -122,6 +123,7 @@ BEGIN
 			ELSE ''
 		END AS TransDesc
 		, 0 AS OddsSpread
+		, -1 AS BetdaqId
 	FROM dbo.translog AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.translogid = c.transid
 	WHERE c.WhTicket = 0
@@ -194,6 +196,7 @@ BEGIN
 		, 0 AS comstatus
 		, b.transdesc
 		, 0 AS OddsSpread
+		, -1 AS BetdaqId
 	FROM dbo.translog AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.translogid = c.transid
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
@@ -276,6 +279,7 @@ BEGIN
 			ELSE ''
 		END AS TransDesc
 		, 0 AS OddsSpread
+		, -1 AS BetdaqId
 	FROM dbo.translog AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.translogid = c.transid
 		INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.eventid = m.Match3rdId

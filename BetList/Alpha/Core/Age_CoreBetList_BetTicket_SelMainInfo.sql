@@ -25,10 +25,10 @@ AS
 		- 20162017@Kos: Add WhTicket = 5 to support AllBet [Redmine: #50864]
 		- 20160907@Kos: Extend length of transdesc to 1000 to support NG2
 		- 20170508@Kos: Support Lucky 3 [#Redmine: 75277]
-
+		- 20180126@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 
 	Param's Explanation:
-		- @tempCust  AS TABLE
+		- @tempCust AS TABLE
 		( 
 			transid			BIGINT
 			, refno			BIGINT
@@ -101,27 +101,34 @@ BEGIN
 		, ComStatus			NVARCHAR(20)
 		, TransDesc			NVARCHAR(1000)
 		, OddsSpread		SMALLMONEY
+		, BetdaqId			BIGINT
 	);
 
 	-- CHECK for selecting from translog
 	IF EXISTS (SELECT TOP(1) 1 FROM @tempCust WHERE WhTicket = 0)
 	BEGIN
 		INSERT INTO #MemBetTicket
-		EXEC [dbo].[Age_CoreBetList_BetTicket_SelTranslog] @tempCust = @TempCust, @TransStatus = @TransStatus
+		EXEC [dbo].[Age_CoreBetList_BetTicket_SelTranslog]
+			@tempCust = @TempCust,
+			@TransStatus = @TransStatus
 	END
 
 	-- CHECK for selecting from bettrans, bettransRnG, bettransLC
-	IF EXISTS (SELECT TOP(1) 1 FROM @tempCust WHERE WhTicket IN (1, 4, 5))
+	IF EXISTS (SELECT TOP(1) 1 FROM @tempCust WHERE WhTicket IN (1, 4, 5, 6))
 	BEGIN
 		INSERT INTO #MemBetTicket
-		EXEC [dbo].[Age_CoreBetList_BetTicket_SelBettrans] @tempCust = @TempCust, @TransStatus = @TransStatus
+		EXEC [dbo].[Age_CoreBetList_BetTicket_SelBettrans]
+			@tempCust = @TempCust,
+			@TransStatus = @TransStatus
 	END
 
 	-- CHECK for selecting from bettrans14
-	IF EXISTS (SELECT TOP(1) 1 FROM @tempCust WHERE WhTicket = 2)
+	IF EXISTS (SELECT TOP(1) 1 FROM @tempCust WHERE WhTicket IN (2, 7))
 	BEGIN
 		INSERT INTO #MemBetTicket
-		EXEC [dbo].[Age_CoreBetList_BetTicket_SelBettrans14] @tempCust = @TempCust, @TransStatus = @TransStatus
+		EXEC [dbo].[Age_CoreBetList_BetTicket_SelBettrans14]
+			@tempCust = @TempCust,
+			@TransStatus = @TransStatus
 	END
 
 	-- OUTPUT main ticket

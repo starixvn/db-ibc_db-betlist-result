@@ -42,6 +42,7 @@ AS
 		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20171030@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
+		- 20180330@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -107,8 +108,7 @@ BEGIN
 		, b.bettype
 		, bt.EventType
 		, CASE
-			WHEN b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
-				AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0) THEN		-- Yesterday and today summary ticket
+			WHEN b.winlostdate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) THEN		-- Yesterday and later summary ticket
 				CASE
 					WHEN bt.ProductId = 6 AND bt.SubProduct <> '' THEN 4	-- RNG Casino Single Wallet
 					WHEN bt.ProductId IN (22, 24) THEN 4					-- Macau Games, Fishing World
