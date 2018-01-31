@@ -30,6 +30,7 @@ AS
 		- 20170629@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20171025@Kos: Support Bullfighting [#Redmine: 84961]
 					- Don't support Live Casino anymore
+		- 20180130@Kos: Don't support Racing, Cockfighting, RNG Casino (bettype 71, 72) anymore [#Redmine: 86086]
 */
 
  BEGIN
@@ -45,7 +46,8 @@ AS
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID NOT IN (4, 7, 9)
+	WHERE ProductID NOT IN (2, 4, 7, 9, 19)
+		AND (ProductID <> 6 OR SubProduct <> '')
 	
 	DECLARE @UserTicketTmp TABLE (
 		CustId		INT,
@@ -77,7 +79,7 @@ AS
 	WHERE tl.winlostdate = @FromDate
 		AND tl.ip = @Ip
 		AND tl.statusID IN (0, 1)
-		AND (sp.ProductID IN (8, 12, 13, 15, 19, 28, 30)
+		AND (sp.ProductID IN (8, 12, 13, 15, 28, 30)
 			OR tl.gameid BETWEEN 801 AND 899)
 	GROUP BY tl.custid
 

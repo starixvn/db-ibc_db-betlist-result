@@ -83,6 +83,7 @@ AS
 		- 20171023@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20171227@Kos: Return ticket detail of Racing and Virtual Horse Racing [#Redmine: 88775]
 		- 20180118@Kos: Support Licensee Bonus System [#Redmine: 74978]
+		- 20180305@Kos: Don't support Cockfighting anymore [#Redmine: 86086]
 */
 
 BEGIN
@@ -173,6 +174,7 @@ BEGIN
 	
 	DELETE FROM #SportBettype
 	WHERE Bettype IN (904, 914)
+		OR ProductID IN (19)
 
 	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (1, 3, 4, 5, 25, 26, 27))
 	BEGIN
@@ -445,9 +447,9 @@ BEGIN
 		END
 	END
 
-	-- RNG Casino, Bingo, Keno, P2P, Gold Deluxe, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, Cockfighting
+	-- RNG Casino, Bingo, Keno, P2P, Gold Deluxe, AG Casino, Microgaming Live Casino, Microgaming RNG Casino
 	-- AllBet, Voidbridge, NG2, Fishing World, Lottery
-	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 8, 9, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28))
+	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28))
 	BEGIN
 		INSERT INTO #BetListData
 		SELECT
@@ -475,15 +477,12 @@ BEGIN
 				ELSE 0
 			END AS hdp2,
 			CASE
-				WHEN s.ProductId IN (8, 12, 19, 23, 28) THEN b.odds
+				WHEN s.ProductId IN (8, 12, 23, 28) THEN b.odds
 				ELSE 0
 			END AS odds,
 			0 AS finalodds,
 			0 AS finalodds2,
-			CASE
-				WHEN s.ProductId = 19 THEN b.oddstype
-				ELSE 0
-			END AS OddsType,
+			0 AS OddsType,
 			b.status,
 			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 			b.stake,
@@ -517,7 +516,6 @@ BEGIN
 				WHEN s.ProductId = 12 THEN 255
 				WHEN s.ProductId = 13 THEN 203
 				WHEN s.ProductId = 17 THEN 205
-				WHEN s.ProductId = 19 THEN 206
 				WHEN s.ProductId = 21 THEN 211
 				WHEN s.ProductId = 22 THEN 212
 				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
@@ -533,7 +531,7 @@ BEGIN
 			b.betfrom,
 			CASE
 				WHEN s.ProductId = 12 THEN b.matchid
-				WHEN s.ProductId IN (19, 23) THEN b.betdaqid
+				WHEN s.ProductId = 23 THEN b.betdaqid
 				ELSE 0
 			END AS matchid,
 			CONVERT(BIT, 0) AS IsNeutral,
@@ -549,12 +547,12 @@ BEGIN
 			'' AS showtime,
 			b.winlostdate,
 			CASE
-				WHEN s.ProductId IN (12, 13, 19) THEN b.BetCheck
+				WHEN s.ProductId IN (12, 13) THEN b.BetCheck
 				ELSE ''
 			END AS BetCheck,
 			CASE
 				WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.transdesc
-				WHEN s.ProductId IN (8, 19, 22, 23, 24, 28) THEN b.transdesc
+				WHEN s.ProductId IN (8, 22, 23, 24, 28) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			0 AS OddsSpread,
@@ -567,7 +565,7 @@ BEGIN
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
-			AND s.ProductId IN (6, 7, 8, 9, 11, 12, 13, 17, 19, 21, 22, 23, 24, 28)
+			AND s.ProductId IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28)
 	END
 
 	-- Horse Racing
