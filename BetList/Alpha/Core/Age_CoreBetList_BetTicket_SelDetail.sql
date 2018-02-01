@@ -16,6 +16,7 @@ AS
 		- 20150910@Bobby: Enhance performance for SP core. Apply TVP for input parameters
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
+		- 20180202@Kos: Don't support Racing, Live Casino [#Redmine: 86086]
 
 	Param's Explanation:
 	
@@ -40,7 +41,7 @@ BEGIN
 		, TransDesc			VARCHAR(300)
 	)
 
-	IF EXISTS (SELECT TOP 1 1 FROM @tempCust WHERE ProductId IN (2, 4, 5, 12))
+	IF EXISTS (SELECT TOP(1) 1 FROM @tempCust WHERE ProductId IN (5, 12))
 	BEGIN
 		-- Get Sport Bettype Matrix
 		DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
@@ -52,30 +53,12 @@ BEGIN
 		INSERT INTO @SportBettype
 		SELECT ProductID, BetType, EventType
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (2, 4, 5, 12)
+		WHERE ProductID IN (5, 12)
 
-		IF EXISTS (SELECT TOP 1 1 FROM @tempCust WHERE WhTicket = 1)
+		IF EXISTS (SELECT TOP(1) 1 FROM @tempCust WHERE WhTicket = 1)
 		BEGIN
-			-- Horse Racing
-			INSERT INTO @BettransDetail
-			SELECT
-				bm.refno
-				, bm.odds
-				, bm.stake
-				, bm.status
-				, bm.apositiontaking
-				, bm.mpositiontaking 
-				, bm.spositiontaking
-				, bm.bettype
-				, bm.betteam
-				, '' AS transdesc
-			FROM dbo.bettransm AS bm WITH (NOLOCK)
-				INNER JOIN @tempCust AS b ON bm.refno = b.transid AND bm.custid = b.custid
-				INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-			WHERE b.ProductId = 2 AND sbtm.ProductId = 2
-
 			-- Virtual Sports
-			UNION ALL
+			INSERT INTO @BettransDetail
 			SELECT
 				bm.refno
 				, bm.odds
@@ -93,24 +76,6 @@ BEGIN
 			WHERE b.ProductID = 5
 				AND sbtm.ProductId = 5
 				AND sbtm.EventType = 3
-
-			-- Live Casino
-			INSERT INTO @BettransDetail
-			SELECT
-				bg.refno
-				, bg.odds
-				, bg.stake
-				, bg.status
-				, bg.apositiontaking
-				, bg.mpositiontaking 
-				, bg.spositiontaking
-				, bg.bettype
-				, bg.betteam 
-				, '' AS transdesc
-			FROM dbo.bettransg AS bg WITH (NOLOCK)
-				INNER JOIN @tempCust AS b ON bg.refno = b.refno AND bg.custid = b.custid
-				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.bettype
-			WHERE b.ProductId = 4 AND sbtg.ProductID = 4
 
 			-- Gold Deluxe
 			UNION ALL
@@ -131,28 +96,10 @@ BEGIN
 			WHERE b.ProductId = 12 AND sbtg.ProductID = 12
 		END
 
-		IF EXISTS (SELECT TOP 1 1 FROM @tempCust WHERE WhTicket = 2)
+		IF EXISTS (SELECT TOP(1) 1 FROM @tempCust WHERE WhTicket = 2)
 		BEGIN
-			-- Horse Racing
-			INSERT INTO @BettransDetail
-			SELECT
-				bm.refno
-				, bm.odds
-				, bm.stake
-				, bm.status
-				, bm.apositiontaking
-				, bm.mpositiontaking 
-				, bm.spositiontaking
-				, bm.bettype
-				, bm.betteam
-				, '' AS transdesc
-			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-				INNER JOIN @tempCust AS b ON bm.refno = b.transid AND bm.custid = b.custid
-				INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-			WHERE b.ProductId = 2 AND sbtm.ProductId = 2
-
 			-- Virtual Sports
-			UNION ALL
+			INSERT INTO @BettransDetail
 			SELECT 
 				bm.refno
 				, bm.odds
@@ -170,24 +117,6 @@ BEGIN
 			WHERE b.ProductId = 5
 				AND sbtm.ProductId = 5
 				AND sbtm.EventType = 3
-
-			-- Live Casino
-			INSERT INTO @BettransDetail
-			SELECT
-				bg.refno
-				, bg.odds
-				, bg.stake
-				, bg.status
-				, bg.apositiontaking
-				, bg.mpositiontaking 
-				, bg.spositiontaking
-				, bg.bettype
-				, bg.betteam
-				, '' AS transdesc
-			FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-				INNER JOIN @tempCust AS b ON bg.refno = b.refno AND bg.custid = b.custid
-				INNER JOIN @SportBettype AS sbtg ON bg.bettype = sbtg.bettype
-			WHERE b.ProductId = 4 AND sbtg.ProductID = 4
 
 			-- Gold Deluxe
 			UNION ALL

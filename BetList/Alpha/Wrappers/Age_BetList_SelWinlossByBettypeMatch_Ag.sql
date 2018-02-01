@@ -42,6 +42,8 @@ AS
 		- 20150903@Bobby: Correct data type of sport bet type matrix for avoiding SQL data conversion
 		- 20150910@Bobby: Enhance performence for SP core. Apply TVP for input parameters
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
+		- 20180201@Kos: Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports
+					and Bullfighting only [#Redmine: 86086]
 */
 
 BEGIN
@@ -61,14 +63,17 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
+	-- Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports and Bullfighting only
 	INSERT INTO @BettypeMatrix
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (1, 3, 5, 26, 27, 30)
+		AND BetType NOT IN (901, 902, 903, 904)
 
 	;WITH CteBettype (bettype)
 	AS (
 		SELECT bt.bettype
-		FROM @BettypeMatrix bt
+		FROM @BettypeMatrix AS bt
 			LEFT JOIN (SELECT Bettype, GroupTypeId FROM [dbo].[f_GroupBettype]()) AS f ON f.bettype = bt.bettype
 		WHERE bt.bettype = @BetType OR f.GroupTypeId = @BetType
 	)
@@ -78,9 +83,9 @@ BEGIN
 		LEFT JOIN CteBettype AS ct ON bt.bettype = ct.bettype
 	WHERE ct.bettype IS NULL
 
-	EXEC [bodb02].[dbo].[Age_CoreBetList_SMAEventBettype_SelBetTicket]
+	EXEC [dbo].[Age_CoreBetList_SMAEventBettype_SelBetTicket]
 		@CustId				= @CustId
-		,@username			= @Username
+		, @Username			= @Username
 		, @RoleId			= 2
 		, @MatchId			= @MatchId
 		, @Liveindicator 	= @LiveIndicator

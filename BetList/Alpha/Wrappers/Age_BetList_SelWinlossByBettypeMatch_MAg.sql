@@ -11,13 +11,13 @@ ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossByBettypeMatch_MAg]
 AS
 
 /*
-	Created: 
-	Task : Betlist
+	Created:
+	Task: Betlist
 	DB: DBAGE.bodb02
 	Original:BetsSelBetListMatchWinLoss_MAg
 	Revisions:
 		- 20071211@Phuc: For API
-		- 20080108: add leaguename,typenamee2,sportname
+		- 20080108: add leaguename, typenamee2, sportname
 		- 20080407@Phuc: Add matchid
 		- 20080629@Viet: Remove Teamname, Leaguename, Sportname, TypeName
 		- 20090326@Phuc: get indexname for FI
@@ -31,12 +31,12 @@ AS
 		- 20110408@Amy: Change function to get Odds value and showed odds type
 		- 20110809@Sophia: Add a new parametter @liveindicator
 		- 20110811@Sophia: Add new columns actual_stake and modds 
-		- 20111216@Sophia: Remove function f_GetOddsByBettype , f_GetChoice , f_ShowOddsByBettype
-		- 20120112@Sophia:  Add refno, showtime for Table - Shoe - Hand of LiveCasino 
-							Add Sub table for Live Casino
+		- 20111216@Sophia: Remove function f_GetOddsByBettype, f_GetChoice, f_ShowOddsByBettype
+		- 20120112@Sophia: Add refno, showtime for Table - Shoe - Hand of LiveCasino 
+						- Add Sub table for Live Casino
 		- 20120927@Sophia: Get comstatus]
 		- 20141016@Sophia: support Sporting solution-grouped bettype 
-		- 20150209@Tom: Support 60 BetRadar (27218) Show betcheck coloum on Bettype 216,217 
+		- 20150209@Tom: Support 60 BetRadar (27218) Show betcheck coloum on Bettype 216,217
 		- 20150331@Cody: Apply sport bettype matrix [Remine: #30169]
 		- 20150522@Bobby: Rollback code caused by holding core bet list
 		- 20150526@Bobby: Implement betlist core
@@ -44,12 +44,14 @@ AS
 		- 20150903@Bobby: Correct data type of sport bet type matrix for avoiding SQL data conversion
 		- 20150910@Bobby: Enhance performence for SP core. Apply TVP for input parameters
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
+		- 20180201@Kos: Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports 
+					and Bullfighting only [#Redmine: 86086]
 */
 
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE	 @TransStatus	[dbo].[TVP_BetTicketStatus]
+	DECLARE	@TransStatus	[dbo].[TVP_BetTicketStatus]
 		, @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]
 
 	-- Gather Ticket status
@@ -63,9 +65,12 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
+	-- Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports and Bullfighting only
 	INSERT INTO @BettypeMatrix
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (1, 3, 5, 26, 27, 30)
+		AND BetType NOT IN (901, 902, 903, 904)
 
 	;WITH CteBettype (bettype)
 	AS (
@@ -80,12 +85,12 @@ BEGIN
 		LEFT JOIN CteBettype AS ct ON bt.bettype = ct.bettype
 	WHERE ct.bettype IS NULL
 
-	EXEC [bodb02].[dbo].[Age_CoreBetList_SMAEventBettype_SelBetTicket]
+	EXEC [dbo].[Age_CoreBetList_SMAEventBettype_SelBetTicket]
 		@CustId 			= @CustId
-		,@username			= @username
+		, @Username			= @Username
 		, @RoleId			= 3
-		, @MatchId 			= @MatchID
-		, @Liveindicator 	= @liveindicator
+		, @MatchId 			= @MatchId
+		, @Liveindicator 	= @LiveIndicator
 		, @Language 		= @Language
 		, @TransStatus		= @TransStatus
 		, @BettypeMatrix	= @BettypeMatrix

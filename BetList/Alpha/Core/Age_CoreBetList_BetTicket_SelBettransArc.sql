@@ -40,6 +40,7 @@ AS
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20171031@Kos: Support Bullfighting [#Redmine: 84961]
+		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
 
 	Param's Explanation:
 
@@ -70,7 +71,6 @@ BEGIN
 		- Keno					: ProductId = 8
 		- P2P					: ProductId = 9
 		- Gold Deluxe			: ProductId = 12
-		- Cockfighting			: ProductId = 19
 		- AllBet				: ProductId = 21
 		- Macau Games			: ProductId = 22
 		- NG2					: ProductId = 23
@@ -92,7 +92,6 @@ BEGIN
 			WHEN c.ProductID = 8 THEN 202
 			WHEN c.ProductID = 9 THEN 253 
 			WHEN c.ProductID = 12 THEN 255
-			WHEN c.ProductID = 19 THEN 206
 			WHEN c.ProductID = 21 THEN 211
 			WHEN c.ProductID = 22 THEN 212
 			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2501 AND 2539 THEN 213
@@ -119,12 +118,12 @@ BEGIN
 			ELSE 0
 		END AS hdp2
 		, CASE
-			WHEN c.ProductID IN (8, 19) THEN b.OddsType
+			WHEN c.ProductID IN (8) THEN b.OddsType
 			ELSE 0
 		END AS OddsType
 		, b.oddsid
 		, CASE
-			WHEN c.ProductID IN (1, 8, 12, 19, 23, 27, 28) THEN b.Odds
+			WHEN c.ProductID IN (1, 8, 12, 23, 27, 28) THEN b.Odds
 			ELSE 0
 		END AS Odds
 		, CASE
@@ -173,7 +172,7 @@ BEGIN
 		, 0 AS LeagueID
 		, CASE
 			WHEN c.ProductID = 12 THEN 255
-			WHEN c.ProductID IN (19, 23) THEN b.betdaqid
+			WHEN c.ProductID = 23 THEN b.betdaqid
 			ELSE 0
 		END AS MatchID
 		, '' AS MatchCode
@@ -187,7 +186,7 @@ BEGIN
 		, '' AS showtime
 		, CASE 
 			WHEN c.ProductID IN (9, 12) AND b.bettype IN (1000, 1701, 1702) THEN b.betcheck
-			WHEN c.ProductID IN (1, 19, 27) THEN ISNULL(b.betcheck, '')
+			WHEN c.ProductID IN (1, 27) THEN ISNULL(b.betcheck, '')
 			ELSE ''
 		END	AS betcheck
 		, CASE WHEN b.comstatus = '1' THEN '1'
@@ -195,7 +194,7 @@ BEGIN
 			END AS comstatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
-			WHEN c.ProductId IN (8, 19, 22, 23, 24, 28) THEN b.transdesc
+			WHEN c.ProductId IN (8, 22, 23, 24, 28) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, 0 AS OddsSpread

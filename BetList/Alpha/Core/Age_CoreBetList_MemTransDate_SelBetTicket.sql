@@ -41,6 +41,7 @@ AS
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
 		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20171030@Kos: Support Bullfighting [#Redmine: 84961]
+		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -131,7 +132,6 @@ BEGIN
 		- Keno			: ProductId = 8
 		- Gold Deluxe	: ProductId = 12
 		- Colossus Bet	: ProductId = 15
-		- Cockfighting	: ProductId = 19
 		- Lottery		: ProductId = 28
 		- Bullfighting	: ProductId = 30
 		- Metric Gaming	: Bettype(801-899)
@@ -159,7 +159,7 @@ BEGIN
 			INNER JOIN @TransStatus AS st ON b.statusID = st.StatusID
 		WHERE b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.custid = @CustId
-			AND (bt.ProductId IN (8, 12, 15, 19, 28, 30)
+			AND (bt.ProductId IN (8, 12, 15, 28, 30)
 				OR bt.bettype BETWEEN 801 AND 899)
 			AND b.statusID IN (0, 1)
 	END

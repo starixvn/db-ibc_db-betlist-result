@@ -41,6 +41,7 @@ AS
 		- 20170829@Kos: Support Lucky 3 [#Redmine: 75277]
 					- Don't support Bingo and P2P anymore [#Redmine: 53988]
 		- 20171031@Kos: Support Bullfighting [#Redmine: 84961]
+		- 20180202@Kos: Don't support Racing, Live Casino, RNG Casino (bettype 71, 72), Cockfighting [#Redmine: 86086]
 
 	Param's Explanation:
 
@@ -56,7 +57,6 @@ BEGIN
 		- Casino				: ProductId = 6
 		- Keno					: ProductId = 8
 		- Gold Deluxe			: ProductId = 12
-		- Cockfighting			: ProductId = 19
 		- AllBet				: ProductId = 21
 		- Macau Games			: ProductId = 22
 		- NG2					: ProductId = 23
@@ -72,11 +72,9 @@ BEGIN
 		, b.custid
 		, b.Username
 		, CASE
-			WHEN c.ProductID = 6 AND b.bettype = 71 THEN 251
-			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.matchid
+			WHEN c.ProductID = 6 THEN b.matchid
 			WHEN c.ProductID = 8 THEN 202
 			WHEN c.ProductID = 12 THEN 255
-			WHEN c.ProductId = 19 THEN 206
 			WHEN c.ProductId = 21 THEN 211
 			WHEN c.ProductId = 22 THEN 212
 			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2501 AND 2539 THEN 213
@@ -99,11 +97,11 @@ BEGIN
 		, CASE WHEN c.ProductID IN (1, 23, 27) THEN b.hdp2
 				ELSE 0
 			END AS hdp2
-		, CASE WHEN c.ProductID IN (8, 19) THEN b.OddsType
+		, CASE WHEN c.ProductID = 8 THEN b.OddsType
 			ELSE 0
 		END AS OddsType
 		, b.oddsid
-		, CASE WHEN c.ProductID IN (1, 8, 12, 19, 23, 27, 28) THEN b.Odds
+		, CASE WHEN c.ProductID IN (1, 8, 12, 23, 27, 28) THEN b.Odds
 				ELSE 0
 			END AS Odds
 		, CASE WHEN c.ProductID IN (1, 27) THEN b.modds
@@ -114,9 +112,7 @@ BEGIN
 		, b.Status
 		, b.Transdate
 		, b.winlostdate
-		, CASE WHEN b.bettype IN (23102, 23002, 23202) THEN 0
-				ELSE (b.winlost - b.actual_stake)
-			END AS WinLost
+		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
@@ -151,7 +147,7 @@ BEGIN
 		, 0 AS LeagueID
 		,CASE
 			WHEN c.ProductID = 12 THEN 255
-			WHEN c.ProductID IN (19, 23) THEN b.betdaqid
+			WHEN c.ProductID = 23 THEN b.betdaqid
 			ELSE 0
 		END AS MatchID
 		, '' AS MatchCode
@@ -165,14 +161,13 @@ BEGIN
 		, '' AS showtime
 		, CASE 
 			WHEN c.ProductID IN (12) AND b.bettype IN (1701, 1702) THEN b.betcheck
-			WHEN c.ProductID IN (1, 19, 27) THEN ISNULL(b.betcheck, '')
+			WHEN c.ProductID IN (1, 27) THEN ISNULL(b.betcheck, '')
 			ELSE ''
 		END AS betcheck
 		, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' 
 		END AS comstatus
 		, CASE
-			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
-			WHEN c.ProductId IN (8, 19, 22, 23, 24, 28) THEN b.transdesc
+			WHEN c.ProductId IN (6, 8, 22, 23, 24, 28) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, 0 AS OddsSpread
@@ -626,7 +621,6 @@ BEGIN
 	/*
 	- Sportsbook				: ProductID = 1
 	- Number Game				: ProductID = 3
-	- Live Casino				: ProductID = 4
 	- Virtual Sports			: ProductID = 5
 	- Lucky 3					: ProductID = 26
 	- Betradar Virtual Sports	: ProductID = 27
@@ -641,12 +635,9 @@ BEGIN
 		, b.bettype
 		, ISNULL(b.betid, 0) AS BetId
 		, b.betteam
+		, b.hdp1
 		, CASE
-			WHEN c.ProductID IN (4) THEN 0
-			ELSE b.hdp1
-		END AS hdp1
-		, CASE
-			WHEN c.ProductID IN (3, 4, 26) THEN 0
+			WHEN c.ProductID IN (3, 26) THEN 0
 			ELSE b.hdp2
 		END AS hdp2
 		, b.oddstype
@@ -674,15 +665,15 @@ BEGIN
 		, b.SPositiontaking
 		, b.TPositiontaking
 		, CASE
-			WHEN c.ProductID IN (1, 3, 4, 5, 27) THEN b.discount
+			WHEN c.ProductID IN (1, 3, 5, 27) THEN b.discount
 			ELSE 0
 		END AS ADiscount
 		, CASE
-			WHEN c.ProductID IN (1, 3, 4, 5, 27) THEN b.adiscount
+			WHEN c.ProductID IN (1, 3, 5, 27) THEN b.adiscount
 			ELSE 0
 		END AS MDiscount
 		, CASE
-			WHEN c.ProductID IN (1, 3, 4, 5, 27) THEN b.sdiscount
+			WHEN c.ProductID IN (1, 3, 5, 27) THEN b.sdiscount
 			ELSE 0
 		END AS SDiscount
 		, b.liveindicator
@@ -730,7 +721,6 @@ BEGIN
 
 	/*
 	- Sportsbook outright	: ProductID = 1
-	- Horse Racing			: ProductID = 2
 	*/
 	UNION ALL
 	SELECT

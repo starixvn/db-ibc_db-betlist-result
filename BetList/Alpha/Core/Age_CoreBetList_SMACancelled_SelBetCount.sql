@@ -29,6 +29,7 @@ AS
 		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20171030@Kos: Support Bullfighting [#Redmine: 84961]
 					- Don't support Live Casino, Bingo, P2P anymore
+		- 20180202@Kos: Don't support Racing, Live Casino, Cockfighting [#Redmine: 86086]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -170,7 +171,6 @@ BEGIN
 		- Keno					: ProductId = 8
 		- Gold Deluxe			: ProductId = 12
 		- Colossus Bet			: ProductId = 15
-		- Cockfighting			: ProductId = 19
 		- NG2					: ProductId = 23
 		- Mix Parlay			: ProductId = 27
 		- Keno Lottery			: ProductId = 28
@@ -186,7 +186,7 @@ BEGIN
 			, COUNT(1) AS BetCount
 		FROM #tempRawData AS b
 		WHERE b.EventType = 0
-			AND b.ProductID IN (6, 8, 12, 15, 19, 23, 27, 28)
+			AND b.ProductID IN (6, 8, 12, 15, 23, 27, 28)
 		GROUP BY b.custid
 			, b.recommend
 			, b.mrecommend
@@ -226,7 +226,6 @@ BEGIN
 
 	/*
 		- Sportsbook outright	: ProductId = 1
-		- Horse Racing			: ProductId = 2
 	*/
 	IF EXISTS (SELECT TOP(1) 1 FROM #tempRawData WHERE EventType = 2)
 	BEGIN

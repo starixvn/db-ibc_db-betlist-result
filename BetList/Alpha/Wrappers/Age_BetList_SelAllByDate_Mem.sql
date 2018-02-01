@@ -22,17 +22,17 @@ AS
 	Original BetsSelBetListEnglishAgent2
 	Revisions:
 		- 20080707@Viet: Remove Teamname, Leaguename, Sportname, TypeName
-		- 20081106@VinhTrinh: Get more result(Sporttype: Horseracing) for betlist
+		- 20081106@Johnny: Get more result(Sporttype: Horseracing) for betlist
 		- 20090226@Hiep: Get more result for Casino Integration
 		- 20090402@nqminh: add real_refno column
 		- 20090406@HanhVu: remove real_refno 
 						- change refno field instead of transid for mix parlay
 						- hardcode refno field for single bet
-		- 20090415@HIepVo: Create @BetListSelAllByDateMem temp table, add column BetID to temp table
+		- 20090415@Henry: Create @BetListSelAllByDateMem temp table, add column BetID to temp table
 		- 20090416@Minh: remove indexName
-		- 20090421@HiepVo: Include more columns: comm, acomm, scomm, awinlost, mwinlost, swinlost
-		- 20090505@HiepVo: Change formula of commission
-		- 20090522@HiepVo: More filter: ShowHR, ShowFI. Add F.O Horse Racing bet type (split Sport Book); Get more data from bettransm for HR
+		- 20090421@Henry: Include more columns: comm, acomm, scomm, awinlost, mwinlost, swinlost
+		- 20090505@Henry: Change formula of commission
+		- 20090522@Henry: More filter: ShowHR, ShowFI. Add F.O Horse Racing bet type (split Sport Book); Get more data from bettransm for HR
 		- 20090710@Phuc: unhide IP for TB currency
 		- 20090930@Phuc: Show the refunded tickets' status based on bettrans.status/ get oddstype
 		- 20100527@Henry: Change to use StatusID instead of Status in WHERE statement
@@ -83,6 +83,7 @@ AS
 		- 20161101@Kos: Support Fishing World [#Redmine: 65934]
 		- 20170327@Kos: Change input params for Microsite bet list [#Redmine: 66992]
 		- 20170703@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20180201@Kos: Don't support Racing, Live Casino, RNG Casino (bettype 71, 72), Bingo, P2P, Cockfighting [#Redmine: 86086]
 */
 
 BEGIN
@@ -104,9 +105,13 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
+	-- Don't support Deposit products (Playtech Casino, AG Casino, Microgaming Live Casino, Macau, Microgaming RNG Casino)
+	-- Don't support Racing, Live Casino, RNG Casino (bettype 71, 72), Bingo, P2P, Cockfighting
 	INSERT INTO @BettypeMatrix
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrixByProduct_Sel(@ProductIds, @IsTest)
+	WHERE ProductID NOT IN (2, 4, 7, 9, 10, 11, 13, 14, 17, 19, 25)
+		AND BetType NOT IN (901, 902, 903, 904, 71, 72)
 
 	-- CALL to core bet list
 	EXEC [bodb02].[dbo].[Age_CoreBetList_MemTransDate_SelBetTicket]
@@ -166,6 +171,8 @@ BEGIN
 								OddsSpread'
 	;
 END
+
+
 
 GO
 GRANT  EXECUTE  ON [dbo].[Age_BetList_SelAllByDate_Mem]  TO [bodbDownlineNet]

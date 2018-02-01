@@ -21,10 +21,10 @@ AS
 		- 20090326@Phuc: get indexname for FI
 		- 20090407@HanhVu: remove refno
 		- 20090416@Minh: remove indexName
-		- 20090421@[HiepVo]: Include more columns: comm, acomm, scomm, awinlost, mwinlost, swinlost
+		- 20090421@Henry: Include more columns: comm, acomm, scomm, awinlost, mwinlost, swinlost
 		- 20090505@HiepVo: Change formula of commission
 		- 20090618@AnhPham: Remove 'Customer' table
-		- 20090710@Phuc: unhide IP for TB currency.
+		- 20090710@Phuc: unhide IP for TB currency
 		- 20101123@Jacob: Add column betid in select clause
 		- 20110408@Amy: Change function to get Odds value and showed odds type
 		- 20110809@Sophia: Add a new parametter @liveindicator
@@ -42,12 +42,14 @@ AS
 		- 20150903@Bobby: Correct data type of sport bet type matrix for avoiding SQL data conversion
 		- 20150910@Bobby: Enhance performance for SP core. Apply TVP for input parameters
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
+		- 20180201@Kos: Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports 
+					and Bullfighting only [#Redmine: 86086]
 */
 
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE	 @TransStatus	[dbo].[TVP_BetTicketStatus]
+	DECLARE @TransStatus	[dbo].[TVP_BetTicketStatus]
 		, @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]
 
 	-- Gather Ticket status
@@ -61,9 +63,12 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
+	-- Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports and Bullfighting only
 	INSERT INTO @BettypeMatrix
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (1, 3, 5, 26, 27, 30)
+		AND BetType NOT IN (901, 902, 903, 904)
 
 	;WITH CteBettype (bettype)
 	AS (
@@ -78,9 +83,9 @@ BEGIN
 		LEFT JOIN CteBettype AS ct ON bt.bettype = ct.bettype
 	WHERE ct.bettype IS NULL
 
-	EXEC [bodb02].[dbo].[Age_CoreBetList_SMAEventBettype_SelBetTicket]
+	EXEC [dbo].[Age_CoreBetList_SMAEventBettype_SelBetTicket]
 		@CustId				= @CustId
-		,@username			= @username
+		, @Username			= @Username
 		, @RoleId			= 4
 		, @MatchId			= @MatchId
 		, @Liveindicator	= @LiveIndicator

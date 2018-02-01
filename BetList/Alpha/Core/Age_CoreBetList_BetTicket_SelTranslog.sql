@@ -30,6 +30,7 @@ AS
 		- 20170705@Kos: Support Keno Lottery [#Redmine: 77929]
 		- 20170718@Kos: Don't parse transdesc for Keno anymore [#Redmine: 80082]
 		- 20171031@Kos: Support Bullfighting [#Redmine: 84961]
+		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
 
 	Param's Explanation:
 
@@ -45,7 +46,6 @@ BEGIN
 		- Keno			: ProductId = 8
 		- Gold Deluxe	: ProductId = 12
 		- Colossus Bet	: ProductId = 15
-		- Cockfighting	: ProductId = 19
 		- Lottery		: ProductId = 28
 	*/
 	SELECT
@@ -57,7 +57,6 @@ BEGIN
 			WHEN c.ProductID = 8 THEN 202
 			WHEN c.ProductID = 12 THEN 255
 			WHEN c.ProductID = 15 THEN 204
-			WHEN c.ProductId = 19 THEN 206
 			WHEN c.ProductID = 28 THEN 220
 			ELSE 0
 		END AS Sporttype
@@ -66,10 +65,7 @@ BEGIN
 		, '' AS betteam
 		, 0 AS Hdp1
 		, 0 AS Hdp2
-		, CASE
-			WHEN c.ProductId = 19 THEN CONVERT(TINYINT, ISNULL(b.custom1, 0))
-			ELSE 0
-		END AS OddsType
+		, 0 AS OddsType
 		, 0 AS OddsId
 		, b.odds
 		, 0 AS MOdds
@@ -104,7 +100,6 @@ BEGIN
 		, 0 AS LeagueID
 		, CASE
 			WHEN c.ProductID = 12 THEN 255
-			WHEN c.ProductID = 19 THEN b.Gameid3rd
 			ELSE 0
 		END AS MatchId
 		, '' AS MatchCode
@@ -119,12 +114,11 @@ BEGIN
 		, CASE 
 			WHEN c.ProductID = 12 AND b.gameid IN ( 1701,1702 ) THEN b.Gameid3rd
 			WHEN c.ProductID = 15 THEN b.Tranid3rd
-			WHEN c.ProductID = 19 THEN b.custom2
 			ELSE ''
 		END AS BetCheck
 		, 0 AS comstatus
 		, CASE
-			WHEN c.ProductID IN (8, 15, 19, 28) THEN b.transdesc
+			WHEN c.ProductID IN (8, 15, 28) THEN b.transdesc
 			ELSE ''
 		END AS TransDesc
 		, 0 AS OddsSpread
