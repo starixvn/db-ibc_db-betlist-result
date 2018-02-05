@@ -107,6 +107,7 @@ AS
 		- 20170602@Kos: Get liveindicator from original ticket for 912 tickets [#Redmine: 77669]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
+		- 20180205@Kos: Add more condition for SB in Parlay [#Redmine: 90492]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -675,7 +676,8 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate 
 				AND b.custid = @CustId
-				AND sbt.ProductID IN (1, 27)
+				AND (sbt.ProductID = 27
+					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND sbt.EventType = 0
 				AND b.matchid IN (9, 29, 2799)
 				AND b.statusID IN (111, 112, 113)
@@ -1854,7 +1856,8 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
-				AND sbt.ProductID IN (1, 27)
+				AND (sbt.ProductID = 27
+					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND sbt.EventType = 0
 				AND b.matchid IN (9, 29, 2799)
 				AND b.statusID IN (111, 112, 113)
@@ -2765,7 +2768,8 @@ BEGIN
 				AND b.custid = @CustId
 				AND b.ruben = 1
 				AND b.status NOT IN ('VOID', 'REJECT','REFUND')
-				AND sbt.ProductID IN (1, 27)
+				AND (sbt.ProductID = 27
+					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND sbt.EventType = 0
 				AND b.matchid IN (0, 9, 29, 2799) --should NOT remove 0 IN archive
 				AND b.transid NOT IN (SELECT Transid FROM @TempBetList) --exclude BA tickets

@@ -120,6 +120,7 @@ AS
 		- 20170623@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
 		- 20171227@Kos: Add index hint for Cash Out in bk range [#Redmine: 88753]
+		- 20180205@Kos: Add more condition for SB in Parlay [#Redmine: 90492]
 */
 
 BEGIN
@@ -685,7 +686,8 @@ BEGIN
 				b.winlostdate BETWEEN @TempFromDate AND @todate
 				AND b.recommend = @Recommend
 				AND b.custid = @CustId
-				AND sbt.ProductID IN (1, 27)
+				AND (sbt.ProductID = 27
+					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND sbt.EventType = 0
 				AND b.matchid IN (9, 29, 2799)
 				AND b.statusID IN (111, 112, 113)
@@ -1819,7 +1821,8 @@ BEGIN
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 				AND b.recommend = @Recommend
 				AND b.custid = @CustId
-				AND sbt.ProductID IN (1, 27)
+				AND (sbt.ProductID = 27
+					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND sbt.EventType = 0
 				AND b.matchid IN (9, 29, 2799)
 				AND b.statusID IN (111, 112, 113)
@@ -2682,7 +2685,8 @@ BEGIN
 				b.winlostdate BETWEEN @fromdate AND @TempToDate
 				AND b.custid = @CustId
 				AND b.recommend = @Recommend
-				AND sbt.ProductID IN (1, 27)
+				AND (sbt.ProductID = 27
+					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND sbt.EventType = 0
 				AND b.matchid IN (0, 9, 29, 2799) --should not remove 0 in Archive
 				AND b.statusID IN (111, 112, 113)

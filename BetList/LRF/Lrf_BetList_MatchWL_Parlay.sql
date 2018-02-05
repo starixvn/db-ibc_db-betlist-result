@@ -56,6 +56,7 @@ AS
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20180205@Kos: Add more condition checking [#Redmine: 90492]
 
 	Param's Explanation:
 */
@@ -128,7 +129,7 @@ BEGIN
 		ELSE
 			SET @TempFromDate = @FromDate
 
-		IF @ShowBA = 1
+		IF @ShowBA = 1 AND @BetType IN (9, 29)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -176,7 +177,8 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		IF @ShowSB = 1 OR @ShowVS2 = 1
+		IF (@ShowSB = 1 AND @BetType IN (9, 29))
+			OR (@ShowVS2 = 1 AND @BetType = 2799)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -232,7 +234,7 @@ BEGIN
 		ELSE
 			SET @TempToDate = @ToDate
 
-		IF @ShowBA = 1
+		IF @ShowBA = 1 AND @BetType IN (9, 29)
 		BEGIN
 			INSERT INTO #Data 
 			SELECT
@@ -280,7 +282,8 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		IF @ShowSB = 1 OR @ShowVS2 = 1
+		IF (@ShowSB = 1 AND @BetType IN (9, 29))
+			OR (@ShowVS2 = 1 AND @BetType = 2799)
 		BEGIN
 			INSERT INTO #Data
 			SELECT

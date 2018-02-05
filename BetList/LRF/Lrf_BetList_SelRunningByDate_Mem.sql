@@ -85,6 +85,7 @@ AS
 		- 20170329@Kos: Support CashOut [#Redmine: 71963]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170724@Kos: Support Keno Lottery [#Redmine: 79997]
+		- 20180205@Kos: Add more condition for SB in Parlay [#Redmine: 90492]
 */
 
 BEGIN
@@ -626,7 +627,8 @@ BEGIN
 		WHERE
 			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.custid = @CustID
-			AND sbt.ProductID IN (1, 27)
+			AND (sbt.ProductID = 27
+				OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 			AND sbt.EventType = 0
 			AND b.statusID IN (0, 1)
 			AND b.transid NOT IN (SELECT transid FROM #TempBATicket)

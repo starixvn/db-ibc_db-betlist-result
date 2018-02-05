@@ -116,6 +116,7 @@ AS
 		- 20170623@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170724@Kos: Support Keno Lottery [#Redmine: 79997]
 		- 20180122@Kos: HotFix - Show wrong Total in case of all Running tickets [#Redmine: 89852]
+		- 20180205@Kos: Add more condition for SB in Parlay [#Redmine: 90492]
 */
 
 BEGIN
@@ -715,7 +716,8 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE b.CustID = @CustID
 			AND b.recommend = @Recommend
-			AND sbt.ProductID IN (1, 27)
+			AND (sbt.ProductID = 27
+				OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 			AND sbt.EventType = 0
 			AND b.matchid IN (9, 29, 2799)
 			AND b.transid NOT IN ( SELECT TransId FROM #TempBATicket )

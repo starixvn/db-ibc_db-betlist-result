@@ -37,6 +37,7 @@ AS
 		- 20170306@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20180205@Kos: Add more condition checking [#Redmine: 90492]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -110,7 +111,7 @@ BEGIN
 		ELSE
 			SET @TempFromDate = @FromDate
 
-		IF @ShowBA = 1
+		IF @ShowBA = 1 AND @BetType IN (9, 29)
 		BEGIN
 			INSERT INTO #AgWinlossMP
 			SELECT
@@ -159,7 +160,8 @@ BEGIN
 					OR (@LiveIndicator = 2))
 		END
 
-		IF @ShowSB = 1 OR @ShowVS2 = 1
+		IF (@ShowSB = 1 AND @BetType IN (9, 29))
+			OR (@ShowVS2 = 1 AND @BetType = 2799)
 		BEGIN
 			INSERT INTO #AgWinlossMP
 			SELECT
@@ -216,7 +218,7 @@ BEGIN
 		ELSE
 			SET @TempToDate = @ToDate
 
-		IF @ShowBA = 1
+		IF @ShowBA = 1 AND @BetType IN (9, 29)
 		BEGIN
 			INSERT INTO #AgWinlossMP
 			SELECT
@@ -265,7 +267,8 @@ BEGIN
 					OR (@LiveIndicator = 2))
 		END
 
-		IF @ShowSB = 1 OR @ShowVS2 = 1
+		IF (@ShowSB = 1 AND @BetType IN (9, 29))
+			OR (@ShowVS2 = 1 AND @BetType = 2799)
 		BEGIN
 			INSERT INTO #AgWinlossMP
 			SELECT
