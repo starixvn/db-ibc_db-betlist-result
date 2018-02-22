@@ -6,8 +6,8 @@ AS
 
 /*
 	Created: 20150401@Sophia
-	Task : Matrix of Bettype vs ResourceID, for matching with betId/ betcheck of ticket
-			Store only Bettypes of BetRadar which use Table ResultDetail 
+	Task: Matrix of Bettype vs ResourceID, for matching with betId/ betcheck of ticket
+		Store only Bettypes of BetRadar which use Table ResultDetail
 	DB: DBAGE.bodb02, DBEXT.bodb02
 	Revisions:
 		- 20160505@Kos: Support Fast Market [#Redmine: 56589]
@@ -16,6 +16,7 @@ AS
 		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 		- 20180320@Kos: Support Fast Market 2 [Redmine: #90708]
+		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 */
 
 BEGIN
@@ -244,6 +245,10 @@ BEGIN
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (2, 1, 'Basketball AIO', 617, '617%')
+
+	-- 6. Betradar Virtual Basketball
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (193, 1, 'Betradar Virtual Basketball', 2809, '2809%')
 
 	RETURN
 END

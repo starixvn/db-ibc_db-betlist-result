@@ -36,6 +36,7 @@ AS
 		- 20180201@Kos: Don't support Racing and Virtual Horse Racing anymore [#Redmine: 86086]
 					- Remove param @RaceNo
 		- 20180320@Kos: Support Fast Market 2 [Redmine: #90708]
+		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 */
 
 BEGIN
@@ -111,48 +112,68 @@ BEGIN
 			SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
 
 		-- Get result detail
-		SELECT
-			d.MatchId,
-			d.ResourceId,
-			d.HomeValue,
-			d.AwayValue,
-			d.ResultStatusID,
-			d.SettlementStatusID,
-			d.OtherInfo
-		FROM dbo.ResultDetail AS d WITH (NOLOCK)
-			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
-				ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
-		WHERE d.MatchId = @MatchId
-			AND ((@SportType = 5
-					AND d.SettlementStatusID > 0
-					AND CASE
-							WHEN @BetType <> 1324 THEN 2
-							ELSE
-								CASE
-									WHEN @BetType = 1324 AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
-									ELSE 0
-								END
-						END = LEN(d.ResourceId))
-				OR (@SportType = 1
-					AND (d.SettlementStatusID > 0
-						OR d.ResourceID LIKE '221%'
-						OR d.ResourceID LIKE '222%'
-						OR d.ResourceID LIKE '223%'
-						OR d.ResourceID LIKE '224%'
-						OR d.ResourceID LIKE '225%'
-						OR d.ResourceID LIKE '226%'
-						OR d.ResourceID LIKE '227%')
-					AND (d.ResourceID <> '08'
-						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
-						OR d.HomeValue LIKE '%h%')
-					AND d.ResourceId LIKE f.ResourceID)
-				OR (@SportType = 2
-					AND (LEN(d.ResourceId) = 2
-						OR (d.SettlementStatusID > 0
-							AND d.ResourceId LIKE f.ResourceID
-							AND (@BetType NOT IN (606, 607, 613, 617)
-								OR d.ResourceId LIKE '%' + @ResourceId)))))
-		ORDER BY d.ResourceID
+		IF @SportType <> 193
+		BEGIN
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetail AS d WITH (NOLOCK)
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE d.MatchId = @MatchId
+				AND ((@SportType = 5
+						AND d.SettlementStatusID > 0
+						AND CASE
+								WHEN @BetType <> 1324 THEN 2
+								ELSE
+									CASE
+										WHEN @BetType = 1324 AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
+										ELSE 0
+									END
+							END = LEN(d.ResourceId))
+					OR (@SportType = 1
+						AND (d.SettlementStatusID > 0
+							OR d.ResourceID LIKE '221%'
+							OR d.ResourceID LIKE '222%'
+							OR d.ResourceID LIKE '223%'
+							OR d.ResourceID LIKE '224%'
+							OR d.ResourceID LIKE '225%'
+							OR d.ResourceID LIKE '226%'
+							OR d.ResourceID LIKE '227%')
+						AND (d.ResourceID <> '08'
+							OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+							OR d.HomeValue LIKE '%h%')
+						AND d.ResourceId LIKE f.ResourceID)
+					OR (@SportType = 2
+						AND (LEN(d.ResourceId) = 2
+							OR (d.SettlementStatusID > 0
+								AND d.ResourceId LIKE f.ResourceID
+								AND (@BetType NOT IN (606, 607, 613, 617)
+									OR d.ResourceId LIKE '%' + @ResourceId)))))
+			ORDER BY d.ResourceID
+		END
+		ELSE
+		BEGIN
+			SELECT
+				d.MatchID,
+				d.ResourceId,
+				d.Custom1 AS HomeValue,
+				d.Custom2 AS AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetail3rd AS d WITH (NOLOCK)
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE d.MatchID = @MatchId
+				AND (@SportType = 193 AND d.SettlementStatusID > 0)
+			ORDER BY d.ResourceId
+		END
 	END
 	ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)
 	BEGIN
@@ -217,48 +238,68 @@ BEGIN
 			SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
 
 		-- Get result detail
-		SELECT
-			d.MatchID,
-			d.ResourceID,
-			d.HomeValue,
-			d.AwayValue,
-			d.ResultStatusID,
-			d.SettlementStatusID,
-			d.OtherInfo
-		FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
-			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
-				ON f.Bettype = @BetType AND d.ResourceID LIKE f.ResourceID
-		WHERE d.MatchId = @MatchId
-			AND ((@SportType = 5
-					AND d.SettlementStatusID > 0
-					AND CASE
-							WHEN @BetType <> 1324 THEN 2
-							ELSE
-								CASE
-									WHEN @BetType = 1324 AND LEFT(d.ResourceID, 2) = @ResourceId THEN 4
-									ELSE 0
-								END
-						END = LEN(d.ResourceID))
-				OR (@SportType = 1
-					AND (d.SettlementStatusID > 0
-						OR d.ResourceID LIKE '221%'
-						OR d.ResourceID LIKE '222%'
-						OR d.ResourceID LIKE '223%'
-						OR d.ResourceID LIKE '224%'
-						OR d.ResourceID LIKE '225%'
-						OR d.ResourceID LIKE '226%'
-						OR d.ResourceID LIKE '227%')
-					AND (d.ResourceID <> '08'
-						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
-						OR d.HomeValue LIKE '%h%')
-					AND d.ResourceID LIKE f.ResourceID)
-				OR (@SportType = 2
-					AND (LEN(d.ResourceId) = 2
-						OR (d.SettlementStatusID > 0
-							AND d.ResourceId LIKE f.ResourceID
-							AND (@BetType NOT IN (606, 607, 613, 617)
-								OR d.ResourceId LIKE '%' + @ResourceId)))))
-		ORDER BY d.ResourceID
+		IF @SportType <> 193
+		BEGIN
+			SELECT
+				d.MatchID,
+				d.ResourceID,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = @BetType AND d.ResourceID LIKE f.ResourceID
+			WHERE d.MatchId = @MatchId
+				AND ((@SportType = 5
+						AND d.SettlementStatusID > 0
+						AND CASE
+								WHEN @BetType <> 1324 THEN 2
+								ELSE
+									CASE
+										WHEN @BetType = 1324 AND LEFT(d.ResourceID, 2) = @ResourceId THEN 4
+										ELSE 0
+									END
+							END = LEN(d.ResourceID))
+					OR (@SportType = 1
+						AND (d.SettlementStatusID > 0
+							OR d.ResourceID LIKE '221%'
+							OR d.ResourceID LIKE '222%'
+							OR d.ResourceID LIKE '223%'
+							OR d.ResourceID LIKE '224%'
+							OR d.ResourceID LIKE '225%'
+							OR d.ResourceID LIKE '226%'
+							OR d.ResourceID LIKE '227%')
+						AND (d.ResourceID <> '08'
+							OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+							OR d.HomeValue LIKE '%h%')
+						AND d.ResourceID LIKE f.ResourceID)
+					OR (@SportType = 2
+						AND (LEN(d.ResourceId) = 2
+							OR (d.SettlementStatusID > 0
+								AND d.ResourceId LIKE f.ResourceID
+								AND (@BetType NOT IN (606, 607, 613, 617)
+									OR d.ResourceId LIKE '%' + @ResourceId)))))
+			ORDER BY d.ResourceID
+		END
+		ELSE
+		BEGIN
+			SELECT
+				d.MatchID,
+				d.ResourceId,
+				d.Custom1 AS HomeValue,
+				d.Custom2 AS AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetail3rd14 AS d WITH (NOLOCK)
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE d.MatchID = @MatchId
+				AND (@SportType = 193 AND d.SettlementStatusID > 0)
+			ORDER BY d.ResourceId
+		END
 	END
 	ELSE
 	BEGIN
@@ -321,48 +362,69 @@ BEGIN
 		ELSE
 			SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
 
-		SELECT
-			d.MatchId,
-			d.ResourceId,
-			d.HomeValue,
-			d.AwayValue,
-			d.ResultStatusID,
-			d.SettlementStatusID,
-			d.OtherInfo
-		FROM DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
-			LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
-				ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
-		WHERE d.MatchId = @MatchId
-			AND ((@SportType = 5
-					AND d.SettlementStatusID > 0
-					AND CASE
-							WHEN @BetType <> 1324 THEN 2
-							ELSE
-								CASE
-									WHEN @BetType = 1324 AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
-									ELSE 0
-								END
-						END = LEN(d.ResourceId))
-				OR (@SportType = 1
-					AND (d.SettlementStatusID > 0
-						OR d.ResourceID LIKE '221%'
-						OR d.ResourceID LIKE '222%'
-						OR d.ResourceID LIKE '223%'
-						OR d.ResourceID LIKE '224%'
-						OR d.ResourceID LIKE '225%'
-						OR d.ResourceID LIKE '226%'
-						OR d.ResourceID LIKE '227%')
-					AND (d.ResourceID <> '08'
-						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
-						OR d.HomeValue LIKE '%h%')
-					AND d.ResourceId LIKE f.ResourceID)
-				OR (@SportType = 2
-					AND (LEN(d.ResourceId) = 2
-						OR (d.SettlementStatusID > 0
-							AND d.ResourceId LIKE f.ResourceID
-							AND (@BetType NOT IN (606, 607, 613, 617)
-								OR d.ResourceId LIKE '%' + @ResourceId)))))
-		ORDER BY d.ResourceId
+		-- Get result detail
+		IF @SportType <> 193
+		BEGIN
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE d.MatchId = @MatchId
+				AND ((@SportType = 5
+						AND d.SettlementStatusID > 0
+						AND CASE
+								WHEN @BetType <> 1324 THEN 2
+								ELSE
+									CASE
+										WHEN @BetType = 1324 AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
+										ELSE 0
+									END
+							END = LEN(d.ResourceId))
+					OR (@SportType = 1
+						AND (d.SettlementStatusID > 0
+							OR d.ResourceID LIKE '221%'
+							OR d.ResourceID LIKE '222%'
+							OR d.ResourceID LIKE '223%'
+							OR d.ResourceID LIKE '224%'
+							OR d.ResourceID LIKE '225%'
+							OR d.ResourceID LIKE '226%'
+							OR d.ResourceID LIKE '227%')
+						AND (d.ResourceID <> '08'
+							OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+							OR d.HomeValue LIKE '%h%')
+						AND d.ResourceId LIKE f.ResourceID)
+					OR (@SportType = 2
+						AND (LEN(d.ResourceId) = 2
+							OR (d.SettlementStatusID > 0
+								AND d.ResourceId LIKE f.ResourceID
+								AND (@BetType NOT IN (606, 607, 613, 617)
+									OR d.ResourceId LIKE '%' + @ResourceId)))))
+			ORDER BY d.ResourceId
+		END
+		ELSE
+		BEGIN
+			SELECT
+				d.MatchID,
+				d.ResourceId,
+				d.Custom1 AS HomeValue,
+				d.Custom2 AS AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM DBARC.bodb_Archive.dbo.ResultDetail3rd_BK AS d WITH (NOLOCK)
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE d.MatchID = @MatchId
+				AND (@SportType = 193 AND d.SettlementStatusID > 0)
+			ORDER BY d.ResourceId
+		END
 	END
 END
 
