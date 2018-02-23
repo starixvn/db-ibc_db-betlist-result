@@ -24,6 +24,7 @@ AS
 		- 20180119@Kos: Add Match No for Bullfighting [#Redmine: 85382]
 					- Move SP from DBAGE to DBACC
 					- Don't support Racing anymore
+		- 20180223@Kos: Support Licensee Bonus System [#Redmine: 74978]
 */
 
 BEGIN
@@ -107,7 +108,9 @@ BEGIN
 		TransDesc		NVARCHAR(300),
 		OddsSpread		MONEY,
 		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000)
+		ExtraInfo		VARCHAR(1000),
+		WalletType		TINYINT,
+		RefCode			BIGINT
 	)
 
 	DECLARE
@@ -230,7 +233,9 @@ BEGIN
 				END AS TransDesc,
 				0 AS OddsSpread,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.translog AS b WITH (NOLOCK)
 				INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.eventid = m.Match3rdId
 			WHERE b.translogid = @TransId
@@ -326,7 +331,15 @@ BEGIN
 				CASE
 					WHEN @ProductId = 1 THEN ISNULL(b.ExtraInfo, '')
 					ELSE ''
-				END AS ExtraInfo
+				END AS ExtraInfo,
+				CASE
+					WHEN @ProductId = 1 THEN ISNULL(b.WalletType, 0)
+					ELSE 0
+				END AS WalletType,
+				CASE
+					WHEN @ProductId = 1 THEN ISNULL(b.RefCode, 0)
+					ELSE 0
+				END AS RefCode
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK) 
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -402,7 +415,9 @@ BEGIN
 				'' AS transdesc,
 				0 AS OddsSpread,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.transid = @TransId
 		END
@@ -473,7 +488,9 @@ BEGIN
 				'' AS transdesc,
 				0 AS OddsSpread,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -546,7 +563,9 @@ BEGIN
 				'' AS transdesc,
 				0 AS OddsSpread,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -633,7 +652,9 @@ BEGIN
 				ISNULL(b.transdesc, '') AS TransDesc,
 				0 AS OddsSpread,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo
+				'' AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
@@ -644,6 +665,16 @@ BEGIN
 				AND b.statusID NOT IN (0, 1)
 		END
 	END
+
+	-- Don't display Cash text for ticket from Cash Wallet only
+	UPDATE @Data
+	SET WalletType = 0
+	WHERE WalletType = 2 AND RefCode = 0
+
+	-- Display Cash/Bonus text for ticket from multiple wallets
+	UPDATE @Data
+	SET RefCode = 0
+	WHERE RefCode <> 0
 
 	SELECT b.*,
 		ex.currency
