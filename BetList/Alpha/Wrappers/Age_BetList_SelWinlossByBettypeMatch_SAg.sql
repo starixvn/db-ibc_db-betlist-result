@@ -30,7 +30,7 @@ AS
 		- 20110809@Sophia: Add a new parametter @liveindicator
 		- 20110811@Sophia: Add new columns actual_stake and modds
 		- 20111216@Sophia: Remove function f_GetOddsByBettype, f_GetChoice, f_ShowOddsByBettype
-		- 20120112@Sophia:  Add refno, showtime for Table - Shoe - Hand of LiveCasino 
+		- 20120112@Sophia: Add refno, showtime for Table - Shoe - Hand of LiveCasino 
 							Add Sub table for Live Casino
 		- 20120927@Sophia: Get comstatus
 		- 20141016@Sophia: support Sporting solution-grouped bettype 
@@ -42,8 +42,9 @@ AS
 		- 20150903@Bobby: Correct data type of sport bet type matrix for avoiding SQL data conversion
 		- 20150910@Bobby: Enhance performance for SP core. Apply TVP for input parameters
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
-		- 20180201@Kos: Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports 
+		- 20180201@Kos: Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports		
 					and Bullfighting only [#Redmine: 86086]
+		- 20180305@Kos: Include Void/Reject/Refund tickets [#Redmine: 91150]
 */
 
 BEGIN
@@ -56,7 +57,7 @@ BEGIN
 	INSERT INTO @TransStatus
 	SELECT StatusId
 	FROM bodb02.dbo.All_f_TransStatus (1) stt
-	WHERE statusid IN (111, 112, 113)
+	WHERE StatusId NOT IN (0, 1)
 
 	-- Gather BettypeMatrix
 	DECLARE @IsTest BIT = 0
