@@ -84,6 +84,7 @@ AS
 		- 20171227@Kos: Return ticket detail of Racing and Virtual Horse Racing [#Redmine: 88775]
 		- 20180118@Kos: Support Licensee Bonus System [#Redmine: 74978]
 		- 20180305@Kos: Don't support Cockfighting anymore [#Redmine: 86086]
+		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 */
 
 BEGIN
@@ -175,6 +176,21 @@ BEGIN
 	DELETE FROM #SportBettype
 	WHERE Bettype IN (904, 914)
 		OR ProductID IN (19)
+
+	-- Add bettypes which have the same name
+	IF EXISTS ( SELECT 1 FROM #SportBettype AS s
+				WHERE s.Bettype IN (SELECT DISTINCT GroupTypeId FROM bodb02.dbo.f_GroupBetType3rd()))
+	BEGIN
+		INSERT INTO #SportBettype
+		SELECT
+			s.ProductID,
+			f.BetType,
+			s.EventType,
+			s.SubProduct
+		FROM #SportBettype AS s
+			INNER JOIN (SELECT * FROM bodb02.dbo.f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f ON s.Bettype = f.GroupTypeId
+		WHERE NOT EXISTS ( SELECT 1 FROM #SportBettype AS sbt WHERE sbt.Bettype = f.Bettype )
+	END
 
 	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (1, 3, 4, 5, 25, 26, 27))
 	BEGIN

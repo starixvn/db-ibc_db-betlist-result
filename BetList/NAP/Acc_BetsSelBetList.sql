@@ -115,6 +115,7 @@ AS
 					- Don't support Live Casino in bettrans and bettrans14 anymore
 		- 20180118@Kos: Support Licensee Bonus System [#Redmine: 74978]
 		- 20180305@Kos: Don't support Racing, Cockfighting, RNG Casino (bettype 71, 72) anymore [#Redmine: 86086]
+		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 */
 
 BEGIN
@@ -148,6 +149,21 @@ BEGIN
 	WHERE Bettype IN (904, 914)
 		OR ProductID IN (2, 4, 7, 9, 19)
 		OR (ProductID = 6 AND SubProduct = '')
+
+	-- Add bettypes which have the same name
+	IF EXISTS ( SELECT 1 FROM #SportBettype AS s
+								WHERE s.Bettype IN (SELECT DISTINCT GroupTypeId FROM f_GroupBetType3rd()))
+	BEGIN
+		INSERT INTO #SportBettype
+		SELECT
+			s.ProductID,
+			f.BetType,
+			s.EventType,
+			s.SubProduct
+		FROM #SportBettype AS s
+			INNER JOIN (SELECT * FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f ON s.Bettype = f.GroupTypeId
+		WHERE NOT EXISTS ( SELECT 1 FROM #SportBettype AS sbt WHERE sbt.Bettype = f.Bettype )
+	END
 
 	DECLARE @Today	SMALLDATETIME,
 		@Yesterday	SMALLDATETIME
@@ -2698,6 +2714,7 @@ BEGIN
 	DROP TABLE #BetListDetailData
 	DROP TABLE #SportBettype
 END
+
 
 
 

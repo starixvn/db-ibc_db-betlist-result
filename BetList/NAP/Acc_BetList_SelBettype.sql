@@ -22,6 +22,7 @@ AS
 		- 20160804@Kos: Exclude bet type 904 [#Redmine: 58978]
 		- 20170315@Kos: Exclude bet type 913, 914 [#Redmine: 71963]
 		- 20171019@Kos: Include Waiting tickets in translog [#Redmine: 84961]
+		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 */
 
 BEGIN
@@ -91,6 +92,16 @@ BEGIN
 			AND custid = @CustId
 			AND winlostdate BETWEEN @FromDate AND @TempToDate
 	END
+
+	-- Replace multiple bettypes which have the same name by group bet type ID
+	INSERT INTO @BettypeTable
+	SELECT f.GroupTypeId
+	FROM (SELECT * FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f
+	WHERE f.BetType IN (SELECT DISTINCT BetType FROM @BettypeTable)
+		AND f.GroupTypeId NOT IN (SELECT DISTINCT BetType FROM @BettypeTable)
+
+	DELETE @BettypeTable
+	WHERE BetType IN ( SELECT BetType FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId)
 
 	SELECT
 		typeid,
