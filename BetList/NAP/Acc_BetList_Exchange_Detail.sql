@@ -1,0 +1,62 @@
+﻿USE [bodb02]
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[Acc_BetList_Exchange_Detail]
+	@CustId	INT,
+	@BetId	BIGINT
+AS
+
+/*
+	Created: Kos@20180301
+	Task: Bet list detail for Exchange
+	DB: DBEXT.bodb02
+
+	Revisions:
+		- 20180313@Kos: First revision [#Redmine: 91808]
+*/
+
+BEGIN
+	SET NOCOUNT ON
+
+	DECLARE @Data AS TABLE (
+		TransId		BIGINT,
+		BetTaken	DATETIME,
+		WinLostDate	DATETIME,
+		Currency	TINYINT,
+		Stake		MONEY,
+		OddsRequest	SMALLMONEY,
+		OddsMatched	SMALLMONEY
+	)
+
+	INSERT INTO @Data
+	SELECT
+		bm.TransID,
+		bm.betTaken,
+		DATEADD(DAY, 0, DATEDIFF(DAY, 0, s.settledDate)) AS WinLostDate,
+		s.Currency,
+		bm.txStake / s.ExVirtualRate AS Stake,
+		bm.actualOdds AS OddsRequest,
+		bm.txOddsMatched AS OddsMatched
+	FROM bodb_3rdProduct.dbo.Bettrans_Exchange AS b WITH (NOLOCK)
+		INNER JOIN bodb_3rdProduct.dbo.BettransM_Exchange AS bm WITH (NOLOCK) ON b.betID = bm.BetID
+		INNER JOIN bodb_3rdProduct.dbo.Sum_winloss_Exchange AS s WITH (NOLOCK)
+			ON b.userId = s.userId
+				AND b.eventID = s.eventID
+				AND b.marketID = s.marketID
+	WHERE b.betID = @BetId
+		AND s.CustID = @CustId
+
+	SELECT * FROM @Data
+END
+
+
+GO
+GRANT EXECUTE ON [dbo].[Acc_BetList_Exchange_Detail] TO [bodbAdminNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_Exchange_Detail] TO vnteam
+GO
+ 
