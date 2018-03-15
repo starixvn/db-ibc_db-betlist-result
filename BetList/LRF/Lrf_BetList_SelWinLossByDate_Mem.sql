@@ -124,6 +124,7 @@ AS
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
+		- 20180405@Kos: Correct BetEffective value in Bonus tickets [#Redmine: 91740]
 */
 
 BEGIN
@@ -3309,6 +3310,7 @@ BEGIN
 			Stake			MONEY,
 			Actual_Stake	MONEY,
 			WinLost			MONEY,
+			BetEffective	MONEY,
 			LicenseeWL		MONEY,
 			Comm			MONEY,
 			PlayerComm		MONEY
@@ -3322,6 +3324,7 @@ BEGIN
 			SUM(Stake) AS Stake,
 			SUM(Actual_Stake) AS Actual_Stake,
 			SUM(WinLost) AS WinLost,
+			SUM(BetEffective) AS BetEffective,
 			SUM(LicenseeWL) AS LicenseeWL,
 			SUM(Comm) AS Comm,
 			SUM(PlayerComm) AS PlayerComm
@@ -3338,6 +3341,7 @@ BEGIN
 				b.Stake = r.Stake,
 				b.Actual_Stake = r.Actual_Stake,
 				b.WinLost = r.WinLost,
+				b.BetEffective = r.BetEffective,
 				b.LicenseeWL = r.LicenseeWL,
 				b.Comm = r.Comm,
 				b.PlayerComm = r.PlayerComm,
