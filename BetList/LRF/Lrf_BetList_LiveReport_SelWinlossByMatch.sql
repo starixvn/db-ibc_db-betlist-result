@@ -56,6 +56,7 @@ AS
 		- 20170830@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
+		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -148,7 +149,8 @@ BEGIN
 		OriginalStake	MONEY,
 		OriginalBetType	SMALLINT,
 		WalletType		TINYINT,
-		RefCode			BIGINT
+		RefCode			BIGINT,
+		OddsSpread		MONEY
 	)
 
 	IF EXISTS (SELECT TOP(1) 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchID)
@@ -205,7 +207,8 @@ BEGIN
 					ELSE 0
 				END AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK,INDEX=IXU_transid)
 				INNER JOIN bodb_licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
@@ -268,7 +271,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK,INDEX=IXU_transid)
 				INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
@@ -341,7 +345,8 @@ BEGIN
 					ELSE 0
 				END AS OriginalBetType,
 				ISNULL(b.WalletType, 0) AS WalletType,
-				ISNULL(b.RefCode, 0) AS RefCode
+				ISNULL(b.RefCode, 0) AS RefCode,
+				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -404,7 +409,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -476,7 +482,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -550,7 +557,8 @@ BEGIN
 					ELSE 0
 				END AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
@@ -613,7 +621,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
@@ -686,7 +695,8 @@ BEGIN
 					ELSE 0
 				END AS OriginalBetType,
 				ISNULL(b.WalletType, 0) AS WalletType,
-				ISNULL(b.RefCode, 0) AS RefCode
+				ISNULL(b.RefCode, 0) AS RefCode,
+				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK) 
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
@@ -749,7 +759,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
@@ -821,7 +832,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK) 
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid

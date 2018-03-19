@@ -47,6 +47,7 @@ AS
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170602@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
+		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -143,7 +144,8 @@ BEGIN
 		OriginalStake	MONEY,
 		OriginalBetType	SMALLINT,
 		WalletType		TINYINT,
-		RefCode			BIGINT
+		RefCode			BIGINT,
+		OddsSpread		MONEY
 	)
 
 	DECLARE @Status AS TABLE (StatusID INT)
@@ -252,7 +254,8 @@ BEGIN
 					ELSE 0
 				END AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
@@ -340,7 +343,8 @@ BEGIN
 					ELSE 0
 				END AS OriginalBetType,
 				ISNULL(b.WalletType, 0) AS WalletType,
-				ISNULL(b.RefCode, 0) AS RefCode
+				ISNULL(b.RefCode, 0) AS RefCode,
+				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
@@ -439,7 +443,8 @@ BEGIN
 					ELSE 0
 				END AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
@@ -530,7 +535,8 @@ BEGIN
 					ELSE 0
 				END AS OriginalBetType,
 				ISNULL(b.WalletType, 0) AS WalletType,
-				ISNULL(b.RefCode, 0) AS RefCode
+				ISNULL(b.RefCode, 0) AS RefCode,
+				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
@@ -643,7 +649,8 @@ BEGIN
 						ELSE 0
 					END AS OriginalBetType,
 					0 AS WalletType,
-					0 AS RefCode
+					0 AS RefCode,
+					ISNULL(b.oddsspread, 0) AS OddsSpread
 				FROM
 					bodb_archive.dbo.bettrans_bk b WITH (NOLOCK, INDEX=IX_CUSTID)
 					INNER JOIN cte_match m ON b.matchid = m.matchid
@@ -743,7 +750,8 @@ BEGIN
 						ELSE 0
 					END AS OriginalBetType,
 					ISNULL(b.WalletType, 0) AS WalletType,
-					ISNULL(b.RefCode, 0) AS RefCode
+					ISNULL(b.RefCode, 0) AS RefCode,
+					ISNULL(b.oddsspread, 0) AS OddsSpread
 				FROM bodb_archive.dbo.bettrans_bk b WITH (NOLOCK, INDEX=IX_CUSTID)
 					INNER JOIN cte_match m ON b.matchid = m.matchid
 				WHERE b.winlostdate between ''''' 

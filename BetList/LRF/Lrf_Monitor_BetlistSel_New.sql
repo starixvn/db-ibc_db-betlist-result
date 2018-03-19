@@ -44,6 +44,7 @@ AS
 		- 20170920@Kos: Support new bet types 461-464 [#Redmine: 83260]
 		- 20171020@Kos: Support new platform New Asia [#Redmine: 85203]
 		- 20171031@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180319@Kos: Support Fast Market 2 [#Redmine: 90879]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -142,7 +143,8 @@ BEGIN
 		OriginalStake	MONEY,
 		OriginalBetType	SMALLINT,
 		WalletType		TINYINT,
-		RefCode			BIGINT
+		RefCode			BIGINT,
+		OddsSpread		MONEY
 	)
 
 	DECLARE @SQL VARCHAR(8000)
@@ -257,7 +259,8 @@ BEGIN
 				ELSE 0
 			END AS OriginalBetType,
 			ISNULL(b.WalletType, 0) AS WalletType,
-			ISNULL(b.RefCode, 0) AS RefCode
+			ISNULL(b.RefCode, 0) AS RefCode,
+			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM dbo.bettrans_lrf_betRunning AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS a WITH (NOLOCK) ON b.Recommend = a.CustId AND b.Currency = a.Currency' + CHAR(13) +
 			CASE

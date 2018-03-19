@@ -49,6 +49,7 @@ AS
 		- 20170905@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
+		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 
 	Parameters:
 */
@@ -175,7 +176,8 @@ BEGIN
 		OriginalStake	MONEY,
 		OriginalBetType	SMALLINT,
 		WalletType		TINYINT,
-		RefCode			BIGINT
+		RefCode			BIGINT,
+		OddsSpread		MONEY
 	)
 
 	DECLARE @TempFromDate DATETIME,
@@ -543,7 +545,8 @@ BEGIN
 					ELSE 0
 				END AS OriginalBetType,
 				td.WalletType,
-				td.RefCode
+				td.RefCode,
+				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
@@ -602,7 +605,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
@@ -665,7 +669,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 			WHERE td.WhTicket = 1
@@ -735,7 +740,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -795,7 +801,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
@@ -855,7 +862,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -919,7 +927,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -987,7 +996,8 @@ BEGIN
 					ELSE 0
 				END AS OriginalBetType,
 				td.WalletType,
-				td.RefCode
+				td.RefCode,
+				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
@@ -1046,7 +1056,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
@@ -1109,7 +1120,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 			WHERE td.WhTicket = 2
@@ -1179,7 +1191,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -1239,7 +1252,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
@@ -1299,7 +1313,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -1363,7 +1378,8 @@ BEGIN
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
-				0 AS RefCode
+				0 AS RefCode,
+				0 AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype

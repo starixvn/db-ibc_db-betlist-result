@@ -56,6 +56,7 @@ AS
 		- 20170830@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
+		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 
 	Param's Explanation:
 		- @AgentList: Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -139,7 +140,8 @@ BEGIN
 		OriginalStake	MONEY,
 		OriginalBetType	SMALLINT,
 		WalletType		TINYINT,
-		RefCode			BIGINT
+		RefCode			BIGINT,
+		OddsSpread		MONEY
 	)
 
 	-- Keno, Lottery
@@ -187,7 +189,8 @@ BEGIN
 		0 AS OriginalStake,
 		0 AS OriginalBetType,
 		0 AS WalletType,
-		0 AS RefCode
+		0 AS RefCode,
+		0 AS OddsSpread
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
@@ -257,7 +260,11 @@ BEGIN
 		CASE
 			WHEN sbt.ProductID = 1 THEN ISNULL(b.RefCode, 0)
 			ELSE 0
-		END AS RefCode
+		END AS RefCode,
+		CASE
+			WHEN sbt.ProductID = 1 THEN ISNULL(b.oddsspread, 0)
+			ELSE 0
+		END AS OddsSpread
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN
@@ -325,7 +332,8 @@ BEGIN
 		0 AS OriginalStake,
 		0 AS OriginalBetType,
 		0 AS WalletType,
-		0 AS RefCode
+		0 AS RefCode,
+		0 AS OddsSpread
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN
@@ -390,7 +398,8 @@ BEGIN
 		0 AS OriginalStake,
 		0 AS OriginalBetType,
 		0 AS WalletType,
-		0 AS RefCode
+		0 AS RefCode,
+		0 AS OddsSpread
 	FROM 
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype

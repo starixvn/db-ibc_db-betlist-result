@@ -97,6 +97,7 @@ AS
 		- 20170608@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180320@Kos: Increase TransDesc column length [#Redmine: 92433]
+		- 20180322@Kos: Support Fast Market 2 [#Redmine: 90879]
 
 	Param's Explanation:
 */
@@ -179,6 +180,7 @@ BEGIN
 		ExtraInfo			VARCHAR(1000),
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		OddsSpread			MONEY,
 		StakeUSD			MONEY,
 		WinLostUSD			MONEY,
 		LicenseeWLUSD		MONEY,
@@ -427,6 +429,7 @@ BEGIN
 			ExtraInfo			VARCHAR(1000),
 			WalletType			TINYINT,
 			RefCode				BIGINT,
+			OddsSpread			MONEY,
 			StakeUSD			MONEY,
 			WinLostUSD			MONEY,
 			LicenseeWLUSD		MONEY,
@@ -514,6 +517,10 @@ BEGIN
 			ISNULL(b.ExtraInfo, '''') AS ExtraInfo,
 			ISNULL(b.WalletType, 0) AS WalletType,
 			ISNULL(b.RefCode, 0) AS RefCode,
+			CASE
+				WHEN sbt.ProductID = 1 THEN ISNULL(b.oddsspread, 0)
+				ELSE 0
+			END AS OddsSpread,
 			-- USD
 			b.stake * e.USD stakeUSD,'
 			+ @Winlost + ' * e.USD WinlostUSD,'
@@ -612,6 +619,7 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
+			OddsSpread,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
@@ -732,6 +740,7 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
+			OddsSpread,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
@@ -880,6 +889,7 @@ BEGIN
 			ExtraInfo			VARCHAR(1000),
 			WalletType			TINYINT,
 			RefCode				BIGINT,
+			OddsSpread			MONEY,
 			StakeUSD			MONEY,
 			WinLostUSD			MONEY,
 			LicenseeWLUSD		MONEY,
@@ -967,6 +977,10 @@ BEGIN
 			ISNULL(b.ExtraInfo, '''') AS ExtraInfo,
 			ISNULL(b.WalletType, 0) AS WalletType,
 			ISNULL(b.RefCode, 0) AS RefCode,
+			CASE
+				WHEN sbt.ProductID = 1 THEN ISNULL(b.oddsspread, 0)
+				ELSE 0
+			END AS OddsSpread,
 			-- USD
 			b.stake * e.USD stakeUSD,'
 			+ @Winlost + ' * e.USD WinlostUSD,'
@@ -1065,6 +1079,7 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
+			OddsSpread,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
@@ -1185,6 +1200,7 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
+			OddsSpread,
 			stakeUSD,
 			WinlostUSD,
 			LicenseeWLUSD,
