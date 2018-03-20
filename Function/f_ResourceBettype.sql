@@ -15,6 +15,7 @@ AS
 		- 20170323@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
+		- 20180320@Kos: Support Fast Market 2 [Redmine: #90708]
 */
 
 BEGIN
@@ -208,6 +209,9 @@ BEGIN
 	VALUES (1, 10, 'Fast Market', 222, '222%')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 10, 'Fast Market', 222, '221CNT%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 10, 'Fast Market', 223, '223%')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
@@ -215,6 +219,12 @@ BEGIN
 	
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 10, 'Fast Market', 225, '225%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 10, 'Fast Market', 226, '226%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 10, 'Fast Market', 227, '227%')
 
 	-- 5. Basketball AIO
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
