@@ -40,6 +40,7 @@ AS
 		- 20170418@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20171103@Kos: Support PH AIO 3 [#Redmine: 83970]
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
+		- 20180320@Kos: Exclude Fast Market 2 result [#Redmine: 90879]
 
 	Sample test case:
 		exec Lrf_Result_SportSelByDate @EventDate='2013-10-06 00:00:00',@licenseeid=1
@@ -81,6 +82,8 @@ BEGIN
 						AND ResourceID NOT LIKE '223%'
 						AND ResourceID NOT LIKE '224%'
 						AND ResourceID NOT LIKE '225%'
+						AND ResourceID NOT LIKE '226%'
+						AND ResourceID NOT LIKE '227%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
@@ -146,6 +149,8 @@ BEGIN
 						AND ResourceID NOT LIKE '223%'
 						AND ResourceID NOT LIKE '224%'
 						AND ResourceID NOT LIKE '225%'
+						AND ResourceID NOT LIKE '226%'
+						AND ResourceID NOT LIKE '227%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162

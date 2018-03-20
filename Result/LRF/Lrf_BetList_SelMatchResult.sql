@@ -44,6 +44,7 @@ AS
 					- Remove params @LicenseeId and @UserId
 		- 20170919@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
+		- 20180320@Kos: Support Fast Market 2 [#Redmine: 90879]
 
 		*******************
 		sample test case:
@@ -156,7 +157,9 @@ BEGIN
 							OR d.ResourceID LIKE '222%'
 							OR d.ResourceID LIKE '223%'
 							OR d.ResourceID LIKE '224%'
-							OR d.ResourceID LIKE '225%')
+							OR d.ResourceID LIKE '225%'
+							OR d.ResourceID LIKE '226%'
+							OR d.ResourceID LIKE '227%')
 						AND (d.ResourceId NOT IN ('00', '01', '08')
 							OR (d.ResourceId = '08'
 								AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
@@ -264,7 +267,9 @@ BEGIN
 							OR d.ResourceID LIKE '222%'
 							OR d.ResourceID LIKE '223%'
 							OR d.ResourceID LIKE '224%'
-							OR d.ResourceID LIKE '225%')
+							OR d.ResourceID LIKE '225%'
+							OR d.ResourceID LIKE '226%'
+							OR d.ResourceID LIKE '227%')
 						AND (d.ResourceId NOT IN ('00', '01', '08')
 							OR (d.ResourceId = '08'
 								AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
@@ -372,7 +377,9 @@ BEGIN
 							OR d.ResourceID LIKE '222%'
 							OR d.ResourceID LIKE '223%'
 							OR d.ResourceID LIKE '224%'
-							OR d.ResourceID LIKE '225%')
+							OR d.ResourceID LIKE '225%'
+							OR d.ResourceID LIKE '226%'
+							OR d.ResourceID LIKE '227%')
 						AND (d.ResourceId NOT IN ('00', '01', '08')
 							OR (d.ResourceId = '08'
 								AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))

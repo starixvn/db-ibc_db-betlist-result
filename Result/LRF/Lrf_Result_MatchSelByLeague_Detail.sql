@@ -26,6 +26,7 @@ AS
 		- 20170919@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 		- 20171106@Kos: Support PH AIO 3 [#Redmine: 83970]
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
+		- 20180320@Kos: Exclude Fast Market 2 result [#Redmine: 90879]
 
 	-------
 	EXEC Lrf_Result_MatchSelByLeague_Detail
@@ -113,7 +114,9 @@ BEGIN
 					AND ResourceID NOT LIKE '222%'
 					AND ResourceID NOT LIKE '223%'
 					AND ResourceID NOT LIKE '224%'
-					AND ResourceID NOT LIKE '225%')
+					AND ResourceID NOT LIKE '225%'
+					AND ResourceID NOT LIKE '226%'
+					AND ResourceID NOT LIKE '227%')
 				OR (@SportType = 5							-- Tennis
 					AND SettlementStatusID > 0)
 				OR (@SportType = 2							-- Basketball
@@ -198,7 +201,9 @@ BEGIN
 					AND ResourceID NOT LIKE '222%'
 					AND ResourceID NOT LIKE '223%'
 					AND ResourceID NOT LIKE '224%'
-					AND ResourceID NOT LIKE '225%')
+					AND ResourceID NOT LIKE '225%'
+					AND ResourceID NOT LIKE '226%'
+					AND ResourceID NOT LIKE '227%')
 				OR (@SportType = 5							-- Tennis
 					AND SettlementStatusID > 0)
 				OR (@SportType = 2							-- Basketball
