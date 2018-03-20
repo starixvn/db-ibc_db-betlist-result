@@ -27,6 +27,7 @@ AS
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 		- 20171219@Sophia: Enhance performance [Redmine: #88410]
 		- 20180205@Kos: Don't support Racing anymore [#Redmine: 86086]
+		- 20180320@Kos: Exclude Fast Market 2 [Redmine: #90708]
 */
 
 BEGIN
@@ -77,6 +78,8 @@ BEGIN
 													AND ResourceID NOT LIKE '223%'
 													AND ResourceID NOT LIKE '224%'
 													AND ResourceID NOT LIKE '225%'
+													AND ResourceID NOT LIKE '226%'
+													AND ResourceID NOT LIKE '227%'
 													AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 													AND m.matchid = BR.MatchId
 												)
@@ -147,7 +150,9 @@ BEGIN
 													AND ResourceID NOT LIKE '222%'
 													AND ResourceID NOT LIKE '223%'
 													AND ResourceID NOT LIKE '224%'
-													AND ResourceID NOT LIKE '225%'	
+													AND ResourceID NOT LIKE '225%'
+													AND ResourceID NOT LIKE '226%'
+													AND ResourceID NOT LIKE '227%'
 													AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 													AND m.matchid = BR.MatchId
 												)

@@ -39,6 +39,7 @@ AS
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 		- 20180208@Kos: Don't support Racing and Virtual Horse Racing anymore [#Redmine: 86086]
 					- Remove param @RaceNo
+		- 20180320@Kos: Support Fast Market 2 [Redmine: #90708]
 */
 
 BEGIN
@@ -143,7 +144,9 @@ BEGIN
 						OR d.ResourceID LIKE '222%'
 						OR d.ResourceID LIKE '223%'
 						OR d.ResourceID LIKE '224%'
-						OR d.ResourceID LIKE '225%')
+						OR d.ResourceID LIKE '225%'
+						OR d.ResourceID LIKE '226%'
+						OR d.ResourceID LIKE '227%')
 					AND (d.ResourceID <> '08'
 						OR d.HomeValue LIKE '%a%'	-- Return '08' - Goal Sequence only if at least a goal scored
 						OR d.HomeValue LIKE '%h%')
@@ -248,7 +251,9 @@ BEGIN
 						OR d.ResourceID LIKE '222%'
 						OR d.ResourceID LIKE '223%'
 						OR d.ResourceID LIKE '224%'
-						OR d.ResourceID LIKE '225%')
+						OR d.ResourceID LIKE '225%'
+						OR d.ResourceID LIKE '226%'
+						OR d.ResourceID LIKE '227%')
 					AND (d.ResourceID <> '08'
 						OR d.HomeValue LIKE '%a%'	-- Return '08' - Goal Sequence only if at least a goal scored
 						OR d.HomeValue LIKE '%h%')
@@ -352,7 +357,9 @@ BEGIN
 						OR d.ResourceID LIKE '222%'
 						OR d.ResourceID LIKE '223%'
 						OR d.ResourceID LIKE '224%'
-						OR d.ResourceID LIKE '225%')
+						OR d.ResourceID LIKE '225%'
+						OR d.ResourceID LIKE '226%'
+						OR d.ResourceID LIKE '227%')
 					AND (d.ResourceID <> '08'
 						OR d.HomeValue LIKE '%a%'	-- Return '08' - Goal Sequence only if at least a goal scored
 						OR d.HomeValue LIKE '%h%')

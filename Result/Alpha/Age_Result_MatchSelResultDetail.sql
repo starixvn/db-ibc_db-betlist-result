@@ -16,6 +16,7 @@ AS
 		- 20170405@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
+		- 20180320@Kos: Exclude Fast Market 2 [Redmine: #90708]
 */
 
 BEGIN
@@ -99,7 +100,9 @@ BEGIN
 					AND ResourceID NOT LIKE '222%'
 					AND ResourceID NOT LIKE '223%'
 					AND ResourceID NOT LIKE '224%'
-					AND ResourceID NOT LIKE '225%')
+					AND ResourceID NOT LIKE '225%'
+					AND ResourceID NOT LIKE '226%'
+					AND ResourceID NOT LIKE '227%')
 				OR (@SportType = 5
 					AND SettlementStatusID > 0)
 				OR (@SportType = 2
@@ -184,7 +187,9 @@ BEGIN
 					AND ResourceID NOT LIKE '222%'
 					AND ResourceID NOT LIKE '223%'
 					AND ResourceID NOT LIKE '224%'
-					AND ResourceID NOT LIKE '225%')
+					AND ResourceID NOT LIKE '225%'
+					AND ResourceID NOT LIKE '226%'
+					AND ResourceID NOT LIKE '227%')
 				OR (@SportType = 5
 					AND SettlementStatusID > 0)
 				OR (@SportType = 2
