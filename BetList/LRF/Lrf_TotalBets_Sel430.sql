@@ -34,6 +34,7 @@ AS
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 */
 
 BEGIN
@@ -89,7 +90,7 @@ BEGIN
 		OddsType		TINYINT,
 		WinLostDate		DATETIME,
 		Currency		SMALLINT,
-		TransDesc		NVARCHAR(200),
+		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		OriginalStake	MONEY,

@@ -48,6 +48,7 @@ AS
 		- 20170726@Kos: Support Keno Lottery [#Redmine: 79997]
 		- 20170905@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
+		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 
 	Parameters:
 */
@@ -168,7 +169,7 @@ BEGIN
 		PlayerComm		MONEY,
 		Race			VARCHAR(20),
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		OriginalStake	MONEY,

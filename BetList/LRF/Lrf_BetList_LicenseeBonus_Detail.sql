@@ -18,6 +18,7 @@ AS
 	DB: DBACC.bodb02
 	Original:
 	Revisions:
+		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
@@ -91,7 +92,7 @@ BEGIN
 		ShowTime		NVARCHAR(50),
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(1000),
 		OddsSpread		SMALLMONEY,
 		WalletType		TINYINT,
 		RefCode			BIGINT

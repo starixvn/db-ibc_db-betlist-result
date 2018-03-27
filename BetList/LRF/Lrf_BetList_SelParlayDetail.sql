@@ -29,6 +29,7 @@ AS
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170324@Kos: Hotfix - Mix Parlay duplciate ticket detail [Redmine: #73984]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 */
 
 BEGIN
@@ -69,7 +70,7 @@ BEGIN
 		BetStatus		NVARCHAR(50),
 		IsNeutral		BIT,
 		StatusId		INT,
-		TransDesc		NVARCHAR(200))
+		TransDesc		NVARCHAR(1000))
 
 	DECLARE @RefNo		BIGINT,
 		@CustId			INT,

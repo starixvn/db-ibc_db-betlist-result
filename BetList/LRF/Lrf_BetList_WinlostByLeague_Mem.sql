@@ -46,6 +46,7 @@ AS
 		- 20170227@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170602@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -136,7 +137,7 @@ BEGIN
 		RefNo			BIGINT,
 		ShowTime		NVARCHAR(50),
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		OriginalStake	MONEY,

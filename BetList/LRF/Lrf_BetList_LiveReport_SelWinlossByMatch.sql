@@ -55,6 +55,7 @@ AS
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170830@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
+		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -141,7 +142,7 @@ BEGIN
 		RefNo			BIGINT,
 		ShowTime		NVARCHAR(50),
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		OriginalStake	MONEY,
