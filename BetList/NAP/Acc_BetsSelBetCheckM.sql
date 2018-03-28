@@ -30,6 +30,7 @@ AS
 		- 20160407@Kos: Add TransId param, support Combo Parlay [#Redmine: 55282]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
+		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 */
 
 BEGIN
@@ -69,7 +70,7 @@ BEGIN
 		MatchCode		NVARCHAR(50),
 		ShowTime		NVARCHAR(50),
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(200)
+		TransDesc		NVARCHAR(1000)
 	)
 
 	-- Get currency name

@@ -28,6 +28,7 @@ AS
 		- 20160426@Kos: Support paging
 		- 20160704@Kos: Include Void/Rejected detail ticket in TransType = 1 [Redmine: #59366]
 		- 20161020@Kos: Support Fishing World [#Redmine: 65934]
+		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 
 	Parameters:
 		- @TransType
@@ -119,7 +120,7 @@ BEGIN
 		AComm			MONEY,
 		Comm			MONEY,
 		Ip				NVARCHAR(15),
-		TransDesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(50),
 		MatchCode		VARCHAR(1000)
 	)

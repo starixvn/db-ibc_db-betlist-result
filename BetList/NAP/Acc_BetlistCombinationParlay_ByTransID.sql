@@ -26,6 +26,7 @@ AS
 		- 20160411@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170210@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
+		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 
 	Paramters Explanation:
 */
@@ -142,7 +143,7 @@ BEGIN
 		MatchCode		VARCHAR(50),
 		MatchDate		DATETIME,
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(200),
+		TransDesc		NVARCHAR(1000),
 		SetStake		MONEY,
 		--for generating combination parlays
 		RN				TINYINT,	-- set No. for selection in the combination

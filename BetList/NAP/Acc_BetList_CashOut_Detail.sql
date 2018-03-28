@@ -18,6 +18,7 @@ AS
 	DB: DBACC.bodb02
 	Original:
 	Revisions:
+		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 */
 
 BEGIN
@@ -109,7 +110,7 @@ BEGIN
 		ShowTime		NVARCHAR(50),
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(1000),
 		OddsSpread		SMALLMONEY,
 		OriginalBetType	INT,
 		BetdaqId		BIGINT,

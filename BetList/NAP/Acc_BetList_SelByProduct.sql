@@ -25,6 +25,7 @@ AS
 		- 20160906@Kos: Support AllBet [#Redmine: 61876]
 		- 20161202@Kos: Support Fishing World [#Redmine: 65934]
 		- 20171025@Kos: Support Bullfighting [#Redmine: 84961]
+		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 */
 
 BEGIN
@@ -108,7 +109,7 @@ BEGIN
 		ShowTime			NVARCHAR(50),
 		WinLostDate			SMALLDATETIME,
 		BetCheck			NVARCHAR(50),
-		TransDesc			NVARCHAR(300),
+		TransDesc			NVARCHAR(1000),
 		OddsSpread			SMALLMONEY
 	)
 

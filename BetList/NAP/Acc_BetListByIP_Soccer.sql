@@ -46,6 +46,7 @@ AS
 		- 20170321@Kos: Support CashOut [#Redmine: 71963]
 		- 20170602@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170615@Kos: Support Licensee Bonus System [#Redmine: 74978]
+		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -116,7 +117,7 @@ BEGIN
 		ShowTime		NVARCHAR(50),
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(1000),
 		OddsSpread		SMALLMONEY,
 		OriginalBetType	INT,
 		BetdaqId		BIGINT,
