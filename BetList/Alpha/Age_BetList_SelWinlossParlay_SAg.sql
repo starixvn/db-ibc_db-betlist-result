@@ -31,6 +31,7 @@ AS
 		- 20130410@Lukas: get custid field
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20160122@Kos: Support PH All In One 1.2 [#Redmine: 50897]
+		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 */
 
 BEGIN
@@ -74,7 +75,7 @@ BEGIN
 		BetID			BIGINT,
 		comstatus		NVARCHAR(20),
 		BetCheck		NVARCHAR(50),
-		transdesc		NVARCHAR(300)
+		transdesc		NVARCHAR(1000)
 	)
 
 	IF @Todate > @MoveBetsDay

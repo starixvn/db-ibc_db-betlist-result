@@ -42,6 +42,7 @@ AS
 		- 20151217@Kos: Support Cockfighting (#Redmine: 48850)
 		- 20171109@Kos: Return IsNeutral for neutral match [#Redmine: 86312]
 		- 20171113@Kos: Wrong column name [#Redmine: 86508]
+		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -98,7 +99,7 @@ BEGIN
 		, ShowTime			NVARCHAR(50)
 		, ComStatus			NVARCHAR(20)
 		, BetCheck			NVARCHAR(50)
-		, TransDesc			NVARCHAR(300)
+		, TransDesc			NVARCHAR(1000)
 		, OddsSpread		SMALLMONEY
 		, ProductId			TINYINT
 		, EventType			TINYINT
