@@ -23,6 +23,7 @@ AS
 		- 20161014@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170117@Kos: Support new result status Abandoned 1H/2H [#Redmine: 70410]
 		- 20170613@Kos: Get data from DBARC.bodb_Archive.dbo.match_remark for bk range instead [#Redmine: 78212]
+		- 20180329@Kos: Increase TransDesc length to 1000 [#Redmine: 92845]
 */
 
 BEGIN
@@ -63,7 +64,7 @@ BEGIN
 		IsPending		BIT,
 		BetType			SMALLINT,
 		BetCheck		VARCHAR(50),
-		TransDesc		NVARCHAR(200)
+		TransDesc		NVARCHAR(1000)
 	)
 
 	DECLARE @tmpResultDetail AS TABLE (
@@ -128,13 +129,13 @@ BEGIN
 			END AS EventStatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
-			m.goalrecord,
+			m.GoalRecord,
 			m.matchcode,
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(mr.IsPending, 0) AS IsPending,
-			bm.Bettype,
-			bm.Betcheck,
+			bm.bettype,
+			bm.BetCheck,
 			bm.transdesc
 		FROM
 			(
@@ -230,13 +231,13 @@ BEGIN
 			END AS eventstatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
-			m.goalrecord,
-			m.matchcode, 
+			m.GoalRecord,
+			m.matchcode,
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(mr.IsPending, 0) AS IsPending,
 			bm.Bettype,
-			bm.Betcheck,
+			bm.BetCheck,
 			bm.transdesc
 		FROM
 			(
