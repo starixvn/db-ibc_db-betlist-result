@@ -25,6 +25,7 @@ AS
 					- Move SP from DBAGE to DBACC
 					- Don't support Racing anymore
 		- 20180223@Kos: Support Licensee Bonus System [#Redmine: 74978]
+		- 20180329@Kos: Increase TransDesc length to 1000 [#Redmine: 92842]
 */
 
 BEGIN
@@ -105,7 +106,7 @@ BEGIN
 		ShowTime		NVARCHAR(50),
 		WinLostDate		SMALLDATETIME,
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(300),
+		TransDesc		NVARCHAR(1000),
 		OddsSpread		MONEY,
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
