@@ -88,6 +88,7 @@ AS
 		- 20180118@Kos: Support Licensee Bonus System [#Redmine: 74978]
 		- 20180305@Kos: Don't support Racing, Cockfighting, RNG Casino (bettype 71, 72) anymore [#Redmine: 86086]
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 
 	Param's Explanation:
 		• @FromDate = @winlostdate
@@ -855,7 +856,7 @@ BEGIN
 				AND s.ProductID IN (8, 12, 13, 23, 28)
 
 			-- Casino, Keno, Gold Deluxe, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet 
-			-- Voidbridge, NG2, Fishing World, Lottery bettrans14
+			-- Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino bettrans14
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -925,6 +926,7 @@ BEGIN
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 					WHEN s.ProductID = 24 THEN 219
 					WHEN s.ProductID = 28 THEN 220
+					WHEN s.ProductID = 32 THEN 248
 					ELSE 0
 				END AS sporttype,
 				CASE
@@ -944,7 +946,7 @@ BEGIN
 					ELSE ''
 				END AS betcheck,
 				CASE
-					WHEN s.ProductID IN (6, 8, 22, 23, 24, 28) THEN b.transdesc
+					WHEN s.ProductID IN (6, 8, 22, 23, 24, 28, 32) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				CASE
@@ -960,7 +962,7 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
-				AND s.ProductID IN (6, 7, 8, 11, 12, 13, 17, 21, 22, 23, 24, 28)
+				AND s.ProductID IN (6, 7, 8, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32)
 
 			-- Virtual Horse Racing
 			UNION ALL
@@ -1550,7 +1552,7 @@ BEGIN
 				AND b.winlostdate = @Date
 				AND s.ProductID = 15
 
-			-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World
+			-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino
 			-- (before yesterday ticket)
 			UNION ALL
 			SELECT
@@ -1604,6 +1606,7 @@ BEGIN
 					WHEN s.ProductID = 17 THEN 205
 					WHEN s.ProductID = 22 THEN 212
 					WHEN s.ProductID = 24 THEN 219
+					WHEN s.ProductID = 32 THEN 248
 					ELSE 0
 				END AS Sporttype,
 				0 AS matchid,
@@ -1633,7 +1636,7 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND @Date < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
-				AND s.ProductId IN (6, 17, 22, 24)
+				AND s.ProductId IN (6, 17, 22, 24, 32)
 
 			-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
 			-- (yesterday and later running ticket)
@@ -1686,6 +1689,7 @@ BEGIN
 					WHEN s.ProductID = 17 THEN 205
 					WHEN s.ProductID = 22 THEN 212
 					WHEN s.ProductID = 24 THEN 219
+					WHEN s.ProductID = 32 THEN 248
 					ELSE 0
 				END AS Sporttype,
 				0 AS matchid,
@@ -1698,7 +1702,7 @@ BEGIN
 				b.winlostdate,
 				'' AS betcheck,
 				CASE
-					WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
+					WHEN s.ProductID IN (6, 22, 24, 32) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				0 AS OddsSpread,
@@ -1713,7 +1717,7 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND @Date >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- yesterday and later
-				AND s.ProductId IN (6, 17, 22, 24)
+				AND s.ProductId IN (6, 17, 22, 24, 32)
 				AND brng.statusID IN (0, 1)
 			GROUP BY
 				b.transid,
@@ -1792,6 +1796,7 @@ BEGIN
 					WHEN s.ProductID = 17 THEN 205
 					WHEN s.ProductID = 22 THEN 212
 					WHEN s.ProductID = 24 THEN 219
+					WHEN s.ProductID = 32 THEN 248
 					ELSE 0
 				END AS Sporttype,
 				0 AS matchid,
@@ -1804,7 +1809,7 @@ BEGIN
 				b.winlostdate,
 				'' AS betcheck,
 				CASE
-					WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
+					WHEN s.ProductID IN (6, 22, 24, 32) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				CASE
@@ -1823,7 +1828,7 @@ BEGIN
 				AND b.winlostdate = @Date
 				AND @Date BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
-				AND s.ProductId IN (6, 17, 22, 24)
+				AND s.ProductId IN (6, 17, 22, 24, 32)
 				AND brng.statusID NOT IN (0, 1)
 			GROUP BY
 				b.transid,

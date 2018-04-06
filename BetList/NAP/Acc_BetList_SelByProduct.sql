@@ -26,6 +26,7 @@ AS
 		- 20161202@Kos: Support Fishing World [#Redmine: 65934]
 		- 20171025@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
+		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 */
 
 BEGIN
@@ -534,8 +535,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World
-			IF @ProductId IN (22, 24)
+			-- Macau Games, Fishing World, Pragmatic Casino
+			IF @ProductId IN (22, 24, 32)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -854,8 +855,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World
-			IF @ProductId IN (22, 24)
+			-- Macau Games, Fishing World, Pragmatic Casino
+			IF @ProductId IN (22, 24, 32)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN

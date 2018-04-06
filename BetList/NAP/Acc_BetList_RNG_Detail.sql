@@ -30,6 +30,7 @@ AS
 		- 20161020@Kos: Support Fishing World [#Redmine: 65934]
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20180330@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 
 	Parameters:
 		- @TransType
@@ -43,7 +44,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix --
-	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World
+	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -53,7 +54,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (17, 22, 24)
+	WHERE ProductID IN (17, 22, 24, 32)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
@@ -193,7 +194,7 @@ BEGIN
 			brng.ip,
 			brng.transdesc,
 			CASE
-				WHEN sbt.productID IN (6, 17, 22, 24) THEN brng.TranId3rd
+				WHEN sbt.productID IN (6, 17, 22, 24, 32) THEN brng.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			CASE
@@ -253,7 +254,7 @@ BEGIN
 			brng.ip,
 			brng.transdesc,
 			CASE
-				WHEN sbt.productID IN (6, 17, 22, 24) THEN brng.TranId3rd
+				WHEN sbt.productID IN (6, 17, 22, 24, 32) THEN brng.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			CASE
@@ -311,7 +312,7 @@ BEGIN
 			brng.ip,
 			brng.transdesc,
 			CASE
-				WHEN sbt.productID IN (6, 17, 22, 24) THEN brng.TranId3rd
+				WHEN sbt.productID IN (6, 17, 22, 24, 32) THEN brng.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			CASE

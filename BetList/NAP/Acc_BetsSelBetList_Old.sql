@@ -86,6 +86,7 @@ AS
 		- 20180305@Kos: Don't support Cockfighting anymore [#Redmine: 86086]
 		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 */
 
 BEGIN
@@ -465,8 +466,8 @@ BEGIN
 	END
 
 	-- RNG Casino, Bingo, Keno, P2P, Gold Deluxe, AG Casino, Microgaming Live Casino, Microgaming RNG Casino
-	-- AllBet, Voidbridge, NG2, Fishing World, Lottery
-	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28))
+	-- AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino
+	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32))
 	BEGIN
 		INSERT INTO #BetListData
 		SELECT
@@ -542,6 +543,7 @@ BEGIN
 				WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 				WHEN s.ProductId = 24 THEN 219
 				WHEN s.ProductID = 28 THEN 220
+				WHEN s.ProductID = 32 THEN 248
 				ELSE 0
 			END AS sporttype,
 			b.ip,
@@ -569,7 +571,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.transdesc
-				WHEN s.ProductId IN (8, 22, 23, 24, 28) THEN b.transdesc
+				WHEN s.ProductId IN (8, 22, 23, 24, 28, 32) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			CASE
@@ -585,7 +587,7 @@ BEGIN
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
-			AND s.ProductId IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28)
+			AND s.ProductId IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32)
 	END
 
 	-- Horse Racing
