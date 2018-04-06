@@ -41,6 +41,7 @@ AS
 		- 20171103@Kos: Support PH AIO 3 [#Redmine: 83970]
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180320@Kos: Exclude Fast Market 2 result [#Redmine: 90879]
+		- 20180412@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 
 	Sample test case:
 		exec Lrf_Result_SportSelByDate @EventDate='2013-10-06 00:00:00',@licenseeid=1
@@ -85,13 +86,19 @@ BEGIN
 						AND ResourceID NOT LIKE '226%'
 						AND ResourceID NOT LIKE '227%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetail3rd WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+				) AS b ON m.matchid = b.MatchID AND m.sporttype = 193
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
 				OR (mr.IsHTCal = 1 AND m.eventstatus = 'running')
 				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution, BAIO show running Match but settled least one type
-				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar show running Match but settled least one type
+				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for BetRadar show running Match but settled least one type
+				OR (ISNULL(b.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar Virtual Basketball show running Match but settled least one type
 
 		-- Horse Racing
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 1)
@@ -152,13 +159,19 @@ BEGIN
 						AND ResourceID NOT LIKE '226%'
 						AND ResourceID NOT LIKE '227%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetail3rd14 WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+				) AS b ON m.matchid = b.MatchID AND m.sporttype = 193
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
 				OR (mr.IsHTCal = 1 AND m.eventstatus = 'running')
 				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution, BAIO show running Match but settled least one type
-				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar show running Match but settled least one type
+				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for BetRadar show running Match but settled least one type
+				OR (ISNULL(b.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar Virtual Basketball show running Match but settled least one type
 
 		-- Horse Racing
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 1)

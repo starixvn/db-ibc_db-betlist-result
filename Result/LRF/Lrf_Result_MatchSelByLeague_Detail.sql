@@ -27,6 +27,7 @@ AS
 		- 20171106@Kos: Support PH AIO 3 [#Redmine: 83970]
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180320@Kos: Exclude Fast Market 2 result [#Redmine: 90879]
+		- 20180412@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 
 	-------
 	EXEC Lrf_Result_MatchSelByLeague_Detail
@@ -37,6 +38,16 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @SportType SMALLINT
+
+	DECLARE @Detail TABLE (
+		MatchId				INT,
+		ResourceId			VARCHAR(20),
+		HomeValue			VARCHAR(50),
+		AwayValue			VARCHAR(50),
+		ResultStatusId		TINYINT,
+		SettlementStatusId	TINYINT,
+		OtherInfo			VARCHAR(50)
+	)
 
 	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)
 	BEGIN
@@ -93,38 +104,58 @@ BEGIN
 		WHERE matchid = @MatchId
 
 		-- Get result detail
-		SELECT
-			MatchId,
-			ResourceId,
-			HomeValue,
-			AwayValue,
-			ResultStatusID,
-			SettlementStatusID,
-			OtherInfo
-		FROM dbo.ResultDetail WITH (NOLOCK)
-		WHERE MatchID = @MatchId
-			AND ((@SportType = 1							-- Soccer
-					AND SettlementStatusID > 0
-					AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-						OR (ResourceID = '08'
-							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-					AND ResourceID NOT LIKE '217%'
-					AND ResourceID NOT LIKE '216%'
-					AND ResourceID NOT LIKE '221%'
-					AND ResourceID NOT LIKE '222%'
-					AND ResourceID NOT LIKE '223%'
-					AND ResourceID NOT LIKE '224%'
-					AND ResourceID NOT LIKE '225%'
-					AND ResourceID NOT LIKE '226%'
-					AND ResourceID NOT LIKE '227%')
-				OR (@SportType = 5							-- Tennis
-					AND SettlementStatusID > 0)
-				OR (@SportType = 2							-- Basketball
-					AND (LEN(ResourceID) = 2
-						OR SettlementStatusID > 0)))
-		ORDER BY MatchID,
-			ResourceID
-	END 
+		IF @SportType IN (1, 2, 5)
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetail WITH (NOLOCK)
+			WHERE MatchID = @MatchId
+				AND ((@SportType = 1							-- Soccer
+						AND SettlementStatusID > 0
+						AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
+							OR (ResourceID = '08'
+								AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
+						AND ResourceID NOT LIKE '217%'
+						AND ResourceID NOT LIKE '216%'
+						AND ResourceID NOT LIKE '221%'
+						AND ResourceID NOT LIKE '222%'
+						AND ResourceID NOT LIKE '223%'
+						AND ResourceID NOT LIKE '224%'
+						AND ResourceID NOT LIKE '225%'
+						AND ResourceID NOT LIKE '226%'
+						AND ResourceID NOT LIKE '227%')
+					OR (@SportType = 5							-- Tennis
+						AND SettlementStatusID > 0)
+					OR (@SportType = 2							-- Basketball
+						AND (LEN(ResourceID) = 2
+							OR SettlementStatusID > 0)))
+			ORDER BY MatchID,
+				ResourceID
+		END
+		ELSE IF @SportType = 193
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchID,
+				ResourceId,
+				Custom1 AS HomeValue,
+				Custom2 AS AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetail3rd WITH (NOLOCK)
+			WHERE MatchID = @MatchId AND SettlementStatusID > 0
+			ORDER BY MatchID,
+				ResourceId
+		END
+	END
 	ELSE
 	BEGIN
 		SELECT
@@ -180,38 +211,60 @@ BEGIN
 		WHERE matchid = @MatchId
 
 		-- Get result detail
-		SELECT
-			MatchId,
-			ResourceId,
-			HomeValue,
-			AwayValue,
-			ResultStatusID,
-			SettlementStatusID,
-			OtherInfo
-		FROM dbo.ResultDetail14 WITH (NOLOCK)
-		WHERE MatchID = @MatchId
-			AND ((@SportType = 1							-- Soccer
-					AND SettlementStatusID > 0
-					AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-						OR (ResourceID = '08'
-							AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-					AND ResourceID NOT LIKE '217%'
-					AND ResourceID NOT LIKE '216%'
-					AND ResourceID NOT LIKE '221%'
-					AND ResourceID NOT LIKE '222%'
-					AND ResourceID NOT LIKE '223%'
-					AND ResourceID NOT LIKE '224%'
-					AND ResourceID NOT LIKE '225%'
-					AND ResourceID NOT LIKE '226%'
-					AND ResourceID NOT LIKE '227%')
-				OR (@SportType = 5							-- Tennis
-					AND SettlementStatusID > 0)
-				OR (@SportType = 2							-- Basketball
-					AND (LEN(ResourceID) = 2
-						OR SettlementStatusID > 0)))
-		ORDER BY MatchID,
-			ResourceID
+		IF @SportType IN (1, 2, 5)
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetail14 WITH (NOLOCK)
+			WHERE MatchID = @MatchId
+				AND ((@SportType = 1							-- Soccer
+						AND SettlementStatusID > 0
+						AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
+							OR (ResourceID = '08'
+								AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
+						AND ResourceID NOT LIKE '217%'
+						AND ResourceID NOT LIKE '216%'
+						AND ResourceID NOT LIKE '221%'
+						AND ResourceID NOT LIKE '222%'
+						AND ResourceID NOT LIKE '223%'
+						AND ResourceID NOT LIKE '224%'
+						AND ResourceID NOT LIKE '225%'
+						AND ResourceID NOT LIKE '226%'
+						AND ResourceID NOT LIKE '227%')
+					OR (@SportType = 5							-- Tennis
+						AND SettlementStatusID > 0)
+					OR (@SportType = 2							-- Basketball
+						AND (LEN(ResourceID) = 2
+							OR SettlementStatusID > 0)))
+			ORDER BY MatchID,
+				ResourceID
+		END
+		ELSE IF @SportType = 193
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchID,
+				ResourceId,
+				Custom1 AS HomeValue,
+				Custom2 AS AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetail3rd14 WITH (NOLOCK)
+			WHERE MatchID = @MatchId AND SettlementStatusID > 0
+			ORDER BY MatchID,
+				ResourceId
+		END
 	END
+
+	SELECT * FROM @Detail
 END
 
 GO
