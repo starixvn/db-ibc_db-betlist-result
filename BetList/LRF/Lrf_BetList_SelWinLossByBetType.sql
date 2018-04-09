@@ -50,6 +50,7 @@ AS
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
+		- 20180409@Kos: Support Betradar Virtual Basketball [Redmine: #90881]
 
 	Parameters:
 */
@@ -90,15 +91,12 @@ BEGIN
 	WHERE
 		ProductID IN (1, 2, 3, 5, 8, 27, 28)
 		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
-		AND bettype IN (
-			SELECT bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
-			UNION SELECT GroupTypeId FROM dbo.f_GroupBettype() WHERE bettype = @BetType
+		AND BetType IN (
+			SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
+			UNION SELECT GroupTypeId FROM dbo.f_GroupBettype() WHERE Bettype = @BetType
+			UNION SELECT Bettype FROM dbo.f_GroupBetType3rd() WHERE GroupTypeId = @BetType
+			UNION SELECT GroupTypeId FROM dbo.f_GroupBetType3rd() WHERE Bettype = @BetType
 			UNION SELECT @BetType)
-	/*
-	DELETE FROM @SportBettype
-	WHERE ProductID NOT IN (1, 2, 3, 4, 5, 8)
-		OR (ProductID = 1 AND Bettype IN (901, 902, 903, 904))
-	*/
 
 	-- Create temp table
 	CREATE TABLE #AllData (
@@ -193,6 +191,7 @@ BEGIN
 
 		IF EXISTS (SELECT 1 FROM dbo.f_GroupBettype() WHERE Bettype = @BetType)
 				OR EXISTS (SELECT 1 FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType)
+		BEGIN
 			INSERT INTO #AllData
 			SELECT
 				b.transid,
@@ -218,13 +217,50 @@ BEGIN
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @TempAg AS t ON b.recommend = t.CustId AND b.currency = t.currency
 				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
-				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
+				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.Bettype
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.Grouptypeid END = @BetType
+				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.GroupTypeId END = @BetType
 				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
+		END
+		ELSE IF EXISTS (SELECT 1 FROM dbo.f_GroupBetType3rd() WHERE Bettype = @BetType)
+				OR EXISTS (SELECT 1 FROM dbo.f_GroupBetType3rd() WHERE GroupTypeId = @BetType)
+		BEGIN
+			INSERT INTO #AllData
+			SELECT
+				b.transid,
+				b.refno,
+				b.currency,
+				b.winlostdate,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				-(b.winlost - b.actual_stake) AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				CASE
+					WHEN s.ProductID = 1 THEN ISNULL(b.WalletType, 0)
+					ELSE 0
+				END AS WalletType,
+				CASE
+					WHEN s.ProductID = 1 THEN ISNULL(b.RefCode, 0)
+					ELSE 0
+				END AS RefCode,
+				1 AS WhTicket -- bettrans
+			FROM
+				dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @TempAg AS t ON b.recommend = t.CustId AND b.currency = t.currency
+				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+				LEFT JOIN dbo.f_GroupBettype3rd() AS ss ON b.bettype = ss.Bettype
+			WHERE
+				b.winlostdate BETWEEN @TempFromDate AND @ToDate
+				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.GroupTypeId END = @BetType
+				AND b.statusID NOT IN (0, 1, 101, 102, 103)
+				AND b.matchid > 0 -- using index recommend-matchid-bettype
+		END
 		ELSE
+		BEGIN
 			INSERT INTO #AllData
 			SELECT
 				b.transid,
@@ -255,6 +291,7 @@ BEGIN
 				AND b.bettype = @BetType
 				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
+		END
 	END
 
 	-- Bettrans14 range
@@ -270,6 +307,7 @@ BEGIN
 
 		IF EXISTS (SELECT 1 FROM dbo.f_GroupBettype() WHERE Bettype = @BetType)
 				OR EXISTS (SELECT 1 FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType)
+		BEGIN
 			INSERT INTO #AllData
 			SELECT
 				b.transid,
@@ -295,13 +333,50 @@ BEGIN
 				dbo.bettrans14 b WITH (NOLOCK)
 				INNER JOIN @TempAg AS t ON b.recommend = t.CustId AND b.currency = t.currency
 				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
-				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
+				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.Bettype
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.Grouptypeid END = @BetType
 				AND b.statusID NOT IN (101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
+		END
+		ELSE IF EXISTS (SELECT 1 FROM dbo.f_GroupBetType3rd() WHERE Bettype = @BetType)
+				OR EXISTS (SELECT 1 FROM dbo.f_GroupBetType3rd() WHERE GroupTypeId = @BetType)
+		BEGIN
+			INSERT INTO #AllData
+			SELECT
+				b.transid,
+				b.refno,
+				b.currency,
+				b.winlostdate,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				-(b.winlost - b.actual_stake) AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				CASE
+					WHEN s.ProductID = 1 THEN ISNULL(b.WalletType, 0)
+					ELSE 0
+				END AS WalletType,
+				CASE
+					WHEN s.ProductID = 1 THEN ISNULL(b.RefCode, 0)
+					ELSE 0
+				END AS RefCode,
+				2 AS WhTicket -- bettrans14
+			FROM
+				dbo.bettrans14 AS b WITH (NOLOCK)
+				INNER JOIN @TempAg AS t ON b.recommend = t.CustId AND b.currency = t.currency
+				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+				LEFT JOIN dbo.f_GroupBetType3rd() AS ss ON b.bettype = ss.Bettype
+			WHERE
+				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
+				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.GroupTypeId END = @BetType
+				AND b.statusID NOT IN (101, 102, 103)
+				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
+		END
 		ELSE
+		BEGIN
 			INSERT INTO #AllData
 			SELECT
 				b.transid,
@@ -332,6 +407,7 @@ BEGIN
 				AND b.bettype = @BetType
 				AND b.statusID NOT IN (101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
+		END
 	END
 
 	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
