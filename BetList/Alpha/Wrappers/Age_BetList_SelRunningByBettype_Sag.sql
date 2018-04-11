@@ -35,7 +35,7 @@ AS
 		- 20110930@Johnson: Get matchid into betlist
 		- 20111122@Sophia: Add Checktime and SecAcceptFlag to show status waiting or running
 		- 20111216@Sophia: Remove function f_GetOddsByBettype, f_GetChoice, f_ShowOddsByBettype
-		- 20120119@Sophia:  Add showtime for Table - Shoe - Hand of LiveCasino
+		- 20120119@Sophia: Add showtime for Table - Shoe - Hand of LiveCasino
 							Add Sub table for Live Casino
 		- 20120424@Lukas: Get more column custid
 		- 20120705@Sophia: Get sporttype for outright
@@ -51,18 +51,19 @@ AS
 		- 20151125@Kos: Support new bet type (410) for Total Bet of Double Chance
 		- 20170721@Kos: Use inline function for SportBettypeMatrix and include bet type 427, 431, 433 [Redmine: #53153]
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82399]
+		- 20180411@Kos: Enhance performance when getting SportBetTypeMatrix [#Redmine: 93257]
 */
 
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE	 @TransStatus	[dbo].[TVP_BetTicketStatus]
-		, @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]
+	DECLARE @TransStatus	[dbo].[TVP_BetTicketStatus],
+		@BettypeMatrix		[dbo].[TVP_SportBettypeMatrix]
 
 	-- Gather Ticket status
 	INSERT INTO @TransStatus
 	SELECT StatusId
-	FROM bodb02.dbo.All_f_TransStatus (1) stt
+	FROM dbo.All_f_TransStatus (1) stt
 	WHERE stt.statusId IN (0, 1)
 
 	-- Gather BettypeMatrix
@@ -73,30 +74,16 @@ BEGIN
 	INSERT INTO @BettypeMatrix
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-
-	;WITH CteBettype (bettype)
-	AS (
-		SELECT bt.bettype
-		FROM @BettypeMatrix bt
-		WHERE (bt.ProductId = 1 AND bt.EventType = 0) 	-- mix-parlay
-			OR (bt.EventType = 1)						-- macth event
-			OR (bt.ProductId = 1 AND bt.EventType = 2)	-- outright
-	)
-
-	DELETE bt
-	FROM @BettypeMatrix AS bt
-		LEFT JOIN CteBettype AS ct ON bt.bettype = ct.bettype
-	WHERE ct.bettype IS NULL
-		OR (@BetType NOT IN (6, 14, 24, 26, 1, 3, 7, 8, 28) AND bt.bettype NOT IN (@BetType))
-		OR (@BetType = 6	AND bt.bettype NOT IN (6, 126))
-		OR (@BetType = 14	AND bt.bettype NOT IN (14, 127))
-		OR (@BetType = 24	AND bt.bettype NOT IN (24, 151, 186, 410, 431))
-		OR (@BetType = 26	AND bt.bettype NOT IN (26, 145, 146, 170, 188, 427, 433))
-		OR (@BetType = 1	AND bt.bettype NOT IN (1, 301))		-- Support Myanmar Odds
-		OR (@BetType = 3	AND bt.bettype NOT IN (3, 302))		-- Support Myanmar Odds
-		OR (@BetType = 7	AND bt.bettype NOT IN (7, 303))		-- Support Myanmar Odds
-		OR (@BetType = 8	AND bt.bettype NOT IN (8, 304))		-- Support Myanmar Odds
-		OR (@BetType = 28	AND bt.bettype NOT IN (28, 453))
+	WHERE (@BetType = 6		AND BetType IN (6, 126))
+		OR (@BetType = 14	AND BetType IN (14, 127))
+		OR (@BetType = 24	AND BetType IN (24, 151, 186, 410, 431))
+		OR (@BetType = 26	AND BetType IN (26, 145, 146, 170, 188, 427, 433))
+		OR (@BetType = 1	AND BetType IN (1, 301))		-- Support Myanmar Odds
+		OR (@BetType = 3	AND BetType IN (3, 302))		-- Support Myanmar Odds
+		OR (@BetType = 7	AND BetType IN (7, 303))		-- Support Myanmar Odds
+		OR (@BetType = 8	AND BetType IN (8, 304))		-- Support Myanmar Odds
+		OR (@BetType = 28	AND BetType IN (28, 453))		-- Support Myanmar Odds
+		OR BetType = @BetType
 
 	EXEC [bodb02].[dbo].[Age_CoreBetList_SMABettype_SelBetTicket]
 		@CustId 			= @CustId
@@ -130,7 +117,7 @@ BEGIN
 								tpositiontaking,
 								spositiontaking,
 								mpositiontaking,
-								apositiontaking, 
+								apositiontaking,
 								Adiscount,
 								Mdiscount,
 								Sdiscount,

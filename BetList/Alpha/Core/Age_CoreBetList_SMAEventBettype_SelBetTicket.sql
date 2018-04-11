@@ -2,7 +2,7 @@ USE bodb02
 GO
 
 ALTER PROCEDURE [dbo].[Age_CoreBetList_SMAEventBettype_SelBetTicket]
-	@CustId				INT 			= NULL
+	@CustId				INT				= NULL
 	, @Username			NVARCHAR(50)	= NULL
 	, @RoleId			INT
 	, @MatchId			INT
@@ -21,7 +21,7 @@ AS
 	Created: Bobby
 	Task: Aphla site - refactor betlist core 
 	DB: DBAGE.bodb02
-	Original: 
+	Original:
 
 	Revisions:
 		- 20150504@Bobby: Create new SP
@@ -29,6 +29,7 @@ AS
 		- 20150910@Bobby: Enhance performance for SP core. Apply TVP for input parameters
 		- 20160111@Kos: Add @TransStatus param to support RNG Casino Single Wallet [#Redmine: 48958]
 		- 20171030@Kos: Support Bullfighting [#Redmine: 84961]
+		- 20180330@Kos: Change to use index in srecommend and mrecommend [#Redmine: 91150]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -87,10 +88,10 @@ BEGIN
 		WhTicket	TINYINT
 	)
 	
-	-- bettrans
+	-- Bettrans
 	IF @IsBet14 = 0
 	BEGIN
-		IF @RoleId = 1
+		IF @RoleId = 1		-- Member
 		BEGIN
 			INSERT INTO #tempRawData
 			SELECT
@@ -110,7 +111,7 @@ BEGIN
 					OR bt.SubProduct IN ('MG-SuperLive') AND b.StatusId NOT IN (0, 1))
 		END
 
-		IF @RoleId = 2
+		IF @RoleId = 2		-- Agent
 		BEGIN
 			INSERT INTO #tempRawData
 			SELECT
@@ -130,14 +131,8 @@ BEGIN
 					OR bt.SubProduct IN ('MG-SuperLive') AND b.StatusId NOT IN (0, 1))
 		END
 
-		IF @RoleId = 3
+		IF @RoleId = 3		-- Master
 		BEGIN
-			WITH CteRecommend ( custid )
-			AS (
-				SELECT custid
-				FROM dbo.Customer WITH (NOLOCK)
-				WHERE mrecommend = @CustId AND roleid = 2
-			)
 			INSERT INTO #tempRawData
 			SELECT
 				b.transid,
@@ -148,22 +143,16 @@ BEGIN
 				bt.EventType,
 				1 AS WhTicket
 			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN CteRecommend AS c ON b.recommend = c.custid
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
-			WHERE b.matchid = @MatchId
+			WHERE b.mrecommend = @CustId
+				AND b.matchid = @MatchId
 				AND (bt.SubProduct NOT IN ('MG-SuperLive')
 					OR bt.SubProduct IN ('MG-SuperLive') AND b.StatusId NOT IN (0, 1))
 		END
 
-		IF @RoleId = 4
+		IF @RoleId = 4		-- Super
 		BEGIN
-			WITH CteRecommend ( custid )
-			AS (
-				SELECT custid
-				FROM dbo.Customer WITH (NOLOCK)
-				WHERE srecommend = @CustId AND roleid = 2
-			)
 			INSERT INTO #tempRawData
 			SELECT
 				b.transid,
@@ -174,18 +163,19 @@ BEGIN
 				bt.EventType,
 				1 AS WhTicket
 			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN CteRecommend AS c ON b.recommend = c.custid
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
-			WHERE b.matchid = @MatchId
+			WHERE b.srecommend = @CustId
+				AND b.matchid = @MatchId
 				AND (bt.SubProduct NOT IN ('MG-SuperLive')
 					OR bt.SubProduct IN ('MG-SuperLive') AND b.StatusId NOT IN (0, 1))
 		END
 	END
 
-	IF @IsBet14 = 1 -- from bettrans14
+	-- Bettrans14
+	IF @IsBet14 = 1
 	BEGIN
-		IF @RoleId = 1
+		IF @RoleId = 1		-- Member
 		BEGIN
 			INSERT INTO #tempRawData
 			SELECT
@@ -197,13 +187,13 @@ BEGIN
 				bt.EventType,
 				2 AS WhTicket
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.Bettype
 				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 			WHERE b.custid = @CustId
 				AND b.matchid = @MatchId
 		END
 
-		IF @RoleId = 2
+		IF @RoleId = 2		-- Agent
 		BEGIN
 			INSERT INTO #tempRawData
 			SELECT
@@ -215,20 +205,14 @@ BEGIN
 				bt.EventType,
 				2 AS WhTicket
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.Bettype
 				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 			WHERE b.recommend = @CustId
 				AND b.matchid = @MatchId
 		END
 
-		IF @RoleId = 3
+		IF @RoleId = 3		-- Master
 		BEGIN
-			WITH CteRecommend ( custid )
-			AS (
-				SELECT custid
-				FROM dbo.Customer WITH (NOLOCK)
-				WHERE mrecommend = @CustId AND roleid = 2
-			)
 			INSERT INTO #tempRawData
 			SELECT
 				b.transid,
@@ -239,19 +223,19 @@ BEGIN
 				bt.EventType,
 				2 AS WhTicket
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN CteRecommend AS c ON b.recommend = c.custid
-				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.Bettype
 				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
-			WHERE b.matchid = @MatchId
+			WHERE b.mrecommend = @CustId
+				AND b.matchid = @MatchId
 		END
-		
-		IF @RoleId = 4
+
+		IF @RoleId = 4		-- Super
 		BEGIN
 			WITH CteRecommend ( custid )
 			AS (
 				SELECT custid
 				FROM dbo.Customer WITH (NOLOCK)
-				WHERE srecommend = @CustId AND roleid = 2
+				WHERE srecommend = @CustId AND roleid = 3
 			)
 			INSERT INTO #tempRawData
 			SELECT
@@ -263,8 +247,8 @@ BEGIN
 				bt.EventType,
 				2 AS WhTicket
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN CteRecommend AS c ON b.recommend = c.custid
-				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+				INNER JOIN CteRecommend AS c ON b.mrecommend = c.custid
+				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.Bettype
 				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 			WHERE b.matchid = @MatchId
 		END
