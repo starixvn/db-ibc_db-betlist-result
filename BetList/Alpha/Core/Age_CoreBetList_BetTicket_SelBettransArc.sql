@@ -42,6 +42,7 @@ AS
 		- 20171031@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20180418@Kos: Support Pragmatic Casino [#Redmine: 92160]
 
 	Param's Explanation:
 
@@ -78,6 +79,7 @@ BEGIN
 		- Fishing World			: ProductId = 24
 		- Mix Parlay			: ProductId = 27
 		- Lottery				: ProductId = 28
+		- Pragmatic Casino		: ProductId = 32
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -102,6 +104,7 @@ BEGIN
 			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 			WHEN c.ProductId = 24 THEN 219
 			WHEN c.ProductId = 28 THEN 220
+			WHEN c.ProductId = 32 THEN 248
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
@@ -195,7 +198,7 @@ BEGIN
 			END AS comstatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
-			WHEN c.ProductId IN (8, 22, 23, 24, 28) THEN b.transdesc
+			WHEN c.ProductId IN (8, 22, 23, 24, 28, 32) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, CASE

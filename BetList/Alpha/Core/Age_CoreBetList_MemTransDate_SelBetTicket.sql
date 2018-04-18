@@ -43,6 +43,7 @@ AS
 		- 20171030@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
 		- 20180330@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20180418@Kos: Support Pragmatic Casino [#Redmine: 92160]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -78,8 +79,8 @@ BEGIN
 	IF @CustId > 0
 		AND (@Recommend IS NULL OR @UserName IS NULL)
 	BEGIN
-		SELECT @Recommend	= Recommend,
-			@UserName		= UserName
+		SELECT @Recommend = Recommend,
+			@UserName = UserName
 		FROM dbo.custinfo WITH (NOLOCK)
 		WHERE CustID = @CustId
 	END
@@ -111,7 +112,7 @@ BEGIN
 			WHEN b.winlostdate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) THEN		-- Yesterday and later summary ticket
 				CASE
 					WHEN bt.ProductId = 6 AND bt.SubProduct <> '' THEN 4	-- RNG Casino Single Wallet
-					WHEN bt.ProductId IN (22, 24) THEN 4					-- Macau Games, Fishing World
+					WHEN bt.ProductId IN (22, 24, 32) THEN 4				-- Macau Games, Fishing World, Pragmatic Casino
 					WHEN bt.ProductId = 21 THEN 5							-- AllBet
 					ELSE 1
 				END

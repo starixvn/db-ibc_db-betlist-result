@@ -22,7 +22,7 @@ ALTER PROCEDURE [dbo].[Age_CoreBetList_Mem_SelBetTicket]
 	, @PageIndex		INT				= 1
 	, @PageSize			INT				= 5000
 	, @Language			VARCHAR(2)		= 'E'
-	--OPTIONAL
+	-- OPTIONAL
 	, @ColumnOutput		VARCHAR(MAX)	= NULL
 	-- OUTPUT INFO
 	, @TotalRows		INT 			= 0 OUTPUT
@@ -58,6 +58,7 @@ AS
 		- 20171030@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20180418@Kos: Support Pragmatic Casino [#Redmine: 92160]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -156,7 +157,7 @@ BEGIN
 				AND ( bt.SubProduct NOT IN ('MG-SuperLive')
 					OR ( bt.SubProduct IN ('MG-SuperLive') AND b.StatusId NOT IN (0, 1) )
 				)
-				AND ((bt.ProductId NOT IN (21, 22, 24)		-- before yesterday AllBet, RNG Casino Single Wallet, Macau Games, Fishing World
+				AND ((bt.ProductId NOT IN (21, 22, 24, 32)		-- before yesterday AllBet, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino
 					AND (bt.ProductId <> 6 OR bt.SubProduct = ''))
 						OR b.winlostdate < @Yesterday)
 
@@ -202,6 +203,7 @@ BEGIN
 					- RNG Casino Single Wallet	: ProductId = 6 AND bettype <> 71
 					- Macau Games				: ProductId = 22
 					- Fishing World				: ProductId = 24
+					- Pragmatic Casino			: ProductId = 32
 				+ Live Casino (WhTicket = 5)
 					- AllBet	: ProductId = 21
 			*/
@@ -225,7 +227,7 @@ BEGIN
 					, bt.EventType
 					, CASE
 							WHEN bt.ProductId = 6 AND bt.SubProduct <> '' THEN 4
-							WHEN bt.ProductId IN (22, 24) THEN 4
+							WHEN bt.ProductId IN (22, 24, 32) THEN 4
 							WHEN bt.ProductId = 21 THEN 5
 							ELSE 0
 						END AS WhTicket
@@ -235,7 +237,7 @@ BEGIN
 					AND b.winlostdate >= @Yesterday
 					AND b.recommend = @Recommend
 					AND b.custid = @CustId
-					AND (bt.ProductId IN (21, 22, 24)
+					AND (bt.ProductId IN (21, 22, 24, 32)
 						OR (bt.ProductId = 6 AND bt.SubProduct <> ''))
 			END
 		END

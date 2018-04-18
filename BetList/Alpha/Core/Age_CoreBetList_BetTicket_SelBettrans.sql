@@ -43,6 +43,7 @@ AS
 		- 20171031@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180202@Kos: Don't support Racing, Live Casino, RNG Casino (bettype 71, 72), Cockfighting [#Redmine: 86086]
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20180418@Kos: Support Pragmatic Casino [#Redmine: 92160]
 
 	Param's Explanation:
 
@@ -64,6 +65,7 @@ BEGIN
 		- Fishing World			: ProductId = 24
 		- Mix Parlay			: ProductId = 27
 		- Lottery				: ProductId = 28
+		- Pragmatic Casino		: ProductId = 32
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -85,6 +87,7 @@ BEGIN
 			WHEN c.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 			WHEN c.ProductId = 24 THEN 219
 			WHEN c.ProductId = 28 THEN 220
+			WHEN c.ProductId = 32 THEN 248
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
@@ -110,8 +113,8 @@ BEGIN
 			END AS modds
 		, b.stake
 		, b.actual_stake
-		, b.Status
-		, b.Transdate
+		, b.status
+		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
@@ -168,7 +171,7 @@ BEGIN
 		, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' 
 		END AS comstatus
 		, CASE
-			WHEN c.ProductId IN (6, 8, 22, 23, 24, 28) THEN b.transdesc
+			WHEN c.ProductId IN (6, 8, 22, 23, 24, 28, 32) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, CASE
@@ -187,6 +190,7 @@ BEGIN
 		- RNG Casino Single Wallet	: ProductId = 6 AND bettype <> 71
 		- Macau Games				: ProductId = 22
 		- Fishing World				: ProductId = 24
+		- Pragmatic Casino			: ProductId = 32
 	*/
 	UNION ALL
 	SELECT
@@ -198,6 +202,7 @@ BEGIN
 			WHEN c.ProductID = 6 THEN b.matchid
 			WHEN c.ProductID = 22 THEN 212
 			WHEN c.ProductID = 24 THEN 219
+			WHEN c.ProductId = 32 THEN 248
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
@@ -251,7 +256,7 @@ BEGIN
 		, '' AS betcheck
 		, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END	AS comstatus
 		, CASE
-			WHEN c.ProductId IN (6, 22, 24) THEN b.transdesc
+			WHEN c.ProductId IN (6, 22, 24, 32) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, 0 AS OddsSpread
@@ -282,6 +287,7 @@ BEGIN
 		- RNG Casino Single Wallet	: ProductId = 6 AND bettype <> 71
 		- Macau Games				: ProductId = 22
 		- Fishing World				: ProductId = 24
+		- Pragmatic Casino			: ProductId = 32
 	*/
 	UNION ALL
 	SELECT
@@ -293,6 +299,7 @@ BEGIN
 			WHEN c.ProductID = 6 THEN b.matchid
 			WHEN c.ProductID = 22 THEN 212
 			WHEN c.ProductID = 24 THEN 219
+			WHEN c.ProductId = 32 THEN 248
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
@@ -354,7 +361,7 @@ BEGIN
 		, '' AS betcheck
 		, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END	AS comstatus
 		, CASE
-			WHEN c.ProductId IN (6, 22, 24) THEN b.transdesc
+			WHEN c.ProductId IN (6, 22, 24, 32) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, CASE
