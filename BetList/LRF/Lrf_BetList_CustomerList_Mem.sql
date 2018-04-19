@@ -1,4 +1,5 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Lrf_BetList_CustomerList_Mem]
 	@AgentList		VARCHAR(MAX),
 	@CustId			INT,
@@ -26,6 +27,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_CustomerList_Mem]
 	@ShowFW			BIT	= 0,	-- Fishing World
 	@ShowVS2		BIT	= 0,	-- Betradar Virtual Sports
 	@ShowLT			BIT	= 0,	-- Lottery
+	@ShowPP			BIT	= 0,	-- Pragmatic Casino
 	@ShowBT			BIT	= 0,	-- Bet Trade
 	@ShowCO			BIT	= 0,	-- Cash Out
 	@TotalRows		INT		= 0 OUTPUT,
@@ -41,6 +43,7 @@ AS
 	DB: DBACC.bodb02
 	Revisions:
 		- 20180604@Kos: Created [#Redmine: 96319]
+		- 20180720@Kos: Support Pragmatic Casino [#Redmine: 92318]
 */
 
 BEGIN
@@ -92,6 +95,7 @@ BEGIN
 		OR (ProductID = 25 AND @ShowCO = 1)						-- Cash Out
 		OR (ProductID = 27 AND @ShowVS2 = 1)					-- Betradar Virtual Sports
 		OR (ProductID = 28 AND @ShowLT = 1)						-- Lottery
+		OR (ProductID = 32 AND @ShowPP = 1)						-- Pragmatic Casino
 		OR (BetType IN (901, 902, 903) AND @ShowBT = 1)			-- BetTrade
 
 	DELETE @SportBettype
@@ -797,12 +801,12 @@ BEGIN
 				AND sbt.ProductID IN (8, 13, 28)
 		END
 
-		-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World
-		IF (@ShowCS = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1)
+		-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino
+		IF (@ShowCS = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1)
 			AND EXISTS (SELECT 1 FROM dbo.bettrans AS b WITH (NOLOCK)
 							INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 						WHERE b.custid = @CustId
-							AND (sbt.ProductID IN (17, 22, 24)
+							AND (sbt.ProductID IN (17, 22, 24, 32)
 								OR (sbt.ProductID = 6 AND sbt.SubProduct <> '')))
 		BEGIN
 			-- Up to yesterday settled ticket
@@ -813,6 +817,7 @@ BEGIN
 					WHEN sbt.ProductID = 17 THEN 205
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
+					WHEN sbt.ProductID = 32 THEN 248
 					ELSe 0
 				END AS SportType,
 				b.transid,
@@ -852,7 +857,7 @@ BEGIN
 				'' AS ShowTime,
 				'' AS BetCheck,
 				CASE
-					WHEN sbt.ProductID IN (6, 22, 24) THEN b.transdesc
+					WHEN sbt.ProductID IN (6, 22, 24, 32) THEN b.transdesc
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -870,7 +875,7 @@ BEGIN
 				AND b.winlostdate < @Yesterday	-- not yesterday and today
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND (sbt.ProductID IN (17, 22, 24)
+				AND (sbt.ProductID IN (17, 22, 24, 32)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 
 			IF @ToDate >= @Yesterday AND @TempFromDate <= @Today
@@ -883,6 +888,7 @@ BEGIN
 						WHEN sbt.ProductID = 17 THEN 205
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
+						WHEN sbt.ProductID = 32 THEN 248
 						ELSE 0
 					END AS SportType,
 					b.transid,
@@ -926,7 +932,7 @@ BEGIN
 					'' AS ShowTime,
 					'' AS BetCheck,
 					CASE
-						WHEN sbt.ProductID IN (6, 22, 24) THEN b.transdesc
+						WHEN sbt.ProductID IN (6, 22, 24, 32) THEN b.transdesc
 						ELSE ''
 					END AS TransDesc,
 					-1 AS BetdaqId,
@@ -944,7 +950,7 @@ BEGIN
 					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND b.custid = @CustId
 					AND brng.statusID NOT IN (0, 1)
-					AND (sbt.ProductID IN (17, 22, 24)
+					AND (sbt.ProductID IN (17, 22, 24, 32)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 				GROUP BY
 					b.transid,
@@ -1741,9 +1747,9 @@ BEGIN
 		END
 
 		-- RNG Casino, Keno, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet, Voidbridge
-		-- Fishing World, Lottery
+		-- Fishing World, Lottery, Pragmatic Casino
 		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1
-			OR @ShowFW = 1 OR @ShowLT = 1
+			OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1757,6 +1763,7 @@ BEGIN
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
+					WHEN sbt.ProductID = 32 THEN 248
 					ELSE 0
 				END AS SportType,
 				b.transid,
@@ -1804,7 +1811,7 @@ BEGIN
 				END AS BetCheck,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-					WHEN sbt.ProductID IN (8, 22, 24, 28) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (8, 22, 24, 28, 32) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -1821,7 +1828,7 @@ BEGIN
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113, 101, 102, 103)
-				AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28)
+				AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28, 32)
 		END
 
 		-- Colossus Bets
@@ -2454,9 +2461,9 @@ BEGIN
 		END
 
 		-- RNG Casino, Keno, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet, Voidbridge, Fishing World,
-		-- Lottery
+		-- Lottery, Pragmatic Casino
 		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1
-			OR @ShowFW = 1 OR @ShowLT = 1
+			OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -2471,6 +2478,7 @@ BEGIN
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
+					WHEN sbt.ProductID = 32 THEN 248
 					ELSE 0
 				END AS SportType,
 				b.transid,
@@ -2537,7 +2545,7 @@ BEGIN
 				END AS BetCheck,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-					WHEN sbt.ProductID IN (8, 22, 24, 28) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (8, 22, 24, 28, 32) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -2553,7 +2561,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.custid = @CustId
-				AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28)
+				AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28, 32)
 				AND b.statusID IN (111, 112, 113, 101, 102, 103)
 		END
 

@@ -1,11 +1,4 @@
 /*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_RNG_Detail]
 	@AgentList	VARCHAR(MAX),
@@ -30,6 +23,7 @@ AS
 		- 20161111@Kos: Support Fishing World [#Redmine: 66737]
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20180514@Kos: Return ExchangeId instead of CurrencyCode [#Redmine: 94845]
+		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
 
 	Parameters:
 		- @TransType
@@ -70,11 +64,11 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
+	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (17, 22, 24)
+	WHERE ProductID IN (17, 22, 24, 32)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)

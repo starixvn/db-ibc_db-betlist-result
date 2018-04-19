@@ -1,4 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelByDayAll_Mem_Old]
 	@AgentList			VARCHAR(MAX),
 	@CustId				INT,
@@ -88,6 +89,7 @@ AS
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
+		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
 
 	Param's Explanation:
 		+ @TransType:
@@ -225,7 +227,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28)
+	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28, 32)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -290,7 +292,7 @@ BEGIN
 			m.htawayscore,
 			b.ip,
 			@Username,
-			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			b.currency,
 			CASE 
 				WHEN sbt.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
@@ -591,7 +593,7 @@ BEGIN
 			AND sbt.EventType = 2
 
 		-- RNG Casino, Keno, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, AllBet, Macau Games, Fishing World
-		-- Lottery
+		-- Lottery, Pragmatic Casino
 		INSERT INTO @Data
 		SELECT
 			CASE
@@ -605,6 +607,7 @@ BEGIN
 				WHEN sbt.ProductID = 22 THEN 212
 				WHEN sbt.ProductID = 24 THEN 219
 				WHEN sbt.ProductID = 28 THEN 220
+				WHEN sbt.ProductID = 32 THEN 248
 				ELSE 0
 			END AS SportType,
 			0 AS leagueid,
@@ -687,7 +690,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-				WHEN sbt.ProductID IN (8, 22, 24, 28) THEN b.transdesc
+				WHEN sbt.ProductID IN (8, 22, 24, 28, 32) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			-1 AS BetdaqId,
@@ -702,7 +705,7 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-			AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28)
+			AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28, 32)
 			AND sbt.EventType = 0
 
 		-- Colossus Bets

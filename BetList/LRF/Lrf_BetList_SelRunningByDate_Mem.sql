@@ -1,4 +1,5 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DB042-bodb02,DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@AgentList	VARCHAR(MAX),
 	@CustId		INT			= NULL,
@@ -24,6 +25,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowFW		BIT			= 0,	-- Fishing World
 	@ShowVS2	BIT			= 0,	-- Betradar Virtual Sports
 	@ShowLT		BIT			= 0,	-- Lottery
+	@ShowPP		BIT			= 0,	-- Pragmatic Casino
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -92,6 +94,7 @@ AS
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
+		- 20180918@Kos: Support Pragmatic Casino [#Redmine: 92318]
 */
 
 BEGIN
@@ -164,7 +167,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE (ProductID <= 3 OR ProductID IN (5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 27, 28))
+	WHERE ProductID IN (1, 2, 3, 5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 27, 28, 32)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -183,6 +186,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowFW = 0		THEN 24 END
 		OR ProductID	= CASE WHEN @ShowVS2 = 0	THEN 27 END
 		OR ProductID	= CASE WHEN @ShowLT = 0		THEN 28 END
+		OR ProductID	= CASE WHEN @ShowPP = 0		THEN 32 END
 	-- end filer bettypes by sporttype
 
 	CREATE TABLE #BetListSelRunningByDateMem (
@@ -270,7 +274,7 @@ BEGIN
 			b.odds,
 			b.modds,
 			CASE
-				WHEN b.bettype NOT IN (9,29,10) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1
+				WHEN b.bettype NOT IN (9, 29, 10) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1
 					AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
@@ -335,7 +339,7 @@ BEGIN
 			b.LiveHomeScore,
 			b.LiveAwayScore,
 			b.Ip,
-			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			b.OddsType,
 			'' AS ShowTime,
 			m.matchid,
@@ -881,8 +885,8 @@ BEGIN
 			AND sbt.ProductID IN (8, 13, 15, 28)
 	END
 
-	-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
-	IF (@ShowCS = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1)
+	-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino
+	IF (@ShowCS = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1)
 		AND EXISTS (SELECT 1 FROM dbo.bettransRnG WITH (NOLOCK) WHERE custid = @CustId AND statusID IN (0, 1))
 	BEGIN
 		-- Yesterday and today running ticket
@@ -893,6 +897,7 @@ BEGIN
 				WHEN sbt.ProductID = 17 THEN 205
 				WHEN sbt.ProductID = 22 THEN 212
 				WHEN sbt.ProductID = 24 THEN 219
+				WHEN sbt.ProductID = 32 THEN 248
 				ELSE 0
 			END AS Sporttype,
 			@Username AS UserName,
@@ -925,7 +930,7 @@ BEGIN
 			0 AS matchid,
 			'' AS betcheck,
 			CASE
-				WHEN sbt.ProductID IN (6, 22, 24) THEN b.transdesc
+				WHEN sbt.ProductID IN (6, 22, 24, 32) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			-1 AS BetdaqId,
@@ -943,7 +948,7 @@ BEGIN
 			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.winlostdate BETWEEN @Yesterday AND @Today
 			AND brng.custid = @CustId
-			AND (sbt.ProductID IN (17, 22, 24)
+			AND (sbt.ProductID IN (17, 22, 24, 32)
 				OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 			AND sbt.EventType = 0
 			AND brng.statusID IN (0, 1)

@@ -1,11 +1,5 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Lrf_BetList_SelWinLossByDate_Mem]    Script Date: 9/24/2015 4:49:37 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByDate_Mem]
 	@AgentList			VARCHAR(MAX),
 	@CustId				INT,
@@ -51,6 +45,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByDate_Mem]
 	@ShowFW				BIT				= 0,	-- Fishing World
 	@ShowVS2			BIT				= 0,	-- Betradar Virtual Sports
 	@ShowLT				BIT				= 0,	-- Lottery
+	@ShowPP				BIT				= 0,	-- Pragmatic Casino
 	@ShowBT				BIT				= 0,	-- Bet Trade
 	@ShowCO				BIT				= 0		-- Cash Out
 AS
@@ -127,6 +122,7 @@ AS
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180405@Kos: Correct BetEffective value in Bonus tickets [#Redmine: 91740]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
+		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
 */
 
 BEGIN
@@ -163,7 +159,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 11, 13, 17, 21, 22, 24, 25, 27, 28)
+	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 11, 13, 17, 21, 22, 24, 25, 27, 28, 32)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -190,6 +186,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowCO = 0		THEN 25 END
 		OR ProductID	= CASE WHEN @ShowVS2 = 0	THEN 27 END
 		OR ProductID	= CASE WHEN @ShowLT = 0		THEN 28 END
+		OR ProductID	= CASE WHEN @ShowPP = 0		THEN 32 END
 
 	DECLARE @UserName		NVARCHAR(20),
 		@Recommend			INT,
@@ -530,7 +527,7 @@ BEGIN
 				m.sporttype,
 				@Username,
 				b.transid,
-				ISNULL(b.betid,0),
+				ISNULL(b.betid, 0),
 				b.bettype,
 				b.hdp1,
 				b.hdp2,
@@ -1167,8 +1164,8 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
-		IF @ShowCS = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1
+		-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino
+		IF @ShowCS = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1
 		BEGIN
 			-- Up to yesterday settled ticket
 			INSERT INTO #BetListByDateMem
@@ -1178,6 +1175,7 @@ BEGIN
 					WHEN sbt.ProductID = 17 THEN 205
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
+					WHEN sbt.ProductID = 32 THEN 248
 					ELSE 0
 				END AS Sporttype,
 				@Username,
@@ -1217,7 +1215,7 @@ BEGIN
 				'' AS ShowTime,
 				'' AS betcheck,
 				CASE
-					WHEN sbt.ProductID IN (6, 22, 24) THEN b.transdesc
+					WHEN sbt.ProductID IN (6, 22, 24, 32) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				-1 AS BetdaqId,
@@ -1235,7 +1233,7 @@ BEGIN
 				AND b.winlostdate < @Yesterday
 				AND b.recommend = @Recommend --to improve performance
 				AND b.custid = @CustID 
-				AND (sbt.ProductID IN (17, 22, 24)
+				AND (sbt.ProductID IN (17, 22, 24, 32)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 				AND b.statusID IN (111, 112, 113)
 
@@ -1249,6 +1247,7 @@ BEGIN
 						WHEN sbt.ProductID = 17 THEN 205
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
+						WHEN sbt.ProductID = 32 THEN 248
 						ELSE 0
 					END AS Sporttype,
 					@Username,
@@ -1292,7 +1291,7 @@ BEGIN
 					'' AS showtime,
 					'' AS betcheck,
 					CASE
-						WHEN sbt.ProductID IN (6, 22, 24) THEN b.transdesc
+						WHEN sbt.ProductID IN (6, 22, 24, 32) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					-1 AS BetdaqId,
@@ -1309,7 +1308,7 @@ BEGIN
 				WHERE b.winlostdate BETWEEN @TempFromDate AND @todate
 					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND b.custid = @CustId 
-					AND (sbt.ProductID IN (17, 22, 24)
+					AND (sbt.ProductID IN (17, 22, 24, 32)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND brng.statusID <> 0
 				GROUP BY
@@ -2271,9 +2270,9 @@ BEGIN
 		END
 
 		-- RNG Casino, Keno, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, AllBet, Macau Games, Fishing World
-		-- Lottery
+		-- Lottery, Pragmatic Casino
 		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1
-			OR @ShowFW = 1 OR @ShowLT = 1
+			OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
@@ -2288,6 +2287,7 @@ BEGIN
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
+					WHEN sbt.ProductID = 32 THEN 248
 					ELSE 0
 				END AS Sporttype,
 				@Username, 
@@ -2354,7 +2354,7 @@ BEGIN
 				END AS betcheck,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-					WHEN sbt.ProductID IN (8, 22, 24, 28) THEN b.transdesc
+					WHEN sbt.ProductID IN (8, 22, 24, 28, 32) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				-1 AS BetdaqId,
@@ -2371,7 +2371,7 @@ BEGIN
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate 
 				AND b.recommend = @Recommend --to improve performance
 				AND b.custid = @CustID 
-				AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28)
+				AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28, 32)
 				AND b.statusID IN (111, 112, 113)
 		END
 
@@ -3172,9 +3172,9 @@ BEGIN
 		END
 
 		-- RNG Casino, Keno, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet, Macau Games. Fishing World
-		-- Lottery
+		-- Lottery, Pragmatic Casino
 		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1
-			OR @ShowFW = 1 OR @ShowLT = 1
+			OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1
 		BEGIN
 			INSERT INTO #BetListByDateMem
 			SELECT
@@ -3189,6 +3189,7 @@ BEGIN
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
+					WHEN sbt.ProductID = 32 THEN 248
 					ELSE 0
 				END AS Sporttype,
 				@Username, 
@@ -3255,7 +3256,7 @@ BEGIN
 				END AS betcheck,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-					WHEN sbt.ProductID IN (8, 22, 24, 28) THEN b.transdesc
+					WHEN sbt.ProductID IN (8, 22, 24, 28, 32) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				-1 AS BetdaqId,
@@ -3272,7 +3273,7 @@ BEGIN
 				b.winlostdate BETWEEN @fromdate AND @TempToDate
 				AND b.custid = @CustID
 				AND b.recommend = @Recommend
-				AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28)
+				AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28, 32)
 				AND b.statusID IN (111, 112, 113)
 		END
 	END
