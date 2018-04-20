@@ -110,6 +110,7 @@ AS
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
+		- 20180420@Kos: Include bet type 911 for Cash Out [#Redmine: 93919]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -247,7 +248,7 @@ BEGIN
 	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28)
 
 	DELETE FROM @SportBettype
-	WHERE Bettype IN (904, 911, 914)
+	WHERE Bettype IN (904, 914)
 
 	IF @ShowBT = 0
 	BEGIN
@@ -840,6 +841,20 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 
 			-- Get more info for CashOut tickets
+			IF EXISTS (SELECT TOP(1) 1 FROM @BetListByDateMem WHERE BetType = 911)
+			BEGIN
+				UPDATE b
+				SET b.Odds = ob.odds,
+					b.LiveIndicator = ob.liveindicator,
+					b.LiveHomeScore = ob.livehomescore,
+					b.LiveAwayScore = ob.liveawayscore,
+					b.OriginalBetType = ob.bettype,
+					b.BetdaqId = ob.transid
+				FROM @BetListByDateMem AS b
+					INNER JOIN dbo.bettrans AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
+				WHERE b.BetType = 911
+			END
+
 			IF EXISTS (SELECT TOP(1) 1 FROM @BetListByDateMem WHERE BetType = 912)
 			BEGIN
 				UPDATE b
@@ -2071,6 +2086,20 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 
 			-- Get more info for CashOut tickets
+			IF EXISTS (SELECT TOP(1) 1 FROM @BetListByDateMem WHERE BetType = 911)
+			BEGIN
+				UPDATE b
+				SET b.Odds = ob.odds,
+					b.LiveIndicator = ob.liveindicator,
+					b.LiveHomeScore = ob.livehomescore,
+					b.LiveAwayScore = ob.liveawayscore,
+					b.OriginalBetType = ob.bettype,
+					b.BetdaqId = ob.transid
+				FROM @BetListByDateMem AS b
+					INNER JOIN dbo.bettrans14 AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
+				WHERE b.BetType = 911
+			END
+
 			IF EXISTS (SELECT TOP(1) 1 FROM @BetListByDateMem WHERE BetType = 912)
 			BEGIN
 				UPDATE b
@@ -3022,6 +3051,20 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 
 			-- Get more info for CashOut tickets
+			IF EXISTS (SELECT TOP(1) 1 FROM @BetListByDateMem WHERE BetType = 911)
+			BEGIN
+				UPDATE b
+				SET b.Odds = ob.odds,
+					b.LiveIndicator = ob.liveindicator,
+					b.LiveHomeScore = ob.livehomescore,
+					b.LiveAwayScore = ob.liveawayscore,
+					b.OriginalBetType = ob.bettype,
+					b.BetdaqId = ob.transid
+				FROM @BetListByDateMem AS b
+					INNER JOIN bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
+				WHERE b.BetType = 911
+			END
+
 			IF EXISTS (SELECT TOP(1) 1 FROM @BetListByDateMem WHERE BetType = 912)
 			BEGIN
 				UPDATE b
