@@ -27,6 +27,7 @@ AS
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 		- 20180307@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20180423@Kos: Hotfix - redundant Result Detail in result popup [Redmine: #94133]
 */
 
 BEGIN
@@ -199,7 +200,12 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType = 193 AND d.SettlementStatusID > 0
+			WHERE p.SportType = 193
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceID IN ('00', '01')
+					OR (d.ResourceID LIKE f.ResourceID
+						AND (p.BetType <> 2809
+							OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))
 		END
 	END
 
@@ -321,7 +327,12 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType = 193 AND d.SettlementStatusID > 0
+			WHERE p.SportType = 193
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceID IN ('00', '01')
+					OR (d.ResourceID LIKE f.ResourceID
+						AND (p.BetType <> 2809
+							OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))
 		END
 	END
 
@@ -443,7 +454,12 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType = 193 AND d.SettlementStatusID > 0
+			WHERE p.SportType = 193
+				AND d.SettlementStatusID > 0
+				AND (d.ResourceID IN ('00', '01')
+					OR (d.ResourceID LIKE f.ResourceID
+						AND (p.BetType <> 2809
+							OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))
 		END
 	END
 
