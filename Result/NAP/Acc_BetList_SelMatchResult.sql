@@ -37,6 +37,7 @@ AS
 					- Remove param @RaceNo
 		- 20180320@Kos: Support Fast Market 2 [Redmine: #90708]
 		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20180423@Kos: Hotfix - redundant Result Detail in result popup [Redmine: #94133]
 */
 
 BEGIN
@@ -171,7 +172,12 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchID = @MatchId
-				AND (@SportType = 193 AND d.SettlementStatusID > 0)
+				AND (@SportType = 193
+					AND d.SettlementStatusID > 0
+					AND (d.ResourceID IN ('00', '01')
+						OR (d.ResourceID LIKE f.ResourceID
+							AND (@BetType <> 2809
+								OR d.ResourceID LIKE '%' + @ResourceId))))
 			ORDER BY d.ResourceId
 		END
 	END
@@ -297,7 +303,12 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchID = @MatchId
-				AND (@SportType = 193 AND d.SettlementStatusID > 0)
+				AND (@SportType = 193
+					AND d.SettlementStatusID > 0
+					AND (d.ResourceID IN ('00', '01')
+						OR (d.ResourceID LIKE f.ResourceID
+							AND (@BetType <> 2809
+								OR d.ResourceID LIKE '%' + @ResourceId))))
 			ORDER BY d.ResourceId
 		END
 	END
@@ -422,7 +433,12 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchID = @MatchId
-				AND (@SportType = 193 AND d.SettlementStatusID > 0)
+				AND (@SportType = 193
+					AND d.SettlementStatusID > 0
+					AND (d.ResourceID IN ('00', '01')
+						OR (d.ResourceID LIKE f.ResourceID
+							AND (@BetType <> 2809
+								OR d.ResourceID LIKE '%' + @ResourceId))))
 			ORDER BY d.ResourceId
 		END
 	END
