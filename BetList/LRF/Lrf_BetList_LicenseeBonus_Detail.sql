@@ -19,6 +19,7 @@ AS
 	Original:
 	Revisions:
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
+		- 20180502@Kos: Missing return GBP base currency data [#Redmine: 94431]
 
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
@@ -324,22 +325,22 @@ BEGIN
 		b.*,
 		b.Stake * e.USD AS StakeUSD,
 		b.Stake * e.EUR AS StakeEUR,
-		b.Stake * e.MYR AS StakeMYR,
+		b.Stake * e.GBP AS StakeGBP,
 		b.Actual_Stake * e.USD AS Actual_StakeUSD,
 		b.Actual_Stake * e.EUR AS Actual_StakeEUR,
-		b.Actual_Stake * e.MYR AS Actual_StakeMYR,
+		b.Actual_Stake * e.GBP AS Actual_StakeGBP,
 		b.WinLost * e.USD AS WinLostUSD,
 		b.WinLost * e.EUR AS WinLostEUR,
-		b.WinLost * e.MYR AS WinLostMYR,
+		b.WinLost * e.GBP AS WinLostGBP,
 		b.LicenseeWL * e.USD AS LicenseeWLUSD,
 		b.LicenseeWL * e.EUR AS LicenseeWLEUR,
-		b.LicenseeWL * e.MYR AS LicenseeWLMYR,
+		b.LicenseeWL * e.GBP AS LicenseeWLGBP,
 		b.Comm * e.USD AS CommUSD,
 		b.Comm * e.EUR AS CommEUR,
-		b.Comm * e.MYR AS CommMYR,
+		b.Comm * e.GBP AS CommGBP,
 		b.PlayerComm * e.USD AS PlayerCommUSD,
 		b.PlayerComm * e.EUR AS PlayerCommEUR,
-		b.PlayerComm * e.MYR AS PlayerCommMYR
+		b.PlayerComm * e.GBP AS PlayerCommGBP
 	FROM @Data AS b
 		INNER JOIN #TempExchange AS e
 			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.exchangeid = b.Currency

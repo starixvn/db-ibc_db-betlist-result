@@ -21,6 +21,7 @@ AS
 	Original:
 	Revisions:
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
+		- 20180502@Kos: Missing return GBP base currency data [#Redmine: 94431]
 */
 
 BEGIN
@@ -519,16 +520,16 @@ BEGIN
 		b.*,
 		b.Stake * e.USD AS StakeUSD,
 		b.Stake * e.EUR AS StakeEUR,
-		b.Stake * e.MYR AS StakeMYR,
+		b.Stake * e.GBP AS StakeGBP,
 		b.WinLost * e.USD AS WinLostUSD,
 		b.WinLost * e.EUR AS WinLostEUR,
-		b.WinLost * e.MYR AS WinLostMYR,
+		b.WinLost * e.GBP AS WinLostGBP,
 		b.PlayerComm * e.USD AS PlayerCommUSD,
 		b.PlayerComm * e.EUR AS PlayerCommEUR,
-		b.PlayerComm * e.MYR AS PlayerCommMYR,
+		b.PlayerComm * e.GBP AS PlayerCommGBP,
 		b.OriginalStake * e.USD AS OriginalStakeUSD,
 		b.OriginalStake * e.EUR AS OriginalStakeEUR,
-		b.OriginalStake * e.MYR AS OriginalStakeMYR
+		b.OriginalStake * e.GBP AS OriginalStakeGBP
 	FROM @Data AS b
 		INNER JOIN #TempExchange AS e
 			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.exchangeid = b.Currency
@@ -537,13 +538,13 @@ BEGIN
 		b.*,
 		b.Stake * e.USD AS StakeUSD,
 		b.Stake * e.EUR AS StakeEUR,
-		b.Stake * e.MYR AS StakeMYR,
+		b.Stake * e.GBP AS StakeGBP,
 		b.Price * e.USD AS PriceUSD,
 		b.Price * e.EUR AS PriceEUR,
-		b.Price * e.MYR AS PriceMYR,
+		b.Price * e.GBP AS PriceGBP,
 		b.WinLost * e.USD AS WinLostUSD,
 		b.WinLost * e.EUR AS WinLostEUR,
-		b.WinLost * e.MYR AS WinLostMYR
+		b.WinLost * e.GBP AS WinLostGBP
 	FROM @CashOutData AS b
 		INNER JOIN #TempExchange AS e
 			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.exchangeid = b.Currency
