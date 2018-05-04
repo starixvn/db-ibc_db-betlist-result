@@ -1,3 +1,4 @@
+/*<info serverAlias="DBARC-bodb_Archive" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE bodb_archive
 GO
 ALTER PROCEDURE [dbo].[Aff_CoreBetList_BetTicket_SelMainInfoArc]
@@ -147,7 +148,7 @@ END
 
 
 
-
+GO
 GRANT EXECUTE ON [dbo].[Aff_CoreBetList_BetTicket_SelMainInfoArc] TO [bodbAdminNet] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Aff_CoreBetList_BetTicket_SelMainInfoArc] TO [bodbDownlineNet] AS [dbo]

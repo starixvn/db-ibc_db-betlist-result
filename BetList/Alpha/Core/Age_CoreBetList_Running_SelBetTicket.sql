@@ -1,3 +1,4 @@
+/*<info serverAlias="DBAGE-bodb_AGE" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [bodb_AGE]
 GO
 /****** Object:  StoredProcedure [dbo].[Age_CoreBetList_Running_SelBetTicket]    Script Date: 5/5/2015 1:45:13 PM ******/

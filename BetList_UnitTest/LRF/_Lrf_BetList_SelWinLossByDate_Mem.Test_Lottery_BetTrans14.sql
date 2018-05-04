@@ -1,12 +1,12 @@
 USE [UnitTest_Kos]
 GO
-/****** Object:  StoredProcedure [_Lrf_BetList_SelWinLossByDate_Mem].[Test_HorseRacing_BetTrans]    Script Date: 2/13/2017 10:35:20 AM ******/
+/****** Object:  StoredProcedure [_Lrf_BetList_SelWinLossByDate_Mem].[Test_Keno_BetTrans14]    Script Date: 2/13/2017 10:36:24 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Lrf_BetList_SelWinLossByDate_Mem].[Test_HorseRacing_BetTrans]
+ALTER PROCEDURE [_Lrf_BetList_SelWinLossByDate_Mem].[Test_Lottery_BetTrans14]
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -122,13 +122,14 @@ BEGIN
 		@TransId = b.transid,
 		@CustId = b.custid,
 		@WinLostDate = b.winlostdate
-	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
+	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.Customer AS c WITH (NOLOCK) ON b.custid = c.custid
 		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE s.ProductID = 2
+	WHERE s.ProductID = 28
 		AND b.currency IN (SELECT Currency FROM @Temp)
 		AND b.recommend IN (SELECT AgentId FROM @Temp)
 		AND b.statusID IN (111, 112, 113)
+		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 	IF @TransId IS NOT NULL
 	BEGIN
@@ -138,7 +139,7 @@ BEGIN
 		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelWinLossByDate_Mem] 
 							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
 							@CustID = ' + CONVERT(VARCHAR(10), @CustId) + ',
-							@ShowRB = 1,
+							@ShowKN = 1,
 							@FromDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
 							@ToDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',

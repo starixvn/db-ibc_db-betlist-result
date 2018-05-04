@@ -76,6 +76,8 @@ BEGIN
 		OriginalBetType		INT,
 		BetdaqId			BIGINT,
 		ExtraInfo			VARCHAR(1000),
+		WalletType			TINYINT,
+		RefCode				BIGINT,
 		Currency			NVARCHAR(50)
 	)
 

@@ -1,4 +1,5 @@
-﻿use bodb02
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+use bodb02
 go
 set ANSI_NULLS ON
 set QUOTED_IDENTIFIER ON

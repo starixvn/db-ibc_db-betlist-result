@@ -1,6 +1,7 @@
-﻿USE [bodb02]
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE [bodb02]
 GO
-/****** Object:  StoredProcedure [dbo].[Lrf_BetList_PlatformWinLoss_Mem_xtest]    Script Date: 3/31/2016 9:59:07 AM ******/
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON

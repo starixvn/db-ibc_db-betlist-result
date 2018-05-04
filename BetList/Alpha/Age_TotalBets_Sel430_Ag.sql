@@ -1,4 +1,5 @@
-﻿USE bodb02
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE bodb02
 GO
 
 ALTER PROCEDURE [dbo].[Age_TotalBets_Sel430_Ag]

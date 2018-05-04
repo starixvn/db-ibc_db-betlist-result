@@ -1,3 +1,4 @@
+/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [bodb02]
 GO
 /****** Object:  StoredProcedure [dbo].[Lrf_BetList_WinlostByLeague_Mem]    Script Date: 4/20/2015 12:14:52 PM ******/

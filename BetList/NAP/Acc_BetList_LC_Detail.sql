@@ -1,3 +1,4 @@
+/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [bodb02]
 GO
 /****** Object:  StoredProcedure [dbo].[Acc_BetList_LC_Detail]    Script Date: 10/12/2015 3:31:51 PM ******/

@@ -1,4 +1,5 @@
-﻿USE bodb_archive
+﻿/*<info serverAlias="DBARC-bodb_Archive" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE bodb_archive
 GO
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_Old]

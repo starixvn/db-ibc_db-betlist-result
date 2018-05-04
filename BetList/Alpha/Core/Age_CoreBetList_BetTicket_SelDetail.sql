@@ -1,5 +1,5 @@
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE bodb02
---USE bodb_archive
 GO
 ALTER PROCEDURE [dbo].[Age_CoreBetList_BetTicket_SelDetail]
 	@tempCust	TVP_TicketSportBettype READONLY

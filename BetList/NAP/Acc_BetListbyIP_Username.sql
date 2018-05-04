@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_BetListbyIP_Username]
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_BetListbyIP_Username]
 	@FromDate		DATETIME,
 	@Ip				VARCHAR(15),
 	@UserId			INT			= NULL,

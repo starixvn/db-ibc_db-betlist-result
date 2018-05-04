@@ -1,3 +1,4 @@
+/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [bodb02]
 GO
 /****** Object:  StoredProcedure [dbo].[Aff_User_BetListSystemParlayDetail]    Script Date: 10/17/2014 12:47:09 PM ******/

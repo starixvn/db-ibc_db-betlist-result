@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossParlay_Ag]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossParlay_Ag]
 	@CustID			INT				= NULL,
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,

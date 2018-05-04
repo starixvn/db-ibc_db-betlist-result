@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_BetsSelBetCheckM]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_BetsSelBetCheckM]
 	@TransId	BIGINT,
 	@RefNo		BIGINT,
 	@Language	NVARCHAR(2) = 'E'

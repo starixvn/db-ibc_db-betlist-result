@@ -1,3 +1,4 @@
+/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [bodb02]
 GO
 /****** Object:  StoredProcedure [dbo].[Lrf_BetList_CashOut_Detail]    Script Date: 3/29/2017 4:38:38 PM ******/

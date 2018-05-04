@@ -1,3 +1,4 @@
+/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [bodb02]
 GO
 /****** Object:  StoredProcedure [dbo].[Acc_BetList_LC_Detail]    Script Date: 10/12/2015 3:31:51 PM ******/
@@ -170,6 +171,8 @@ BEGIN
 	RETURN
 	
 END
+
+
 GO
 GRANT	VIEW DEFINITION	ON	Aff_BetList_LC_Detail	TO	vnteam
 GRANT	EXECUTE	ON	Aff_BetList_LC_Detail	TO	bodbDownlineNet

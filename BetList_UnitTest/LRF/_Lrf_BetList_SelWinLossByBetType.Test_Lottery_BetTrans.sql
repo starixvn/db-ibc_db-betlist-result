@@ -1,12 +1,12 @@
 USE [UnitTest_Kos]
 GO
-/****** Object:  StoredProcedure [_Lrf_BetList_PlatformWinLoss_Mem].[Test_HorseRacing_BetTrans]    Script Date: 1/12/2017 1:51:55 PM ******/
+/****** Object:  StoredProcedure [_Lrf_BetList_SelWinLossByBetType].[Test_Keno_BetTrans]    Script Date: 1/12/2017 1:11:21 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Lrf_BetList_PlatformWinLoss_Mem].[Test_HorseRacing_BetTrans]
+ALTER PROCEDURE [_Lrf_BetList_SelWinLossByBetType].[Test_Lottery_BetTrans]
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -14,71 +14,64 @@ BEGIN
 	-- Arrange
 	DECLARE @Data TABLE (
 		RowNum				INT,
-		SportType			INT,
 		TransId				BIGINT,
+		RefNo				BIGINT,
 		BetId				BIGINT,
+		CustId				INT,
+		Username			NVARCHAR(50),
+		SportType			INT,
 		BetType				INT,
+		Currency			SMALLINT,
+		LeagueId			INT,
+		MatchId				INT,
+		MatchCode			VARCHAR(50),
+		IsNeutral			BIT,
+		HomeId				INT,
+		AwayId				INT,
 		Hdp1				SMALLMONEY,
 		Hdp2				SMALLMONEY,
-		Modds				MONEY,
-		OddsType			TINYINT,
+		BetTeam				NVARCHAR(10),
 		Odds				MONEY,
-		Stake				MONEY,
-		Actual_Stake		MONEY,
-		BetTeam				NVARCHAR(20),
+		OddsType			TINYINT,
+		Modds				MONEY,
+		LiveIndicator		BIT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		ShowTime			NVARCHAR(50),
 		Status				NVARCHAR(10),
-		RefNo				BIGINT,
+		BetStatus			NVARCHAR(50),
 		TransDate			DATETIME,
 		WinLostDate			DATETIME,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
 		WinLost				MONEY,
 		LicenseeWL			MONEY,
 		Comm				MONEY,
 		PlayerComm			MONEY,
-		LiveIndicator		BIT,
-		LiveHomeScore		SMALLINT,
-		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
-		LeagueId			INT,
-		MatchId				INT,
-		MatchCode			NVARCHAR(50),
-		Race				NVARCHAR(20),
-		HomeId				INT,
-		AwayId				INT,
-		BetStatus			NVARCHAR(50),
-		IsNeutral			BIT,
-		VirtualRate			FLOAT,
-		IsShowOTExRate		BIT,
-		Currency			INT,
-		ShowTime			NVARCHAR(50),
+		Race				VARCHAR(20),
 		BetCheck			NVARCHAR(50),
 		TransDesc			NVARCHAR(300),
 		BetdaqId			BIGINT,
 		ExtraInfo			VARCHAR(1000),
 		OriginalStake		MONEY,
 		OriginalBetType		SMALLINT,
-		StakeMYR			MONEY,
-		Actual_StakeMYR		MONEY,
-		WinLostMYR			MONEY,
-		LicenseeWLMYR		MONEY,
-		CommMYR				MONEY,
-		PlayerCommMYR		MONEY,
-		OriginalStakeMYR	MONEY,
+		WalletType			TINYINT,
+		RefCode				BIGINT,
+		OddsSpread			MONEY,
+		Nickname			NVARCHAR(50),
 		StakeUSD			MONEY,
-		Actual_StakeUSD		MONEY,
 		WinLostUSD			MONEY,
 		LicenseeWLUSD		MONEY,
 		CommUSD				MONEY,
 		PlayerCommUSD		MONEY,
 		OriginalStakeUSD	MONEY,
 		StakeEUR			MONEY,
-		Actual_StakeEUR		MONEY,
 		WinLostEUR			MONEY,
 		LicenseeWLEUR		MONEY,
 		CommEUR				MONEY,
 		PlayerCommEUR		MONEY,
 		OriginalStakeEUR	MONEY,
 		StakeGBP			MONEY,
-		Actual_StakeGBP		MONEY,
 		WinLostGBP			MONEY,
 		LicenseeWLGBP		MONEY,
 		CommGBP				MONEY,
@@ -103,17 +96,16 @@ BEGIN
 
 	DECLARE @LicenseeId	INT		= 26,	-- Athena000
 		@UserId			INT		= 68,
-		@CustId			INT,
 		@TransId		BIGINT,
-		@PlatformType	TINYINT,
+		@BetType		INT,
 		@WinLostDate	SMALLDATETIME
 
 	DECLARE @Temp TABLE (Currency INT, CurrencyName VARCHAR(100), IsActive BIT, AgentId INT)
 
 	INSERT INTO @Temp
-	EXEC dbo.Lrf_SelCurrencyByLicenseeUser
-		@LicenseeId = @LicenseeId,
-		@UserId = @UserId
+	EXEC bodb02.dbo.Lrf_SelCurrencyByLicenseeUser
+		@LicenseeID = @LicenseeId,
+		@UserID = @UserId
 
 	DECLARE @AgentList VARCHAR(MAX)
 
@@ -125,36 +117,24 @@ BEGIN
 
 	SELECT TOP(1)
 		@TransId = b.transid,
-		@CustId = b.custid,
-		@PlatformType = CASE 
-							WHEN b.betfrom IN ('d', 'g') THEN 1
-							WHEN b.betfrom IN ('a', 'z') THEN 2
-							WHEN b.betfrom IN ('e', 'u', 'y') THEN 3
-							WHEN b.betfrom = 'm' THEN 4
-							WHEN b.betfrom IN ('s', 'l') THEN 5
-							WHEN b.betfrom = 'r' THEN 6
-							WHEN b.betfrom = 'x' THEN 7
-							ELSE 0
-						END,
+		@BetType = b.bettype,
 		@WinLostDate = b.winlostdate
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.Customer AS c WITH (NOLOCK) ON b.custid = c.custid
-		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
-	WHERE s.ProductID = 2
-		AND b.currency IN (SELECT Currency FROM @Temp)
-		AND b.recommend IN (SELECT AgentId FROM @Temp)
+	WHERE b.bettype BETWEEN 1031 AND 1038
+		AND b.currency IN (SELECT DISTINCT Currency FROM @Temp)
+		AND b.recommend IN (SELECT DISTINCT AgentId FROM @Temp)
 		AND b.statusID IN (111, 112, 113)
+		AND b.winlostdate > @MoveBetsDay
 
 	IF @TransId IS NOT NULL
 	BEGIN
 		-- Act
 		DECLARE @Command NVARCHAR(MAX)
 
-		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_PlatformWinLoss_Mem] 
+		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelWinLossByBetType] 
 							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
-							@CustID = ' + CONVERT(VARCHAR(10), @CustId) + ',
-							@ShowRB = 1,
-							@PlatformType = ' + CONVERT(VARCHAR(2), @PlatformType) + ',
+							@Bettype = ' + CONVERT(VARCHAR(5), @BetType) + ',
 							@FromDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
 							@ToDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',
@@ -163,7 +143,7 @@ BEGIN
 		INSERT @Data
 		EXEC tSQLt.ResultSetFilter
 			@ResultsetNo = 1,
-			@Command = @Command
+			@Command = @Command;
 
 		DECLARE @Actual INT
 

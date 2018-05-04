@@ -1,3 +1,4 @@
+/*<info serverAlias="DBARC-bodb_Archive" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [bodb_Archive]
 GO
 /****** Object:  StoredProcedure [dbo].[Aff_CoreBetList_MemArc_SelBetTicket]    Script Date: 5/22/2017 11:20:07 AM ******/

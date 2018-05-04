@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_BetList_SelBettype]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_BetList_SelBettype]
 	@CustId			INT,
 	@FromDate		DATETIME,
 	@ToDate			DATETIME,

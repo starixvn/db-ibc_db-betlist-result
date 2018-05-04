@@ -1,4 +1,5 @@
-﻿USE [bodb02]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE [bodb02]
 GO
 
 /****** Object:  StoredProcedure [dbo].[Acc_BetlistCombinationParlay_Details]    Script Date: 4/8/2013 1:26:41 PM ******/

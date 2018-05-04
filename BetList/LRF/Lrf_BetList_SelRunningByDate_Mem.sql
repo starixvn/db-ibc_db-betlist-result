@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@AgentList	VARCHAR(MAX),
 	@CustId		INT			= NULL,
 	@FromDate	DATETIME	= '',

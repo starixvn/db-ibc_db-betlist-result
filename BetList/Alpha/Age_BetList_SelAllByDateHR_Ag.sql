@@ -1,4 +1,4 @@
-﻿
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_BetList_SelAllByDateHR_Ag]
 	@CustId		INT			= NULL,		-- AgentID
 	@BetType	INT,

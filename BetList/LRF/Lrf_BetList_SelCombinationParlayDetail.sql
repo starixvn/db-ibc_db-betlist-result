@@ -1,4 +1,5 @@
-﻿USE [bodb02]
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE [bodb02]
 GO
 /****** Object:  StoredProcedure [dbo].[Lrf_BetList_SelCombinationParlayDetail]    Script Date: 12/04/2015 04:04:44 ******/
 SET ANSI_NULLS ON

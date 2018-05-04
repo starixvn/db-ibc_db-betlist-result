@@ -1,3 +1,4 @@
+/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelByDayAll_Mem_Old]
 	@AgentList			VARCHAR(MAX),
 	@CustId				INT,

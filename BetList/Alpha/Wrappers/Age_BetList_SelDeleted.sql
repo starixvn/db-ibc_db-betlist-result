@@ -1,4 +1,5 @@
-﻿USE [bodb02]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE [bodb02]
 GO
 /****** Object:  StoredProcedure [dbo].[Age_BetList_SelDeleted_xtest]    Script Date: 5/13/2015 1:04:15 PM ******/
 SET ANSI_NULLS ON

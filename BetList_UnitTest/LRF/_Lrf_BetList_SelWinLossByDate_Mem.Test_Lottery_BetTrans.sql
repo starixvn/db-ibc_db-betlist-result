@@ -1,12 +1,12 @@
 USE [UnitTest_Kos]
 GO
-/****** Object:  StoredProcedure [_Lrf_BetList_SelWinloss_Mem].[Test_HorseRacing_BetTrans]    Script Date: 1/12/2017 2:36:11 PM ******/
+/****** Object:  StoredProcedure [_Lrf_BetList_SelWinLossByDate_Mem].[Test_Keno_BetTrans]    Script Date: 2/13/2017 10:36:00 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Lrf_BetList_SelWinloss_Mem].[Test_HorseRacing_BetTrans]
+ALTER PROCEDURE [_Lrf_BetList_SelWinLossByDate_Mem].[Test_Lottery_BetTrans]
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -14,15 +14,16 @@ BEGIN
 	-- Arrange
 	DECLARE @Data TABLE (
 		RowNum				INT,
-		SportType			INT,
+		SportType			SMALLINT,
+		Username			NVARCHAR(20),
 		TransId				BIGINT,
 		BetId				BIGINT,
-		BetType				INT,
+		BetType				SMALLINT,
 		Hdp1				SMALLMONEY,
 		Hdp2				SMALLMONEY,
-		MOdds				MONEY,
 		OddsType			TINYINT,
 		Odds				MONEY,
+		Modds				MONEY,
 		Stake				MONEY,
 		Actual_Stake		MONEY,
 		BetTeam				NVARCHAR(20),
@@ -31,6 +32,7 @@ BEGIN
 		TransDate			DATETIME,
 		WinLostDate			DATETIME,
 		WinLost				MONEY,
+		BetEffective		MONEY,
 		LicenseeWL			MONEY,
 		Comm				MONEY,
 		PlayerComm			MONEY,
@@ -46,9 +48,7 @@ BEGIN
 		AwayId				INT,
 		BetStatus			NVARCHAR(50),
 		IsNeutral			BIT,
-		VirtualRate			FLOAT,
-		IsShowOTExRate		BIT,
-		Currency			INT,
+		Currency			SMALLINT,
 		ShowTime			NVARCHAR(50), -- table - shoe - hand of Live Casino
 		BetCheck			NVARCHAR(50),
 		TransDesc			NVARCHAR(300),
@@ -56,16 +56,10 @@ BEGIN
 		ExtraInfo			VARCHAR(1000),
 		OriginalStake		MONEY,
 		OriginalBetType		SMALLINT,
-		StakeMYR			MONEY,
-		Actual_StakeMYR		MONEY,
-		WinLostMYR			MONEY,
-		LicenseeWLMYR		MONEY,
-		CommMYR				MONEY,
-		PlayerCommMYR		MONEY,
-		OriginalStakeMYR	MONEY,
 		StakeUSD			MONEY,
 		Actual_StakeUSD		MONEY,
 		WinLostUSD			MONEY,
+		BetEffectiveUSD		MONEY,
 		LicenseeWLUSD		MONEY,
 		CommUSD				MONEY,
 		PlayerCommUSD		MONEY,
@@ -73,6 +67,7 @@ BEGIN
 		StakeEUR			MONEY,
 		Actual_StakeEUR		MONEY,
 		WinLostEUR			MONEY,
+		BetEffectiveEUR		MONEY,
 		LicenseeWLEUR		MONEY,
 		CommEUR				MONEY,
 		PlayerCommEUR		MONEY,
@@ -80,6 +75,7 @@ BEGIN
 		StakeGBP			MONEY,
 		Actual_StakeGBP		MONEY,
 		WinLostGBP			MONEY,
+		BetEffectiveGBP		MONEY,
 		LicenseeWLGBP		MONEY,
 		CommGBP				MONEY,
 		PlayerCommGBP		MONEY,
@@ -105,7 +101,6 @@ BEGIN
 		@UserId			INT		= 68,
 		@CustId			INT,
 		@TransId		BIGINT,
-		@BetType		INT,
 		@WinLostDate	SMALLDATETIME
 
 	DECLARE @Temp TABLE (Currency INT, CurrencyName VARCHAR(100), IsActive BIT, AgentId INT)
@@ -126,11 +121,11 @@ BEGIN
 	SELECT TOP(1)
 		@TransId = b.transid,
 		@CustId = b.custid,
-		@BetType = b.bettype,
 		@WinLostDate = b.winlostdate
 	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.Customer AS c WITH (NOLOCK) ON b.custid = c.custid
-	WHERE b.bettype BETWEEN 31 AND 33
+		INNER JOIN bodb02.dbo.SportBettypeMatrix AS s WITH (NOLOCK) ON b.bettype = s.BetType
+	WHERE s.ProductID = 28
 		AND b.currency IN (SELECT Currency FROM @Temp)
 		AND b.recommend IN (SELECT AgentId FROM @Temp)
 		AND b.statusID IN (111, 112, 113)
@@ -140,10 +135,10 @@ BEGIN
 		-- Act
 		DECLARE @Command NVARCHAR(MAX)
 
-		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelWinloss_Mem] 
+		SET @Command = 'EXEC bodb02.dbo.[Lrf_BetList_SelWinLossByDate_Mem] 
 							@AgentList = ''' + CONVERT(VARCHAR(MAX), @AgentList) + ''',
 							@CustID = ' + CONVERT(VARCHAR(10), @CustId) + ',
-							@ShowRB = 1,
+							@ShowKN = 1,
 							@FromDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
 							@ToDate = ''' + CONVERT(VARCHAR(10), @WinLostDate, 23) + ''',
 							@MoveBetsDay = ''' + CONVERT(VARCHAR(10), @MoveBetsDay, 23) + ''',

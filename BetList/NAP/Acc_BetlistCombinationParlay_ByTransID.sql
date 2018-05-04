@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_BetlistCombinationParlay_ByTransID]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_BetlistCombinationParlay_ByTransID]
 	@TransId		BIGINT,
 	@CustId			INT,
 	@MoveBetDay		DATETIME,

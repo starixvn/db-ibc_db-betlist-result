@@ -26,6 +26,7 @@ BEGIN
 	-- Arrange
 	DECLARE @Data TABLE (
 		RowNum			INT,
+		CustId			INT,
 		TransId			BIGINT,
 		SportType		INT,
 		BetType			INT,
@@ -54,7 +55,10 @@ BEGIN
 		Ip				NVARCHAR(15),
 		TransDesc		NVARCHAR(300),
 		BetCheck		NVARCHAR(50),
-		MatchCode		VARCHAR(50)
+		MatchCode		VARCHAR(50),
+		OddsSpread		MONEY,
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	DECLARE @RefNo	BIGINT,

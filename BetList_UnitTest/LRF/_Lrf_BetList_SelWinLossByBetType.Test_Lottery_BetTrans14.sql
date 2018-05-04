@@ -1,12 +1,12 @@
 USE [UnitTest_Kos]
 GO
-/****** Object:  StoredProcedure [_Lrf_BetList_SelWinLossByBetType].[Test_HorseRacing_BetTrans]    Script Date: 12/14/2017 3:46:12 PM ******/
+/****** Object:  StoredProcedure [_Lrf_BetList_SelWinLossByBetType].[Test_Keno_BetTrans14]    Script Date: 1/12/2017 1:11:41 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [_Lrf_BetList_SelWinLossByBetType].[Test_HorseRacing_BetTrans]
+ALTER PROCEDURE [_Lrf_BetList_SelWinLossByBetType].[Test_Lottery_BetTrans14]
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -55,6 +55,9 @@ BEGIN
 		ExtraInfo			VARCHAR(1000),
 		OriginalStake		MONEY,
 		OriginalBetType		SMALLINT,
+		WalletType			TINYINT,
+		RefCode				BIGINT,
+		OddsSpread			MONEY,
 		Nickname			NVARCHAR(50),
 		StakeUSD			MONEY,
 		WinLostUSD			MONEY,
@@ -116,12 +119,13 @@ BEGIN
 		@TransId = b.transid,
 		@BetType = b.bettype,
 		@WinLostDate = b.winlostdate
-	FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
+	FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.Customer AS c WITH (NOLOCK) ON b.custid = c.custid
-	WHERE b.bettype BETWEEN 31 AND 33
+	WHERE b.bettype BETWEEN 1031 AND 1038
 		AND b.currency IN (SELECT DISTINCT Currency FROM @Temp)
 		AND b.recommend IN (SELECT DISTINCT AgentId FROM @Temp)
 		AND b.statusID IN (111, 112, 113)
+		AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 	IF @TransId IS NOT NULL
 	BEGIN
