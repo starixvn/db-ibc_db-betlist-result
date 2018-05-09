@@ -116,6 +116,7 @@ AS
 		- 20180305@Kos: Don't support Racing, Cockfighting, RNG Casino (bettype 71, 72) anymore [#Redmine: 86086]
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
+		- 20180509@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 
 	Param's Explanation:
 		+ @TransType:
@@ -715,7 +716,8 @@ BEGIN
 				b.swinlost,
 				b.winlostdate,
 				CASE
-					WHEN s.ProductID IN (12, 13) THEN b.betcheck 
+					WHEN s.ProductID IN (12, 13) THEN b.betcheck
+					WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
 				CASE
@@ -1774,6 +1776,7 @@ BEGIN
 					CASE
 						WHEN s.ProductId = 12 THEN b.GameID3rd
 						WHEN s.ProductId = 15 THEN b.Tranid3rd
+						WHEN s.ProductId = 8 THEN ISNULL(b.custom2, '')
 						ELSE ''
 					END AS BetCheck,
 					CASE
@@ -1872,7 +1875,11 @@ BEGIN
 					b.mwinlost,
 					b.swinlost,
 					b.winlostdate,
-					b.BetCheck,
+					CASE
+						WHEN s.ProductId IN (12, 13, 28) THEN b.betcheck
+						WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
+						ELSE ''
+					END AS BetCheck,
 					CASE
 						WHEN s.ProductId IN (8, 28) THEN b.transdesc
 						ELSE ''

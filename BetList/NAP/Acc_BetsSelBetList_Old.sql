@@ -2,8 +2,8 @@
 GO
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_Old]
-	@FromDate	DATETIME,
-	@ToDate		DATETIME,
+	@FromDate	SMALLDATETIME,
+	@ToDate		SMALLDATETIME,
 	@CustId		INT,
 	@BetType	INT = 0
 AS
@@ -87,6 +87,7 @@ AS
 		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
+		- 20180509@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 */
 
 BEGIN
@@ -567,6 +568,7 @@ BEGIN
 			b.winlostdate,
 			CASE
 				WHEN s.ProductId IN (12, 13) THEN b.BetCheck
+				WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE

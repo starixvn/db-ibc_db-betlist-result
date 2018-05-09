@@ -7,9 +7,9 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList]
-	@FromDate		DATETIME,
-	@ToDate			DATETIME,
-	@MoveBetsDay	DATETIME,
+	@FromDate		SMALLDATETIME,
+	@ToDate			SMALLDATETIME,
+	@MoveBetsDay	SMALLDATETIME,
 	@CustId			INT,
 	@BetType		INT = 0
 AS
@@ -118,6 +118,8 @@ AS
 		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
+		- 20180509@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
+					- Fix duplicate data during Move Bet process
 */
 
 BEGIN
@@ -241,8 +243,16 @@ BEGIN
 		RefCode			BIGINT
 	)
 
-	IF @Todate > @MoveBetsDay
+	DECLARE @TempFromDate SMALLDATETIME,
+		@TempToDate SMALLDATETIME
+
+	IF @ToDate > @MoveBetsDay
 	BEGIN
+		IF @FromDate <= @MoveBetsDay
+			SET @TempFromDate = DATEADD(DAY, 1, @MoveBetsDay)
+		ELSE
+			SET @TempFromDate = @FromDate
+
 		/* normal tickets
 			- Sportsbook				: ProductID = 1
 			- Number Game				: ProductID = 3
@@ -361,7 +371,7 @@ BEGIN
 				--exclude metric gaming running ticket
 				AND (s.SubProduct NOT IN ('MG-SuperLive')
 					OR (s.SubProduct IN ('MG-SuperLive') AND b.statusID NOT IN (0, 1)))
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 
 			UNION ALL -- translog metric gaming
 			SELECT
@@ -445,7 +455,7 @@ BEGIN
 				b.custid = @CustId
 				AND s.SubProduct IN ('MG-SuperLive')
 				AND b.statusID IN (0, 1)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 
 			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports)
 			IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE Bettype IN (9, 29, 2799))
@@ -512,7 +522,6 @@ BEGIN
 					b.swinlost,
 					'' AS showtime,
 					b.winlostdate,
-
 					ISNULL(b.betcheck, '') AS BetCheck,
 					'' AS transdesc,
 					0 AS OddsSpread,
@@ -526,7 +535,7 @@ BEGIN
 				WHERE b.custid = @CustId
 					AND b.matchid IN (9, 29, 2799)
 					AND b.bettype IN (9, 29, 2799)
-					AND b.winlostdate BETWEEN @FromDate AND @ToDate
+					AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			END
 
 			-- Outright
@@ -609,7 +618,7 @@ BEGIN
 				WHERE b.custid = @CustId
 					AND b.matchid > 0
 					AND b.bettype = 10
-					AND b.winlostdate BETWEEN @FromDate AND @ToDate
+					AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			END
 
 			-- Get more info for BetTrade tickets
@@ -761,6 +770,7 @@ BEGIN
 				b.winlostdate,
 				CASE
 					WHEN s.ProductId IN (12, 13) THEN b.BetCheck
+					WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
@@ -776,7 +786,7 @@ BEGIN
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid_matchid_bettype)
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND s.ProductId IN (8, 12, 13, 23, 28)
 		END
 
@@ -878,7 +888,7 @@ BEGIN
 				AND b.matchid > 0
 				AND s.ProductID = 5
 				AND s.eventtype = 3
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 		END
 
 		-- Keno, Gold Deluxe, Microgaming Live Casino, Colossus Bets, Lottery (translog)
@@ -959,6 +969,7 @@ BEGIN
 				CASE
 					WHEN s.ProductId = 12 THEN b.GameID3rd
 					WHEN s.ProductId = 15 THEN b.Tranid3rd
+					WHEN s.ProductId = 8 THEN ISNULL(b.custom2, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
@@ -975,7 +986,7 @@ BEGIN
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.gameID
 			WHERE b.custid = @CustId
 				AND b.statusid IN (0, 1)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND s.ProductID IN (8, 12, 13, 15, 28)
 		END
 
@@ -1054,7 +1065,7 @@ BEGIN
 				INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND s.EventType = 5
 		END
 
@@ -1148,7 +1159,7 @@ BEGIN
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.gameID
 			WHERE b.custid = @CustId
 				AND b.statusid IN (0, 1)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND s.ProductID = 30
 		END
 
@@ -1243,7 +1254,7 @@ BEGIN
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId 
 				AND s.ProductId IN (6, 17, 22, 24, 32)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.winlostdate < @Yesterday	-- before yesterday
 
 			IF @ToDate >= @Yesterday
@@ -1331,7 +1342,7 @@ BEGIN
 					INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId 
 					AND s.ProductId IN (6, 17, 22, 24, 32)
-					AND b.winlostdate BETWEEN @FromDate AND @ToDate
+					AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 					AND b.winlostdate >= @Yesterday
 					AND brng.statusID IN (0, 1)
 				GROUP BY
@@ -1447,7 +1458,7 @@ BEGIN
 					INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId 
 					AND s.ProductId IN (6, 17, 22, 24, 32)
-					AND b.winlostdate BETWEEN @FromDate AND @ToDate
+					AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND brng.statusID NOT IN (0, 1)
 				GROUP BY
@@ -1547,7 +1558,7 @@ BEGIN
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId 
 				AND s.ProductId IN (11, 21)
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.winlostdate < @Yesterday
 
 			IF @ToDate >= @Yesterday
@@ -1629,7 +1640,7 @@ BEGIN
 					INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId 
 					AND s.ProductId IN (11, 21)
-					AND b.winlostdate BETWEEN @FromDate AND @ToDate
+					AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 					AND b.winlostdate >= @Yesterday
 					AND blc.statusID IN (0, 1)
 				GROUP BY
@@ -1729,7 +1740,7 @@ BEGIN
 					INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId 
 					AND s.ProductId IN (11, 21)
-					AND b.winlostdate BETWEEN @FromDate AND @ToDate
+					AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND blc.statusID NOT IN (0, 1)
 				GROUP BY
@@ -1824,12 +1835,17 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.matchid = 204
 				AND s.ProductId = 15
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 		END
 	END
 
-	IF @Fromdate <= @MoveBetsDay
+	IF @FromDate <= @MoveBetsDay
 	BEGIN
+		IF @ToDate >= @MoveBetsDay
+			SET @TempToDate = @MoveBetsDay
+		ELSE
+			SET @TempToDate = @ToDate
+
 		/* normal tickets 
 			- Sportsbook				: ProductID = 1
 			- Number Game				: ProductID = 3
@@ -1936,7 +1952,7 @@ BEGIN
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.matchid > 0
 				AND s.EventType = 1
 
@@ -2016,7 +2032,7 @@ BEGIN
 				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX=bettrans1413)
 					INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
-					AND b.winlostdate BETWEEN @FromDate AND @ToDate
+					AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 					AND b.matchid IN (9, 29, 2799)
 					AND b.bettype IN (9, 29, 2799)
 			END
@@ -2095,7 +2111,7 @@ BEGIN
 					INNER JOIN dbo.outright14 AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 					INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
 				WHERE b.custid = @CustId
-					AND b.winlostdate BETWEEN @FromDate AND @ToDate
+					AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 					AND b.bettype = 10
 					AND b.matchid > 0
 			END
@@ -2251,7 +2267,8 @@ BEGIN
 				'' AS showtime,
 				b.winlostdate,
 				CASE
-					WHEN s.ProductId IN (12, 13) THEN b.BetCheck
+					WHEN s.ProductId IN (12, 13) THEN b.betcheck
+					WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
@@ -2270,7 +2287,7 @@ BEGIN
 			FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX=bettrans1413)
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND s.ProductId IN (6, 8, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32)
 		END
 
@@ -2368,7 +2385,7 @@ BEGIN
 						AND f.bettype = 1232 
 				) bm
 			WHERE b.custid = @CustId
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.matchid > 0
 				AND s.ProductId = 5
 				AND s.EventType = 3
@@ -2449,7 +2466,7 @@ BEGIN
 				INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND s.EventType = 5
 		END
 
@@ -2527,7 +2544,7 @@ BEGIN
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 				LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 			WHERE b.custid = @CustId
-				AND b.winlostdate BETWEEN @FromDate AND @ToDate
+				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.matchid = 204 
 				AND s.ProductId = 15
 		END

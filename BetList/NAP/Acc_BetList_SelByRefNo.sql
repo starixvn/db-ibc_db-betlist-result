@@ -62,6 +62,7 @@ AS
 					- Don't support Cockfighting anymore
 		- 20180302@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
+		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 */
 
 BEGIN
@@ -728,6 +729,8 @@ BEGIN
 					b.winlostdate,
 					CASE
 						WHEN s.ProductID IN (12, 13) THEN b.betcheck
+						WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
+
 						ELSE ''
 					END AS BetCheck,
 					CASE
@@ -911,6 +914,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID IN (12, 13) THEN b.GameID3rd
 						WHEN s.ProductID = 15 THEN b.Tranid3rd
+						WHEN s.ProductId = 8 THEN ISNULL(b.custom2, '')
 						ELSE ''
 					END AS BetCheck,
 					CASE
@@ -2259,7 +2263,7 @@ BEGIN
 				SELECT
 					b.bettype,
 					b.transid,
-					ISNULL(b.BetID, 0) AS BetId,
+					ISNULL(b.betid, 0) AS BetId,
 					b.refno,
 					'' AS matchcode,
 					'' AS Race,
@@ -2349,6 +2353,7 @@ BEGIN
 					b.winlostdate,
 					CASE
 						WHEN s.ProductID IN (12, 13) THEN b.betcheck
+						WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 						ELSE ''
 					END AS BetCheck,
 					CASE
