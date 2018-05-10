@@ -32,6 +32,7 @@ AS
 		- 20171031@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
 		- 20180323@Kos: Return BetdaqId to support ONERnG Jackpot [#Redmine: 88652]
+		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 
 	Param's Explanation:
 
@@ -113,8 +114,9 @@ BEGIN
 		, '' AS Placing
 		, '' AS showtime
 		, CASE 
-			WHEN c.ProductID = 12 AND b.gameid IN ( 1701,1702 ) THEN b.Gameid3rd
+			WHEN c.ProductID = 12 AND b.gameid IN (1701, 1702) THEN b.Gameid3rd
 			WHEN c.ProductID = 15 THEN b.Tranid3rd
+			WHEN c.ProductID = 8 THEN ISNULL(b.custom2, '')
 			ELSE ''
 		END AS BetCheck
 		, 0 AS comstatus

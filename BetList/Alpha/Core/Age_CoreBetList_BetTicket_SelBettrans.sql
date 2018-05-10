@@ -44,6 +44,7 @@ AS
 		- 20180202@Kos: Don't support Racing, Live Casino, RNG Casino (bettype 71, 72), Cockfighting [#Redmine: 86086]
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180418@Kos: Support Pragmatic Casino [#Redmine: 92160]
+		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 
 	Param's Explanation:
 
@@ -166,6 +167,7 @@ BEGIN
 		, CASE 
 			WHEN c.ProductID IN (12) AND b.bettype IN (1701, 1702) THEN b.betcheck
 			WHEN c.ProductID IN (1, 27) THEN ISNULL(b.betcheck, '')
+			WHEN c.ProductID = 8 THEN ISNULL(b.comstatus, '')
 			ELSE ''
 		END AS betcheck
 		, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' 
