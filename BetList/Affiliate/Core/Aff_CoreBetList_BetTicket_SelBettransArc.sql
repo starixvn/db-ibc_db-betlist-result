@@ -18,6 +18,8 @@ AS
 
 	Revisions:
 		- 20170519@Kos: Clone from original SP and support CashOut [#Redmine: 71963]
+		- 20180511@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
+					- Don't support Cockfighting anymore
 
 	Param's Explanation:
 	
@@ -48,7 +50,6 @@ BEGIN
 		- Keno					: ProductId = 8
 		- P2P					: ProductId = 9
 		- Gold Deluxe			: ProductId = 12
-		- Cockfighting			: ProductId = 19
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -64,14 +65,12 @@ BEGIN
 			WHEN c.ProductID = 8 THEN 202
 			WHEN c.ProductID = 9 THEN 253 
 			WHEN c.ProductID = 12 THEN 255
-			WHEN c.ProductID = 19 THEN 206
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
 		, ISNULL(b.betid, 0)
 		, CASE
 			WHEN c.ProductID = 1 THEN b.betteam
-			WHEN c.ProductID = 8 THEN fnc.ChoiceId
 			ELSE ''
 		END AS Betteam
 		, CASE
@@ -83,12 +82,12 @@ BEGIN
 			ELSE 0
 		END AS hdp2
 		, CASE
-			WHEN c.ProductID IN (8, 19) THEN b.OddsType
+			WHEN c.ProductID IN (8) THEN b.OddsType
 			ELSE 0
 		END AS OddsType
 		, b.oddsid
 		, CASE
-			WHEN c.ProductID IN (1, 8, 12, 19) THEN b.Odds
+			WHEN c.ProductID IN (1, 8, 12) THEN b.Odds
 			ELSE 0
 		END AS Odds
 		, CASE
@@ -136,9 +135,7 @@ BEGIN
 		, b.ip
 		, 0 AS LeagueID
 		, CASE
-			WHEN c.ProductID = 8 THEN fnc.GameId
 			WHEN c.ProductID = 12 THEN 255
-			WHEN c.ProductID = 19 THEN b.betdaqid
 			ELSE 0
 		END AS MatchID
 		, '' AS MatchCode
@@ -150,9 +147,9 @@ BEGIN
 		, CONVERT(BIT, 0) AS IsNeutral
 		, '' AS Placing
 		, '' AS showtime
-		, CASE 
-			WHEN c.ProductID IN (9, 12) AND b.bettype IN (1000, 1701, 1702) THEN b.betcheck 
-			WHEN c.ProductID = 19 THEN b.betcheck
+		, CASE
+			WHEN c.ProductID = 8 THEN ISNULL(b.comstatus, '')
+			WHEN c.ProductID IN (9, 12) AND b.bettype IN (1000, 1701, 1702) THEN b.betcheck
 			WHEN b.bettype = 29 THEN ISNULL(b.betcheck, '')
 			ELSE ''
 		END	AS betcheck
@@ -161,7 +158,7 @@ BEGIN
 			END AS comstatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
-			WHEN c.ProductId = 19 THEN b.transdesc
+			WHEN c.ProductId = 8 THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, 0 AS OddsSpread
@@ -171,7 +168,6 @@ BEGIN
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN @custInfo AS ci ON c.custid = ci.custid
-		OUTER APPLY [dbo].[f_ParseTransDesc](b.transdesc, b.bettype) fnc
 	WHERE c.WhTicket = 3
 		AND c.EventType = 0
 		AND c.ProductID <> 15	-- not Colossus Bet
@@ -347,7 +343,7 @@ BEGIN
 	WHERE c.WhTicket = 3
 		AND c.EventType = 1
 
-	/* 
+	/*
 		- SB outright	: ProductID = 1
 		- HR			: ProductID = 2
 	*/

@@ -22,8 +22,10 @@ AS
 		- 20160308@Bobby: Implement LIC core bet list for Affiliate site
 		- 20160415@Bobby: Update changes for combo parlay [#Redmine: 56136]
 		- 20170302@Kos: Support KickOffTime for Virtual Soccer and Virtual Tennis [#Redmine: 71906]
-					  - Don't support P2P and Bingo in bettrans and bettrans14 anymore
+					- Don't support P2P and Bingo in bettrans and bettrans14 anymore
 		- 20170519@Kos: Support CashOut [#Redmine: 71963]
+		- 20180511@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
+					- Don't support Cockfighting anymore
 
 	Param's Explanation:
 
@@ -40,7 +42,6 @@ BEGIN
 		- Keno					: ProductId = 8
 		- AG Casino				: ProductId = 11
 		- Gold Deluxe			: ProductId = 12
-		- Cockfighting			: ProductId = 19
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -53,33 +54,31 @@ BEGIN
 			WHEN c.ProductID = 6 AND b.bettype = 71 THEN 251
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.matchid
 			WHEN c.ProductID = 8 THEN 202
-			WHEN c.ProductID = 12 THEN 255
-			WHEN c.ProductId = 19 THEN 206
 			WHEN c.ProductId = 11 THEN 250
+			WHEN c.ProductID = 12 THEN 255
 			ELSE 0
-		END							AS Sporttype
+		END AS Sporttype
 		, b.bettype
 		, ISNULL(b.BetID, 0)
 		, CASE WHEN c.ProductID = 1 THEN b.Betteam
-				WHEN c.ProductID = 8 THEN fnc.ChoiceId
-				ELSE '' 
-			END						AS Betteam
+				ELSE ''
+			END AS Betteam
 		, CASE WHEN c.ProductID = 1 THEN b.hdp1
 				ELSE 0
-			END						AS hdp1
+			END AS hdp1
 		, CASE WHEN c.ProductID = 1 THEN b.hdp2
 				ELSE 0 
-			END						AS hdp2
-		, CASE WHEN c.ProductID IN (8, 19) THEN b.OddsType
+			END AS hdp2
+		, CASE WHEN c.ProductID IN (8) THEN b.OddsType
 			ELSE 0
-		END		AS OddsType
+		END AS OddsType
 		, b.oddsid
-		, CASE WHEN c.ProductID IN ( 1, 8, 12, 19 ) THEN b.Odds
+		, CASE WHEN c.ProductID IN ( 1, 8, 12 ) THEN b.Odds
 				ELSE 0 
-			END						AS Odds
+			END AS Odds
 		, CASE WHEN c.ProductID IN (1) THEN b.modds 
 				ELSE 0 
-			END						AS modds
+			END AS modds
 		, b.Stake
 		, b.actual_stake 
 		, b.Status
@@ -121,11 +120,9 @@ BEGIN
 		, b.ip
 		, 0 AS LeagueID
 		,CASE
-			WHEN c.ProductID = 8 THEN fnc.GameId
 			WHEN c.ProductID = 12 THEN 255
-			WHEN c.ProductID = 19 THEN b.betdaqid
 			ELSE 0
-		END		AS MatchID
+		END AS MatchID
 		, '' AS MatchCode
 		, '' AS Race
 		, b.winlostdate AS eventdate
@@ -136,8 +133,8 @@ BEGIN
 		, '' AS Placing
 		, '' AS showtime
 		, CASE 
-			WHEN c.ProductID = 12 AND b.bettype IN (1701, 1702) THEN b.betcheck 
-			WHEN c.ProductID = 19 THEN b.betcheck
+			WHEN c.ProductID = 8 THEN ISNULL(b.comstatus, '')
+			WHEN c.ProductID = 12 AND b.bettype IN (1701, 1702) THEN b.betcheck
 			WHEN b.bettype = 29 THEN ISNULL(b.betcheck, '')
 			ELSE ''
 		END	AS betcheck
@@ -146,7 +143,7 @@ BEGIN
 		END		AS comstatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
-			WHEN c.ProductId = 19 THEN b.transdesc
+			WHEN c.ProductID = 8 THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, 0 AS OddsSpread
@@ -155,7 +152,6 @@ BEGIN
 		, 0 AS OriginalBetType
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
-		OUTER APPLY [dbo].[f_ParseTransDesc](b.transdesc, b.bettype) fnc
 	WHERE c.WhTicket = 1 AND c.EventType = 0
 
 	/*
@@ -654,4 +650,10 @@ BEGIN
 
 	RETURN;
 END
+
+
+GO
+GRANT EXECUTE ON [dbo].[Aff_CoreBetList_BetTicket_SelBettrans] TO [bodbAdminNet] AS [dbo]
+GO
+GRANT EXECUTE ON [dbo].[Aff_CoreBetList_BetTicket_SelBettrans] TO [bodbDownlineNet] AS [dbo]
 GO
