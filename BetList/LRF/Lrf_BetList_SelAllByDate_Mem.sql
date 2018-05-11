@@ -120,6 +120,7 @@ AS
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
+		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 */
 
 BEGIN
@@ -1296,6 +1297,7 @@ BEGIN
 			'' AS ShowTime,
 			CASE
 				WHEN sbt.ProductID = 15 THEN t.Tranid3rd
+				WHEN sbt.ProductID = 8 THEN ISNULL(t.custom2, '')
 				ELSE '' 
 			END AS BetCheck,
 			CASE
@@ -1378,6 +1380,7 @@ BEGIN
 			'' AS ShowTime,
 			CASE
 				WHEN sbt.ProductID = 13 THEN b.betcheck
+				WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE

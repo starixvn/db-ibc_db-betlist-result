@@ -51,6 +51,7 @@ AS
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180409@Kos: Support Betradar Virtual Basketball [Redmine: #90881]
+		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 
 	Parameters:
 */
@@ -996,7 +997,10 @@ BEGIN
 				b.comm,
 				b.playercomm,
 				'' AS Race,
-				'' AS BetCheck,
+				CASE
+					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
+					ELSE ''
+				END AS BetCheck,
 				ISNULL(b.transdesc, '') AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
@@ -1447,7 +1451,10 @@ BEGIN
 				b.comm,
 				b.playercomm,
 				'' AS Race,
-				'' AS BetCheck,
+				CASE
+					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
+					ELSE ''
+				END AS BetCheck,
 				ISNULL(b.transdesc, '') AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,

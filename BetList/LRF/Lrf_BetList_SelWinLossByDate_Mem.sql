@@ -125,6 +125,7 @@ AS
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180405@Kos: Correct BetEffective value in Bonus tickets [#Redmine: 91740]
+		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 */
 
 BEGIN
@@ -284,11 +285,11 @@ BEGIN
 		OddsSpread		MONEY
 	)
 
-	DECLARE @TempFromDate DATETIME
-	DECLARE @TempToDate DATETIME
+	DECLARE @TempFromDate SMALLDATETIME
+	DECLARE @TempToDate SMALLDATETIME
 
 	DECLARE @Yesterday SMALLDATETIME
-	DECLARE @Today DATETIME
+	DECLARE @Today SMALLDATETIME
 
 	SET @Yesterday = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 	SET @Today = DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
@@ -1139,6 +1140,7 @@ BEGIN
 				'' AS ShowTime,
 				CASE
 					WHEN sbt.ProductID = 13 THEN b.betcheck
+					WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
 				CASE
@@ -2346,6 +2348,7 @@ BEGIN
 				'' AS ShowTime,
 				CASE
 					WHEN sbt.ProductID = 13 THEN b.betcheck
+					WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
 				CASE
@@ -3246,6 +3249,7 @@ BEGIN
 				'' AS ShowTime,
 				CASE
 					WHEN sbt.ProductID = 13 THEN b.betcheck
+					WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
 				CASE
@@ -3264,11 +3268,10 @@ BEGIN
 				bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE
-				b.winlostdate BETWEEN @fromdate AND @TempToDate 
-				AND b.custid = @CustID 
-				AND b.recommend = @Recommend 
+				b.winlostdate BETWEEN @fromdate AND @TempToDate
+				AND b.custid = @CustID
+				AND b.recommend = @Recommend
 				AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28)
-				AND sbt.EventType = 0 
 				AND b.statusID IN (111, 112, 113)
 		END
 	END

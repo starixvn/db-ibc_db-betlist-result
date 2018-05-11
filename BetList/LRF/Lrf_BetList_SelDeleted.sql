@@ -57,6 +57,7 @@ AS
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
+		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 
 	Param's Explanation:
 		- @AgentList: Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -182,7 +183,10 @@ BEGIN
 		b.betid,
 		b.currency,
 		'' AS ShowTime,
-		'' AS betcheck,
+		CASE
+			WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
+			ELSE ''
+		END AS BetCheck,
 		ISNULL(b.transdesc, '') AS transdesc,
 		-1 AS BetdaqId,
 		'' AS ExtraInfo,
@@ -337,7 +341,7 @@ BEGIN
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN
-			(	SELECT 
+			(	SELECT
 					teamid AS homeid,
 					leagueid,
 					orid,

@@ -98,6 +98,7 @@ AS
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180320@Kos: Increase TransDesc column length [#Redmine: 92433]
 		- 20180322@Kos: Support Fast Market 2 [#Redmine: 90879]
+		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 
 	Param's Explanation:
 */
@@ -499,7 +500,10 @@ BEGIN
 			b.refno,
 			b.custid,
 			'''' AS showtime,
-			b.betcheck,
+			CASE
+				WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '''')
+				ELSE ''''
+			END AS BetCheck,
 			ISNULL(b.transdesc, '''') AS transdesc,
 			CASE
 				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE ''%p25%'' THEN
@@ -959,7 +963,10 @@ BEGIN
 			b.refno,
 			b.custid,
 			'''' AS showtime,
-			b.betcheck,
+			CASE
+				WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '''')
+				ELSE ''''
+			END AS BetCheck,
 			ISNULL(b.transdesc, '''') AS transdesc,
 			CASE
 				WHEN sbt.ProductID = 1 AND b.ExtraInfo LIKE ''%p25%'' THEN

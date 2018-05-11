@@ -8,8 +8,8 @@ GO
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinloss_Mem]
 	@AgentList			VARCHAR(MAX),
 	@CustId				INT,
-	@FromDate			DATETIME,
-	@ToDate				DATETIME,
+	@FromDate			SMALLDATETIME,
+	@ToDate				SMALLDATETIME,
 	@DrawFilter			SMALLINT	= 1,
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
@@ -111,6 +111,7 @@ AS
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180420@Kos: Include bet type 911 for Cash Out [#Redmine: 93919]
+		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -143,8 +144,8 @@ BEGIN
 		RETURN
 	END CATCH
 
-	DECLARE @fdate DATETIME,
-		@tdate DATETIME
+	DECLARE @fdate SMALLDATETIME,
+		@tdate SMALLDATETIME
 
 	SELECT @fdate = @FromDate,
 		@tdate = @ToDate
@@ -232,8 +233,8 @@ BEGIN
 		OddsSpread		MONEY
 	)
 
-	DECLARE @TempFromDate DATETIME
-	DECLARE @TempToDate DATETIME
+	DECLARE @TempFromDate SMALLDATETIME
+	DECLARE @TempToDate SMALLDATETIME
 
 	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
@@ -1056,6 +1057,7 @@ BEGIN
 				'' AS showtime,
 				CASE
 					WHEN sbt.ProductID = 13 THEN b.betcheck
+					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
 				CASE
@@ -2329,6 +2331,7 @@ BEGIN
 				'' AS showtime,
 				CASE
 					WHEN sbt.ProductID = 13 THEN b.betcheck
+					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
 				CASE
@@ -3294,6 +3297,7 @@ BEGIN
 				'' AS showtime,
 				CASE
 					WHEN sbt.ProductID = 13 THEN b.betcheck
+					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
 				CASE
