@@ -28,6 +28,7 @@ AS
 					- Change to use inline function for SportBetTypeMatrix
 		- 20161111@Kos: Support Fishing World [#Redmine: 66737]
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
+		- 20180514@Kos: Return ExchangeId instead of CurrencyCode [#Redmine: 94845]
 
 	Parameters:
 		- @TransType
@@ -251,13 +252,10 @@ BEGIN
 	END
 
 	-- get currency (for security)
-	DECLARE @Currency	INT,
-		@CurrencyCode	NVARCHAR(50)
+	DECLARE @Currency	INT
 
-	SELECT @Currency = c.currency,
-		@CurrencyCode = CASE WHEN ex.Code <> '' THEN ex.Code ELSE ex.currency END
+	SELECT @Currency = c.currency
 	FROM dbo.custinfo AS c WITH (NOLOCK)
-		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
 	WHERE c.custid = @CustId
 		AND c.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 
@@ -271,7 +269,7 @@ BEGIN
 
 	SELECT
 		b.*,
-		@CurrencyCode AS Currency,
+		@Currency AS CurrencyId,
 		CAST(b.Stake * e.USD AS MONEY) AS StakeUSD,
 		CAST(b.Stake * e.EUR AS MONEY) AS StakeEUR,
 		CAST(b.Stake * e.MYR AS MONEY) AS StakeMYR,
@@ -294,7 +292,7 @@ BEGIN
 		CAST(b.PlayerComm * e.GBP AS MONEY) AS PlayerCommGBP
 	FROM @tmpBettransRnG AS b
 		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)) AS e
-			ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = @currency
+			ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = @Currency
 	ORDER BY b.TransId ASC
 END
 

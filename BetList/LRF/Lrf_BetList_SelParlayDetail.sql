@@ -30,6 +30,7 @@ AS
 		- 20170324@Kos: Hotfix - Mix Parlay duplciate ticket detail [Redmine: #73984]
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
+		- 20180514@Kos: Return ExchangeId instead of CurrencyCode [#Redmine: 94845]
 */
 
 BEGIN
@@ -55,7 +56,7 @@ BEGIN
 		LeagueId		INT,
 		BetType			INT,
 		Stake			MONEY,
-		Currency		NVARCHAR(50),
+		CurrencyId		INT,
 		MatchId			INT,
 		ShowTime		NVARCHAR(50),
 		HomeId			INT,
@@ -74,31 +75,31 @@ BEGIN
 
 	DECLARE @RefNo		BIGINT,
 		@CustId			INT,
-		@CurrencyCode	VARCHAR(3)
+		@CurrencyId		INT
 
-	SELECT @RefNo = b.refno,
+	SELECT
+		@RefNo = b.refno,
 		@CustId = b.custid,
-		@CurrencyCode = CASE WHEN ex.Code <> '' THEN ex.Code ELSE ex.currency END
+		@CurrencyId = b.currency
 	FROM dbo.bettrans AS b WITH (NOLOCK)
-		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 	WHERE b.transid = @TransId
 
 	IF @RefNo IS NULL
 	BEGIN
-		SELECT @RefNo = b.refno,
+		SELECT
+			@RefNo = b.refno,
 			@CustId = b.custid,
-			@CurrencyCode = CASE WHEN ex.Code <> '' THEN ex.Code ELSE ex.currency END
+			@CurrencyId = b.currency
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 		WHERE b.transid = @TransId
 
 		IF @RefNo IS NULL
 		BEGIN
-			SELECT @RefNo = b.refno,
+			SELECT
+				@RefNo = b.refno,
 				@CustId = b.custid,
-				@CurrencyCode = CASE WHEN ex.Code <> '' THEN ex.Code ELSE ex.currency END
+				@CurrencyId = b.currency
 			FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			WHERE b.transid = @TransId
 		END
 	END
@@ -117,7 +118,7 @@ BEGIN
 			m.leagueid,
 			b.bettype,
 			b.stake,
-			@CurrencyCode AS Currency,
+			@CurrencyId,
 			m.matchid,
 			CASE
 				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
@@ -173,7 +174,7 @@ BEGIN
 			m.leagueid,
 			b.bettype,
 			b.stake,
-			@CurrencyCode AS Currency,
+			@CurrencyId,
 			m.matchid,
 			CASE
 				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
@@ -229,7 +230,7 @@ BEGIN
 			m.leagueid,
 			b.bettype,
 			b.stake,
-			@CurrencyCode AS Currency,
+			@CurrencyId,
 			m.matchid,
 			CASE
 				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
