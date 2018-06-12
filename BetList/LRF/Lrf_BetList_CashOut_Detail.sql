@@ -1,18 +1,12 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Lrf_BetList_CashOut_Detail]    Script Date: 3/29/2017 4:38:38 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_CashOut_Detail]
 	@AgentList			VARCHAR(MAX),
 	@TransId			BIGINT,
 	@RefNo				BIGINT,
 	@BetType			SMALLINT,
-	@OriginalTransId	BIGINT		= 0
+	@OriginalTransId	BIGINT		= 0,
+	@BaseCurrency		VARCHAR(10)	= ''
 AS
 
 /*
@@ -23,6 +17,7 @@ AS
 	Revisions:
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180502@Kos: Missing return GBP base currency data [#Redmine: 94431]
+		- 20180719@Kos: Support more base currencies [#Redmine: 80941]
 */
 
 BEGIN
@@ -50,7 +45,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -94,6 +89,7 @@ BEGIN
 		EventDate		SMALLDATETIME,
 		HomeId			INT,
 		AwayId			INT,
+		BetStatus		NVARCHAR(50),
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
 		Odds			MONEY,
@@ -161,6 +157,7 @@ BEGIN
 			m.eventdate,
 			m.homeid,
 			m.awayid,
+			m.betstatus,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -224,6 +221,7 @@ BEGIN
 			m.eventdate,
 			m.homeid,
 			m.awayid,
+			m.betstatus,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -287,6 +285,7 @@ BEGIN
 			m.eventdate,
 			m.homeid,
 			m.awayid,
+			m.betstatus,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -511,46 +510,94 @@ BEGIN
 
 	IF @WinLostDate > @Today
 		SET @WinLostDate = @Today
-
-	SELECT *
-	INTO #TempExchange
-	FROM Lrf_f_GetExchangeDaily(@WinLostDate, @WinLostDate)
-	WHERE exchangeid IN (SELECT DISTINCT Currency FROM @Data)
+		
+	-- Get exchange rate
+	DECLARE @ExchangeRate AS TABLE (
+		ExchangeDate	SMALLDATETIME,
+		ExchangeId		INT,
+		Rate			FLOAT
+	)
+	
+	IF @BaseCurrency <> ''
+	BEGIN
+		INSERT INTO @ExchangeRate
+		SELECT
+			e.exchangedate,
+			e.ExchangeId,
+			CASE
+				WHEN @BaseCurrency = 'MYR' THEN e.MYR
+				WHEN @BaseCurrency = 'USD' THEN e.USD
+				WHEN @BaseCurrency = 'EUR' THEN e.EUR
+				WHEN @BaseCurrency = 'CNY' THEN e.CNY
+				WHEN @BaseCurrency = 'IDR' THEN e.IDR
+				WHEN @BaseCurrency = 'GBP' THEN e.GBP
+				WHEN @BaseCurrency = 'THB' THEN e.THB
+				ELSE 1
+			END AS Rate
+		FROM dbo.Lrf_f_GetExchangeDaily(@WinLostDate, @WinLostDate) AS e
+		WHERE EXISTS (SELECT 1 FROM @Data WHERE Currency = e.ExchangeId)
+	END
 
 	SELECT
-		b.*,
-		b.Stake * e.USD AS StakeUSD,
-		b.Stake * e.EUR AS StakeEUR,
-		b.Stake * e.GBP AS StakeGBP,
-		b.WinLost * e.USD AS WinLostUSD,
-		b.WinLost * e.EUR AS WinLostEUR,
-		b.WinLost * e.GBP AS WinLostGBP,
-		b.PlayerComm * e.USD AS PlayerCommUSD,
-		b.PlayerComm * e.EUR AS PlayerCommEUR,
-		b.PlayerComm * e.GBP AS PlayerCommGBP,
-		b.OriginalStake * e.USD AS OriginalStakeUSD,
-		b.OriginalStake * e.EUR AS OriginalStakeEUR,
-		b.OriginalStake * e.GBP AS OriginalStakeGBP
+		b.BetType,
+		b.TransId,
+		b.BetId,
+		b.RefNo,
+		b.MatchCode,
+		b.EventDate,
+		b.HomeId,
+		b.AwayId,
+		b.BetStatus,
+		b.Hdp1,
+		b.Hdp2,
+		b.Odds,
+		b.OddsType,
+		b.Status,
+		b.Stake * ISNULL(e.Rate, 1) AS Stake,
+		b.Actual_Stake,
+		b.TransDate,
+		b.BetTeam,
+		b.LiveIndicator,
+		b.Modds,
+		b.CustId,
+		b.Currency,
+		b.LiveHomeScore,
+		b.LiveAwayScore,
+		b.LeagueId,
+		b.SportType,
+		b.Ip,
+		b.MatchId,
+		b.IsNeutral,
+		b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
+		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		b.ShowTime,
+		b.WinLostDate,
+		b.BetCheck,
+		b.TransDesc,
+		b.OddsSpread,
+		b.BetdaqId,
+		b.ExtraInfo,
+		b.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
+		b.OriginalBetType
 	FROM @Data AS b
-		INNER JOIN #TempExchange AS e
+		LEFT JOIN @ExchangeRate AS e
 			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.exchangeid = b.Currency
 
 	SELECT
-		b.*,
-		b.Stake * e.USD AS StakeUSD,
-		b.Stake * e.EUR AS StakeEUR,
-		b.Stake * e.GBP AS StakeGBP,
-		b.Price * e.USD AS PriceUSD,
-		b.Price * e.EUR AS PriceEUR,
-		b.Price * e.GBP AS PriceGBP,
-		b.WinLost * e.USD AS WinLostUSD,
-		b.WinLost * e.EUR AS WinLostEUR,
-		b.WinLost * e.GBP AS WinLostGBP
+		b.BetType,
+		b.TransId,
+		b.RefNo,
+		b.Status,
+		b.Stake * ISNULL(e.Rate, 1) AS Stake,
+		b.TransDate,
+		b.WinLostDate,
+		b.Currency,
+		b.CustId,
+		b.Price * ISNULL(e.Rate, 1) AS Price,
+		b.WinLost * ISNULL(e.Rate, 1) AS WinLost
 	FROM @CashOutData AS b
-		INNER JOIN #TempExchange AS e
+		LEFT JOIN @ExchangeRate AS e
 			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.exchangeid = b.Currency
-
-	DROP TABLE #TempExchange
 END
 
 

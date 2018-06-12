@@ -12,11 +12,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelCombinationParlayDetail]
 	@RefNo			BIGINT,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@Outstanding	MONEY = 0 OUTPUT,
-	@OutstandingUSD	MONEY = 0 OUTPUT,
-	@OutstandingEUR	MONEY = 0 OUTPUT,
-	@OutstandingMYR	MONEY = 0 OUTPUT,
-	@OutstandingGBP	MONEY = 0 OUTPUT
+	@BaseCurrency	VARCHAR(10)	= '',
+	@Outstanding	MONEY		= 0 OUTPUT
 AS
 
 /*
@@ -39,6 +36,7 @@ AS
 		- 20160510@Kos: Remove param @TransId, @BetId, @CustId [#Redmine: 55282]
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
+		- 20180719@Kos: Support more base currencies [#Redmine: 80941]
 */
 
 BEGIN
@@ -77,11 +75,7 @@ BEGIN
 	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @CustId	INT,
-		@currency	INT,
-		@USD		FLOAT,
-		@EUR		FLOAT,
-		@MYR		FLOAT,
-		@GBP		FLOAT
+		@currency	INT
 
 	DECLARE @tmpBettrans AS TABLE (
 		TransId	BIGINT,
@@ -204,7 +198,7 @@ BEGIN
 				WHEN betcheck IS NULL THEN CONVERT(INT, hdp2)	-- old Parlay tickets
 				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
 			END AS Bitmap
-		FROM DBACC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
+		FROM DBARC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
 		WHERE custid = @custid
 			AND refno = @RefNo
 			AND matchid = 29
@@ -229,7 +223,7 @@ BEGIN
 			b.statusid,
 			b.comm,
 			CASE WHEN b.statusid IN (112, 113) THEN b.playercomm ELSE 0 END AS playercomm
-		FROM DBACC.bodb_Archive.dbo.BetParlayResult AS b WITH (NOLOCK)
+		FROM DBARC.bodb_Archive.dbo.BetParlayResult AS b WITH (NOLOCK)
 		WHERE refno = @RefNo
 	END
 
@@ -356,7 +350,7 @@ BEGIN
 			m.awayid
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
-			INNER JOIN DBACC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.MatchId = m.matchid
+			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.MatchId = m.matchid
 		WHERE p.statusid NOT IN (0, 1, 113)
 	END
 
@@ -398,26 +392,56 @@ BEGIN
 	
 	SELECT @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 
-	SELECT
-		@USD = e.USD,
-		@EUR = e.EUR,
-		@MYR = e.MYR,
-		@GBP = e.GBP
-	FROM (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) AS e
-	WHERE e.ExchangeDate = @Today AND e.ExchangeId = @currency
+	DECLARE @ExFromdate DATETIME
+	DECLARE @ExTodate DATETIME 
 
-	SELECT @Outstanding = ISNULL(@Outstanding, 0)
-	SELECT @OutstandingUSD = ISNULL(@Outstanding, 0) * @USD
-	SELECT @OutstandingEUR = ISNULL(@Outstanding, 0) * @EUR
-	SELECT @OutstandingMYR = ISNULL(@Outstanding, 0) * @MYR
-	SELECT @OutstandingGBP = ISNULL(@Outstanding, 0) * @GBP
-
-	DECLARE @Fromdate DATETIME
-	DECLARE @Todate DATETIME 
-
-	SELECT @Fromdate = MIN(winlostdate),
-		@Todate = MAX(winlostdate)
+	SELECT @ExFromdate = MIN(winlostdate),
+		@ExTodate = MAX(winlostdate)
 	FROM @tmpResults
+
+	DECLARE @ExchangeRate TABLE (
+		ExchangeDate	SMALLDATETIME,
+		Rate			FLOAT
+	)
+
+	-- Get exchange rate
+	IF @BaseCurrency <> ''
+	BEGIN
+		INSERT INTO @ExchangeRate
+		SELECT
+			e.exchangedate,
+			CASE
+				WHEN @BaseCurrency = 'MYR' THEN e.MYR
+				WHEN @BaseCurrency = 'USD' THEN e.USD
+				WHEN @BaseCurrency = 'EUR' THEN e.EUR
+				WHEN @BaseCurrency = 'CNY' THEN e.CNY
+				WHEN @BaseCurrency = 'IDR' THEN e.IDR
+				WHEN @BaseCurrency = 'GBP' THEN e.GBP
+				WHEN @BaseCurrency = 'THB' THEN e.THB
+				ELSE 1
+			END AS Rate
+		FROM Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e
+		WHERE e.ExchangeId = @Currency
+			AND EXISTS (SELECT 1 FROM @tmpResults WHERE WinLostDate = e.exchangedate)
+
+		SELECT @Outstanding = ISNULL(@Outstanding, 0) * 
+			CASE
+				WHEN @BaseCurrency = 'MYR' THEN e.MYR
+				WHEN @BaseCurrency = 'USD' THEN e.USD
+				WHEN @BaseCurrency = 'EUR' THEN e.EUR
+				WHEN @BaseCurrency = 'CNY' THEN e.CNY
+				WHEN @BaseCurrency = 'IDR' THEN e.IDR
+				WHEN @BaseCurrency = 'GBP' THEN e.GBP
+				WHEN @BaseCurrency = 'THB' THEN e.THB
+				ELSE 1
+			END
+		FROM Lrf_f_GetExchangeDaily(@Today, @Today) AS e
+		WHERE e.ExchangeId = @Currency
+	END
+	ELSE
+	BEGIN
+		SELECT @Outstanding = ISNULL(@Outstanding, 0)
+	END
 
 	-- Return combo detail
 	SELECT DISTINCT
@@ -433,31 +457,14 @@ BEGIN
 			WHEN 111 THEN 'DRAW'
 			WHEN 112 THEN 'WON'
 			ELSE ''
-		END AS status,
+		END AS Status,
 		b.Modds,
-		b.Stake,
-		CAST(b.Stake * e.USD AS MONEY) AS StakeUSD,
-		CAST(b.Stake * e.EUR AS MONEY) AS StakeEUR,
-		CAST(b.Stake * e.MYR AS MONEY) AS StakeMYR,
-		CAST(b.Stake * e.GBP AS MONEY) AS StakeGBP,
-		b.WinLost - b.Stake AS WinLost,
-		CAST((b.WinLost - b.Stake) * e.USD AS MONEY) AS WinLostUSD,
-		CAST((b.WinLost - b.Stake) * e.EUR AS MONEY) AS WinLostEUR,
-		CAST((b.WinLost - b.Stake) * e.MYR AS MONEY) AS WinLostMYR,
-		CAST((b.WinLost - b.Stake) * e.GBP AS MONEY) AS WinLostGBP,
-		b.Comm,
-		CAST(b.Comm * e.USD AS MONEY) AS CommUSD,
-		CAST(b.Comm * e.EUR AS MONEY) AS CommEUR,
-		CAST(b.Comm * e.MYR AS MONEY) AS CommMYR,
-		CAST(b.Comm * e.GBP AS MONEY) AS CommGBP,
-		b.PlayerComm,
-		CAST(b.PlayerComm * e.USD AS MONEY) AS PlayerCommUSD,
-		CAST(b.PlayerComm * e.EUR AS MONEY) AS PlayerCommEUR,
-		CAST(b.PlayerComm * e.MYR AS MONEY) AS PlayerCommMYR,
-		CAST(b.PlayerComm * e.GBP AS MONEY) AS PlayerCommGBP
+		b.Stake * ISNULL(e.Rate, 1) AS Stake,
+		(b.WinLost - b.Stake) * ISNULL(e.Rate, 1) AS WinLost,
+		b.Comm * ISNULL(e.Rate, 1) AS Comm,
+		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm
 	FROM @tmpResults AS b
-		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)) AS e
-			ON e.ExchangeDate = b.WinLostDate AND e.ExchangeId = @currency
+		LEFT JOIN @ExchangeRate AS e ON e.ExchangeDate = b.WinLostDate
 	WHERE b.StatusId NOT IN (0, 1, 113)
 
 	UNION ALL
@@ -470,29 +477,12 @@ BEGIN
 		113 AS StatusId,
 		'LOSE' AS Status,
 		0 AS Modds,
-		SUM(b.Stake) AS Stake,
-		CAST(SUM(b.Stake * e.USD) AS MONEY) AS StakeUSD,
-		CAST(SUM(b.Stake * e.EUR) AS MONEY) AS StakeEUR,
-		CAST(SUM(b.Stake * e.MYR) AS MONEY) AS StakeMYR,
-		CAST(SUM(b.Stake * e.GBP) AS MONEY) AS StakeGBP,
-		SUM(b.WinLost - b.Stake) AS WinLost,
-		CAST(SUM((b.WinLost - b.Stake) * e.USD) AS MONEY) AS WinLostUSD,
-		CAST(SUM((b.WinLost - b.Stake) * e.EUR) AS MONEY) AS WinLostEUR,
-		CAST(SUM((b.WinLost - b.Stake) * e.MYR) AS MONEY) AS WinLostMYR,
-		CAST(SUM((b.WinLost - b.Stake) * e.GBP) AS MONEY) AS WinLostGBP,
-		SUM(b.Comm) AS Comm,
-		CAST(SUM(b.Comm * e.USD) AS MONEY) AS CommUSD,
-		CAST(SUM(b.Comm * e.EUR) AS MONEY) AS CommEUR,
-		CAST(SUM(b.Comm * e.MYR) AS MONEY) AS CommMYR,
-		CAST(SUM(b.Comm * e.GBP) AS MONEY) AS CommGBP,
-		SUM(b.PlayerComm) AS PlayerComm,
-		CAST(SUM(b.PlayerComm * e.USD) AS MONEY) AS PlayerCommUSD,
-		CAST(SUM(b.PlayerComm * e.EUR) AS MONEY) AS playercommeur,
-		CAST(SUM(b.PlayerComm * e.MYR) AS MONEY) AS playercommmyr,
-		CAST(SUM(b.PlayerComm * e.GBP) AS MONEY) AS playercommgbp
+		SUM(b.Stake * ISNULL(e.Rate, 1)) AS Stake,
+		SUM((b.WinLost - b.Stake) * ISNULL(e.Rate, 1)) AS WinLost,
+		SUM(b.Comm * ISNULL(e.Rate, 1)) AS Comm,
+		SUM(b.PlayerComm * ISNULL(e.Rate, 1)) AS PlayerComm
 	FROM @tmpResults AS b
-		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)) AS e
-			ON e.ExchangeDate = b.WinLostDate AND e.ExchangeId = @currency
+		LEFT JOIN @ExchangeRate AS e ON e.ExchangeDate = b.WinLostDate
 	WHERE b.StatusId = 113
 	GROUP BY b.WinLostDate
 	ORDER BY
