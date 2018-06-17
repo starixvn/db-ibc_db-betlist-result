@@ -1,4 +1,4 @@
-USE bodb_AGE
+USE bodb02
 GO
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunningByBettype_Ag]
@@ -10,11 +10,11 @@ AS
 /*
 	Created:
 	Task: Betlist
-	DB: DBAGE.bodb_AGE
-	Original:BetsSelBetList_Ag
+	DB: DBAGE.bodb02
+	Original: BetsSelBetList_Ag
 	Revisions:
 		- 20080104@Vinh: include mix parlay
-		- 20080105: Add typenamee2,sportname
+		- 20080105: Add typenamee2, sportname
 		- 20080629@Viet: Remove Teamname, Leaguename, Sportname, TypeName
 		- 20090326@Phuc: get indexname for FI
 		- 20090406@HanhVu: remove refno
@@ -35,8 +35,8 @@ AS
 		- 20110930@Johnson: Get column matchid into betlist
 		- 20111122@Sophia: Add Checktime and SecAcceptFlag to show status waiting or running
 		- 20111216@Sophia: Remove function f_GetOddsByBettype, f_GetChoice, f_ShowOddsByBettype
-		- 20120119@Sophia:  Add showtime for Table - Shoe - Hand of LiveCasino
-							Add Sub table for Live Casino
+		- 20120119@Sophia: Add showtime for Table - Shoe - Hand of LiveCasino
+						- Add Sub table for Live Casino
 		- 20120424@Lukas: Get more column custid
 		- 20120705@Sophia: Get sporttype for outright
 		- 20120926@Sophia: Get Comstatus
@@ -54,6 +54,7 @@ AS
 		- 20151125@Kos: Support new bet type (410) for Total Bet of Double Chance
 		- 20170721@Kos: Use inline function for SportBettypeMatrix and include bet type 427, 431, 433 [Redmine: #53153]
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82399]
+		- 20180617@Kos: Move SP from bodb_Age to bodb02 [#Redmine: 97037]
 */
 
 BEGIN
@@ -68,7 +69,7 @@ BEGIN
 
 	INSERT INTO @BettypeMatrix
 	SELECT ProductID, BetType, EventType, SubProduct
-	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE (@BetType = 6		AND BetType IN (6, 126))
 		OR (@BetType = 14	AND BetType IN (14, 127))
 		OR (@BetType = 24	AND BetType IN (24, 151, 186, 410, 431))
@@ -80,7 +81,7 @@ BEGIN
 		OR (@BetType = 28	AND BetType IN (28, 453))		-- Support Myanmar Odds
 		OR BetType = @BetType
 
-	EXEC [dbo].[Age_CoreBetList_Running_SelBetTicket]
+	EXEC [dbo].[Age_CoreBetList_SelRunning]
 		@CustId 			= @CustId
 		, @RoleId			= 2
 		, @Language 		= @Language
@@ -122,7 +123,9 @@ BEGIN
 								comstatus,
 								transdesc,
 								OddsSpread'
+
 END
+
 
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelRunningByBettype_Ag] TO [bodbDownlineNet]
