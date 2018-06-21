@@ -52,19 +52,13 @@ AS
 		- 20170721@Kos: Use inline function for SportBettypeMatrix and include bet type 427, 431, 433 [Redmine: #53153]
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82399]
 		- 20180411@Kos: Enhance performance when getting SportBetTypeMatrix [#Redmine: 93257]
+		- 20180621@Kos: Change to use new core [#Redmine: 97249]
 */
 
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @TransStatus	[dbo].[TVP_BetTicketStatus],
-		@BettypeMatrix		[dbo].[TVP_SportBettypeMatrix]
-
-	-- Gather Ticket status
-	INSERT INTO @TransStatus
-	SELECT StatusId
-	FROM dbo.All_f_TransStatus (1) stt
-	WHERE stt.statusId IN (0, 1)
+	DECLARE @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]
 
 	-- Gather BettypeMatrix
 	DECLARE @IsTest BIT = 0
@@ -85,11 +79,10 @@ BEGIN
 		OR (@BetType = 28	AND BetType IN (28, 453))		-- Support Myanmar Odds
 		OR BetType = @BetType
 
-	EXEC [bodb02].[dbo].[Age_CoreBetList_SMABettype_SelBetTicket]
-		@CustId 			= @CustId
+	EXEC [dbo].[Age_CoreBetList_SelRunning]
+		@CustId				= @CustId
 		, @RoleId			= 4
 		, @Language			= @Language
-		, @TransStatus		= @TransStatus
 		, @BettypeMatrix	= @BettypeMatrix
 		, @ColumnOutput		= 'sporttype,
 								username,
@@ -111,19 +104,19 @@ BEGIN
 								transdate,
 								betteam,
 								betID,
-								livehomescore,
+								livehomescore, 
 								liveawayscore,
-								liveindicator,
+								liveindicator ,
 								tpositiontaking,
 								spositiontaking,
 								mpositiontaking,
-								apositiontaking,
-								Adiscount,
-								Mdiscount,
-								Sdiscount,
+								apositiontaking, 
+								adiscount,
+								mdiscount,
+								sdiscount,
 								IP,
 								IsNeutral,
-								oddstype,
+								OddsType,
 								showtime,
 								comstatus,
 								transdesc,

@@ -48,19 +48,13 @@ AS
 		- 20150903@Bobby: Correct data type of sport bet type matrix for avoiding SQL data conversion
 		- 20150910@Bobby: Enhance performance for SP core. Apply TVP for input parameters
 		- 20180411@Kos: Enhance performance when getting SportBetTypeMatrix [#Redmine: 93257]
+		- 20180621@Kos: Change to use new core [#Redmine: 97249]
 */
 
 BEGIN
 	SET NOCOUNT ON;
-	
-	DECLARE @TransStatus	[dbo].[TVP_BetTicketStatus],
-		@BettypeMatrix		[dbo].[TVP_SportBettypeMatrix]
-	
-	-- Gather Ticket status
-	INSERT INTO @TransStatus
-	SELECT StatusId
-	FROM dbo.All_f_TransStatus(1)
-	WHERE StatusId IN (0, 1)
+
+	DECLARE @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]
 
 	-- Check SP Version
 	DECLARE @IsTest BIT = 0
@@ -71,24 +65,23 @@ BEGIN
 	INSERT INTO @BettypeMatrix
 	SELECT DISTINCT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @IsTest)
-	WHERE (@BetType		= 6		AND BetType IN (6, 159, 161, 162, 126, 179, 181, 182))
-		OR (@BetType	= 14	AND BetType IN (14, 127))
-		OR (@BetType	= 2		AND BetType IN (2, 157))
-		OR (@BetType	= 15	AND BetType IN (15, 167))
-		OR (@BetType	= 1		AND BetType IN (1, 301))		-- Support Myanmar Odds
-		OR (@BetType	= 3		AND BetType IN (3, 302))		-- Support Myanmar Odds
-		OR (@BetType	= 7		AND BetType IN (7, 303))		-- Support Myanmar Odds
-		OR (@BetType	= 8		AND BetType IN (8, 304))		-- Support Myanmar Odds
-		OR BetType = @BetType
+	WHERE (@BetType = 6 	AND BetType IN (6, 159, 161, 162, 126, 179, 181, 182))
+		OR (@BetType = 14 	AND BetType IN (14, 127))
+		OR (@BetType = 2 	AND BetType IN (2, 157))
+		OR (@BetType = 15 	AND BetType IN (15, 167))
+		OR (@BetType = 1 	AND BetType IN (1, 301))		-- Support Myanmar Odds
+		OR (@BetType = 3 	AND BetType IN (3, 302))		-- Support Myanmar Odds
+		OR (@BetType = 7 	AND BetType IN (7, 303))		-- Support Myanmar Odds
+		OR (@BetType = 8 	AND BetType IN (8, 304))		-- Support Myanmar Odds
+		OR BetType = @BetType 
 
-	EXEC [bodb02].[dbo].[Age_CoreBetList_SMAEventBettype_SelBetTicket]
+	EXEC [dbo].[Age_CoreBetList_SelRunning]
 		@CustId				= @CustId
 		, @RoleId			= 2
 		, @MatchId			= @MatchId
-		, @Liveindicator	= @LiveIndicator
-		, @Betteam			= @BetTeam
+		, @LiveIndicator	= @LiveIndicator
+		, @BetTeam			= @BetTeam
 		, @Language			= @Language
-		, @TransStatus		= @TransStatus
 		, @BettypeMatrix	= @BettypeMatrix
 		, @ColumnOutput		= 'Sporttype,
 								Username,
@@ -99,12 +92,12 @@ BEGIN
 								Race,
 								leagueid,
 								HomeID,
-								AwayID, 
+								AwayID,
 								hdp1,
 								hdp2,
 								odds,
 								modds,
-								status, 
+								status,
 								stake,
 								actual_stake,
 								Transdate,
@@ -115,7 +108,7 @@ BEGIN
 								APositiontaking,
 								Adiscount,
 								IP,
-								isNeutral,
+								IsNeutral,
 								oddstype,
 								betid,
 								showtime,
@@ -123,7 +116,7 @@ BEGIN
 								comstatus,
 								transdesc,
 								OddsSpread'
-		
+
 	RETURN;
 END
 

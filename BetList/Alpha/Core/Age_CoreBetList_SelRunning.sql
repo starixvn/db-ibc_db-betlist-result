@@ -43,6 +43,7 @@ AS
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20180617@Kos: Move SP from bodb_Age to bodb02 [#Redmine: 97037]
 					- Don't support Metric Gaming and translog anymore
+		- 20180621@Kos: Add index hint for Master and Agent level [#Redmine: 97249]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -70,6 +71,7 @@ BEGIN
 		, MatchId			INT
 		, HomeId			INT
 		, AwayId			INT
+		, BetStatus			NVARCHAR(50)
 		, Hdp1				SMALLMONEY
 		, Hdp2				SMALLMONEY
 		, Odds				MONEY
@@ -142,6 +144,7 @@ BEGIN
 			, b.matchid
 			, 0 HomeID
 			, 0 AwayID
+			, '' AS BetStatus
 			, b.hdp1
 			, b.hdp2
 			, b.Odds
@@ -199,6 +202,7 @@ BEGIN
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
+				, '' AS BetStatus
 				, b.hdp1
 				, b.hdp2
 				, b.Odds
@@ -254,6 +258,7 @@ BEGIN
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
+				, '' AS BetStatus
 				, b.hdp1
 				, b.hdp2
 				, b.Odds
@@ -309,6 +314,7 @@ BEGIN
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
+				, '' AS BetStatus
 				, b.hdp1
 				, b.hdp2
 				, b.Odds
@@ -366,6 +372,7 @@ BEGIN
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
+				, '' AS BetStatus
 				, b.hdp1
 				, b.hdp2
 				, b.Odds
@@ -398,7 +405,7 @@ BEGIN
 				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
 				, bt.productid
 				, bt.eventtype
-			FROM dbo.bettrans AS b WITH (NOLOCK)
+			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_betrunning_recommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.recommend = @CustId
 				AND b.statusID IN (0, 1)
@@ -422,6 +429,7 @@ BEGIN
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
+				, '' AS BetStatus
 				, b.hdp1
 				, b.hdp2
 				, b.Odds
@@ -454,7 +462,7 @@ BEGIN
 				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
 				, bt.productid
 				, bt.eventtype
-			FROM dbo.bettrans AS b WITH (NOLOCK)
+			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_betrunning_mrecommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.mrecommend = @CustId
 				AND b.statusID IN (0, 1)
@@ -478,6 +486,7 @@ BEGIN
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
+				, '' AS BetStatus
 				, b.hdp1
 				, b.hdp2
 				, b.Odds
@@ -534,32 +543,33 @@ BEGIN
 	UPDATE b
 	SET
 		SportType	= m.sporttype,
-		LeagueId	= m.leagueID,
+		LeagueId	= m.leagueid,
 		MatchCode	= m.matchcode,
-		HomeId		= m.homeID,
-		AwayId		= m.awayID,
+		HomeId		= m.homeid,
+		AwayId		= m.awayid,
+		BetStatus	= m.betstatus,
 		ShowTime	= m.showtime,
 		IsNeutral	= m.IsNeutral
 	FROM @Data AS b
-		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.MatchId = m.matchid
 	WHERE b.EventType = 1
 
 	UPDATE b
 	SET
 		SportType = l.sporttype,
-		LeagueId = m.leagueID,
+		LeagueId = m.leagueid,
 		MatchCode = m.matchcode,
-		HomeId = m.teamID,
+		HomeId = m.teamid,
 		AwayId = 0,
 		ShowTime = ''
 	FROM @Data AS b
-		INNER JOIN bodb02.dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
-		INNER JOIN bodb02.dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
+		INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.MatchId = m.orid
+		INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 	WHERE b.EventType = 2
 
 	SELECT * FROM @Data
-	ORDER BY transid DESC
-	
+	ORDER BY TransId DESC
+
 	DECLARE @BettransDetail TABLE (
 		RefNo				BIGINT
 		, Odds				MONEY
@@ -572,7 +582,7 @@ BEGIN
 		, BetTeam			NVARCHAR(10)
 		, TransDesc			VARCHAR(300)
 	)
-	
+
 	SELECT * FROM @BettransDetail
 END
 
