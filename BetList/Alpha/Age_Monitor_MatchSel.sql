@@ -10,6 +10,7 @@ AS
 	Revision:
 		- 20120301@Jamie: Retrieve showtime for LiveCasino
 		- 20170817@Kos: Return IsNeutral [#Redmine: 66992]
+		- 20180622@Sophia: Add Betstatus [#Redmine: 97219]
 	
 	Parameter's Explanation:
 		- @@Matchid: lastest match's ID running get 
@@ -28,7 +29,8 @@ BEGIN
 		awayid,
 		'' AS Race,
 		showtime,
-		IsNeutral
+		IsNeutral,
+		betstatus
 	FROM dbo.match WITH (NOLOCK)
 	WHERE eventstatus <> 'completed'
 		AND matchid >= @MatchId
