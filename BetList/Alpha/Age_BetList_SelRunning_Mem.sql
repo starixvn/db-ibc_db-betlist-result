@@ -99,7 +99,8 @@ AS
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180617@Kos: Change to use bodb02.bettrans instead of bodb_Age.bettrans_running [#Redmine: 97037]
 		- 20180625@Kos: Check running tickets exist to enhance performance [#Redmine: 97249]
-					- Comment Colossus Bets block of code due to inactive 
+					- Comment Colossus Bets block of code due to inactive
+		- 20180625@Kos: Use INDEX HINT and force nested loop for translog [#Redmine: 97249]
 */
 
 BEGIN
@@ -718,13 +719,14 @@ BEGIN
 						b.transdesc,
 						0 AS OddsSpread
 					FROM 
-						dbo.translog AS b WITH (NOLOCK)
-						INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
+						@SportBettype AS s
+						INNER LOOP JOIN dbo.translog AS b WITH (NOLOCK, INDEX=IX_custid2) ON s.Bettype = b.gameID
 						INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
 					WHERE b.transdate >= @FromDate AND b.transdate <= @ToDate 
 						AND b.custid = @CustId
 						AND b.statusID IN (0, 1)
 						AND s.SubProduct IN ('MG-SuperLive')
+					OPTION(FORCE ORDER)
 				END
 
 				-- Keno, Gold Deluxe, Colossus Bet, Lottery (translog)
@@ -788,12 +790,13 @@ BEGIN
 						END AS TransDesc,
 						0 AS OddsSpread
 					FROM
-						dbo.translog AS b WITH (NOLOCK)
-						INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
+						@SportBettype AS s
+						INNER LOOP JOIN dbo.translog AS b WITH (NOLOCK, INDEX=IX_custid2) ON s.Bettype = b.gameID
 					WHERE b.transdate >= @FromDate AND b.transdate <= @ToDate
 						AND b.custid = @CustId
 						AND b.statusID IN (0, 1)
 						AND s.ProductID IN (8, 12, 15, 28)
+					OPTION(FORCE ORDER)
 				END
 
 				-- Bullfighting (EventType = 5) (translog)
@@ -858,13 +861,14 @@ BEGIN
 						END AS TransDesc,
 						0 AS OddsSpread
 					FROM
-						dbo.translog AS b WITH (NOLOCK)
+						@SportBettype AS s
+						INNER LOOP JOIN dbo.translog AS b WITH (NOLOCK, INDEX=IX_custid2) ON s.Bettype = b.gameID
 						INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.eventid = m.Match3rdId
-						INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 					WHERE b.transdate BETWEEN @FromDate AND @ToDate
 						AND b.custid = @CustId
 						AND b.statusID IN (0, 1)
 						AND s.ProductID = 30
+					OPTION(FORCE ORDER)
 				END
 			END
 
@@ -1520,12 +1524,13 @@ BEGIN
 						b.transdesc,
 						0 AS OddsSpread
 					FROM 
-						dbo.translog AS b WITH (NOLOCK)
-						INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
+						@SportBettype AS s
+						INNER LOOP JOIN dbo.translog AS b WITH (NOLOCK, INDEX=IX_custid2) ON s.Bettype = b.gameID
 						INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
 					WHERE b.custid = @CustId
 						AND b.statusID IN (0, 1)
 						AND s.SubProduct IN ('MG-SuperLive')
+					OPTION(FORCE ORDER)
 				END
 
 				-- Keno, Gold Deluxe, Colossus Bet, Lottery (translog)
@@ -1589,11 +1594,12 @@ BEGIN
 						END AS TransDesc,
 						0 AS OddsSpread
 					FROM
-						dbo.translog AS b WITH (NOLOCK)
-						INNER JOIN @SportBettype AS s ON s.bettype = b.gameid
+						@SportBettype AS s
+						INNER LOOP JOIN dbo.translog AS b WITH (NOLOCK, INDEX=IX_custid2) ON s.bettype = b.gameid
 					WHERE b.custid = @CustId
 						AND b.statusID IN (0, 1)
 						AND s.ProductID IN (8, 12, 15, 28)
+					OPTION(FORCE ORDER)
 				END
 
 				-- Bullfighting (EventType = 5) (translog)
@@ -1658,12 +1664,13 @@ BEGIN
 						END AS TransDesc,
 						0 AS OddsSpread
 					FROM
-						dbo.translog AS b WITH (NOLOCK)
+						@SportBettype AS s
+						INNER LOOP JOIN dbo.translog AS b WITH (NOLOCK, INDEX=IX_custid2) ON s.Bettype = b.gameID
 						INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.eventid = m.Match3rdId
-						INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 					WHERE b.custid = @CustId
 						AND b.statusID IN (0, 1)
 						AND s.ProductID = 30
+					OPTION(FORCE ORDER)
 				END
 			END
 
