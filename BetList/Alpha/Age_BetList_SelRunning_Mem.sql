@@ -101,6 +101,7 @@ AS
 		- 20180625@Kos: Check running tickets exist to enhance performance [#Redmine: 97249]
 					- Comment Colossus Bets block of code due to inactive
 		- 20180625@Kos: Use INDEX HINT and force nested loop for translog [#Redmine: 97249]
+		- 20180703@Kos: Use new index for bettransRnG and bettransLC [#Redmine: 97249]
 */
 
 BEGIN
@@ -172,8 +173,10 @@ BEGIN
 
 	IF EXISTS (SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE custid = @CustId AND statusID IN (0, 1))
 		OR EXISTS (SELECT 1 FROM dbo.translog WITH (NOLOCK) WHERE custid = @CustId AND statusID IN (0, 1))
-		OR EXISTS (SELECT 1 FROM dbo.bettransRnG WITH (NOLOCK) WHERE custid = @CustId AND status = 'running')
-		OR EXISTS (SELECT 1 FROM dbo.bettransLC WITH (NOLOCK) WHERE custid = @CustId AND status = 'running')
+		OR EXISTS (SELECT 1 FROM dbo.bettransRnG WITH (NOLOCK, INDEX = IX_custid_running)
+					WHERE custid = @CustId AND statusID IN (0, 1))
+		OR EXISTS (SELECT 1 FROM dbo.bettransLC WITH (NOLOCK, INDEX = IX_custid_running)
+					WHERE custid = @CustId AND statusID IN (0, 1))
 	BEGIN
 		/* Get sport bettype */
 		-- Check SP Version
@@ -873,11 +876,11 @@ BEGIN
 			END
 
 			-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino
-			IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductID IN (6, 22, 24, 32))
+			IF EXISTS ( SELECT TOP(1) 1
+						FROM dbo.bettransRnG WITH (NOLOCK, INDEX = IX_custid_running)
+						WHERE custid = @CustId AND statusID IN (0, 1))
 			BEGIN
-				IF EXISTS ( SELECT TOP(1) 1
-							FROM dbo.bettransRnG WITH (NOLOCK)
-							WHERE custid = @CustId AND winlostdate >= @Yesterday)
+				IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductID IN (6, 22, 24, 32))
 					INSERT INTO @BetListSelRunningByDateMem
 					SELECT
 						CASE
@@ -946,11 +949,11 @@ BEGIN
 			END
 
 			-- AllBet
-			IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductID = 21)
+			IF EXISTS ( SELECT TOP(1) 1
+							FROM dbo.bettransLC WITH (NOLOCK, INDEX = IX_custid_running)
+							WHERE custid = @CustId AND statusID IN (0, 1))
 			BEGIN
-				IF EXISTS ( SELECT TOP(1) 1
-							FROM dbo.bettransLC WITH (NOLOCK)
-							WHERE custid = @CustId AND winlostdate >= @Yesterday)
+				IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductID = 21)
 					INSERT INTO @BetListSelRunningByDateMem
 					SELECT
 						211 AS Sporttype,
@@ -1675,11 +1678,11 @@ BEGIN
 			END
 
 			-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino
-			IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductID IN (6, 22, 24, 32))
+			IF EXISTS ( SELECT TOP(1) 1
+							FROM dbo.bettransRnG WITH (NOLOCK, INDEX = IX_custid_running)
+							WHERE custid = @CustId AND statusID IN (0, 1))
 			BEGIN
-				IF EXISTS ( SELECT TOP(1) 1
-							FROM dbo.bettransRnG WITH (NOLOCK)
-							WHERE custid = @CustId AND winlostdate >= @Yesterday)
+				IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductID IN (6, 22, 24, 32))
 					INSERT INTO @BetListSelRunningByDateMem
 					SELECT
 						CASE
@@ -1746,11 +1749,11 @@ BEGIN
 			END
 
 			-- AllBet
-			IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductID = 21)
+			IF EXISTS ( SELECT TOP(1) 1
+						FROM dbo.bettransLC WITH (NOLOCK, INDEX = IX_custid_running)
+						WHERE custid = @CustId AND statusID IN (0, 1))
 			BEGIN
-				IF EXISTS ( SELECT TOP(1) 1
-							FROM dbo.bettransLC WITH (NOLOCK)
-							WHERE custid = @CustId AND winlostdate >= @Yesterday)
+				IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductID = 21)
 					INSERT INTO @BetListSelRunningByDateMem
 					SELECT
 						211 AS Sporttype,
