@@ -1,15 +1,23 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Acc_BetListbyIP_Username]
 	@FromDate		DATETIME,
 	@Ip				VARCHAR(15),
 	@UserId			INT			= NULL,
-	@MoveBetsDay	SMALLDATETIME
+	@MoveBetsDay	SMALLDATETIME,
+	@SiteType		TINYINT		= 0
 AS
 
 /*
 	Created by: Jamie@20090318
 	Task: Total bet by IP and Username 
 	DB: DBACC.bodb02
+	
+	Parameter Explanantion
+		- @SiteType:
+			- 0 : Get all
+			- 1 : Exclude deposit sites
+			- 2 : Exclude credit sites
 
 	Revisions:
 		- 20100611@Henry: Change mix-parlay match from 0 to 9
@@ -33,7 +41,7 @@ AS
 					- Don't support Live Casino anymore
 		- 20180130@Kos: Don't support Racing, Cockfighting, RNG Casino (bettype 71, 72) anymore [#Redmine: 86086]
 		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
-		
+		- 20180727@Kos: Add new permission to view Licensee account [#Redmine: 96118]
 */
 
  BEGIN
@@ -224,19 +232,33 @@ AS
 		SiteId			INT,
 		Site			NVARCHAR(50),
 		SpecialGroup	TINYINT)
-		
 
-	DECLARE @tmpUserid VARCHAR(50)
-    SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
-	
-	DECLARE @SearchQuery varchar(1024)
-	
+	DECLARE @tmpUserid VARCHAR(50),
+		@SearchQuery VARCHAR(1024)
+
+	SELECT @tmpUserid = CAST(@UserId AS VARCHAR(50))
+
 	SELECT @SearchQuery = 'SELECT * 
-	FROM OPENQUERY(DBPOL, 
-	''SELECT siteid , site,SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
+		FROM OPENQUERY(DBPOL, 
+		''SELECT siteid, site, SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
 
-	INSERT INTO  @DeniedSite (siteid , site,SpecialGroup)
+	INSERT INTO @DeniedSite (siteid, site, SpecialGroup)
 	EXECUTE(@SearchQuery)
+
+	IF @SiteType <> 0
+	BEGIN
+		INSERT INTO  @DeniedSite (SiteId, Site, SpecialGroup)
+		SELECT
+			s.siteid,
+			s.site,
+			s.SpecialGroup
+		FROM dbo.Site AS s WITH (NOLOCK)
+		WHERE NOT EXISTS (SELECT 1 FROM @DeniedSite WHERE SiteId = s.siteid)
+			AND s.isLicensee = CASE
+								WHEN @SiteType = 1 THEN 1
+								WHEN @SiteType = 2 THEN 0
+							END
+	END
 
 	SELECT c.custid,
 		c.username,

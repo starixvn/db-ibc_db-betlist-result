@@ -9,7 +9,8 @@ ALTER PROCEDURE [dbo].[Acc_BetList_SelByProduct]
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME
+	@BalanceUpDay	SMALLDATETIME,
+	@SiteType		TINYINT			= 0
 AS
 
 /*
@@ -17,6 +18,12 @@ AS
 	Task: Search tickets by product
 	DB: DBAGE.bodb02
 	Original:
+	
+	Parameter Explanantion
+		- @SiteType:
+			- 0 : Get all
+			- 1 : Exclude deposit sites
+			- 2 : Exclude credit sites
 	
 	Revisions:
 		- 20160623@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
@@ -28,7 +35,7 @@ AS
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-		
+		- 20180927@Kos: Add new permission to view Licensee account [#Redmine: 96118]
 */
 
 BEGIN
@@ -132,6 +139,21 @@ BEGIN
 
 	INSERT INTO @DeniedSite
 	EXEC (@Sql)
+
+	IF @SiteType <> 0
+	BEGIN
+		INSERT INTO  @DeniedSite (SiteId, Site, SpecialGroup)
+		SELECT
+			s.siteid,
+			s.site,
+			s.SpecialGroup
+		FROM dbo.Site AS s WITH (NOLOCK)
+		WHERE NOT EXISTS (SELECT 1 FROM @DeniedSite WHERE SiteId = s.siteid)
+			AND s.isLicensee = CASE
+								WHEN @SiteType = 1 THEN 1
+								WHEN @SiteType = 2 THEN 0
+							END
+	END
 
 	IF NOT EXISTS ( SELECT 1
 					FROM dbo.customer AS c WITH (NOLOCK)

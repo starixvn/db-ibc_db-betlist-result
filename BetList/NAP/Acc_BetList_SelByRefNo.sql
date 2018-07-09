@@ -1,9 +1,11 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Acc_BetList_SelByRefNo]
 	@UserId			BIGINT,
 	@RefNo			BIGINT,
 	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME
+	@BalanceUpDay	SMALLDATETIME,
+	@SiteType		TINYINT			= 0
 AS
 
 /*
@@ -11,6 +13,12 @@ AS
 	Task: Get tickets by RefNo (display in column RefNo in bet list)
 	DB: DBACC.bodb02
 	Original: Acc_BetsSelBetList_ByTransID_Advance
+
+	Parameter Explanantion
+		- @SiteType:
+			- 0 : Get all
+			- 1 : Exclude deposit sites
+			- 2 : Exclude credit sites
 	
 	Revisions:
 		- 20130121@Dan: change linked server DB06 to DBARC
@@ -64,6 +72,7 @@ AS
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
+		- 20180927@Kos: Add new permission to view Licensee account [#Redmine: 96118]
 */
 
 BEGIN
@@ -220,17 +229,34 @@ BEGIN
 		SiteId			INT,
 		Site			NVARCHAR(50),
 		SpecialGroup	TINYINT)
-	
-	DECLARE @tmpUserid VARCHAR(50)
-    SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
-	
-	DECLARE @SearchQuery varchar(1024)
-	SELECT @SearchQuery = 'SELECT * 
-	FROM OPENQUERY(DBPOL, 
-	''SELECT siteid , site,SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser ( ''''' + @tmpUserid + ''''')'')'
 
-	INSERT INTO  @DeniedSite (siteid , site,SpecialGroup)
+	DECLARE @tmpUserid VARCHAR(50)
+
+	SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
+
+	DECLARE @SearchQuery VARCHAR(1024)
+
+	SELECT @SearchQuery = 'SELECT * 
+		FROM OPENQUERY(DBPOL, 
+		''SELECT siteid, site, SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser ( ''''' + @tmpUserid + ''''')'')'
+
+	INSERT INTO @DeniedSite (siteid, site, SpecialGroup)
 	EXECUTE(@SearchQuery)
+
+	IF @SiteType <> 0
+	BEGIN
+		INSERT INTO  @DeniedSite (SiteId, Site, SpecialGroup)
+		SELECT
+			s.siteid,
+			s.site,
+			s.SpecialGroup
+		FROM dbo.Site AS s WITH (NOLOCK)
+		WHERE NOT EXISTS (SELECT 1 FROM @DeniedSite WHERE SiteId = s.siteid)
+			AND s.isLicensee = CASE
+								WHEN @SiteType = 1 THEN 1
+								WHEN @SiteType = 2 THEN 0
+							END
+	END
 		
 	IF @WinLostDate IS NOT NULL
 		AND NOT EXISTS ( SELECT 1
