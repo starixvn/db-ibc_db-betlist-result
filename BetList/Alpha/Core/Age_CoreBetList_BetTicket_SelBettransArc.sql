@@ -45,6 +45,7 @@ AS
 		- 20180418@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
+		- 20180711@Kos: Support Poker Games [#Redmine: 97565]
 
 	Param's Explanation:
 
@@ -82,6 +83,7 @@ BEGIN
 		- Mix Parlay			: ProductId = 27
 		- Lottery				: ProductId = 28
 		- Pragmatic Casino		: ProductId = 32
+		- Poker Games			: ProductId = 33
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -107,6 +109,7 @@ BEGIN
 			WHEN c.ProductId = 24 THEN 219
 			WHEN c.ProductId = 28 THEN 220
 			WHEN c.ProductId = 32 THEN 248
+			WHEN c.ProductId = 33 THEN 163
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
@@ -116,7 +119,7 @@ BEGIN
 			ELSE ''
 		END AS Betteam
 		, CASE
-			WHEN c.ProductID IN (1, 23, 27) THEN b.hdp1
+			WHEN c.ProductID IN (1, 23, 27, 33) THEN b.hdp1
 			ELSE 0
 		END AS hdp1
 		, CASE
@@ -163,7 +166,7 @@ BEGIN
 			ELSE 0
 		END AS Liveindicator
 		, CASE
-			WHEN c.ProductID IN (1, 23) THEN b.Livehomescore
+			WHEN c.ProductID IN (1, 23, 33) THEN b.Livehomescore
 			ELSE 0
 		END AS Livehomescore
 		, CASE
@@ -192,13 +195,14 @@ BEGIN
 		, '' AS showtime
 		, CASE 
 			WHEN c.ProductID IN (9, 12) AND b.bettype IN (1000, 1701, 1702) THEN b.betcheck
-			WHEN c.ProductID IN (1, 27) THEN ISNULL(b.betcheck, '')
+			WHEN c.ProductID IN (1, 27, 33) THEN ISNULL(b.betcheck, '')
 			WHEN c.ProductID = 8 THEN ISNULL(b.comstatus, '')
 			ELSE ''
 		END	AS betcheck
-		, CASE WHEN b.comstatus = '1' THEN '1'
-				ELSE '0'
-			END AS comstatus
+		, CASE
+			WHEN c.ProductID = 33 THEN ISNULL(b.comstatus, '')
+			ELSE CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
+		END AS ComStatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
 			WHEN c.ProductId IN (8, 22, 23, 24, 28, 32) THEN b.transdesc
@@ -209,6 +213,10 @@ BEGIN
 			ELSE 0
 		END AS OddsSpread
 		, -1 AS BetdaqId
+		, CASE
+			WHEN c.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
+			ELSE ''
+		END AS ExtraInfo
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN @custInfo AS ci ON c.custid = ci.custid
@@ -281,6 +289,7 @@ BEGIN
 		, '' AS transdesc
 		, 0 AS OddsSpread
 		, -1 AS BetdaqId
+		, '' AS ExtraInfo
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN @custInfo AS ci ON c.custid = ci.custid
@@ -387,6 +396,7 @@ BEGIN
 			ELSE 0
 		END AS OddsSpread
 		, -1 AS BetdaqId
+		, '' AS ExtraInfo
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
 		INNER JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
@@ -458,6 +468,7 @@ BEGIN
 		, '' AS transdesc
 		, 0 AS OddsSpread
 		, -1 AS BetdaqId
+		, '' AS ExtraInfo
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
 		INNER JOIN dbo.outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
@@ -529,6 +540,7 @@ BEGIN
 		, '' AS transdesc
 		, 0 AS OddsSpread
 		, -1 AS BetdaqId
+		, '' AS ExtraInfo
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
 		INNER JOIN dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 		INNER JOIN bodb02.dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -604,6 +616,7 @@ BEGIN
 		, ISNULL(b.transdesc, '') AS TransDesc
 		, 0 AS OddsSpread
 		, -1 AS BetdaqId
+		, '' AS ExtraInfo
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
 		INNER JOIN dbo.Match3rd_bk AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
@@ -675,6 +688,7 @@ BEGIN
 		, ISNULL(b.transdesc, '') AS TransDesc
 		, 0 AS OddsSpread
 		, ISNULL(b.RefNo2, -1) AS BetdaqId
+		, '' AS ExtraInfo
 	FROM dbo.bettransRnG_bk AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 	WHERE c.WhTicket = 8

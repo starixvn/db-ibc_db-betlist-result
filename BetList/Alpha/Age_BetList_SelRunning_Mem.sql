@@ -104,6 +104,7 @@ AS
 		- 20180703@Kos: Use new index for bettransRnG and bettransLC [#Redmine: 97249]
 		- 20180705@Viet: Rewrite SP
 		- 20180731@Patrick: Index revolution [#Redmine: #98757]
+		- 20180803@Kos: Support Poker Games [#Redmine: 97565]
 */
 
 BEGIN
@@ -155,6 +156,7 @@ BEGIN
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
 		OddsSpread		MONEY,
+		ExtraInfo		VARCHAR(1000),
 		SecAcceptFlag	BIT,
 		OddsId			INT,
 		CheckTime		DATETIME,
@@ -185,7 +187,7 @@ BEGIN
 	-- CONSTANT VALUE: 1:bettrans; 2:translog; 4:bettransRnG; 8:bettransLC
 	DECLARE @hasData TINYINT = 0
 
-	--bettrans
+	-- bettrans
 	INSERT INTO @BetListSelRunningByDateMem (
 		TransId
 		,TransDate
@@ -220,6 +222,7 @@ BEGIN
 		,SPositionTaking
 		,Stake
 		,TransDesc
+		,ExtraInfo
 		,TableID
 	)
 	SELECT TransID = transid
@@ -235,7 +238,7 @@ BEGIN
 		,BetId = ISNULL(betid, 0) --betid
 		,BetTeam = betteam
 		,CheckTime = checktime
-		,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END --comstatus
+		,ComStatus = comstatus
 		,ADiscount = discount --adiscount
 		,Hdp1 = hdp1
 		,Hdp2 = hdp2
@@ -247,14 +250,15 @@ BEGIN
 		,MPositionTaking = mpositiontaking
 		,Odds = odds
 		,OddsId = oddsid
-		,OddsSpread = ISNULL(b.OddsSpread, 0) --oddsspread
+		,OddsSpread = ISNULL(b.OddsSpread, 0)
 		,OddsType = oddstype
 		,RefNo = refno
 		,SDiscount = sdiscount
 		,SecAcceptFlag = SecAcceptFlag
 		,SPositionTaking = spositiontaking
 		,Stake = stake
-		,TransDesc = ISNULL(b.TransDesc, '') --transdesc
+		,TransDesc = ISNULL(b.TransDesc, '')
+		,ExtraInfo = ISNULL(b.ExtraInfo, '')
 		,TableID = 1 --bettrans
 	FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_betrunning_custid)
 	WHERE custid = @CustId
@@ -515,8 +519,10 @@ BEGIN
 								WHEN b.[Status] = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 								ELSE b.[Status]
 							END
+				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0))
 				,ShowTime = ''
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			WHERE b.TableID = 1 -- bettrans
@@ -533,6 +539,7 @@ BEGIN
 				,MatchId = 0
 				,homeID = m.teamID
 				,AwayId  = 0
+				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,Hdp1 = 0
 				,Hdp2 = 0
 				,Betteam = ''
@@ -545,6 +552,7 @@ BEGIN
 				,BetCheck = ''
 				,TransDesc = ''
 				,OddsSpread = 0
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
@@ -560,6 +568,7 @@ BEGIN
 				,MatchId = 0
 				,homeID = 0
 				,AwayId  = 0
+				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,LiveIndicator = 0
 				,LiveHomeScore = 0
 				,LiveAwayScore = 0
@@ -568,6 +577,7 @@ BEGIN
 				,ShowTime = ''
 				,TransDesc = ''
 				,OddsSpread = 0
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.bettype IN (9, 29)
 				AND b.matchid IN (9, 29)
@@ -581,6 +591,7 @@ BEGIN
 				,MatchId = CASE WHEN b.ProductID IN (5, 27) THEN m.matchid ELSE 0 END
 				,HomeId = CASE WHEN b.ProductID IN (5, 27) THEN m.homeid ELSE 0 END
 				,AwayId = CASE WHEN b.ProductID IN (5, 27) THEN m.awayid ELSE 0 END
+				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,Hdp2 = CASE WHEN b.ProductID IN (5, 27) THEN b.hdp2 ELSE 0 END
 				,[Status] = CASE
 								WHEN b.[Status] = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
@@ -598,6 +609,7 @@ BEGIN
 				,BetCheck = ''
 				,TransDesc = CASE WHEN b.ProductID IN (26, 27) THEN ISNULL(b.TransDesc, '') ELSE '' END
 				,OddsSpread = 0
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			WHERE b.TableID = 1 -- bettrans
@@ -613,11 +625,13 @@ BEGIN
 				,homeID = o.RacerID
 				,awayID = 0
 				,betteam = ''
+				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,OddsType = 0
 				,ShowTime = r.EventTime
 				,BetCheck = ''
 				,TransDesc = ''
 				,OddsSpread = 0
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
@@ -634,6 +648,7 @@ BEGIN
 				,MatchID = 0
 				,HomeId = 0
 				,AwayID = 0
+				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,LiveIndicator = 0
 				,LiveHomeScore = 0
 				,LiveAwayScore = 0
@@ -642,18 +657,20 @@ BEGIN
 				,ShowTime = ''
 				,TransDesc = ''
 				,OddsSpread = 0
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 1 -- bettrans
 				AND b.matchid = 2799
 
-			-- NG2 bettrans
+			-- NG2, Poker Games bettrans
 			UPDATE b
 			SET Sporttype = CASE
-								WHEN b.ProductId = 23 AND b.Bettype BETWEEN 2501 AND 2539 THEN 213
-								WHEN b.ProductId = 23 AND b.Bettype BETWEEN 2541 AND 2579 THEN 214
-								WHEN b.ProductId = 23 AND b.Bettype BETWEEN 2581 AND 2619 THEN 215
-								WHEN b.ProductId = 23 AND b.Bettype BETWEEN 2621 AND 2659 THEN 216
-								WHEN b.ProductId = 23 AND b.Bettype BETWEEN 2681 AND 2699 THEN 218
+								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2501 AND 2539 THEN 213
+								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2541 AND 2579 THEN 214
+								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2581 AND 2619 THEN 215
+								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2621 AND 2659 THEN 216
+								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2681 AND 2699 THEN 218
+								WHEN b.ProductId = 33 THEN 163
 								ELSE 0
 							END
 				,LeagueID = 0
@@ -662,6 +679,7 @@ BEGIN
 				,MatchID = 0
 				,HomeId = 0
 				,AwayID = 0
+				,Hdp2 = CASE WHEN b.ProductID = 23 THEN b.hdp2 ELSE 0 END
 				,MOdds = 0
 				,BetTeam = ''
 				,LiveIndicator = 0
@@ -670,11 +688,21 @@ BEGIN
 				,OddsType = 0
 				,ShowTime = ''
 				,OddsSpread = 0
-				,ComStatus = 0
-				,BetCheck = ''
+				,ComStatus = CASE
+								WHEN b.ProductID = 33 THEN ISNULL(b.comstatus, '')
+								ELSE ''
+							END
+				,BetCheck = CASE
+								WHEN b.ProductID = 33 THEN ISNULL(b.betcheck, '')
+								ELSE ''
+							END
+				,ExtraInfo = CASE
+								WHEN b.ProductID = 33 THEN ISNULL(b.ExtraInfo, '')
+								ELSE ''
+							END
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 1 -- bettrans
-				AND b.ProductID = 23
+				AND b.ProductID IN (23, 33)
 		END -- got bettrans' data
 
 		IF (@hasData & 2 = 2) -- got translog's data
@@ -691,6 +719,7 @@ BEGIN
 				,IsNeutral = ISNULL(m.IsNeutral, 0)
 				,OddsType = CASE WHEN b.SubProduct IN ('MG-SuperLive') THEN CONVERT(TINYINT, ISNULL(b.custom1, 0)) ELSE 0 END
 				,ShowTime = ISNULL(m.showtime,'')
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			WHERE b.TableID = 2 -- translog
@@ -722,6 +751,7 @@ BEGIN
 							END
 				,TransDesc = CASE WHEN b.ProductID IN (8, 28) THEN b.transdesc ELSE '' END
 				,OddsSpread = 0
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 2 -- translog
 				AND b.ProductID IN (8, 12, 15, 28)
@@ -743,6 +773,7 @@ BEGIN
 				,ShowTime = ''
 				,BetCheck = CASE WHEN b.ProductID = 30 THEN ISNULL(b.Tranid3rd, '') ELSE '' END
 				,TransDesc = CASE WHEN b.ProductID = 30 THEN ISNULL(b.transdesc, '') ELSE '' END
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.MatchId = m.Match3rdId
 			WHERE b.TableID = 2 -- translog
@@ -794,6 +825,7 @@ BEGIN
 				,ComStatus = 0
 				,BetCheck = ''
 				,OddsSpread = 0
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS d
 				INNER JOIN dbo.bettrans AS s WITH (NOLOCK) on d.transid = s.transid
 			WHERE d.ProductID IN (21, 6, 22, 24, 32)
@@ -902,6 +934,7 @@ BEGIN
 		,BetCheck
 		,TransDesc
 		,OddsSpread
+		,ExtraInfo
 		,@CustId AS CustId
 		,@Username AS Username
 		,@CurrencyName AS Currency

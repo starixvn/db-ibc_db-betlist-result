@@ -20,6 +20,7 @@ AS
 		- 20160907@Kos: Extend length of transdesc to 1000 to support NG2
 		- 20170508@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20180126@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 
 	Param's Explanation:
 
@@ -98,6 +99,7 @@ BEGIN
 		, TransDesc			NVARCHAR(1000)
 		, OddsSpread		SMALLMONEY
 		, BetdaqId			BIGINT
+		, ExtraInfo			VARCHAR(1000)
 	);
 
 	-- CHECK for selecting from bettrans_bk

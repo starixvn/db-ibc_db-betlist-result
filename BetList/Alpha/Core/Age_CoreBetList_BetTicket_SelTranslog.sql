@@ -34,6 +34,7 @@ AS
 		- 20180323@Kos: Return BetdaqId to support ONERnG Jackpot [#Redmine: 88652]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
+		- 20180711@Kos: Return new column ExtraInfo to match columns of other SPs [#Redmine: 97565]
 
 	Param's Explanation:
 
@@ -127,6 +128,7 @@ BEGIN
 		END AS TransDesc
 		, 0 AS OddsSpread
 		, -1 AS BetdaqId
+		, '' AS ExtraInfo
 	FROM dbo.translog AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.translogid = c.transid
 	WHERE c.WhTicket = 0
@@ -200,6 +202,7 @@ BEGIN
 		, b.transdesc
 		, 0 AS OddsSpread
 		, -1 AS BetdaqId
+		, '' AS ExtraInfo
 	FROM dbo.translog AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.translogid = c.transid
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
@@ -286,6 +289,7 @@ BEGIN
 		END AS TransDesc
 		, 0 AS OddsSpread
 		, -1 AS BetdaqId
+		, '' AS ExtraInfo
 	FROM dbo.translog AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.translogid = c.transid
 		INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.eventid = m.Match3rdId
