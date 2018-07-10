@@ -118,6 +118,7 @@ AS
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20180509@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
+		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 
 	Param's Explanation:
 		+ @TransType:
@@ -618,7 +619,7 @@ BEGIN
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
 			-- RNG Casino, Keno, Gold Deluxe, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet
-			-- Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino
+			-- Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Poker Games
 			INSERT INTO @Data
 			SELECT
 				CASE
@@ -638,6 +639,7 @@ BEGIN
 					WHEN s.ProductID = 24 THEN 219
 					WHEN s.ProductID = 28 THEN 220
 					WHEN s.ProductID = 32 THEN 248
+					WHEN s.ProductID = 33 THEN 163
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -664,7 +666,7 @@ BEGIN
 				b.oddsid,
 				b.bettype,
 				CASE
-					WHEN s.ProductId = 23 THEN b.hdp1
+					WHEN s.ProductId IN (23, 33) THEN b.hdp1
 					ELSE 0
 				END AS hdp1,
 				CASE
@@ -682,13 +684,16 @@ BEGIN
 				'' AS betteam,
 				b.status,
 				'' AS betstatus,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE
+					WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
+					ELSE ''
+				END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				b.playercomm,
 				CASE
-					WHEN s.ProductId = 23 THEN b.livehomescore
+					WHEN s.ProductId IN (23, 33) THEN b.livehomescore
 					ELSE 0
 				END AS livehomescore,
 				0 AS liveawayscore,
@@ -717,7 +722,7 @@ BEGIN
 				b.swinlost,
 				b.winlostdate,
 				CASE
-					WHEN s.ProductID IN (12, 13) THEN b.betcheck
+					WHEN s.ProductID IN (12, 13, 33) THEN b.betcheck
 					WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
@@ -731,14 +736,17 @@ BEGIN
 				END AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				CASE
+					WHEN s.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND s.ProductID IN (6, 8, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32)
+				AND s.ProductID IN (6, 8, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32, 33)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Bullfighting (EventType = 5)
@@ -1594,7 +1602,7 @@ BEGIN
 				AND s.EventType = 3
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
-			-- NG2
+			-- NG2, Poker Games
 			INSERT INTO @Data
 			SELECT
 				CASE
@@ -1603,6 +1611,7 @@ BEGIN
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
+					WHEN s.ProductID = 33 THEN 163
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -1628,7 +1637,7 @@ BEGIN
 				b.oddsid,
 				b.bettype,
 				CASE
-					WHEN s.ProductId = 23 THEN b.hdp1
+					WHEN s.ProductId IN (23, 33) THEN b.hdp1
 					ELSE 0
 				END AS hdp1,
 				CASE
@@ -1643,7 +1652,10 @@ BEGIN
 				b.betteam,
 				b.status,
 				'' AS betstatus,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,   
+				CASE
+					WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
+					ELSE ''
+				END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
@@ -1677,7 +1689,10 @@ BEGIN
 				b.mwinlost,
 				b.swinlost,
 				b.winlostdate,
-				'' AS BetCheck,
+				CASE
+					WHEN s.ProductId = 33 THEN b.betcheck
+					ELSE ''
+				END AS BetCheck,
 				CASE
 					WHEN s.ProductId = 23 THEN ISNULL(b.transdesc, '')
 					ELSE ''
@@ -1685,14 +1700,17 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				CASE
+					WHEN s.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND s.ProductId = 23
+				AND s.ProductId IN (23, 33)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Keno, Gold Deluxe, Microgaming Live Casino, Colossus Bet, Lottery (translog)
@@ -3113,7 +3131,7 @@ BEGIN
 	DELETE @Data
 	WHERE Bettype IN (903, 913)
 
-	UPDATE @Data
+	UPDATE tblTemp
 	SET tblTemp.Creator = cu.username
 	FROM @Data AS tblTemp
 		INNER JOIN dbo.Customer AS cu WITH (NOLOCK) ON cu.custid = tblTemp.Creator;

@@ -91,6 +91,7 @@ AS
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
+		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 
 	Param's Explanation:
 		• @FromDate = @winlostdate
@@ -150,20 +151,11 @@ BEGIN
 		Actual_Stake	MONEY,
 		TransDate		DATETIME,
 		BetTeam			NVARCHAR(50),
-		SPositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		APositionTaking SMALLMONEY,
-		SPositionTaking2 SMALLMONEY,
-		MPositionTaking2 SMALLMONEY,
-		APositionTaking2 SMALLMONEY,
 		LiveHomeScore	INT,
 		LiveAwayScore	INT,
 		LiveIndicator	BIT,
 		WinLost			MONEY,
 		Commission		MONEY,
-		SComm			MONEY,
-		AComm			MONEY,
-		Comm			MONEY,
 		AWinLost		MONEY,
 		MWinLost		MONEY,
 		SWinLost		MONEY,
@@ -222,20 +214,11 @@ BEGIN
 		actual_stake,
 		transdate,
 		betteam,
-		0 spositiontaking, -- unuse in this report
-		0 mpositiontaking, -- unuse in this report
-		0 apositiontaking, -- unuse in this report
-		0 spositiontaking2,-- unuse in this report
-		0 mpositiontaking2,-- unuse in this report
-		0 apositiontaking2,-- unuse in this report
 		livehomescore,
 		liveawayscore,
 		liveindicator,
 		winlost,
 		commission,
-		0 scomm, -- unuse in this report
-		0 acomm, -- unuse in this report
-		0 comm,	-- unuse in this report
 		awinlost,
 		mwinlost,
 		swinlost,
@@ -295,7 +278,7 @@ BEGIN
 				0 finalodds2,
 				b.oddstype,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -378,7 +361,7 @@ BEGIN
 				0 finalodds2,
 				0 AS OddsType,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -465,7 +448,7 @@ BEGIN
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 					ELSE b.status 
 				END AS status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -549,7 +532,7 @@ BEGIN
 				0 finalodds2,
 				0 AS OddsType,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -626,7 +609,7 @@ BEGIN
 				bmOdd.finalodds2,
 				0 AS OddsType, 
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -706,7 +689,7 @@ BEGIN
 				bmOdd.finalodds2,
 				0 AS OddsType,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -756,7 +739,7 @@ BEGIN
 				AND b.custid = @CustId
 				AND l.sporttype <> 1 
 
-			-- Keno, Gold Deluxe, Microgaming Live Casino, NG2, Lottery bettrans
+			-- Keno, Gold Deluxe, Microgaming Live Casino, NG2, Lottery, Poker Games bettrans
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -779,7 +762,7 @@ BEGIN
 				0 AS awayid,
 				ISNULL(b.checktime, '') AS checktime,
 				CASE
-					WHEN s.ProductId = 23 THEN b.hdp1
+					WHEN s.ProductId IN (23, 33) THEN b.hdp1
 					ELSE 0
 				END AS hdp1,
 				CASE
@@ -795,13 +778,16 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE
+					WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
+					ELSE ''
+				END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
 				'' AS betteam,
 				CASE
-					WHEN s.ProductId = 23 THEN b.livehomescore
+					WHEN s.ProductId IN (23, 33) THEN b.livehomescore
 					ELSE 0
 				END AS livehomescore,
 				0 AS liveawayscore,
@@ -823,6 +809,7 @@ BEGIN
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 					WHEN s.ProductID = 28 THEN 220
+					WHEN s.ProductID = 33 THEN 163
 					ELSE 0
 				END AS sporttype,
 				CASE
@@ -838,7 +825,7 @@ BEGIN
 				b.betfrom,
 				b.winlostdate,
 				CASE
-					WHEN s.ProductID IN (12, 13) THEN b.betcheck
+					WHEN s.ProductID IN (12, 13, 33) THEN b.betcheck
 					WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
@@ -849,17 +836,20 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				CASE
+					WHEN s.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
-				AND s.ProductID IN (8, 12, 13, 23, 28)
+				AND s.ProductID IN (8, 12, 13, 23, 28, 33)
 
 			-- Casino, Keno, Gold Deluxe, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet 
-			-- Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino bettrans14
+			-- Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Poker Games bettrans14
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -882,7 +872,7 @@ BEGIN
 				0 AS awayid,
 				ISNULL(b.checktime, '') AS checktime,
 				CASE
-					WHEN s.ProductId = 23 THEN b.hdp1
+					WHEN s.ProductId IN (23, 33) THEN b.hdp1
 					ELSE 0
 				END AS hdp1,
 				CASE
@@ -898,7 +888,7 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -908,7 +898,10 @@ BEGIN
 				0 AS liveindicator,
 				(b.winlost - b.actual_stake) AS WinLost,
 				b.playercomm AS commission,
-				CASE b.custid WHEN b.creator THEN b.username ELSE '' END creator,
+				CASE
+					WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
+					ELSE ''
+				END AS comstatus,
 				b.username,
 				0 AS hthomescore,
 				0 AS htawayscore,
@@ -930,6 +923,7 @@ BEGIN
 					WHEN s.ProductID = 24 THEN 219
 					WHEN s.ProductID = 28 THEN 220
 					WHEN s.ProductID = 32 THEN 248
+					WHEN s.ProductID = 33 THEN 163
 					ELSE 0
 				END AS sporttype,
 				CASE
@@ -945,7 +939,7 @@ BEGIN
 				b.betfrom,
 				b.winlostdate,
 				CASE
-					WHEN s.ProductID IN (12, 13) THEN b.betcheck
+					WHEN s.ProductID IN (12, 13, 33) THEN b.betcheck
 					WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
@@ -959,14 +953,17 @@ BEGIN
 				END AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				CASE
+					WHEN s.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
-				AND s.ProductID IN (6, 7, 8, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32)
+				AND s.ProductID IN (6, 7, 8, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32, 33)
 
 			-- Virtual Horse Racing
 			UNION ALL
@@ -998,7 +995,7 @@ BEGIN
 				0 finalodds2,
 				0 AS OddsType,
 				b.status, 
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake, 
 				b.actual_stake,
 				b.transdate, 
@@ -1069,7 +1066,7 @@ BEGIN
 				0 finalodds2,
 				0 AS OddsType,
 				b.status, 
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake, 
 				b.actual_stake,
 				b.transdate,
@@ -1143,7 +1140,7 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
-				0 AS comstatus,
+				'' AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -1232,7 +1229,7 @@ BEGIN
 					ELSE 0
 				END AS OddsType,
 				b.status,
-				0 AS comstatus,
+				'' AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -1314,7 +1311,7 @@ BEGIN
 				0 AS FinalOdds2,
 				b.oddstype,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -1383,7 +1380,7 @@ BEGIN
 				0 AS FinalOdds2,
 				b.oddstype,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -1452,7 +1449,7 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -1521,7 +1518,7 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -1594,7 +1591,7 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -1677,7 +1674,7 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				'Running' AS Status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				SUM(brng.stake) AS Stake,
 				SUM(brng.actual_stake) AS Actual_Stake,
 				b.transdate,
@@ -1784,7 +1781,7 @@ BEGIN
 					WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
 					ELSE 'Draw'
 				END AS Status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				SUM(brng.stake) AS Stake,
 				SUM(brng.actual_stake) AS Actual_Stake,
 				b.transdate,
@@ -1886,7 +1883,7 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -1959,7 +1956,7 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				'Running' AS Status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				SUM(blc.stake) AS Stake,
 				SUM(blc.actual_stake) AS Actual_Stake,
 				b.transdate,
@@ -2053,7 +2050,7 @@ BEGIN
 					WHEN SUM(blc.winlost - blc.actual_stake) < 0 THEN 'Lose'
 					ELSE 'Draw'
 				END AS Status,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 				SUM(blc.stake) AS Stake,
 				SUM(blc.actual_stake) AS Actual_Stake,
 				b.transdate,
@@ -2130,10 +2127,7 @@ BEGIN
 			Commission		MONEY,
 			SWinLost		MONEY,
 			MWinLost		MONEY,
-			AWinLost		MONEY,
-			SComm			MONEY,
-			AComm			MONEY,
-			Comm			MONEY
+			AWinLost		MONEY
 		)
 
 		-- Prepare temp table
@@ -2147,10 +2141,7 @@ BEGIN
 			SUM(Commission) AS Commission,
 			SUM(SWinLost) AS SWinLost,
 			SUM(MWinLost) AS MWinLost,
-			SUM(AWinLost) AS AWinLost,
-			SUM(SComm) AS SComm,
-			SUM(AComm) AS AComm,
-			SUM(Comm) AS Comm
+			SUM(AWinLost) AS AWinLost
 		FROM @Data
 		WHERE RefCode <> 0
 		GROUP BY RefCode
@@ -2168,9 +2159,6 @@ BEGIN
 				b.SWinLost = r.SWinLost,
 				b.MWinLost = r.MWinLost,
 				b.AWinLost = r.AWinLost,
-				b.SComm = r.SComm,
-				b.AComm = r.AComm,
-				b.Comm = r.Comm,
 				b.WalletType = 0
 			FROM @Data AS b
 				INNER JOIN @RefCodeTmp AS r ON b.RefCode = r.RefCode AND b.TransId = r.TransId

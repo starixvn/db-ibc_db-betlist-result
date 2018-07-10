@@ -89,6 +89,7 @@ AS
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20180509@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
+		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 */
 
 BEGIN
@@ -468,8 +469,8 @@ BEGIN
 	END
 
 	-- RNG Casino, Bingo, Keno, P2P, Gold Deluxe, AG Casino, Microgaming Live Casino, Microgaming RNG Casino
-	-- AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino
-	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32))
+	-- AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Poker Games
+	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32, 33))
 	BEGIN
 		INSERT INTO #BetListData
 		SELECT
@@ -489,7 +490,7 @@ BEGIN
 			0 AS awayid,
 			'' AS settleTime,
 			CASE
-				WHEN s.ProductId = 23 THEN b.hdp1
+				WHEN s.ProductId IN (23, 33) THEN b.hdp1
 				ELSE 0
 			END AS hdp1,
 			CASE
@@ -504,7 +505,10 @@ BEGIN
 			0 AS finalodds2,
 			0 AS OddsType,
 			b.status,
-			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+			CASE
+				WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
+				ELSE ''
+			END AS comstatus,
 			b.stake,
 			b.actual_stake,
 			b.transdate,
@@ -519,7 +523,7 @@ BEGIN
 			0 AS modds,
 			b.custid,
 			CASE
-				WHEN s.ProductId = 23 THEN b.livehomescore
+				WHEN s.ProductId IN (23, 33) THEN b.livehomescore
 				ELSE 0
 			END AS livehomescore,
 			0 AS liveawayscore,
@@ -546,6 +550,7 @@ BEGIN
 				WHEN s.ProductId = 24 THEN 219
 				WHEN s.ProductID = 28 THEN 220
 				WHEN s.ProductID = 32 THEN 248
+				WHEN s.ProductID = 33 THEN 163
 				ELSE 0
 			END AS sporttype,
 			b.ip,
@@ -568,7 +573,7 @@ BEGIN
 			'' AS showtime,
 			b.winlostdate,
 			CASE
-				WHEN s.ProductId IN (12, 13) THEN b.BetCheck
+				WHEN s.ProductId IN (12, 13, 33) THEN b.BetCheck
 				WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 				ELSE ''
 			END AS BetCheck,
@@ -583,14 +588,17 @@ BEGIN
 			END AS OddsSpread,
 			0 AS OriginalBetType,
 			-1 AS BetdaqId,
-			'' AS ExtraInfo,
+			CASE
+				WHEN s.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
+				ELSE ''
+			END AS ExtraInfo,
 			0 AS WalletType,
 			0 AS RefCode
 		FROM dbo.bettrans_bk AS b WITH (NOLOCK,INDEX=IX_custid)
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
-			AND s.ProductId IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32)
+			AND s.ProductId IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32, 33)
 	END
 
 	-- Horse Racing
