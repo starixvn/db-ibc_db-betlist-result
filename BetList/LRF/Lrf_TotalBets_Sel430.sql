@@ -16,7 +16,7 @@ AS
 /*
 	Created: Henry@20101209
 	Task: Betlist for Correct score and first correct score
-	DB: DBEXT.bodb02
+	DB: DB042.bodb02
 	Original:
 	Revisions:
 		- 20111229@Jim: change the way to get odds/oddstype/betteam to web dev
@@ -35,6 +35,7 @@ AS
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
+		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
 */
 
 BEGIN
@@ -88,7 +89,6 @@ BEGIN
 		Ip				NVARCHAR(30),
 		IsNeutral		BIT,
 		OddsType		TINYINT,
-		WinLostDate		DATETIME,
 		Currency		SMALLINT,
 		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
@@ -110,8 +110,8 @@ BEGIN
 		m.matchcode,
 		m.homeid,
 		m.awayid,
-		CONVERT(FLOAT, b.hdp1) AS hdp1,
-		CONVERT(FLOAT, b.hdp2) AS hdp2,
+		b.hdp1,
+		b.hdp2,
 		b.odds,
 		b.modds,
 		b.status,
@@ -125,9 +125,8 @@ BEGIN
 		b.discount,
 		m.leagueid,
 		b.ip,
-		ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 		b.oddstype,
-		b.winlostdate,
 		b.currency,
 		ISNULL(b.transdesc, '') AS transdesc,
 		ISNULL(b.betdaqid, -1) AS BetdaqId,

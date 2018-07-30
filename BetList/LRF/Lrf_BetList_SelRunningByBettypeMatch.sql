@@ -20,7 +20,7 @@ AS
 /*
 	Created: Henry@20101209
 	Task: Betlist
-	DB: DBEXT.bodb02
+	DB: DB042.bodb02
 	Original: [Age_BetList_SelRunningByBettypeMatch_Ag]
 	Revisions:
 		- 20110216@Jacob: Add column nickname IN the result SET
@@ -51,6 +51,7 @@ AS
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170324@Kos: Support CashOut [#Redmine: 71963]
 		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
 */
 
 BEGIN
@@ -106,7 +107,6 @@ BEGIN
 		IsNeutral		BIT,
 		OddsType		TINYINT,
 		BetId			BIGINT,
-		WinLostDate		DATETIME,
 		Currency		SMALLINT,
 		RefNo			BIGINT,
 		ShowTime		NVARCHAR(50),
@@ -149,7 +149,6 @@ BEGIN
 			CONVERT(BIT,0) AS isNeutral,
 			0 AS oddstype,
 			b.betid,
-			b.winlostdate,
 			b.currency,
 			b.refno,
 			'' AS ShowTime,
@@ -169,7 +168,7 @@ BEGIN
 			AND b.bettype = @BetType
 			AND b.recommend IN (SELECT CustId FROM @TempAg)
 			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-			AND b.statusID = 0
+			AND b.statusID IN (0, 1)
 		ORDER BY
 			b.status,
 			b.transid
@@ -207,7 +206,6 @@ BEGIN
 			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			b.oddstype,
 			b.betid,
-			b.winlostdate,
 			b.currency,
 			b.refno,
 			ISNULL(m.showtime,'') AS showtime,
@@ -234,7 +232,6 @@ BEGIN
 			AND b.recommend IN (SELECT CustId FROM @TempAg)
 			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 			AND b.statusID IN (0, 1)
-			AND b.bettype NOT IN (SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 			AND ((@LiveIndicator = -1)
 				OR (@LiveIndicator = 0 AND b.liveindicator = 0)
 				OR (@LiveIndicator = 1 AND b.liveindicator = 1))
@@ -338,4 +335,9 @@ BEGIN
 	DROP TABLE #Data
 END
 
+
+GO
+GRANT EXECUTE ON [dbo].[Lrf_BetList_SelRunningByBettypeMatch] TO [bodbLicenseeNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelRunningByBettypeMatch] TO [vnteam]
 GO

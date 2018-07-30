@@ -18,7 +18,7 @@ AS
 /*
 	Created: Victor@20130802
 	Task: Forecast
-	DB: DBEXT.bodb02
+	DB: DB042.bodb02
 	Original: [Lrf_BetList_Forecast_SelByMatch]
 	Revisions:
 		- 20131010@Victor: Add handicap parameter to show betlist of a specific handicap line
@@ -28,6 +28,7 @@ AS
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
 
 	Param's explanation:
 		- BetChoice: one of the following list: 'All','Home', 'Away', 'Over', 'Under'
@@ -92,7 +93,6 @@ BEGIN
 		IsNeutral		BIT,
 		OddsType		TINYINT,
 		BetId			BIGINT,
-		WinLostDate		DATETIME,
 		Currency		SMALLINT,
 		RefNo			BIGINT,
 		ShowTime		NVARCHAR(50),
@@ -116,8 +116,8 @@ BEGIN
 		m.leagueid,
 		m.homeid,
 		m.awayid,
-		CONVERT(FLOAT, b.hdp1) AS hdp1,
-		CONVERT(FLOAT, b.hdp2) AS hdp2,
+		b.hdp1,
+		b.hdp2,
 		b.odds,
 		CASE
 			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
@@ -135,7 +135,6 @@ BEGIN
 		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 		b.oddstype,
 		b.betid,
-		b.winlostdate,
 		b.currency,
 		b.refno,
 		ISNULL(m.showtime,'') AS showtime,
@@ -156,7 +155,7 @@ BEGIN
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid 
 	WHERE b.matchid = @MatchId
 		AND ((@BetType = 0 AND b.bettype IN (1, 3, 7, 8))
-			OR (@BetType != 0 AND b.bettype = @BetType))
+			OR (@BetType <> 0 AND b.bettype = @BetType))
 		AND b.recommend IN (SELECT CustId FROM @TempAg)
 		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.statusID IN (0, 1)
@@ -202,7 +201,8 @@ BEGIN
 	-- Filter data by Handicap
 	IF @BetChoice IN ('Home','Away') AND @handicap IS NOT NULL
 	BEGIN
-		DELETE FROM #Data WHERE hdp2-hdp1 != @handicap
+		DELETE FROM #Data
+		WHERE hdp2 - hdp1 <> @handicap
 	END
 
 	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
@@ -276,7 +276,7 @@ BEGIN
 		(
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY b.Status, b.TransId) AS RowNum,
-				SUBSTRING(c.username2, CHARINDEX('$',c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS NickName,
+				SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS NickName,
 				b.* ,
 				b.Stake * e.USD AS StakeUSD,
 				b.Stake * e.EUR AS StakeEUR,

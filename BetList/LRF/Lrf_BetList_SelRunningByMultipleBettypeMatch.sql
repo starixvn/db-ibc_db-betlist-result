@@ -19,7 +19,7 @@ AS
 /*
 	Created: 20140522@Jim
 	Task: Betlist
-	DB: DBEXT.bodb02
+	DB: DB042.bodb02
 	Original: [Lrf_BetList_SelRunningByBettypeMatch]
 	Revisions:
 		- 20140522@Jim: Clone from Lrf_BetList_SelRunningByBettypeMatch to support muilti bettype
@@ -32,6 +32,7 @@ AS
 		- 20170223@Kos: Support sub licensees [#Redmine: 71679]
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
+		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
 */
 
 BEGIN
@@ -65,7 +66,7 @@ BEGIN
 	DECLARE @tblbettype AS TABLE (BetType INT)
 
 	INSERT INTO @tblbettype (BetType)
-	SELECT CONVERT(INT,VAL) AS BetType
+	SELECT CONVERT(INT, VAL) AS BetType
 	FROM strSplit(@BetType, ',')
 
 	SET @BetTeam = RTRIM(LTRIM(ISNULL(@BetTeam,'')))
@@ -92,12 +93,11 @@ BEGIN
 		LiveIndicator	INT,
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
-		Discount		DECIMAL(9,8),
+		Discount		DECIMAL(9, 8),
 		Ip				NVARCHAR(20),
 		IsNeutral		BIT,
 		OddsType		TINYINT,
 		BetId			BIGINT,
-		WinLostDate		DATETIME,
 		Currency		SMALLINT,
 		RefNo			BIGINT,
 		ShowTime		NVARCHAR(50), -- table - shoe - hand of Live Casino
@@ -110,62 +110,7 @@ BEGIN
 		RefCode			BIGINT
 	)
 
-	IF EXISTS (SELECT 1 FROM @tblbettype WHERE BetType = 10)
-	BEGIN
-		INSERT INTO #Data
-		SELECT
-			b.custid,
-			l.sporttype,
-			b.Username,
-			b.bettype,
-			b.transid,
-			m.matchcode,
-			m.groupmatch AS Race,
-			m.leagueid,
-			m.teamid AS HomeID,
-			0 AS AwayID,
-			0 AS hdp1,
-			0 AS hdp2,
-			b.odds,
-			b.status,
-			b.stake,
-			b.actual_stake,
-			b.transdate,
-			'' AS BetTeam,
-			0 AS Liveindicator,
-			0 AS Livehomescore,
-			0 AS Liveawayscore,
-			b.discount,
-			b.ip,
-			CONVERT(BIT,0) AS isNeutral,
-			0 AS oddstype,
-			b.betid,
-			b.winlostdate,
-			b.currency,
-			b.refno,
-			'' AS ShowTime,
-			'' AS BetCheck,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo,
-			0 AS OriginalStake,
-			0 AS OriginalBetType,
-			0 AS WalletType,
-			0 AS RefCode
-		FROM 
-			dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
-			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
-		WHERE
-			b.matchid = @MatchId
-			AND b.bettype = 10
-			AND b.recommend IN (SELECT CustId FROM @TempAg)
-			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-			AND b.statusID = 0
-		ORDER BY
-			b.status,
-			b.transid
-	END
-	ELSE IF EXISTS (SELECT 1 FROM @tblbettype WHERE bettype <= 19000)
+	IF EXISTS (SELECT 1 FROM @tblbettype)
 	BEGIN
 		INSERT INTO #Data
 		SELECT
@@ -178,9 +123,9 @@ BEGIN
 			'' AS Race,
 			m.leagueid,
 			m.homeid,
-			m.awayid, 
-			CONVERT(FLOAT, b.hdp1) AS hdp1,
-			CONVERT(FLOAT, b.hdp2) AS hdp2,
+			m.awayid,
+			b.hdp1,
+			b.hdp2,
 			b.odds,
 			CASE
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
@@ -195,10 +140,9 @@ BEGIN
 			b.liveawayscore,
 			b.discount,
 			b.ip,
-			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			b.oddstype,
 			b.betid,
-			b.winlostdate,
 			b.currency,
 			b.refno,
 			ISNULL(m.showtime,'') AS showtime,
@@ -222,11 +166,9 @@ BEGIN
 			INNER JOIN @tblbettype AS bt ON b.bettype = bt.bettype
 		WHERE
 			b.matchid = @MatchId
-			AND bt.bettype <= 19000
-			AND b.recommend IN (SELECT CustId FROM @TempAg)
-			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+			AND EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.recommend)
+			AND EXISTS (SELECT 1 FROM @TempAg WHERE Currency = b.currency)
 			AND b.statusID IN (0, 1)
-			AND b.bettype NOT IN (SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 			AND ((@LiveIndicator = -1)
 				OR (@LiveIndicator = 0 AND b.liveindicator = 0)
 				OR (@LiveIndicator = 1 AND b.liveindicator = 1))
@@ -309,7 +251,7 @@ BEGIN
 		(
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY b.Status, b.TransId) AS RowNum,
-				SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$',c.username2)) AS Nickname,
+				SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
 				b.*,
 				b.Stake * e.USD AS StakeUSD,
 				b.Stake * e.EUR AS StakeEUR,
