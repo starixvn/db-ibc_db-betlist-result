@@ -103,6 +103,7 @@ AS
 		- 20180625@Kos: Use INDEX HINT and force nested loop for translog [#Redmine: 97249]
 		- 20180703@Kos: Use new index for bettransRnG and bettransLC [#Redmine: 97249]
 		- 20180705@Viet: Rewrite SP
+		- 20180731@Patrick: Index revolution [#Redmine: #98757]
 */
 
 BEGIN
@@ -255,7 +256,7 @@ BEGIN
 		,Stake = stake
 		,TransDesc = ISNULL(b.TransDesc, '') --transdesc
 		,TableID = 1 --bettrans
-	FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_custid)
+	FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_betrunning_custid)
 	WHERE custid = @CustId
 		AND statusID IN (0,1)
 		AND transdate >= CASE @GetAll WHEN 1 THEN transdate ELSE @FromDate END
@@ -344,7 +345,7 @@ BEGIN
 		,Gameid3rd = Gameid3rd
 		,Tranid3rd = Tranid3rd
 		,TableID = 2 -- translog
-	FROM dbo.translog AS b WITH (NOLOCK, INDEX=IX_custid2)
+	FROM dbo.translog AS b WITH (NOLOCK, INDEX=IX_betrunning_custid)
 	WHERE custid = @CustId
 		AND statusID IN (0,1)
 		AND transdate >= CASE @GetAll WHEN 1 THEN transdate ELSE @FromDate END
