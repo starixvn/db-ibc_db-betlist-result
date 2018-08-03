@@ -25,6 +25,8 @@ AS
 		- 20160125@Kos: Support PH All In One 1.2 [Redmine: #50897]
 		- 20160308@Francis: Change to use inline function instead of table variable to enhance performance
 		- 20160623@Percy: Remove WITH recompile [RedmineID: #58288]
+		- 20180802@Patrick: indexes revolution [RedmineID: #98757]
+
 	Parameter's Explanation:
 		- @custid : agent's ID
 		- @transid: lastest transid 
@@ -37,6 +39,14 @@ BEGIN
 	DECLARE @isTest BIT
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	; WITH __bettypeList AS (
+		SELECT bettype
+		FROM dbo.SportBettypeMatrix WITH(NOLOCK)
+		WHERE ProductID = 1
+			AND IsTest = @IsTest
+		GROUP BY bettype
+	)
 
 	SELECT TOP(@LimitRowCount)
 		b.custid,
@@ -73,11 +83,11 @@ BEGIN
 		ISNULL(b.transdesc, '') AS transdesc,
 		ISNULL(b.oddsspread, 0) AS OddsSpread
 	FROM dbo.bettrans AS b WITH (NOLOCK)
-		INNER JOIN dbo.f_SportBettypeMatrix_Sel_Mode4(1, 0, 0, 2, '', '', @IsTest) s ON b.bettype = s.Bettype
 	WHERE b.recommend = @custid 
 		AND b.transid > @transid
-		AND b.statusID BETWEEN 0 AND 1
+		AND b.statusID IN (0,1)
 		AND b.bettype NOT BETWEEN 801 AND 806
+		AND EXISTS (SELECT TOP 1 1 FROM __bettypeList s WHERE b.bettype = s.Bettype)
 	ORDER BY b.transid DESC
 
 END

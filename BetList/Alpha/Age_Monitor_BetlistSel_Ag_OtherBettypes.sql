@@ -24,6 +24,7 @@ AS
 		- 20160125@Kos: Support PH All In One 1.2 [Redmine: #50897]
 		- 20160623@Percy: Remove WITH recompile [RedmineID: #58288]
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
+		- 20180802@Patrick: indexes revolution [RedmineID: #98757]
 
 	Parameter's Explanation:
 		- @custid : agent ID
@@ -34,16 +35,16 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	-- Get SportBettypeMatrix (support Sportsbook only)
-	DECLARE @SportBettype TABLE (ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
 	DECLARE @IsTest BIT = 0
-
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
-	SELECT ProductID, BetType, EventType
-	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID = 1
+	; WITH __bettypeList AS (
+		SELECT bettype
+		FROM dbo.SportBettypeMatrix WITH(NOLOCK)
+		WHERE ProductID = 1
+			AND IsTest = @IsTest
+		GROUP BY bettype
+	)
 
 	SELECT TOP(@LimitRowCount)
 		b.custid,
@@ -80,13 +81,12 @@ BEGIN
 		ISNULL(b.transdesc, '') AS transdesc,
 		0 AS OddsSpread
 	FROM dbo.bettrans AS b WITH (NOLOCK)
-		INNER JOIN @SportBettype AS s ON b.bettype = s.BetType
 	WHERE b.recommend = @custid 
-		AND b.statusID BETWEEN 0 AND 1
-		AND b.bettype NOT IN (1, 3, 7, 8, 301, 302, 303, 304)		-- Exclude HDP & OU bettypes
-		AND b.bettype < 19001
+		AND b.statusID IN (0,1)
 		AND b.transid > @transid
-		AND b.bettype NOT BETWEEN 801 AND 806		-- Exclude Metric Gaming
+		AND b.bettype NOT BETWEEN 801 AND 806
+		AND b.bettype NOT IN (1, 3, 7, 8, 301, 302, 303, 304)
+		AND EXISTS (SELECT TOP 1 1 FROM __bettypeList s WHERE b.bettype = s.Bettype)
 	ORDER BY b.transid DESC
 END
 

@@ -16,6 +16,7 @@ AS
 		- 20111122@Sophia: Add Checktime and SecAcceptFlag to show status waiting or running
 		- 20150826@Kos: Add column OddsSpread to support Myanmar Odds
 		- 20160623@Percy: Remove WITH recompile [RedmineID: #58288]
+		- 20180802@Patrick: indexes revolution [RedmineID: #98757]
 	
 	Parameter's Explanation:
 		- @custid : agent's ID
@@ -58,9 +59,9 @@ BEGIN
 		ISNULL(b.oddsspread, 0) AS OddsSpread
 	FROM dbo.bettrans AS b WITH(NOLOCK)
 	WHERE b.recommend = @custid 
-		AND b.statusID BETWEEN 0 AND 1
+		AND b.statusID IN (0,1)
 		AND b.transid > @transid
-		AND bettype IN (3, 8, 302, 304)
+		AND b.bettype IN (3, 8, 302, 304)
 	ORDER BY b.transid DESC
 END
 
