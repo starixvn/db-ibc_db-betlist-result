@@ -94,6 +94,7 @@ AS
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
+		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 
 	Param's Explanation:
 		+ @TransType:
@@ -231,7 +232,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28, 32)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28, 32)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -611,8 +612,7 @@ BEGIN
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
 			CASE
-				WHEN ISNULL(BA.transid, 0) = 0 AND b.bettype = 10 THEN - (b.winlost - b.actual_stake)
-				WHEN b.bettype IN (31, 32, 33) THEN b.awinlost
+				WHEN ISNULL(BA.transid, 0) = 0 THEN - (b.winlost - b.actual_stake)
 				ELSE 0
 			END AS LicenseeWL,
 			b.comm,
@@ -643,13 +643,11 @@ BEGIN
 			dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright14 AS m WITH (NOLOCK) on b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) on m.leagueid = l.leagueid
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @CustId
 			AND b.winlostdate = @FromDate
-			AND sbt.ProductID IN (1, 2)
-			AND sbt.EventType = 2
+			AND b.bettype = 10
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
 		-- Keno, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet, Macau Games, Fishing World, Lottery
@@ -1332,13 +1330,12 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			CASE
-				WHEN b.statusID NOT IN (0,1) THEN (b.winlost - b.actual_stake)
+				WHEN b.statusID NOT IN (0, 1) THEN (b.winlost - b.actual_stake)
 				ELSE 0
 			END AS WinLost,
-			CASE WHEN b.statusID NOT IN (0,1) THEN 
+			CASE WHEN b.statusID NOT IN (0, 1) THEN 
 				CASE
-					WHEN ISNULL(BA.transid,0) = 0 AND b.bettype = 10 THEN - (b.winlost-b.actual_stake)
-					WHEN b.bettype IN (31,32,33) THEN b.awinlost
+					WHEN ISNULL(BA.transid,0) = 0 THEN - (b.winlost - b.actual_stake)
 					ELSE 0
 				END
 			ELSE 0 END AS LicenseeWL,
@@ -1370,13 +1367,11 @@ BEGIN
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) on b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) on m.leagueid = l.leagueid
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @CustId
 			AND b.winlostdate = @FromDate
-			AND sbt.ProductID IN (1, 2)
-			AND sbt.EventType = 2
+			AND b.bettype = 10
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
 		-- Keno, Microgaming Live Casino, Lottery (bettrans)
@@ -2513,30 +2508,7 @@ BEGIN
 
 	IF @FromDate <= @MoveBetsDay
 	BEGIN
-		-- Horse Racing
-		INSERT INTO @BettransDetail 
-		SELECT
-			bm.refno,
-			bm.odds,
-			bm.stake,
-			bm.status,
-			bm.apositiontaking,
-			bm.bettype,
-			bm.betteam,
-			bm.stake * e.EUR,
-			bm.stake * e.USD,
-			bm.stake * e.GBP
-		FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-			INNER JOIN @Data AS b ON bm.refno = b.TransId
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
-			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-		WHERE bm.custid = @CustId
-			AND sbt.ProductID = 2
-			AND sbtm.ProductID = 2
-
 		-- Virtual Sports
-		UNION ALL
 		SELECT
 			bm.refno,
 			bm.odds,
@@ -2561,30 +2533,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		-- Horse Racing
-		INSERT INTO @BettransDetail
-		SELECT
-			bm.refno,
-			bm.odds,
-			bm.stake,
-			bm.status,
-			bm.apositiontaking,
-			bm.bettype,
-			bm.betteam,
-			bm.stake * e.EUR,
-			bm.stake * e.USD,
-			bm.stake * e.GBP
-		FROM dbo.bettransm AS bm WITH (NOLOCK)
-			INNER JOIN @Data AS b ON bm.refno = b.TransId
-			INNER JOIN #TempExchange AS e ON  e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
-			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-		WHERE  bm.custid = @CustId
-			AND sbt.ProductID = 2
-			AND sbtm.ProductID = 2
-
 		-- Virtual Sports
-		UNION ALL
 		SELECT
 			bm.refno,
 			bm.odds,

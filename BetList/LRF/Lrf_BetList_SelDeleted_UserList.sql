@@ -35,6 +35,7 @@ AS
 		- 20170621@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
+		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 */
 
 BEGIN
@@ -56,7 +57,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -71,10 +72,8 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 25, 27, 28)
-
-	DELETE FROM @SportBettype
-	WHERE Bettype IN (903, 904, 913, 914)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 25, 27, 28)
+		AND BetType NOT IN (903, 904, 913, 914)
 
 	DECLARE @bc TABLE (CustId INT, BetCount INT)
 
@@ -87,13 +86,13 @@ BEGIN
 		INNER JOIN @TempAg AS ag ON b.recommend = ag.CustId AND b.Currency = ag.Currency
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 	WHERE b.statusID IN (101, 102)
-		AND (sbt.ProductID NOT IN (1, 2, 5, 8, 28)
+		AND (sbt.ProductID NOT IN (1, 5, 8, 28)
 			OR (sbt.ProductID = 1 AND sbt.EventType <> 2)
 			OR (sbt.ProductID = 5 AND sbt.EventType <> 3))
 		AND m.eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 	GROUP BY b.custid
 
-	-- Horse Racing, Outright
+	-- Outright
 	INSERT INTO @bc
 	SELECT b.custid,
 		SUM(1) AS BetCount
@@ -101,10 +100,8 @@ BEGIN
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN @TempAg AS ag ON b.recommend = ag.CustId AND b.Currency = ag.Currency
-		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 	WHERE b.statusID IN (101, 102)
-		AND (sbt.ProductID = 2
-			OR (sbt.ProductID = 1 AND sbt.EventType = 2))
+		AND b.bettype = 10
 		AND m.eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 	GROUP BY b.custid
 
@@ -119,7 +116,7 @@ BEGIN
 	WHERE b.statusID IN (101, 102)
 		AND sbt.ProductID = 5
 		AND sbt.EventType = 3
-		AND m.eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
+		AND m.EventDate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 	GROUP BY b.custid
 
 	-- Keno, Lottery

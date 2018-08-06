@@ -10,7 +10,6 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@PageIndex	INT			= 1,
 	-- check for showing product
 	@ShowSB		BIT			= 0,	-- Sportsbook
-	@ShowRB		BIT			= 0,	-- Horse Racing
 	@ShowNG		BIT			= 0,	-- Number Game
 	@ShowBA		BIT			= 0,
 	@ShowVS		BIT			= 0,	-- Virtual Sports
@@ -95,6 +94,7 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
 		- 20180918@Kos: Support Pragmatic Casino [#Redmine: 92318]
+		- 20181005@Kos: Don't support Racing anymore [#Redmine: 99378]
 */
 
 BEGIN
@@ -167,12 +167,11 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 2, 3, 5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 27, 28, 32)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 27, 28, 32)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
 	WHERE ProductID		= CASE WHEN @ShowSB = 0 AND @ShowBA = 0 THEN 1 END
-		OR ProductID	= CASE WHEN @ShowRB = 0		THEN 2 END
 		OR ProductID	= CASE WHEN @ShowNG = 0		THEN 3 END
 		OR ProductID	= CASE WHEN @ShowVS = 0		THEN 5 END
 		OR ProductID	= CASE WHEN @ShowCS = 0		THEN 6 END
@@ -639,64 +638,6 @@ BEGIN
 	-- release mem for tempdb
 	DROP TABLE #TempBATicket;
 
-	-- Horse Racing
-	IF @ShowRB = 1
-	BEGIN
-		INSERT INTO #BetListSelRunningByDateMem
-		SELECT
-			m.creator AS sporttype,
-			@Username AS UserName,
-			b.bettype,
-			m.leagueID,
-			b.refno,
-			b.transid,
-			ISNULL(b.betid, 0),
-			m.matchcode,
-			m.groupmatch AS Race,
-			m.teamID AS homeID,
-			0 AS awayID,
-			CONVERT(FLOAT, b.hdp1) AS hdp1,
-			CONVERT(FLOAT, b.hdp2) AS hdp2,
-			b.odds,
-			b.modds,
-			CASE
-				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-				ELSE b.status
-			END AS status,
-			b.stake,
-			b.actual_stake,
-			b.transdate,
-			'' AS Betteam,
-			b.discount,
-			0 AS liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.ip,
-			CONVERT(BIT,0) AS IsNeutral,
-			0 AS oddstype,
-			'' AS ShowTime,
-			0 AS matchid,
-			'' AS BetCheck,
-			'' AS TransDesc,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo,
-			0 AS OriginalStake,
-			0 AS OriginalBetType,
-			0 AS WalletType,
-			0 AS RefCode,
-			0 AS OddsSpread
-		FROM
-			dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-		WHERE
-			b.transdate >= @FromDate AND b.transdate <= @ToDate
-			AND b.custid = @CustID
-			AND sbt.ProductID = 2
-			AND sbt.EventType = 2
-			AND b.statusID IN (0, 1)
-	END
-	
 	-- Number Game, Virtual Sport, Betradar Virtual Sport
 	IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
 	BEGIN
@@ -1192,33 +1133,6 @@ BEGIN
 		StakeUSD		MONEY,
 		StakeGBP		MONEY
 	);
-
-	-- Horse Racing
-	IF EXISTS (	SELECT 1
-				FROM #BetListSelRunningByDateMem AS b
-					INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
-				WHERE sbt.ProductID = 2)
-	BEGIN
-		INSERT INTO @BetListDetail
-		SELECT
-			bm.refno,
-			bm.odds,
-			bm.stake,
-			bm.status,
-			bm.apositiontaking,
-			bm.bettype,
-			'' AS betteam,
-			bm.stake * @EUR,
-			bm.stake * @USD,
-			bm.stake * @GBP
-		FROM dbo.bettransm AS bm WITH (NOLOCK)
-			INNER JOIN #BetListSelRunningByDateMem AS b ON bm.refno = b.TransId
-			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
-			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-		WHERE bm.custid = @CustId
-			AND sbt.ProductID = 2
-			AND sbtm.ProductID = 2
-	END
 
 	-- Virtual Sports
 	IF EXISTS (	SELECT 1

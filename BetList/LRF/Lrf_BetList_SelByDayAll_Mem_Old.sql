@@ -90,6 +90,7 @@ AS
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
+		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 
 	Param's Explanation:
 		+ @TransType:
@@ -117,7 +118,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -227,10 +228,8 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28, 32)
-
-	DELETE @SportBettype
-	WHERE Bettype IN (904, 914)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28, 32)
+		AND BetType NOT IN (904, 914)
 
 	IF @TransType = 4	-- support only for Microgaming RNG Casino, Colossus Bets
 	BEGIN
@@ -553,8 +552,7 @@ BEGIN
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
 			CASE
-				WHEN ISNULL(ba.transid, 0) = 0 AND b.bettype = 10 THEN - (b.winlost-b.actual_stake)
-				WHEN b.bettype IN (31, 32, 33) THEN b.awinlost
+				WHEN ISNULL(ba.transid, 0) = 0 THEN - (b.winlost-b.actual_stake)
 				ELSE 0
 			END AS LicenseeWL,
 			b.comm,
@@ -585,12 +583,10 @@ BEGIN
 			INNER JOIN bodb_archive.dbo.outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			LEFT JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS ba WITH (NOLOCK) ON b.transid = ba.transid
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-			AND sbt.ProductID IN (1, 2)
-			AND sbt.EventType = 2
+			AND b.bettype = 10
 
 		-- RNG Casino, Keno, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, AllBet, Macau Games, Fishing World
 		-- Lottery, Pragmatic Casino
@@ -1035,34 +1031,6 @@ BEGIN
 		StakeUSD		MONEY,
 		StakeGBP		MONEY
 	)
-
-	-- Horse Racing
-	IF EXISTS (	SELECT 1
-				FROM @Data AS b
-					INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
-				WHERE sbt.ProductID = 2)
-	BEGIN
-		INSERT INTO @BettransDetail
-		SELECT
-			bm.refno,
-			bm.odds,
-			bm.stake,
-			bm.status,
-			bm.apositiontaking,
-			bm.bettype,
-			bm.betteam,
-			bm.stake * e.EUR,
-			bm.stake * e.USD,
-			bm.stake * e.GBP
-		FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
-			INNER JOIN @Data AS b ON bm.refno = b.TransId
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
-			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
-			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-		WHERE bm.custid = @CustId
-			AND sbt.ProductID = 2
-			AND sbtm.ProductID = 2
-	END
 
 	-- Virtual Sports
 	IF EXISTS (	SELECT 1

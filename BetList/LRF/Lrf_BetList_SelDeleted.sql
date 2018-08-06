@@ -59,6 +59,7 @@ AS
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
+		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 
 	Param's Explanation:
 		- @AgentList: Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -83,7 +84,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -98,10 +99,8 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID <= 3 OR ProductID IN (5, 6, 8, 25, 27, 28)
-
-	DELETE FROM @SportBettype
-	WHERE Bettype IN (904, 914)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 25, 27, 28)
+		AND BetType NOT IN (904, 914)
 
 	CREATE TABLE #Data (
 		SportType		SMALLINT,
@@ -296,7 +295,7 @@ BEGIN
 		AND sbt.ProductID <> 8
 		AND b.bettype NOT IN (SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 
-	-- Outright/Horse Racing
+	-- Outright
 	UNION ALL
 	SELECT
 		l.sporttype,
@@ -353,10 +352,8 @@ BEGIN
 				WHERE eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 			) AS m ON b.matchid = m.orid
 		INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
-		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 	WHERE
-		(sbt.ProductID = 2
-			OR (sbt.ProductID = 1 AND sbt.EventType = 2))
+		b.bettype = 10
 		AND b.custid = @CustID
 		AND b.recommend IN (SELECT CustId FROM @TempAg)
 		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
@@ -530,8 +527,9 @@ BEGIN
 	DECLARE @Fromdate	DATETIME,
 		@Todate			DATETIME
 
-	SELECT @FromDate = MIN(winlostdate) FROM #Data
-	SELECT @ToDate = MAX(winlostdate) FROM #Data
+	SELECT @FromDate = MIN(winlostdate),
+		@ToDate = MAX(winlostdate)
+	FROM #Data
 
 	IF @TotalRows = 0
 	BEGIN
@@ -582,32 +580,6 @@ BEGIN
 		StakeEUR		MONEY,
 		StakeUSD		MONEY,
 		StakeGBP		MONEY)
-
-	-- Horse Racing
-	IF EXISTS (	SELECT TOP(1) 1
-				FROM #Data AS b
-					INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-				WHERE sbt.ProductID = 2)
-	BEGIN
-		INSERT INTO @BettransDetail
-		SELECT
-			bm.refno,
-			bm.odds,
-			bm.stake,
-			bm.status,
-			bm.apositiontaking,
-			bm.bettype,
-			bm.betteam,
-			bm.stake * e.EUR AS StakeEUR,
-			bm.stake * e.USD AS StakeUSD,
-			bm.stake * e.GBP AS StakeGBP
-		FROM dbo.bettransm AS bm WITH (NOLOCK)
-			INNER JOIN #Data AS b ON bm.refno = b.RefNo AND bm.custid = b.CustId
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
-			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
-			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-		WHERE sbt.ProductId = 2 AND sbtm.ProductId = 2
-	END
 
 	-- Virtual Sports
 	IF EXISTS (	SELECT TOP 1 1

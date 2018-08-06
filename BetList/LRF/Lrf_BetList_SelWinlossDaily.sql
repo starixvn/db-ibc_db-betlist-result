@@ -100,6 +100,7 @@ AS
 		- 20180320@Kos: Increase TransDesc column length [#Redmine: 92433]
 		- 20180322@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
+		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 
 	Param's Explanation:
 */
@@ -133,6 +134,7 @@ BEGIN
 		@wldate			SMALLDATETIME,
 		@MoveBetsDay_	SMALLDATETIME,
 		@BalanceUpDay_	SMALLDATETIME
+
 	SELECT
 		@wldate			= @date,
 		@MoveBetsDay_	= @MoveBetsDay,
@@ -223,19 +225,6 @@ BEGIN
 		IsNeutral	INT
 	)
 
-	DECLARE @hr TABLE (
-		OriD		INT,
-		SportType	INT,
-		LeagueId	INT,
-		MatchCode	VARCHAR(20),
-		Race		NVARCHAR(20),
-		RacerId		INT,
-		BetStatus	VARCHAR(100),
-		ShowTime	DATETIME,
-		AwayID		INT,
-		IsNeutral	INT
-	)
-
 	DECLARE @RowStart INT, @RowEnd INT
 
 	SELECT @PageIndex = @PageIndex - 1
@@ -252,30 +241,24 @@ BEGIN
 	FROM Lrf_f_GetExchangeDaily(@wldate, @wldate)
 
 	-- Get SportBettypeMatrix
-	CREATE TABLE #SportBettype (ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+	CREATE TABLE #SportBettype (ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO #SportBettype
-	SELECT ProductID, BetType, EventType, SubProduct
+	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE (@Product IN ('SB', 'BA') AND (ProductID = 1 AND Bettype NOT IN (901, 902, 903, 904)))
 		OR (@Product = 'NG' AND ProductID = 3)
-		OR (@Product = 'RB' AND ProductID = 2)
 		OR (@Product = 'VS' AND ProductID = 5)
 		OR (@Product = 'KN' AND ProductID = 8)
 		OR (@Product = 'VS2' AND ProductID = 27)
 		OR (@Product = 'LT' AND ProductID = 28)
 
-	SET @LicenseeWL =
-					'CASE
-						WHEN b.bettype NOT IN (31,32,33) THEN - (b.winlost-b.actual_stake)
-						ELSE b.awinlost 
-					 END'
-
-	SET @Winlost = '(b.winlost-b.actual_stake)'
+	SET @LicenseeWL = '- (b.winlost - b.actual_stake)'
+	SET @Winlost = '(b.winlost - b.actual_stake)'
 
 	IF @Sort LIKE '%USD%' OR @Sort LIKE '%EUR%' OR @Sort LIKE '%GBP%'
 	BEGIN
@@ -321,25 +304,6 @@ BEGIN
 			WHERE o.EventDate = @wldate
 		END
 
-		IF @Product = 'RB'
-		BEGIN
-			INSERT INTO @hr
-			SELECT
-				m.OrId,
-				l.sporttype,
-				m.LeagueID,
-				m.MatchCode,
-				m.GroupMatch,
-				m.TeamID,
-				0 AS BetStatus,
-				'' AS ShowTime,
-				NULL AS AwayID,
-				CONVERT(BIT,0) AS IsNeutral
-			FROM dbo.Outright AS m WITH (NOLOCK)
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
-			WHERE m.eventdate = @wldate
-		END
-
 		IF @Product = 'BA'
 		BEGIN
 			INSERT INTO @DataSum
@@ -368,9 +332,7 @@ BEGIN
 			SELECT
 				b.currency,
 				SUM(ISNULL(b.winlost - b.actual_stake, 0)),
-				-SUM(ISNULL(CASE WHEN b.bettype IN (31, 32, 33) THEN b.awinlost
-								ELSE (b.winlost - b.actual_stake) 
-							END, 0)),
+				-SUM(ISNULL(b.winlost - b.actual_stake, 0)),
 				SUM(ISNULL(b.comm, 0)),
 				SUM(b.playercomm) AS SumPlayerComm
 			FROM dbo.bettrans AS b WITH (NOLOCK)
@@ -477,10 +439,7 @@ BEGIN
 			b.status,
 			b.stake,
 			(b.winlost - b.actual_stake) AS WinLost,
-			CASE
-				WHEN b.bettype NOT IN (31,32,33) THEN - (b.winlost - b.actual_stake)
-				ELSE awinlost
-			END AS LicenseeWL,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.transdate,
@@ -686,19 +645,6 @@ BEGIN
 			INNER JOIN @vhr AS v ON b.oddsid = v.OrID
 		WHERE b.bettype IN (1231, 1232, 1233, 1237, 1238)
 
-		-- Update data with @hr table
-		UPDATE b
-		SET sporttype = r.sporttype,
-			leagueID = r.leagueid,
-			matchcode = r.matchcode,
-			homeID = r.RacerID,
-			awayID = r.AwayID,
-			betstatus = r.BetStatus,
-			Race = r.Race
-		FROM #BetData1 AS b
-			INNER JOIN @hr AS r ON b.oddsid = r.OrID
-		WHERE b.bettype IN (31, 32, 33)
-
 		-- Insert and drop temp table
 		INSERT INTO #Data
 		SELECT
@@ -789,25 +735,6 @@ BEGIN
 			WHERE o.EventDate = @wldate
 		END
 
-		IF @Product = 'RB'
-		BEGIN
-			INSERT INTO @hr
-			SELECT
-				m.OrId,
-				l.sporttype,
-				m.LeagueID,
-				m.MatchCode,
-				m.GroupMatch,
-				m.TeamID,
-				0 BetStatus,
-				'' ShowTime,
-				NULL AS AwayID,
-				CONVERT(BIT,0) AS IsNeutral
-			FROM dbo.Outright14 AS m WITH (NOLOCK) 
-				 INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
-			WHERE m.eventdate = @wldate
-		END
-
 		IF @Product = 'BA'
 		BEGIN
 			INSERT INTO @DataSum
@@ -834,7 +761,7 @@ BEGIN
 			SELECT
 				b.currency,
 				SUM(ISNULL(b.winlost - b.actual_stake, 0)),
-				-SUM(ISNULL(CASE WHEN b.bettype IN (31,32,33) THEN b.awinlost ELSE (b.winlost - b.actual_stake) END, 0)),
+				-SUM(ISNULL(b.winlost - b.actual_stake, 0)),
 				SUM(ISNULL(b.comm, 0)),
 				SUM(b.playercomm) AS SumPlayerComm
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -940,10 +867,7 @@ BEGIN
 			b.status,
 			b.stake,
 			(b.winlost - b.actual_stake) AS WinLost,
-			CASE
-				WHEN b.bettype NOT IN (31,32,33) THEN - (b.winlost-b.actual_stake)
-				ELSE awinlost
-			END AS LicenseeWL,
+			- (b.winlost-b.actual_stake) AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.transdate,
@@ -1148,19 +1072,6 @@ BEGIN
 		FROM #BetData14 AS b
 			INNER JOIN @vhr AS v ON b.oddsid = v.OrID
 		WHERE b.bettype IN (1231, 1232, 1233, 1237, 1238)
-
-		-- Update data with @hr table
-		UPDATE b
-		SET sporttype = r.sporttype,
-			leagueID = r.leagueid,
-			matchcode = r.matchcode,
-			homeID = r.RacerID,
-			awayID = r.AwayID,
-			betstatus = r.BetStatus,
-			Race = r.Race
-		FROM #BetData14 AS b
-			INNER JOIN @hr AS r ON b.oddsid = r.OrID
-		WHERE b.bettype IN (31, 32, 33)
 
 		-- Insert and drop temp table
 		INSERT INTO #Data
@@ -1396,57 +1307,6 @@ BEGIN
 		StakeUSD		MONEY,
 		StakeGBP		MONEY
 	)
-
-	-- Horse Racing
-	IF EXISTS (	SELECT TOP(1) 1
-				FROM #Data AS b
-					INNER JOIN #SportBettype AS sbt ON sbt.Bettype = b.bettype
-				WHERE sbt.ProductID = 2)
-	BEGIN
-		IF @wldate > @MoveBetsDay_
-		BEGIN
-			INSERT INTO #BettransDetail
-			SELECT
-				bm.refno,
-				bm.odds,
-				bm.stake,
-				bm.status,
-				bm.apositiontaking,
-				bm.bettype,
-				bm.betteam,
-				bm.stake * e.EUR,
-				bm.stake * e.USD,
-				bm.stake * e.GBP
-			FROM dbo.bettransm AS bm WITH (NOLOCK)
-				INNER JOIN #Data AS b ON bm.custid = b.custid AND bm.refno = b.Transid
-				INNER JOIN #TempExchange AS e ON e.exchangeid = b.currency
-				INNER JOIN #SportBettype AS sbt ON b.Bettype = sbt.BetType
-				INNER JOIN #SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-			WHERE sbt.ProductId = 2 AND sbtm.ProductId = 2
-		END
-
-		IF @wldate <= @MoveBetsDay_
-		BEGIN
-			INSERT INTO #BettransDetail
-			SELECT
-				bm.refno,
-				bm.odds,
-				bm.stake,
-				bm.status,
-				bm.apositiontaking,
-				bm.bettype,
-				bm.betteam,
-				bm.stake * e.EUR,
-				bm.stake * e.USD,
-				bm.stake * e.GBP
-			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-				INNER JOIN #Data AS b ON bm.custid = b.custid AND bm.refno = b.Transid
-				INNER JOIN #TempExchange AS e ON e.exchangeid = b.currency
-				INNER JOIN #SportBettype AS sbt ON b.Bettype = sbt.BetType
-				INNER JOIN #SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-			WHERE sbt.ProductId = 2 AND sbtm.ProductId = 2
-		END
-	END
 
 	-- Virtual Sports
 	IF EXISTS (	SELECT TOP(1) 1

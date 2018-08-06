@@ -53,6 +53,7 @@ AS
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180409@Kos: Support Betradar Virtual Basketball [Redmine: #90881]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
+		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 
 	Parameters:
 */
@@ -76,7 +77,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -84,14 +85,15 @@ BEGIN
 	-- Sport Bet Type matrix
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
-	DECLARE @isTest BIT
-	SELECT @isTest = dbo.f_CheckSPVersion(@@PROCID)
+	DECLARE @IsTest BIT
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
 	SELECT DISTINCT ProductId, Bettype, EventType
-	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @isTest)
+	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @IsTest)
 	WHERE
-		ProductID IN (1, 2, 3, 5, 8, 27, 28)
+		ProductID IN (1, 3, 5, 8, 27, 28)
 		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 		AND BetType IN (
 			SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
@@ -223,7 +225,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.GroupTypeId END = @BetType
-				AND b.statusID NOT IN (0, 1, 101, 102, 103)
+				AND b.statusID IN (111, 112, 113)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 		ELSE IF EXISTS (SELECT 1 FROM dbo.f_GroupBetType3rd() WHERE Bettype = @BetType)
@@ -258,7 +260,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.GroupTypeId END = @BetType
-				AND b.statusID NOT IN (0, 1, 101, 102, 103)
+				AND b.statusID IN (111, 112, 113)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 		ELSE
@@ -291,7 +293,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @BetType
-				AND b.statusID NOT IN (0, 1, 101, 102, 103)
+				AND b.statusID IN (111, 112, 113)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 	END
@@ -339,7 +341,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.Grouptypeid END = @BetType
-				AND b.statusID NOT IN (101, 102, 103)
+				AND b.statusID IN (111, 112, 113)
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 		ELSE IF EXISTS (SELECT 1 FROM dbo.f_GroupBetType3rd() WHERE Bettype = @BetType)
@@ -374,7 +376,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND CASE WHEN ss.Bettype IS NULL THEN b.bettype ELSE ss.GroupTypeId END = @BetType
-				AND b.statusID NOT IN (101, 102, 103)
+				AND b.statusID IN (111, 112, 113)
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 		ELSE
@@ -407,7 +409,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.bettype = @BetType
-				AND b.statusID NOT IN (101, 102, 103)
+				AND b.statusID IN (111, 112, 113)
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 	END
@@ -484,8 +486,8 @@ BEGIN
 	-- Get exchange rate
 	SELECT * 
 	INTO #TempExchange
-	FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)
-	-- WHERE ExchangeId IN (SELECT DISTINCT CurrencyId FROM #Currency) (no need)
+	FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate) AS e
+	WHERE EXISTS (SELECT 1 FROM #AllData WHERE Currency = e.ExchangeId)
 
 	-- Get total values
 	SELECT
@@ -828,67 +830,6 @@ BEGIN
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype IN (SELECT bettype FROM @SportBettype)
 				AND b.statusID NOT IN (0, 1, 101, 102, 103)
-				AND b.matchid > 0 -- using index recommend-matchid-bettype
-		END
-
-		-- Horse Racing (EventType = 2)
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId = 2 AND Bettype = @BetType)
-		BEGIN
-			INSERT INTO #Data
-			SELECT
-				td.RowNum,
-				b.transid,
-				b.refno,
-				ISNULL(b.betid, 0) AS BetId,
-				b.custid,
-				b.Username,
-				l.sporttype,
-				b.bettype,
-				b.currency,
-				o.leagueid,
-				b.matchid,
-				o.matchcode,
-				CONVERT(BIT, 0) AS IsNeutral,
-				o.teamid AS HomeId,
-				0 AS AwayId,
-				0 AS Hdp1,
-				0 AS Hdp2,
-				'' AS BetTeam,
-				b.odds,
-				0 AS OddsType,
-				b.modds,
-				0 AS LiveIndicator,
-				b.livehomescore,
-				b.liveawayscore,
-				'' AS ShowTime,
-				b.status,
-				'' AS BetStatus,
-				b.transdate,
-				b.winlostdate,
-				b.stake,
-				b.actual_stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				-(b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				o.groupmatch AS Race,
-				'' AS BetCheck,
-				'' AS TransDesc,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo,
-				0 AS OriginalStake,
-				0 AS OriginalBetType,
-				0 AS WalletType,
-				0 AS RefCode,
-				0 AS OddsSpread
-			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-				INNER JOIN #TempData AS td ON b.transid = td.TransId
-			WHERE td.WhTicket = 1
-				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND b.bettype IN (SELECT bettype FROM @SportBettype)
-				AND b.statusID NOT IN (0,1,101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
@@ -1285,67 +1226,6 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 
-		-- Horse Racing (EventType = 2)
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId = 2 AND Bettype = @BetType)
-		BEGIN
-			INSERT INTO #Data
-			SELECT
-				td.RowNum,
-				b.transid,
-				b.refno,
-				ISNULL(b.betid, 0) AS BetId,
-				b.custid,
-				b.Username,
-				l.sporttype,
-				b.bettype,
-				b.currency,
-				o.leagueid,
-				b.matchid,
-				o.matchcode,
-				CONVERT(BIT, 0) AS IsNeutral,
-				o.teamid AS HomeId,
-				0 AS AwayId,
-				0 AS Hdp1,
-				0 AS Hdp2,
-				'' AS BetTeam,
-				b.odds,
-				0 AS OddsType,
-				b.modds,
-				0 AS LiveIndicator,
-				b.livehomescore,
-				b.liveawayscore,
-				'' AS ShowTime,
-				b.status,
-				'' AS BetStatus,
-				b.transdate,
-				b.winlostdate,
-				b.stake,
-				b.actual_stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				-(b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				o.groupmatch AS Race,
-				'' AS BetCheck,
-				'' AS TransDesc,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo,
-				0 AS OriginalStake,
-				0 AS OriginalBetType,
-				0 AS WalletType,
-				0 AS RefCode,
-				0 AS OddsSpread
-			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-				INNER JOIN #TempData AS td ON b.transid = td.TransId
-			WHERE td.WhTicket = 2
-				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
-				AND b.bettype IN (SELECT bettype FROM @SportBettype)
-				AND b.statusID NOT IN (101, 102, 103)
-				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
-		END
-
 		-- Virtual Sports (EventType = 2)
 		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId = 5 AND EventType = 3 AND Bettype = @BetType)
 		BEGIN
@@ -1514,51 +1394,6 @@ BEGIN
 		StakeGBP		MONEY
 	)
 
-	-- Horse Racing
-	IF EXISTS (	SELECT 1
-				FROM #Data AS b
-					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-				WHERE sbt.ProductId = 2)
-	BEGIN
-		INSERT INTO @BettransDetail
-		SELECT
-			bm.refno,
-			bm.odds,
-			bm.stake,
-			bm.status,
-			bm.apositiontaking,
-			bm.bettype,
-			bm.betteam,
-			bm.stake * e.EUR,
-			bm.stake * e.USD,
-			bm.stake * e.GBP
-		FROM dbo.bettransm AS bm WITH (NOLOCK)
-			INNER JOIN #Data AS b ON bm.refno = b.transid AND bm.custid = b.custid
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.Exchangeid = b.Currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-		WHERE sbt.ProductId = 2 AND sbtm.ProductId = 2
-
-		INSERT INTO @BettransDetail
-		SELECT
-			bm.refno,
-			bm.odds,
-			bm.stake,
-			bm.status,
-			bm.apositiontaking,
-			bm.bettype,
-			bm.betteam,
-			bm.stake * e.EUR,
-			bm.stake * e.USD,
-			bm.stake * e.GBP
-		FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-			INNER JOIN #Data AS b ON bm.refno = b.transid AND bm.custid = b.custid
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.Exchangeid = b.Currency
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
-		WHERE sbt.ProductId = 2 AND sbtm.ProductId = 2
-	END
-
 	-- Virtual Sports
 	IF EXISTS (	SELECT 1
 				FROM #Data AS b
@@ -1620,34 +1455,6 @@ END
 
 
 
-
-/*
-declare @p10 int
-declare @p11 money
-declare @p12 money
-declare @p13 money
-declare @p14 money
-declare @p15 money
-declare @p16 money
-declare @p17 money
-declare @p18 money
-declare @p19 money
-declare @p20 money
-declare @p21 money
-declare @p22 money
-declare @p23 money
-declare @p24 money
-declare @p25 money
-declare @p26 money
-exec Lrf_BetList_SelWinLossByBetType @licenseeid=1,@userid=68,@CurrencyID=0,@LicenseeType=NULL,@bettype=9,
-@PageSize=2147483646,@PageIndex=1,@totalrows=@p10 output,@SumWinlost=@p11 output,@SumLicenseeWL=@p12 output,
-@SumComm=@p13 output,@SumPlayerComm=@p14 output,@SumWinlostUSD=@p15 output,@SumLicenseeWLUSD=@p16 output,@SumCommUSD=@p17 output,
-@SumPlayerCommUSD=@p18 output,@SumWinlostEUR=@p19 output,@SumLicenseeWLEUR=@p20 output,@SumCommEUR=@p21 output,
-@SumPlayerCommEUR=@p22 output,@SumWinlostGBP=@p23 output,@SumLicenseeWLGBP=@p24 output,@SumCommGBP=@p25 output,
-@SumPlayerCommGBP=@p26 output,@FromDate='2016-02-24 00:00:00',@ToDate='2016-02-28 00:00:00',
-@MoveBetsDay='2016-02-21 00:00:00',@BalanceUpDay='2016-02-20 00:00:00'
-select @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24, @p25, @p26
-*/
 
 GO
 GRANT	VIEW DEFINITION	ON	Lrf_BetList_SelWinLossByBetType	TO	vnteam
