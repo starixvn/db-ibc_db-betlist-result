@@ -42,6 +42,7 @@ AS
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180320@Kos: Exclude Fast Market 2 result [#Redmine: 90879]
 		- 20180412@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 
 	Sample test case:
 		exec Lrf_Result_SportSelByDate @EventDate='2013-10-06 00:00:00',@licenseeid=1
@@ -99,20 +100,6 @@ BEGIN
 				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution, BAIO show running Match but settled least one type
 				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for BetRadar show running Match but settled least one type
 				OR (ISNULL(b.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar Virtual Basketball show running Match but settled least one type
-
-		-- Horse Racing
-		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 1)
-		BEGIN
-			INSERT INTO @Sport
-			SELECT DISTINCT l.sporttype
-			FROM dbo.league AS l WITH (NOLOCK)
-				INNER JOIN (
-						SELECT DISTINCT leagueid
-						FROM dbo.outright WITH (NOLOCK)
-						WHERE eventdate = @EventDate AND oddsstatus = 'completed'
-					) AS o ON o.leagueid = l.leagueid
-			WHERE l.sporttype = 151
-		END
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
@@ -172,20 +159,6 @@ BEGIN
 				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution, BAIO show running Match but settled least one type
 				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for BetRadar show running Match but settled least one type
 				OR (ISNULL(b.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar Virtual Basketball show running Match but settled least one type
-
-		-- Horse Racing
-		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 1)
-		BEGIN
-			INSERT INTO @Sport
-			SELECT DISTINCT l.sporttype
-			FROM dbo.league AS l WITH (NOLOCK)
-				INNER JOIN (
-						SELECT DISTINCT leagueid
-						FROM dbo.outright14 WITH (NOLOCK)
-						WHERE eventdate = @EventDate AND oddsstatus = 'completed'
-					) AS o ON o.leagueid = l.leagueid
-			WHERE l.sporttype = 151
-		END
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)

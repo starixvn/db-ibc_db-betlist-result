@@ -46,6 +46,7 @@ AS
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180320@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180406@Kos: Support Betradar Virtual Basketball [Redmine: #90881]
+		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 
 		*******************
 		sample test case:
@@ -486,100 +487,6 @@ BEGIN
 			IsSCR		BIT,
 			FOddsStatus	VARCHAR(10))
 
-		DECLARE @LeagueId	INT,
-			@EventDate		DATETIME
-
-		IF EXISTS (SELECT 1 FROM dbo.outright WITH (NOLOCK) WHERE orid = @MatchId)
-		BEGIN
-			SELECT @LeagueId = leagueid,
-				@EventDate = eventdate
-			FROM dbo.outright WITH (NOLOCK)
-			WHERE orid = @MatchId
-
-			INSERT INTO #tmpresult
-			SELECT
-				o.matchcode AS horseNo,
-				NULL,
-				CAST(o.groupmatch AS INT) AS racename,
-				CASE WHEN o.placing = 0 THEN 5 ELSE ISNULL(o.Placing, 5) END place,
-				l.sporttype,
-				o.teamid AS horseid,
-				o.odds,
-				o.placeodds,
-				o.leagueid AS meetingid,
-				o.oddsstatus AS status,
-				CONVERT(VARCHAR(10), o.IsFavor),
-				o.IsSCR,
-				o.FOddsStatus
-			FROM dbo.outright AS o WITH (NOLOCK)
-				INNER JOIN dbo.league AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-			WHERE o.leagueid = @LeagueId
-				AND o.groupmatch = @RaceNo
-				AND o.eventdate = @EventDate
-				AND (ISNULL(o.Placing, 0) <> 0 OR o.IsSCR = 1)
-			ORDER BY o.Placing
-		END
-		ELSE IF EXISTS (SELECT 1 FROM dbo.Outright14 WITH (NOLOCK) WHERE orid = @MatchId)
-		BEGIN
-			SELECT @LeagueId = leagueid,
-				@EventDate = eventdate
-			FROM dbo.outright14 WITH (NOLOCK)
-			WHERE orid = @MatchId
-
-			INSERT INTO #tmpresult
-			SELECT
-				o.matchcode AS horseNo,
-				NULL,
-				CAST(o.groupmatch AS INT) AS racename,
-				CASE WHEN o.placing = 0 THEN 5 ELSE ISNULL(o.Placing, 5) END place,
-				l.sporttype,
-				o.teamid AS horseid,
-				o.odds,
-				o.placeodds,
-				o.leagueid AS meetingid,
-				o.oddsstatus AS status,
-				CONVERT(VARCHAR(10), o.IsFavor),
-				o.IsSCR,
-				o.FOddsStatus
-			FROM dbo.outright14 AS o WITH (NOLOCK)
-				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = o.leagueid
-			WHERE o.leagueid = @LeagueId
-				AND o.groupmatch = @RaceNo
-				AND o.eventdate = @EventDate
-				AND (ISNULL(o.Placing, 0) <> 0 OR o.IsSCR = 1)
-			ORDER BY o.Placing
-		END
-		ELSE IF EXISTS (SELECT 1 FROM DBARC.bodb_Archive.dbo.Outright_bk WITH (NOLOCK) WHERE orid = @MatchId)
-		BEGIN
-			SELECT @LeagueId = leagueid,
-				@EventDate = eventdate 
-			FROM DBARC.bodb_Archive.dbo.Outright_bk WITH (NOLOCK)
-			WHERE orid = @MatchId
-
-			INSERT INTO #tmpresult
-			SELECT
-				bk.matchcode AS horseNo,
-				NULL,
-				CAST(bk.groupmatch AS INT) AS racename,
-				CASE WHEN bk.placing = 0 THEN 5 ELSE ISNULL(bk.placing, 5) END place,
-				l.sporttype,
-				bk.teamid horseid,
-				bk.odds,
-				bk.placeodds,
-				bk.leagueid AS meetingid,
-				bk.oddsstatus status,
-				CONVERT(VARCHAR(10), bk.IsFavor),
-				bk.IsSCR,
-				bk.FOddsStatus
-			FROM DBARC.bodb_Archive.dbo.Outright_bk AS bk WITH (NOLOCK)
-				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = bk.leagueid
-			WHERE bk.leagueid = @LeagueId 
-				AND bk.groupmatch = @RaceNo
-				AND bk.eventdate = @EventDate 
-				AND (ISNULL(bk.placing, 0) <> 0 OR bk.isScr = 1)
-			ORDER BY bk.placing
-		END 
-
 		-- Virtual Horse Racing
 		IF EXISTS (SELECT TOP(1) 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE EventID = @MatchID)
 		BEGIN
@@ -648,70 +555,7 @@ BEGIN
 			ORDER BY o.Placing
 		END
 
-		IF EXISTS (SELECT 1 FROM #tmpresult WHERE sporttype IN (151, 152, 153))
-		BEGIN
-			SELECT meetingid,
-				racename,
-				COUNT(place) rc
-			INTO #DataSUM
-			FROM #tmpresult
-			WHERE place < 5
-			GROUP BY meetingid, racename
-
-			SELECT
-				d.meetingid,
-				d.racename,
-				temp.results AS TF,
-				temp2.results2 AS SCR
-			INTO #tmp
-			FROM #tmpresult AS d
-				INNER JOIN #DataSum AS d2 ON d.meetingid = d2.meetingid AND d.racename = d2.racename
-				CROSS APPLY (
-					SELECT STUFF (
-						(
-						SELECT CAST(horseNo AS VARCHAR(10)) + ','
-						FROM #tmpresult d
-						WHERE d.meetingid = d2.meetingid
-							AND d.racename = d2.racename
-							AND d.IsFavor <> '0'
-						FOR XML PATH(''), type).value('.','VARCHAR(max)')
-						, 1, 2, ''
-						)
-					)temp(results)
-				CROSS APPLY (
-					SELECT STUFF (
-						(
-						SELECT CAST(horseNo AS VARCHAR(10)) + ','
-						FROM #tmpresult d
-						WHERE d.meetingid = d2.meetingid
-							AND d.racename = d2.racename
-							AND d.IsSCR <> 0
-						FOR XML PATH(''), type).value('.','VARCHAR(max)')
-						, 1, 2, ''
-						)
-					)temp2(results2)
-			ORDER BY
-				d.meetingid,
-				d.racename,
-				d.place
-
-			SELECT DISTINCT
-				d.*,
-				d3.TF,
-				d3.SCR,
-				d2.rc AS [RowCount]
-			FROM #tmpresult AS d
-				INNER JOIN #DataSum AS d2 ON d.meetingid = d2.meetingid AND d.racename = d2.racename
-				INNER JOIN #tmp AS d3 ON d.meetingid = d3.meetingid AND d.racename = d3.racename
-			WHERE d.place < 5
-			ORDER BY d.meetingid,
-				d.racename,
-				d.place
-
-			DROP TABLE #DataSum
-			DROP TABLE #tmp
-		END
-		ELSE IF EXISTS (SELECT 1 FROM #tmpresult WHERE sporttype IN (181, 182, 183, 184, 185))
+		IF EXISTS (SELECT 1 FROM #tmpresult WHERE sporttype IN (181, 182, 183, 184, 185))
 		BEGIN
 			SELECT kickofftime,
 				COUNT(place) rc
