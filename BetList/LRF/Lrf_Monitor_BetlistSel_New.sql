@@ -1,4 +1,8 @@
-﻿USE [bodb02]
+﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[Lrf_Monitor_BetlistSel_New]
@@ -23,7 +27,7 @@ AS
 /*
 	Created: Scott@20130418
 	Task: LRF Monitor lastest bets list(all bettypes and all sports) with filter by League and Sport
-	DB: DBEXT.bodb02
+	DB: DB042.bodb02
 	Original: [Lrf_Monitor_BetlistSel]
 	Revision:
 		- 20130618@Jim: Restrict permission of Licensee Users by currency
@@ -45,6 +49,7 @@ AS
 		- 20171020@Kos: Support new platform New Asia [#Redmine: 85203]
 		- 20171031@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180319@Kos: Support Fast Market 2 [#Redmine: 90879]
+		- 20181708@Kos: Migrate to DB042 [RedmineID: #99464]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -106,19 +111,12 @@ BEGIN
 	END CATCH
 
 	CREATE TABLE #Data (
-		SportType		INT,
+		CustId			INT,
 		MatchId			INT,
-		LeagueId		INT,
-		Username		NVARCHAR(50),
-		Nickname		NVARCHAR(50),
 		BetType			SMALLINT,
 		TransId			BIGINT,
 		RefNo			BIGINT,
 		TransDate		DATETIME,
-		MatchCode		VARCHAR(50),
-		HomeId			INT,
-		AwayId			INT,
-		Race			VARCHAR(50),
 		BetId			BIGINT,
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
@@ -131,11 +129,8 @@ BEGIN
 		BetFrom			NVARCHAR(1),
 		Status			NVARCHAR(10),
 		BetTeam			NVARCHAR(10),
-		IsNeutral		BIT,
 		OddsType		TINYINT,
 		CurrencyId		SMALLINT,
-		CurrencyName	NVARCHAR(50),
-		SpecialLevel	INT,
 		BetCheck		NVARCHAR(100),
 		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
@@ -167,12 +162,12 @@ BEGIN
 	DECLARE @RefCode	BIGINT
 
 	SELECT @RefCode = RefCode
-	FROM bettrans_lrf_betRunning WITH (NOLOCK)
+	FROM bettrans WITH (NOLOCK)
 	WHERE transid = @TransId
 
 	IF @RefCode IS NOT NULL AND @RefCode > 0
 	BEGIN
-		IF EXISTS (	SELECT 1 FROM bettrans_lrf_betRunning WITH (NOLOCK)
+		IF EXISTS (	SELECT 1 FROM bettrans WITH (NOLOCK)
 					WHERE transid = @TransId + 1 AND RefCode = @RefCode )
 		BEGIN
 			SET @TransId = @TransId + 1
@@ -199,7 +194,7 @@ BEGIN
 			'UNION ALL
 			SELECT o.orid
 			FROM (SELECT orid, leagueid FROM dbo.outright WITH (NOLOCK) WHERE oddsstatus = ''running'') AS o
-				CROSS APPLY (SELECT l.leagueid FROM dbo.league l WITH (NOLOCK) WHERE o.leagueid = l.leagueid AND l.sporttype = ' + CONVERT(VARCHAR(10),@SportId) + ') AS l2
+				CROSS APPLY (SELECT l.leagueid FROM dbo.league AS l WITH (NOLOCK) WHERE o.leagueid = l.leagueid AND l.sporttype = ' + CONVERT(VARCHAR(10),@SportId) + ') AS l2
 			WHERE (1=1)' + CHAR(13) +
 			CASE
 				WHEN @LeagueId > 0 THEN 'AND o.leagueid = ' + CONVERT(VARCHAR(10), @LeagueId) + CHAR(13)
@@ -213,19 +208,12 @@ BEGIN
 
 	SELECT @SQL = @SQL + 'INSERT INTO #Data
 		SELECT
-			0 AS SportType,
+			b.custid,
 			b.matchid,
-			0 AS LeagueId,
-			b.Username,
-			SUBSTRING(b.username2, CHARINDEX(''$'', b.username2) + 1, LEN(b.username2) - CHARINDEX(''$'', b.username2)) AS Nickname,
 			b.bettype,
 			b.transid,
 			b.refno,
 			b.transdate,
-			'''' AS MatchCode,
-			0 AS HomeId,
-			0 AS AwayId,
-			'''' AS Race,
 			b.betid,
 			b.livehomescore,
 			b.liveawayscore,
@@ -236,15 +224,12 @@ BEGIN
 			b.actual_stake,
 			b.stake,' + CHAR(13) +
 			CASE WHEN @IncludeBetFrom = 1 THEN 'b.betfrom,'
-				ELSE ''
+				ELSE ''''' AS BetFrom,'
 			END + CHAR(13) +
-			'''running'' AS Status,
+			'b.status,
 			b.betteam,
-			CONVERT(BIT,0) AS IsNeutral,
-			b.OddsType,
+			b.oddstype,
 			b.currency AS CurrencyId,
-			'''' AS CurrencyName,
-			b.SpecialLevel,
 			ISNULL(b.betcheck, '''') AS BetCheck,
 			ISNULL(b.transdesc, '''') AS TransDesc,
 			ISNULL(b.betdaqid, -1) AS BetdaqId,
@@ -261,13 +246,14 @@ BEGIN
 			ISNULL(b.WalletType, 0) AS WalletType,
 			ISNULL(b.RefCode, 0) AS RefCode,
 			ISNULL(b.oddsspread, 0) AS OddsSpread
-		FROM dbo.bettrans_lrf_betRunning AS b WITH (NOLOCK)
+		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
 			INNER JOIN #TempAg AS a WITH (NOLOCK) ON b.Recommend = a.CustId AND b.Currency = a.Currency' + CHAR(13) +
 			CASE
 				WHEN @SportId > 0 AND @SportId <> 999 THEN 'INNER JOIN @Match AS m ON b.matchid = m.matchid '
 				ELSE ' '
 			END + CHAR(13) +
-		'WHERE b.statusID = 0
+		'WHERE EXISTS (SELECT TOP 1 1 FROM dbo.SportBettypeMatrix WITH (NOLOCK) WHERE b.bettype = Bettype AND ProductID = 1)
+			AND b.statusID IN (0, 1)
 			AND b.transid > ' + CONVERT(VARCHAR(20), @TransId) + ' ' + CHAR(13) +
 			CASE
 				WHEN @BetFrom = 1 THEN 'AND betfrom IN (''d'', ''g'')'
@@ -284,34 +270,31 @@ BEGIN
 				ELSE ' '
 			END + CHAR(13) +
 			CASE
-				WHEN @SpecialLevel <> 'ALL' THEN 'AND SpecialLevel IN (' + @SpecialLevel + ')'
-				ELSE ' '
+				WHEN @SpecialLevel = 'ALL' THEN ' '
+				WHEN @SpecialLevel = '0' THEN 'AND NOT EXISTS (SELECT 1 FROM dbo.Dep_CustSpecialLevel WITH (NOLOCK) WHERE custid = b.custid)'
+				WHEN ',' + @SpecialLevel + ',' LIKE '%,0,%' THEN
+					'AND (NOT EXISTS (SELECT 1 FROM dbo.Dep_CustSpecialLevel WITH (NOLOCK) WHERE custid = b.custid)
+						OR EXISTS (SELECT 1 FROM dbo.Dep_CustSpecialLevel WITH (NOLOCK)
+									WHERE custid = b.custid AND SpecialLevel IN (' + @SpecialLevel + ')))'
+				ELSE 'AND EXISTS (SELECT 1 FROM dbo.Dep_CustSpecialLevel WITH (NOLOCK)
+								WHERE custid = b.custid AND SpecialLevel IN (' + @SpecialLevel + '))'
 			END + CHAR(13) +
 			CASE
-				WHEN @SportId > 0 AND @SportId < 999 AND @LiveIndicator IN (0,1) THEN 'AND Liveindicator = ' + CONVERT(VARCHAR(10), @LiveIndicator)
-				WHEN @SportId > 0 AND @SportId < 999 AND @LiveIndicator = 2 THEN 'AND b.bettype IN (9, 29) AND b.Livehomescore=' + CONVERT(VARCHAR(10), @LiveIndicator)
-				WHEN @SportId > 0 AND @SportId <> 999 AND @LiveIndicator = 3 THEN 'AND ( b.bettype < 31 OR b.bettype BETWEEN 121 AND 999 OR (b.Bettype BETWEEN 1301 AND 1399) )'
-				ELSE ' '
-			END + CHAR(13) +
-			CASE
+				WHEN @SportId > 0 AND @SportId < 999 AND @LiveIndicator IN (0, 1) THEN 'AND Liveindicator = ' + CONVERT(VARCHAR(10), @LiveIndicator)
+				WHEN @SportId > 0 AND @SportId < 999 AND @LiveIndicator = 2 THEN 'AND b.bettype IN (9, 29) AND b.Livehomescore = ' + CONVERT(VARCHAR(10), @LiveIndicator)
 				WHEN @SportId = 0 THEN
 					CASE
-						WHEN @LiveIndicator = 3 THEN 'AND ( b.bettype < 31 OR b.bettype BETWEEN 121 AND 999 OR (b.Bettype BETWEEN 1301 AND 1399))'
 						WHEN @LiveIndicator = 2 THEN 'AND b.bettype IN (9, 29) AND b.Livehomescore=' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
-						WHEN @LiveIndicator IN (0,1) THEN 
-						'AND ((Liveindicator=' + CONVERT(VARCHAR(10), @LiveIndicator) +
-								' AND ((b.bettype < 31 AND b.bettype NOT IN (9, 29))
-									OR b.bettype BETWEEN 121 AND 999
-									OR b.Bettype BETWEEN 1301 AND 1399)) ' +
-							'OR (b.bettype IN (9, 29) AND b.Livehomescore=' + CONVERT(VARCHAR(10), @LiveIndicator) + ')) '
+						WHEN @LiveIndicator IN (0, 1) THEN 
+							'AND ((b.bettype NOT IN (9, 29) AND b.Liveindicator=' + CONVERT(VARCHAR(10), @LiveIndicator) +
+								') OR (b.bettype IN (9, 29) AND b.Livehomescore=' + CONVERT(VARCHAR(10), @LiveIndicator) + ')) '
 						ELSE ' '
 					END
 				WHEN @SportId = 999 THEN
-					CASE @LiveIndicator
-						WHEN 3 THEN 'AND b.bettype IN (9, 29) '
-						WHEN 2 THEN 'AND b.bettype IN (9, 29) AND b.Livehomescore = ' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
-						ELSE 'AND b.bettype IN (9, 29) AND b.Livehomescore = ' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
-					END
+					'AND b.bettype IN (9, 29) ' + CASE
+													WHEN @LiveIndicator IN (0, 1, 2) THEN 'AND b.Livehomescore = ' + CONVERT(VARCHAR(10), @LiveIndicator) + ' '
+													ELSE ''
+												END
 				ELSE ' '
 			END + CHAR(13) +
 			CASE
@@ -376,13 +359,10 @@ BEGIN
 	SET WalletType = 0
 	WHERE WalletType = 2 AND RefCode = 0
 
-	SELECT *
-	INTO #TempExchange
-	FROM Lrf_f_GetExchangeDaily(CONVERT(VARCHAR(10), GETDATE(), 111),CONVERT(VARCHAR(10), GETDATE(), 111))
-	WHERE exchangeid IN (SELECT DISTINCT CurrencyId FROM #Data)
-
 	SELECT TOP(@LimitRowCount)
 		b.*,
+		c.username,
+		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
 		b.Stake * e.USD AS StakeUSD,
 		b.Stake * e.EUR AS StakeEUR,
 		b.Stake * e.GBP AS StakeGBP,
@@ -393,7 +373,8 @@ BEGIN
 		b.OriginalStake * e.EUR AS OriginalStakeEUR,
 		b.OriginalStake * e.GBP AS OriginalStakeGBP
 	FROM #Data AS b
-		INNER JOIN #TempExchange AS e ON e.exchangeid = b.CurrencyId
+		LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
+		INNER JOIN dbo.Lrf_f_GetExchangeDaily(CONVERT(VARCHAR(10), GETDATE(), 111),CONVERT(VARCHAR(10), GETDATE(), 111)) AS e ON e.exchangeid = b.CurrencyId
 	WHERE (@BaseCurrency = 'USD'
 			AND (@MinStake = 0 OR b.Stake * e.USD >= @MinStake)
 			AND (@MaxStake = 0 OR b.Stake * e.USD <= @MaxStake))
@@ -410,8 +391,8 @@ BEGIN
 
 	DROP TABLE #TempAg
 	DROP TABLE #Data
-	DROP TABLE #TempExchange
 END
+
 
 
 
