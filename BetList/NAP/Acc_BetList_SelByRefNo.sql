@@ -1,7 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
+/*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_BetList_SelByRefNo]
 	@UserId			BIGINT,
 	@RefNo			BIGINT,
@@ -66,6 +63,7 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
+		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 */
 
 BEGIN
@@ -222,17 +220,18 @@ BEGIN
 		SiteId			INT,
 		Site			NVARCHAR(50),
 		SpecialGroup	TINYINT)
+	
+	DECLARE @tmpUserid VARCHAR(50)
+    SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
+	
+	DECLARE @SearchQuery varchar(1024)
+	SELECT @SearchQuery = 'SELECT * 
+	FROM OPENQUERY(DBPOL, 
+	''SELECT siteid , site,SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser ( ''''' + @tmpUserid + ''''')'')'
 
-	DECLARE @Sql VARCHAR(500)
-
-	SET @Sql = 'SELECT * 
-				FROM OPENQUERY(DBPOLICY,
-					''SELECT siteid, site, SpecialGroup
-					FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + CAST(@Userid AS VARCHAR(50)) + ''''')'')'
-
-	INSERT INTO @DeniedSite
-	EXEC (@Sql)
-
+	INSERT INTO  @DeniedSite (siteid , site,SpecialGroup)
+	EXECUTE(@SearchQuery)
+		
 	IF @WinLostDate IS NOT NULL
 		AND NOT EXISTS ( SELECT 1
 						FROM dbo.customer AS c WITH (NOLOCK)

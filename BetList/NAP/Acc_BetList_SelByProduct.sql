@@ -1,7 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
+/*<info serverAlias="DBAGE-BODB02" executers="bodbDownlineNet,bodbAdminNet,bodbExtAccNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_BetList_SelByProduct]
 	@UserId			BIGINT,
 	@ProductId		TINYINT,
@@ -30,6 +27,8 @@ AS
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		
 */
 
 BEGIN
@@ -127,9 +126,9 @@ BEGIN
 	DECLARE @Sql VARCHAR(500)
 
 	SET @Sql = 'SELECT * 
-				FROM OPENQUERY(DBPOLICY,
+				FROM OPENQUERY(DBPOL,
 					''SELECT siteid, site, SpecialGroup
-					FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + CAST(@UserId AS VARCHAR(50)) + ''''')'')'
+					FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( ''''' + CAST(@UserId AS VARCHAR(50)) + ''''')'')'
 
 	INSERT INTO @DeniedSite
 	EXEC (@Sql)
@@ -960,8 +959,6 @@ BEGIN
 
 	SELECT DISTINCT * FROM @DetailData
 END
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelByProduct] TO [bodbDownlineNet]

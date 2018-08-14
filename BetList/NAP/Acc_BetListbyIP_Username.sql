@@ -32,6 +32,8 @@ AS
 		- 20171025@Kos: Support Bullfighting [#Redmine: 84961]
 					- Don't support Live Casino anymore
 		- 20180130@Kos: Don't support Racing, Cockfighting, RNG Casino (bettype 71, 72) anymore [#Redmine: 86086]
+		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
+		
 */
 
  BEGIN
@@ -222,16 +224,19 @@ AS
 		SiteId			INT,
 		Site			NVARCHAR(50),
 		SpecialGroup	TINYINT)
+		
 
-	DECLARE @Sql VARCHAR(500)
+	DECLARE @tmpUserid VARCHAR(50)
+    SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
+	
+	DECLARE @SearchQuery varchar(1024)
+	
+	SELECT @SearchQuery = 'SELECT * 
+	FROM OPENQUERY(DBPOL, 
+	''SELECT siteid , site,SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
 
-	SET @Sql = 'SELECT * 
-				FROM OPENQUERY(DBPOLICY,
-					''SELECT siteid, site, SpecialGroup
-					FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + CAST(@UserId AS VARCHAR(50)) + ''''')'')'
-
-	INSERT INTO @DeniedSite
-	EXEC (@Sql)
+	INSERT INTO  @DeniedSite (siteid , site,SpecialGroup)
+	EXECUTE(@SearchQuery)
 
 	SELECT c.custid,
 		c.username,
