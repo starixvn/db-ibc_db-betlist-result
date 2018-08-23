@@ -49,7 +49,8 @@ AS
 		- 20171020@Kos: Support new platform New Asia [#Redmine: 85203]
 		- 20171031@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180319@Kos: Support Fast Market 2 [#Redmine: 90879]
-		- 20181708@Kos: Migrate to DB042 [RedmineID: #99464]
+		- 20180817@Kos: Migrate to DB042 [RedmineID: #99464]
+		- 20180823@Kos: HotFix - Miss SpecialLevel [RedmineID: #100423]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -131,6 +132,7 @@ BEGIN
 		BetTeam			NVARCHAR(10),
 		OddsType		TINYINT,
 		CurrencyId		SMALLINT,
+		SpecialLevel	INT,
 		BetCheck		NVARCHAR(100),
 		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
@@ -230,6 +232,10 @@ BEGIN
 			b.betteam,
 			b.oddstype,
 			b.currency AS CurrencyId,
+			CASE
+				WHEN d.custid IS NULL THEN 0
+				ELSE d.SpecialLevel
+			END AS SpecialLevel,
 			ISNULL(b.betcheck, '''') AS BetCheck,
 			ISNULL(b.transdesc, '''') AS TransDesc,
 			ISNULL(b.betdaqid, -1) AS BetdaqId,
@@ -247,6 +253,7 @@ BEGIN
 			ISNULL(b.RefCode, 0) AS RefCode,
 			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
+			LEFT JOIN dbo.Dep_CustSpecialLevel AS d WITH (NOLOCK) ON b.custid = d.custid
 			INNER JOIN #TempAg AS a WITH (NOLOCK) ON b.Recommend = a.CustId AND b.Currency = a.Currency' + CHAR(13) +
 			CASE
 				WHEN @SportId > 0 AND @SportId <> 999 THEN 'INNER JOIN @Match AS m ON b.matchid = m.matchid '
