@@ -1,5 +1,4 @@
-﻿USE bodb02
-Go
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_ByTransID]
 	@CustId			INT,
@@ -102,7 +101,8 @@ AS
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20180509@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
-		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
+		- 20180829@Kos: Hotfix - Bullfighting bettrans_bk [#Redmine: 100666]
+		- 20180830@Kos: Support Poker Games [#Redmine: 97565]
 */
 
 BEGIN
@@ -2732,7 +2732,7 @@ BEGIN
 			END
 
 			-- Bullfighting (EventType = 5) (bettrans14)
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 5 AND bettype = @BetType )
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 5 AND Bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -3793,7 +3793,7 @@ BEGIN
 			END
 
 			-- Bullfighting (EventType = 5) (bettrans_bk)
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 1 AND bettype = @BetType )
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 5 AND Bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
 				SELECT
