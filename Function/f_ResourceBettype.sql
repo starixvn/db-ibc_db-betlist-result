@@ -19,6 +19,7 @@ AS
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 		- 20180320@Kos: Support Fast Market 2 [Redmine: #90708]
 		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20180906@Kos: Support E-Sports phase 2 [Redmine: #101047]
 */
 
 BEGIN
@@ -251,6 +252,94 @@ BEGIN
 	-- 6. Betradar Virtual Basketball
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (193, 1, 'Betradar Virtual Basketball', 2809, '2809%')
+
+	-- 7. E-Sports 2.0
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	SELECT 43, 1, 'E-Sports', 9002, '9002%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9003, '9002%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9004, '9002%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9005, '9002%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9006, '9006%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9007, '9007%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9008, '9008%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9009, '9008%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9010, '9008%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9078, '9008%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9011, '9011%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9012, '9012%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9013, '9012%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9014, '9012%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9079, '9012%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9015, '9015%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9016, '9016%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9017, '9017%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9018, '9018%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9019, '9018%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9020, '9018%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9080, '9018%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9021, '9021%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9022, '9022%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9023, '9023%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9024, '9024%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9025, '9024%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9026, '9024%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9081, '9024%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9027, '9027%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9028, '9028%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9029, '9028%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9030, '9028%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9082, '9028%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9031, '9031%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9032, '9032%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9033, '9033%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9034, '9034%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9035, '9034%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9036, '9034%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9083, '9034%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9037, '9037%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9038, '9038%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9039, '9039%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9040, '9040%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9041, '9040%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9042, '9040%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9084, '9040%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9043, '9043%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9044, '9044%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9045, '9045%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9046, '9046%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9047, '9046%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9048, '9046%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9085, '9046%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9049, '9049%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9050, '9050%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9051, '9051%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9052, '9052%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9053, '9052%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9054, '9052%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9086, '9052%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9055, '9055%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9056, '9056%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9057, '9057%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9058, '9058%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9059, '9059%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9060, '9059%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9061, '9059%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9062, '9062%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9063, '9063%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9064, '9064%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9065, '9065%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9066, '9066%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9076, '9066%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9067, '9067%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9068, '9068%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9069, '9069%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9070, '9069%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9071, '9069%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9077, '9069%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9072, '9072%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9073, '9073%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9074, '9074%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9075, '9075%'
 
 	RETURN
 END
