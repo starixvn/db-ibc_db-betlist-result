@@ -11,13 +11,12 @@ AS
 	Original: Age_BetList_SelMatchResultParlay
 	Revisions:
 		- 20091202@Jamie: Results for Future Mix Parlay
-		- 20100123@Henry: Grant execute to Accounting site
 		- 20110819@Johnson: Add column kickofftime
 		- 20110831@Johnson: Correct event status when refund ticket
 		- 20110907@Sophia: Add column IsHTCal, calculate for Pending Status
 		- 20111003@Sophia: Add column IsPending Pending Status
 		- 20130121@Dan: Change linked server DB06 to DBARC
-		- 20131010@Kathy: Turn to use GlobalShowTime for display the Kick-off-Time [redmine:#6076]
+		- 20131010@Kathy: Turn to use GlobalShowTime for display the Kick-off-Time [Redmine: #6076]
 		- 20141002@Sophia: Get the detail information of Tennis sport
 		- 20140403@Sophia: Support BetRadar, correct Kickofftime
 		- 20161007@Kos: Include ResourceID '08' to support PH All In One phase 2b [#Redmine: 62882]
@@ -33,6 +32,7 @@ AS
 		- 20181003@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Move eventstatus data transform to web (no change for Tennis)
 		- 20181204@Kos: Move to DBACC [Redmine: #105787]
+		- 20181206@Kos: Support E-Sports phase 2 [Redmine: #101047]					
 */
 
 BEGIN
@@ -155,7 +155,7 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE ((p.SportType = 5
+			WHERE ((p.SportType = 5			-- Tennis
 					AND d.SettlementStatusID > 0
 					AND CASE
 							WHEN p.BetType <> 1324 THEN 2
@@ -165,18 +165,40 @@ BEGIN
 									ELSE 0
 								END
 						END = LEN(d.ResourceID))
-				OR (p.SportType = 1
+				OR (p.SportType = 1			-- Soccer
 					AND d.SettlementStatusID > 0
 					AND (d.ResourceID <> '08'
 						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
 						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
-				OR (p.SportType = 2
+				OR (p.SportType = 2			-- Basketball
 					AND (LEN(d.ResourceID) = 2
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceID LIKE f.ResourceID
 							AND (p.BetType NOT IN (606, 607, 613, 617)
 								OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
+		END
+
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
+		BEGIN
+			INSERT INTO @tmpResultDetail
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetailES AS d WITH (NOLOCK)
+				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE p.SportType = 43		-- E-Sports
+				AND (LEN(d.ResourceID) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceID LIKE f.ResourceID
+						AND d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', '')))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
@@ -271,7 +293,7 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE ((p.SportType = 5
+			WHERE ((p.SportType = 5			-- Tennis
 					AND d.SettlementStatusID > 0
 					AND CASE
 							WHEN p.BetType <> 1324 THEN 2
@@ -281,18 +303,40 @@ BEGIN
 									ELSE 0
 								END
 						END = LEN(d.ResourceId))
-				OR (p.SportType = 1
+				OR (p.SportType = 1			-- Soccer
 					AND d.SettlementStatusID > 0
 					AND (d.ResourceID <> '08'
 						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
 						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
-				OR (p.SportType = 2
+				OR (p.SportType = 2			-- Basketball
 					AND (LEN(d.ResourceID) = 2
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceID LIKE f.ResourceID
 							AND (p.BetType NOT IN (606, 607, 613, 617)
 								OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
+		END
+
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
+		BEGIN
+			INSERT INTO @tmpResultDetail
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetailES14 AS d WITH (NOLOCK)
+				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE p.SportType = 43		-- E-Sports
+				AND (LEN(d.ResourceID) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceID LIKE f.ResourceID
+						AND d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', '')))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
@@ -390,7 +434,7 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
-			WHERE ((p.SportType = 5
+			WHERE ((p.SportType = 5			-- Tennis
 					AND d.SettlementStatusID > 0
 					AND CASE
 							WHEN p.BetType <> 1324 THEN 2
@@ -400,18 +444,40 @@ BEGIN
 									ELSE 0
 								END
 						END = LEN(d.ResourceId))
-				OR (p.SportType = 1
+				OR (p.SportType = 1			-- Soccer
 					AND d.SettlementStatusID > 0
 					AND (d.ResourceID <> '08'
 						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
 						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
-				OR (p.SportType = 2
+				OR (p.SportType = 2			-- Basketball
 					AND (LEN(d.ResourceId) = 2
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceId LIKE f.ResourceID
 							AND (p.BetType NOT IN (606, 607, 613, 617)
 								OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
+		END
+
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
+		BEGIN
+			INSERT INTO @tmpResultDetail
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM DBARC.bodb_Archive.dbo.ResultDetailES_bk AS d WITH (NOLOCK)
+				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
+			WHERE p.SportType = 43		-- E-Sports
+				AND (LEN(d.ResourceID) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceID LIKE f.ResourceID
+						AND d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', '')))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)

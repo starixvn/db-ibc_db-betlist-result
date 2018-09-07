@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_Result_MatchSelResultDetail]
 	@MatchId INT
@@ -22,6 +22,7 @@ AS
 		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20181003@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Move eventstatus data transform to web (no change for Tennis)
+		- 20181122@Kos: Support E-Sports phase 2 [Redmine: #101047]
 */
 
 BEGIN
@@ -67,7 +68,7 @@ BEGIN
 			END AS EventStatus,
 			m.showtime,
 			ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
-			m.goalrecord,
+			m.GoalRecord,
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
@@ -118,6 +119,23 @@ BEGIN
 			ORDER BY MatchID,
 				ResourceId
 		END
+		ELSE IF @SportType = 43
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailES WITH (NOLOCK)
+			WHERE MatchID = @MatchId
+				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+			ORDER BY MatchID,
+				ResourceId
+		END
 		ELSE IF @SportType = 193
 		BEGIN
 			INSERT INTO @Detail
@@ -163,14 +181,14 @@ BEGIN
 			END AS EventStatus,
 			m.showtime,
 			ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
-			m.goalrecord,
+			m.GoalRecord,
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.matchID = m.matchid AND r.ResourceId = '00'
+			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
 		WHERE m.matchid = @MatchId
 
 		-- Get sport type
@@ -211,6 +229,23 @@ BEGIN
 					OR (@SportType = 2
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
+			ORDER BY MatchID,
+				ResourceId
+		END
+		ELSE IF @SportType = 43
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailES14 WITH (NOLOCK)
+			WHERE MatchID = @MatchId
+				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
 			ORDER BY MatchID,
 				ResourceId
 		END

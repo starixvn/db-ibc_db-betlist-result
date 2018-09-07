@@ -1,10 +1,9 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_Result_MatchSelByLeague]
 	@FromDate		DATETIME,
 	@MoveBetsDay	DATETIME,
 	@LeagueId		INT,
-	@Language		NVARCHAR(2)	= 'E',
 	@SportType		SMALLINT	= 0,
 	@IsShowAll		BIT			= 1,	-- 1: Show All; 0: is NOT show Test
 	@CustId			INT			= 0
@@ -40,24 +39,25 @@ AS
 		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20181003@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Move eventstatus data transform to web (no change for Tennis)
+		- 20181122@Kos: Support E-Sports phase 2 [Redmine: #101047]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT @isShowAll = CASE @isShowAll WHEN 1 THEN NULL ELSE 0 END
+	SELECT @IsShowAll = CASE @IsShowAll WHEN 1 THEN NULL ELSE 0 END
 
 	DECLARE @EventDate DATE
 
 	SELECT @EventDate = @FromDate
 
-	DECLARE @site VARCHAR(50)
+	DECLARE @Site VARCHAR(50)
 
-	IF @CustID <> 0
+	IF @CustId <> 0
 	BEGIN
-		SELECT @site = site
+		SELECT @Site = site
 		FROM dbo.customer WITH (NOLOCK)
-		WHERE custid = @CustID
+		WHERE custid = @CustId
 	END
 
 	CREATE TABLE #Match (
@@ -104,10 +104,7 @@ BEGIN
 			m.finalawayscore,
 			m.eventstatus,
 			m.showtime,
-			CASE
-				WHEN ISNULL(m.homeid2, 0) = 0 AND m.sporttype = 162 THEN 1101
-				ELSE m.homeid2
-			END AS homeid2,		-- contains bettype of Live Casino 
+			m.homeid2,
 			ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 			m.goalrecord,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
@@ -165,6 +162,14 @@ BEGIN
 							OR @SportType = 2)
 					UNION ALL
 					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetailES WITH (NOLOCK)
+					WHERE SettlementStatusID > 0 AND @SportType = 43
+					UNION ALL
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetailES14 WITH (NOLOCK)
+					WHERE SettlementStatusID > 0 AND @SportType = 43
+					UNION ALL
+					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetail3rd WITH (NOLOCK)
 					WHERE SettlementStatusID > 0 AND @SportType = 193
 					UNION ALL
@@ -183,9 +188,9 @@ BEGIN
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND m.matchcode NOT LIKE '%hedge%'
 			AND m.matchcode NOT LIKE '%betdaq%'
-			AND (ISNULL(@site, '') = '789y'
-				OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@site, '') <> '789y'))
-			AND l.isTest = ISNULL(@isShowAll, l.isTest)
+			AND (ISNULL(@Site, '') = '789y'
+				OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@Site, '') <> '789y'))
+			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 		OPTION (OPTIMIZE FOR (@LeagueId = 0))
 	END
 	ELSE IF @SportType IN (0, 5)
@@ -253,8 +258,8 @@ BEGIN
 							AND m.sporttype = 5
 							AND m.matchcode NOT LIKE '%hedge%'
 							AND m.matchcode NOT LIKE '%betdaq%'
-							AND (ISNULL(@site, '') = '789y'
-								OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@site, '') <> '789y'))
+							AND (ISNULL(@Site, '') = '789y'
+								OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@Site, '') <> '789y'))
 					) AS m ON m.leagueid = l.leagueid
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK)
@@ -264,7 +269,7 @@ BEGIN
 				AND ( m.eventstatus NOT IN ('closed')
 					OR ( mr.IsPending = 1
 						AND m.eventstatus IN ('running', 'closed')))
-				AND l.isTest = ISNULL(@isShowAll, l.isTest)
+				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 			--ORDER BY m.eventdate , m.sporttype , m.leagueid
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
@@ -330,8 +335,8 @@ BEGIN
 							AND m.sporttype = 5
 							AND m.matchcode NOT LIKE '%hedge%'
 							AND m.matchcode NOT LIKE '%betdaq%'
-							AND (ISNULL(@site, '') = '789y'
-								OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@site, '') <> '789y'))
+							AND (ISNULL(@Site, '') = '789y'
+								OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@Site, '') <> '789y'))
 					) AS m ON m.leagueid = l.leagueid
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK)
@@ -341,7 +346,7 @@ BEGIN
 				AND ( m.eventstatus NOT IN ('closed')
 					OR ( mr.IsPending = 1
 						AND m.eventstatus IN ('running', 'closed')))
-				AND l.isTest = ISNULL(@isShowAll, l.isTest)
+				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 			--ORDER BY m.eventdate , m.sporttype , m.leagueid
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
@@ -404,6 +409,23 @@ BEGIN
 			ORDER BY MatchID,
 				ResourceId
 		END
+		ELSE IF @SportType = 43
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailES WITH (NOLOCK)
+			WHERE MatchID IN (SELECT MatchId FROM #Match)
+				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+			ORDER BY MatchID,
+				ResourceId
+		END
 		ELSE IF @SportType = 193
 		BEGIN
 			INSERT INTO @Detail
@@ -459,6 +481,23 @@ BEGIN
 			ORDER BY MatchID,
 				ResourceId
 		END
+		ELSE IF @SportType = 43
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailES14 WITH (NOLOCK)
+			WHERE MatchID IN (SELECT MatchId FROM #Match)
+				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+			ORDER BY MatchID,
+				ResourceId
+		END
 		ELSE IF @SportType = 193
 		BEGIN
 			INSERT INTO @Detail
@@ -489,6 +528,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_Result_MatchSelByLeague] TO [bodbDownlineNet] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_Result_MatchSelByLeague] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_Result_MatchSelByLeague] TO [vnteam] AS [dbo]
 GO

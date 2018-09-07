@@ -1,4 +1,6 @@
-﻿ALTER PROCEDURE [dbo].[Age_Result_SportSelByDate]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+
+ALTER PROCEDURE [dbo].[Age_Result_SportSelByDate]
 	@EventDate		SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@IsShowAll		BIT			= 0
@@ -13,7 +15,7 @@ AS
 		- 20110307@Lukas: Get more sporttype 152, 153
 		- 20110908@Sophia: Add Condition Where : OR (eventstatus = 'running' AND (mr.ishtcal=1 OR mr.calculate=1))
 		- 20111003@Sophia: Edit condition OR to show the row which have eventstatus IN ('running','closed')
-		- 20130712@Kathy: Hide sporttype in the "Sport" dropdown list since these sports have not launched yet.
+		- 20130712@Kathy: Hide sporttype in the "Sport" dropdown list since these sports have not launched yet
 		- 20130805@Lukas: hide live casino game
 		- 20131121@Kathy: Add Virtual Greyhounds (182), Virtual Motor Racing (184) [Redmine:#7234]
 		- 20140404@Dom: Add Virtual Speedway (183), Virtual Cycling Racing (185)
@@ -29,11 +31,12 @@ AS
 		- 20180205@Kos: Don't support Racing anymore [#Redmine: 86086]
 		- 20180320@Kos: Exclude Fast Market 2 [Redmine: #90708]
 		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20180907@Kos: Support E-Sports phase 2 [Redmine: #101047]
 */
 
 BEGIN
 	SET NOCOUNT ON
-	 
+
 	DECLARE @MatchDate DATETIME
 
 	SELECT @MatchDate = @EventDate
@@ -64,7 +67,7 @@ BEGIN
 											FROM dbo.ResultDetail AS SS WITH (NOLOCK)
 											WHERE SS.SettlementStatusID > 0
 												AND m.matchid = SS.MatchId
-												AND m.sporttype IN (2, 5)
+												AND m.sporttype IN (2, 5)		-- Basketball, Tennis
 												AND ( ISNULL(SS.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											)
 								OR EXISTS (	SELECT 1
@@ -84,6 +87,13 @@ BEGIN
 												AND BR.ResourceID NOT LIKE '227%'
 												AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 												AND m.matchid = BR.MatchId
+											)
+								OR EXISTS (	SELECT 1
+											FROM dbo.ResultDetailES AS e WITH (NOLOCK)
+											WHERE e.SettlementStatusID > 0
+												AND m.matchid = e.MatchId
+												AND m.sporttype = 43		-- E-Sports
+												AND ( ISNULL(e.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											)
 								OR EXISTS (	SELECT 1
 											FROM dbo.ResultDetail3rd AS r WITH (NOLOCK)
@@ -106,8 +116,8 @@ BEGIN
 									FROM dbo.VSOutright AS o WITH (NOLOCK)
 										INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
 									WHERE o.EventDate = @EventDate
-										AND r.eventstatus = 'completed'
-										AND r.leagueid = l.leagueid
+										AND r.EventStatus = 'completed'
+										AND r.LeagueID = l.leagueid
 									)
 						AND l.sporttype IN (181, 182, 183, 185, 184)
 						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
@@ -142,7 +152,7 @@ BEGIN
 										FROM dbo.ResultDetail14 AS SS WITH (NOLOCK)
 										WHERE SS.SettlementStatusID > 0
 											AND m.matchid = SS.MatchId
-											AND m.sporttype IN (2, 5)
+											AND m.sporttype IN (2, 5)		-- Basketball, Tennis
 											AND ( ISNULL(SS.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 										)
 							OR EXISTS (	SELECT 1
@@ -162,6 +172,13 @@ BEGIN
 											AND BR.ResourceID NOT LIKE '227%'
 											AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											AND m.matchid = BR.MatchId
+										)
+							OR EXISTS (	SELECT 1
+										FROM dbo.ResultDetailES14 AS e WITH (NOLOCK)
+										WHERE e.SettlementStatusID > 0
+											AND m.matchid = e.MatchId
+											AND m.sporttype = 43		-- E-Sports
+											AND ( ISNULL(e.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 										)
 							OR EXISTS (	SELECT 1
 										FROM dbo.ResultDetail3rd14 AS r WITH (NOLOCK)
@@ -184,8 +201,8 @@ BEGIN
 									FROM dbo.VSOutright14 AS o WITH (NOLOCK)
 										INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
 									WHERE o.EventDate = @EventDate
-										AND r.eventstatus = 'completed'
-										AND r.leagueid = l.leagueid
+										AND r.EventStatus = 'completed'
+										AND r.LeagueID = l.leagueid
 									)
 						AND l.sporttype IN (181, 182, 183, 185, 184)
 						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
@@ -197,12 +214,9 @@ BEGIN
 END
 
 
- 
+
 GO
 GRANT EXECUTE ON [dbo].[Age_Result_SportSelByDate] TO [bodbDownlineNet] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_Result_SportSelByDate] TO [bodbDownlineNetView] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Age_Result_SportSelByDate] TO [vnteam] AS [dbo]
-GO
- 
