@@ -1,6 +1,6 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE bodb02
-GO 
+GO
 
 ALTER PROCEDURE [dbo].[Acc_BetListByDayAll]
 	@CustId			INT,
@@ -120,6 +120,7 @@ AS
 		- 20180509@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
+		- 20180910@Kos: HotFix - Missing Seat # in Poker Games [#Redmine: 101215]
 
 	Param's Explanation:
 		+ @TransType:
@@ -1662,7 +1663,7 @@ BEGIN
 				(b.winlost - b.actual_stake) AS WinLost,
 				b.playercomm,
 				CASE
-					WHEN s.ProductId = 23 THEN b.livehomescore
+					WHEN s.ProductId IN (23, 33) THEN b.livehomescore
 					ELSE 0
 				END AS livehomescore,
 				0 AS liveawayscore,
