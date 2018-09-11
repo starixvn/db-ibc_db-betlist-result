@@ -93,6 +93,7 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
+		- 20180911@Kos: Hotfix - Wrong operator name [#Redmine: 101299]
 
 	Param's Explanation:
 		• @FromDate = @winlostdate
@@ -889,7 +890,10 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
-				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
+				CASE
+					WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
+					ELSE ''
+				END AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -899,10 +903,7 @@ BEGIN
 				0 AS liveindicator,
 				(b.winlost - b.actual_stake) AS WinLost,
 				b.playercomm AS commission,
-				CASE
-					WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
-					ELSE ''
-				END AS comstatus,
+				CASE b.custid WHEN b.creator THEN b.username ELSE '' END creator,
 				b.username,
 				0 AS hthomescore,
 				0 AS htawayscore,
