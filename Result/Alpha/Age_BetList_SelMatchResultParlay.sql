@@ -1,4 +1,6 @@
-﻿ALTER PROCEDURE [dbo].[Age_BetList_SelMatchResultParlay]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
+ALTER PROCEDURE [dbo].[Age_BetList_SelMatchResultParlay]
 	@RefNo	BIGINT
 AS
 
@@ -28,6 +30,8 @@ AS
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 		- 20180307@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20180423@Kos: Hotfix - redundant Result Detail in result popup [Redmine: #94133]
+		- 20181003@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+					- Move eventstatus data transform to web (no change for Tennis)
 */
 
 BEGIN
@@ -46,29 +50,29 @@ BEGIN
 	WHERE ProductID IN (1, 27)
 
 	DECLARE @tmpParlay TABLE(
-		SportType		INT,
-		LeagueId		INT,
-		MatchId			INT,
-		HomeId			INT,
-		AwayId			INT,
-		HtHomeScore		INT,
-		HtAwayScore		INT,
-		FinalHomeScore	INT,
-		FinalAwayScore	INT,
-		KickOffTime		DATETIME,
-		EventDate		DATETIME,
-		IsNeutral		BIT,
-		BetStatus		VARCHAR(50),
-		EventStatus		VARCHAR(15),
-		IsRefund		BIT,
-		IsCalRefund		BIT,
-		GoalRecord		VARCHAR(50),
-		MatchCode		VARCHAR(50),
-		IsHTCal			BIT,
-		Calculate		BIT,
-		IsPending		BIT,
-		BetType			SMALLINT,
-		BetCheck		VARCHAR(50)
+		SportType			INT,
+		LeagueId			INT,
+		MatchId				INT,
+		HomeId				INT,
+		AwayId				INT,
+		HtHomeScore			INT,
+		HtAwayScore			INT,
+		FinalHomeScore		INT,
+		FinalAwayScore		INT,
+		KickOffTime			DATETIME,
+		EventDate			DATETIME,
+		IsNeutral			BIT,
+		BetStatus			VARCHAR(50),
+		EventStatus			VARCHAR(15),
+		IsRefund			BIT,
+		IsCalRefund			BIT,
+		GoalRecord			VARCHAR(50),
+		MatchCode			VARCHAR(50),
+		IsHTCal				BIT,
+		Calculate			BIT,
+		SettlementStatus	TINYINT,
+		BetType				SMALLINT,
+		BetCheck			VARCHAR(50)
 	)
 
 	DECLARE @tmpResultDetail AS TABLE (
@@ -98,10 +102,7 @@ BEGIN
 			m.htawayscore,
 			m.finalhomescore,
 			m.finalawayscore,
-			CASE
-				WHEN m.sporttype = 162 THEN m.kickofftime
-				ELSE m.GlobalShowTime
-			END AS kickofftime,
+			m.GlobalShowTime AS kickofftime,
 			m.eventdate,
 			m.IsNeutral,
 			m.betstatus,
@@ -113,15 +114,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS eventstatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
@@ -129,7 +122,7 @@ BEGIN
 			m.matchcode,
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			bm.bettype,
 			bm.betcheck
 		FROM
@@ -226,10 +219,7 @@ BEGIN
 			m.htawayscore,
 			m.finalhomescore,
 			m.finalawayscore,
-			CASE
-				WHEN m.sporttype = 162 THEN m.kickofftime
-				ELSE m.GlobalShowTime
-			END AS kickofftime,
+			m.GlobalShowTime AS kickofftime,
 			m.eventdate,
 			m.IsNeutral,
 			m.betstatus,
@@ -241,15 +231,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS eventstatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
@@ -257,7 +239,7 @@ BEGIN
 			m.matchcode,
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending,
+			0 AS SettlementStatus,
 			bm.bettype,
 			bm.betcheck
 		FROM
@@ -368,15 +350,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END 
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS eventstatus,
 			ISNULL(mr.refund, 0) IsRefund,
 			ISNULL(mr.calrefund, 0) IsCalRefund,
@@ -384,7 +358,7 @@ BEGIN
 			m.matchcode,
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending,
+			0 AS SettlementStatus,
 			bm.Bettype,
 			bm.Betcheck
 		FROM

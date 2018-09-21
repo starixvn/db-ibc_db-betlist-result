@@ -1,3 +1,5 @@
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Age_Result_MatchSelResultDetail]
 	@MatchId INT
 AS
@@ -18,6 +20,8 @@ AS
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82403]
 		- 20180320@Kos: Exclude Fast Market 2 [Redmine: #90708]
 		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20181003@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+					- Move eventstatus data transform to web (no change for Tennis)
 */
 
 BEGIN
@@ -44,10 +48,7 @@ BEGIN
 			m.matchid,
 			m.matchcode,
 			m.eventdate,
-			CASE
-				WHEN m.sporttype = 162 THEN m.kickofftime
-				ELSE m.GlobalShowTime
-			END AS kickofftime,
+			m.GlobalShowTime AS kickofftime,
 			m.homeid,
 			m.awayid,
 			m.hthomescore,
@@ -62,15 +63,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS EventStatus,
 			m.showtime,
 			ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
@@ -78,7 +71,7 @@ BEGIN
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
@@ -151,10 +144,7 @@ BEGIN
 			m.matchid,
 			m.matchcode,
 			m.eventdate,
-			CASE
-				WHEN m.sporttype = 162 THEN m.kickofftime
-				ELSE m.globalshowtime
-			END AS kickofftime,
+			m.GlobalShowTime AS kickofftime,
 			m.homeid,
 			m.awayid,
 			m.hthomescore,
@@ -169,15 +159,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS EventStatus,
 			m.showtime,
 			ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
@@ -185,7 +167,7 @@ BEGIN
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending
+			0 AS SettlementStatus
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.matchID = m.matchid AND r.ResourceId = '00'
