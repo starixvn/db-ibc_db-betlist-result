@@ -1,6 +1,5 @@
 /*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE bodb_archive
-GO
+
 ALTER PROCEDURE [dbo].[Age_CoreBetList_BetTicket_SelMainInfoArc]
 (
 	@tempCust		TVP_TicketSportBettype READONLY,
