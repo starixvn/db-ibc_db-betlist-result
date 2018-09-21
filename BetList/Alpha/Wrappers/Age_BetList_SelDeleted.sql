@@ -58,6 +58,7 @@ AS
 		- 20180807@Kos: Enhance and support Refund tickets [#Redmine: 98338]
 					- Support Poker Games
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
+		- 20181011@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
 		
 	Param's Explanation:
 		- @CustID: SAgentID
@@ -843,8 +844,7 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId = 12 AND b.BetType IN (1701, 1702) THEN b.BetCheck
-									WHEN b.ProductId IN (1, 27, 33) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 12, 27, 33) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
@@ -1103,8 +1103,7 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId = 12 AND b.BetType IN (1701, 1702) THEN b.BetCheck
-									WHEN b.ProductId IN (1, 27, 33) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 12, 27, 33) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,

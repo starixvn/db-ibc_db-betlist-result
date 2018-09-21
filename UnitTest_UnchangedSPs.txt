@@ -1,1 +1,0 @@
-Result_UnitTest\LRF\_Lrf_BetList_SelMatchResult.Test_Sportsbook_BetTrans_Normal.sql

@@ -86,6 +86,7 @@ AS
 		- 20170327@Kos: Change input params for Microsite bet list [#Redmine: 66992]
 					- Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20181014@Viet: rewrite sp [#Redmine: 101405]
+		- 20180921@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
 */
 
 BEGIN
@@ -105,7 +106,7 @@ BEGIN
 	DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
 
 	-- CHECK for MoveBetsDay
-	IF (@MoveBetsDay IS NULL)
+	IF @MoveBetsDay IS NULL
 	BEGIN
 		SELECT @MoveBetsDay = MAX(Winlostdate)
 		FROM dbo.bettrans14 WITH (NOLOCK)
@@ -218,7 +219,7 @@ BEGIN
 		, OddsSpread		SMALLMONEY
 	)
 
-	IF (@ToDate > @MoveBetsDay) --bettrans
+	IF @ToDate > @MoveBetsDay	-- bettrans
 	BEGIN
 		SET @f_date = CASE WHEN @FromDate <= @MoveBetsDay THEN DATEADD(DAY, 1, @MoveBetsDay) ELSE @FromDate END
 		SET @t_date = @ToDate
@@ -268,10 +269,10 @@ BEGIN
 
 		IF @@ROWCOUNT > 0
 		BEGIN
-			IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG') AND Winlostdate >= @Yesterday) -- bettransRnG
+			IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG') AND WinLostDate >= @Yesterday) -- bettransRnG
 			BEGIN
 				INSERT INTO @temp_bettransX
-				SELECT refno = c.transid
+				SELECT RefNo = c.transid
 					,Odds = CASE
 								WHEN Product = 'OneRNG' THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 								ELSE 0 END
@@ -300,15 +301,15 @@ BEGIN
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.transid
 				WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG')
-					AND c.Winlostdate >= @Yesterday
+					AND c.WinLostDate >= @Yesterday
 					AND brng.statusID NOT IN (0, 1)
 				GROUP BY c.transid, c.Product
 			END -- end: bettransRnG
 
-			IF EXISTS (SELECT 1 FROM @Tickets WHERE Product = 'Allbet' AND Winlostdate >= @Yesterday) --bettransLC
+			IF EXISTS (SELECT 1 FROM @Tickets WHERE Product = 'Allbet' AND WinLostDate >= @Yesterday) -- bettransLC
 			BEGIN
 				INSERT INTO @temp_bettransX
-				SELECT refno = c.transid
+				SELECT RefNo = c.transid
 					,Odds = 0
 					,Stake = SUM(blc.stake)
 					,actual_stake = SUM(blc.actual_stake)
@@ -334,8 +335,8 @@ BEGIN
 					,OddsSpread = 0
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.transid
-				WHERE Product = 'Allbet'
-					AND c.Winlostdate >= @Yesterday
+				WHERE c.Product = 'Allbet'
+					AND c.WinLostDate >= @Yesterday
 					AND blc.statusID NOT IN (0, 1)
 				GROUP BY c.transid, c.Product
 			END -- end: bettransLC
@@ -351,7 +352,7 @@ BEGIN
 				,SportType = CASE
 								WHEN c.Product = 'OneRNG' THEN b.matchid
 								WHEN c.Product = 'Keno' THEN 202
-								WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
+								WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe
 								WHEN c.Product = 'AllBet' THEN 211 -- AllBet
 								WHEN c.Product = 'VB' THEN 212 -- Macau Games
 								WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2501 AND 2539 THEN 213 -- NG2
@@ -557,7 +558,7 @@ BEGIN
 								WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 								ELSE '' END
 				,BetCheck = CASE 
-								WHEN c.Product IN ('GD') AND b.bettype IN (1701, 1702) THEN ISNULL(b.betcheck, '')
+								WHEN c.Product IN ('GD') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Parlay', 'ParlayVS2', 'PG') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 								WHEN c.Product IN ('CB') THEN ISNULL(bm.betcheck, '')
@@ -638,7 +639,7 @@ BEGIN
 			,Product
 		)
 		SELECT TransID = b.transid
-			,refno = b.refno
+			,RefNo = b.refno
 			,Product = CASE
 							WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay' -- Sportsbook Parlay
 							WHEN s.EventType = 0 AND ProductID = 6 THEN 'OneRNG' -- RNG Casino
@@ -662,10 +663,10 @@ BEGIN
 							WHEN s.EventType = 3 AND ProductID = 5 THEN 'VR' -- virtual sports:: racing
 							WHEN s.EventType = 5 AND ProductID = 30 THEN 'BF' --Bullfighting
 							ELSE 'unknown' END
-		FROM dbo.bettrans14 b WITH(NOLOCK)
-			INNER JOIN dbo.f_SportBettypeMatrixByProduct_Sel(@ProductIds, @IsTest) s ON b.bettype = s.bettype
-		WHERE custid = @CustId
-			AND winlostdate BETWEEN @f_date AND @t_date
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN dbo.f_SportBettypeMatrixByProduct_Sel(@ProductIds, @IsTest) AS s ON b.bettype = s.bettype
+		WHERE b.custid = @CustId
+			AND b.winlostdate BETWEEN @f_date AND @t_date
 		
 		IF @@ROWCOUNT > 0
 		BEGIN
@@ -850,7 +851,7 @@ BEGIN
 								WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 								ELSE '' END
 				,BetCheck = CASE 
-								WHEN c.Product IN ('GD') AND b.bettype IN (1701, 1702) THEN ISNULL(b.betcheck, '')
+								WHEN c.Product IN ('GD') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Parlay', 'ParlayVS2', 'PG') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 								WHEN c.Product IN ('CB') THEN ISNULL(bm.betcheck, '')
@@ -925,6 +926,8 @@ BEGIN
 	SELECT * 
 	FROM @BettransDetail
 	ORDER BY RefNo DESC
+
+	DROP TABLE #MemBetTicket
 END
 
 

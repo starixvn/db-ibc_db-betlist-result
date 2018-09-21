@@ -39,9 +39,10 @@ AS
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180418@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
-		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]]
+		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180711@Kos: Support Poker Games [#Redmine: 97565]
 		- 20181006@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
+		- 20181123@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
 
 	Param's Explanation:
 
@@ -171,8 +172,7 @@ BEGIN
 		, '' AS Placing
 		, '' AS showtime
 		, CASE 
-			WHEN c.ProductID IN (12) AND b.bettype IN (1701, 1702) THEN b.betcheck
-			WHEN c.ProductID IN (1, 27, 33) THEN ISNULL(b.betcheck, '')
+			WHEN c.ProductID IN (1, 12, 27, 33) THEN ISNULL(b.betcheck, '')
 			WHEN c.ProductID = 8 THEN ISNULL(b.comstatus, '')
 			ELSE ''
 		END	AS betcheck
