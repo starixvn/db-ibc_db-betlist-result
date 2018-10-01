@@ -1,4 +1,5 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Acc_BetListByDayAll]
 	@CustId			INT,
 	@FromDate		SMALLDATETIME,
@@ -119,6 +120,7 @@ AS
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 		- 20180910@Kos: HotFix - Missing Seat # in Poker Games [#Redmine: 101215]
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
+		- 20181011@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 
 	Param's Explanation:
 		+ @TransType:
@@ -179,75 +181,76 @@ BEGIN
 	END
 
 	DECLARE @Data TABLE (
-		SportType		INT,
-		LeagueId		INT,
-		HomeId			INT,
-		AwayId			INT,
-		MatchCode		NVARCHAR(50),
-		Race			NVARCHAR(50),
-		EventDate		DATETIME,
-		VirtualRate		FLOAT,			-- in case OpenToe, it's currency2's exchange rate 
-		IsShowOTExRate	BIT,			-- Show OpenTote currency2's exchange rate or not 
-		SDiscount		DECIMAL(9, 8),
-		ADiscount		DECIMAL(9, 8),
-		Discount		DECIMAL(9, 8),
-		SettleTime		DATETIME,
-		MatchId			INT,
-		TransId			BIGINT,
-		BetId			BIGINT,
-		RefNo			BIGINT,
-		TransDate		DATETIME,
-		OddsId			INT,
-		BetType			SMALLINT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		MOdds			MONEY,
-		FinalOdds		MONEY,
-		FinalOdds2		MONEY,
-		OddsType		INT,
-		BetTeam			NVARCHAR(50),
-		Status			NVARCHAR(50),
-		BetStatus		NVARCHAR(50),
-		ComStatus		NVARCHAR(50),
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		WinLost			MONEY,
-		Commission		MONEY,
-		LiveHomeScore	INT,
-		LiveAwayScore	INT,
-		LiveIndicator	BIT,
-		FinalHomeScore	INT,
-		FinalAwayScore	INT,
-		HtHomeScore		INT,
-		HtAwayScore		INT,
-		Creator			VARCHAR(50),
-		Ip				NVARCHAR(15),
-		Username		VARCHAR(50),
-		IsNeutral		BIT,
-		ShowTime		NVARCHAR(50),
-		SPositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		APositionTaking SMALLMONEY,
-		SPositionTaking2 SMALLMONEY,
-		MPositionTaking2 SMALLMONEY,
-		APositionTaking2 SMALLMONEY,
-		BetFrom			NVARCHAR(1),
-		SComm			MONEY,
-		AComm			MONEY,
-		Comm			MONEY,
-		AWinLost		MONEY,
-		MWinLost		MONEY,
-		SWinLost		MONEY,
-		WinLostDate		SMALLDATETIME,
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000),
-		OddsSpread		MONEY,
-		OriginalBetType	INT,
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000),
-		WalletType		TINYINT,
-		RefCode			BIGINT
+		SportType			INT,
+		LeagueId			INT,
+		HomeId				INT,
+		AwayId				INT,
+		MatchCode			NVARCHAR(50),
+		Race				NVARCHAR(50),
+		EventDate			DATETIME,
+		VirtualRate			FLOAT,			-- in case OpenToe, it's currency2's exchange rate 
+		IsShowOTExRate		BIT,			-- Show OpenTote currency2's exchange rate or not 
+		SDiscount			DECIMAL(9, 8),
+		ADiscount			DECIMAL(9, 8),
+		Discount			DECIMAL(9, 8),
+		SettleTime			DATETIME,
+		MatchId				INT,
+		TransId				BIGINT,
+		BetId				BIGINT,
+		RefNo				BIGINT,
+		TransDate			DATETIME,
+		OddsId				INT,
+		BetType				SMALLINT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		MOdds				MONEY,
+		FinalOdds			MONEY,
+		FinalOdds2			MONEY,
+		OddsType			INT,
+		BetTeam				NVARCHAR(50),
+		Status				NVARCHAR(50),
+		SettlementStatus	TINYINT,
+		BetStatus			NVARCHAR(50),
+		ComStatus			NVARCHAR(50),
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		WinLost				MONEY,
+		Commission			MONEY,
+		LiveHomeScore		INT,
+		LiveAwayScore		INT,
+		LiveIndicator		BIT,
+		FinalHomeScore		INT,
+		FinalAwayScore		INT,
+		HtHomeScore			INT,
+		HtAwayScore			INT,
+		Creator				VARCHAR(50),
+		Ip					NVARCHAR(15),
+		Username			VARCHAR(50),
+		IsNeutral			BIT,
+		ShowTime			NVARCHAR(50),
+		SPositionTaking		SMALLMONEY,
+		MPositionTaking		SMALLMONEY,
+		APositionTaking		SMALLMONEY,
+		SPositionTaking2	SMALLMONEY,
+		MPositionTaking2	SMALLMONEY,
+		APositionTaking2	SMALLMONEY,
+		BetFrom				NVARCHAR(1),
+		SComm				MONEY,
+		AComm				MONEY,
+		Comm				MONEY,
+		AWinLost			MONEY,
+		MWinLost			MONEY,
+		SWinLost			MONEY,
+		WinLostDate			SMALLDATETIME,
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000),
+		OddsSpread			MONEY,
+		OriginalBetType		INT,
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		WalletType			TINYINT,
+		RefCode				BIGINT
 	);
 
 	IF @Fromdate <= @MoveBetsDay
@@ -301,6 +304,7 @@ BEGIN
 				b.oddstype,
 				b.betteam,
 				b.status,
+				0 AS SettlementStatus,
 				m.betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -357,8 +361,8 @@ BEGIN
 				ELSE 0
 			END AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
 				AND s.EventType = 1
@@ -400,6 +404,7 @@ BEGIN
 				'' AS oddstype,
 				b.betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -479,6 +484,7 @@ BEGIN
 				0 AS oddstype,
 				'',
 				b.status,
+				0 AS SettlementStatus,
 				'',
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -568,6 +574,7 @@ BEGIN
 				b.oddstype,
 				'' AS betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -683,6 +690,7 @@ BEGIN
 				0 AS OddsType,
 				'' AS betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE
 					WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
@@ -781,6 +789,7 @@ BEGIN
 				b.oddstype,
 				b.betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -861,6 +870,7 @@ BEGIN
 				0 AS oddstype,
 				'' AS betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -1004,6 +1014,7 @@ BEGIN
 				0 AS oddstype,
 				'' AS betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				0 AS comstatus,
 				b.stake,
@@ -1095,6 +1106,7 @@ BEGIN
 				'' AS oddstype,
 				'' AS betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -1200,6 +1212,7 @@ BEGIN
 				CASE WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 					ELSE b.status
 				END AS status,
+				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				m.betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -1256,8 +1269,8 @@ BEGIN
 				ELSE 0
 			END AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
 				AND s.EventType = 1
@@ -1300,6 +1313,7 @@ BEGIN
 				END AS OddsType,
 				'' AS betteam,
 				b.status,
+				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				m.betstatus,
 				0 AS comstatus,
 				b.stake,
@@ -1342,8 +1356,8 @@ BEGIN
 				0 AS RefCode
 			FROM
 				dbo.translog AS b WITH (NOLOCK)
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
+				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
 				AND b.gameID BETWEEN 801 AND 899
@@ -1385,6 +1399,7 @@ BEGIN
 				'' AS oddstype,
 				b.betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -1464,6 +1479,7 @@ BEGIN
 				0 AS oddstype,
 				'',
 				b.status,
+				0 AS SettlementStatus,
 				'',
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -1553,6 +1569,7 @@ BEGIN
 				b.oddstype,
 				'' AS betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
@@ -1652,6 +1669,7 @@ BEGIN
 				0 AS oddstype,
 				b.betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE
 					WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
@@ -1761,6 +1779,7 @@ BEGIN
 						ELSE ''
 					END AS betteam,
 					b.status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					0 AS comstatus,
 					b.stake,
@@ -1863,6 +1882,7 @@ BEGIN
 					0 AS OddsType,
 					'' AS betteam,
 					b.status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -1961,6 +1981,7 @@ BEGIN
 						ELSE ''
 					END AS BetTeam,
 					b.status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					0 AS comstatus,
 					b.stake,
@@ -2050,6 +2071,7 @@ BEGIN
 					b.oddstype,
 					b.betteam,
 					b.status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -2144,6 +2166,7 @@ BEGIN
 					0 AS oddstype,
 					'' AS betteam,
 					b.status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -2248,6 +2271,7 @@ BEGIN
 						WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
 						ELSE 'Draw'
 					END AS Status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					SUM(brng.stake) AS stake,
@@ -2361,6 +2385,7 @@ BEGIN
 					0 AS oddstype,
 					'' AS betteam,
 					'Running' AS Status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					SUM(brng.stake) AS stake,
@@ -2469,6 +2494,7 @@ BEGIN
 					0 AS oddstype,
 					'' AS betteam,
 					b.status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -2560,6 +2586,7 @@ BEGIN
 						WHEN SUM(blc.winlost - blc.actual_stake) < 0 THEN 'Lose'
 						ELSE 'Draw'
 					END AS Status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					SUM(blc.stake) AS stake,
@@ -2662,6 +2689,7 @@ BEGIN
 					0 AS oddstype,
 					'' AS betteam,
 					'Running' AS Status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					SUM(blc.stake) AS stake,
@@ -2760,6 +2788,7 @@ BEGIN
 					0 AS oddstype,
 					'',
 					b.status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -2842,6 +2871,7 @@ BEGIN
 					0 AS oddstype,
 					'',
 					b.status,
+					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -2985,6 +3015,7 @@ BEGIN
 				0 AS oddstype,
 				'' AS betteam,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				0 AS comstatus,
 				b.stake,
@@ -3076,6 +3107,7 @@ BEGIN
 				'' AS oddstype,
 				'',
 				b.status,
+				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,

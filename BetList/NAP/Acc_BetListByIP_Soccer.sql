@@ -1,6 +1,4 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE bodb02
-GO
 
 ALTER PROCEDURE [dbo].[Acc_BetListByIP_Soccer]
 	@CustId		INT,
@@ -48,6 +46,7 @@ AS
 		- 20170602@Kos: Get liveindicator from original ticket for 911 and 912 tickets [#Redmine: 77669]
 		- 20170615@Kos: Support Licensee Bonus System [#Redmine: 74978]
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
+		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -57,74 +56,75 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Data TABLE (
-		FinalHomeScore	INT,
-		FinalAwayScore	INT,
-		OddsId			INT,
-		LeagueId		INT,
-		MatchId			INT,
-		BetType			SMALLINT,
-		TransId			BIGINT,
-		BetId			BIGINT,
-		RefNo			BIGINT,
-		MatchCode		NVARCHAR(50),
-		Race			NVARCHAR(50),
-		EventDate		DATETIME,
-		VirtualRate		FLOAT,
-		IsShowOTExRate	BIT,
-		SDiscount		DECIMAL(9, 8),
-		ADiscount		DECIMAL(9, 8),
-		Discount		DECIMAL(9, 8),
-		HomeId			INT,
-		AwayId			INT,
-		SettleTime		DATETIME,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		FinalOdds		MONEY,
-		FinalOdds2		MONEY,
-		MOdds			MONEY,
-		OddsType		INT, 
-		Status			NVARCHAR(50),
-		ComStatus		NVARCHAR(20),
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		TransDate		DATETIME,
-		BetTeam			NVARCHAR(50),
-		SPositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		APositionTaking SMALLMONEY,
-		SPositionTaking2 SMALLMONEY,
-		MPositionTaking2 SMALLMONEY,
-		APositionTaking2 SMALLMONEY,
-		LiveHomeScore	INT,
-		LiveAwayScore	INT,
-		LiveIndicator	BIT,
-		WinLost			MONEY,
-		Commission		MONEY,
-		SComm			MONEY,
-		AComm			MONEY,
-		Comm			MONEY,
-		AWinLost		MONEY,
-		MWinLost		MONEY,
-		SWinLost		MONEY,
-		Creator			VARCHAR(50),
-		Username		NVARCHAR(50),
-		HtHomeScore		INT,
-		HtAwayScore		INT,
-		Ip				NVARCHAR(15),
-		BetFrom			NVARCHAR(1),
-		SportType		INT,
-		IsNeutral		BIT,
-		ShowTime		NVARCHAR(50),
-		WinLostDate		SMALLDATETIME,
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000),
-		OddsSpread		SMALLMONEY,
-		OriginalBetType	INT,
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000),
-		WalletType		TINYINT,
-		RefCode			BIGINT
+		FinalHomeScore		INT,
+		FinalAwayScore		INT,
+		OddsId				INT,
+		LeagueId			INT,
+		MatchId				INT,
+		BetType				SMALLINT,
+		TransId				BIGINT,
+		BetId				BIGINT,
+		RefNo				BIGINT,
+		MatchCode			NVARCHAR(50),
+		Race				NVARCHAR(50),
+		EventDate			DATETIME,
+		VirtualRate			FLOAT,
+		IsShowOTExRate		BIT,
+		SDiscount			DECIMAL(9, 8),
+		ADiscount			DECIMAL(9, 8),
+		Discount			DECIMAL(9, 8),
+		HomeId				INT,
+		AwayId				INT,
+		SettleTime			DATETIME,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		FinalOdds			MONEY,
+		FinalOdds2			MONEY,
+		MOdds				MONEY,
+		OddsType			INT, 
+		Status				NVARCHAR(50),
+		SettlementStatus	TINYINT,
+		ComStatus			NVARCHAR(20),
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		TransDate			DATETIME,
+		BetTeam				NVARCHAR(50),
+		SPositionTaking		SMALLMONEY,
+		MPositionTaking		SMALLMONEY,
+		APositionTaking		SMALLMONEY,
+		SPositionTaking2	SMALLMONEY,
+		MPositionTaking2	SMALLMONEY,
+		APositionTaking2	SMALLMONEY,
+		LiveHomeScore		INT,
+		LiveAwayScore		INT,
+		LiveIndicator		BIT,
+		WinLost				MONEY,
+		Commission			MONEY,
+		SComm				MONEY,
+		AComm				MONEY,
+		Comm				MONEY,
+		AWinLost			MONEY,
+		MWinLost			MONEY,
+		SWinLost			MONEY,
+		Creator				VARCHAR(50),
+		Username			NVARCHAR(50),
+		HtHomeScore			INT,
+		HtAwayScore			INT,
+		Ip					NVARCHAR(15),
+		BetFrom				NVARCHAR(1),
+		SportType			INT,
+		IsNeutral			BIT,
+		ShowTime			NVARCHAR(50),
+		WinLostDate			SMALLDATETIME,
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000),
+		OddsSpread			SMALLMONEY,
+		OriginalBetType		INT,
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		WalletType			TINYINT,
+		RefCode				BIGINT
 	)
 
 	DECLARE @DetailData TABLE (
@@ -173,6 +173,7 @@ BEGIN
 		modds,
 		OddsType,
 		status,
+		SettlementStatus,
 		comstatus,
 		stake,
 		actual_stake,
@@ -238,6 +239,7 @@ BEGIN
 				b.modds,
 				b.oddstype,
 				b.status,
+				0 AS SettlementStatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
 				b.actual_stake,
@@ -317,6 +319,7 @@ BEGIN
 				b.modds,
 				0 AS OddsType,
 				b.status,
+				0 AS SettlementStatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,  
 				b.stake,
 				b.actual_stake,
@@ -397,6 +400,7 @@ BEGIN
 				b.modds,
 				0 AS OddsType,
 				b.status,
+				0 AS SettlementStatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
 				b.actual_stake,
@@ -481,6 +485,7 @@ BEGIN
 				CASE WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 					ELSE b.status 
 				END AS status,
+				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,  
 				b.stake,
 				b.actual_stake,
@@ -567,6 +572,7 @@ BEGIN
 					ELSE 0
 				END AS OddsType,
 				b.status,
+				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				0 AS comstatus,
 				b.stake,
 				b.actual_stake,
@@ -646,6 +652,7 @@ BEGIN
 				b.modds,
 				0 AS OddsType,
 				b.status,
+				0 AS SettlementStatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
 				b.actual_stake,
@@ -727,6 +734,7 @@ BEGIN
 				b.modds,
 				0 AS OddsType,
 				b.status,
+				0 AS SettlementStatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
 				b.actual_stake,
@@ -809,6 +817,7 @@ BEGIN
 				b.modds,
 				0 AS OddsType,
 				b.status,
+				0 AS SettlementStatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
 				b.actual_stake,
@@ -888,6 +897,7 @@ BEGIN
 				b.modds,
 				0 AS OddsType,
 				b.status,
+				0 AS SettlementStatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 				b.stake,
 				b.actual_stake,
@@ -1114,40 +1124,6 @@ BEGIN
 
 	SELECT * FROM @Data
 	ORDER BY 4,26
-
-	-- Get ticket detail
-	IF EXISTS ( SELECT TOP 1 1 FROM @Data WHERE BetType BETWEEN 1101 AND 1199 )
-	BEGIN
-		INSERT INTO @DetailData
-		SELECT
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			bg.status,
-			bg.apositiontaking,
-			bg.mpositiontaking,
-			bg.spositiontaking,
-			bg.bettype,
-			bg.betteam
-		FROM dbo.bettransg AS bg WITH (NOLOCK)
-			INNER JOIN @Data AS b ON bg.refno = b.RefNo
-		WHERE b.BetType BETWEEN 1101 AND 1199
-
-		INSERT INTO @DetailData
-		SELECT
-			bg.refno,
-			bg.odds,
-			bg.stake,
-			bg.status,
-			bg.apositiontaking,
-			bg.mpositiontaking,
-			bg.spositiontaking,
-			bg.bettype,
-			bg.betteam
-		FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-			INNER JOIN @Data AS b ON bg.refno = b.RefNo
-		WHERE b.BetType BETWEEN 1101 AND 1199
-	END
 
 	SELECT DISTINCT * FROM @DetailData
 END

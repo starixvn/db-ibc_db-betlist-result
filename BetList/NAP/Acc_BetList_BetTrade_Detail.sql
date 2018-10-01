@@ -1,11 +1,4 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Acc_BetList_BetTrade_Detail]    Script Date: 8/4/2016 1:33:16 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 ALTER PROCEDURE [dbo].[Acc_BetList_BetTrade_Detail]
 	@TransId	BIGINT,
@@ -19,6 +12,7 @@ AS
 	Original:
 	Revisions:
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
+		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 
 	Parameters:
 		- @TransId: TransId of ticket bettype 901
@@ -47,6 +41,7 @@ BEGIN
 		Odds				MONEY,
 		OddsType			TINYINT,
 		Status				NVARCHAR(50),
+		SettlementStatus	TINYINT,
 		ComStatus			NVARCHAR(50),
 		Stake				MONEY,
 		Actual_Stake		MONEY,
@@ -108,6 +103,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 			b.stake,
 			b.actual_stake,
@@ -173,6 +169,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
+			0 AS SettlementStatus,
 			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 			b.stake,
 			b.actual_stake,
@@ -238,6 +235,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
+			0 AS SettlementStatus,
 			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 			b.stake,
 			b.actual_stake,
@@ -282,6 +280,9 @@ BEGIN
 
 	SELECT * FROM @Data
 END
+
+
+
 
 GO
 GRANT	VIEW DEFINITION	ON	[Acc_BetList_BetTrade_Detail]	TO	vnteam

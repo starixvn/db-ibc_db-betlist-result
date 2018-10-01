@@ -74,6 +74,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 		- 20180927@Kos: Add new permission to view Licensee account [#Redmine: 96118]
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
+		- 20181121@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 */
 
 BEGIN
@@ -182,6 +183,7 @@ BEGIN
 		FinalOdds2			MONEY,
 		OddsType			TINYINT,
 		Status				NVARCHAR(50),
+		SettlementStatus	TINYINT,
 		ComStatus			NVARCHAR(50),
 		Stake				MONEY,
 		Actual_Stake		MONEY,
@@ -308,6 +310,7 @@ BEGIN
 						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 						ELSE b.status
 					END AS status,
+					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -366,8 +369,8 @@ BEGIN
 						ELSE 0
 					END AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
-					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 					INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
+					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				WHERE b.transid = @TransId AND s.EventType = 1
 
 				UNION ALL -- translog metric gaming
@@ -397,6 +400,7 @@ BEGIN
 						ELSE 0
 					END AS OddsType,
 					b.status,
+					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 					'' AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -440,8 +444,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode
 				FROM dbo.translog AS b WITH (NOLOCK) 
-					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventId = m.matchid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
+					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventId = m.matchid
 				WHERE b.translogid = @TransId
 					AND b.statusID IN (0, 1)
 					AND s.BetType BETWEEN 801 AND 899
@@ -547,6 +551,7 @@ BEGIN
 					0 AS FinalOdds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -620,6 +625,7 @@ BEGIN
 					0 AS FinalOdds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -704,6 +710,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE
 						WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
 						ELSE ''
@@ -812,6 +819,7 @@ BEGIN
 					0 AS finalodds2,
 					b.OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -906,6 +914,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					0 AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -997,6 +1006,7 @@ BEGIN
 					0 AS FinalOdds2,
 					b.oddstype,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -1079,6 +1089,7 @@ BEGIN
 						ELSE 0
 					END AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					0 AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -1174,6 +1185,7 @@ BEGIN
 						0 AS finalodds2,
 						0 AS OddsType,
 						'Running' AS Status,
+						0 AS SettlementStatus,
 						CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 						SUM(brng.stake) AS stake,
 						SUM(brng.actual_stake) AS actual_stake,
@@ -1281,6 +1293,7 @@ BEGIN
 							WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
 							ELSE 'Draw'
 						END AS Status,
+						0 AS SettlementStatus,
 						CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 						SUM(brng.stake) AS stake,
 						SUM(brng.actual_stake) AS actual_stake,
@@ -1388,6 +1401,7 @@ BEGIN
 						0 AS finalodds2,
 						0 AS OddsType,
 						b.status,
+						0 AS SettlementStatus,
 						CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 						b.stake,
 						b.actual_stake,
@@ -1481,6 +1495,7 @@ BEGIN
 						0 AS finalodds2,
 						0 AS OddsType,
 						'Running' AS Status,
+						0 AS SettlementStatus,
 						CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 						SUM(blc.stake) AS stake,
 						SUM(blc.actual_stake) AS actual_stake,
@@ -1575,6 +1590,7 @@ BEGIN
 							WHEN SUM(blc.winlost - blc.actual_stake) < 0 THEN 'Lose'
 							ELSE 'Draw'
 						END AS Status,
+						0 AS SettlementStatus,
 						CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 						SUM(blc.stake) AS stake,
 						SUM(blc.actual_stake) AS actual_stake,
@@ -1667,6 +1683,7 @@ BEGIN
 						0 AS finalodds2,
 						0 AS OddsType,
 						b.status,
+						0 AS SettlementStatus,
 						CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 						b.stake,
 						b.actual_stake,
@@ -1747,6 +1764,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -1826,6 +1844,7 @@ BEGIN
 						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 						ELSE b.status
 					END AS status,
+					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,					
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -1918,6 +1937,7 @@ BEGIN
 					0 AS finalodds2,
 					b.OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -1976,8 +1996,8 @@ BEGIN
 						ELSE 0
 					END AS RefCode
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
-					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				WHERE s.EventType = 1 AND b.transid = @TransId
 			END
 
@@ -2081,6 +2101,7 @@ BEGIN
 					0 AS FinalOdds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -2154,6 +2175,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -2230,6 +2252,7 @@ BEGIN
 					0 AS finalodds2,
 					b.OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -2334,6 +2357,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE
 						WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
 						ELSE ''
@@ -2451,6 +2475,7 @@ BEGIN
 					0 AS FinalOdds2,
 					b.oddstype,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -2527,6 +2552,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -2603,6 +2629,7 @@ BEGIN
 					0 AS finalodds2,
 					b.oddstype,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -2695,6 +2722,7 @@ BEGIN
 					0 AS finalodds2,
 					b.OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -2753,9 +2781,9 @@ BEGIN
 						ELSE 0
 					END AS RefCode
 				FROM
-					bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-					INNER JOIN bodb_archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+					bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType
+					INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				WHERE s.EventType = 1 AND b.transid = @TransId
 
 				-- Get more info for BetTrade tickets
@@ -2859,6 +2887,7 @@ BEGIN
 					0 AS FinalOdds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -2932,6 +2961,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -3008,6 +3038,7 @@ BEGIN
 					bm.finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -3099,6 +3130,7 @@ BEGIN
 					0 AS finalodds2,
 					b.OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -3204,6 +3236,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					CASE
 						WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
 						ELSE ''
@@ -3317,6 +3350,7 @@ BEGIN
 					0 AS finalodds2,
 					b.oddstype,
 					b.status,
+					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -3651,6 +3685,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					'' AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -3749,6 +3784,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					'' AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -3879,6 +3915,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					'' AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -3964,6 +4001,7 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					b.status,
+					0 AS SettlementStatus,
 					'' AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -4053,6 +4091,7 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS comstatus,
 				b.stake,
 				b.actual_stake,
@@ -4136,6 +4175,7 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				b.status,
+				0 AS SettlementStatus,
 				'' AS comstatus,
 				b.stake,
 				b.actual_stake,
