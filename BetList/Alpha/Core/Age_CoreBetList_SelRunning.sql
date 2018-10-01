@@ -1,33 +1,20 @@
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Age_CoreBetList_Running_SelBetTicket]    Script Date: 5/5/2015 1:45:13 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Age_CoreBetList_SelRunning]
 (
-	-- MEM INFO
 	@CustId				INT
 	, @RoleId			TINYINT
-	, @Username			NVARCHAR(50)	= NULL
-	--Event
 	, @MatchId			INT				= 0
 	, @LiveIndicator	INT				= NULL
 	, @BetTeam			NVARCHAR(20)	= ''
-	-- PRODUCT - BETTYPE - STATUS
 	, @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]	READONLY
-	, @Language			VARCHAR(2)		= 'E'
-	, @ColumnOutput		VARCHAR(MAX)	= NULL
-	, @Error			INT				= 0 OUTPUT
-	, @ErrorMsg			VARCHAR(250)	= '' OUTPUT
 )
 AS
 
 /*
 	Created: Bobby
 	Task: Aphla site - refactor betlist core 
-	DB: DBAGE.bodb02
+	DB: DB042.bodb02
 	Original:
 
 	Revisions:
@@ -44,6 +31,9 @@ AS
 		- 20180617@Kos: Move SP from bodb_Age to bodb02 [#Redmine: 97037]
 					- Don't support Metric Gaming and translog anymore
 		- 20180621@Kos: Add index hint for Master and Agent level [#Redmine: 97249]
+		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
+					- Remove param @Username, @Language, @Error, @ErrorMsg, @ColumnOutput
+					- Don't support member level anymore
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -77,6 +67,7 @@ BEGIN
 		, Odds				MONEY
 		, MOdds				MONEY
 		, Status			NVARCHAR(10)
+		, SettlementStatus	TINYINT
 		, Stake				MONEY
 		, Actual_Stake		MONEY
 		, TransDate			DATETIME
@@ -103,85 +94,9 @@ BEGIN
 		, EventType			TINYINT
 	)
 
-	SELECT @Error	= 0
-		, @ErrorMsg	= ''
-		, @CustId	= ISNULL(@CustId, 0)
+	SELECT @CustId	= ISNULL(@CustId, 0)
 		, @MatchId	= ISNULL(@MatchId, 0)
 		, @BetTeam	= ISNULL(@BetTeam, '')
-
-	-- CHECK member info
-	IF( (@CustId = 0 AND @RoleId = 1)
-		AND @UserName IS NOT NULL
-	)
-	BEGIN
-		SELECT TOP(1) @CustId = custid
-		FROM bodb02.dbo.custinfo WITH (NOLOCK)
-		WHERE username = @UserName
-	END
-
-	IF ISNULL(@CustId, 0) = 0
-	BEGIN
-		SELECT @Error 	= 100
-			, @ErrorMsg	= 'The customer was not found.'
-
-		RETURN;
-	END
-
-	IF @RoleId = 1
-	BEGIN
-		INSERT INTO @Data
-		SELECT
-			0 Sporttype
-			, b.custid
-			, b.Username
-			, b.Bettype
-			, 0 LeagueID
-			, b.refno
-			, b.TransID
-			, b.BetID
-			, '' MatchCode
-			, '' Race
-			, b.matchid
-			, 0 HomeID
-			, 0 AwayID
-			, '' AS BetStatus
-			, b.hdp1
-			, b.hdp2
-			, b.Odds
-			, b.Modds
-			,CASE
-				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-				ELSE b.status
-			END AS status
-			, b.Stake
-			, b.actual_stake
-			, b.Transdate
-			, b.Betteam
-			, b.APositiontaking
-			, b.MPositiontaking
-			, b.SPositiontaking
-			, b.tpositiontaking
-			, b.discount AS Adiscount --Agent
-			, b.adiscount AS Mdiscount --Master
-			, b.sdiscount AS Sdiscount --Super
-			, b.Liveindicator
-			, b.Livehomescore
-			, b.Liveawayscore
-			, b.IP
-			,CONVERT(BIT,0) IsNeutral
-			, b.oddstype
-			, '' showtime
-			, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
-			, b.BetCheck
-			, '' AS transdesc
-			, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
-			, bt.productid
-			, bt.eventtype
-		FROM dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-		WHERE b.custid = @CustId
-			AND b.statusID IN (0, 1)
-	END
 
 	IF @MatchId = 0
 	BEGIN
@@ -195,8 +110,8 @@ BEGIN
 				, b.Bettype
 				, 0 LeagueID
 				, b.refno
-				, b.TransID
-				, b.BetID
+				, b.transid
+				, b.betid
 				, '' MatchCode
 				, '' Race
 				, b.matchid
@@ -211,6 +126,7 @@ BEGIN
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 					ELSE b.status
 				END AS status
+				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
 				, b.Transdate
@@ -267,6 +183,7 @@ BEGIN
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 					ELSE b.status
 				END AS status
+				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
 				, b.Transdate
@@ -323,6 +240,7 @@ BEGIN
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 					ELSE b.status
 				END AS status
+				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
 				, b.Transdate
@@ -381,6 +299,7 @@ BEGIN
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 					ELSE b.status
 				END AS status
+				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
 				, b.Transdate
@@ -438,6 +357,7 @@ BEGIN
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 					ELSE b.status
 				END AS status
+				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
 				, b.Transdate
@@ -495,6 +415,7 @@ BEGIN
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 					ELSE b.status
 				END AS status
+				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
 				, b.Transdate
@@ -531,12 +452,12 @@ BEGIN
 	BEGIN
 		DELETE b
 		FROM @Data AS b
-			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+			INNER JOIN @BettypeMatrix AS bt ON b.BetType = bt.Bettype
 		WHERE ( @LiveIndicator IS NOT NULL
-				AND bt.productid = 3
+				AND bt.ProductID = 3
 				AND b.Liveindicator <> @LiveIndicator)
 			OR ( @BetTeam <> '' 
-				AND bt.productid = 3
+				AND bt.ProductID = 3
 				AND b.betteam <> @BetTeam )
 	END
 
@@ -548,6 +469,7 @@ BEGIN
 		HomeId		= m.homeid,
 		AwayId		= m.awayid,
 		BetStatus	= m.betstatus,
+		SettlementStatus = ISNULL(m.SettlementStatus, 0),
 		ShowTime	= m.showtime,
 		IsNeutral	= m.IsNeutral
 	FROM @Data AS b
@@ -585,6 +507,7 @@ BEGIN
 
 	SELECT * FROM @BettransDetail
 END
+
 
 
 GO

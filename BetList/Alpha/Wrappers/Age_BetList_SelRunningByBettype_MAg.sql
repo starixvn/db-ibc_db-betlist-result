@@ -1,16 +1,14 @@
-USE bodb02
-GO
+/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunningByBettype_MAg]
 	@CustId		INT,
-	@BetType	INT,
-	@Language	VARCHAR(2) = 'E'
+	@BetType	INT
 AS
 
 /*
 	Created:
 	Task: Betlist
-	DB: DBAGE.bodb02
+	DB: DB042.bodb02
 	Original: BetsSelBetList_MAg
 	Revisions:
 		- 20080104@Vinh: include mix parlay
@@ -55,6 +53,8 @@ AS
 		- 20170721@Kos: Use inline function for SportBettypeMatrix and include bet type 427, 431, 433 [Redmine: #53153]
 		- 20171012@Kos: Support PH AIO Phase 3 [Redmine: #82399]
 		- 20180617@Kos: Move SP from bodb_Age to bodb02 [#Redmine: 97037]
+		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
+					- Remove param @Language
 */
 
 BEGIN
@@ -84,45 +84,7 @@ BEGIN
 	EXEC [dbo].[Age_CoreBetList_SelRunning]
 		@CustId				= @CustId
 		, @RoleId			= 3
-		, @Language			= @Language
 		, @BettypeMatrix	= @BettypeMatrix
-		, @ColumnOutput		= 'sporttype,
-								username,
-								bettype,
-								custid,
-								transid,
-								refno,
-								matchid,
-								matchcode,
-								homeID,
-								awayID,
-								hdp1,
-								hdp2,
-								odds,
-								modds,
-								status,
-								stake,
-								actual_stake,
-								transdate,
-								betteam,
-								betID,
-								livehomescore, 
-								liveawayscore,
-								liveindicator ,
-								tpositiontaking,
-								spositiontaking,
-								mpositiontaking,
-								apositiontaking, 
-								adiscount,
-								mdiscount,
-								sdiscount,
-								IP,
-								IsNeutral,
-								OddsType,
-								showtime,
-								comstatus,
-								transdesc,
-								OddsSpread'
 END
 
 

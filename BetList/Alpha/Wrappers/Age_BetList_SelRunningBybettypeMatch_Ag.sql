@@ -1,12 +1,9 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE bodb02
-GO
+/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunningByBettypeMatch_Ag]
 	@MatchId		INT,
 	@CustId			INT,
 	@BetType		INT,
-	@Language		VARCHAR(2)		= 'E',
 	@LiveIndicator	INT				= 0,
 	@BetTeam		NVARCHAR(20)	= NULL
 AS
@@ -14,7 +11,7 @@ AS
 /*
 	Created:
 	Task: Betlist
-	DB: DBAGE.bodb02
+	DB: DB042.bodb02
 	Original: BetsSelBetListMatchWinLoss_Ag
 	Revisions:
 		- 20080105: Add typenamee2, sportname
@@ -50,6 +47,8 @@ AS
 		- 20150910@Bobby: Enhance performance for SP core. Apply TVP for input parameters
 		- 20180411@Kos: Enhance performance when getting SportBetTypeMatrix [#Redmine: 93257]
 		- 20180621@Kos: Change to use new core [#Redmine: 97249]
+		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
+					- Remove param @Language
 */
 
 BEGIN
@@ -82,44 +81,11 @@ BEGIN
 		, @MatchId			= @MatchId
 		, @LiveIndicator	= @LiveIndicator
 		, @BetTeam			= @BetTeam
-		, @Language			= @Language
 		, @BettypeMatrix	= @BettypeMatrix
-		, @ColumnOutput		= 'Sporttype,
-								Username,
-								Bettype,
-								TransID,
-								matchid,
-								Matchcode,
-								Race,
-								leagueid,
-								HomeID,
-								AwayID,
-								hdp1,
-								hdp2,
-								odds,
-								modds,
-								status,
-								stake,
-								actual_stake,
-								Transdate,
-								Betteam,
-								Liveindicator,
-								Livehomescore,
-								Liveawayscore,
-								APositiontaking,
-								Adiscount,
-								IP,
-								IsNeutral,
-								oddstype,
-								betid,
-								showtime,
-								refno,
-								comstatus,
-								transdesc,
-								OddsSpread'
 
 	RETURN;
 END
+
 
 
 GO

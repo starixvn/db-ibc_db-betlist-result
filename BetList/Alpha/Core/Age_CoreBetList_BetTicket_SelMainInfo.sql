@@ -26,6 +26,7 @@ AS
 		- 20170508@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20180126@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
+		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 
 	Param's Explanation:
 		- @tempCust AS TABLE
@@ -61,6 +62,7 @@ BEGIN
 		, Stake				MONEY
 		, Actual_Stake		MONEY
 		, Status			NVARCHAR(10)
+		, SettlementStatus	TINYINT
 		, TransDate			DATETIME
 		, WinLostDate		DATETIME
 		, WinLost			MONEY

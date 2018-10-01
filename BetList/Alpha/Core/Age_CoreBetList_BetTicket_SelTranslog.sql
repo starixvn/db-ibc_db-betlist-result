@@ -1,11 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Age_CoreBetList_Mem_SelBetTicket]    Script Date: 5/11/2015 10:31:30 AM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 ALTER PROCEDURE [dbo].[Age_CoreBetList_BetTicket_SelTranslog]
 (
 	@tempCust		[dbo].[TVP_TicketSportBettype]	READONLY
@@ -36,6 +30,7 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180711@Kos: Return new column ExtraInfo to match columns of other SPs [#Redmine: 97565]
+		- 20181006@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 
 	Param's Explanation:
 
@@ -77,6 +72,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, 0 AS Winlost
@@ -162,6 +158,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, 0 AS WinLost
@@ -243,6 +240,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, 0 AS WinLost

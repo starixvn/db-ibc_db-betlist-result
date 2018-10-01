@@ -1,11 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Age_CoreBetList_Mem_SelBetTicket]    Script Date: 5/11/2015 10:31:30 AM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 ALTER PROCEDURE [dbo].[Age_CoreBetList_BetTicket_SelBettrans14]
 (
 	@tempCust		[dbo].[TVP_TicketSportBettype]	READONLY
@@ -47,6 +41,7 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]]
 		- 20180711@Kos: Support Poker Games [#Redmine: 97565]
+		- 20181006@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 
 	Param's Explanation:
 
@@ -125,6 +120,7 @@ BEGIN
 		, b.Stake
 		, b.actual_stake
 		, b.Status
+		, 0 AS SettlementStatus
 		, b.Transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -225,6 +221,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -304,11 +301,8 @@ BEGIN
 		, b.modds
 		, b.stake
 		, b.actual_stake
-		, CASE
-			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1
-				AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-			ELSE b.status
-		END AS status
+		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -403,6 +397,7 @@ BEGIN
 		, b.Stake 
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -474,6 +469,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -546,6 +542,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -620,6 +617,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost

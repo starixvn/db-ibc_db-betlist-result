@@ -1,0 +1,12 @@
+BetList/Alpha/Wrappers/Age_BetList_SelWinLossByDate_Mem.sql
+BetList/Alpha/Wrappers/Age_BetList_SelWinLossByDate_Mem_Old.sql
+BetList/Alpha/Wrappers/Age_BetList_SelWinlossByBettypeMatch_SAg.sql
+BetList/Alpha/Wrappers/Age_BetList_SelWinlossByBettypeMatch_MAg.sql
+BetList/Alpha/Wrappers/Age_BetList_SelWinlossByBettypeMatch_Ag.sql
+BetList/Alpha/Wrappers/Age_BetList_SelAllByDate_Mem.sql
+BetList/Alpha/Wrappers/Age_BetList_SelByDayAll_Mem.sql
+BetList/Alpha/Wrappers/Age_BetList_SelByDayAll_Mem_Old.sql
+BetList/Alpha/Core/Age_CoreBetList_Mem_SelBetTicket.sql
+BetList/Alpha/Core/Age_CoreBetList_MemArc_SelBetTicket.sql
+BetList/Alpha/Core/Age_CoreBetList_MemTransDate_SelBetTicket.sql
+BetList/Alpha/Core/Age_CoreBetList_SMAEventBettype_SelBetTicket.sql

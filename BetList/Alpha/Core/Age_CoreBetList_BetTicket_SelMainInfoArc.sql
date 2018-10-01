@@ -21,6 +21,7 @@ AS
 		- 20170508@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20180126@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
+		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 
 	Param's Explanation:
 
@@ -58,6 +59,7 @@ BEGIN
 		, Stake				MONEY
 		, Actual_Stake		MONEY
 		, Status			NVARCHAR(10)
+		, SettlementStatus	TINYINT
 		, TransDate			DATETIME
 		, WinLostDate		DATETIME
 		, WinLost			MONEY
@@ -109,25 +111,6 @@ BEGIN
 		EXEC [dbo].[Age_CoreBetList_BetTicket_SelBettransArc] @tempCust = @tempCust
 	END
 
-	-- OUTPUT main ticket
-	/*IF (@ColumnOutput IS NULL)
-	BEGIN
-		SELECT *
-		FROM #MemBetTicket t
-		ORDER BY t.transid DESC
-	END
-	ELSE
-	BEGIN 
-		DECLARE @queryOutput NVARCHAR(MAX)
-		SET @queryOutput = 'SELECT' 
-							+ ' ' + @ColumnOutput 
-							+ ' FROM #MemBetTicket t'
-							+ '	ORDER BY t.transid DESC '
-		
-		EXEC sp_sqlexec @queryOutput
-	END
-	*/
-
 	SELECT
 		t.*,
 		e.currency
@@ -141,6 +124,9 @@ BEGIN
 
 	RETURN;
 END
+
+
+
 
 GO
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_BetTicket_SelMainInfo] TO [bodbDownlineNet]

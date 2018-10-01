@@ -1,11 +1,4 @@
 /*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb_archive]
-GO
-/****** Object:  StoredProcedure [dbo].[Age_CoreBetList_Mem_SelBetTicket]    Script Date: 5/11/2015 10:31:30 AM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 ALTER PROCEDURE [dbo].[Age_CoreBetList_BetTicket_SelBettransArc]
 (
@@ -47,6 +40,7 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180711@Kos: Support Poker Games [#Redmine: 97565]
+		- 20181006@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 
 	Param's Explanation:
 
@@ -143,6 +137,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.Transdate
 		, b.winlostdate
 		, CASE WHEN b.bettype IN (23102, 23002, 23202) THEN 0
@@ -218,7 +213,7 @@ BEGIN
 			WHEN c.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
 			ELSE ''
 		END AS ExtraInfo
-	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
+	FROM dbo.bettrans_bk AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN @custInfo AS ci ON c.custid = ci.custid
 	WHERE c.WhTicket = 3
@@ -247,6 +242,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.Transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -291,7 +287,7 @@ BEGIN
 		, 0 AS OddsSpread
 		, -1 AS BetdaqId
 		, '' AS ExtraInfo
-	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
+	FROM dbo.bettrans_bk AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN @custInfo AS ci ON c.custid = ci.custid
 		LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.refno AND bm.bettype = 18001
@@ -332,6 +328,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -398,7 +395,7 @@ BEGIN
 		END AS OddsSpread
 		, -1 AS BetdaqId
 		, '' AS ExtraInfo
-	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
+	FROM dbo.bettrans_bk AS b WITH (NOLOCK)
 		INNER JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN @custInfo AS ci ON c.custid = ci.custid
@@ -428,6 +425,7 @@ BEGIN
 		, b.Stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -470,7 +468,7 @@ BEGIN
 		, 0 AS OddsSpread
 		, -1 AS BetdaqId
 		, '' AS ExtraInfo
-	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
+	FROM dbo.bettrans_bk AS b WITH (NOLOCK)
 		INNER JOIN dbo.outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
@@ -500,6 +498,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -542,7 +541,7 @@ BEGIN
 		, 0 AS OddsSpread
 		, -1 AS BetdaqId
 		, '' AS ExtraInfo
-	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
+	FROM dbo.bettrans_bk AS b WITH (NOLOCK)
 		INNER JOIN dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 		INNER JOIN bodb02.dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
@@ -573,6 +572,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost
@@ -648,6 +648,7 @@ BEGIN
 		, b.stake
 		, b.actual_stake
 		, b.status
+		, 0 AS SettlementStatus
 		, b.transdate
 		, b.winlostdate
 		, (b.winlost - b.actual_stake) AS WinLost

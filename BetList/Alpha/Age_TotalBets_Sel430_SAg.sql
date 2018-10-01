@@ -1,24 +1,13 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE bodb02
-GO
-
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Age_TotalBets_Sel430_SAg]    Script Date: 1/25/2016 4:27:53 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_TotalBets_Sel430_SAg]
-	@CustId		INT,
-	@Language	VARCHAR(2) = 'E'
+	@CustId	INT
 AS
 
 /*
 	Created: 20110915@TOM
-	Task : Retrieve total bet of 1St Correct Score/Correct Score. (BetType: 4,30)
-	DB: DBAGE.bodb02
+	Task: Retrieve total bet of 1St Correct Score/Correct Score. (BetType: 4,30)
+	DB: DB042.bodb02
 	Original:Age_BetList_SelRunningByBettype_SAg
 
 	Revisions:
@@ -30,6 +19,8 @@ AS
 		- 20150407@Cody: Integrate new 60 bet types from BetRadar [Redmine: #32734]
 		- 20151203@Kos: Include bet type 405 2H Correct Score [Redmine: #47959]
 		- 20170721@Kos: Include bet type 416 Half Time/Full Time Correct Score (own) [Redmine: #53153]
+		- 20181008@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
+					- Remove param @Language
 */
 
 BEGIN
@@ -38,28 +29,29 @@ BEGIN
 	SELECT 
 		m.sporttype,
 		b.username,
-		m.leagueID,
+		m.leagueid,
 		b.bettype,
 		b.transid,
 		b.refno,
 		m.matchid,
 		m.matchcode,
-		m.homeID,
-		m.awayID,
-		CONVERT(FLOAT, b.hdp1) AS hdp1,
-		CONVERT(FLOAT, b.hdp2) AS hdp2,
+		m.homeid,
+		m.awayid,
+		b.hdp1,
+		b.hdp2,
 		b.odds,
 		b.modds,
 		CASE 
 			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 			ELSE b.status
 		END AS status,
+		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 		CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 		b.stake,
 		b.actual_stake,
 		b.transdate,
 		b.betteam,
-		b.betID,
+		b.betid,
 		b.spositiontaking,
 		b.mpositiontaking,
 		b.apositiontaking,
@@ -69,19 +61,18 @@ BEGIN
 		b.livehomescore,
 		b.liveawayscore,
 		b.liveindicator,
-		b.IP,
-		ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
-		b.OddsType,
+		b.ip,
+		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
+		b.oddstype,
 		ISNULL(b.transdesc, '') AS transdesc
  	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-	WHERE b.SRecommend = @custid
+	WHERE b.srecommend = @custid
 		AND b.bettype IN (4, 30, 152, 165, 166, 405, 413, 414, 416)
 		AND b.statusID IN (0, 1)
-	ORDER BY b.status, b.transid
+	ORDER BY b.transid DESC
 END
 
-	
 
 GO
 GRANT EXECUTE ON [dbo].[Age_TotalBets_Sel430_SAg] TO [bodbDownlineNet]
@@ -90,6 +81,3 @@ GRANT EXECUTE ON [dbo].[Age_TotalBets_Sel430_SAg] TO [bodbDownlineNetView]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_TotalBets_Sel430_SAg] TO vnteam
 GO
-
-
- 

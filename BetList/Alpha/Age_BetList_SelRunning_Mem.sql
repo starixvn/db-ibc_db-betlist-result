@@ -1,11 +1,10 @@
-﻿USE [bodb02]
-GO
+﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunning_Mem]
 	@CustId		INT			= NULL,
 	@FromDate	DATETIME	= '',
 	@ToDate		DATETIME	= '',
 	@GetAll		BIT			= 0,
-	@Language	VARCHAR(2)	= 'E',
 	@Username	VARCHAR(30)	= NULL, -- for API
 	@ProductIds	VARCHAR(MAX)
 AS
@@ -105,6 +104,8 @@ AS
 		- 20180705@Viet: Rewrite SP
 		- 20180731@Patrick: Index revolution [#Redmine: #98757]
 		- 20180803@Kos: Support Poker Games [#Redmine: 97565]
+		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
+					- Remove param @Language
 */
 
 BEGIN
@@ -118,57 +119,58 @@ BEGIN
 	END
 
 	DECLARE @BetListSelRunningByDateMem TABLE (
-		SportType		SMALLINT,
-		BetType			SMALLINT,
-		LeagueId		INT,
-		RefNo			BIGINT,
-		TransId			BIGINT,
-		BetId			BIGINT,
-		MatchCode		NVARCHAR(50),
-		Race			NVARCHAR(20),
-		MatchId			INT,
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		MOdds			MONEY,
-		Status			NVARCHAR(10),
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		TransDate		DATETIME,
-		WinLostDate		DATETIME,
-		BetTeam			NVARCHAR(20),
-		APositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		SPositionTaking SMALLMONEY,
-		ADiscount		SMALLMONEY,
-		MDiscount		SMALLMONEY,
-		SDiscount		SMALLMONEY,
-		LiveIndicator	BIT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		Ip				NVARCHAR(15),
-		IsNeutral		BIT,
-		OddsType		TINYINT,
-		ShowTime		NVARCHAR(50),
-		ComStatus		NVARCHAR(20),
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000),
-		OddsSpread		MONEY,
-		ExtraInfo		VARCHAR(1000),
-		SecAcceptFlag	BIT,
-		OddsId			INT,
-		CheckTime		DATETIME,
-		Custom1			NVARCHAR(50),
-		Custom2			NVARCHAR(50),
-		Custom3			NVARCHAR(50),
-		Gameid3rd		NVARCHAR(50),
-		Tranid3rd		NVARCHAR(64),
-		ProductID		INT,
-		EventType		INT,
-		SubProduct		VARCHAR(500),
-		TableID			TINYINT
+		SportType			SMALLINT,
+		BetType				SMALLINT,
+		LeagueId			INT,
+		RefNo				BIGINT,
+		TransId				BIGINT,
+		BetId				BIGINT,
+		MatchCode			NVARCHAR(50),
+		Race				NVARCHAR(20),
+		MatchId				INT,
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		MOdds				MONEY,
+		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		TransDate			DATETIME,
+		WinLostDate			DATETIME,
+		BetTeam				NVARCHAR(20),
+		APositionTaking		SMALLMONEY,
+		MPositionTaking		SMALLMONEY,
+		SPositionTaking		SMALLMONEY,
+		ADiscount			SMALLMONEY,
+		MDiscount			SMALLMONEY,
+		SDiscount			SMALLMONEY,
+		LiveIndicator		BIT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		Ip					NVARCHAR(15),
+		IsNeutral			BIT,
+		OddsType			TINYINT,
+		ShowTime			NVARCHAR(50),
+		ComStatus			NVARCHAR(20),
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000),
+		OddsSpread			MONEY,
+		ExtraInfo			VARCHAR(1000),
+		SecAcceptFlag		BIT,
+		OddsId				INT,
+		CheckTime			DATETIME,
+		Custom1				NVARCHAR(50),
+		Custom2				NVARCHAR(50),
+		Custom3				NVARCHAR(50),
+		Gameid3rd			NVARCHAR(50),
+		Tranid3rd			NVARCHAR(64),
+		ProductID			INT,
+		EventType			INT,
+		SubProduct			VARCHAR(500),
+		TableID				TINYINT
 	)
 
 	DECLARE @BetListDetail TABLE(
@@ -519,6 +521,7 @@ BEGIN
 								WHEN b.[Status] = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 								ELSE b.[Status]
 							END
+				,SettlementStatus = ISNULL(m.SettlementStatus, 0)
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0))
 				,ShowTime = ''
@@ -537,8 +540,9 @@ BEGIN
 				,MatchCode = m.matchcode
 				,Race = m.GroupMatch
 				,MatchId = 0
-				,homeID = m.teamID
+				,HomeId = m.teamID
 				,AwayId  = 0
+				,SettlementStatus = 0
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,Hdp1 = 0
 				,Hdp2 = 0
@@ -566,8 +570,9 @@ BEGIN
 				,MatchCode = ''
 				,Race = ''
 				,MatchId = 0
-				,homeID = 0
+				,HomeId = 0
 				,AwayId  = 0
+				,SettlementStatus = 0
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,LiveIndicator = 0
 				,LiveHomeScore = 0
@@ -591,6 +596,7 @@ BEGIN
 				,MatchId = CASE WHEN b.ProductID IN (5, 27) THEN m.matchid ELSE 0 END
 				,HomeId = CASE WHEN b.ProductID IN (5, 27) THEN m.homeid ELSE 0 END
 				,AwayId = CASE WHEN b.ProductID IN (5, 27) THEN m.awayid ELSE 0 END
+				,SettlementStatus = 0
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,Hdp2 = CASE WHEN b.ProductID IN (5, 27) THEN b.hdp2 ELSE 0 END
 				,[Status] = CASE
@@ -622,9 +628,10 @@ BEGIN
 				,LeagueId = r.LeagueID
 				,MatchCode = o.RacerNum
 				,Race = b.oddsid
-				,homeID = o.RacerID
-				,awayID = 0
-				,betteam = ''
+				,HomeId = o.RacerID
+				,AwayId = 0
+				,BetTeam = ''
+				,SettlementStatus = 0
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,OddsType = 0
 				,ShowTime = r.EventTime
@@ -647,7 +654,8 @@ BEGIN
 				,Race = ''
 				,MatchID = 0
 				,HomeId = 0
-				,AwayID = 0
+				,AwayId = 0
+				,SettlementStatus = 0
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,LiveIndicator = 0
 				,LiveHomeScore = 0
@@ -688,6 +696,7 @@ BEGIN
 				,OddsType = 0
 				,ShowTime = ''
 				,OddsSpread = 0
+				,SettlementStatus = 0
 				,ComStatus = CASE
 								WHEN b.ProductID = 33 THEN ISNULL(b.comstatus, '')
 								ELSE ''
@@ -717,6 +726,7 @@ BEGIN
 				,AwayID = m.awayID
 				,LiveIndicator = 0
 				,IsNeutral = ISNULL(m.IsNeutral, 0)
+				,SettlementStatus = 0
 				,OddsType = CASE WHEN b.SubProduct IN ('MG-SuperLive') THEN CONVERT(TINYINT, ISNULL(b.custom1, 0)) ELSE 0 END
 				,ShowTime = ISNULL(m.showtime,'')
 				,ExtraInfo = ''
@@ -742,6 +752,7 @@ BEGIN
 				,AwayID = 0
 				,LiveIndicator = 0
 				,IsNeutral = 0
+				,SettlementStatus = 0
 				,ShowTime = ''
 				,BetCheck = CASE
 								WHEN b.ProductID = 12 THEN b.Gameid3rd
@@ -769,6 +780,7 @@ BEGIN
 				,Hdp2 = 0
 				,BetTeam = CASE WHEN b.ProductID = 30 THEN b.custom3 ELSE '' END
 				,IsNeutral = 0
+				,SettlementStatus = 0
 				,OddsType = CASE WHEN b.ProductID = 30 THEN CONVERT(TINYINT, ISNULL(b.custom1, 0)) ELSE 0 END
 				,ShowTime = ''
 				,BetCheck = CASE WHEN b.ProductID = 30 THEN ISNULL(b.Tranid3rd, '') ELSE '' END
@@ -815,6 +827,7 @@ BEGIN
 				,Odds = 0
 				,MOdds = 0
 				,Status = 'Running'
+				,SettlementStatus = 0
 				,Betteam = ''
 				,LiveIndicator = 0
 				,LiveHomeScore = 0
@@ -912,6 +925,7 @@ BEGIN
 		,Odds
 		,MOdds
 		,Status
+		,SettlementStatus
 		,Stake
 		,Actual_Stake
 		,TransDate
