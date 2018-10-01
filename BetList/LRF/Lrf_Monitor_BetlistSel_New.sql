@@ -111,6 +111,7 @@ BEGIN
 		CustId			INT,
 		MatchId			INT,
 		BetType			SMALLINT,
+		ProductId		TINYINT,
 		TransId			BIGINT,
 		RefNo			BIGINT,
 		TransDate		DATETIME,
@@ -184,10 +185,6 @@ BEGIN
 			SET @BetFromList = 'x'
 		END
 
-		DECLARE @IsTest BIT
-
-		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
-
 		-- Check if @TransId and @TransId + 1 is combo ticket then reset @TransId
 		DECLARE @RefCode	BIGINT
 
@@ -211,6 +208,7 @@ BEGIN
 				b.custid,
 				b.matchid,
 				b.bettype,
+				0 AS ProductId,
 				b.transid,
 				b.refno,
 				b.transdate,
@@ -228,7 +226,7 @@ BEGIN
 				b.betteam,
 				b.oddstype,
 				b.currency AS CurrencyId,
-				ISNULL(d.SpecialLevel, 0) AS SpecialLevel,
+				0 AS SpecialLevel,
 				ISNULL(b.betcheck, '') AS BetCheck,
 				ISNULL(b.transdesc, '') AS TransDesc,
 				ISNULL(b.betdaqid, -1) AS BetdaqId,
@@ -246,21 +244,13 @@ BEGIN
 				ISNULL(b.RefCode, 0) AS RefCode,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
-				LEFT JOIN dbo.Dep_CustSpecialLevel AS d WITH (NOLOCK) ON b.custid = d.custid
 				INNER JOIN @TempAg AS a ON b.Recommend = a.CustId AND b.Currency = a.Currency
 			WHERE b.statusID IN (0, 1)
 				AND b.transid > @TransId
-				AND EXISTS (SELECT TOP(1) 1 FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-							WHERE b.bettype = Bettype
-								AND ProductID = 1
-								AND IsTest = @IsTest)
 				AND (@BetFrom = 0
 					OR ',' + @BetFromList + ',' LIKE '%,' + b.betfrom + ',%')
 				AND (@Currency = ''
 					OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
-				AND (@SpecialLevel = ''
-					OR (',' + @SpecialLevel + ',' LIKE '%,0,%' AND d.custid IS NULL)
-					OR (',' + @SpecialLevel + ',' LIKE '%,' + CONVERT(VARCHAR(3), d.SpecialLevel) + ',%' AND d.custid IS NOT NULL))
 				AND (@LiveIndicator = 3
 					OR (b.bettype IN (9, 29) AND b.livehomescore = @LiveIndicator)
 					OR (b.bettype NOT IN (9, 29) AND @LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
@@ -276,6 +266,7 @@ BEGIN
 				b.custid,
 				b.matchid,
 				b.bettype,
+				0 AS ProductId,
 				b.transid,
 				b.refno,
 				b.transdate,
@@ -293,7 +284,7 @@ BEGIN
 				b.betteam,
 				b.oddstype,
 				b.currency AS CurrencyId,
-				ISNULL(d.SpecialLevel, 0) AS SpecialLevel,
+				0 AS SpecialLevel,
 				ISNULL(b.betcheck, '') AS BetCheck,
 				ISNULL(b.transdesc, '') AS TransDesc,
 				ISNULL(b.betdaqid, -1) AS BetdaqId,
@@ -311,7 +302,6 @@ BEGIN
 				ISNULL(b.RefCode, 0) AS RefCode,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
-				LEFT JOIN dbo.Dep_CustSpecialLevel AS d WITH (NOLOCK) ON b.custid = d.custid
 				INNER JOIN @TempAg AS a ON b.Recommend = a.CustId AND b.Currency = a.Currency
 			WHERE b.statusID IN (0, 1)
 				AND b.transid > @TransId
@@ -320,9 +310,6 @@ BEGIN
 					OR ',' + @BetFromList + ',' LIKE '%,' + b.betfrom + ',%')
 				AND (@Currency = ''
 					OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
-				AND (@SpecialLevel = ''
-					OR (',' + @SpecialLevel + ',' LIKE '%,0,%' AND d.custid IS NULL)
-					OR (',' + @SpecialLevel + ',' LIKE '%,' + CONVERT(VARCHAR(3), d.SpecialLevel) + ',%' AND d.custid IS NOT NULL))
 				AND (@LiveIndicator = 3 OR b.livehomescore = @LiveIndicator)
 		END
 		ELSE IF @SportId > 0 AND @SportId < 999
@@ -332,6 +319,7 @@ BEGIN
 				b.custid,
 				b.matchid,
 				b.bettype,
+				0 AS ProductId,
 				b.transid,
 				b.refno,
 				b.transdate,
@@ -349,7 +337,7 @@ BEGIN
 				b.betteam,
 				b.oddstype,
 				b.currency AS CurrencyId,
-				ISNULL(d.SpecialLevel, 0) AS SpecialLevel,
+				0 AS SpecialLevel,
 				ISNULL(b.betcheck, '') AS BetCheck,
 				ISNULL(b.transdesc, '') AS TransDesc,
 				ISNULL(b.betdaqid, -1) AS BetdaqId,
@@ -367,39 +355,65 @@ BEGIN
 				ISNULL(b.RefCode, 0) AS RefCode,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
-				LEFT JOIN dbo.Dep_CustSpecialLevel AS d WITH (NOLOCK) ON b.custid = d.custid
 				INNER JOIN @TempAg AS a ON b.Recommend = a.CustId AND b.Currency = a.Currency
 			WHERE b.statusID IN (0, 1)
 				AND b.transid > @TransId
 				AND b.bettype NOT IN (9, 29)
-				AND EXISTS (SELECT TOP(1) 1 FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-							WHERE b.bettype = Bettype
-								AND ProductID = 1
-								AND IsTest = @IsTest)
-				AND (EXISTS (SELECT TOP(1) 1 FROM dbo.match AS m WITH (NOLOCK)
-							WHERE m.matchid = b.matchid
-								AND m.sporttype = @SportId
-								AND m.eventstatus = 'running'
-								AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
-								AND (@MatchId = 0 OR m.matchid = @MatchId))
-					OR EXISTS (SELECT TOP(1) 1 FROM (SELECT orid, leagueid FROM dbo.outright WITH (NOLOCK) WHERE oddsstatus = 'running') AS o
-								CROSS APPLY (SELECT l.leagueid FROM dbo.League AS l WITH (NOLOCK) WHERE o.leagueid = l.leagueid AND l.sporttype = @SportId) AS l2
-							WHERE o.orid = b.matchid
-								AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
-								AND (@MatchId = 0 OR o.orid = @MatchId)))
 				AND (@BetFrom = 0
 					OR ',' + @BetFromList + ',' LIKE '%,' + b.betfrom + ',%')
 				AND (@Currency = ''
 					OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
-				AND (@SpecialLevel = ''
-					OR (',' + @SpecialLevel + ',' LIKE '%,0,%' AND d.custid IS NULL)
-					OR (',' + @SpecialLevel + ',' LIKE '%,' + CONVERT(VARCHAR(3), d.SpecialLevel) + ',%' AND d.custid IS NOT NULL))
 				AND (@LiveIndicator = 3
 					OR (@LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
 				AND (@BetType = ''
 					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609))
 					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616))
 					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616)))
+		END
+
+		IF EXISTS (SELECT TOP(1) 1 FROM @Data)
+		BEGIN
+			IF @SportId >= 0 AND @SportId < 999
+			BEGIN
+				DECLARE @IsTest BIT
+
+				SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+				UPDATE b
+				SET ProductId = s.ProductID
+				FROM @Data AS b
+					INNER JOIN dbo.f_SportBettypeMatrixByProduct_Sel ('1', @IsTest) AS s ON b.bettype = s.bettype
+
+				DELETE @Data WHERE ProductId <> 1
+			END
+
+			IF @SportId > 0 AND @SportId < 999
+			BEGIN
+				DELETE b
+				FROM @Data AS b
+				WHERE NOT EXISTS (SELECT TOP(1) 1 FROM dbo.match AS m WITH (NOLOCK)
+								WHERE m.matchid = b.matchid
+									AND m.sporttype = @SportId
+									AND m.eventstatus = 'running'
+									AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
+									AND (@MatchId = 0 OR m.matchid = @MatchId))
+					AND NOT EXISTS (SELECT TOP(1) 1 FROM (SELECT orid, leagueid FROM dbo.outright WITH (NOLOCK) WHERE oddsstatus = 'running') AS o
+								CROSS APPLY (SELECT l.leagueid FROM dbo.League AS l WITH (NOLOCK) WHERE o.leagueid = l.leagueid AND l.sporttype = @SportId) AS l2
+								WHERE o.orid = b.matchid
+									AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
+									AND (@MatchId = 0 OR o.orid = @MatchId))
+			END
+
+			UPDATE b
+			SET b.SpecialLevel = ISNULL(d.SpecialLevel, 0)
+			FROM @Data AS b
+				INNER JOIN dbo.Dep_CustSpecialLevel AS d WITH (NOLOCK) ON b.custid = d.custid
+
+			IF @SpecialLevel <> ''
+			BEGIN
+				DELETE @Data
+				WHERE ',' + @SpecialLevel + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), SpecialLevel) + ',%'
+			END
 		END
 
 		-- Get data for summary ticket of multiple Bonus/Cash sub tickets
