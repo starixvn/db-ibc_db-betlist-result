@@ -1,5 +1,4 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Age_BetList_SelDeleted]
 	@CustId			INT,
 	@RoleId			INT,
@@ -58,7 +57,8 @@ AS
 		- 20180710@Kos: Don't support Poker Games [#Redmine: 97565]
 		- 20180807@Kos: Enhance and support Refund tickets [#Redmine: 98338]
 					- Support Poker Games
-
+		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
+		
 	Param's Explanation:
 		- @CustID: SAgentID
 */
@@ -248,12 +248,6 @@ BEGIN
 
 		IF @RoleId = 3
 		BEGIN
-			DECLARE @SRecommend INT
-
-			SELECT @SRecommend = srecommend
-			FROM dbo.custInfo WITH (NOLOCK)
-			WHERE custid = @CustId AND roleid = 3
-
 			INSERT INTO #Data (
 				TransId,
 				RefNo,
@@ -314,7 +308,6 @@ BEGIN
 				1 AS WhTicket
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.mrecommend = @CustId
-				AND b.srecommend = @SRecommend
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 		END
@@ -1376,11 +1369,6 @@ BEGIN
 
 	DROP TABLE #PagingData
 END
-
-
-
-
-
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelDeleted] TO [bodbDownlineNet]
 GO

@@ -1,7 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE bodb02
-GO
-
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_BetListByDayAll]
 	@CustId			INT,
 	@FromDate		SMALLDATETIME,
@@ -121,6 +118,7 @@ AS
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 		- 20180910@Kos: HotFix - Missing Seat # in Poker Games [#Redmine: 101215]
+		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 
 	Param's Explanation:
 		+ @TransType:
@@ -2295,7 +2293,7 @@ BEGIN
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_custid_matchid_bettype)
+				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
@@ -2405,7 +2403,7 @@ BEGIN
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_custid_matchid_bettype)
+				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
@@ -2601,7 +2599,7 @@ BEGIN
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_custid_matchid_bettype)
+				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
@@ -2703,7 +2701,7 @@ BEGIN
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_custid_matchid_bettype)
+				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
@@ -3343,15 +3341,6 @@ BEGIN
 
 	SELECT * FROM @DetailData
 END
-
-
-
-
-
-
-
-
-
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetListByDayAll] TO [bodbAdminNet]
 GO

@@ -36,6 +36,8 @@ AS
 		- 20180329@Kos: Modify code to use index in mrecommend on bettrans14 range [#Redmine: 91150]
 					- Change RefNo column data type from NVARCHAR(30) to BIGINT
 					- Don't return betstatus, matchcode, homeid, awayid, leagueid, matchid, sporttype anymore
+		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
+							
 */
 
 BEGIN
@@ -195,10 +197,8 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			ISNULL(b.transdesc, '') AS TransDesc
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-			INNER JOIN dbo.custinfo AS ci WITH (NOLOCK) ON b.mrecommend = ci.custid
 		WHERE
-			ci.srecommend = @CustId
-			AND ci.roleid = 3
+			b.srecommend = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 			AND b.bettype = @BetType
 			AND b.matchid = @BetType
