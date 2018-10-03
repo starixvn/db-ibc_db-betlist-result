@@ -1,4 +1,6 @@
-﻿ALTER PROCEDURE [dbo].[Acc_BetList_SelMatchResult]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
+ALTER PROCEDURE [dbo].[Acc_BetList_SelMatchResult]
 	@MatchId	INT,
 	@BetType	SMALLINT	= NULL,
 	@BetId		BIGINT		= NULL
@@ -38,6 +40,8 @@ AS
 		- 20180320@Kos: Support Fast Market 2 [Redmine: #90708]
 		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20180423@Kos: Hotfix - redundant Result Detail in result popup [Redmine: #94133]
+		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+					- Move eventstatus data transform to web (no change for Tennis)
 */
 
 BEGIN
@@ -57,7 +61,6 @@ BEGIN
 			m.betstatus,
 			m.hthomescore,
 			m.htawayscore,
-			DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP) AS playtime,
 			m.leagueid,
 			m.matchid,
 			m.homeid,
@@ -77,23 +80,15 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS eventstatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
-			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			m.goalrecord,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			m.showtime
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
@@ -188,7 +183,6 @@ BEGIN
 			m.betstatus,
 			m.hthomescore,
 			m.htawayscore,
-			DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP) AS playtime,
 			m.leagueid,
 			m.matchid,
 			m.homeid,
@@ -208,15 +202,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS eventstatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
@@ -224,9 +210,9 @@ BEGIN
 			m.goalrecord,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending,
+			0 AS SettlementStatus,
 			m.showtime
-		FROM dbo.match14 AS m WITH(NOLOCK)
+		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 		WHERE m.matchid = @MatchId
@@ -339,15 +325,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS eventstatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
@@ -355,7 +333,7 @@ BEGIN
 			m.goalrecord,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending,
+			0 AS SettlementStatus,
 			m.showtime
 		FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
