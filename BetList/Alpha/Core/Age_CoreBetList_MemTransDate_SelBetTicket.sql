@@ -1,5 +1,4 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Age_CoreBetList_MemTransDate_SelBetTicket]
 	-- MEM INFO
 	@CustId				INT
@@ -39,7 +38,8 @@ AS
 		- 20180202@Kos: Don't support Cockfighting [#Redmine: 86086]
 		- 20180330@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180418@Kos: Support Pragmatic Casino [#Redmine: 92160]
-
+		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
+		
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
 		- @TransStatus		: string formation (0,1,102,103,111,112,113)
@@ -117,7 +117,6 @@ BEGIN
 		INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 		INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 	WHERE b.transdate BETWEEN @FromDate AND @ToDate
-		AND b.recommend = @Recommend
 		AND b.custid = @CustId
 		--exclude running tickets of MetricGaming
 		AND ( bt.SubProduct NOT IN ('MG-SuperLive')
