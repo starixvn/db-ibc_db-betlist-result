@@ -146,7 +146,6 @@ BEGIN
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 			WHERE b.winlostdate BETWEEN @FDate AND @ToDate
-				AND b.recommend = @Recommend 
 				AND b.custid = @CustId
 				--exclude running tickets of MetricGaming
 				AND ( bt.SubProduct NOT IN ('MG-SuperLive')
@@ -230,7 +229,6 @@ BEGIN
 					INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 				WHERE b.winlostdate BETWEEN @FDate AND @ToDate
 					AND b.winlostdate >= @Yesterday
-					AND b.recommend = @Recommend
 					AND b.custid = @CustId
 					AND (bt.ProductId IN (21, 22, 24, 32)
 						OR (bt.ProductId = 6 AND bt.SubProduct <> ''))
@@ -263,7 +261,6 @@ BEGIN
 					INNER JOIN @BettypeMatrix AS bt ON b.gameID = bt.bettype
 					INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 				WHERE b.winlostdate BETWEEN @FDate AND @ToDate
-					AND b.recommend = @Recommend
 					AND b.custid = @CustId
 					AND bt.ProductID = 6
 					AND EXISTS (	SELECT 1
@@ -294,7 +291,6 @@ BEGIN
 					INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 					INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 				WHERE b.winlostdate BETWEEN @FDate AND @ToDate
-					AND b.recommend = @Recommend
 					AND b.custid = @CustId
 					AND bt.ProductID = 15
 					AND EXISTS (	SELECT 1
@@ -334,7 +330,6 @@ BEGIN
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 			WHERE b.winlostdate BETWEEN @FromDate AND @TDate
-				AND b.recommend = @Recommend
 				AND b.custid = @CustId
 		END
 
@@ -364,7 +359,6 @@ BEGIN
 					INNER JOIN @BettypeMatrix AS bt ON b.gameID = bt.bettype
 					INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 				WHERE b.winlostdate BETWEEN @FromDate AND @TDate
-					AND b.recommend = @Recommend
 					AND b.custid = @CustId
 					AND bt.ProductID = 6
 					AND EXISTS (	SELECT 1
@@ -395,7 +389,6 @@ BEGIN
 					INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 					INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
 				WHERE b.winlostdate BETWEEN @FromDate AND @TDate
-					AND b.recommend = @Recommend
 					AND b.custid = @CustId
 					AND bt.ProductID = 15
 					AND EXISTS (	SELECT 1
