@@ -1,11 +1,5 @@
 ﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
 
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 ALTER PROCEDURE [dbo].[Acc_BetList_Exchange]
 	@CustId		INT,
 	@FromDate	DATETIME,
@@ -23,6 +17,7 @@ AS
 
 	Revisions:
 		- 20180313@Kos: First revision [#Redmine: 91808]
+		- 20180313@Kos: Exclude tickets which don't have ticket detail [#Redmine: 102898]
 */
 
 BEGIN
@@ -83,6 +78,10 @@ BEGIN
 	FROM bodb_3rdProduct.dbo.Sum_winloss_Exchange AS b WITH (NOLOCK)
 	WHERE b.CustID = @CustId
 		AND b.settledDate BETWEEN @FromDate AND @TempToDate
+		AND EXISTS ( SELECT 1 FROM bodb_3rdProduct.dbo.Bettrans_Exchange AS d WITH (NOLOCK)
+					WHERE d.userId = b.userId
+						AND d.eventID = b.eventID
+						AND d.marketID = b.marketID )
 
 	IF EXISTS (SELECT 1 FROM @Data)
 	BEGIN
