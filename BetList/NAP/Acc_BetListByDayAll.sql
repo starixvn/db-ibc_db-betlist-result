@@ -1347,6 +1347,7 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
 				AND b.gameID BETWEEN 801 AND 899
+				AND b.statusID IN (0,1)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus WHERE statusID IN (0, 1))
 
 			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports)
