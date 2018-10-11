@@ -15,6 +15,7 @@ AS
 	DB: DBACC.bodb02
 	Revisions:
 		- 20180604@Kos: Created [#Redmine: 80941]
+		- 20181011@Kos: Fix Licensee WL of Ba tickets [#Redmine: 80941]
 */
 
 BEGIN
@@ -186,6 +187,13 @@ BEGIN
 		RefCode			BIGINT
 	)
 
+	DECLARE @IsBA BIT = 0
+
+	IF EXISTS (SELECT TOP(1) 1 FROM DBLIC.bodb_Licensee.dbo.LicenseeBATransaction WITH (NOLOCK) WHERE transid = @TransId)
+	BEGIN
+		SET @IsBA = 1
+	END
+
 	IF @WhTicket = 2	-- Bettrans
 	BEGIN
 		-- Sportbooks (EventType = 1)
@@ -225,7 +233,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN @IsBA = 1 THEN 0
+					ELSE - (b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.ip,
@@ -365,7 +376,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN @IsBA = 1 THEN 0
+					ELSE - (b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.ip,
@@ -419,7 +433,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN @IsBA = 1 THEN 0
+					ELSE - (b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.ip,
@@ -543,7 +560,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN @IsBA = 1 THEN 0
+					ELSE - (b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.ip,
@@ -683,7 +703,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN @IsBA = 1 THEN 0
+					ELSE - (b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.ip,
@@ -737,7 +760,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN @IsBA = 1 THEN 0
+					ELSE - (b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.ip,
@@ -861,7 +887,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN @IsBA = 1 THEN 0
+					ELSE - (b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.ip,
@@ -1001,7 +1030,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN @IsBA = 1 THEN 0
+					ELSE - (b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.ip,
@@ -1056,7 +1088,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN @IsBA = 1 THEN 0
+					ELSE - (b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.ip,
