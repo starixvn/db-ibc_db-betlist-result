@@ -1,11 +1,4 @@
-/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByBettypeMatch]
 	@AgentList		VARCHAR(MAX),
@@ -53,6 +46,7 @@ AS
 		- 20170324@Kos: Support CashOut [#Redmine: 71963]
 		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
+		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 */
 
 BEGIN
@@ -82,42 +76,43 @@ BEGIN
 	SET @BetTeam = RTRIM(LTRIM(ISNULL(@BetTeam, '')))
 
 	CREATE TABLE #Data (
-		CustId			INT,
-		SportType		INT,
-		Username		NVARCHAR(50),
-		BetType			SMALLINT,
-		TransId			BIGINT,
-		MatchCode		VARCHAR(50),
-		Race			VARCHAR(50),
-		LeagueId		INT,
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		Status			NVARCHAR(50),
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		TransDate		DATETIME,
-		BetTeam			VARCHAR(50),
-		LiveIndicator	INT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		Discount		DECIMAL(9,8),
-		Ip				NVARCHAR(20),
-		IsNeutral		BIT,
-		OddsType		TINYINT,
-		BetId			BIGINT,
-		Currency		SMALLINT,
-		RefNo			BIGINT,
-		ShowTime		NVARCHAR(50),
-		BetCheck		NVARCHAR(50),
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000),
-		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT,
-		WalletType		TINYINT,
-		RefCode			BIGINT
+		CustId				INT,
+		SportType			INT,
+		Username			NVARCHAR(50),
+		BetType				SMALLINT,
+		TransId				BIGINT,
+		MatchCode			VARCHAR(50),
+		Race				VARCHAR(50),
+		LeagueId			INT,
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		Status				NVARCHAR(50),
+		SettlementStatus	TINYINT,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		TransDate			DATETIME,
+		BetTeam				VARCHAR(50),
+		LiveIndicator		INT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		Discount			DECIMAL(9,8),
+		Ip					NVARCHAR(20),
+		IsNeutral			BIT,
+		OddsType			TINYINT,
+		BetId				BIGINT,
+		Currency			SMALLINT,
+		RefNo				BIGINT,
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(50),
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		OriginalStake		MONEY,
+		OriginalBetType		SMALLINT,
+		WalletType			TINYINT,
+		RefCode				BIGINT
 	)
 
 	IF @BetType = 10
@@ -138,6 +133,7 @@ BEGIN
 			0 AS hdp2,
 			b.odds,
 			b.status,
+			0 AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
 			b.Transdate,
@@ -195,6 +191,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
 			b.transdate,
@@ -209,7 +206,7 @@ BEGIN
 			b.betid,
 			b.currency,
 			b.refno,
-			ISNULL(m.showtime,'') AS showtime,
+			ISNULL(m.showtime, '') AS showtime,
 			b.betcheck,
 			ISNULL(b.betdaqid, -1) AS BetdaqId,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,

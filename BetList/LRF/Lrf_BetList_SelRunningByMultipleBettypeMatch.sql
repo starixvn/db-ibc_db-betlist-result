@@ -1,11 +1,5 @@
-/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
+/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByMultipleBettypeMatch]
 	@AgentList		VARCHAR(MAX),
 	@MatchId		INT,
@@ -34,6 +28,7 @@ AS
 		- 20170327@Kos: Support CashOut [#Redmine: 71963]
 		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
+		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 */
 
 BEGIN
@@ -60,58 +55,49 @@ BEGIN
 		RETURN
 	END CATCH
 
-	-- Get bet types
-	IF ISNULL(@BetType, '') = ''
-		SET @BetType = ''
-
-	DECLARE @tblbettype AS TABLE (BetType INT)
-
-	INSERT INTO @tblbettype (BetType)
-	SELECT CONVERT(INT, VAL) AS BetType
-	FROM strSplit(@BetType, ',')
-
-	SET @BetTeam = RTRIM(LTRIM(ISNULL(@BetTeam,'')))
+	SET @BetTeam = RTRIM(LTRIM(ISNULL(@BetTeam, '')))
 
 	CREATE TABLE #Data (
-		CustId			INT,
-		SportType		INT,
-		Username		NVARCHAR(50),
-		BetType			SMALLINT,
-		TransId			BIGINT,
-		MatchCode		VARCHAR(50),
-		Race			VARCHAR(50),
-		LeagueId		INT,
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		Status			NVARCHAR(50),
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		TransDate		DATETIME,
-		BetTeam			VARCHAR(50),
-		LiveIndicator	INT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		Discount		DECIMAL(9, 8),
-		Ip				NVARCHAR(20),
-		IsNeutral		BIT,
-		OddsType		TINYINT,
-		BetId			BIGINT,
-		Currency		SMALLINT,
-		RefNo			BIGINT,
-		ShowTime		NVARCHAR(50), -- table - shoe - hand of Live Casino
-		BetCheck		NVARCHAR(50),
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000),
-		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT,
-		WalletType		TINYINT,
-		RefCode			BIGINT
+		CustId				INT,
+		SportType			INT,
+		Username			NVARCHAR(50),
+		BetType				SMALLINT,
+		TransId				BIGINT,
+		MatchCode			VARCHAR(50),
+		Race				VARCHAR(50),
+		LeagueId			INT,
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		Status				NVARCHAR(50),
+		SettlementStatus	TINYINT,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		TransDate			DATETIME,
+		BetTeam				VARCHAR(50),
+		LiveIndicator		INT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		Discount			DECIMAL(9, 8),
+		Ip					NVARCHAR(20),
+		IsNeutral			BIT,
+		OddsType			TINYINT,
+		BetId				BIGINT,
+		Currency			SMALLINT,
+		RefNo				BIGINT,
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(50),
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		OriginalStake		MONEY,
+		OriginalBetType		SMALLINT,
+		WalletType			TINYINT,
+		RefCode				BIGINT
 	)
 
-	IF EXISTS (SELECT 1 FROM @tblbettype)
+	IF @BetType IS NOT NULL AND @BetType <> ''
 	BEGIN
 		INSERT INTO #Data
 		SELECT
@@ -132,6 +118,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
 			b.transdate,
@@ -164,9 +151,9 @@ BEGIN
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-			INNER JOIN @tblbettype AS bt ON b.bettype = bt.bettype
 		WHERE
 			b.matchid = @MatchId
+			AND ',' + @BetType + ',' LIKE '%,' + CONVERT(VARCHAR(5), b.bettype) + ',%'
 			AND EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.recommend)
 			AND EXISTS (SELECT 1 FROM @TempAg WHERE Currency = b.currency)
 			AND b.statusID IN (0, 1)

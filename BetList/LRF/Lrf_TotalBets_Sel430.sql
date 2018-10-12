@@ -31,6 +31,7 @@ AS
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
+		- 20181121@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 */
 
 BEGIN
@@ -58,40 +59,41 @@ BEGIN
 	END CATCH
 
 	DECLARE @Data TABLE (
-		CustId			INT,
-		SportType		INT,
-		Username		NVARCHAR(50),
-		BetType			SMALLINT,
-		TransId			BIGINT,
-		RefNo			BIGINT,
-		MatchCode		VARCHAR(50),
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		Modds			MONEY,
-		Status			NVARCHAR(50),
-		Stake			MONEY, 
-		Actual_Stake	MONEY,
-		TransDate		DATETIME,
-		BetTeam			VARCHAR(50),
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		LiveIndicator	INT,
-		Discount		DECIMAL(9,8),
-		LeagueId		INT,
-		Ip				NVARCHAR(30),
-		IsNeutral		BIT,
-		OddsType		TINYINT,
-		Currency		SMALLINT,
-		TransDesc		NVARCHAR(1000),
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000),
-		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT,
-		WalletType		TINYINT,
-		RefCode			BIGINT
+		CustId				INT,
+		SportType			INT,
+		Username			NVARCHAR(50),
+		BetType				SMALLINT,
+		TransId				BIGINT,
+		RefNo				BIGINT,
+		MatchCode			VARCHAR(50),
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		Modds				MONEY,
+		Status				NVARCHAR(50),
+		SettlementStatus	TINYINT,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		TransDate			DATETIME,
+		BetTeam				VARCHAR(50),
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		LiveIndicator		INT,
+		Discount			DECIMAL(9,8),
+		LeagueId			INT,
+		Ip					NVARCHAR(30),
+		IsNeutral			BIT,
+		OddsType			TINYINT,
+		Currency			SMALLINT,
+		TransDesc			NVARCHAR(1000),
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		OriginalStake		MONEY,
+		OriginalBetType		SMALLINT,
+		WalletType			TINYINT,
+		RefCode				BIGINT
 	)
 
 	INSERT INTO @Data
@@ -113,6 +115,7 @@ BEGIN
 			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 			ELSE b.status
 		END AS status,
+		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,		
 		b.stake,
 		b.actual_stake,
 		b.transdate,
@@ -123,7 +126,7 @@ BEGIN
 		b.discount,
 		m.leagueid,
 		b.ip,
-		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
+		ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 		b.oddstype,
 		b.currency,
 		ISNULL(b.transdesc, '') AS transdesc,
@@ -147,7 +150,7 @@ BEGIN
 		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.bettype IN (4, 30, 152, 165, 166, 405, 413, 414, 416)
 		AND b.statusID IN (0, 1)
-		AND b.tpositiontaking <> 0 
+		AND b.tpositiontaking <> 0
 	ORDER BY
 		b.status,
 		b.transid

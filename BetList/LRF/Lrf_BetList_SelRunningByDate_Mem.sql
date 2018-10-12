@@ -95,6 +95,7 @@ AS
 		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
 		- 20180918@Kos: Support Pragmatic Casino [#Redmine: 92318]
 		- 20181005@Kos: Don't support Racing anymore [#Redmine: 99378]
+		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 */
 
 BEGIN
@@ -189,44 +190,45 @@ BEGIN
 	-- end filer bettypes by sporttype
 
 	CREATE TABLE #BetListSelRunningByDateMem (
-		SportType		INT,
-		Username		NVARCHAR(50),
-		BetType			SMALLINT,
-		LeagueId		INT,
-		RefNo			BIGINT,
-		TransId			BIGINT,
-		BetId			BIGINT,
-		MatchCode		NVARCHAR(50),
-		Race			NVARCHAR(50),
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		Modds			MONEY,
-		Status			NVARCHAR(50),
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		TransDate		DATETIME,
-		BetTeam			NVARCHAR(50),
-		Discount		DECIMAL(9,8),
-		LiveIndicator	BIT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		Ip				NVARCHAR(30),
-		IsNeutral		BIT,
-		OddsType		INT,
-		ShowTime		NVARCHAR(50),
-		MatchId			INT,
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000),
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000),
-		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT,
-		WalletType		TINYINT,
-		RefCode			BIGINT,
-		OddsSpread		MONEY
+		SportType			INT,
+		Username			NVARCHAR(50),
+		BetType				SMALLINT,
+		LeagueId			INT,
+		RefNo				BIGINT,
+		TransId				BIGINT,
+		BetId				BIGINT,
+		MatchCode			NVARCHAR(50),
+		Race				NVARCHAR(50),
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		Modds				MONEY,
+		Status				NVARCHAR(50),
+		SettlementStatus	TINYINT,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		TransDate			DATETIME,
+		BetTeam				NVARCHAR(50),
+		Discount			DECIMAL(9,8),
+		LiveIndicator		BIT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		Ip					NVARCHAR(30),
+		IsNeutral			BIT,
+		OddsType			INT,
+		ShowTime			NVARCHAR(50),
+		MatchId				INT,
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000),
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		OriginalStake		MONEY,
+		OriginalBetType		SMALLINT,
+		WalletType			TINYINT,
+		RefCode				BIGINT,
+		OddsSpread			MONEY
 	)
 
 	CREATE TABLE #TempBATicket (
@@ -329,6 +331,7 @@ BEGIN
 			b.Odds,
 			b.Modds,
 			b.Status,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			b.Stake,
 			b.Actual_Stake,
 			b.TransDate,
@@ -375,6 +378,7 @@ BEGIN
 			b.Odds,
 			b.Modds,
 			b.Status,
+			0 AS SettlementStatus,
 			b.Stake,
 			b.Actual_Stake,
 			b.TransDate,
@@ -425,6 +429,7 @@ BEGIN
 			b.Odds,
 			b.Modds,
 			b.status,
+			0 AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
 			b.transdate,
@@ -477,6 +482,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
 			b.transdate,
@@ -541,6 +547,7 @@ BEGIN
 			b.odds,
 			b.modds,
 			b.status,
+			0 AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
 			b.transdate,
@@ -600,6 +607,7 @@ BEGIN
 			b.odds,
 			b.modds,
 			b.status,
+			0 AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
 			b.transdate,
@@ -662,6 +670,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'  
 				ELSE b.status
 			END AS status,
+			0 AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
 			b.transdate,
@@ -722,6 +731,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'  
 				ELSE b.status
 			END AS status,
+			0 AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
 			b.transdate,
@@ -787,6 +797,7 @@ BEGIN
 			END AS Odds,
 			0 AS MOdds,
 			t.status,
+			0 AS SettlementStatus,
 			t.stake,
 			t.actual_stake,
 			t.transdate,
@@ -856,6 +867,7 @@ BEGIN
 			0 AS odds,
 			0 AS modds,
 			'Running' AS Status,
+			0 AS SettlementStatus,
 			SUM(brng.stake) AS Stake,
 			SUM(brng.actual_stake) AS Actual_Stake,
 			b.transdate,
@@ -934,6 +946,7 @@ BEGIN
 			0 AS odds,
 			0 AS modds,
 			'Running' AS Status,
+			0 AS SettlementStatus,
 			SUM(blc.stake) AS Stake,
 			SUM(blc.actual_stake) AS Actual_Stake,
 			b.transdate,
@@ -1000,6 +1013,7 @@ BEGIN
 			0 AS odds,
 			0 AS modds,
 			b.status,
+			0 AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
 			b.transdate,
@@ -1177,7 +1191,6 @@ END
 
 
 GO
-
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelRunningByDate_Mem] TO [bodbLicenseeNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelRunningByDate_Mem] TO vnteam
