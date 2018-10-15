@@ -1,12 +1,5 @@
 /*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 ALTER PROCEDURE [dbo].[Lrf_Result_MatchSelByLeague_Detail]
 	@MatchId INT
 AS
@@ -28,6 +21,8 @@ AS
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180320@Kos: Exclude Fast Market 2 result [#Redmine: 90879]
 		- 20180412@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20181015@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
+					- Move eventstatus data transform to web (no change for Tennis)
 
 	-------
 	EXEC Lrf_Result_MatchSelByLeague_Detail
@@ -76,15 +71,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS EventStatus,
 			m.showtime,
 			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
@@ -92,7 +79,7 @@ BEGIN
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
@@ -183,15 +170,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS eventstatus,
 			m.showtime,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
@@ -199,7 +178,7 @@ BEGIN
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending
+			0 AS SettlementStatus
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.matchID = m.matchid AND r.ResourceId = '00'

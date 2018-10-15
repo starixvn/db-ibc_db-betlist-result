@@ -1,13 +1,5 @@
 ﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
-USE [bodb02]
-GO
- 
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResult]
 	@MatchId	INT,
 	@RaceNo		VARCHAR(50)	= NULL,
@@ -47,11 +39,12 @@ AS
 		- 20180320@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180406@Kos: Support Betradar Virtual Basketball [Redmine: #90881]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
+		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
+					- Move eventstatus data transform to web (no change for Tennis)
 
 		*******************
 		sample test case:
-			exec Lrf_BetList_SelMatchResult @MatchID=10514601, @RaceNo=default, @BetType = 1324,
-				@Betid='801', @LicenseeID=1, @UserID=10
+			exec Lrf_BetList_SelMatchResult @MatchID=10514601, @RaceNo=default, @BetType=1324, @Betid='801'
 */
 
 BEGIN
@@ -99,15 +92,7 @@ BEGIN
 							WHEN 3 THEN 'Refund FT'
 							ELSE m.eventstatus
 						END
-					ELSE
-						CASE
-							WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-							WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-							WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-							WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-							WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-							ELSE m.eventstatus
-						END
+					ELSE m.eventstatus
 				END AS EventStatus,
 				ISNULL(mr.refund, 0) AS IsRefund,
 				ISNULL(mr.calrefund, 0) AS IsCalRefund,
@@ -115,7 +100,7 @@ BEGIN
 				m.goalrecord,
 				ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 				ISNULL(mr.calculate, 0) AS calculate,
-				ISNULL(mr.IsPending, 0) AS IsPending,
+				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				ISNULL(m.showtime, '') AS showtime,
 				m.homeid2
 			FROM dbo.match AS m WITH (NOLOCK)
@@ -234,15 +219,7 @@ BEGIN
 							WHEN 3 THEN 'Refund FT'
 							ELSE m.eventstatus
 						END
-					ELSE
-						CASE
-							WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-							WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-							WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-							WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-							WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-							ELSE m.eventstatus
-						END
+					ELSE m.eventstatus
 				END AS EventStatus,
 				ISNULL(mr.refund, 0) AS IsRefund,
 				ISNULL(mr.calrefund, 0) AS IsCalRefund,
@@ -250,7 +227,7 @@ BEGIN
 				m.goalrecord,
 				ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 				ISNULL(mr.calculate, 0) AS calculate,
-				ISNULL(mr.IsPending, 0) AS IsPending,
+				0 AS SettlementStatus,
 				ISNULL(m.showtime, '') AS showtime,
 				m.homeid2
 			FROM dbo.match14 AS m WITH (NOLOCK)
@@ -369,15 +346,7 @@ BEGIN
 							WHEN 3 THEN 'Refund FT'
 							ELSE m.eventstatus
 						END
-					ELSE
-						CASE
-							WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-							WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-							WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-							WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-							WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-							ELSE m.eventstatus
-						END
+					ELSE m.eventstatus
 				END AS EventStatus,
 				ISNULL(mr.refund, 0) AS IsRefund,
 				ISNULL(mr.calrefund, 0) AS IsCalRefund,
@@ -385,7 +354,7 @@ BEGIN
 				m.goalrecord,
 				ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 				ISNULL(mr.calculate, 0) AS calculate,
-				ISNULL(mr.IsPending, 0) AS IsPending,
+				0 AS SettlementStatus,
 				ISNULL(m.showtime, '') AS showtime,
 				m.homeid2
 			FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
@@ -611,7 +580,7 @@ END
 
 
 
- 
+
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResult] TO [bodbLicenseeNet]
 GO

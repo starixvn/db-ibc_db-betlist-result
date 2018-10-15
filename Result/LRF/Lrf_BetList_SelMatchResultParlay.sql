@@ -1,12 +1,5 @@
 ﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
-USE [bodb02]
-GO
- 
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResultParlay]
 	@RefNo	BIGINT
 AS
@@ -30,12 +23,14 @@ AS
 		- 20170623@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180307@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20181015@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
+					- Move eventstatus data transform to web (no change for Tennis)
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	-- Get Sport Bettype Matrix (support Sportsbook only)
+	-- Get Sport Bettype Matrix (support Sportsbook and Virtual Sports 2 only)
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -48,29 +43,29 @@ BEGIN
 	WHERE ProductID IN (1, 27)
 
 	DECLARE @tmpParlay TABLE (
-		SportType		INT,
-		LeagueId		INT,
-		MatchId			INT,
-		HomeId			INT,
-		AwayId			INT,
-		HtHomeScore		INT,
-		HtAwayScore		INT,
-		FinalHomeScore	INT,
-		FinalAwayScore	INT,
-		KickOffTime		DATETIME,
-		EventDate		DATETIME,
-		IsNeutral		BIT,
-		BetStatus		VARCHAR(50),
-		EventStatus		VARCHAR(15),
-		IsRefund		BIT,
-		IsCalRefund		BIT,
-		GoalRecord		VARCHAR(50),
-		MatchCode		VARCHAR(50),
-		IsHTCal			BIT,
-		Calculate		BIT,
-		IsPending		BIT,
-		BetType			SMALLINT,
-		BetCheck		VARCHAR(50)
+		SportType			INT,
+		LeagueId			INT,
+		MatchId				INT,
+		HomeId				INT,
+		AwayId				INT,
+		HtHomeScore			INT,
+		HtAwayScore			INT,
+		FinalHomeScore		INT,
+		FinalAwayScore		INT,
+		KickOffTime			DATETIME,
+		EventDate			DATETIME,
+		IsNeutral			BIT,
+		BetStatus			VARCHAR(50),
+		EventStatus			VARCHAR(15),
+		IsRefund			BIT,
+		IsCalRefund			BIT,
+		GoalRecord			VARCHAR(50),
+		MatchCode			VARCHAR(50),
+		IsHTCal				BIT,
+		Calculate			BIT,
+		SettlementStatus	TINYINT,
+		BetType				SMALLINT,
+		BetCheck			VARCHAR(50)
 	)
 
 	DECLARE @tmpResultDetail TABLE (
@@ -114,15 +109,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS EventStatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
@@ -130,7 +117,7 @@ BEGIN
 			m.matchcode,
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			bm.bettype,
 			bm.betcheck
 		FROM
@@ -241,15 +228,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END
+				ELSE m.eventstatus
 			END AS EventStatus,
 			ISNULL(mr.refund, 0) IsRefund,
 			ISNULL(mr.calrefund, 0) IsCalRefund,
@@ -257,7 +236,7 @@ BEGIN
 			m.matchcode,
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending,
+			0 AS SettlementStatus,
 			bm.bettype,
 			bm.betcheck
 		FROM
@@ -367,15 +346,7 @@ BEGIN
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
 					END
-				ELSE
-					CASE
-						WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-						WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-						WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-						WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-						WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-						ELSE m.eventstatus
-					END 
+				ELSE m.eventstatus
 			END AS eventstatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
@@ -383,7 +354,7 @@ BEGIN
 			m.matchcode,
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(mr.IsPending, 0) AS IsPending,
+			0 AS SettlementStatus,
 			bm.Bettype,
 			bm.Betcheck
 		FROM
@@ -395,9 +366,9 @@ BEGIN
 				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo ) AS bm
-			INNER JOIN DBARC.bodb_Archive.dbo.match_BK AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
+			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_bk AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (1, 2, 5))
 		BEGIN
