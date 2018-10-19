@@ -1,12 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Lrf_Result_SportSelByDate]    Script Date: 12/02/2014 10:07:48 AM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_Result_SportSelByDate]
 	@EventDate		DATETIME,
@@ -43,6 +35,7 @@ AS
 		- 20180320@Kos: Exclude Fast Market 2 result [#Redmine: 90879]
 		- 20180412@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
+		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 
 	Sample test case:
 		exec Lrf_Result_SportSelByDate @EventDate='2013-10-06 00:00:00',@licenseeid=1
@@ -92,14 +85,21 @@ BEGIN
 					FROM dbo.ResultDetail3rd WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
 				) AS b ON m.matchid = b.MatchID AND m.sporttype = 193
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetailES WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+				) AS e ON m.matchid = e.MatchID AND m.sporttype = 43
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
-				OR (mr.IsHTCal = 1 AND m.eventstatus = 'running')
-				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution, BAIO show running Match but settled least one type
-				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for BetRadar show running Match but settled least one type
-				OR (ISNULL(b.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar Virtual Basketball show running Match but settled least one type
+				OR (m.eventstatus = 'running'
+					AND (mr.IsHTCal = 1
+						OR ISNULL(ss.MatchID, 0) <> 0		-- Sportting Solution, BAIO show running Match but settled least one type
+						OR ISNULL(br.MatchID, 0) <> 0		-- BetRadar show running Match but settled least one type
+						OR ISNULL(b.MatchID, 0) <> 0		-- BetRadar Virtual Basketball show running Match but settled least one type
+						OR ISNULL(e.MatchID, 0) <> 0)))		-- E-Sports show running Match but settled least one type
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
@@ -151,14 +151,21 @@ BEGIN
 					FROM dbo.ResultDetail3rd14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
 				) AS b ON m.matchid = b.MatchID AND m.sporttype = 193
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetailES14 WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+				) AS e ON m.matchid = e.MatchID AND m.sporttype = 43
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
-				OR (mr.IsHTCal = 1 AND m.eventstatus = 'running')
-				OR (ISNULL(ss.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for Sportting Solution, BAIO show running Match but settled least one type
-				OR (ISNULL(br.MatchID, 0) <> 0 AND m.eventstatus = 'running')	-- condition for BetRadar show running Match but settled least one type
-				OR (ISNULL(b.MatchID, 0) <> 0 AND m.eventstatus = 'running'))	-- condition for BetRadar Virtual Basketball show running Match but settled least one type
+				OR (m.eventstatus = 'running'
+					AND (mr.IsHTCal = 1
+						OR ISNULL(ss.MatchID, 0) <> 0		-- Sportting Solution, BAIO show running Match but settled least one type
+						OR ISNULL(br.MatchID, 0) <> 0		-- BetRadar show running Match but settled least one type
+						OR ISNULL(b.MatchID, 0) <> 0		-- BetRadar Virtual Basketball show running Match but settled least one type
+						OR ISNULL(e.MatchID, 0) <> 0)))		-- E-Sports show running Match but settled least one type
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
@@ -192,6 +199,4 @@ END
 
 GO
 GRANT EXECUTE ON [dbo].Lrf_Result_SportSelByDate TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].Lrf_Result_SportSelByDate TO [vnteam]
 GO

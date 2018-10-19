@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResult]
 	@MatchId	INT,
@@ -41,6 +41,7 @@ AS
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 					- Move eventstatus data transform to web (no change for Tennis)
+		- 20181122@Kos: Support E-Sports 2 [#Redmine: 100721]
 
 		*******************
 		sample test case:
@@ -121,7 +122,7 @@ BEGIN
 				SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
 
 			-- Get result detail
-			IF @SportType <> 193
+			IF @SportType NOT IN (43, 193)
 			BEGIN
 				SELECT
 					d.MatchId,
@@ -159,6 +160,26 @@ BEGIN
 									AND d.ResourceId LIKE f.ResourceID
 									AND (@BetType NOT IN (606, 607, 613, 617)
 										OR d.ResourceId LIKE '%' + @ResourceId)))))
+				ORDER BY d.ResourceID
+			END
+			ELSE IF @SportType = 43
+			BEGIN
+				SELECT
+					d.MatchId,
+					d.ResourceId,
+					d.HomeValue,
+					d.AwayValue,
+					d.ResultStatusID,
+					d.SettlementStatusID,
+					d.OtherInfo
+				FROM dbo.ResultDetailES AS d WITH (NOLOCK)
+					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+				WHERE d.MatchId = @MatchId
+					AND (LEN(d.ResourceId) = 2
+						OR (d.SettlementStatusID > 0
+							AND d.ResourceId LIKE f.ResourceID
+							AND d.ResourceId LIKE '%' + @ResourceId))
 				ORDER BY d.ResourceID
 			END
 			ELSE
@@ -248,7 +269,7 @@ BEGIN
 				SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
 
 			-- Get result detail
-			IF @SportType <> 193
+			IF @SportType NOT IN (43, 193)
 			BEGIN
 				SELECT
 					d.MatchId,
@@ -286,6 +307,26 @@ BEGIN
 									AND d.ResourceId LIKE f.ResourceID
 									AND (@BetType NOT IN (606, 607, 613, 617)
 										OR d.ResourceId LIKE '%' + @ResourceId)))))
+				ORDER BY d.ResourceID
+			END
+			ELSE IF @SportType = 43
+			BEGIN
+				SELECT
+					d.MatchId,
+					d.ResourceId,
+					d.HomeValue,
+					d.AwayValue,
+					d.ResultStatusID,
+					d.SettlementStatusID,
+					d.OtherInfo
+				FROM dbo.ResultDetailES14 AS d WITH (NOLOCK)
+					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+				WHERE d.MatchId = @MatchId
+					AND (LEN(d.ResourceId) = 2
+						OR (d.SettlementStatusID > 0
+							AND d.ResourceId LIKE f.ResourceID
+							AND d.ResourceId LIKE '%' + @ResourceId))
 				ORDER BY d.ResourceID
 			END
 			ELSE
@@ -375,7 +416,7 @@ BEGIN
 				SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
 
 			-- Get result detail
-			IF @SportType <> 193
+			IF @SportType NOT IN (43, 193)
 			BEGIN
 				SELECT
 					d.MatchId,
@@ -413,6 +454,26 @@ BEGIN
 									AND d.ResourceId LIKE f.ResourceID
 									AND (@BetType NOT IN (606, 607, 613, 617)
 										OR d.ResourceId LIKE '%' + @ResourceId)))))
+				ORDER BY d.ResourceID
+			END
+			ELSE IF @SportType = 43
+			BEGIN
+				SELECT
+					d.MatchId,
+					d.ResourceId,
+					d.HomeValue,
+					d.AwayValue,
+					d.ResultStatusID,
+					d.SettlementStatusID,
+					d.OtherInfo
+				FROM DBARC.bodb_Archive.dbo.ResultDetailES_bk AS d WITH (NOLOCK)
+					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+				WHERE d.MatchId = @MatchId
+					AND (LEN(d.ResourceId) = 2
+						OR (d.SettlementStatusID > 0
+							AND d.ResourceId LIKE f.ResourceID
+							AND d.ResourceId LIKE '%' + @ResourceId))
 				ORDER BY d.ResourceID
 			END
 			ELSE
@@ -583,6 +644,4 @@ END
 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResult] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelMatchResult] TO [vnteam]
 GO

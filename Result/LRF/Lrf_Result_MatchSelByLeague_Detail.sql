@@ -1,4 +1,4 @@
-/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_Result_MatchSelByLeague_Detail]
 	@MatchId INT
@@ -23,6 +23,7 @@ AS
 		- 20180412@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20181015@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 					- Move eventstatus data transform to web (no change for Tennis)
+		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 
 	-------
 	EXEC Lrf_Result_MatchSelByLeague_Detail
@@ -126,6 +127,23 @@ BEGIN
 			ORDER BY MatchID,
 				ResourceID
 		END
+		ELSE IF @SportType = 43
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailES WITH (NOLOCK)
+			WHERE MatchID = @MatchId
+				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+			ORDER BY MatchID,
+				ResourceId
+		END
 		ELSE IF @SportType = 193
 		BEGIN
 			INSERT INTO @Detail
@@ -225,6 +243,23 @@ BEGIN
 			ORDER BY MatchID,
 				ResourceID
 		END
+		ELSE IF @SportType = 43
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailES14 WITH (NOLOCK)
+			WHERE MatchID = @MatchId
+				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+			ORDER BY MatchID,
+				ResourceId
+		END
 		ELSE IF @SportType = 193
 		BEGIN
 			INSERT INTO @Detail
@@ -246,8 +281,8 @@ BEGIN
 	SELECT * FROM @Detail
 END
 
+
+
 GO
 GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelByLeague_Detail] TO [bodbLicenseeNet] 
-GO
-GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelByLeague_Detail] TO [vnteam] 
 GO

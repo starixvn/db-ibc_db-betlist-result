@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_Result_MatchSelByLeague]
 	@FromDate		DATETIME,
@@ -42,6 +42,7 @@ AS
 		- 20180412@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20181015@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 					- Move eventstatus data transform to web (no change for Tennis)
+		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 
 	Sample call
 		exec Lrf_Result_MatchSelByLeague @FromDate='2014-10-15 00:00:00',@SportType=5,@LeagueID=0,@IsShowAll=1
@@ -158,6 +159,14 @@ BEGIN
 							AND ResourceID NOT LIKE '226%'
 							AND ResourceID NOT LIKE '227%')
 						OR @SportType = 2)
+				UNION ALL
+				SELECT DISTINCT MatchID
+				FROM dbo.ResultDetailES WITH (NOLOCK)
+				WHERE SettlementStatusID > 0 AND @SportType = 43
+				UNION ALL
+				SELECT DISTINCT MatchID
+				FROM dbo.ResultDetailES14 WITH (NOLOCK)
+				WHERE SettlementStatusID > 0 AND @SportType = 43
 				UNION ALL
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetail3rd WITH (NOLOCK)
@@ -396,6 +405,23 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
+		ELSE IF @SportType = 43
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailES WITH (NOLOCK)
+			WHERE MatchID IN (SELECT MatchId FROM #Match)
+				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+			ORDER BY MatchID,
+				ResourceId
+		END
 		ELSE IF @SportType = 193
 		BEGIN
 			INSERT INTO @Detail
@@ -451,6 +477,23 @@ BEGIN
 			ORDER BY MatchID,
 				ResourceId
 		END
+		ELSE IF @SportType = 43
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailES14 WITH (NOLOCK)
+			WHERE MatchID IN (SELECT MatchId FROM #Match)
+				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+			ORDER BY MatchID,
+				ResourceId
+		END
 		ELSE IF @SportType = 193
 		BEGIN
 			INSERT INTO @Detail
@@ -480,8 +523,4 @@ END
 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelByLeague] TO [bodbLicenseeNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelByLeague] TO [vnteam] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_Result_MatchSelByLeague] TO [vnteam] AS [dbo]
 GO

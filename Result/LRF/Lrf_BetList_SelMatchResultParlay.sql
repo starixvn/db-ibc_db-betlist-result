@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResultParlay]
 	@RefNo	BIGINT
@@ -25,6 +25,7 @@ AS
 		- 20180307@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20181015@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 					- Move eventstatus data transform to web (no change for Tennis)
+		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 */
 
 BEGIN
@@ -173,6 +174,28 @@ BEGIN
 								OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
+		BEGIN
+			INSERT INTO @tmpResultDetail
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetailES AS d WITH (NOLOCK)
+				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE p.SportType = 43		-- E-Sports
+				AND (LEN(d.ResourceID) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceID LIKE f.ResourceID
+						AND d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', '')))
+		END
+
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
 		BEGIN
 			INSERT INTO @tmpResultDetail
@@ -289,6 +312,28 @@ BEGIN
 							AND d.ResourceId LIKE f.ResourceID
 							AND (p.BetType NOT IN (606, 607, 613, 617)
 								OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
+		END
+
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
+		BEGIN
+			INSERT INTO @tmpResultDetail
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetailES14 AS d WITH (NOLOCK)
+				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE p.SportType = 43		-- E-Sports
+				AND (LEN(d.ResourceID) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceID LIKE f.ResourceID
+						AND d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', '')))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
@@ -409,6 +454,28 @@ BEGIN
 								OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
+		BEGIN
+			INSERT INTO @tmpResultDetail
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM DBARC.bodb_Archive.dbo.ResultDetailES_bk AS d WITH (NOLOCK)
+				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
+			WHERE p.SportType = 43		-- E-Sports
+				AND (LEN(d.ResourceID) = 2
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceID LIKE f.ResourceID
+						AND d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', '')))
+		END
+
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
 		BEGIN
 			INSERT INTO @tmpResultDetail
@@ -450,6 +517,4 @@ END
 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResultParlay] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelMatchResultParlay] TO [vnteam]
 GO
