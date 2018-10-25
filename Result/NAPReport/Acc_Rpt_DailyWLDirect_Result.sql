@@ -22,6 +22,7 @@ AS
 		- 20171004@Kos: Use table TradingBettypeMapping instead of hardcode [Redmine: #83679]
 		- 20181108@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 104013]
 					- Move eventstatus data transform to web (no change for Tennis)
+		- 20181025@Kos: Support E-Sports 2 [Redmine: #100635]
 */
 
 BEGIN
@@ -83,21 +84,38 @@ BEGIN
 		FROM dbo.match WITH (NOLOCK)
 		WHERE matchid = @MatchId
 
-		-- Get result detail for Basketball and Tennis main result only
-		SELECT
-			MatchID,
-			ResourceID,
-			HomeValue,
-			AwayValue,
-			ResultStatusID,
-			SettlementStatusID,
-			OtherInfo
-		FROM dbo.ResultDetail WITH (NOLOCK)
-		WHERE MatchID = @MatchId
-			AND LEN(ResourceID) = 2
-			AND (@SportType = 2
-				OR (@SportType = 5 AND SettlementStatusID > 0))
-		ORDER BY ResourceID
+		-- Get result detail for Basketball, Tennis, E-Sports main result only
+		IF @SportType IN (2, 5)
+		BEGIN
+			SELECT
+				MatchID,
+				ResourceID,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetail WITH (NOLOCK)
+			WHERE MatchID = @MatchId
+				AND LEN(ResourceID) = 2
+				AND (@SportType = 2
+					OR (@SportType = 5 AND SettlementStatusID > 0))
+			ORDER BY ResourceID
+		END
+		ELSE IF @SportType = 43
+		BEGIN
+			SELECT
+				MatchID,
+				ResourceID,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailES WITH (NOLOCK)
+			WHERE MatchID = @MatchId AND LEN(ResourceID) = 2
+			ORDER BY ResourceID
+		END
 	END
 	ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)	-- Bettrans14 range
 	BEGIN
@@ -153,24 +171,40 @@ BEGIN
 		FROM dbo.match14 WITH (NOLOCK)
 		WHERE matchid = @MatchId
 
-		-- Get result detail for Basketball and Tennis main result only
-		SELECT
-			MatchID,
-			ResourceID,
-			HomeValue,
-			AwayValue,
-			ResultStatusID,
-			SettlementStatusID,
-			OtherInfo
-		FROM dbo.ResultDetail14 WITH (NOLOCK)
-		WHERE MatchID = @MatchId
-			AND LEN(ResourceID) = 2
-			AND (@SportType = 2
-				OR (@SportType = 5 AND SettlementStatusID > 0))
-		ORDER BY ResourceID
+		-- Get result detail for Basketball, Tennis, E-Sports main result only
+		IF @SportType IN (2, 5)
+		BEGIN
+			SELECT
+				MatchID,
+				ResourceID,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetail14 WITH (NOLOCK)
+			WHERE MatchID = @MatchId
+				AND LEN(ResourceID) = 2
+				AND (@SportType = 2
+					OR (@SportType = 5 AND SettlementStatusID > 0))
+			ORDER BY ResourceID
+		END
+		ELSE IF @SportType = 43
+		BEGIN
+			SELECT
+				MatchID,
+				ResourceID,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetail14ES WITH (NOLOCK)
+			WHERE MatchID = @MatchId AND LEN(ResourceID) = 2
+			ORDER BY ResourceID
+		END
 	END
 END
-
 
 
 GO
