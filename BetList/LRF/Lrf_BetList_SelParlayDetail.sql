@@ -1,15 +1,8 @@
 ﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Lrf_BetList_SelParlayDetail]    Script Date: 04/24/2015 08:52:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelParlayDetail]
 	@TransId	BIGINT,
-	@Langkey	VARCHAR(10) = 'en-US'
+	@CustId		INT
 AS
 
 /*
@@ -32,6 +25,8 @@ AS
 		- 20170620@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180514@Kos: Return ExchangeId instead of CurrencyCode [#Redmine: 94845]
+		- 20181030@Kos: Hotfix - View parlay detail crossline [#Redmine: 103935]
+					- Add new param @CustId, remove param @Langkey
 */
 
 BEGIN
@@ -75,15 +70,13 @@ BEGIN
 		TransDesc		NVARCHAR(1000))
 
 	DECLARE @RefNo		BIGINT,
-		@CustId			INT,
 		@CurrencyId		INT
 
 	SELECT
 		@RefNo = b.refno,
-		@CustId = b.custid,
 		@CurrencyId = b.currency
 	FROM dbo.bettrans AS b WITH (NOLOCK)
-	WHERE b.transid = @TransId
+	WHERE b.transid = @TransId AND b.custid = @CustId
 
 	IF @RefNo IS NULL
 	BEGIN
@@ -92,7 +85,7 @@ BEGIN
 			@CustId = b.custid,
 			@CurrencyId = b.currency
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-		WHERE b.transid = @TransId
+		WHERE b.transid = @TransId AND b.custid = @CustId
 
 		IF @RefNo IS NULL
 		BEGIN
@@ -101,7 +94,7 @@ BEGIN
 				@CustId = b.custid,
 				@CurrencyId = b.currency
 			FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-			WHERE b.transid = @TransId
+			WHERE b.transid = @TransId AND b.custid = @CustId
 		END
 	END
 
