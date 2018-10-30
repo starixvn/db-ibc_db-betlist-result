@@ -1,8 +1,9 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetCheckM_All]
 	@TransId	BIGINT,
 	@RefNo		BIGINT,
-	@Language	NVARCHAR(2) = 'E'
+	@CustId		INT
 AS
 
 /*
@@ -26,6 +27,8 @@ AS
 		- 20170207@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
 		- 20170616@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
+		- 20181022@Kos: Hotfix - View Parlay crossline [Redmine: #103171]
+					- Add new param @CustId, remove param @Language
 */
 
 BEGIN
@@ -54,7 +57,7 @@ BEGIN
 		Hdp2			SMALLMONEY,
 		Odds			MONEY,
 		BetTeam			NVARCHAR(20),
-		StatusId		INT,
+		StatusId		TINYINT,
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
 		LiveIndicator	BIT,
@@ -74,21 +77,21 @@ BEGIN
 	SELECT @CurrencyName = ex.currency
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
-	WHERE b.transid = @TransId
+	WHERE b.transid = @TransId AND b.custid = @CustId
 
 	IF @CurrencyName IS NULL
 	BEGIN
 		SELECT @CurrencyName = ex.currency
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
-		WHERE b.transid = @TransId
+		WHERE b.transid = @TransId AND b.custid = @CustId
 
 		IF @CurrencyName IS NULL
 		BEGIN
 			SELECT @CurrencyName = ex.currency
 			FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
-			WHERE b.transid = @TransId
+			WHERE b.transid = @TransId AND b.custid = @CustId
 		END
 	END
 
@@ -96,7 +99,7 @@ BEGIN
 	IF EXISTS(	SELECT 1
 				FROM dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo)
+				WHERE bm.refno = @RefNo AND bm.custid = @CustId)
 	BEGIN
 		INSERT INTO @BetListMP
 		SELECT
@@ -151,7 +154,7 @@ BEGIN
 	IF EXISTS(	SELECT 1
 				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo)
+				WHERE bm.refno = @RefNo AND bm.custid = @CustId)
 	BEGIN
 		INSERT INTO @BetListMP
 		SELECT
@@ -206,7 +209,7 @@ BEGIN
 	IF EXISTS(	SELECT 1
 				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo)
+				WHERE bm.refno = @RefNo AND bm.custid = @CustId)
 	BEGIN
 		INSERT INTO @BetListMP
 		SELECT
