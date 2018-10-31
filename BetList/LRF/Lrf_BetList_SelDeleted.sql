@@ -60,6 +60,7 @@ AS
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
+		- 20181031@Patrick: DB052 indexes revolution [RedmineID: #103572]
 
 	Param's Explanation:
 		- @AgentList: Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -271,24 +272,11 @@ BEGIN
 		END AS OddsSpread
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
-		INNER JOIN
-			(	SELECT
-					sporttype,
-					homeid,
-					awayid,
-					leagueid,
-					matchid,
-					matchcode,
-					eventdate,
-					isneutral,
-					showtime,
-					kickofftime
-				FROM dbo.match WITH (NOLOCK)
-				WHERE eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
-			) AS m ON b.matchid = m.matchid
+		INNER JOIN dbo.match m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 	WHERE
 		b.custid = @CustID
+		AND b.winlostdate  > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 		AND b.recommend IN (SELECT CustId FROM @TempAg)
 		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.statusID IN (101, 102)
@@ -340,20 +328,11 @@ BEGIN
 		0 AS OddsSpread
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
-		INNER JOIN
-			(	SELECT
-					teamid AS homeid,
-					leagueid,
-					orid,
-					matchcode,
-					groupmatch,
-					eventdate
-				FROM dbo.outright WITH (NOLOCK)
-				WHERE eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
-			) AS m ON b.matchid = m.orid
+		INNER JOIN dbo.outright m WITH (NOLOCK) ON b.matchid = m.orid
 		INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 	WHERE
 		b.bettype = 10
+		AND b.winlostdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 		AND b.custid = @CustID
 		AND b.recommend IN (SELECT CustId FROM @TempAg)
 		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
@@ -405,23 +384,11 @@ BEGIN
 	FROM 
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-		INNER JOIN
-			(	SELECT
-					vsr.SportType,
-					vso.RacerID AS homeid,
-					vsr.LeagueID,
-					vsr.EventID,
-					vso.Orid,
-					CONVERT(VARCHAR(20), vso.RacerNum) AS matchcode,
-					'' groupmatch,
-					vso.EventDate,
-					vsr.EventTime
-				FROM dbo.VSOutright AS vso WITH (NOLOCK) 
-					INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
-				WHERE vso.EventDate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
-			) AS vhr ON b.oddsid = vhr.Orid
+		INNER JOIN dbo.VSOutright AS vso WITH (NOLOCK) ON b.oddsid = vhr.Orid
+		INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
 	WHERE
 		sbt.ProductID = 5
+		AND b.winlostdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 		AND sbt.EventType = 3
 		AND b.custid = @CustID
 		AND b.recommend IN (SELECT CustId FROM @TempAg)

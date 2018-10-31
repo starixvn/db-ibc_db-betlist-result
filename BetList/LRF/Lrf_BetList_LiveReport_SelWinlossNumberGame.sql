@@ -37,6 +37,7 @@ AS
 		- 20150124@Winnie: add base currency GBP
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY, sporttype from TINYINT to SMALLINT [Redmine: #48660]
 		- 20170301@Kos: Support sub licensees [#Redmine: 71679]
+		- 20181031@Patrick: DB052 indexes revolution [RedmineID: #103572]
 
 	Param's Explanation:
 		@Liveindicator : indicate that whether the report will get live data or not
@@ -229,7 +230,7 @@ BEGIN
 				' + @LicenseeWL + '*e.GBP LicenseeWLGBP,
 				comm*e.GBP commGBP
 			FROM
-				dbo.bettrans14 b WITH (NOLOCK,INDEX(bettrans143))
+				dbo.bettrans14 b WITH (NOLOCK,INDEX(IX_recommend))
 				INNER JOIN #TempAg t ON b.recommend = t.custid
 				INNER JOIN dbo.match14 m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #TempExchange e ON b.currency = e.exchangeID AND b.winlostdate = e.exchangeDate

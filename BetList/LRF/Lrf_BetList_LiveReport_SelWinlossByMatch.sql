@@ -1,12 +1,4 @@
 ﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
 ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch]
 	@AgentList		VARCHAR(MAX),
 	@MatchId		INT,
@@ -58,6 +50,7 @@ AS
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
+		- 20181031@Patrick: DB052 indexes revolution [RedmineID: #103572]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -211,7 +204,7 @@ BEGIN
 				0 AS RefCode,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM
-				dbo.bettrans AS b WITH (NOLOCK,INDEX=IXU_transid)
+				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN bodb_licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
@@ -275,7 +268,7 @@ BEGIN
 				0 AS RefCode,
 				0 AS OddsSpread
 			FROM
-				dbo.bettrans AS b WITH (NOLOCK,INDEX=IXU_transid)
+				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype

@@ -36,6 +36,8 @@ AS
 		- 20170721@Kos: Support Keno Lottery [#Redmine: 79997]
 		- 20180103@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
+		- 20181031@Patrick: DB052 indexes revolution [RedmineID: #103572]
+
 */
 
 BEGIN
@@ -89,7 +91,7 @@ BEGIN
 		AND (sbt.ProductID NOT IN (1, 5, 8, 28)
 			OR (sbt.ProductID = 1 AND sbt.EventType <> 2)
 			OR (sbt.ProductID = 5 AND sbt.EventType <> 3))
-		AND m.eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
+		AND b.winlostdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 	GROUP BY b.custid
 
 	-- Outright
@@ -102,7 +104,7 @@ BEGIN
 		INNER JOIN @TempAg AS ag ON b.recommend = ag.CustId AND b.Currency = ag.Currency
 	WHERE b.statusID IN (101, 102)
 		AND b.bettype = 10
-		AND m.eventdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
+		AND b.winlostdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 	GROUP BY b.custid
 
 	-- Virtual Sports (EventType = 3)
@@ -116,7 +118,7 @@ BEGIN
 	WHERE b.statusID IN (101, 102)
 		AND sbt.ProductID = 5
 		AND sbt.EventType = 3
-		AND m.EventDate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
+		AND b.winlostdate > DATEADD(DAY, -3, CURRENT_TIMESTAMP)
 	GROUP BY b.custid
 
 	-- Keno, Lottery
