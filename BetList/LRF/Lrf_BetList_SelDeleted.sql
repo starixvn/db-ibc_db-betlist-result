@@ -384,7 +384,7 @@ BEGIN
 	FROM 
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-		INNER JOIN dbo.VSOutright AS vso WITH (NOLOCK) ON b.oddsid = vhr.Orid
+		INNER JOIN dbo.VSOutright AS vso WITH (NOLOCK) ON b.oddsid = vso.Orid
 		INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
 	WHERE
 		sbt.ProductID = 5
