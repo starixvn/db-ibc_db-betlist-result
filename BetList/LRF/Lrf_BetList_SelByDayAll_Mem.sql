@@ -95,6 +95,7 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
+		- 20181102@Patrick: DB052 indexes revolution [RedmineID :#103572]
 
 	Param's Explanation:
 		+ @TransType:
@@ -1531,6 +1532,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON t.gameID = sbt.bettype
 			WHERE
 				t.custid = @CustId
+				AND t.statusID IN (0,1)
 				AND t.winlostdate = @FromDate
 				AND sbt.ProductID IN (8, 13, 15, 28)
 				AND t.statusID IN (SELECT [statusID] FROM @tmpStatus)
