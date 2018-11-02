@@ -1,11 +1,4 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_PlatformWinLoss_Mem]
 	@AgentList		VARCHAR(MAX),
@@ -100,6 +93,7 @@ AS
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
+		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -134,7 +128,7 @@ AS
 		DECLARE @p31 MONEY
 		DECLARE @p32 MONEY
 		DECLARE @p33 MONEY
-		EXEC [Lrf_BetList_PlatformWinLoss_Mem] @licenseeid=1,@userid=68,@custid=16052548,@currencyid=45,
+		EXEC [Lrf_BetList_PlatformWinLoss_Mem] @AgentList=N'<ROOT><Agent AgentId="791088" Currency="6"/><Agent AgentId="860379" Currency="6"/></ROOT>',@custid=16052548,
 			@FromDate='2016-03-01 00:00:00',@ToDate='2016-03-30 00:00:00',
 			@MoveBetsDay='2016-03-20 00:00:00',@BalanceUpDay='2016-03-19 00:00:00',
 			@showSB=1,@showNG=0,@ShowVS=1,@ShowCS=0,@ShowKN=1,@ShowMGCLC=0,@ShowMGCRNG=1,@ShowVB=1,
@@ -400,7 +394,7 @@ BEGIN
 			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS ba WITH (NOLOCK) ON b.transid = ba.transid
+			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.transid
 		WHERE
 			b.winlostdate BETWEEN @TempFromDate AND @tdate
 			AND b.custid = @CustId
@@ -1128,7 +1122,7 @@ BEGIN
 			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM
 			dbo.bettrans14 AS b WITH (NOLOCK)
-			INNER JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS ba WITH (NOLOCK) ON b.transid = ba.transid
+			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.transid
 		WHERE
 			b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 			AND b.custid = @CustId
@@ -1701,7 +1695,7 @@ BEGIN
 			END AS OriginalBetType,
 			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-			INNER JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS ba WITH (NOLOCK) ON b.transid = ba.transid
+			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.transid
 		WHERE
 			b.winlostdate BETWEEN @fdate AND @TempToDate
 			AND b.custid = @CustId

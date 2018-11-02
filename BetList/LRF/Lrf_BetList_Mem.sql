@@ -48,6 +48,7 @@ AS
 
 	Revisions:
 		- 20180711@Kos: Created [#Redmine: 80941]
+		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
 */
 
 BEGIN
@@ -543,7 +544,14 @@ BEGIN
 			UPDATE b
 			SET BATransId = ba.TransID
 			FROM #Data AS b
-				INNER JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS ba WITH (NOLOCK) ON b.transid = ba.TransID
+				INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID
+			WHERE b.WhTicket = 1
+
+			UPDATE b
+			SET BATransId = ba.TransID
+			FROM #Data AS b
+				INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.TransID
+			WHERE b.WhTicket IN (2, 3)
 
 			DECLARE @ShowSB BIT = 0
 

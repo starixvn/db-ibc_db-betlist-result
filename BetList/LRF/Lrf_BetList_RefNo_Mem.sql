@@ -1,4 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Lrf_BetList_RefNo_Mem]
 	@AgentList		VARCHAR(MAX),
 	@RefNo			BIGINT,
@@ -16,6 +17,7 @@ AS
 	Revisions:
 		- 20180604@Kos: Created [#Redmine: 80941]
 		- 20181011@Kos: Fix Licensee WL of Ba tickets [#Redmine: 80941]
+		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
 */
 
 BEGIN
@@ -189,7 +191,8 @@ BEGIN
 
 	DECLARE @IsBA BIT = 0
 
-	IF EXISTS (SELECT TOP(1) 1 FROM DBLIC.bodb_Licensee.dbo.LicenseeBATransaction WITH (NOLOCK) WHERE transid = @TransId)
+	IF EXISTS (SELECT TOP(1) 1 FROM bodb_Licensee.dbo.LicenseeBATransaction_active WITH (NOLOCK) WHERE transid = @TransId)
+		OR EXISTS (SELECT TOP(1) 1 FROM bodb_Licensee.dbo.LicenseeBATransaction_bk WITH (NOLOCK) WHERE transid = @TransId)
 	BEGIN
 		SET @IsBA = 1
 	END

@@ -123,6 +123,7 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
+		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
 */
 
 BEGIN
@@ -343,7 +344,7 @@ BEGIN
 			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction BA WITH (NOLOCK) ON b.transid = BA.transid
+			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.winlostdate BETWEEN @TempFromDate AND @todate
 			AND b.recommend = @Recommend --to improve performance
@@ -1466,7 +1467,7 @@ BEGIN
 			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM
 			dbo.bettrans14 AS b WITH (NOLOCK)
-			INNER JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
+			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 			AND b.recommend = @Recommend
@@ -2304,7 +2305,7 @@ BEGIN
 			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM
 			bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
-			INNER JOIN DBLIC.bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
+			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.winlostdate BETWEEN @fromdate AND @TempToDate 
 			AND b.recommend = @Recommend
