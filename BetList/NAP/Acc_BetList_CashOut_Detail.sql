@@ -1,11 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Acc_BetList_CashOut_Detail]    Script Date: 3/21/2017 2:46:15 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 ALTER PROCEDURE [dbo].[Acc_BetList_CashOut_Detail]
 	@TransId			BIGINT,
 	@RefNo				BIGINT,
@@ -20,6 +14,7 @@ AS
 	Original:
 	Revisions:
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
+		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 */
 
 BEGIN
@@ -62,60 +57,61 @@ BEGIN
 
 	-- Create temp table
 	DECLARE @Data TABLE (
-		BetType			INT,
-		TransId			BIGINT,
-		BetId			BIGINT,
-		RefNo			NVARCHAR(50),
-		MatchCode		NVARCHAR(50),
-		EventDate		SMALLDATETIME,
-		SDiscount		SMALLMONEY,
-		ADiscount		SMALLMONEY,
-		Discount		SMALLMONEY,
-		HomeId			INT,
-		AwayId			INT,
-		SettleTime		DATETIME,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		OddsType		TINYINT,
-		Status			NVARCHAR(50),
-		ComStatus		NVARCHAR(50),
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		TransDate		DATETIME,
-		BetTeam			NVARCHAR(50),
-		SPositionTaking	SMALLMONEY,
-		MPositionTaking	SMALLMONEY,
-		APositionTaking	SMALLMONEY,
-		LiveIndicator	BIT,
-		Modds			MONEY,
-		CustId			INT,
-		LiveHomeScore	INT,
-		LiveAwayScore	INT,
-		FinalHomeScore	INT,
-		FinalAwayScore	INT,
-		LeagueId		INT,
-		SportType		SMALLINT,
-		Ip				NVARCHAR(15),
-		BetFrom			NVARCHAR (1),
-		MatchId			INT,
-		IsNeutral		BIT,
-		WinLost			MONEY,
-		Commission		MONEY,
-		SComm			MONEY,
-		AComm			MONEY,
-		Comm			MONEY,
-		AWinLost		MONEY,
-		MWinLost		MONEY,
-		SWinLost		MONEY,
-		ShowTime		NVARCHAR(50),
-		WinLostDate		SMALLDATETIME,
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000),
-		OddsSpread		SMALLMONEY,
-		OriginalBetType	INT,
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000)
+		BetType				INT,
+		TransId				BIGINT,
+		BetId				BIGINT,
+		RefNo				NVARCHAR(50),
+		MatchCode			NVARCHAR(50),
+		EventDate			SMALLDATETIME,
+		SDiscount			SMALLMONEY,
+		ADiscount			SMALLMONEY,
+		Discount			SMALLMONEY,
+		HomeId				INT,
+		AwayId				INT,
+		SettleTime			DATETIME,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		OddsType			TINYINT,
+		Status				NVARCHAR(50),
+		SettlementStatus	TINYINT,
+		ComStatus			NVARCHAR(50),
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		TransDate			DATETIME,
+		BetTeam				NVARCHAR(50),
+		SPositionTaking		SMALLMONEY,
+		MPositionTaking		SMALLMONEY,
+		APositionTaking		SMALLMONEY,
+		LiveIndicator		BIT,
+		Modds				MONEY,
+		CustId				INT,
+		LiveHomeScore		INT,
+		LiveAwayScore		INT,
+		FinalHomeScore		INT,
+		FinalAwayScore		INT,
+		LeagueId			INT,
+		SportType			SMALLINT,
+		Ip					NVARCHAR(15),
+		BetFrom				NVARCHAR(1),
+		MatchId				INT,
+		IsNeutral			BIT,
+		WinLost				MONEY,
+		Commission			MONEY,
+		SComm				MONEY,
+		AComm				MONEY,
+		Comm				MONEY,
+		AWinLost			MONEY,
+		MWinLost			MONEY,
+		SWinLost			MONEY,
+		ShowTime			NVARCHAR(50),
+		WinLostDate			SMALLDATETIME,
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000),
+		OddsSpread			SMALLMONEY,
+		OriginalBetType		INT,
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000)
 	)
 
 	DECLARE @CashOutData TABLE (
@@ -162,6 +158,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 			b.stake,
 			b.actual_stake,
@@ -234,6 +231,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
+			0 AS SettlementStatus,
 			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 			b.stake,
 			b.actual_stake,
@@ -306,6 +304,7 @@ BEGIN
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
+			0 AS SettlementStatus,
 			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 			b.stake,
 			b.actual_stake,
