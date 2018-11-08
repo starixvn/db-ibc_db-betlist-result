@@ -1,10 +1,4 @@
-﻿USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Acc_Rpt_DailyWLDirect_Result_Old]    Script Date: 2/14/2017 4:31:02 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_Rpt_DailyWLDirect_Result_Old]
 	@MatchId	INT,
@@ -29,6 +23,8 @@ AS
 		- 20170323@Kos: Support Basketball AIO [#Redmine: 73033]
 		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 		- 20171004@Kos: Use table TradingBettypeMapping instead of hardcode [Redmine: #83679]
+		- 20181108@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 104013]
+					- Move eventstatus data transform to web (no change for Tennis)
 */
 
 BEGIN
@@ -58,23 +54,15 @@ BEGIN
 					WHEN 3 THEN 'Refund FT'
 					ELSE m.eventstatus
 				END
-			ELSE
-				CASE
-					WHEN m.betstatus LIKE '%Abandoned 1H%' THEN 'Abandoned 1H'
-					WHEN m.betstatus LIKE '%Abandoned 2H%' THEN 'Abandoned 2H'
-					WHEN m.betstatus LIKE '%Refund FT%' THEN 'Refund FT'
-					WHEN m.betstatus LIKE '%Refund HT%' THEN 'Refund HT'
-					WHEN m.betstatus LIKE '%Refund%' THEN 'Refund'
-					ELSE m.eventstatus
-				END
+			ELSE m.eventstatus
 		END AS EventStatus,
 		ISNULL(mr.refund, 0) IsRefund,
 		ISNULL(mr.calrefund, 0) IsCalRefund,
 		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
-		m.goalrecord,
+		m.GoalRecord,
 		ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 		ISNULL(mr.calculate, 0) AS Calculate,
-		ISNULL(mr.IsPending, 0) AS IsPending
+		0 AS SettlementStatus
 	FROM bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 		LEFT OUTER JOIN bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 		LEFT JOIN bodb_Archive.dbo.ResultDetail_bk AS r WITH (NOLOCK) ON r.MatchId = m.matchid AND r.ResourceId = '00'
@@ -83,7 +71,7 @@ BEGIN
 	-- Get trader name
 	SELECT @TraderName = c.username
 	FROM bodb_Archive.dbo.Dot_Admin_Assignment_Operator_bk AS o WITH (NOLOCK)
-		INNER JOIN dbo.customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
+		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
 		INNER JOIN DBDW.bodb_Account.dbo.TradingBettypeMapping AS m WITH (NOLOCK)
 			ON o.OperatorType = m.OperatorType AND o.bettype = m.TradingBetType
 	WHERE o.matchid = @MatchId AND m.TicketBetType = @BetType
