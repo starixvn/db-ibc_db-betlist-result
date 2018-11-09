@@ -1,11 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Acc_BetList_LC_Detail]    Script Date: 10/12/2015 3:31:51 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_LC_Detail]
 	@RefNo		BIGINT,
@@ -19,7 +12,7 @@ AS
 /*
 	Created: Kos@20151012
 	Task : Get ticket detail from table betransLC (AG Casino)
-	DB: DBAGE.bodb02
+	DB: DBACC.bodb02
 	Original:
 	Revisions:
 		- 20151012@Kos: Support AG Casino Single Wallet
@@ -28,6 +21,7 @@ AS
 		- 20160704@Kos: Include Void/Rejected detail ticket in TransType = 1 [Redmine: #59366]
 		- 20161111@Kos: Return currency name
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
+		- 20181109@Kos: Move from DBAGE to DBACC [#Redmine: 104521]
 
 	Parameters:
 		- @TransType
@@ -144,7 +138,7 @@ BEGIN
 		BEGIN
 			SELECT @CurrencyName = ex.currency,
 				@WhTicket = 3
-			FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			WHERE b.transid = @RefNo
 		END
@@ -278,7 +272,7 @@ BEGIN
 				WHEN sbt.productID IN (21) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode
-		FROM DBARC.bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
 	END
