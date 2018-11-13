@@ -49,6 +49,7 @@ AS
 	Revisions:
 		- 20180711@Kos: Created [#Redmine: 80941]
 		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
+		- 20181113@Kos: Support new platform Mobile App [#Redmine: 104521]
 */
 
 BEGIN
@@ -262,6 +263,10 @@ BEGIN
 		ELSE IF @Platform = 7
 		BEGIN
 			SET @BetFromList = 'x'
+		END
+		ELSE IF @Platform = 8
+		BEGIN
+			SET @BetFromList = 'o'
 		END
 
 		DECLARE @TempToDate	SMALLDATETIME,

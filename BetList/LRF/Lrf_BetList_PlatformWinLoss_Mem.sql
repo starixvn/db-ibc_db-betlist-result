@@ -94,6 +94,7 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
+		- 20181113@Kos: Support new platform Mobile App [#Redmine: 104521]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -109,6 +110,7 @@ AS
 			- 5 - Smart Site: s (smartphone), l (dep-smart)
 			- 6 - Tablet: r (dep2-tablet)
 			- 7 - New Asia: x (dep2-Asia)
+			- 8 - Mobile App: o (dep-New Mobile APP)
 
 	Sample call:
 		DECLARE @p17 INT
@@ -249,6 +251,13 @@ BEGIN
 	BEGIN
 		INSERT INTO @BetFrom
 		SELECT 'x'
+	END
+
+	-- Mobile App
+	IF @PlatformType IN (0, 8)
+	BEGIN
+		INSERT INTO @BetFrom
+		SELECT 'o'
 	END
 
 	DECLARE @Data AS TABLE (

@@ -49,6 +49,7 @@ AS
 					- Remove param @IncludeBetFrom
 					- Change base currency coding style, support all base currencies
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
+		- 20181121@Kos: Support new platform Mobile App [#Redmine: 104521]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -69,6 +70,7 @@ AS
 					5 - Smart Site: s (smartphone), l (dep-smart)
 					6 - Tablet: r (dep2-tablet)
 					7 - New Asia: x (dep2-Asia)
+					8 - Mobile App: o (dep-New Mobile APP)
 	Excecute sample :
 		[Lrf_Monitor_BetlistSel_New]
 			@LicenseeID = 14,
@@ -184,6 +186,10 @@ BEGIN
 		ELSE IF @BetFrom = 7
 		BEGIN
 			SET @BetFromList = 'x'
+		END
+		ELSE IF @BetFrom = 8
+		BEGIN
+			SET @BetFromList = 'o'
 		END
 
 		-- Check if @TransId and @TransId + 1 is combo ticket then reset @TransId
