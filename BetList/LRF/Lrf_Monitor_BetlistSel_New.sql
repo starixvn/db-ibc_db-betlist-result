@@ -48,6 +48,7 @@ AS
 		- 20180903@Kos: Remove dynamic SQL [RedmineID: #101703]
 					- Remove param @IncludeBetFrom
 					- Change base currency coding style, support all base currencies
+		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -222,7 +223,10 @@ BEGIN
 				b.actual_stake,
 				b.stake,
 				b.betfrom,
-				b.status,
+				CASE
+					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					ELSE b.status
+				END AS status,
 				b.betteam,
 				b.oddstype,
 				b.currency AS CurrencyId,
@@ -333,7 +337,10 @@ BEGIN
 				b.actual_stake,
 				b.stake,
 				b.betfrom,
-				b.status,
+				CASE
+					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					ELSE b.status
+				END AS status,
 				b.betteam,
 				b.oddstype,
 				b.currency AS CurrencyId,

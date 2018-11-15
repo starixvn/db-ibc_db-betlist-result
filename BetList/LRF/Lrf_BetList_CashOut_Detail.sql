@@ -18,6 +18,7 @@ AS
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180502@Kos: Missing return GBP base currency data [#Redmine: 94431]
 		- 20180719@Kos: Support more base currencies [#Redmine: 80941]
+		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 */
 
 BEGIN
@@ -162,7 +163,10 @@ BEGIN
 			b.hdp2,
 			b.odds,
 			b.oddstype,
-			b.status,
+			CASE
+				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				ELSE b.status
+			END AS status,
 			b.stake,
 			b.actual_stake,
 			b.transdate,

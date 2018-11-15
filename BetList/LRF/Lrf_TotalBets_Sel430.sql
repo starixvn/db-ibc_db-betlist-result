@@ -1,11 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_TotalBets_Sel430]
 	@AgentList	VARCHAR(MAX),
@@ -37,6 +30,7 @@ AS
 		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
+		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 */
 
 BEGIN
@@ -115,7 +109,10 @@ BEGIN
 		b.hdp2,
 		b.odds,
 		b.modds,
-		b.status,
+		CASE
+			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+			ELSE b.status
+		END AS status,
 		b.stake,
 		b.actual_stake,
 		b.transdate,

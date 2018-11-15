@@ -23,6 +23,7 @@ AS
 	DB: DB042.bodb02
 	Revisions:
 		- 20180613@Kos: Created [#Redmine: 80941]
+		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 */
 
 BEGIN
@@ -252,7 +253,10 @@ BEGIN
 				b.oddsspread,
 				b.stake,
 				b.actual_stake,
-				b.status,
+				CASE
+					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					ELSE b.status
+				END AS status,
 				b.transdate,
 				b.winlostdate,
 				b.liveindicator,
@@ -324,7 +328,10 @@ BEGIN
 				b.oddsspread,
 				b.stake,
 				b.actual_stake,
-				b.status,
+				CASE
+					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					ELSE b.status
+				END AS status,
 				b.transdate,
 				b.winlostdate,
 				b.liveindicator,
