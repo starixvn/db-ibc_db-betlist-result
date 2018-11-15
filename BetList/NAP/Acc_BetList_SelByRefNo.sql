@@ -73,6 +73,7 @@ AS
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 		- 20180927@Kos: Add new permission to view Licensee account [#Redmine: 96118]
+		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 */
 
 BEGIN
@@ -1821,7 +1822,10 @@ BEGIN
 					0 AS finalodds,
 					0 AS finalodds2,
 					b.oddstype,
-					b.status,
+					CASE
+						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+						ELSE b.status
+					END AS status,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
