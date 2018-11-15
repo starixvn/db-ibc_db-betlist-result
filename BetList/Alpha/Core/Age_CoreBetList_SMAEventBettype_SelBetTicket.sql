@@ -31,6 +31,7 @@ AS
 		- 20160111@Kos: Add @TransStatus param to support RNG Casino Single Wallet [#Redmine: 48958]
 		- 20171030@Kos: Support Bullfighting [#Redmine: 84961]
 		- 20180330@Kos: Change to use index in srecommend and mrecommend [#Redmine: 91150]
+		- 20181115@Patrick: High CPU DB053 [#Redmine: 104853]
 
 	Param's Explanation:
 		- @BettypeMatrix	: XML.format(<BettypeMatrix><row ProductID="1" Bettype="1" EventType="1" /></BettypeMatrix>)
@@ -40,9 +41,9 @@ AS
 		- Age_BetList_SelRunningByBettypeMatch_Ag
 		- Age_BetList_SelRunningByBettypeMatch_MAg
 		- Age_BetList_SelRunningByBettypeMatch_SAg
-		- Age_BetList_SelWinlossByBettypeMatch_Ag
-		- Age_BetList_SelWinlossByBettypeMatch_MAg
-		- Age_BetList_SelWinlossByBettypeMatch_SAg
+		- Age_BetList_SelWinlossByBettypeMatch_Ag_UAT3
+		- Age_BetList_SelWinlossByBettypeMatch_MAg_UAT3
+		- Age_BetList_SelWinlossByBettypeMatch_SAg_UAT3
 	
 */
 
@@ -232,12 +233,12 @@ BEGIN
 
 		IF @RoleId = 4		-- Super
 		BEGIN
-			WITH CteRecommend ( custid )
-			AS (
-				SELECT custid
-				FROM dbo.Customer WITH (NOLOCK)
-				WHERE srecommend = @CustId AND roleid = 3
-			)
+			--WITH CteRecommend ( custid )
+			--AS (
+			--	SELECT custid
+			--	FROM dbo.Customer WITH (NOLOCK)
+			--	WHERE srecommend = @CustId AND roleid = 3
+			--)
 			INSERT INTO #tempRawData
 			SELECT
 				b.transid,
@@ -248,10 +249,10 @@ BEGIN
 				bt.EventType,
 				2 AS WhTicket
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN CteRecommend AS c ON b.mrecommend = c.custid
+				--INNER JOIN CteRecommend AS c ON b.mrecommend = c.custid
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.Bettype
 				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
-			WHERE b.matchid = @MatchId
+			WHERE b.matchid = @MatchId AND b.srecommend = @CustId
 		END
 	END
 
