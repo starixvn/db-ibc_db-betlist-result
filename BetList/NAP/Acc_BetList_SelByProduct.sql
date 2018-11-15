@@ -1,4 +1,5 @@
 /*<info serverAlias="DBAGE-BODB02" executers="bodbDownlineNet,bodbAdminNet,bodbExtAccNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Acc_BetList_SelByProduct]
 	@UserId			BIGINT,
 	@ProductId		TINYINT,
@@ -36,6 +37,7 @@ AS
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20180927@Kos: Add new permission to view Licensee account [#Redmine: 96118]
+		- 20181115@Kos: Hotfix - Bullfighting [#Redmine: 104833]
 */
 
 BEGIN
@@ -531,7 +533,7 @@ BEGIN
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND b.statusID NOT IN (0, 1)
-						AND (@GameId = '' OR b.betid = @GameId)
+						AND (@GameId = '' OR CONVERT(VARCHAR(20), b.betid) = @GameId)
 						AND (@BetId = '' OR b.betcheck = @BetId)
 				END
 			END
@@ -801,7 +803,7 @@ BEGIN
 			-- Bullfighting
 			IF @ProductId = 30
 			BEGIN
-				IF @BetId <> ''
+				IF @GameId <> '' OR @BetId <> ''
 				BEGIN
 					-- bettrans14
 					INSERT INTO @Data
@@ -855,8 +857,8 @@ BEGIN
 						INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
 						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 					WHERE b.custid = @CustId
-						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-						AND (@GameId = '' OR b.betid = @GameId)
+						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
+						AND (@GameId = '' OR CONVERT(VARCHAR(20), b.betid) = @GameId)
 						AND (@BetId = '' OR b.betcheck = @BetId)
 				END
 			END
@@ -981,6 +983,8 @@ BEGIN
 
 	SELECT DISTINCT * FROM @DetailData
 END
+
+
 
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelByProduct] TO [bodbDownlineNet]
