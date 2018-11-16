@@ -1,6 +1,4 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE bodb02
-GO
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossByBettypeMatch_SAg]
 	@MatchId			INT
@@ -46,103 +44,19 @@ AS
 		- 20180201@Kos: Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports		
 					and Bullfighting only [#Redmine: 86086]
 		- 20180305@Kos: Include Void/Reject/Refund tickets [#Redmine: 91150]
+		- 20181116@Kos: Improve performance [#Redmine: 103577]
 */
 
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @TransStatus	[dbo].[TVP_BetTicketStatus]
-		, @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]
-
-	-- Gather Ticket status
-	INSERT INTO @TransStatus
-	SELECT StatusId
-	FROM bodb02.dbo.All_f_TransStatus (1) stt
-	WHERE StatusId NOT IN (0, 1)
-
-	-- Gather BettypeMatrix
-	DECLARE @IsTest BIT = 0
-
-	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
-
-	-- Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports and Bullfighting only
-	INSERT INTO @BettypeMatrix
-	SELECT ProductID, BetType, EventType, SubProduct
-	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 26, 27, 30)
-		AND BetType NOT IN (901, 902, 903, 904)
-
-	;WITH CteBettype (bettype)
-	AS (
-		SELECT bt.bettype
-		FROM @BettypeMatrix AS bt
-			LEFT JOIN (SELECT Bettype, GroupTypeId FROM [dbo].[f_GroupBettype]()) AS f ON f.bettype = bt.bettype
-		WHERE bt.bettype = @BetType OR f.GroupTypeId = @BetType
-	)
-
-	DELETE bt
-	FROM @BettypeMatrix AS bt
-		LEFT JOIN CteBettype AS ct ON bt.bettype = ct.bettype
-	WHERE ct.bettype IS NULL
-
-	EXEC [dbo].[Age_CoreBetList_SMAEventBettype_SelBetTicket]
-		@CustId				= @CustId
-		, @Username			= @Username
-		, @RoleId			= 4
-		, @MatchId			= @MatchId
-		, @Liveindicator	= @LiveIndicator
-		, @Language			= @Language
-		, @TransStatus		= @TransStatus
-		, @BettypeMatrix	= @BettypeMatrix
-		, @ColumnOutput		= 'sporttype,
-								username,
-								bettype,
-								leagueID,
-								transid,
-								matchcode,
-								homeID,
-								awayID,
-								hdp1, 
-								hdp2, 
-								odds,
-								modds,
-								status,
-								stake,
-								actual_stake,
-								winlost,
-								awinlost,
-								mwinlost,
-								swinlost,
-								playercomm,
-								comm,
-								acomm,
-								scomm,
-								transdate,
-								winlostdate,
-								betteam,
-								apositiontaking,
-								mpositiontaking,
-								spositiontaking,
-								Adiscount,
-								Mdiscount,
-								Sdiscount,
-								liveindicator,
-								livehomescore,
-								liveawayscore,
-								matchid, 
-								IP,
-								betstatus,
-								IsNeutral,
-								OddsType,
-								betid,
-								showtime,
-								refno,
-								betcheck,
-								comstatus,
-								transdesc,
-								OddsSpread'
-
-	RETURN;
+	EXEC [dbo].[Age_BetList_SelWinlossByBettypeMatch]
+		@MatchId		= @MatchId,
+		@CustId			= @CustId,
+		@Username		= @Username,
+		@RoleId			= 4,
+		@BetType		= @BetType,
+		@LiveIndicator 	= @LiveIndicator
 END
 
 
