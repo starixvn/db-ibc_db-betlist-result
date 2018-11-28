@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelWinLossByDate_Mem]
 	@CustId					INT,
@@ -86,7 +86,8 @@ AS
 		- 20170327@Kos: Change input params for Microsite bet list [#Redmine: 66992]
 					- Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20181014@Viet: rewrite sp [#Redmine: 101405]
-		- 20180921@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
+		- 20181121@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
+		- 20181128@Kos: Hotfix - Running Casino ticket [#Redmine: 105393]
 */
 
 BEGIN
@@ -340,6 +341,12 @@ BEGIN
 					AND blc.statusID NOT IN (0, 1)
 				GROUP BY c.transid, c.Product
 			END -- end: bettransLC
+
+			DELETE b
+			FROM @Tickets AS b
+			WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet')
+				AND b.Winlostdate >= @Yesterday
+				AND NOT EXISTS (SELECT 1 FROM @temp_bettransX WHERE RefNo = b.TransId)
 
 			INSERT INTO #MemBetTicket
 			SELECT TransId = CASE
@@ -937,8 +944,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinLossByDate_Mem] TO [bodbDownlineNet] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinLossByDate_Mem] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinLossByDate_Mem] TO [vnteam] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelWinLossByDate_Mem] TO [vnteam] AS [dbo]
 GO
