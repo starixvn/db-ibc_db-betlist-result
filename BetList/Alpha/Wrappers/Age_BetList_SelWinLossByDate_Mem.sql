@@ -88,6 +88,7 @@ AS
 		- 20181014@Viet: rewrite sp [#Redmine: 101405]
 		- 20181121@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
 		- 20181128@Kos: Hotfix - Running Casino ticket [#Redmine: 105393]
+		- 20181220@Kos: Hotfix - Jackpot Contribution [#Redmine: 106772]
 */
 
 BEGIN
@@ -404,9 +405,9 @@ BEGIN
 				,OddsId = CASE
 								WHEN c.Product IN ('BF') THEN 0
 								ELSE b.oddsid END
-				,Odds = CASE 
-							WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery') THEN b.Odds
+				,Odds = CASE
 							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
+							WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery') THEN b.Odds
 							WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN b.odds
 							WHEN c.Product IN ('Outright') THEN b.odds
 							WHEN c.Product IN ('VR') THEN b.odds
