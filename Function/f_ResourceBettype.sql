@@ -1,3 +1,5 @@
+/*<info serverAlias="DBAGE-bodb02,DBEXT-bodb02,DBACC-bodb02" selecters="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="1" isNested="1"></info>*/
+
 ALTER FUNCTION [dbo].[f_ResourceBettype]
 (
 )
@@ -8,7 +10,7 @@ AS
 	Created: 20150401@Sophia
 	Task: Matrix of Bettype vs ResourceID, for matching with betId/ betcheck of ticket
 		Store only Bettypes of BetRadar which use Table ResultDetail
-	DB: DBAGE.bodb02, DBEXT.bodb02
+	DB: DBAGE.bodb02, DBEXT.bodb02, DBACC.bodb02
 	Revisions:
 		- 20160505@Kos: Support Fast Market [#Redmine: 56589]
 		- 20160829@Kos: Support PH All In One phase 2b [#Redmine: 62882]

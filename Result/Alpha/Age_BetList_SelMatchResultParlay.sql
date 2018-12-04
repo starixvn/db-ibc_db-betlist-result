@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelMatchResultParlay]
 	@RefNo	BIGINT
@@ -7,7 +7,7 @@ AS
 /*
 	Created: nqminh@20090402
 	Task: Select MixParlay result
-	DB: DBAGE.bodb02
+	DB: DBACC.bodb02
 	Original: Age_BetList_SelMatchResultParlay
 	Revisions:
 		- 20091202@Jamie: Results for Future Mix Parlay
@@ -32,6 +32,7 @@ AS
 		- 20180423@Kos: Hotfix - redundant Result Detail in result popup [Redmine: #94133]
 		- 20181003@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Move eventstatus data transform to web (no change for Tennis)
+		- 20181204@Kos: Move to DBACC [Redmine: #105787]
 */
 
 BEGIN
@@ -320,14 +321,14 @@ BEGIN
 
 	-- Bettrans_bk range
 	IF EXISTS (	SELECT 1
-				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+				FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo)
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
 			m.sporttype,
-			m.LeagueID,
+			m.leagueid,
 			m.matchid,
 			m.homeID,
 			m.awayID,
@@ -367,12 +368,12 @@ BEGIN
 					bm.matchId,
 					bm.bettype,
 					bm.betcheck
-				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+				FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo ) bm
-			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
+			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+			LEFT OUTER JOIN bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (1, 2, 5))
 		BEGIN
@@ -385,7 +386,7 @@ BEGIN
 				d.ResultStatusID,
 				d.SettlementStatusID,
 				d.OtherInfo
-			FROM DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
+			FROM bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
@@ -424,7 +425,7 @@ BEGIN
 				d.ResultStatusID,
 				d.SettlementStatusID,
 				d.OtherInfo
-			FROM DBARC.bodb_Archive.dbo.ResultDetail3rd_BK AS d WITH (NOLOCK)
+			FROM bodb_Archive.dbo.ResultDetail3rd_BK AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
@@ -461,6 +462,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultParlay] TO [bodbDownlineNetView]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultParlay] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelMatchResultParlay] TO [vnteam]
 GO
