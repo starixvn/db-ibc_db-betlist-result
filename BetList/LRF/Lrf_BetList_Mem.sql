@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_Mem]
 	@AgentList		VARCHAR(MAX),
@@ -39,7 +39,9 @@ AS
 			- 4 - WAP: m (dep-wap)
 			- 5 - Smart Site: s (smartphone), l (dep-smart)
 			- 6 - Tablet: r (dep2-tablet)
-			 -7 - New Asia: x (dep2-Asia)
+			- 7 - New Asia: x (dep2-Asia)
+			- 8 - Mobile App: o (dep-New Mobile APP)
+			- 9 - Mobile China View: c (dep-MCV)
 		- @LiveIndicator:
 			- 0 : Non-live
 			- 1 : Live
@@ -49,7 +51,8 @@ AS
 	Revisions:
 		- 20180711@Kos: Created [#Redmine: 80941]
 		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
-		- 20181113@Kos: Support new platform Mobile App [#Redmine: 104521]
+		- 20181113@Kos: Support new platform 'o' Mobile App [#Redmine: 104521]
+		- 20181210@Kos: Support new platform 'c' Mobile China View [#Redmine: 106088]
 */
 
 BEGIN
@@ -267,6 +270,10 @@ BEGIN
 		ELSE IF @Platform = 8
 		BEGIN
 			SET @BetFromList = 'o'
+		END
+		ELSE IF @Platform = 9
+		BEGIN
+			SET @BetFromList = 'c'
 		END
 
 		DECLARE @TempToDate	SMALLDATETIME,
@@ -1083,6 +1090,4 @@ END
 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_Mem] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_Mem] TO vnteam
 GO

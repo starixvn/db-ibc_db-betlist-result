@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_Monitor_BetlistSel_New]
 	@AgentList		VARCHAR(MAX),
@@ -49,7 +49,8 @@ AS
 					- Remove param @IncludeBetFrom
 					- Change base currency coding style, support all base currencies
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
-		- 20181121@Kos: Support new platform Mobile App [#Redmine: 104521]
+		- 20181121@Kos: Support new platform 'o' Mobile App [#Redmine: 104521]
+		- 20181210@Kos: Support new platform 'c' Mobile China View [#Redmine: 106088]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -71,6 +72,7 @@ AS
 					6 - Tablet: r (dep2-tablet)
 					7 - New Asia: x (dep2-Asia)
 					8 - Mobile App: o (dep-New Mobile APP)
+					9 - Mobile China View: c (dep-MCV)
 	Excecute sample :
 		[Lrf_Monitor_BetlistSel_New]
 			@LicenseeID = 14,
@@ -190,6 +192,10 @@ BEGIN
 		ELSE IF @BetFrom = 8
 		BEGIN
 			SET @BetFromList = 'o'
+		END
+		ELSE IF @BetFrom = 9
+		BEGIN
+			SET @BetFromList = 'c'
 		END
 
 		-- Check if @TransId and @TransId + 1 is combo ticket then reset @TransId
@@ -554,6 +560,4 @@ END
 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [vnteam]
 GO

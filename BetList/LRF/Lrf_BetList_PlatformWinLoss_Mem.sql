@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_PlatformWinLoss_Mem]
 	@AgentList		VARCHAR(MAX),
@@ -94,7 +94,8 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
-		- 20181113@Kos: Support new platform Mobile App [#Redmine: 104521]
+		- 20181113@Kos: Support new platform 'o' Mobile App [#Redmine: 104521]
+		- 20181210@Kos: Support new platform 'c' Mobile China View [#Redmine: 106088]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -111,6 +112,7 @@ AS
 			- 6 - Tablet: r (dep2-tablet)
 			- 7 - New Asia: x (dep2-Asia)
 			- 8 - Mobile App: o (dep-New Mobile APP)
+			- 9 - Mobile China View: c (dep-MCV)
 
 	Sample call:
 		DECLARE @p17 INT
@@ -258,6 +260,13 @@ BEGIN
 	BEGIN
 		INSERT INTO @BetFrom
 		SELECT 'o'
+	END
+
+	-- Mobile China View
+	IF @PlatformType IN (0, 9)
+	BEGIN
+		INSERT INTO @BetFrom
+		SELECT 'c'
 	END
 
 	DECLARE @Data AS TABLE (
@@ -2487,6 +2496,4 @@ END
 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_PlatformWinLoss_Mem] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_PlatformWinLoss_Mem] TO [vnteam]
 GO
