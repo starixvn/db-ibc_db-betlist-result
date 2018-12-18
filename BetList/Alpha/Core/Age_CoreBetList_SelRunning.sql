@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_CoreBetList_SelRunning]
 (
@@ -34,6 +34,7 @@ AS
 		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Remove param @Username, @Language, @Error, @ErrorMsg, @ColumnOutput
 					- Don't support member level anymore
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -41,6 +42,9 @@ AS
 	Wrapped SP List:
 		- Age_BetList_SelRunningByBettype_Ag
 		- Age_BetList_SelRunningByBettype_MAg
+		- Age_BetList_SelRunningByBettype_SAg
+		- Age_BetList_SelRunningByBettypeMatch_Ag
+		- Age_BetList_SelRunningByBettypeMatch_MAg
 		- Age_BetList_SelRunningByBettypeMatch_SAg
 */
 
@@ -90,6 +94,7 @@ BEGIN
 		, BetCheck			NVARCHAR(50)
 		, TransDesc			NVARCHAR(1000)
 		, OddsSpread		SMALLMONEY
+		, ExtraInfo			VARCHAR(1000)
 		, ProductId			TINYINT
 		, EventType			TINYINT
 	)
@@ -149,6 +154,7 @@ BEGIN
 				, b.BetCheck
 				, ''transdesc
 				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
 			FROM dbo.bettrans AS b WITH (NOLOCK)
@@ -206,6 +212,7 @@ BEGIN
 				, b.BetCheck
 				, ''transdesc
 				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
 			FROM dbo.bettrans AS b WITH (NOLOCK)
@@ -263,6 +270,7 @@ BEGIN
 				, b.BetCheck
 				, ''transdesc
 				, CASE WHEN bt.SubProduct IN('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
 			FROM dbo.bettrans b WITH (NOLOCK)
@@ -322,6 +330,7 @@ BEGIN
 				, b.BetCheck
 				, ''transdesc
 				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_betrunning_recommend)
@@ -380,6 +389,7 @@ BEGIN
 				, b.BetCheck
 				, ''transdesc
 				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_betrunning_mrecommend)
@@ -438,6 +448,7 @@ BEGIN
 				, b.BetCheck
 				, ''transdesc
 				, CASE WHEN bt.SubProduct IN('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
 			FROM dbo.bettrans b WITH (NOLOCK, INDEX=IX_betrunning_srecommend)
@@ -514,6 +525,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_SelRunning] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_SelRunning] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CoreBetList_SelRunning] TO [vnteam]
 GO

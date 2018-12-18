@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossByBettypeMatch]
 	@MatchId		INT,
@@ -15,6 +15,7 @@ AS
 	DB: DBAGE.bodb02
 	Revisions:
 		- 20181115@Kos: Create new [#Redmine: 103577]
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 */
 
 BEGIN
@@ -305,7 +306,11 @@ BEGIN
 				WHEN c.Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
-			b.currencyname AS Currency
+			b.currencyname AS Currency,
+			CASE
+				WHEN c.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+				ELSE ''
+			END AS ExtraInfo
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK, INDEX = PK_bettrans) ON b.transid = c.TransId
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') AND b.matchid = m.matchid
@@ -535,7 +540,11 @@ BEGIN
 				WHEN c.Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
-			b.currencyname AS Currency
+			b.currencyname AS Currency,
+			CASE
+				WHEN c.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+				ELSE ''
+			END AS ExtraInfo
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.TransId
 			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') AND b.matchid = m.matchid
@@ -566,6 +575,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossByBettypeMatch] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossByBettypeMatch] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelWinlossByBettypeMatch] TO vnteam
 GO

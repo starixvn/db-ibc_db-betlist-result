@@ -79,6 +79,7 @@ AS
 		- 20170703@Kos: Support Betradar Virtual Sports [#Redmine: 77280]
 		- 20180201@Kos: Don't support Racing, Live Casino, RNG Casino (bettype 71, 72), Bingo, P2P, Cockfighting [#Redmine: 86086]
 		- 20181127@Kos: Enhance performance, don't use core anymore [#Redmine: 103577]
+		- 20181227@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 */
 
 BEGIN
@@ -610,7 +611,7 @@ BEGIN
 							ELSE 0 END
 			,BetdaqId = -1
 			,ExtraInfo = CASE
-							WHEN c.Product IN ('PG') THEN ISNULL(b.ExtraInfo, '')
+							WHEN c.Product IN ('SB', 'PG') THEN ISNULL(b.ExtraInfo, '')
 							ELSE '' END
 			,Currency = b.currencyname
 		FROM @Tickets AS c

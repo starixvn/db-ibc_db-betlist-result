@@ -89,6 +89,7 @@ AS
 		- 20181121@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
 		- 20181128@Kos: Hotfix - Running Casino ticket [#Redmine: 105393]
 		- 20181220@Kos: Hotfix - Jackpot Contribution [#Redmine: 106772]
+		- 20181227@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 */
 
 BEGIN
@@ -587,7 +588,7 @@ BEGIN
 								ELSE 0 END
 				,BetdaqId = -1
 				,ExtraInfo = CASE
-								WHEN c.Product IN ('PG') THEN ISNULL(b.ExtraInfo, '')
+								WHEN c.Product IN ('SB', 'PG') THEN ISNULL(b.ExtraInfo, '')
 								ELSE '' END
 				,Currency = b.currencyname
 			FROM @Tickets AS c
@@ -880,18 +881,18 @@ BEGIN
 								ELSE 0 END
 				,BetdaqId = -1
 				,ExtraInfo = CASE
-								WHEN c.Product IN ('PG') THEN ISNULL(b.ExtraInfo, '')
+								WHEN c.Product IN ('SB', 'PG') THEN ISNULL(b.ExtraInfo, '')
 								ELSE '' END	
 				,Currency = b.currencyname
 			FROM @Tickets AS c
-				INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON b.transid = c.transid
-				LEFT JOIN dbo.match14 AS m WITH(NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') AND b.matchid = m.matchid
-				LEFT JOIN dbo.bettransm14 AS bm WITH(NOLOCK) ON c.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
-				LEFT JOIN dbo.outright14 AS o WITH(NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
-				LEFT JOIN dbo.League AS l WITH(NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
-				LEFT JOIN dbo.VSOutright14 AS vo WITH(NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
-				LEFT JOIN dbo.VSRaceInfo AS vr WITH(NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
-				LEFT JOIN dbo.Match3rd14 AS m3 WITH(NOLOCK) ON c.Product IN ('BF') AND b.matchid = m3.Match3rdId	
+				INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
+				LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') AND b.matchid = m.matchid
+				LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON c.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
+				LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
+				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
+				LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
+				LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
+				LEFT JOIN dbo.Match3rd14 AS m3 WITH (NOLOCK) ON c.Product IN ('BF') AND b.matchid = m3.Match3rdId	
 
 			INSERT INTO @BettransDetail
 			-- virtual sports:: racing
@@ -928,7 +929,7 @@ BEGIN
 
 	SELECT *
 	FROM #MemBetTicket
-	ORDER BY 1 DESC
+	ORDER BY TransId DESC
 
 	-- OUTPUT ticket detail
 	SELECT * 

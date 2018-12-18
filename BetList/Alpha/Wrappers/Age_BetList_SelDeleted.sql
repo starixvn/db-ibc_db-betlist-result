@@ -1,4 +1,5 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Age_BetList_SelDeleted]
 	@CustId			INT,
 	@RoleId			INT,
@@ -59,9 +60,7 @@ AS
 					- Support Poker Games
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 		- 20181011@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
-		
-	Param's Explanation:
-		- @CustID: SAgentID
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 */
 
 BEGIN
@@ -733,7 +732,10 @@ BEGIN
 									WHEN b.ProductId = 1 THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
-					ExtraInfo = ''
+					ExtraInfo = CASE
+									WHEN b.ProductId = 1 THEN ISNULL(b.ExtraInfo, '')
+									ELSE ''
+								END
 				FROM #PagingData AS b
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				WHERE b.WhTicket = 1 AND b.EventType = 1
@@ -992,7 +994,10 @@ BEGIN
 									WHEN b.ProductId = 1 THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
-					ExtraInfo = ''
+					ExtraInfo = CASE
+									WHEN b.ProductId = 1 THEN ISNULL(b.ExtraInfo, '')
+									ELSE ''
+								END
 				FROM #PagingData AS b
 					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				WHERE b.WhTicket = 2 AND b.EventType = 1
@@ -1368,6 +1373,7 @@ BEGIN
 
 	DROP TABLE #PagingData
 END
+
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelDeleted] TO [bodbDownlineNet]
 GO

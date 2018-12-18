@@ -1,6 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
+/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes]
 	@CustId			INT,
@@ -9,16 +7,15 @@ ALTER PROCEDURE [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes]
 AS
 
 /*
-	Created: Johnson
-	Task: Monitor lastest bets list( all bettypes and others bettype not handicap and over/under)
-	Date: 28/06/2011
-	DB: DBAGE.bodb02
+	Created: Johnson@20110628
+	Task: Last Bets (exclude handicap and over/under bettypes)
+	DB: DB042.bodb02
 	Revision:
 		- 20111122@Sophia: Add Checktime and SecAcceptFlag to show status waiting or running
 		- 20120827@Jamie: Add actual_stake for System Parlay Bet list
 		- 20130222@Elodie: Get custid value
 		- 20130222@Elodie: Get oddsid value to use for Virtual HR
-		- 20150302@Tom: Support 60 BetRadar (27218) Show betcheck coloum on Bettype 216,217 
+		- 20150302@Tom: Support 60 BetRadar (27218) Show betcheck coloum on Bettype 216,217
 		- 20150706@Bobby: Exclude Metric Gaming running ticket
 		- 20150826@Kos: Add column OddsSpread to support Myanmar Odds and exclude Myanmar Odds bet types
 		- 20160104@Kos: Support Sportsbook only and use SportBetTypeMatrix
@@ -26,40 +23,36 @@ AS
 		- 20160623@Percy: Remove WITH recompile [RedmineID: #58288]
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
 		- 20180802@Patrick: indexes revolution [RedmineID: #98757]
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 
 	Parameter's Explanation:
-		- @custid : agent ID
-		- @transid: lastest transid 
-		- @LimitRowCount: max record return.
+		- @CustId: agent ID
+		- @TransId: lastest transid
+		- @LimitRowCount: max record return
 */ 
 
 BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @IsTest BIT = 0
+
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	; WITH __bettypeList AS (
-		SELECT bettype
-		FROM dbo.SportBettypeMatrix WITH(NOLOCK)
-		WHERE ProductID = 1
-			AND IsTest = @IsTest
-		GROUP BY bettype
+		SELECT BetType
+		FROM dbo.SportBettypeMatrix WITH (NOLOCK)
+		WHERE ProductID = 1 AND IsTest IN (0, @IsTest)
+		GROUP BY BetType
 	)
 
 	SELECT TOP(@LimitRowCount)
 		b.custid,
-		0 AS sporttype,
 		b.matchid,
-		0 AS leagueid,
 		b.Username,
 		b.bettype,
 		b.transid,
 		b.refno,
 		b.transdate,
-		'' AS matchcode,
-		0 AS homeid,
-		0 AS awayid,
 		b.oddsid AS Race,
 		b.betid,
 		b.livehomescore,
@@ -75,26 +68,25 @@ BEGIN
 			ELSE b.status
 		END AS status,
 		b.betteam,
-		b.IP,
-		CONVERT(BIT, 0) AS isNeutral,
+		b.ip,
 		b.oddstype,
-		ISNULL(b.Betcheck, '') AS Betcheck,
+		ISNULL(b.betcheck, '') AS Betcheck,
 		ISNULL(b.transdesc, '') AS transdesc,
-		0 AS OddsSpread
+		0 AS OddsSpread,
+		ISNULL(b.ExtraInfo, '') AS ExtraInfo
 	FROM dbo.bettrans AS b WITH (NOLOCK)
-	WHERE b.recommend = @custid 
+	WHERE b.recommend = @CustId
 		AND b.statusID IN (0,1)
-		AND b.transid > @transid
+		AND b.transid > @TransId
 		AND b.bettype NOT BETWEEN 801 AND 806
 		AND b.bettype NOT IN (1, 3, 7, 8, 301, 302, 303, 304)
-		AND EXISTS (SELECT TOP 1 1 FROM __bettypeList s WHERE b.bettype = s.Bettype)
+		AND EXISTS (SELECT TOP 1 1 FROM __bettypeList AS s WHERE b.bettype = s.BetType)
 	ORDER BY b.transid DESC
 END
+
 
 GO
 GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes] TO [vnteam]
 GO

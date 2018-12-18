@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunning_Mem]
 	@CustId		INT			= NULL,
@@ -106,6 +106,7 @@ AS
 		- 20180803@Kos: Support Poker Games [#Redmine: 97565]
 		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Remove param @Language
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 */
 
 BEGIN
@@ -525,7 +526,7 @@ BEGIN
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0))
 				,ShowTime = ''
-				,ExtraInfo = ''
+				,ExtraInfo = ISNULL(b.ExtraInfo, '')
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			WHERE b.TableID = 1 -- bettrans
@@ -967,6 +968,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelRunning_Mem] TO [bodbDownlineNet] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelRunning_Mem] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelRunning_Mem] TO [vnteam] AS [dbo]
 GO

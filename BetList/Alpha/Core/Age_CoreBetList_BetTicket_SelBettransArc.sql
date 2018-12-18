@@ -1,4 +1,4 @@
-/*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_CoreBetList_BetTicket_SelBettransArc]
 (
@@ -42,6 +42,7 @@ AS
 		- 20180711@Kos: Support Poker Games [#Redmine: 97565]
 		- 20181006@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20181123@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 
 	Param's Explanation:
 
@@ -394,7 +395,10 @@ BEGIN
 			ELSE 0
 		END AS OddsSpread
 		, -1 AS BetdaqId
-		, '' AS ExtraInfo
+		, CASE
+			WHEN c.ProductId = 1 THEN ISNULL(b.ExtraInfo, '')
+			ELSE ''
+		END AS ExtraInfo
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK)
 		INNER JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
