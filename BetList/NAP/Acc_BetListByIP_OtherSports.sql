@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetListByIP_OtherSports]
 	@CustId		INT,
@@ -93,6 +93,7 @@ AS
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 		- 20180911@Kos: Hotfix - Wrong operator name [#Redmine: 101299]
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 
 	Param's Explanation:
 		• @FromDate = @winlostdate
@@ -314,7 +315,10 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				CASE
+					WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo,
 				CASE
 					WHEN s.ProductID = 1 THEN ISNULL(b.WalletType, 0)
 					ELSE 0
@@ -486,7 +490,10 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				CASE
+					WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo,
 				CASE
 					WHEN s.ProductID = 1 THEN ISNULL(b.WalletType, 0)
 					ELSE 0
@@ -2329,6 +2336,4 @@ END
 
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetListByIP_OtherSports] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetListByIP_OtherSports] TO [vnteam]
 GO

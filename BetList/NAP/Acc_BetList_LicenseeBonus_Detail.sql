@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_LicenseeBonus_Detail]
 	@TransId	BIGINT,
@@ -13,6 +13,7 @@ AS
 	Revisions:
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
@@ -77,7 +78,8 @@ BEGIN
 		TransDesc			NVARCHAR(1000),
 		OddsSpread			SMALLMONEY,
 		WalletType			TINYINT,
-		RefCode				BIGINT
+		RefCode				BIGINT,
+		ExtraInfo			VARCHAR(1000)
 	)
 
 	DECLARE @CustId		INT,
@@ -170,7 +172,8 @@ BEGIN
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread,
 			ISNULL(b.WalletType, 0) AS WalletType,
-			0 AS RefCode
+			0 AS RefCode,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.custid = @CustId
@@ -236,7 +239,8 @@ BEGIN
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread,
 			ISNULL(b.WalletType, 0) AS WalletType,
-			0 AS RefCode
+			0 AS RefCode,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.custid = @CustId
@@ -302,7 +306,8 @@ BEGIN
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread,
 			ISNULL(b.WalletType, 0) AS WalletType,
-			0 AS RefCode
+			0 AS RefCode,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.custid = @CustId
@@ -317,9 +322,5 @@ END
 
 
 GO
-GRANT	VIEW DEFINITION	ON	[Acc_BetList_LicenseeBonus_Detail]	TO	vnteam
-GRANT	EXECUTE	ON	[Acc_BetList_LicenseeBonus_Detail]	TO	bodbExtAccNet
-GRANT	EXECUTE	ON	[Acc_BetList_LicenseeBonus_Detail]	TO	bodbDownlineNetView
-GRANT	EXECUTE	ON	[Acc_BetList_LicenseeBonus_Detail]	TO	bodbDownlineNet
 GRANT	EXECUTE	ON	[Acc_BetList_LicenseeBonus_Detail]	TO	bodbAdminNet
 GO

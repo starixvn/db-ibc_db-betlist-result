@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_ByTransID]
 	@CustId			INT,
@@ -104,6 +104,7 @@ AS
 		- 20180829@Kos: Hotfix - Bullfighting bettrans_bk [#Redmine: 100666]
 		- 20180830@Kos: Support Poker Games [#Redmine: 97565]
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 */
 
 BEGIN
@@ -2015,7 +2016,7 @@ BEGIN
 					ISNULL(b.oddsspread, 0) AS OddsSpread,	-- For Myanmar Odds
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 					ISNULL(b.WalletType, 0) AS WalletType,
 					ISNULL(b.RefCode, 0) AS RefCode
 				FROM
@@ -2910,7 +2911,7 @@ BEGIN
 					ISNULL(b.oddsspread, 0) AS OddsSpread,	-- For Myanmar Odds
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 					ISNULL(b.WalletType, 0) AS WalletType,
 					ISNULL(b.RefCode, 0) AS RefCode
 				FROM
@@ -3982,7 +3983,7 @@ BEGIN
 					ISNULL(b.oddsspread, 0) AS OddsSpread,	-- For Myanmar Odds
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 					ISNULL(b.WalletType, 0) AS WalletType,
 					ISNULL(b.RefCode, 0) AS RefCode
 				FROM
@@ -4869,6 +4870,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetsSelBetList_ByTransID] TO [bodbAdminNet]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetsSelBetList_ByTransID] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetsSelBetList_ByTransID] TO [vnteam] 
 GO

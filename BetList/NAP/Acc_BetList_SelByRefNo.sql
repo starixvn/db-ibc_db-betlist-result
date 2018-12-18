@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_SelByRefNo]
 	@UserId			BIGINT,
@@ -71,10 +71,11 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
-		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
+		- 20180808@Helen: DB05.DBPOLICY migration [#Redmine: 99462]
 		- 20180927@Kos: Add new permission to view Licensee account [#Redmine: 96118]
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 		- 20181121@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 */
 
 BEGIN
@@ -1844,7 +1845,7 @@ BEGIN
 						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 						ELSE b.status
 					END AS status,
-					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,					
+					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
 					b.actual_stake,
@@ -1884,7 +1885,7 @@ BEGIN
 					ISNULL(b.oddsspread, 0) AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 					ISNULL(b.WalletType, 0) AS WalletType,
 					ISNULL(b.RefCode, 0) AS RefCode
 				FROM
@@ -2669,7 +2670,7 @@ BEGIN
 					ISNULL(b.oddsspread, 0) AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 					ISNULL(b.WalletType, 0) AS WalletType,
 					ISNULL(b.RefCode, 0) AS RefCode
 				FROM
@@ -3390,7 +3391,7 @@ BEGIN
 					ISNULL(b.oddsspread, 0) AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 					ISNULL(b.WalletType, 0) AS WalletType,
 					ISNULL(b.RefCode, 0) AS RefCode
 				FROM
@@ -4248,6 +4249,4 @@ GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelByRefNo] TO [bodbAdminNet]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelByRefNo] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_SelByRefNo] TO [vnteam] 
 GO
