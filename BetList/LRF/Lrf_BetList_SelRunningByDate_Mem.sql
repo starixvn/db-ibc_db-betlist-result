@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02,DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DB042-bodb02,DBEXT-bodb02" executers="bodbLicenseeNet" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@AgentList	VARCHAR(MAX),
@@ -96,6 +96,7 @@ AS
 		- 20180918@Kos: Support Pragmatic Casino [#Redmine: 92318]
 		- 20181005@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
+		- 20181218@Kos: Fix BA ticket [#Redmine: 106553]
 */
 
 BEGIN
@@ -261,57 +262,57 @@ BEGIN
 		OddsSpread		MONEY
 	)
 
+	-- Receive BA Ticket - SB ticket only
+	INSERT INTO #TempBATicket
+	SELECT
+		b.bettype,
+		b.refno,
+		b.transid,
+		ISNULL(b.betid, 0),
+		b.hdp1,
+		b.hdp2,
+		b.odds,
+		b.modds,
+		CASE
+			WHEN b.bettype NOT IN (9, 29, 10) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1
+				AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+			ELSE b.status
+		END AS status,
+		b.stake,
+		b.actual_stake,
+		b.transdate,
+		b.betteam,
+		b.discount,
+		b.liveindicator,
+		b.livehomescore,
+		b.liveawayscore,
+		b.ip,
+		b.oddstype,
+		b.matchid,
+		b.betcheck,
+		ISNULL(b.transdesc, '') AS TransDesc,
+		ISNULL(b.betdaqid, -1) AS BetdaqId,
+		ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+		CASE
+			WHEN b.ExtraInfo LIKE '%p25%' THEN
+				ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
+			ELSE 0
+		END AS OriginalStake,
+		CASE
+			WHEN b.stake <> 0 THEN -1
+			ELSE 0
+		END AS OriginalBetType,
+		ISNULL(b.oddsspread, 0) AS OddsSpread
+	FROM dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
+		INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+	WHERE b.transdate >= @FromDate AND b.transdate <= @ToDate
+		AND b.custid = @CustID
+		AND sbt.ProductId = 1
+		AND b.statusID IN (0, 1)
+
 	IF @ShowBA = 1
 	BEGIN
-		-- Receive BA Ticket - SB ticket only
-		INSERT INTO #TempBATicket
-		SELECT
-			b.bettype,
-			b.refno,
-			b.transid,
-			ISNULL(b.betid, 0),
-			b.hdp1,
-			b.hdp2,
-			b.odds,
-			b.modds,
-			CASE
-				WHEN b.bettype NOT IN (9, 29, 10) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1
-					AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-				ELSE b.status
-			END AS status,
-			b.stake,
-			b.actual_stake,
-			b.transdate,
-			b.betteam,
-			b.discount,
-			b.liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.ip,
-			b.oddstype,
-			b.matchid,
-			b.betcheck,
-			ISNULL(b.transdesc, '') AS TransDesc,
-			ISNULL(b.betdaqid, -1) AS BetdaqId,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-			CASE
-				WHEN b.ExtraInfo LIKE '%p25%' THEN
-					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-				ELSE 0
-			END AS OriginalStake,
-			CASE
-				WHEN b.stake <> 0 THEN -1
-				ELSE 0
-			END AS OriginalBetType,
-			ISNULL(b.oddsspread, 0) AS OddsSpread
-		FROM dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
-			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-		WHERE b.transdate >= @FromDate AND b.transdate <= @ToDate
-			AND b.custid = @CustID
-			AND sbt.ProductId = 1
-			AND b.statusID IN (0, 1)
-
 		-- Sportsbook
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
@@ -1192,6 +1193,4 @@ END
 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelRunningByDate_Mem] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelRunningByDate_Mem] TO vnteam
 GO

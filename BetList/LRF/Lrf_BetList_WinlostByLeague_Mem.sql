@@ -44,6 +44,7 @@ AS
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 					- Move SP from DBEXT to DBACC
+		- 20181218@Kos: Add index hint to improve performance [#Redmine: 106553]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -253,7 +254,7 @@ BEGIN
 				0 AS WalletType,
 				0 AS RefCode,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
-			FROM dbo.bettrans AS b WITH (NOLOCK)
+			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
@@ -342,7 +343,7 @@ BEGIN
 				ISNULL(b.WalletType, 0) AS WalletType,
 				ISNULL(b.RefCode, 0) AS RefCode,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
-			FROM dbo.bettrans AS b WITH (NOLOCK)
+			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
@@ -722,7 +723,7 @@ BEGIN
 				ISNULL(b.WalletType, 0) AS WalletType,
 				ISNULL(b.RefCode, 0) AS RefCode,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
-			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype

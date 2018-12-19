@@ -1,6 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByBetType]
 	@AgentList			VARCHAR(MAX),
@@ -54,6 +52,7 @@ AS
 		- 20180409@Kos: Support Betradar Virtual Basketball [Redmine: #90881]
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
+		- 20181227@Kos: Hotfix - Licensee WL/Comm on BA ticket [#Redmine: 107084]
 
 	Parameters:
 */
@@ -205,7 +204,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				-(b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+					ELSE -(b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				CASE
@@ -240,7 +242,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				-(b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+					ELSE -(b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				CASE
@@ -274,7 +279,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				-(b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+					ELSE -(b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				CASE
@@ -321,7 +329,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				-(b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+					ELSE -(b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				CASE
@@ -356,7 +367,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				-(b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+					ELSE -(b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				CASE
@@ -390,7 +404,10 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				-(b.winlost - b.actual_stake) AS LicenseeWL,
+				CASE
+					WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+					ELSE -(b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				CASE
@@ -1456,8 +1473,6 @@ END
 
 
 
-GO
-GRANT	VIEW DEFINITION	ON	Lrf_BetList_SelWinLossByBetType	TO	vnteam
 GO
 GRANT	EXECUTE	ON	Lrf_BetList_SelWinLossByBetType	TO	bodbLicenseeNet
 GO

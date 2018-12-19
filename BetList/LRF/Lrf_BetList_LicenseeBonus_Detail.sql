@@ -17,6 +17,7 @@ AS
 		- 20180502@Kos: Missing return GBP base currency data [#Redmine: 94431]
 		- 20180719@Kos: Support more base currencies [#Redmine: 80941]
 		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
+		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106553]
 
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
@@ -95,7 +96,8 @@ BEGIN
 		TransDesc			NVARCHAR(1000),
 		OddsSpread			SMALLMONEY,
 		WalletType			TINYINT,
-		RefCode				BIGINT
+		RefCode				BIGINT,
+		ExtraInfo			VARCHAR(1000)
 	)
 
 	DECLARE @CustId		INT,
@@ -181,7 +183,8 @@ BEGIN
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread,
 			ISNULL(b.WalletType, 0) AS WalletType,
-			0 AS RefCode
+			0 AS RefCode,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.custid = @CustId
@@ -242,7 +245,8 @@ BEGIN
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread,
 			ISNULL(b.WalletType, 0) AS WalletType,
-			0 AS RefCode
+			0 AS RefCode,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.custid = @CustId
@@ -303,7 +307,8 @@ BEGIN
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread,
 			ISNULL(b.WalletType, 0) AS WalletType,
-			0 AS RefCode
+			0 AS RefCode,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.custid = @CustId
@@ -393,7 +398,8 @@ BEGIN
 		b.TransDesc,
 		b.OddsSpread,
 		b.WalletType,
-		b.RefCode
+		b.RefCode,
+		b.ExtraInfo
 	FROM @Data AS b
 		LEFT JOIN @ExchangeRate AS e
 			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.exchangeid = b.Currency
