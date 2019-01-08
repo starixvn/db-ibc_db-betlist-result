@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetListByDayAll]
 	@CustId			INT,
@@ -121,6 +121,7 @@ AS
 		- 20180910@Kos: HotFix - Missing Seat # in Poker Games [#Redmine: 101215]
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 		- 20181011@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 
 	Param's Explanation:
 		+ @TransType:
@@ -385,7 +386,6 @@ BEGIN
 				b.discount,
 				ISNULL(b.checktime, '') AS settletime,
 				0 AS MatchId,
-
 				CASE
 					WHEN b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
 					ELSE b.transid
@@ -1398,7 +1398,19 @@ BEGIN
 				0 AS finalodds2,
 				'' AS oddstype,
 				b.betteam,
-				b.status,
+				CASE
+					WHEN b.status = 'running' THEN
+						CASE
+							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+										WHERE bm.custid = b.custid
+											AND bm.refno = b.refno
+											AND (bm.status = 'waiting'
+												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+								THEN 'Waiting'
+							ELSE b.status
+						END
+					ELSE b.status
+				END AS Status,
 				0 AS SettlementStatus,
 				'' AS betstatus,
 				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
@@ -3374,10 +3386,10 @@ BEGIN
 
 	SELECT * FROM @DetailData
 END
+
+
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetListByDayAll] TO [bodbAdminNet]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetListByDayAll] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetListByDayAll] TO [vnteam]
 GO

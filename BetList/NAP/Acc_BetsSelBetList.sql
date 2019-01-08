@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList]
 	@FromDate		SMALLDATETIME,
@@ -118,6 +118,7 @@ AS
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 		- 20181011@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 */
 
 BEGIN
@@ -486,7 +487,19 @@ BEGIN
 					0 finalodds,
 					0 finalodds2,
 					0 AS OddsType,
-					b.status,
+					CASE
+						WHEN b.status = 'running' THEN
+							CASE
+								WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+											WHERE bm.custid = b.custid
+												AND bm.refno = b.refno
+												AND (bm.status = 'waiting'
+													OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+									THEN 'Waiting'
+								ELSE b.status
+							END
+						ELSE b.status
+					END AS Status,
 					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -2797,8 +2810,10 @@ BEGIN
 	DROP TABLE #BetListDetailData
 	DROP TABLE #SportBettype
 END
+
+
+
 GO
-GRANT	VIEW DEFINITION	ON	Acc_BetsSelBetList	TO	vnteam
 GRANT	EXECUTE	ON	Acc_BetsSelBetList	TO	bodbExtAccNet
 GRANT	EXECUTE	ON	Acc_BetsSelBetList	TO	bodbAdminNet
 GO

@@ -76,6 +76,7 @@ AS
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 		- 20181121@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 */
 
 BEGIN
@@ -551,7 +552,19 @@ BEGIN
 					0 AS FinalOdds,
 					0 AS FinalOdds2,
 					0 AS OddsType,
-					b.status,
+					CASE
+						WHEN b.status = 'running' THEN
+							CASE
+								WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+											WHERE bm.custid = b.custid
+												AND bm.refno = b.refno
+												AND (bm.status = 'waiting'
+													OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+									THEN 'Waiting'
+								ELSE b.status
+							END
+						ELSE b.status
+					END AS Status,
 					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -4238,6 +4251,7 @@ BEGIN
 
 	SELECT * FROM @DetailData
 END
+
 
 
 
