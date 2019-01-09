@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_RefNo_Mem]
 	@AgentList		VARCHAR(MAX),
@@ -19,6 +19,7 @@ AS
 		- 20181011@Kos: Fix Licensee WL of Ba tickets [#Redmine: 80941]
 		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 */
 
 BEGIN
@@ -365,7 +366,19 @@ BEGIN
 				b.modds,
 				0 AS OddsType,
 				0 AS OddsSpread,
-				b.status,
+				CASE
+					WHEN b.status = 'running' THEN
+						CASE
+							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+										WHERE bm.custid = b.custid
+											AND bm.refno = b.refno
+											AND (bm.status = 'waiting'
+												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+								THEN 'Waiting'
+							ELSE b.status
+						END
+					ELSE b.status
+				END AS Status,
 				b.statusID,
 				0 AS LiveIndicator,
 				b.livehomescore,
@@ -1295,6 +1308,4 @@ END
 
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_RefNo_Mem] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_RefNo_Mem] TO [vnteam]
 GO

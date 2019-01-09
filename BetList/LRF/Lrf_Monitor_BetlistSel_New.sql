@@ -51,6 +51,7 @@ AS
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 		- 20181121@Kos: Support new platform 'o' Mobile App [#Redmine: 104521]
 		- 20181210@Kos: Support new platform 'c' Mobile China View [#Redmine: 106088]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -236,7 +237,17 @@ BEGIN
 				b.stake,
 				b.betfrom,
 				CASE
-					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
+						CASE
+							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+										WHERE bm.custid = b.custid
+											AND bm.refno = b.refno
+											AND (bm.status = 'waiting'
+												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+								THEN 'Waiting'
+							ELSE b.status
+						END
 					ELSE b.status
 				END AS status,
 				b.betteam,
@@ -296,7 +307,19 @@ BEGIN
 				b.actual_stake,
 				b.stake,
 				b.betfrom,
-				b.status,
+				CASE
+					WHEN b.status = 'running' THEN
+						CASE
+							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+										WHERE bm.custid = b.custid
+											AND bm.refno = b.refno
+											AND (bm.status = 'waiting'
+												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+								THEN 'Waiting'
+							ELSE b.status
+						END
+					ELSE b.status
+				END AS status,
 				b.betteam,
 				b.oddstype,
 				b.currency AS CurrencyId,
@@ -505,7 +528,7 @@ BEGIN
 		END
 	END
 
-	SELECT 
+	SELECT
 		c.username,
 		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
 		b.CustId,

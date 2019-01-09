@@ -1,4 +1,4 @@
-/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelByDayAll_Mem]
 	@AgentList			VARCHAR(MAX),
@@ -97,6 +97,7 @@ AS
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181102@Patrick: DB052 indexes revolution [RedmineID :#103572]
 		- 20181108@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 
 	Param's Explanation:
 		+ @TransType:
@@ -1268,7 +1269,19 @@ BEGIN
 			0 AS OddsType,
 			b.odds,
 			b.betteam,
-			b.status,
+			CASE
+				WHEN b.status = 'running' THEN
+					CASE
+						WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+									WHERE bm.custid = @CustId
+										AND bm.refno = b.refno
+										AND (bm.status = 'waiting'
+											OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+							THEN 'Waiting'
+						ELSE b.status
+					END
+				ELSE b.status
+			END AS Status,
 			0 AS SettlementStatus,
 			'' betstatus,
 			b.stake,
@@ -2598,8 +2611,6 @@ END
 
 
 
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelByDayAll_Mem] TO [vnteam]
 GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelByDayAll_Mem] TO [bodbLicenseeNet]
 GO 

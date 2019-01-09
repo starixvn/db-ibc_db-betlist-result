@@ -97,6 +97,7 @@ AS
 		- 20181005@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 		- 20181218@Kos: Fix BA ticket [#Redmine: 106553]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 */
 
 BEGIN
@@ -429,7 +430,19 @@ BEGIN
 			b.hdp2,
 			b.Odds,
 			b.Modds,
-			b.status,
+			CASE
+				WHEN b.status = 'running' THEN
+					CASE
+						WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+									WHERE bm.custid = @CustId
+										AND bm.refno = b.refno
+										AND (bm.status = 'waiting'
+											OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+							THEN 'Waiting'
+						ELSE b.status
+					END
+				ELSE b.status
+			END AS Status,
 			0 AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
@@ -607,7 +620,19 @@ BEGIN
 			b.hdp2,
 			b.odds,
 			b.modds,
-			b.status,
+			CASE
+				WHEN b.status = 'running' THEN
+					CASE
+						WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+									WHERE bm.custid = @CustId
+										AND bm.refno = b.refno
+										AND (bm.status = 'waiting'
+											OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+							THEN 'Waiting'
+						ELSE b.status
+					END
+				ELSE b.status
+			END AS Status,
 			0 AS SettlementStatus,
 			b.stake,
 			b.actual_stake,
