@@ -80,6 +80,7 @@ AS
 		- 20180201@Kos: Don't support Racing, Live Casino, RNG Casino (bettype 71, 72), Bingo, P2P, Cockfighting [#Redmine: 86086]
 		- 20181127@Kos: Enhance performance, don't use core anymore [#Redmine: 103577]
 		- 20181227@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 */
 
 BEGIN
@@ -476,12 +477,24 @@ BEGIN
 			,Stake = b.stake
 			,Actual_Stake = b.actual_stake
 			,Status = CASE
-							WHEN c.Product = 'SB'
-								AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-							ELSE b.status END
+						WHEN c.Product = 'SB' AND b.bettype NOT IN (9, 29)
+							AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+						WHEN b.bettype IN (9, 29, 2799) AND b.status = 'running' THEN
+							CASE
+								WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+											WHERE bm.custid = b.custid
+												AND bm.refno = b.refno
+												AND (bm.status = 'waiting'
+													OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+									THEN 'Waiting'
+								ELSE b.status
+							END
+						ELSE b.status
+					END
 			,SettlementStatus = CASE
 									WHEN c.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
-									ELSE 0 END
+									ELSE 0
+								END
 			,TransDate = b.transdate
 			,WinLostDate = b.winlostdate
 			,WinLost = b.winlost - b.actual_stake

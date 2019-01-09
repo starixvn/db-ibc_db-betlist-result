@@ -24,6 +24,7 @@ AS
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
 		- 20180802@Patrick: indexes revolution [RedmineID: #98757]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 
 	Parameter's Explanation:
 		- @CustId: agent ID
@@ -63,8 +64,18 @@ BEGIN
 		b.odds,
 		b.stake,
 		b.actual_stake,
-		CASE 
-			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+		CASE
+			WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+			WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
+				CASE
+					WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+								WHERE bm.custid = b.custid
+									AND bm.refno = b.refno
+									AND (bm.status = 'waiting'
+										OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+						THEN 'Waiting'
+					ELSE b.status
+				END
 			ELSE b.status
 		END AS status,
 		b.betteam,

@@ -79,6 +79,7 @@ AS
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20181129@Kos: Enhance performance, don't use core anymore [#Redmine: 103577]
 		- 20181227@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 
 	Param's Explanation:
 		+ @TransType:
@@ -536,10 +537,21 @@ BEGIN
 									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
 									ELSE b.actual_stake END
 					,Status = CASE
-									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.status IS NOT NULL THEN x.status
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') 
-										AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-									ELSE b.status END
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.status IS NOT NULL THEN x.status
+								WHEN c.Product = 'SB' AND b.bettype NOT IN (9, 29)
+									AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+								WHEN b.bettype IN (9, 29, 2799) AND b.status = 'running' THEN
+									CASE
+										WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+													WHERE bm.custid = b.custid
+														AND bm.refno = b.refno
+														AND (bm.status = 'waiting'
+															OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+											THEN 'Waiting'
+										ELSE b.status
+									END
+								ELSE b.status
+							END
 					,SettlementStatus = CASE
 											WHEN c.Product IN ('SB') THEN ISNULL(m.SettlementStatus, 0)
 											ELSE 0

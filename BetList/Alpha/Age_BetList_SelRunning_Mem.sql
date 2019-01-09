@@ -107,6 +107,7 @@ AS
 		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Remove param @Language
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 */
 
 BEGIN
@@ -573,6 +574,19 @@ BEGIN
 				,MatchId = 0
 				,HomeId = 0
 				,AwayId  = 0
+				,Status = CASE
+							WHEN b.status = 'running' THEN
+								CASE
+									WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+												WHERE bm.custid = @CustId
+													AND bm.refno = b.refno
+													AND (bm.status = 'waiting'
+														OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+										THEN 'Waiting'
+									ELSE b.status
+								END
+							ELSE b.status
+						END
 				,SettlementStatus = 0
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,LiveIndicator = 0
@@ -656,6 +670,19 @@ BEGIN
 				,MatchID = 0
 				,HomeId = 0
 				,AwayId = 0
+				,Status = CASE
+							WHEN b.status = 'running' THEN
+								CASE
+									WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+												WHERE bm.custid = @CustId
+													AND bm.refno = b.refno
+													AND (bm.status = 'waiting'
+														OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+										THEN 'Waiting'
+									ELSE b.status
+								END
+							ELSE b.status
+						END
 				,SettlementStatus = 0
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,LiveIndicator = 0

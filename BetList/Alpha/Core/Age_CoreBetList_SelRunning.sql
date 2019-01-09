@@ -1,14 +1,12 @@
 /*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_CoreBetList_SelRunning]
-(
 	@CustId				INT
 	, @RoleId			TINYINT
 	, @MatchId			INT				= 0
 	, @LiveIndicator	INT				= NULL
 	, @BetTeam			NVARCHAR(20)	= ''
 	, @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]	READONLY
-)
 AS
 
 /*
@@ -35,6 +33,7 @@ AS
 					- Remove param @Username, @Language, @Error, @ErrorMsg, @ColumnOutput
 					- Don't support member level anymore
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -127,10 +126,20 @@ BEGIN
 				, b.hdp2
 				, b.Odds
 				, b.Modds
-				,CASE
-					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				, CASE
+					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
+						CASE
+							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+										WHERE bm.custid = b.custid
+											AND bm.refno = b.refno
+											AND (bm.status = 'waiting'
+												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+								THEN 'Waiting'
+							ELSE b.status
+						END
 					ELSE b.status
-				END AS status
+				END AS Status
 				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
@@ -143,20 +152,20 @@ BEGIN
 				, b.discount AS Adiscount --Agent
 				, b.adiscount AS Mdiscount --Master
 				, b.sdiscount AS Sdiscount --Super
-				, b.Liveindicator
-				, b.Livehomescore
-				, b.Liveawayscore
-				, b.IP
+				, b.liveindicator
+				, b.livehomescore
+				, b.liveawayscore
+				, b.ip
 				,CONVERT(BIT,0) IsNeutral
 				, b.oddstype
 				, '' showtime
 				,CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
-				, b.BetCheck
-				, ''transdesc
+				, b.betcheck
+				, '' AS TransDesc
 				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
-				, bt.productid
-				, bt.eventtype
+				, bt.ProductID
+				, bt.EventType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.recommend = @CustId
@@ -170,7 +179,7 @@ BEGIN
 				0 Sporttype
 				, b.custid
 				, b.Username
-				, b.Bettype
+				, b.bettype
 				, 0 LeagueID
 				, b.refno
 				, b.TransID
@@ -183,12 +192,22 @@ BEGIN
 				, '' AS BetStatus
 				, b.hdp1
 				, b.hdp2
-				, b.Odds
-				, b.Modds
-				,CASE
-					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				, b.odds
+				, b.modds
+				, CASE
+					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
+						CASE
+							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+										WHERE bm.custid = b.custid
+											AND bm.refno = b.refno
+											AND (bm.status = 'waiting'
+												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+								THEN 'Waiting'
+							ELSE b.status
+						END
 					ELSE b.status
-				END AS status
+				END AS Status
 				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
@@ -209,12 +228,12 @@ BEGIN
 				, b.oddstype
 				, '' showtime
 				,CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
-				, b.BetCheck
-				, ''transdesc
+				, b.betcheck
+				, '' AS TransDesc
 				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
-				, bt.productid
-				, bt.eventtype
+				, bt.ProductID
+				, bt.EventType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.mrecommend = @CustId
@@ -241,12 +260,22 @@ BEGIN
 				, '' AS BetStatus
 				, b.hdp1
 				, b.hdp2
-				, b.Odds
-				, b.Modds
+				, b.odds
+				, b.modds
 				, CASE
-					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
+						CASE
+							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+										WHERE bm.custid = b.custid
+											AND bm.refno = b.refno
+											AND (bm.status = 'waiting'
+												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+								THEN 'Waiting'
+							ELSE b.status
+						END
 					ELSE b.status
-				END AS status
+				END AS Status
 				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
@@ -268,11 +297,11 @@ BEGIN
 				, '' showtime
 				,CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 				, b.BetCheck
-				, ''transdesc
+				, '' AS TransDesc
 				, CASE WHEN bt.SubProduct IN('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
-				, bt.productid
-				, bt.eventtype
+				, bt.ProductID
+				, bt.EventType
 			FROM dbo.bettrans b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
 			WHERE b.srecommend = @CustId

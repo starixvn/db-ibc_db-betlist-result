@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelParlayDetail]
 	@TransId	BIGINT,
@@ -34,6 +34,7 @@ AS
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20181022@Kos: Hotfix - View Parlay crossline [Redmine: #103171]
 					- Add new param @CustId, remove param @Language
+		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 */
 
 BEGIN
@@ -59,6 +60,7 @@ BEGIN
 		Stake			MONEY,
 		Currency		NVARCHAR(50),
 		MatchId			INT,
+		EventDate		DATETIME,
 		ShowTime		NVARCHAR(50),
 		HomeId			INT,
 		AwayId			INT,
@@ -66,7 +68,7 @@ BEGIN
 		Hdp2			SMALLMONEY,
 		Odds			MONEY,
 		BetTeam			NVARCHAR(50),
-		StatusId		TINYINT,
+		Status			NVARCHAR(10),
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
 		LiveIndicator	BIT,
@@ -77,29 +79,33 @@ BEGIN
 	)
 
 	DECLARE @RefNo		BIGINT,
-		@CurrencyName	NVARCHAR(50)
+		@CurrencyName	NVARCHAR(50),
+		@Status			NVARCHAR(10)
 
-	SELECT @RefNo = b.refno,
-		@CustId = b.custid,
-		@CurrencyName = ex.currency
+	SELECT
+		@RefNo = b.refno,
+		@CurrencyName = ex.currency,
+		@Status = b.status
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 	WHERE b.transid = @TransId AND b.custid = @CustId
 
 	IF @RefNo IS NULL
 	BEGIN
-		SELECT @RefNo = b.refno,
-			@CustId = b.custid,
-			@CurrencyName = ex.currency
+		SELECT
+			@RefNo = b.refno,
+			@CurrencyName = ex.currency,
+			@Status = b.status
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 		WHERE b.transid = @TransId AND b.custid = @CustId
 
 		IF @RefNo IS NULL
 		BEGIN
-			SELECT @RefNo = b.refno,
-				@CustId = b.custid,
-				@CurrencyName = ex.currency
+			SELECT
+				@RefNo = b.refno,
+				@CurrencyName = ex.currency,
+				@Status = b.status
 			FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			WHERE b.transid = @TransId AND b.custid = @CustId
@@ -120,8 +126,9 @@ BEGIN
 			b.stake,
 			@CurrencyName AS Currency,
 			b.matchid,
+			m.GlobalShowTime AS EventDate,
 			CASE
-				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN sbt.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE m.showtime
 			END AS ShowTime,
 			m.homeid,
@@ -130,36 +137,24 @@ BEGIN
 			b.hdp2,
 			b.odds,
 			b.betteam,
-			b.statusid,
+			CASE
+				WHEN @Status IN ('Void', 'Reject') THEN ''
+				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
+				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
+				ELSE b.status
+			END AS Status,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
 			m.betstatus,
 			m.IsNeutral,
 			b.betcheck,
-			b.transdesc
-		FROM
-			(	SELECT
-					bm.transid,
-					bm.matchid,
-					bm.bettype,
-					bm.stake,
-					bm.hdp1,
-					bm.hdp2,
-					bm.odds,
-					bm.betteam,
-					bm.statusID,
-					bm.livehomescore,
-					bm.liveawayscore,
-					bm.liveindicator,
-					bm.betcheck,
-					ISNULL(bm.transdesc, '') AS transdesc,
-					sbt.ProductId
-				FROM dbo.bettransm AS bm WITH (NOLOCK)
-					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo AND bm.custid = @CustId
-			) AS b
+			ISNULL(b.transdesc, '') AS transdesc
+		FROM dbo.bettransm AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
 	IF EXISTS (	SELECT 1
@@ -176,8 +171,9 @@ BEGIN
 			b.stake,
 			@CurrencyName AS Currency,
 			b.matchid,
+			m.GlobalShowTime AS EventDate,
 			CASE
-				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN sbt.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE m.showtime
 			END AS ShowTime,
 			m.homeid,
@@ -186,36 +182,23 @@ BEGIN
 			b.hdp2,
 			b.odds,
 			b.betteam,
-			b.statusid,
+			CASE
+				WHEN @Status IN ('Void', 'Reject') THEN ''
+				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
+				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
+				ELSE b.status
+			END AS status,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
 			m.betstatus,
 			m.IsNeutral,
 			b.betcheck,
-			b.transdesc
-		FROM
-			(	SELECT
-					bm.transid,
-					bm.matchid,
-					bm.bettype,
-					bm.stake,
-					bm.hdp1,
-					bm.hdp2,
-					bm.odds,
-					bm.betteam,
-					bm.statusID,
-					bm.livehomescore,
-					bm.liveawayscore,
-					bm.liveindicator,
-					bm.betcheck,
-					ISNULL(bm.transdesc, '') AS transdesc,
-					sbt.ProductId
-				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo AND bm.custid = @CustId
-			) AS b
+			ISNULL(b.transdesc, '') AS transdesc
+		FROM dbo.bettransm14 AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
 	IF EXISTS (	SELECT 1
@@ -232,8 +215,9 @@ BEGIN
 			b.stake,
 			@CurrencyName AS Currency,
 			b.matchid,
+			m.GlobalShowTime AS EventDate,
 			CASE
-				WHEN b.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN sbt.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE m.showtime
 			END AS ShowTime,
 			m.homeid,
@@ -242,7 +226,12 @@ BEGIN
 			b.hdp2,
 			b.odds,
 			b.betteam,
-			b.statusid,
+			CASE
+				WHEN @Status IN ('Void', 'Reject') THEN ''
+				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
+				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
+				ELSE b.status
+			END AS status,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -250,28 +239,10 @@ BEGIN
 			m.isNeutral,
 			b.betcheck,
 			b.transdesc
-		FROM
-			(	SELECT
-					bm.transid,
-					bm.matchid,
-					bm.bettype,
-					bm.stake,
-					bm.hdp1,
-					bm.hdp2,
-					bm.odds,
-					bm.betteam,
-					bm.statusID,
-					bm.livehomescore,
-					bm.liveawayscore,
-					bm.liveindicator,
-					bm.betcheck,
-					ISNULL(bm.transdesc, '') AS transdesc,
-					sbt.ProductId
-				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
-					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo AND bm.custID = @CustId
-			) AS b
+		FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		WHERE b.refno = @RefNo AND b.custID = @CustId
 	END
 
 	SELECT DISTINCT * FROM @tmpParlay
@@ -286,6 +257,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelParlayDetail] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelParlayDetail] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelParlayDetail] TO [vnteam]
 GO
