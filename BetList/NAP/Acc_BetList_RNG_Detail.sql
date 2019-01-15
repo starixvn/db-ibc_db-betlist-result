@@ -27,7 +27,8 @@ AS
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20181109@Kos: Move from DBAGE to DBACC [#Redmine: 104521]
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
-		- 20180626@Kos: Change code to prevent wrong index using [#Redmine: 115624]
+		- 20190626@Kos: Change code to prevent wrong index using [#Redmine: 115624]
+		- 20190611@Kos: Support Card Club [#Redmine: 107645]
 
 	Parameters:
 		- @TransType
@@ -41,7 +42,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix --
-	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino
+	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -51,7 +52,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (17, 22, 24, 32)
+	WHERE ProductID IN (17, 22, 24, 32, 34)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
@@ -192,12 +193,9 @@ BEGIN
 			(brng.comm - brng.playercomm) AS comm,
 			brng.ip,
 			brng.transdesc,
+			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (6, 17, 22, 24, 32) THEN brng.TranId3rd
-				ELSE ''
-			END AS BetCheck,
-			CASE
-				WHEN sbt.productID IN (24, 32) THEN brng.Additional
+				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -252,12 +250,9 @@ BEGIN
 			(brng.comm - brng.playercomm) AS comm,
 			brng.ip,
 			brng.transdesc,
+			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (6, 17, 22, 24, 32) THEN brng.TranId3rd
-				ELSE ''
-			END AS BetCheck,
-			CASE
-				WHEN sbt.productID IN (24, 32) THEN brng.Additional
+				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -311,12 +306,9 @@ BEGIN
 			(brng.comm - brng.playercomm) AS comm,
 			brng.ip,
 			brng.transdesc,
+			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (6, 17, 22, 24, 32) THEN brng.TranId3rd
-				ELSE ''
-			END AS BetCheck,
-			CASE
-				WHEN sbt.productID IN (24, 32) THEN brng.Additional
+				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -346,11 +338,11 @@ BEGIN
 	SELECT *
 	FROM (
 		SELECT
-			ROW_NUMBER() OVER(ORDER BY TransId) AS RowNum,
+			ROW_NUMBER() OVER(ORDER BY TransId ASC) AS RowNum,
 			*
 		FROM @Data ) AS t
 	WHERE t.RowNum BETWEEN ((@PageIndex - 1) * @PageSize + 1) AND (@PageSize * @PageIndex)
-	ORDER BY t.TransId
+	ORDER BY t.TransId ASC
 END
 GO
 

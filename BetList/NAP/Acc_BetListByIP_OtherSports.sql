@@ -97,6 +97,8 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
 		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
+		- 20190611@Kos: Support Card Club [#Redmine: 107645]
+					- Don't support Poker Games anymore
 
 	Param's Explanation:
 		• @FromDate = @winlostdate
@@ -423,7 +425,7 @@ BEGIN
 										INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 									WHERE m.sporttype = 1)
 			UNION ALL
-			SELECT 
+			SELECT
 				m.finalhomescore,
 				m.finalawayscore,
 				b.oddsid,
@@ -776,7 +778,7 @@ BEGIN
 				AND b.custid = @CustId
 				AND l.sporttype <> 1 
 
-			-- Keno, Gold Deluxe, Microgaming Live Casino, NG2, Lottery, Poker Games bettrans
+			-- Keno, Gold Deluxe, Microgaming Live Casino, NG2, Lottery bettrans
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -799,7 +801,7 @@ BEGIN
 				0 AS awayid,
 				ISNULL(b.checktime, '') AS checktime,
 				CASE
-					WHEN s.ProductId IN (23, 33) THEN b.hdp1
+					WHEN s.ProductId = 23 THEN b.hdp1
 					ELSE 0
 				END AS hdp1,
 				CASE
@@ -816,16 +818,13 @@ BEGIN
 				0 AS OddsType,
 				b.status,
 				0 AS SettlementStatus,
-				CASE
-					WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
-					ELSE ''
-				END AS comstatus,
+				'' AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
 				'' AS betteam,
 				CASE
-					WHEN s.ProductId IN (23, 33) THEN b.livehomescore
+					WHEN s.ProductId = 23 THEN b.livehomescore
 					ELSE 0
 				END AS livehomescore,
 				0 AS liveawayscore,
@@ -847,7 +846,6 @@ BEGIN
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 					WHEN s.ProductID = 28 THEN 220
-					WHEN s.ProductID = 33 THEN 163
 					ELSE 0
 				END AS sporttype,
 				CASE
@@ -863,7 +861,7 @@ BEGIN
 				b.betfrom,
 				b.winlostdate,
 				CASE
-					WHEN s.ProductID IN (12, 13, 33) THEN b.betcheck
+					WHEN s.ProductID IN (12, 13) THEN b.betcheck
 					WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
@@ -874,20 +872,17 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				CASE
-					WHEN s.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				'' AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
-				AND s.ProductID IN (8, 12, 13, 23, 28, 33)
+				AND s.ProductID IN (8, 12, 13, 23, 28)
 
 			-- Casino, Keno, Gold Deluxe, Microgaming Live Casino, Microgaming RNG Casino, AG Casino, AllBet 
-			-- Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Poker Games bettrans14
+			-- Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Card Club bettrans14
 			UNION ALL
 			SELECT
 				0 AS finalhomescore,
@@ -910,7 +905,7 @@ BEGIN
 				0 AS awayid,
 				ISNULL(b.checktime, '') AS checktime,
 				CASE
-					WHEN s.ProductId IN (23, 33) THEN b.hdp1
+					WHEN s.ProductId = 23 THEN b.hdp1
 					ELSE 0
 				END AS hdp1,
 				CASE
@@ -927,10 +922,7 @@ BEGIN
 				0 AS OddsType,
 				b.status,
 				0 AS SettlementStatus,
-				CASE
-					WHEN s.ProductID = 33 THEN ISNULL(b.comstatus, '')
-					ELSE ''
-				END AS comstatus,
+				'' AS comstatus,
 				b.stake,
 				b.actual_stake,
 				b.transdate,
@@ -946,7 +938,7 @@ BEGIN
 				0 AS htawayscore,
 				b.ip,
 				CASE
-					WHEN s.ProductID = 6 THEN b.matchid
+					WHEN s.ProductID IN (6, 34) THEN b.matchid
 					WHEN s.ProductID = 8 THEN 202
 					WHEN s.ProductID = 11 THEN 250
 					WHEN s.ProductID = 12 THEN 255
@@ -962,7 +954,6 @@ BEGIN
 					WHEN s.ProductID = 24 THEN 219
 					WHEN s.ProductID = 28 THEN 220
 					WHEN s.ProductID = 32 THEN 248
-					WHEN s.ProductID = 33 THEN 163
 					ELSE 0
 				END AS sporttype,
 				CASE
@@ -978,12 +969,12 @@ BEGIN
 				b.betfrom,
 				b.winlostdate,
 				CASE
-					WHEN s.ProductID IN (12, 13, 33) THEN b.betcheck
+					WHEN s.ProductID IN (12, 13) THEN b.betcheck
 					WHEN s.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS betcheck,
 				CASE
-					WHEN s.ProductID IN (6, 8, 22, 23, 24, 28, 32) THEN b.transdesc
+					WHEN s.ProductID IN (6, 8, 22, 23, 24, 28, 32, 34) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				CASE
@@ -992,17 +983,14 @@ BEGIN
 				END AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				CASE
-					WHEN s.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				'' AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
-				AND s.ProductID IN (6, 7, 8, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32, 33)
+				AND s.ProductID IN (6, 7, 8, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32, 34)
 
 			-- Virtual Horse Racing
 			UNION ALL
@@ -1604,7 +1592,7 @@ BEGIN
 				AND b.winlostdate = @Date
 				AND s.ProductID = 15
 
-			-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino
+			-- Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club
 			-- (before yesterday ticket)
 			UNION ALL
 			SELECT
@@ -1655,7 +1643,7 @@ BEGIN
 				0 AS htawayscore,
 				b.ip,
 				CASE
-					WHEN s.ProductID = 6 THEN b.matchid
+					WHEN s.ProductID IN (6, 34) THEN b.matchid
 					WHEN s.ProductID = 17 THEN 205
 					WHEN s.ProductID = 22 THEN 212
 					WHEN s.ProductID = 24 THEN 219
@@ -1672,7 +1660,7 @@ BEGIN
 				b.winlostdate,
 				'' AS betcheck,
 				CASE
-					WHEN s.ProductID IN (6, 22, 24, 32) THEN b.transdesc
+					WHEN s.ProductID IN (6, 22, 24, 32, 34) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				CASE
@@ -1689,7 +1677,7 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND @Date < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
-				AND s.ProductId IN (6, 17, 22, 24, 32)
+				AND s.ProductId IN (6, 17, 22, 24, 32, 34)
 
 			-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
 			-- (yesterday and later running ticket)
@@ -1739,7 +1727,7 @@ BEGIN
 				0 AS htawayscore,
 				b.ip,
 				CASE
-					WHEN s.ProductID = 6 THEN b.matchid
+					WHEN s.ProductID IN (6, 34) THEN b.matchid
 					WHEN s.ProductID = 17 THEN 205
 					WHEN s.ProductID = 22 THEN 212
 					WHEN s.ProductID = 24 THEN 219
@@ -1756,7 +1744,7 @@ BEGIN
 				b.winlostdate,
 				'' AS betcheck,
 				CASE
-					WHEN s.ProductID IN (6, 22, 24, 32) THEN b.transdesc
+					WHEN s.ProductID IN (6, 22, 24, 32, 34) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				0 AS OddsSpread,
@@ -1771,7 +1759,7 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @Date
 				AND @Date >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- yesterday and later
-				AND s.ProductId IN (6, 17, 22, 24, 32)
+				AND s.ProductId IN (6, 17, 22, 24, 32, 34)
 				AND brng.statusID IN (0, 1)
 			GROUP BY
 				b.transid,
@@ -1847,7 +1835,7 @@ BEGIN
 				0 AS htawayscore,
 				b.ip,
 				CASE
-					WHEN s.ProductID = 6 THEN b.matchid
+					WHEN s.ProductID IN (6, 34) THEN b.matchid
 					WHEN s.ProductID = 17 THEN 205
 					WHEN s.ProductID = 22 THEN 212
 					WHEN s.ProductID = 24 THEN 219
@@ -1864,7 +1852,7 @@ BEGIN
 				b.winlostdate,
 				'' AS betcheck,
 				CASE
-					WHEN s.ProductID IN (6, 22, 24, 32) THEN b.transdesc
+					WHEN s.ProductID IN (6, 22, 24, 32, 34) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				CASE
@@ -1883,7 +1871,7 @@ BEGIN
 				AND b.winlostdate = @Date
 				AND @Date BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
-				AND s.ProductId IN (6, 17, 22, 24, 32)
+				AND s.ProductId IN (6, 17, 22, 24, 32, 34)
 				AND brng.statusID NOT IN (0, 1)
 			GROUP BY
 				b.transid,
@@ -2349,11 +2337,6 @@ BEGIN
 	SELECT DISTINCT * FROM @DetailData
 END
 GO
-
-
-
-
-
 
 
 GRANT EXECUTE ON [dbo].[Acc_BetListByIP_OtherSports] TO [bodbAdminNet]

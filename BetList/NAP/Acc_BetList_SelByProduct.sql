@@ -41,6 +41,8 @@ AS
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
 		- 20190531@Kos: Add new input param @Permission VARCHAR(20) [#Redmine: 114125]
 					- Remove param @SiteType
+		- 20190611@Kos: Support Card Club [#Redmine: 107645]
+					- Don't support Poker Games anymore
 */
 
 BEGIN
@@ -55,8 +57,7 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
-	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID = @ProductId
+	FROM dbo.f_SportBettypeMatrix_Sel (@ProductId, 0, 0, 2, '', '', @IsTest)
 
 	-- Get CustId if @CustId IS NULL
 	IF @CustId IS NULL OR @CustId = 0
@@ -299,67 +300,6 @@ BEGIN
 				END
 			END
 
-			-- Poker Games
-			IF @ProductId = 33
-			BEGIN
-				IF @BetId <> ''
-				BEGIN
-					-- bettrans
-					INSERT INTO @Data
-					SELECT
-						b.bettype,
-						b.transid,
-						ISNULL(b.betid, 0) AS BetId,
-						b.refno,
-						'' AS MatchCode,
-						b.sdiscount,
-						b.adiscount,
-						b.discount,
-						0 AS HomeId,
-						0 AS AwayId,
-						b.hdp1,
-						0 AS Hdp2,
-						0 AS Odds,
-						0 AS OddsType,
-						b.status,
-						ISNULL(b.comstatus, '') AS ComStatus,
-						b.stake,
-						b.actual_stake,
-						b.transdate,
-						'' AS BetTeam,
-						b.spositiontaking,
-						b.mpositiontaking,
-						b.apositiontaking,
-						0 AS LiveIndicator,
-						b.custid,
-						b.livehomescore,
-						0 AS LiveAwayScore,
-						0 AS LeagueId,
-						163 AS SportType,
-						b.ip,
-						b.betfrom,
-						0 AS MatchId,
-						(b.winlost - b.actual_stake) AS WinLost,
-						b.playercomm AS Commission,
-						(b.scomm - b.acomm) AS SComm,
-						(b.acomm - b.comm) AS AComm,
-						(b.comm - b.playercomm) AS Comm,
-						b.awinlost,
-						b.mwinlost,
-						b.swinlost,
-						b.winlostdate,
-						b.betcheck,
-						'' AS TransDesc,
-						0 AS OddsSpread,
-						b.ExtraInfo
-					FROM dbo.bettrans AS b WITH (NOLOCK)
-						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-					WHERE b.custid = @CustId
-						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-						AND b.betcheck = @BetId
-				END
-			END
-
 			-- AllBet
 			IF @ProductId = 21
 			BEGIN
@@ -542,8 +482,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino
-			IF @ProductId IN (22, 24, 32)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club
+			IF @ProductId IN (22, 24, 32, 34)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -554,7 +494,7 @@ BEGIN
 						0 AS BetId,
 						b.refno,
 						CASE
-							WHEN s.productID IN (24, 32) THEN b.Additional
+							WHEN s.productID IN (24, 32, 34) THEN b.Additional
 							ELSE ''
 						END AS MatchCode,
 						b.sdiscount,
@@ -682,67 +622,6 @@ BEGIN
 				END
 			END
 
-			-- Poker Games
-			IF @ProductId = 33
-			BEGIN
-				IF @BetId <> ''
-				BEGIN
-					-- bettrans
-					INSERT INTO @Data
-					SELECT
-						b.bettype,
-						b.transid,
-						ISNULL(b.betid, 0) AS BetId,
-						b.refno,
-						'' AS MatchCode,
-						b.sdiscount,
-						b.adiscount,
-						b.discount,
-						0 AS HomeId,
-						0 AS AwayId,
-						b.hdp1,
-						0 AS Hdp2,
-						0 AS Odds,
-						0 AS OddsType,
-						b.status,
-						ISNULL(b.comstatus, '') AS ComStatus,
-						b.stake,
-						b.actual_stake,
-						b.transdate,
-						'' AS BetTeam,
-						b.spositiontaking,
-						b.mpositiontaking,
-						b.apositiontaking,
-						0 AS LiveIndicator,
-						b.custid,
-						b.livehomescore,
-						0 AS LiveAwayScore,
-						0 AS LeagueId,
-						163 AS SportType,
-						b.ip,
-						b.betfrom,
-						0 AS MatchId,
-						(b.winlost - b.actual_stake) AS WinLost,
-						b.playercomm AS Commission,
-						(b.scomm - b.acomm) AS SComm,
-						(b.acomm - b.comm) AS AComm,
-						(b.comm - b.playercomm) AS Comm,
-						b.awinlost,
-						b.mwinlost,
-						b.swinlost,
-						b.winlostdate,
-						b.betcheck,
-						'' AS TransDesc,
-						0 AS OddsSpread,
-						b.ExtraInfo
-					FROM dbo.bettrans14 AS b WITH (NOLOCK)
-						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-					WHERE b.custid = @CustId
-						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
-						AND b.betcheck = @BetId
-				END
-			END
-
 			-- AllBet
 			IF @ProductId = 21
 			BEGIN
@@ -867,8 +746,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino
-			IF @ProductId IN (22, 24, 32)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club
+			IF @ProductId IN (22, 24, 32, 34)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -879,7 +758,7 @@ BEGIN
 						0 AS BetId,
 						b.refno,
 						CASE
-							WHEN s.productID IN (24, 32) THEN b.Additional
+							WHEN s.productID IN (24, 32, 34) THEN b.Additional
 							ELSE ''
 						END AS MatchCode,
 						b.sdiscount,

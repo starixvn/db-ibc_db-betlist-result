@@ -93,6 +93,7 @@ AS
 		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
 		- 20190507@Kos: Support CN88 [Redmine: #112225]
 					- Add new param @IsCN88 BIT
+		- 20190611@Kos: Support Card Club [#Redmine: 107645]
 */
 
 BEGIN
@@ -483,8 +484,8 @@ BEGIN
 	END
 
 	-- RNG Casino, Bingo, Keno, P2P, Gold Deluxe, AG Casino, Microgaming Live Casino, Microgaming RNG Casino
-	-- AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Poker Games
-	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32, 33))
+	-- AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Poker Games, Card Club
+	IF EXISTS (SELECT TOP(1) 1 FROM #SportBettype WHERE ProductID IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32, 33, 34))
 	BEGIN
 		INSERT INTO #BetListData
 		SELECT
@@ -566,6 +567,7 @@ BEGIN
 				WHEN s.ProductID = 28 THEN 220
 				WHEN s.ProductID = 32 THEN 248
 				WHEN s.ProductID = 33 THEN 163
+				WHEN s.ProductID = 34 THEN b.matchid
 				ELSE 0
 			END AS sporttype,
 			b.ip,
@@ -594,7 +596,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.transdesc
-				WHEN s.ProductId IN (8, 22, 23, 24, 28, 32) THEN b.transdesc
+				WHEN s.ProductId IN (8, 22, 23, 24, 28, 32, 34) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			CASE
@@ -613,7 +615,7 @@ BEGIN
 			INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
-			AND s.ProductId IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32, 33)
+			AND s.ProductId IN (6, 7, 8, 9, 11, 12, 13, 17, 21, 22, 23, 24, 28, 32, 33, 34)
 	END
 
 	-- Horse Racing
@@ -1117,7 +1119,7 @@ BEGIN
 		@Username AS Username,
 		@UGroup AS UGroup
 	FROM #BetListData
-	ORDER BY TransId
+	ORDER BY TransId ASC
 
 	-- Get ticket detail
 	CREATE TABLE #BetListDetailData (
@@ -1232,7 +1234,7 @@ BEGIN
 	END
 
 	SELECT * FROM #BetListDetailData
-	ORDER BY RefNo
+	ORDER BY RefNo ASC
 
 	DROP TABLE #BetListData;
 	DROP TABLE #BetListDetailData;
