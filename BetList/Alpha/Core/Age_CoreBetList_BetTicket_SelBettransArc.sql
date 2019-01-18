@@ -45,6 +45,7 @@ AS
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 		- 20190524@Kos: Support BetBuilder [Redmine: #106905]
+		- 20190611@Kos: Support Card Club [Redmine: #107645]
 
 	Param's Explanation:
 
@@ -83,6 +84,7 @@ BEGIN
 		- Lottery				: ProductId = 28
 		- Pragmatic Casino		: ProductId = 32
 		- Poker Games			: ProductId = 33
+		- Card Club				: ProductId = 34
 	*/
 	SELECT
 		CASE WHEN (b.bettype = 29 AND ISNULL(b.betid, 0) > 0) THEN b.betid
@@ -109,6 +111,7 @@ BEGIN
 			WHEN c.ProductId = 28 THEN 220
 			WHEN c.ProductId = 32 THEN 248
 			WHEN c.ProductId = 33 THEN 163
+			WHEN c.ProductId = 34 THEN b.matchid
 			ELSE 0
 		END AS Sporttype
 		, b.bettype
@@ -204,7 +207,7 @@ BEGIN
 		END AS ComStatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
-			WHEN c.ProductId IN (8, 22, 23, 24, 28, 32) THEN b.transdesc
+			WHEN c.ProductId IN (8, 22, 23, 24, 28, 32, 34) THEN b.transdesc
 			ELSE ''
 		END AS transdesc
 		, CASE

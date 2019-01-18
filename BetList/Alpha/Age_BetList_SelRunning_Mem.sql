@@ -109,6 +109,8 @@ AS
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
+		- 20190611@Kos: Support Card Club [Redmine: #107645]
+					- Don't support Poker Games anymore
 */
 
 BEGIN
@@ -240,7 +242,7 @@ BEGIN
 		,Actual_Stake = actual_stake
 		,MDiscount = adiscount --mdiscount
 		,APositionTaking = apositiontaking
-		,BetCheck = ISNULL(b.BetCheck, '') --betcheck
+		,BetCheck = ISNULL(betcheck, '') --betcheck
 		,BetId = ISNULL(betid, 0) --betid
 		,BetTeam = betteam
 		,CheckTime = checktime
@@ -256,17 +258,17 @@ BEGIN
 		,MPositionTaking = mpositiontaking
 		,Odds = odds
 		,OddsId = oddsid
-		,OddsSpread = ISNULL(b.OddsSpread, 0)
+		,OddsSpread = ISNULL(oddsspread, 0)
 		,OddsType = oddstype
 		,RefNo = refno
 		,SDiscount = sdiscount
 		,SecAcceptFlag = SecAcceptFlag
 		,SPositionTaking = spositiontaking
 		,Stake = stake
-		,TransDesc = ISNULL(b.TransDesc, '')
-		,ExtraInfo = ISNULL(b.ExtraInfo, '')
+		,TransDesc = ISNULL(transdesc, '')
+		,ExtraInfo = ISNULL(ExtraInfo, '')
 		,TableID = 1 --bettrans
-	FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_betrunning_custid)
+	FROM dbo.bettrans WITH (NOLOCK, INDEX = IX_betrunning_custid)
 	WHERE custid = @CustId
 		AND statusID IN (0,1)
 		AND transdate >= CASE @GetAll WHEN 1 THEN transdate ELSE @FromDate END
@@ -336,7 +338,7 @@ BEGIN
 		,Ip = ip
 		,LiveAwayScore = 0
 		,LiveHomeScore = 0
-		,LiveIndicator = b.LiveIndicator
+		,LiveIndicator = LiveIndicator
 		,MOdds = 0
 		,MPositionTaking = mpositiontaking
 		,Odds = odds
@@ -355,9 +357,9 @@ BEGIN
 		,Gameid3rd = Gameid3rd
 		,Tranid3rd = Tranid3rd
 		,TableID = 2 -- translog
-	FROM dbo.translog AS b WITH (NOLOCK, INDEX=IX_betrunning_custid)
+	FROM dbo.translog WITH (NOLOCK, INDEX = IX_betrunning_custid)
 	WHERE custid = @CustId
-		AND statusID IN (0,1)
+		AND statusID IN (0, 1)
 		AND transdate >= CASE @GetAll WHEN 1 THEN transdate ELSE @FromDate END
 		AND transdate <= CASE @GetAll WHEN 1 THEN transdate ELSE @ToDate END
 
@@ -379,10 +381,10 @@ BEGIN
 			,TableID = 4 --bettransRnG
 		FROM dbo.bettransRnG WITH (NOLOCK)
 		WHERE custid = @custid
-			AND statusid IN (0, 1)
+			AND statusID IN (0, 1)
 			AND gameid IN (
 					SELECT DISTINCT BetType FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-					WHERE ProductID IN (6, 22, 24, 32)
+					WHERE ProductID IN (6, 22, 24, 32, 34)
 				)
 		GROUP BY RefNo, gameID
 	) AS s ON s.TransID = d.TransId
@@ -443,7 +445,7 @@ BEGIN
 		WHERE custid = @CustId
 			AND statusid IN (0, 1)
 			AND gameID IN (
-					SELECT DISTINCT bettype FROM sportbettypematrix WITH (NOLOCK)
+					SELECT DISTINCT BetType FROM dbo.SportBettypeMatrix WITH (NOLOCK)
 					WHERE ProductID IN (21)
 				)
 		GROUP BY RefNo, gameID
@@ -494,6 +496,7 @@ BEGIN
 	BEGIN
 		-- Check SP Version
 		DECLARE @IsTest BIT = 0
+
 		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 		
 		-- Get Betradar Virtual Sports in addition to Virtual Sports
@@ -501,15 +504,15 @@ BEGIN
 
 		-- get sport/bettype info
 		UPDATE b
-		SET ProductID = s.ProductID
-			,EventType = s.EventType
-			,SubProduct = s.SubProduct
+		SET ProductID = s.ProductID,
+			EventType = s.EventType,
+			SubProduct = s.SubProduct
 		FROM @BetListSelRunningByDateMem b
 			INNER JOIN dbo.f_SportBettypeMatrixByProduct_Sel(@ProductIds, @IsTest) s ON b.bettype = s.bettype
 
 		DELETE @BetListSelRunningByDateMem
 		WHERE ProductID IS NULL
-			OR (ProductID IN (21, 6, 22, 24, 32) AND TableID = 1)
+			OR (ProductID IN (21, 6, 22, 24, 32, 34) AND TableID = 1)
 
 		IF (@hasData & 1 = 1) --got bettrans' data
 		BEGIN
@@ -528,7 +531,7 @@ BEGIN
 							END
 				,SettlementStatus = ISNULL(m.SettlementStatus, 0)
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
-				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0))
+				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT, 0))
 				,ShowTime = ''
 				,ExtraInfo = ISNULL(b.ExtraInfo, '')
 			FROM @BetListSelRunningByDateMem AS b
@@ -628,7 +631,7 @@ BEGIN
 				,MDiscount = CASE WHEN b.ProductID = 26 THEN 0 ELSE b.MDiscount END
 				,SDiscount = CASE WHEN b.ProductID = 26 THEN 0 ELSE b.SDiscount END
 				,OddsType = CASE WHEN b.ProductID IN (3, 5, 27) THEN b.OddsType ELSE 0 END
-				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0))
+				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT, 0))
 				,ShowTime = CASE
 								WHEN b.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 								ELSE ''
@@ -706,7 +709,7 @@ BEGIN
 			WHERE b.TableID = 1 -- bettrans
 				AND b.matchid = 2799
 
-			-- NG2, Poker Games bettrans
+			-- NG2 bettrans
 			UPDATE b
 			SET Sporttype = CASE
 								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2501 AND 2539 THEN 213
@@ -714,7 +717,6 @@ BEGIN
 								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2581 AND 2619 THEN 215
 								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2621 AND 2659 THEN 216
 								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2681 AND 2699 THEN 218
-								WHEN b.ProductId = 33 THEN 163
 								ELSE 0
 							END
 				,LeagueID = 0
@@ -724,7 +726,6 @@ BEGIN
 				,MatchID = 0
 				,HomeId = 0
 				,AwayID = 0
-				,Hdp2 = CASE WHEN b.ProductID = 23 THEN b.hdp2 ELSE 0 END
 				,MOdds = 0
 				,BetTeam = ''
 				,LiveIndicator = 0
@@ -734,21 +735,12 @@ BEGIN
 				,ShowTime = ''
 				,OddsSpread = 0
 				,SettlementStatus = 0
-				,ComStatus = CASE
-								WHEN b.ProductID = 33 THEN ISNULL(b.comstatus, '')
-								ELSE ''
-							END
-				,BetCheck = CASE
-								WHEN b.ProductID = 33 THEN ISNULL(b.betcheck, '')
-								ELSE ''
-							END
-				,ExtraInfo = CASE
-								WHEN b.ProductID = 33 THEN ISNULL(b.ExtraInfo, '')
-								ELSE ''
-							END
+				,ComStatus = ''
+				,BetCheck = ''
+				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 1 -- bettrans
-				AND b.ProductID IN (23, 33)
+				AND b.ProductID = 23
 		END -- got bettrans' data
 
 		IF (@hasData & 2 = 2) -- got translog's data
@@ -832,14 +824,14 @@ BEGIN
 				AND b.ProductID = 30
 		END -- got translog's data
 
-		-- Allbet, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino
-		IF EXISTS (SELECT 1 FROM @BetListSelRunningByDateMem WHERE ProductId IN (21, 6, 22, 24, 32))
+		-- Allbet, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club
+		IF EXISTS ( SELECT 1 FROM @BetListSelRunningByDateMem WHERE ProductId IN (21, 6, 22, 24, 32, 34))
 		BEGIN
 			UPDATE d
 			SET TransDate = s.transdate
 				,WinLostDate = s.winlostdate -- winlostdate
 				,Sporttype = CASE
-									WHEN d.ProductID = 6 THEN s.matchid
+									WHEN d.ProductID IN (6, 34) THEN s.matchid
 									WHEN d.ProductID = 21 THEN 211
 									WHEN d.ProductID = 22 THEN 212
 									WHEN d.ProductID = 24 THEN 219
@@ -882,12 +874,12 @@ BEGIN
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS d
 				INNER JOIN dbo.bettrans AS s WITH (NOLOCK) on d.transid = s.transid
-			WHERE d.ProductID IN (21, 6, 22, 24, 32)
+			WHERE d.ProductID IN (21, 6, 22, 24, 32, 34)
 				--AND s.statusID > 1 -- settled only
 
 			-- DELETE before yesterday one or not IN From - To range
 			DELETE @BetListSelRunningByDateMem
-			WHERE ProductID IN (21, 6, 22, 24, 32)
+			WHERE ProductID IN (21, 6, 22, 24, 32, 34)
 				AND (WinLostDate < DATEADD(dd, DATEDIFF(dd, 0, CURRENT_TIMESTAMP) - 1, 0) --yesterday
 					OR TransDate < CASE @GetAll WHEN 1 THEN TransDate ELSE @FromDate END
 					OR TransDate > CASE @GetAll WHEN 1 THEN transdate ELSE @ToDate END)
@@ -921,7 +913,7 @@ BEGIN
 			WHERE bm.custid = @CustId
 				AND b.ProductID = 5
 				AND b.EventType = 3
-				AND bm.bettype IN (	SELECT DISTINCT bettype FROM dbo.SportBettypeMatrix WITH (NOLOCK)
+				AND bm.bettype IN (	SELECT DISTINCT BetType FROM dbo.SportBettypeMatrix WITH (NOLOCK)
 									WHERE ProductID = 5 AND EventType = 3)
 		END
 
@@ -944,7 +936,7 @@ BEGIN
 				INNER JOIN @BetListSelRunningByDateMem AS b ON bg.refno = b.transid
 			WHERE bg.custid = @CustId
 				AND b.ProductID = 12
-				AND bg.bettype IN (	SELECT DISTINCT bettype FROM dbo.SportBettypeMatrix WITH (NOLOCK)
+				AND bg.bettype IN (	SELECT DISTINCT BetType FROM dbo.SportBettypeMatrix WITH (NOLOCK)
 									WHERE ProductID = 12)
 		END
 	END -- got data
@@ -998,7 +990,7 @@ BEGIN
 	ORDER BY TransId DESC
 
 	SELECT * FROM @BetListDetail
-	ORDER BY RefNo
+	ORDER BY RefNo ASC
 END
 GO
 

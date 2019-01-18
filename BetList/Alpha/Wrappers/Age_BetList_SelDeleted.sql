@@ -63,6 +63,7 @@ AS
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 		- 20190628@Kos: Support PH AIO 4a [Redmine: #112894]
+		- 20190723@Kos: Don't support Poker Games anymore [Redmine: #107645]
 */
 
 BEGIN
@@ -607,7 +608,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 12, 15, 23, 27, 28, 30, 33)
+			OR ProductID NOT IN (1, 3, 5, 8, 12, 15, 23, 27, 28, 30)
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -781,7 +782,6 @@ BEGIN
 				- NG2					: ProductId = 23
 				- Mix Parlay (VS2)		: ProductId = 27
 				- Lottery				: ProductId = 28
-				- Poker Games			: ProductId = 33
 				*/
 				UPDATE b
 				SET
@@ -794,7 +794,6 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId = 33 THEN 163
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -802,7 +801,7 @@ BEGIN
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.ProductId IN (1, 23, 27, 33) THEN b.Hdp1
+								WHEN b.ProductId IN (1, 23, 27) THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
@@ -826,7 +825,7 @@ BEGIN
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.ProductId IN (1, 23, 33) THEN b.LiveHomeScore
+										WHEN b.ProductId IN (1, 23) THEN b.LiveHomeScore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
@@ -848,23 +847,17 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 12, 27, 33) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 12, 27) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
-					ComStatus = CASE
-									WHEN b.ProductId = 33 THEN ISNULL(b.comstatus, '')
-									ELSE ''
-								END,
+					ComStatus = '',
 					TransDesc = CASE
 									WHEN b.ProductId IN (8, 23, 28) THEN b.transdesc
 									ELSE ''
 								END,
 					OddsSpread = 0,
-					ExtraInfo = CASE
-									WHEN b.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
-									ELSE ''
-								END
+					ExtraInfo = ''
 				FROM #PagingData AS b
 				WHERE b.WhTicket = 1
 					AND b.EventType = 0
@@ -1043,7 +1036,6 @@ BEGIN
 				- NG2					: ProductId = 23
 				- Mix Parlay			: ProductId = 27
 				- Lottery				: ProductId = 28
-				- Poker Games			: ProductId = 33
 				*/
 				UPDATE b
 				SET
@@ -1056,7 +1048,6 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId = 33 THEN 163
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -1064,7 +1055,7 @@ BEGIN
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.ProductId IN (1, 23, 27, 33) THEN b.Hdp1
+								WHEN b.ProductId IN (1, 23, 27) THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
@@ -1088,7 +1079,7 @@ BEGIN
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.ProductId IN (1, 23, 33) THEN b.LiveHomeScore
+										WHEN b.ProductId IN (1, 23) THEN b.LiveHomeScore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
@@ -1110,14 +1101,11 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 12, 27, 33) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 12, 27) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
-					ComStatus = CASE
-									WHEN b.ProductId = 33 THEN ISNULL(b.comstatus, '')
-									ELSE ''
-								END,
+					ComStatus = '',
 					TransDesc = CASE
 									WHEN b.ProductId IN (8, 23, 28) THEN b.transdesc
 									ELSE ''
@@ -1371,10 +1359,11 @@ BEGIN
 	ORDER BY TransId DESC
 
 	SELECT * FROM @BetListDetail
-	ORDER BY RefNo
+	ORDER BY RefNo ASC
 
 	DROP TABLE #PagingData
 END
+
 
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelDeleted] TO [bodbDownlineNet]

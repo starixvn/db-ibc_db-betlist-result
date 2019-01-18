@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02,DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBAGE-bodb02,DBACC-bodb02,DB042-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" isFunction="1" isNested="1"></info>*/
 USE [bodb02]
 GO
 
@@ -12,7 +12,7 @@ AS
 /*
 	Created by Percy
 	Date: 2017-06-23
-	DB: DBAGE.bodb02, DBEXT.bodb02, DBACC.bodb02
+	DB: DBAGE.bodb02, DBACC.bodb02, DB042.bodb02
 	Task: Add related products
 
 	Revisions:
