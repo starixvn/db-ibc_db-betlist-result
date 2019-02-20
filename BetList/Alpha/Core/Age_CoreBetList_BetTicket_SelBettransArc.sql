@@ -44,6 +44,7 @@ AS
 		- 20181123@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
+		- 20190524@Kos: Support BetBuilder [Redmine: #106905]
 
 	Param's Explanation:
 
@@ -383,7 +384,7 @@ BEGIN
 			ELSE ISNULL(m.showtime, '')
 		END AS ShowTime
 		, CASE 
-			WHEN (c.ProductId = 1 AND b.bettype IN (216, 217)) THEN b.betcheck
+			WHEN c.ProductId = 1 THEN b.betcheck
 			ELSE ''
 		END AS betcheck
 		, CASE

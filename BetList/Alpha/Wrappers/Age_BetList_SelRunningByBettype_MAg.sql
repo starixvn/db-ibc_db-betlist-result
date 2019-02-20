@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunningByBettype_MAg]
 	@CustId		INT,
@@ -55,6 +55,7 @@ AS
 		- 20180617@Kos: Move SP from bodb_Age to bodb02 [#Redmine: 97037]
 		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Remove param @Language
+		- 20190220@Kos: Support BetBuilder [Redmine: #106905]
 */
 
 BEGIN
@@ -79,12 +80,13 @@ BEGIN
 		OR (@BetType = 7	AND BetType IN (7, 303))		-- Support Myanmar Odds
 		OR (@BetType = 8	AND BetType IN (8, 304))		-- Support Myanmar Odds
 		OR (@BetType = 28	AND BetType IN (28, 453))		-- Support Myanmar Odds
+		OR (@BetType = 29	AND BetType IN (29, 38))
 		OR BetType = @BetType
 
 	EXEC [dbo].[Age_CoreBetList_SelRunning]
-		@CustId				= @CustId
-		, @RoleId			= 3
-		, @BettypeMatrix	= @BettypeMatrix
+		@CustId			= @CustId,
+		@RoleId			= 3,
+		@BettypeMatrix	= @BettypeMatrix
 END
 
 
@@ -92,6 +94,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelRunningByBettype_MAg] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelRunningByBettype_MAg] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelRunningByBettype_MAg] TO vnteam
 GO

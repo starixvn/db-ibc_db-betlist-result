@@ -17,6 +17,7 @@ AS
 		- 20181115@Kos: Create new [#Redmine: 103577]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
+		- 20190524@Kos: Support BetBuilder [Redmine: #106905]
 */
 
 BEGIN
@@ -295,8 +296,7 @@ BEGIN
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN c.Product IN ('SB') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
-				WHEN c.Product IN ('BF') THEN ISNULL(b.betcheck, '')
+				WHEN c.Product IN ('SB', 'BF') THEN ISNULL(b.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
@@ -530,8 +530,7 @@ BEGIN
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN c.Product IN ('SB') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
-				WHEN c.Product IN ('BF') THEN ISNULL(b.betcheck, '')
+				WHEN c.Product IN ('SB', 'BF') THEN ISNULL(b.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,

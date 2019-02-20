@@ -91,6 +91,7 @@ AS
 		- 20181220@Kos: Hotfix - Jackpot Contribution [#Redmine: 106772]
 		- 20181227@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
+		- 20190524@Kos: Support BetBuilder [Redmine: #106905]
 */
 
 BEGIN
@@ -573,7 +574,7 @@ BEGIN
 								WHEN c.Product IN ('Parlay', 'ParlayVS2', 'PG') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 								WHEN c.Product IN ('CB') THEN ISNULL(bm.betcheck, '')
-								WHEN c.Product IN ('SB') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
+								WHEN c.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('BF') THEN ISNULL(b.betcheck, '')
 								ELSE '' END
 				,ComStatus = CASE
@@ -867,7 +868,7 @@ BEGIN
 								WHEN c.Product IN ('Parlay', 'ParlayVS2', 'PG') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 								WHEN c.Product IN ('CB') THEN ISNULL(bm.betcheck, '')
-								WHEN c.Product IN ('SB') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
+								WHEN c.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('BF') THEN ISNULL(b.betcheck, '')
 								ELSE '' END
 				,ComStatus = CASE
