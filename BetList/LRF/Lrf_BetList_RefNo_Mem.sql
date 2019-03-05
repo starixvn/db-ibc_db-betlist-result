@@ -438,7 +438,7 @@ BEGIN
 				ELSE 0
 			END AS Hdp2,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.oddstype
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.oddstype
 				ELSE 0
 			END AS OddsType,
 			CASE
@@ -660,7 +660,7 @@ BEGIN
 				ELSE 0
 			END AS Hdp2,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.oddstype
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.oddstype
 				ELSE 0
 			END AS OddsType,
 			CASE
@@ -869,7 +869,7 @@ BEGIN
 				ELSE 0
 			END AS Hdp2,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.oddstype
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.oddstype
 				ELSE 0
 			END AS OddsType,
 			CASE
@@ -1207,12 +1207,10 @@ BEGIN
 
 	SELECT DISTINCT * FROM @Detail
 END
-
-
-
-
 GO
+
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_RefNo_Mem] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_RefNo_Mem] TO [vnteam]
 GO

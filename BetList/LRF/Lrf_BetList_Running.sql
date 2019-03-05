@@ -1,24 +1,31 @@
 /*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_Running]
-	@AgentList		VARCHAR(MAX),
-	@CustId			INT				= 0,
-	@Username		VARCHAR(50)		= '',
-	@CurrencyId		TINYINT			= 0,
-	@BaseCurrency	VARCHAR(10)		= '',
-	@PageSize		INT				= 1000,
-	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= N'TransId ASC',
-	@ProductList	VARCHAR(200)	= '',
-	@ShowBA			BIT				= 0,	-- BA
-	@TotalRows		INT				= 0 OUTPUT,
-	@SumStake		MONEY			= 0 OUTPUT
+	@AgentList			VARCHAR(MAX),
+	@CustId				INT				= 0,
+	@Username			VARCHAR(50)		= '',
+	@BaseCurrency		VARCHAR(10),
+	@ConvertToBaseCur	BIT				= 0,	-- Convert to base currency or not
+	@StatusFilter		VARCHAR(10)		= '1,2,3',
+	@PageSize			INT				= 1000,
+	@PageIndex			INT				= 1,
+	@Sort				NVARCHAR(50)	= N'TransId ASC',
+	@ProductList		VARCHAR(200)	= '',
+	@ShowBA				BIT				= 0,	-- BA
+	@TotalRows			INT				= 0 OUTPUT,
+	@SumStake			MONEY			= 0 OUTPUT
 AS
 
 /*
 	Created: Kos@20180613
 	Task: Betting Ticket Center - Running Bet List
 	DB: DB042.bodb02
+	Param's Explanation:
+		- @StatusFilter:
+			- 1: Running, Waiting
+			- 2: Result Pending
+			- 3: Under Settlement
+
 	Revisions:
 		- 20180613@Kos: Created [#Redmine: 80941]
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
@@ -26,6 +33,8 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 		- 20190121@Kos: Betting Ticket Center phase 3a [Redmine: #103555]
 					- Remove param @FromDate and @ToDate
+		- 20190305@Kos: Add new param @StatusFilter, @ConvertToBaseCur [Redmine: #108717]
+					- Remove param @CurrencyId
 */
 
 BEGIN
@@ -53,12 +62,6 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		IF @CurrencyId <> 0
-		BEGIN
-			DELETE @TempAg
-			WHERE Currency <> @CurrencyId
-		END
-
 		-- Get CustId in case of inputting Username
 		IF @CustId = 0 AND @Username <> ''
 		BEGIN
@@ -541,6 +544,35 @@ BEGIN
 				INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.bettype = s.bettype
 				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID
 
+			IF @StatusFilter <> '1,2,3'
+			BEGIN
+				UPDATE b
+				SET b.SettlementStatus = m.SettlementStatus
+				FROM #Data AS b
+					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.Product = 'SB' AND m.matchid = b.matchid
+
+				IF ',' + @StatusFilter + ',' NOT LIKE '%,1,%'	-- Not include Running, Waiting
+				BEGIN
+					DELETE #Data
+					WHERE Product <> 'SB'
+						OR (Product = 'SB'
+							AND (Status = 'Waiting'																										-- Waiting
+								OR (Status = 'Running' AND ISNULL(SecAcceptFlag, 0) = 1 AND ISNULL(CheckTime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)	-- Waiting (Second Accept)
+								OR (Status = 'Running' AND ISNULL(SettlementStatus, 0) & 13 = 0)))																	-- Running (normal)
+				END
+				
+				IF ',' + @StatusFilter + ',' NOT LIKE '%,2,%'		-- Not include Result Pending
+					OR ',' + @StatusFilter + ',' NOT LIKE '%,3,%'	-- Not include Under Settlement
+				BEGIN
+					DELETE #Data
+					WHERE Product = 'SB'
+						AND Status = 'Running'
+						AND (ISNULL(SecAcceptFlag, 0) = 0 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP)
+						AND ((',' + @StatusFilter + ',' NOT LIKE '%,2,%' AND ISNULL(SettlementStatus, 0) & 1 <> 0)			-- Result Pending
+							OR (',' + @StatusFilter + ',' NOT LIKE '%,3,%' AND ISNULL(SettlementStatus, 0) & 12 <> 0))		-- Under Settlement
+				END
+			END
+
 			DELETE #Data
 			WHERE Product = 'Unknown'
 				OR Product IS NULL
@@ -600,27 +632,25 @@ BEGIN
 			SET WalletType = 0
 			WHERE WalletType = 2 AND RefCode = 0
 
-			IF @BaseCurrency <> ''
-			BEGIN
-				INSERT INTO #ExchangeRate
-				SELECT
-					e.ExchangeId,
-					CASE
-						WHEN @BaseCurrency = 'MYR' THEN e.MYR
-						WHEN @BaseCurrency = 'USD' THEN e.USD
-						WHEN @BaseCurrency = 'EUR' THEN e.EUR
-						WHEN @BaseCurrency = 'CNY' THEN e.CNY
-						WHEN @BaseCurrency = 'IDR' THEN e.IDR
-						WHEN @BaseCurrency = 'GBP' THEN e.GBP
-						WHEN @BaseCurrency = 'THB' THEN e.THB
-						ELSE 1
-					END AS Rate
-				FROM Lrf_f_GetExchangeDaily(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)) AS e
-				WHERE EXISTS (SELECT 1 FROM #Data WHERE Currency = e.ExchangeId)
-			END
+			-- Get exchange rate
+			INSERT INTO #ExchangeRate
+			SELECT
+				e.ExchangeId,
+				CASE
+					WHEN @BaseCurrency = 'MYR' THEN e.MYR
+					WHEN @BaseCurrency = 'USD' THEN e.USD
+					WHEN @BaseCurrency = 'EUR' THEN e.EUR
+					WHEN @BaseCurrency = 'CNY' THEN e.CNY
+					WHEN @BaseCurrency = 'IDR' THEN e.IDR
+					WHEN @BaseCurrency = 'GBP' THEN e.GBP
+					WHEN @BaseCurrency = 'THB' THEN e.THB
+					ELSE 1
+				END AS Rate
+			FROM Lrf_f_GetExchangeDaily(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)) AS e
+			WHERE EXISTS (SELECT 1 FROM #Data WHERE Currency = e.ExchangeId)
 
 			-- Get sort text
-			IF @BaseCurrency <> '' AND @Sort LIKE '%Stake%'
+			IF @ConvertToBaseCur = 1 AND @Sort LIKE '%Stake%'
 			BEGIN
 				DECLARE @CharIndex TINYINT
 
@@ -635,6 +665,11 @@ BEGIN
 				@SumStake = SUM(b.Stake * ISNULL(e.Rate, 1))
 			FROM #Data AS b
 				LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = b.Currency
+
+			IF @ConvertToBaseCur = 0
+			BEGIN
+				DELETE FROM #ExchangeRate
+			END
 
 			DECLARE @RowStart INT,
 				@RowEnd INT
@@ -691,12 +726,13 @@ BEGIN
 							ELSE 0
 						END,
 				OddsType = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.OddsType
-								ELSE 0
-							END,
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.OddsType
+							ELSE 0
+						END,
 				Odds = CASE
 							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery') THEN b.Odds
-							ELSE 0 END,
+							ELSE 0
+						END,
 				MOdds = CASE 
 							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 							ELSE 0
@@ -909,13 +945,13 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 END
-
-
-
-
-
-
-
 GO
+
+
+
+
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_Running] TO [bodbLicenseeNet]
 GO

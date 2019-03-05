@@ -11,7 +11,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Mem]
 	@BaseCurrency	VARCHAR(10)		= '',
 	@StatusIdList	VARCHAR(50)		= '',
 	@Platform		TINYINT			= 0,
-	@LiveIndicator	TINYINT			= 2,
+	@LiveIndicator	VARCHAR(10)		= '0,1,2',
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@Sort			NVARCHAR(50)	= N'Transid ASC',
@@ -30,7 +30,14 @@ AS
 	Task: Betting Ticket Center - Single Customer Bet List
 	DB: DBACC.bodb02
 	Parameter's Explanation:
-		- @Status: '111,112,113,101,102,103'
+		- @StatusIdList:
+			- 101: Reject
+			- 102: Void (not include Abnormal Bets)
+			- 103: Refund
+			- 111: Draw
+			- 112: Won
+			- 113: Lose
+			- 99: Abnormal Bets
 		- @Platform:
 			- 0 - All: All
 			- 1 - Asia: d (mobile), g (MG Download only)
@@ -46,7 +53,6 @@ AS
 			- 0 : Non-live
 			- 1 : Live
 			- 2 : Mix Non Live & Live (Parlay only)
-			- 3 : All
 
 	Revisions:
 		- 20180711@Kos: Created [#Redmine: 80941]
@@ -54,6 +60,7 @@ AS
 		- 20181113@Kos: Support new platform 'o' Mobile App [#Redmine: 104521]
 		- 20181210@Kos: Support new platform 'c' Mobile China View [#Redmine: 106088]
 		- 20190121@Kos: Betting Ticket Center phase 3a [Redmine: #103555]
+		- 20190305@Kos: Change param @LiveIndicator from TINYINT to VARCHAR(10) [Redmine: #108717]
 */
 
 BEGIN
@@ -283,6 +290,15 @@ BEGIN
 			SET @BetFromList = 'c'
 		END
 
+		DECLARE @OriginalStatusIdList	VARCHAR(50)
+
+		SET @OriginalStatusIdList = @StatusIdList
+
+		IF ',' + @StatusIdList + ',' LIKE '%,99,%'
+		BEGIN
+			SET @StatusIdList = @StatusIdList + ',102'
+		END
+
 		DECLARE @TempToDate	SMALLDATETIME,
 			@TempFromDate	SMALLDATETIME
 
@@ -379,9 +395,8 @@ BEGIN
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 				AND (@Platform = 0
 					OR ',' + @BetFromList + ',' LIKE '%,' + b.betfrom + ',%')
-				AND (@LiveIndicator = 3
-					OR (b.bettype IN (9, 29) AND b.livehomescore = @LiveIndicator)
-					OR (b.bettype NOT IN (9, 29) AND b.liveindicator = @LiveIndicator))
+				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 
 			-- Get more info for CashOut tickets
 			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 911 AND TableID = 1)
@@ -518,9 +533,8 @@ BEGIN
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 				AND (@Platform = 0
 					OR ',' + @BetFromList + ',' LIKE '%,' + b.betfrom + ',%')
-				AND (@LiveIndicator = 3
-					OR (b.bettype IN (9, 29) AND b.livehomescore = @LiveIndicator)
-					OR (b.bettype NOT IN (9, 29) AND b.liveindicator = @LiveIndicator))
+				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 
 			-- Get more info for CashOut tickets
 			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 911 AND TableID = 2)
@@ -652,9 +666,8 @@ BEGIN
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 				AND (@Platform = 0
 					OR ',' + @BetFromList + ',' LIKE '%,' + b.betfrom + ',%')
-				AND (@LiveIndicator = 3
-					OR (b.bettype IN (9, 29) AND b.livehomescore = @LiveIndicator)
-					OR (b.bettype NOT IN (9, 29) AND b.liveindicator = @LiveIndicator))
+				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 
 			-- Get more info for CashOut tickets
 			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 911 AND TableID = 3)
@@ -698,6 +711,12 @@ BEGIN
 		FROM #Data AS b
 		WHERE NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 			OR b.BetType = 913
+			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
+				AND b.Status = 'Void'
+				AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 1)
+			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,102,%'
+				AND b.Status = 'Void'
+				AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 0)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
 		BEGIN
@@ -939,12 +958,13 @@ BEGIN
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.OddsType
-									ELSE 0
-								END,
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.OddsType
+								ELSE 0
+							END,
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery') THEN b.Odds
-								ELSE 0 END,
+								ELSE 0
+							END,
 					MOdds = CASE 
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
@@ -1088,12 +1108,13 @@ BEGIN
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.OddsType
-									ELSE 0
-								END,
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.OddsType
+								ELSE 0
+							END,
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery') THEN b.Odds
-								ELSE 0 END,
+								ELSE 0
+							END,
 					MOdds = CASE 
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
@@ -1237,7 +1258,7 @@ BEGIN
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.OddsType
+									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.OddsType
 									ELSE 0
 								END,
 					Odds = CASE
@@ -1485,13 +1506,13 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 END
-
-
-
-
-
-
-
 GO
+
+
+
+
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_Mem] TO [bodbLicenseeNet]
 GO
