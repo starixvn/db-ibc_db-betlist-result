@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelParlayDetail]
 	@TransId	BIGINT,
@@ -8,7 +8,7 @@ AS
 /*
 	Created:
 	Task: get parlay tickets
-	DB: DBAGE.bodb02
+	DB: DBACC.bodb02
 	Original: BetsSelMTeamList
 
 	Revisions:
@@ -35,6 +35,7 @@ AS
 		- 20181022@Kos: Hotfix - View Parlay crossline [Redmine: #103171]
 					- Add new param @CustId, remove param @Language
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190311@Kos: Move to DB06 [#Redmine: 110058]
 */
 
 BEGIN
@@ -106,7 +107,7 @@ BEGIN
 				@RefNo = b.refno,
 				@CurrencyName = ex.currency,
 				@Status = b.status
-			FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			WHERE b.transid = @TransId AND b.custid = @CustId
 		END
@@ -202,7 +203,7 @@ BEGIN
 	END
 
 	IF EXISTS (	SELECT 1
-				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+				FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo)
 	BEGIN
@@ -239,9 +240,9 @@ BEGIN
 			m.isNeutral,
 			b.betcheck,
 			b.transdesc
-		FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.refno = @RefNo AND b.custID = @CustId
 	END
 
