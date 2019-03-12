@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_CheckBet]
 	@RefNo BIGINT
@@ -26,6 +26,7 @@ AS
 		- 20180223@Kos: Support Licensee Bonus System [#Redmine: 74978]
 		- 20180329@Kos: Increase TransDesc length to 1000 [#Redmine: 92842]
 		- 20181108@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 104013]
+		- 20190313@Kos: Support BetBuilder [Redmine: #104013]
 */
 
 BEGIN
@@ -259,7 +260,10 @@ BEGIN
 				b.refno,
 				m.matchcode,
 				'' AS Race,
-				m.eventdate,
+				CASE
+					WHEN @ProductId = 1 AND @BetType = 38 THEN m.GlobalShowTime
+					ELSE m.eventdate
+				END AS EventDate,
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
 				CASE
@@ -690,14 +694,8 @@ BEGIN
 		LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON b.CustId = ci.custid
 		LEFT JOIN dbo.Exchange AS ex WITH (NOLOCK) ON ci.currency = ex.exchangeid
 END
-
-
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Acc_BetList_CheckBet] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_CheckBet] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_CheckBet] TO [vnteam]
 GO
