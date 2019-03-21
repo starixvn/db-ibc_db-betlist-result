@@ -1,4 +1,4 @@
-/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_RNG_Detail]
 	@AgentList	VARCHAR(MAX),
@@ -24,6 +24,7 @@ AS
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20180514@Kos: Return ExchangeId instead of CurrencyCode [#Redmine: 94845]
 		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
+		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 109471]
 
 	Parameters:
 		- @TransType
@@ -160,7 +161,7 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID = 24 THEN brng.Additional
+				WHEN sbt.productID IN (24, 32) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
@@ -200,7 +201,7 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID = 24 THEN brng.Additional
+				WHEN sbt.productID IN (24, 32) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
@@ -238,7 +239,7 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID = 24 THEN brng.Additional
+				WHEN sbt.productID IN (24, 32) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode
 		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
@@ -290,12 +291,9 @@ BEGIN
 			ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = @Currency
 	ORDER BY b.TransId ASC
 END
+GO
 
 
-GO
-GRANT EXECUTE ON [dbo].[Lrf_BetList_RNG_Detail] TO [bodbAdminNet] AS [dbo]
-GO
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_RNG_Detail] TO [bodbLicenseeNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_RNG_Detail] TO [vnteam] AS [dbo]
 GO
