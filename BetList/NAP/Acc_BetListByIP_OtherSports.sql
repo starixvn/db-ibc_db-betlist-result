@@ -95,6 +95,7 @@ AS
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
 
 	Param's Explanation:
 		• @FromDate = @winlostdate
@@ -1664,7 +1665,7 @@ BEGIN
 				b.winlostdate,
 				'' AS betcheck,
 				CASE
-					WHEN s.ProductID IN (6, 22, 24) THEN b.transdesc
+					WHEN s.ProductID IN (6, 22, 24, 32) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				CASE

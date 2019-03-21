@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_RNG_Detail]
 	@RefNo		BIGINT,
@@ -26,6 +26,7 @@ AS
 		- 20180330@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20181109@Kos: Move from DBAGE to DBACC [#Redmine: 104521]
+		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
 
 	Parameters:
 		- @TransType
@@ -193,7 +194,7 @@ BEGIN
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID = 24 THEN brng.Additional
+				WHEN sbt.productID IN (24, 32) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -253,7 +254,7 @@ BEGIN
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID = 24 THEN brng.Additional
+				WHEN sbt.productID IN (24, 32) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -311,7 +312,7 @@ BEGIN
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID = 24 THEN brng.Additional
+				WHEN sbt.productID IN (24, 32) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -345,11 +346,10 @@ BEGIN
 	WHERE t.RowNum BETWEEN ((@PageIndex - 1) * @PageSize + 1) AND (@PageSize * @PageIndex)
 	ORDER BY t.TransId
 END
+GO
 
 
 GO
-GRANT	VIEW DEFINITION	ON	Acc_BetList_RNG_Detail	TO	vnteam
-GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbExtAccNet
 GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbDownlineNetView
 GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbDownlineNet
 GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbAdminNet

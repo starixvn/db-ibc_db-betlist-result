@@ -106,6 +106,7 @@ AS
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
 */
 
 BEGIN
@@ -4272,7 +4273,7 @@ BEGIN
 					0 AS BetID,
 					b.refno,
 					CASE
-						WHEN s.productID = 24 THEN b.Additional
+						WHEN s.productID IN (24, 32) THEN b.Additional
 						ELSE ''
 					END AS MatchCode,
 					'' AS race,
@@ -4372,7 +4373,7 @@ BEGIN
 					0 AS BetID,
 					b.refno,
 					CASE
-						WHEN s.productID = 24 THEN b.Additional
+						WHEN s.productID IN (24, 32) THEN b.Additional
 						ELSE ''
 					END AS MatchCode,
 					'' AS race,
@@ -4472,7 +4473,7 @@ BEGIN
 					0 AS BetID,
 					b.refno,
 					CASE
-						WHEN s.productID = 24 THEN b.Additional
+						WHEN s.productID IN (24, 32) THEN b.Additional
 						ELSE ''
 					END AS MatchCode,
 					'' AS race,
@@ -4871,16 +4872,10 @@ BEGIN
 
 	SELECT * FROM @DetailData
 END
-
-
-
-
-
-
-
-
 GO
+
+
+
+
 GRANT EXECUTE ON [dbo].[Acc_BetsSelBetList_ByTransID] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetsSelBetList_ByTransID] TO [bodbExtAccNet]
 GO

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-BODB02" executers="bodbDownlineNet,bodbAdminNet,bodbExtAccNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBAGE-BODB02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_SelByProduct]
 	@UserId			BIGINT,
@@ -38,6 +38,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20180927@Kos: Add new permission to view Licensee account [#Redmine: 96118]
 		- 20181115@Kos: Hotfix - Bullfighting [#Redmine: 104833]
+		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
 */
 
 BEGIN
@@ -550,7 +551,7 @@ BEGIN
 						0 AS BetId,
 						b.refno,
 						CASE
-							WHEN s.productID = 24 THEN b.Additional
+							WHEN s.productID IN (24, 32) THEN b.Additional
 							ELSE ''
 						END AS MatchCode,
 						b.sdiscount,
@@ -875,7 +876,7 @@ BEGIN
 						0 AS BetId,
 						b.refno,
 						CASE
-							WHEN s.productID = 24 THEN b.Additional
+							WHEN s.productID IN (24, 32) THEN b.Additional
 							ELSE ''
 						END AS MatchCode,
 						b.sdiscount,
@@ -983,17 +984,8 @@ BEGIN
 
 	SELECT DISTINCT * FROM @DetailData
 END
+GO
 
 
-
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelByProduct] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelByProduct] TO [bodbDownlineNetView]
-GO
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelByProduct] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelByProduct] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_SelByProduct] TO [vnteam] 
 GO

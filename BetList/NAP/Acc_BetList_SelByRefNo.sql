@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_SelByRefNo]
 	@UserId			BIGINT,
@@ -77,6 +77,7 @@ AS
 		- 20181121@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
 */
 
 BEGIN
@@ -3676,7 +3677,7 @@ BEGIN
 					0 AS BetId,
 					b.refno,
 					CASE
-						WHEN s.productID = 24 THEN b.Additional
+						WHEN s.productID IN (24, 32) THEN b.Additional
 						ELSE ''
 					END AS MatchCode,
 					'' AS Race,
@@ -3775,7 +3776,7 @@ BEGIN
 					0 AS BetId,
 					b.refno,
 					CASE
-						WHEN s.productID = 24 THEN b.Additional
+						WHEN s.productID IN (24, 32) THEN b.Additional
 						ELSE ''
 					END AS MatchCode,
 					'' AS Race,
@@ -4251,16 +4252,11 @@ BEGIN
 
 	SELECT * FROM @DetailData
 END
-
-
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelByRefNo] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelByRefNo] TO [bodbDownlineNetView]
-GO
+
+
+
+
+
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelByRefNo] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelByRefNo] TO [bodbExtAccNet]
 GO
