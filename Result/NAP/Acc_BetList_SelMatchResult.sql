@@ -42,7 +42,8 @@ AS
 		- 20180423@Kos: Hotfix - redundant Result Detail in result popup [Redmine: #94133]
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Move eventstatus data transform to web (no change for Tennis)
-		- 20181122@Kos: Support E-Sports phase 2 [Redmine: #101047]					
+		- 20181122@Kos: Support E-Sports phase 2 [Redmine: #101047]
+		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #110599]
 */
 
 BEGIN
@@ -106,7 +107,7 @@ BEGIN
 		IF @SportType = 5
 			SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 		ELSE
-			SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
+			SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 
 		-- Get result detail
 		IF @SportType NOT IN (43, 193)
@@ -248,7 +249,7 @@ BEGIN
 		IF @SportType = 5
 			SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 		ELSE
-			SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
+			SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 
 		-- Get result detail
 		IF @SportType NOT IN (43, 193)
@@ -390,7 +391,7 @@ BEGIN
 		IF @SportType = 5
 			SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 		ELSE
-			SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
+			SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 
 		-- Get result detail
 		IF @SportType NOT IN (43, 193)
@@ -482,15 +483,9 @@ BEGIN
 		END
 	END
 END
-
-
-
-
-
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelMatchResult] TO [bodbExtAccNet]
-GO
+
+
+
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelMatchResult] TO [bodbAdminNet]
 GO
