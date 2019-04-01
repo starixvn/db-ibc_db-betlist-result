@@ -15,9 +15,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowVS		BIT			= 0,	-- Virtual Sports
 	@ShowCS		BIT			= 0,	-- RNG Casino
 	@ShowKN		BIT			= 0,	-- Keno
-	@ShowMGCLC	BIT			= 0,	-- Microgaming Live Casino
 	@ShowCB		BIT			= 0,	-- Colossus Bets
-	@ShowMGCRNG	BIT			= 0,	-- Microgaming RNG Casino
 	@ShowAGC	BIT			= 0,	-- AG Casino
 	@ShowAB		BIT			= 0,	-- AllBet
 	@ShowVB		BIT			= 0,	-- Voidbridge
@@ -98,6 +96,8 @@ AS
 		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 		- 20181218@Kos: Fix BA ticket [#Redmine: 106553]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
+		- 20190401@Kos: Don't support Microgaming Live Casino and Microgaming RNG Casino anymore [#Redmine: 107704]
+					- Remove params @ShowMGCLC and @ShowMGCRNG
 */
 
 BEGIN
@@ -170,7 +170,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 27, 28, 32)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -180,9 +180,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowCS = 0		THEN 6 END
 		OR ProductID	= CASE WHEN @ShowKN = 0		THEN 8 END
 		OR ProductID	= CASE WHEN @ShowAGC = 0	THEN 11 END
-		OR ProductID	= CASE WHEN @ShowMGCLC = 0	THEN 13 END
 		OR ProductID	= CASE WHEN @ShowCB = 0		THEN 15 END
-		OR ProductID	= CASE WHEN @ShowMGCRNG = 0	THEN 17 END
 		OR ProductID	= CASE WHEN @ShowAB = 0		THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB = 0		THEN 22 END
 		OR ProductID	= CASE WHEN @ShowFW = 0		THEN 24 END
@@ -793,14 +791,13 @@ BEGIN
 			AND b.statusID IN (0, 1)
 	END
 
-	-- Keno, Microgaming Live Casino, Colossus Bets, Lottery (translog)
-	IF @ShowKN = 1 OR @ShowMGCLC = 1 OR @ShowCB = 1 OR @ShowLT = 1
+	-- Keno, Colossus Bets, Lottery (translog)
+	IF @ShowKN = 1 OR @ShowCB = 1 OR @ShowLT = 1
 	BEGIN
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
 			CASE
 				WHEN sbt.ProductID = 8 THEN 202
-				WHEN sbt.ProductID = 13 THEN 203
 				WHEN sbt.ProductID = 15 THEN 204
 				WHEN sbt.ProductID = 28 THEN 220
 				ELSE 0
@@ -860,11 +857,11 @@ BEGIN
 			t.transdate BETWEEN @FromDate AND @ToDate
 			AND t.custid = @CustID
 			AND t.statusID IN (0, 1)
-			AND sbt.ProductID IN (8, 13, 15, 28)
+			AND sbt.ProductID IN (8, 15, 28)
 	END
 
-	-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino
-	IF (@ShowCS = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1)
+	-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino
+	IF (@ShowCS = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1)
 		AND EXISTS (SELECT 1 FROM dbo.bettransRnG WITH (NOLOCK) WHERE custid = @CustId AND statusID IN (0, 1))
 	BEGIN
 		-- Yesterday and today running ticket
@@ -872,7 +869,6 @@ BEGIN
 		SELECT
 			CASE
 				WHEN sbt.ProductID = 6 THEN b.matchid
-				WHEN sbt.ProductID = 17 THEN 205
 				WHEN sbt.ProductID = 22 THEN 212
 				WHEN sbt.ProductID = 24 THEN 219
 				WHEN sbt.ProductID = 32 THEN 248
@@ -927,7 +923,7 @@ BEGIN
 			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.winlostdate BETWEEN @Yesterday AND @Today
 			AND brng.custid = @CustId
-			AND (sbt.ProductID IN (17, 22, 24, 32)
+			AND (sbt.ProductID IN (22, 24, 32)
 				OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 			AND sbt.EventType = 0
 			AND brng.statusID IN (0, 1)

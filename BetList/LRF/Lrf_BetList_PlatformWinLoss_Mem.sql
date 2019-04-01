@@ -13,8 +13,6 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_PlatformWinLoss_Mem]
 	@ShowVS		BIT = 0,	-- Virtual Sports
 	@ShowCS		BIT = 0,	-- RNG Casino
 	@ShowKN		BIT = 0,	-- Keno
-	@ShowMGCLC	BIT = 0,	-- Microgaming Live Casino
-	@ShowMGCRNG	BIT = 0,	-- Microgaming RNG Casino
 	@ShowVB		BIT = 0,	-- Macau Games
 	@ShowFW		BIT = 0,	-- Fishing World
 	@ShowVS2	BIT = 0,	-- Betradar Virtual Sports
@@ -96,6 +94,8 @@ AS
 		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
 		- 20181113@Kos: Support new platform 'o' Mobile App [#Redmine: 104521]
 		- 20181210@Kos: Support new platform 'c' Mobile China View [#Redmine: 106088]
+		- 20190401@Kos: Don't support Microgaming Live Casino and Microgaming RNG Casino anymore [#Redmine: 107704]
+					- Remove params @ShowMGCLC and @ShowMGCRNG
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -135,7 +135,7 @@ AS
 		EXEC [Lrf_BetList_PlatformWinLoss_Mem] @AgentList=N'<ROOT><Agent AgentId="791088" Currency="6"/><Agent AgentId="860379" Currency="6"/></ROOT>',@custid=16052548,
 			@FromDate='2016-03-01 00:00:00',@ToDate='2016-03-30 00:00:00',
 			@MoveBetsDay='2016-03-20 00:00:00',@BalanceUpDay='2016-03-19 00:00:00',
-			@showSB=1,@showNG=0,@ShowVS=1,@ShowCS=0,@ShowKN=1,@ShowMGCLC=0,@ShowMGCRNG=1,@ShowVB=1,
+			@showSB=1,@showNG=0,@ShowVS=1,@ShowCS=0,@ShowKN=1,@ShowVB=1,
 			@showBA=0,@PageSize=2147483646,@PageIndex=1,@totalrows=@p17 OUTPUT,@SumWinlost=@p18 OUTPUT,
 			@SumLicenseeWL=@p19 OUTPUT,@SumComm=@p20 OUTPUT,@SumPlayerComm=@p21 OUTPUT,@SumWinlostUSD=@p22 OUTPUT,
 			@SumLicenseeWLUSD=@p23 OUTPUT,@SumCommUSD=@p24 OUTPUT,@SumPlayerCommUSD=@p25 OUTPUT,
@@ -164,7 +164,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -179,7 +179,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 13, 17, 22, 24, 27, 28)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 22, 24, 27, 28)
 
 	DELETE @SportBettype 
 	WHERE ProductID = 1 AND Bettype IN (901, 902, 903, 904)	-- Don't support BetTrade
@@ -190,8 +190,6 @@ BEGIN
 		OR ProductID = CASE WHEN @ShowVS		= 0 THEN 5 END
 		OR ProductID = CASE WHEN @ShowCS		= 0 THEN 6 END
 		OR ProductID = CASE WHEN @ShowKN		= 0 THEN 8 END
-		OR ProductID = CASE WHEN @ShowMGCLC		= 0 THEN 13 END
-		OR ProductID = CASE WHEN @ShowMGCRNG	= 0 THEN 17 END
 		OR ProductID = CASE WHEN @ShowVB		= 0 THEN 22 END
 		OR ProductID = CASE WHEN @ShowFW		= 0 THEN 24 END
 		OR ProductID = CASE WHEN @ShowVS2		= 0 THEN 27 END
@@ -592,8 +590,8 @@ BEGIN
 				AND b.matchid IN (9, 29)
 		END
 
-		-- Sportsbook, RNG Casino, Keno, Microgaming Live Casino, Betradar Virtual Sports, Lottery (EventType = 0)
-		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowMGCLC = 1 OR @ShowVS2 = 1 OR @ShowLT = 1
+		-- Sportsbook, RNG Casino, Keno, Betradar Virtual Sports, Lottery (EventType = 0)
+		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowVS2 = 1 OR @ShowLT = 1
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -601,7 +599,6 @@ BEGIN
 					WHEN sbt.ProductID IN (1, 27) THEN 0
 					WHEN sbt.ProductID = 6 THEN 251
 					WHEN sbt.ProductID = 8 THEN 202
-					WHEN sbt.ProductID = 13 THEN 203
 					WHEN sbt.ProductID = 28 THEN 220
 					ELSE 0
 				END AS Sporttype,
@@ -668,7 +665,7 @@ BEGIN
 				b.currency,
 				'' AS ShowTime,
 				CASE
-					WHEN sbt.ProductID IN (1, 13, 27) THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductID IN (1, 27) THEN ISNULL(b.betcheck, '')
 					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
@@ -687,7 +684,7 @@ BEGIN
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.EventType = 0
-				AND (sbt.ProductID IN (8, 13, 27, 28)
+				AND (sbt.ProductID IN (8, 27, 28)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct = '')
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @TempFromDate AND @tdate
@@ -921,15 +918,14 @@ BEGIN
 
 		END
 
-		-- Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World
-		IF @ShowCS = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1
+		-- RNG Casino Single Wallet, Macau Games, Fishing World
+		IF @ShowCS = 1 OR @ShowVB = 1 OR @ShowFW = 1
 		BEGIN
 			-- Up to yesterday settled ticket
 			INSERT INTO @Data
 			SELECT
 				CASE
 					WHEN sbt.ProductID = 6 THEN b.matchid
-					WHEN sbt.ProductID = 17 THEN 205
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					ELSE 0
@@ -984,7 +980,7 @@ BEGIN
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
-			WHERE (sbt.ProductID IN (17, 22, 24)
+			WHERE (sbt.ProductID IN (22, 24)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 				AND b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.winlostdate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
@@ -1000,7 +996,6 @@ BEGIN
 				SELECT
 					CASE
 						WHEN sbt.ProductID = 6 THEN b.matchid
-						WHEN sbt.ProductID = 17 THEN 205
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
 						ELSE 0
@@ -1060,7 +1055,7 @@ BEGIN
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
-				WHERE (sbt.ProductID IN (17, 22, 24)
+				WHERE (sbt.ProductID IN (22, 24)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND b.winlostdate BETWEEN @TempFromDate AND @tdate
 					AND b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) 
@@ -1322,10 +1317,8 @@ BEGIN
 				AND b.matchid IN (9, 29)
 		END
 
-		-- Sportsbook, RNG Casino, Keno, Microgaming Live Casino, Microgaming RNG Casino, Macau Games
-		-- Fishing World, Betradar Virtual Sports, Lottery (EventType = 0)
-		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1
-			OR @ShowVS2 = 1 OR @ShowLT = 1
+		-- Sportsbook, RNG Casino, Keno, Macau Games, Fishing World, Betradar Virtual Sports, Lottery (EventType = 0)
+		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowVS2 = 1 OR @ShowLT = 1
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -1334,8 +1327,6 @@ BEGIN
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN 251
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.matchid
 					WHEN sbt.ProductID = 8 THEN 202
-					WHEN sbt.ProductID = 13 THEN 203
-					WHEN sbt.ProductID = 17 THEN 205
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
@@ -1407,7 +1398,7 @@ BEGIN
 				b.currency,
 				'' AS ShowTime,
 				CASE
-					WHEN sbt.ProductID IN (1, 13, 27) THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductID IN (1, 27) THEN ISNULL(b.betcheck, '')
 					WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
@@ -1427,7 +1418,7 @@ BEGIN
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.EventType = 0
-				AND (sbt.ProductID IN (6, 8, 13, 17, 22, 24, 27, 28)
+				AND (sbt.ProductID IN (6, 8, 22, 24, 27, 28)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
@@ -1896,10 +1887,8 @@ BEGIN
 				AND b.matchid IN (9, 29)
 		END
 
-		-- Sportsbook, RNG Casino, Keno, Microgaming Live Casino, Microgaming RNG Casino, Macau Games
-		-- Fishing World, Betradar Virtual Sports, Lottery (EventType = 0)
-		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowMGCLC = 1 OR @ShowMGCRNG = 1 OR @ShowVB = 1 OR @ShowFW = 1
-			OR @ShowVS2 = 1 OR @ShowLT = 1
+		-- Sportsbook, RNG Casino, Keno, Macau Games, Fishing World, Betradar Virtual Sports, Lottery (EventType = 0)
+		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowVS2 = 1 OR @ShowLT = 1
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -1908,8 +1897,6 @@ BEGIN
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN 251
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.matchid
 					WHEN sbt.ProductID = 8 THEN 202
-					WHEN sbt.ProductID = 13 THEN 203
-					WHEN sbt.ProductID = 17 THEN 205
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
@@ -1981,7 +1968,7 @@ BEGIN
 				b.currency,
 				'' AS ShowTime,
 				CASE
-					WHEN sbt.ProductID IN (1, 13, 27) THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductID IN (1, 27) THEN ISNULL(b.betcheck, '')
 					WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
@@ -2001,7 +1988,7 @@ BEGIN
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.EventType = 0
-				AND (sbt.ProductID IN (6, 8, 13, 17, 22, 24, 27, 28)
+				AND (sbt.ProductID IN (6, 8, 22, 24, 27, 28)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
@@ -2487,13 +2474,11 @@ BEGIN
 
 	DROP TABLE #TempExchange
 END
-
-
-
-
-
-
-
 GO
+
+
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_PlatformWinLoss_Mem] TO [bodbLicenseeNet]
 GO

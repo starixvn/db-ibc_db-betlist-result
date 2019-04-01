@@ -25,6 +25,7 @@ AS
 		- 20180514@Kos: Return ExchangeId instead of CurrencyCode [#Redmine: 94845]
 		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 109471]
+		- 20190401@Kos: Don't support Microgaming RNG Casino anymore [#Redmine: 107704]
 
 	Parameters:
 		- @TransType
@@ -69,7 +70,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (17, 22, 24, 32)
+	WHERE ProductID IN (22, 24, 32)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)

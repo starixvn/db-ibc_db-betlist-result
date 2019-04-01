@@ -92,6 +92,7 @@ AS
 		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
+		- 20190401@Kos: Don't support Microgaming Live Casino and Microgaming RNG Casino anymore [#Redmine: 107704]
 
 	Param's Explanation:
 		+ @TransType:
@@ -229,13 +230,13 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 13, 15, 17, 21, 22, 24, 25, 27, 28, 32)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32)
 		AND BetType NOT IN (904, 914)
 
-	IF @TransType = 4	-- support only for Microgaming RNG Casino, Colossus Bets
+	IF @TransType = 4	-- support only for Colossus Bets
 	BEGIN
 		DELETE @SportBettype
-		WHERE ProductID NOT IN (15, 17)
+		WHERE ProductID NOT IN (15)
 	END
 	-- end filer bettypes by sporttype
 
@@ -589,8 +590,7 @@ BEGIN
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
 			AND b.bettype = 10
 
-		-- RNG Casino, Keno, AG Casino, Microgaming Live Casino, Microgaming RNG Casino, AllBet, Macau Games, Fishing World
-		-- Lottery, Pragmatic Casino
+		-- RNG Casino, Keno, AG Casino, AllBet, Macau Games, Fishing World, Lottery, Pragmatic Casino
 		INSERT INTO @Data
 		SELECT
 			CASE
@@ -598,8 +598,6 @@ BEGIN
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.matchid
 				WHEN sbt.ProductID = 8 THEN 202
 				WHEN sbt.ProductID = 11 THEN 250
-				WHEN sbt.ProductID = 13 THEN 203
-				WHEN sbt.ProductID = 17 THEN 205
 				WHEN sbt.ProductID = 21 THEN 211
 				WHEN sbt.ProductID = 22 THEN 212
 				WHEN sbt.ProductID = 24 THEN 219
@@ -681,7 +679,6 @@ BEGIN
 			b.currency,
 			'' AS ShowTime,
 			CASE
-				WHEN sbt.ProductID = 13 THEN b.betcheck
 				WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
 				ELSE ''
 			END AS BetCheck,
@@ -702,7 +699,7 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-			AND sbt.ProductID IN (6, 8, 11, 13, 17, 21, 22, 24, 28, 32)
+			AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32)
 			AND sbt.EventType = 0
 
 		-- Colossus Bets
@@ -767,67 +764,6 @@ BEGIN
 	END
 	ELSE IF @transtype = 4		-- Grand Prize Jackpot Win
 	BEGIN
-		-- Microgaming RNG Casino
-		INSERT INTO @Data
-		SELECT
-			205 AS SportType,
-			0 AS LeagueId,
-			0 AS HomeId,
-			0 AS AwayId,
-			b.gameID AS BetType,
-			'' AS MatchCode,
-			'' AS Race,
-			0 AS MatchId,
-			b.transid,
-			pt.transdate,
-			pt.winlostdate,
-			b.refno,
-			0 AS BetId,
-			0 AS OddsId,
-			0 AS hdp1,
-			0 AS hdp2,
-			0 AS modds,
-			0 AS Oddstype,
-			0 AS Odds,
-			'' AS BetTeam,
-			b.status,
-			'' AS BetStatus,
-			b.stake,
-			b.actual_stake,
-			pt.WinAmount AS WinLost,
-			0 AS LicenseeWL,
-			0 AS Comm,
-			0 AS PlayerComm,
-			0 AS LiveHomeScore,
-			0 AS LiveAwayScore,
-			0 AS LiveIndicator,
-			0 AS FinalHomeScore,
-			0 AS FinalAwayScore,
-			0 AS hthomescore,
-			0 AS htawayscore,
-			b.ip,
-			@Username,
-			CONVERT(BIT, 0) AS IsNeutral,
-			b.currency,
-			'' AS ShowTime,
-			b.TranId3rd AS BetCheck,
-			b.transdesc,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo,
-			0 AS OriginalStake,
-			0 AS OriginalBetType,
-			0 AS WalletType,
-			0 AS RefCode,
-			0 AS OddsSpread
-		FROM
-			dbo.PayoutTrans AS pt WITH (NOLOCK)
-			INNER JOIN bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK) ON pt.RefNo = b.transid
-			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.bettype
-		WHERE pt.custid = @CustId
-			AND pt.winlostdate = @TempFromDate
-			AND sbt.ProductID = 17
-			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-
 		-- Colossus Bets
 		INSERT INTO @Data
 		SELECT
