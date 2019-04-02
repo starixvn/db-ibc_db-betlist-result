@@ -958,9 +958,10 @@ BEGIN
 						END AS Product,
 						2 AS WhTicket
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-						INNER JOIN @TempCust AS c ON b.custid = c.CustId
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+						AND t.CustId = b.custid
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ((b.bettype = 2799 AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 							OR (b.bettype <> 2799 AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
@@ -1052,12 +1053,13 @@ BEGIN
 						END AS Product,
 						2 AS WhTicket
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-						INNER JOIN @TempCust AS c ON b.custid = c.CustId
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (3, 5, 25, 27)
 						LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
 						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
+						CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+						AND t.CustId = b.custid
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))

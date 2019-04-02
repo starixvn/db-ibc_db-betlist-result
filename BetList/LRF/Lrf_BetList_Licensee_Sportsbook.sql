@@ -1327,9 +1327,10 @@ BEGIN
 						END AS Product,
 						2 AS WhTicket
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-						INNER JOIN @TempCust AS c ON b.custid = c.CustId
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+						AND t.CustId = b.custid
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 						AND b.bettype NOT BETWEEN 801 AND 899
@@ -1435,10 +1436,11 @@ BEGIN
 							END AS Product,
 							2 AS WhTicket
 						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-							INNER JOIN @TempCust AS c ON b.custid = c.CustId
 							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+							CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+							AND t.CustId = b.custid
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 							AND b.bettype NOT BETWEEN 801 AND 899
@@ -1539,11 +1541,12 @@ BEGIN
 							'Outright' AS Product,
 							2 AS WhTicket
 						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-							INNER JOIN @TempCust AS c ON b.custid = c.CustId
 							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
 							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+							CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+							AND t.CustId = b.custid
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype = 10
 							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
