@@ -35,6 +35,7 @@ AS
 					- Remove param @FromDate and @ToDate
 		- 20190305@Kos: Add new param @StatusFilter, @ConvertToBaseCur [Redmine: #108717]
 					- Remove param @CurrencyId
+		- 20190411@Kos: Support search LIKE on username [Redmine: #111665]
 */
 
 BEGIN
@@ -59,38 +60,6 @@ BEGIN
 	BEGIN CATCH
 		SET @HasError = 1
 	END CATCH
-
-	IF @HasError = 0
-	BEGIN
-		-- Get CustId in case of inputting Username
-		IF @CustId = 0 AND @Username <> ''
-		BEGIN
-			SET @CustId = -1
-
-			SELECT @CustId = custid
-			FROM dbo.Customer AS c WITH (NOLOCK)
-			WHERE EXISTS (SELECT 1 FROM @TempAg WHERE CustId = c.recommend)
-				AND c.username = @Username
-
-			IF @CustId = -1
-			BEGIN
-				SELECT @CustId = custid
-				FROM dbo.Customer AS c WITH (NOLOCK)
-				WHERE EXISTS (SELECT 1 FROM @TempAg WHERE CustId = c.recommend)
-					AND c.username2 LIKE + '%$' + @Username
-			END
-		END
-
-		IF @CustId = -1
-			OR (@CustId <> 0
-				AND NOT EXISTS (	SELECT 1 FROM dbo.custInfo AS c WITH (NOLOCK)
-									WHERE c.custid = @CustId
-										AND EXISTS (	SELECT 1 FROM @TempAg
-														WHERE CustId = c.recommend AND Currency = c.currency)))
-		BEGIN
-			SET @HasError = 1
-		END
-	END
 
 	CREATE TABLE #Data (
 		TransId				BIGINT,
@@ -231,7 +200,7 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		IF @CustId = 0		-- Licensee level
+		IF @Username IS NULL OR @Username = ''		-- Licensee level
 		BEGIN
 			-- bettrans
 			INSERT INTO #Data (
@@ -368,6 +337,16 @@ BEGIN
 		END
 		ELSE		-- Customer level
 		BEGIN
+			DECLARE @TempCust TABLE (CustId INT)
+
+			INSERT INTO @TempCust
+			SELECT c.custid
+			FROM dbo.Customer AS c WITH (NOLOCK)
+				INNER JOIN @TempAg AS a ON c.recommend = a.CustId
+			WHERE c.roleid = 1
+				AND (c.username LIKE + '%' + @Username + '%'
+					OR c.username2 LIKE + '%$%' + @Username + '%')
+
 			-- bettrans
 			INSERT INTO #Data (
 				TransId,
@@ -444,7 +423,8 @@ BEGIN
 				ISNULL(b.RefCode, 0),
 				1 AS TableID
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_custid)
-			WHERE b.custid = @CustId AND b.statusID IN (0, 1)
+				INNER JOIN @TempCust AS c ON b.custid = c.CustId
+			WHERE b.statusID IN (0, 1)
 
 			-- translog
 			INSERT INTO #Data (
@@ -497,7 +477,8 @@ BEGIN
 				b.TranId3rd,
 				2 AS TableID
 			FROM dbo.translog AS b WITH (NOLOCK, INDEX = IX_betrunning_custid)
-			WHERE b.custid = @CustId AND b.statusID IN (0, 1)
+				INNER JOIN @TempCust AS c ON b.custid = c.CustId
+			WHERE b.statusID IN (0, 1)
 		END
 
 		DELETE b
