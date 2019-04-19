@@ -35,6 +35,7 @@ AS
 		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
 		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 120309]
+		- 20191226@Kos: Support Bet Builder [Redmine: #108298]
 */
 
 BEGIN
@@ -105,134 +106,128 @@ BEGIN
 		RefCode				BIGINT
 	)
 
-	IF ',' + @BetType + ',' LIKE '%,9,%'
-		OR ',' + @BetType + ',' LIKE '%,29,%'
-	BEGIN
-		INSERT INTO #Data
-		SELECT
-			b.custid,
-			0 AS SportType,
-			b.username,
-			b.bettype,
-			CASE
-				WHEN b.bettype <> 29 THEN b.transid
-				ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE betid END
-			END AS transid,
-			ISNULL(b.betid, 0),
-			b.refno,
-			'' AS matchcode,
-			b.winlostdate AS EventDate,
-			0 AS homeID,
-			0 AS awayID,
-			b.hdp1,
-			b.hdp2,
-			b.odds,
-			b.modds,
-			CASE
-				WHEN b.status = 'running' THEN
-					CASE
-						WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
-									WHERE bm.custid = b.custid
-										AND bm.refno = b.refno
-										AND (bm.status = 'waiting'
-											OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
-							THEN 'Waiting'
-						ELSE b.status
-					END
-				ELSE b.status
-			END AS Status,
-			0 AS SettlementStatus,
-			b.stake,
-			b.actual_stake,
-			b.transdate,
-			b.betteam,
-			0 AS livehomescore,
-			0 AS liveawayscore,
-			0 AS liveindicator,
-			b.discount,
-			0 AS LeagueID,
-			b.ip,
-			CONVERT(BIT,0) AS IsNeutral,
-			0 AS oddstype,
-			b.currency,
-			'' AS ShowTime,
-			ISNULL(b.betcheck, '') AS BetCheck,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo,
-			0 AS OriginalStake,
-			0 AS OriginalBetType,
-			0 AS WalletType,
-			0 AS RefCode
-		FROM dbo.bettrans AS b WITH (NOLOCK)
-		WHERE
-			b.recommend IN (SELECT CustId FROM @TempAg)
-			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-			AND ',' + @BetType + ',' LIKE '%,' + CONVERT(VARCHAR(5), b.bettype) + ',%'
-			AND b.bettype IN (9, 29)
-			AND b.matchid = b.bettype
-			AND b.statusID IN (0, 1)
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #Data
-		SELECT
-			b.custid,
-			m.sporttype,
-			b.username,
-			b.bettype,
-			b.transid,
-			ISNULL(b.betid, 0),
-			b.refno,
-			m.matchcode,
-			m.GlobalShowTime AS EventDate,
-			m.homeid,
-			m.awayid,
-			b.hdp1,
-			b.hdp2,
-			b.odds,
-			b.modds,
-			CASE
-				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-				ELSE b.status
-			END AS status,
-			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
-			b.stake,
-			b.actual_stake,
-			b.transdate,
-			b.betteam,
-			b.livehomescore,
-			b.liveawayscore,
-			b.liveindicator,
-			b.discount,
-			m.leagueid,
-			b.ip,
-			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
-			b.oddstype,
-			b.currency,
-			ISNULL(m.showtime, '') AS showtime,
-			b.betcheck,
-			ISNULL(b.betdaqid, -1) AS BetdaqId,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-			CASE
-				WHEN b.ExtraInfo LIKE '%p25%' THEN
-					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]', 'MONEY'), 0)
-				ELSE 0
-			END AS OriginalStake,
-			CASE
-				WHEN b.stake <> 0 THEN -1
-				ELSE 0
-			END AS OriginalBetType,
-			ISNULL(b.WalletType, 0) AS WalletType,
-			ISNULL(b.RefCode, 0) AS RefCode
-		FROM
-			dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		WHERE
-			b.recommend IN (SELECT CustId FROM @TempAg)
-			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-			AND ',' + @BetType + ',' LIKE '%,' + CONVERT(VARCHAR(5), b.bettype) + ',%'
-			AND b.statusID IN (0, 1)
-	END
+	INSERT INTO #Data
+	SELECT
+		b.custid,
+		0 AS SportType,
+		b.username,
+		b.bettype,
+		CASE
+			WHEN b.bettype <> 29 THEN b.transid
+			ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE betid END
+		END AS transid,
+		ISNULL(b.betid, 0),
+		b.refno,
+		'' AS matchcode,
+		b.winlostdate AS EventDate,
+		0 AS homeID,
+		0 AS awayID,
+		b.hdp1,
+		b.hdp2,
+		b.odds,
+		b.modds,
+		CASE
+			WHEN b.status = 'running' THEN
+				CASE
+					WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+								WHERE bm.custid = b.custid
+									AND bm.refno = b.refno
+									AND (bm.status = 'waiting'
+										OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+						THEN 'Waiting'
+					ELSE b.status
+				END
+			ELSE b.status
+		END AS Status,
+		0 AS SettlementStatus,
+		b.stake,
+		b.actual_stake,
+		b.transdate,
+		b.betteam,
+		0 AS livehomescore,
+		0 AS liveawayscore,
+		0 AS liveindicator,
+		b.discount,
+		0 AS LeagueID,
+		b.ip,
+		CONVERT(BIT,0) AS IsNeutral,
+		0 AS oddstype,
+		b.currency,
+		'' AS ShowTime,
+		ISNULL(b.betcheck, '') AS BetCheck,
+		-1 AS BetdaqId,
+		'' AS ExtraInfo,
+		0 AS OriginalStake,
+		0 AS OriginalBetType,
+		0 AS WalletType,
+		0 AS RefCode
+	FROM dbo.bettrans AS b WITH (NOLOCK)
+	WHERE
+		b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+		AND ',' + @BetType + ',' LIKE '%,' + CONVERT(VARCHAR(5), b.bettype) + ',%'
+		AND b.bettype IN (9, 29)
+		AND b.matchid = b.bettype
+		AND b.statusID IN (0, 1)
+
+	INSERT INTO #Data
+	SELECT
+		b.custid,
+		m.sporttype,
+		b.username,
+		b.bettype,
+		b.transid,
+		ISNULL(b.betid, 0),
+		b.refno,
+		m.matchcode,
+		m.GlobalShowTime AS EventDate,
+		m.homeid,
+		m.awayid,
+		b.hdp1,
+		b.hdp2,
+		b.odds,
+		b.modds,
+		CASE
+			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+			ELSE b.status
+		END AS status,
+		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+		b.stake,
+		b.actual_stake,
+		b.transdate,
+		b.betteam,
+		b.livehomescore,
+		b.liveawayscore,
+		b.liveindicator,
+		b.discount,
+		m.leagueid,
+		b.ip,
+		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
+		b.oddstype,
+		b.currency,
+		ISNULL(m.showtime, '') AS showtime,
+		b.betcheck,
+		ISNULL(b.betdaqid, -1) AS BetdaqId,
+		ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+		CASE
+			WHEN b.ExtraInfo LIKE '%p25%' THEN
+				ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]', 'MONEY'), 0)
+			ELSE 0
+		END AS OriginalStake,
+		CASE
+			WHEN b.stake <> 0 THEN -1
+			ELSE 0
+		END AS OriginalBetType,
+		ISNULL(b.WalletType, 0) AS WalletType,
+		ISNULL(b.RefCode, 0) AS RefCode
+	FROM
+		dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+	WHERE
+		b.recommend IN (SELECT CustId FROM @TempAg)
+		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+		AND ',' + @BetType + ',' LIKE '%,' + CONVERT(VARCHAR(5), b.bettype) + ',%'
+		AND b.statusID IN (0, 1)
 
 	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
