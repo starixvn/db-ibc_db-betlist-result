@@ -41,6 +41,7 @@ AS
 					- Remove input param @ShowBA
 		- 20190313@Kos: Change param @LiveIndicator from TINYINT to VARCHAR(10) [Redmine: #108717]
 					- Add new param @Username VARCHAR(50)
+		- 20190422@Kos: Enhance performance for searching too many members [Redmine: #112313]
 */
 
 
@@ -200,7 +201,7 @@ BEGIN
 				END
 				ELSE
 				BEGIN
-					SELECT @TotalRowsBettrans = COUNT(1)
+					SELECT @TotalRowsBettrans14 = COUNT(1)
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
@@ -209,7 +210,7 @@ BEGIN
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
 						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
-					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 							OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
@@ -251,58 +252,24 @@ BEGIN
 				ELSE
 					SET @TempFromDate = @FromDate
 
-				IF @SportType = 0 AND @LeagueId = 0
-				BEGIN
-					SELECT @TotalRowsBettrans = COUNT(1)
-					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
-						INNER JOIN @TempCust AS c ON b.custid = c.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
-							OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-						AND (@MatchId = 0 OR b.matchid = @MatchId)
-						AND 1 = CASE
-									WHEN s.ProductID = 1 THEN
-										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
-											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
-											ELSE 0
-										END
-									ELSE 1
-								END
-				END
-				ELSE
-				BEGIN
-					SELECT @TotalRowsBettrans = COUNT(1)
-					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
-						INNER JOIN @TempCust AS c ON b.custid = c.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (1, 3, 5, 25, 27)
-						LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
-						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid AND s.EventType = 2 AND s.ProductID = 1
-						LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
-						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
-					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
-							OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-						AND (@SportType = 0 OR m.sporttype IS NULL OR m.sporttype = @SportType)
-						AND (@LeagueId = 0 OR m.leagueid IS NULL OR m.leagueid = @LeagueId)
-						AND (@LeagueId = 0 OR o.leagueid IS NULL OR o.leagueid = @LeagueId)
-						AND (@SportType = 0 OR l.sporttype IS NULL OR l.sporttype = @SportType)
-						AND (@SportType = 0 OR vr.sporttype IS NULL OR vr.sporttype = @SportType)
-						AND (@MatchId = 0 OR b.matchid = @MatchId)
-						AND 1 = CASE
-									WHEN s.ProductID = 1 THEN
-										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
-											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
-											ELSE 0
-										END
-									ELSE 1
-								END
-				END
+				SELECT @TotalRowsBettrans = COUNT(1)
+				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
+					INNER JOIN @TempCust AS c ON b.custid = c.CustId
+					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+				WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+					AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+					AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+						OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+					AND (@MatchId = 0 OR b.matchid = @MatchId)
+					AND 1 = CASE
+								WHEN s.ProductID = 1 THEN
+									CASE
+										WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+										WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+										ELSE 0
+									END
+								ELSE 1
+							END
 			END
 
 			-- Bettrans14 range
@@ -313,58 +280,24 @@ BEGIN
 				ELSE
 					SET @TempToDate = @ToDate
 
-				IF @SportType = 0 AND @LeagueId = 0
-				BEGIN
-					SELECT @TotalRowsBettrans14 = COUNT(1)
-					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-						INNER JOIN @TempCust AS c ON b.custid = c.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
-						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
-							OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-						AND (@MatchId = 0 OR b.matchid = @MatchId)
-						AND 1 = CASE
-									WHEN s.ProductID = 1 THEN
-										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
-											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
-											ELSE 0
-										END
-									ELSE 1
-								END
-				END
-				ELSE
-				BEGIN
-					SELECT @TotalRowsBettrans = COUNT(1)
-					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-						INNER JOIN @TempCust AS c ON b.custid = c.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (1, 3, 5, 25, 27)
-						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
-						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid AND s.EventType = 2 AND s.ProductID = 1
-						LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
-						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
-					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
-							OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-						AND (@SportType = 0 OR m.sporttype IS NULL OR m.sporttype = @SportType)
-						AND (@LeagueId = 0 OR m.leagueid IS NULL OR m.leagueid = @LeagueId)
-						AND (@LeagueId = 0 OR o.leagueid IS NULL OR o.leagueid = @LeagueId)
-						AND (@SportType = 0 OR l.sporttype IS NULL OR l.sporttype = @SportType)
-						AND (@SportType = 0 OR vr.sporttype IS NULL OR vr.sporttype = @SportType)
-						AND (@MatchId = 0 OR b.matchid = @MatchId)
-						AND 1 = CASE
-									WHEN s.ProductID = 1 THEN
-										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
-											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
-											ELSE 0
-										END
-									ELSE 1
-								END
-				END
+				SELECT @TotalRowsBettrans14 = COUNT(1)
+				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
+					INNER JOIN @TempCust AS c ON b.custid = c.CustId
+					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+				WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+					AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+					AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+						OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+					AND (@MatchId = 0 OR b.matchid = @MatchId)
+					AND 1 = CASE
+								WHEN s.ProductID = 1 THEN
+									CASE
+										WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+										WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+										ELSE 0
+									END
+								ELSE 1
+							END
 			END
 		END
 	END
