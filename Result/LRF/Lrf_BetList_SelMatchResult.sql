@@ -42,6 +42,7 @@ AS
 		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 					- Move eventstatus data transform to web (no change for Tennis)
 		- 20181122@Kos: Support E-Sports 2 [#Redmine: 100721]
+		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #112376]
 
 		*******************
 		sample test case:
@@ -119,7 +120,7 @@ BEGIN
 			IF @SportType = 5
 				SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 			ELSE
-				SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
+				SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 
 			-- Get result detail
 			IF @SportType NOT IN (43, 193)
@@ -266,7 +267,7 @@ BEGIN
 			IF @SportType = 5
 				SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 			ELSE
-				SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
+				SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 
 			-- Get result detail
 			IF @SportType NOT IN (43, 193)
@@ -413,7 +414,7 @@ BEGIN
 			IF @SportType = 5
 				SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 			ELSE
-				SELECT @ResourceId = REPLACE(CONVERT(VARCHAR(20), @BetId), '8', '')
+				SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 
 			-- Get result detail
 			IF @SportType NOT IN (43, 193)
@@ -637,11 +638,11 @@ BEGIN
 		DROP TABLE #tmpresult
 	END
 END
-
-
-
-
-
 GO
+
+
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResult] TO [bodbLicenseeNet]
 GO

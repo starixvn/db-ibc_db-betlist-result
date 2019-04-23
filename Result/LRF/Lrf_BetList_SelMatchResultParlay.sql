@@ -26,6 +26,7 @@ AS
 		- 20181015@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 					- Move eventstatus data transform to web (no change for Tennis)
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
+		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #112376]
 */
 
 BEGIN
@@ -100,12 +101,12 @@ BEGIN
 				ELSE m.kickofftime
 			END AS KickOffTime,
 			m.eventdate,
-			m.isNeutral,
+			m.IsNeutral,
 			m.betstatus,
 			CASE m.sporttype
 				WHEN 5 THEN
 					CASE ISNULL(d.SettlementStatusID, 0)
-						WHEN 1 THEN 'Refund' 
+						WHEN 1 THEN 'Refund'
 						WHEN 2 THEN 'Refund HT'
 						WHEN 3 THEN 'Refund FT'
 						ELSE m.eventstatus
@@ -193,7 +194,7 @@ BEGIN
 				AND (LEN(d.ResourceID) = 2
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', '')))
+						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
@@ -333,7 +334,7 @@ BEGIN
 				AND (LEN(d.ResourceID) = 2
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', '')))
+						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
@@ -473,7 +474,7 @@ BEGIN
 				AND (LEN(d.ResourceID) = 2
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', '')))
+						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
