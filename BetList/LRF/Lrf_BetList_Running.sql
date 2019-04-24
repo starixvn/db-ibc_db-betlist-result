@@ -201,149 +201,10 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		-- bettrans
-		INSERT INTO #Data (
-			TransId,
-			RefNo,
-			CustId,
-			Currency,
-			Recommend,
-			BetType,
-			BetId,
-			BetTeam,
-			Hdp1,
-			Hdp2,
-			OddsId,
-			OddsType,
-			Odds,
-			MOdds,
-			OddsSpread,
-			Stake,
-			Actual_Stake,
-			Status,
-			SecAcceptFlag,
-			CheckTime,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			LiveHomeScore,
-			LiveAwayScore,
-			Ip,
-			BetFrom,
-			MatchId,
-			BetCheck,
-			ComStatus,
-			TransDesc,
-			BetdaqId,
-			ExtraInfo,
-			WalletType,
-			RefCode,
-			TableID)
-		SELECT
-			b.transid,
-			b.refno,
-			b.custid,
-			b.currency,
-			b.recommend,
-			b.bettype,
-			ISNULL(b.BetId, 0) AS BetId,
-			b.betteam,
-			b.hdp1,
-			b.hdp2,
-			b.oddsid,
-			b.oddstype,
-			b.odds,
-			b.modds,
-			b.oddsspread,
-			b.stake,
-			b.actual_stake,
-			b.status,
-			b.SecAcceptFlag,
-			b.checktime,
-			b.transdate,
-			b.winlostdate,
-			b.liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.ip,
-			b.betfrom,
-			b.matchid,
-			b.betcheck,
-			b.comstatus,
-			b.transdesc,
-			b.betdaqid,
-			b.ExtraInfo,
-			b.WalletType,
-			ISNULL(b.RefCode, 0),
-			1 AS TableID
-		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_recommend)
-			INNER JOIN @TempAg AS a ON a.CustId = b.recommend
-		WHERE b.statusID IN (0, 1)
+		DECLARE @TempCust TABLE (CustId INT)
 
-		-- translog
-		INSERT INTO #Data (
-			TransId,
-			RefNo,
-			CustId,
-			Currency,
-			Recommend,
-			BetType,
-			Odds,
-			Stake,
-			Actual_Stake,
-			Status,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			Ip,
-			BetFrom,
-			TransDesc,
-			ProductId,
-			Custom1,
-			Custom2,
-			Custom3,
-			Gameid3rd,
-			Tranid3rd,
-			TableID
-		)
-		SELECT
-			b.translogid AS TransId,
-			b.translogid AS RefNo,
-			b.custid,
-			b.currency,
-			b.recommend,
-			b.gameID AS BetType,
-			b.odds,
-			b.stake,
-			b.actual_stake,
-			b.status,
-			b.transdate,
-			b.transdate AS WinLostDate,
-			b.LiveIndicator,
-			b.ip,
-			b.betfrom,
-			b.transdesc,
-			b.productID,
-			b.custom1,
-			b.custom2,
-			b.custom3,
-			b.GameId3rd,
-			b.TranId3rd,
-			2 AS TableID
-		FROM dbo.translog AS b WITH (NOLOCK, INDEX = IX_betrunning_recommend)
-			INNER JOIN @TempAg AS a ON a.CustId = b.recommend
-		WHERE b.statusID IN (0, 1)
-
-		IF @Username IS NULL OR @Username = ''
+		IF @Username IS NOT NULL AND @Username <> ''
 		BEGIN
-			DELETE b
-			FROM #Data AS b
-			WHERE NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
-		END
-		ELSE
-		BEGIN
-			DECLARE @TempCust TABLE (CustId INT)
-
 			INSERT INTO @TempCust
 			SELECT c.custid
 			FROM dbo.Customer AS c WITH (NOLOCK)
@@ -351,7 +212,291 @@ BEGIN
 			WHERE c.roleid = 1
 				AND (c.username LIKE + '%' + @Username + '%'
 					OR c.username2 LIKE + '%$%' + @Username + '%')
+		END
 
+		DECLARE @NumOfMem	INT = 0
+
+		SELECT @NumOfMem = COUNT(1) FROM @TempCust
+
+		IF @Username IS NULL OR @Username = '' OR @NumOfMem > 5000		-- Licensee level (not input username of number of searched member > 5000)
+		BEGIN
+			-- bettrans
+			INSERT INTO #Data (
+				TransId,
+				RefNo,
+				CustId,
+				Currency,
+				Recommend,
+				BetType,
+				BetId,
+				BetTeam,
+				Hdp1,
+				Hdp2,
+				OddsId,
+				OddsType,
+				Odds,
+				MOdds,
+				OddsSpread,
+				Stake,
+				Actual_Stake,
+				Status,
+				SecAcceptFlag,
+				CheckTime,
+				TransDate,
+				WinLostDate,
+				LiveIndicator,
+				LiveHomeScore,
+				LiveAwayScore,
+				Ip,
+				BetFrom,
+				MatchId,
+				BetCheck,
+				ComStatus,
+				TransDesc,
+				BetdaqId,
+				ExtraInfo,
+				WalletType,
+				RefCode,
+				TableID)
+			SELECT
+				b.transid,
+				b.refno,
+				b.custid,
+				b.currency,
+				b.recommend,
+				b.bettype,
+				ISNULL(b.BetId, 0) AS BetId,
+				b.betteam,
+				b.hdp1,
+				b.hdp2,
+				b.oddsid,
+				b.oddstype,
+				b.odds,
+				b.modds,
+				b.oddsspread,
+				b.stake,
+				b.actual_stake,
+				b.status,
+				b.SecAcceptFlag,
+				b.checktime,
+				b.transdate,
+				b.winlostdate,
+				b.liveindicator,
+				b.livehomescore,
+				b.liveawayscore,
+				b.ip,
+				b.betfrom,
+				b.matchid,
+				b.betcheck,
+				b.comstatus,
+				b.transdesc,
+				b.betdaqid,
+				b.ExtraInfo,
+				b.WalletType,
+				ISNULL(b.RefCode, 0),
+				1 AS TableID
+			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_recommend)
+				INNER JOIN @TempAg AS a ON a.CustId = b.recommend
+			WHERE b.statusID IN (0, 1)
+
+			-- translog
+			INSERT INTO #Data (
+				TransId,
+				RefNo,
+				CustId,
+				Currency,
+				Recommend,
+				BetType,
+				Odds,
+				Stake,
+				Actual_Stake,
+				Status,
+				TransDate,
+				WinLostDate,
+				LiveIndicator,
+				Ip,
+				BetFrom,
+				TransDesc,
+				ProductId,
+				Custom1,
+				Custom2,
+				Custom3,
+				Gameid3rd,
+				Tranid3rd,
+				TableID
+			)
+			SELECT
+				b.translogid AS TransId,
+				b.translogid AS RefNo,
+				b.custid,
+				b.currency,
+				b.recommend,
+				b.gameID AS BetType,
+				b.odds,
+				b.stake,
+				b.actual_stake,
+				b.status,
+				b.transdate,
+				b.transdate AS WinLostDate,
+				b.LiveIndicator,
+				b.ip,
+				b.betfrom,
+				b.transdesc,
+				b.productID,
+				b.custom1,
+				b.custom2,
+				b.custom3,
+				b.GameId3rd,
+				b.TranId3rd,
+				2 AS TableID
+			FROM dbo.translog AS b WITH (NOLOCK, INDEX = IX_betrunning_recommend)
+				INNER JOIN @TempAg AS a ON a.CustId = b.recommend
+			WHERE b.statusID IN (0, 1)
+		END
+		ELSE		-- Customer level
+		BEGIN
+			-- bettrans
+			INSERT INTO #Data (
+				TransId,
+				RefNo,
+				CustId,
+				Currency,
+				Recommend,
+				BetType,
+				BetId,
+				BetTeam,
+				Hdp1,
+				Hdp2,
+				OddsId,
+				OddsType,
+				Odds,
+				MOdds,
+				OddsSpread,
+				Stake,
+				Actual_Stake,
+				Status,
+				SecAcceptFlag,
+				CheckTime,
+				TransDate,
+				WinLostDate,
+				LiveIndicator,
+				LiveHomeScore,
+				LiveAwayScore,
+				Ip,
+				BetFrom,
+				MatchId,
+				BetCheck,
+				ComStatus,
+				TransDesc,
+				BetdaqId,
+				ExtraInfo,
+				WalletType,
+				RefCode,
+				TableID)
+			SELECT
+				b.transid,
+				b.refno,
+				b.custid,
+				b.currency,
+				b.recommend,
+				b.bettype,
+				ISNULL(b.BetId, 0) AS BetId,
+				b.betteam,
+				b.hdp1,
+				b.hdp2,
+				b.oddsid,
+				b.oddstype,
+				b.odds,
+				b.modds,
+				b.oddsspread,
+				b.stake,
+				b.actual_stake,
+				b.status,
+				b.SecAcceptFlag,
+				b.checktime,
+				b.transdate,
+				b.winlostdate,
+				b.liveindicator,
+				b.livehomescore,
+				b.liveawayscore,
+				b.ip,
+				b.betfrom,
+				b.matchid,
+				b.betcheck,
+				b.comstatus,
+				b.transdesc,
+				b.betdaqid,
+				b.ExtraInfo,
+				b.WalletType,
+				ISNULL(b.RefCode, 0),
+				1 AS TableID
+			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_custid)
+				INNER JOIN @TempCust AS c ON b.custid = c.CustId
+			WHERE b.statusID IN (0, 1)
+
+			-- translog
+			INSERT INTO #Data (
+				TransId,
+				RefNo,
+				CustId,
+				Currency,
+				Recommend,
+				BetType,
+				Odds,
+				Stake,
+				Actual_Stake,
+				Status,
+				TransDate,
+				WinLostDate,
+				LiveIndicator,
+				Ip,
+				BetFrom,
+				TransDesc,
+				ProductId,
+				Custom1,
+				Custom2,
+				Custom3,
+				Gameid3rd,
+				Tranid3rd,
+				TableID
+			)
+			SELECT
+				b.translogid AS TransId,
+				b.translogid AS RefNo,
+				b.custid,
+				b.currency,
+				b.recommend,
+				b.gameID AS BetType,
+				b.odds,
+				b.stake,
+				b.actual_stake,
+				b.status,
+				b.transdate,
+				b.transdate AS WinLostDate,
+				b.LiveIndicator,
+				b.ip,
+				b.betfrom,
+				b.transdesc,
+				b.productID,
+				b.custom1,
+				b.custom2,
+				b.custom3,
+				b.GameId3rd,
+				b.TranId3rd,
+				2 AS TableID
+			FROM dbo.translog AS b WITH (NOLOCK, INDEX = IX_betrunning_custid)
+				INNER JOIN @TempCust AS c ON b.custid = c.CustId
+			WHERE b.statusID IN (0, 1)
+		END
+
+		IF @Username IS NULL OR @Username = '' OR @NumOfMem <= 5000
+		BEGIN
+			DELETE b
+			FROM #Data AS b
+			WHERE NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
+		END
+		ELSE
+		BEGIN
 			DELETE b
 			FROM #Data AS b
 			WHERE NOT EXISTS (SELECT 1 FROM @TempCust WHERE CustId = b.CustId)

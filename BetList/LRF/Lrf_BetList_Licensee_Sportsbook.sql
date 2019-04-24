@@ -223,457 +223,368 @@ BEGIN
 			SET @StatusIdList = @StatusIdList + ',102'
 		END
 
+		DECLARE @TempCust TABLE (CustId INT)
+
+		IF @Username IS NOT NULL AND @Username <> ''
+		BEGIN
+			INSERT INTO @TempCust
+			SELECT c.custid
+			FROM dbo.Customer AS c WITH (NOLOCK)
+				INNER JOIN @TempAg AS a ON c.recommend = a.CustId
+			WHERE c.roleid = 1
+				AND (c.username LIKE + '%' + @Username + '%'
+					OR c.username2 LIKE + '%$%' + @Username + '%')
+		END
+
+		DECLARE @NumOfMem	INT = 0
+
+		SELECT @NumOfMem = COUNT(1) FROM @TempCust
+
 		DECLARE @TempToDate	SMALLDATETIME,
 			@TempFromDate	SMALLDATETIME
 
-		-- Bettrans range
-		IF @ToDate > @MoveBetsDay
+		IF @Username IS NULL OR @Username = '' OR @NumOfMem > 5000		-- Licensee level (not input username of number of searched member > 5000)
 		BEGIN
-			IF @FromDate <= @MoveBetsDay
-				SET @TempFromDate = DATEADD(DAY, 1, @MoveBetsDay)
-			ELSE
-				SET @TempFromDate = @FromDate
-
-			IF @SportType = 0 AND @LeagueId = 0
-			BEGIN
-				INSERT INTO #Data (
-					TransId,
-					RefNo,
-					CustId,
-					Recommend,
-					Currency,
-					BetType,
-					BetId,
-					BetTeam,
-					Hdp1,
-					Hdp2,
-					OddsType,
-					Odds,
-					MOdds,
-					OddsSpread,
-					Stake,
-					Actual_Stake,
-					WinLost,
-					LicenseeWL,
-					Comm,
-					PlayerComm,
-					Status,
-					TransDate,
-					WinLostDate,
-					LiveIndicator,
-					LiveHomeScore,
-					LiveAwayScore,
-					Ip,
-					BetFrom,
-					MatchId,
-					BetCheck,
-					TransDesc,
-					BetdaqId,
-					ExtraInfo,
-					WalletType,
-					RefCode,
-					Product,
-					WhTicket)
-				SELECT
-					b.transid,
-					b.refno,
-					b.custid,
-					b.recommend,
-					b.currency,
-					b.bettype,
-					b.betid,
-					b.betteam,
-					b.hdp1,
-					b.hdp2,
-					b.oddstype,
-					b.odds,
-					b.modds,
-					b.oddsspread,
-					b.stake,
-					b.actual_stake,
-					(b.winlost - b.actual_stake) AS WinLost,
-					CASE
-						WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-						ELSE - (b.winlost - b.actual_stake)
-					END AS LiceseeWL,
-					b.comm,
-					b.playercomm,
-					b.status,
-					b.transdate,
-					b.winlostdate,
-					b.liveindicator,
-					b.livehomescore,
-					b.liveawayscore,
-					b.ip,
-					b.betfrom,
-					b.matchid,
-					b.betcheck,
-					b.transdesc,
-					b.betdaqid,
-					b.ExtraInfo,
-					b.WalletType,
-					ISNULL(b.RefCode, 0),
-					CASE
-						WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-						WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-						WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-						ELSE 'Unknown'
-					END AS Product,
-					1 AS WhTicket
-				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-					INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-				WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-					AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-					AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
-					AND b.bettype NOT BETWEEN 801 AND 899
-					AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
-						OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-					AND (@MatchId = 0 OR b.matchid = @MatchId)
-					AND 1 = CASE
-								WHEN s.ProductID = 1 THEN
-									CASE
-										WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
-										WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
-										ELSE 0
-									END
-								ELSE 1
-							END
-			END
-			ELSE
-			BEGIN
-				IF @BetType <> 10
-				BEGIN
-					INSERT INTO #Data (
-						TransId,
-						RefNo,
-						CustId,
-						Recommend,
-						Currency,
-						BetType,
-						BetId,
-						BetTeam,
-						Hdp1,
-						Hdp2,
-						OddsType,
-						Odds,
-						MOdds,
-						OddsSpread,
-						Stake,
-						Actual_Stake,
-						WinLost,
-						LicenseeWL,
-						Comm,
-						PlayerComm,
-						Status,
-						TransDate,
-						WinLostDate,
-						LiveIndicator,
-						LiveHomeScore,
-						LiveAwayScore,
-						Ip,
-						BetFrom,
-						MatchId,
-						BetCheck,
-						TransDesc,
-						BetdaqId,
-						ExtraInfo,
-						WalletType,
-						RefCode,
-						Product,
-						WhTicket)
-					SELECT
-						b.transid,
-						b.refno,
-						b.custid,
-						b.recommend,
-						b.currency,
-						b.bettype,
-						b.betid,
-						b.betteam,
-						b.hdp1,
-						b.hdp2,
-						b.oddstype,
-						b.odds,
-						b.modds,
-						b.oddsspread,
-						b.stake,
-						b.actual_stake,
-						(b.winlost - b.actual_stake) AS WinLost,
-						CASE
-							WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-							ELSE - (b.winlost - b.actual_stake)
-						END AS LiceseeWL,
-						b.comm,
-						b.playercomm,
-						b.status,
-						b.transdate,
-						b.winlostdate,
-						b.liveindicator,
-						b.livehomescore,
-						b.liveawayscore,
-						b.ip,
-						b.betfrom,
-						b.matchid,
-						b.betcheck,
-						b.transdesc,
-						b.betdaqid,
-						b.ExtraInfo,
-						b.WalletType,
-						ISNULL(b.RefCode, 0),
-						CASE
-							WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-							WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-							WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-							ELSE 'Unknown'
-						END AS Product,
-						1 AS WhTicket
-					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
-					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-						AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
-						AND b.bettype NOT BETWEEN 801 AND 899
-						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
-							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-						AND (@SportType = 0 OR m.sporttype = @SportType)
-						AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
-						AND (@MatchId = 0 OR b.matchid = @MatchId)
-						AND 1 = CASE
-									WHEN s.ProductID = 1 THEN
-										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
-											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
-											ELSE 0
-										END
-									ELSE 1
-								END
-				END
-				ELSE
-				BEGIN
-					INSERT INTO #Data (
-						TransId,
-						RefNo,
-						CustId,
-						Recommend,
-						Currency,
-						BetType,
-						BetId,
-						BetTeam,
-						Hdp1,
-						Hdp2,
-						OddsType,
-						Odds,
-						MOdds,
-						OddsSpread,
-						Stake,
-						Actual_Stake,
-						WinLost,
-						LicenseeWL,
-						Comm,
-						PlayerComm,
-						Status,
-						TransDate,
-						WinLostDate,
-						LiveIndicator,
-						LiveHomeScore,
-						LiveAwayScore,
-						Ip,
-						BetFrom,
-						MatchId,
-						BetCheck,
-						TransDesc,
-						BetdaqId,
-						ExtraInfo,
-						WalletType,
-						RefCode,
-						Product,
-						WhTicket)
-					SELECT
-						b.transid,
-						b.refno,
-						b.custid,
-						b.recommend,
-						b.currency,
-						b.bettype,
-						b.betid,
-						b.betteam,
-						b.hdp1,
-						b.hdp2,
-						b.oddstype,
-						b.odds,
-						b.modds,
-						b.oddsspread,
-						b.stake,
-						b.actual_stake,
-						(b.winlost - b.actual_stake) AS WinLost,
-						CASE
-							WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-							ELSE - (b.winlost - b.actual_stake)
-						END AS LiceseeWL,
-						b.comm,
-						b.playercomm,
-						b.status,
-						b.transdate,
-						b.winlostdate,
-						b.liveindicator,
-						b.livehomescore,
-						b.liveawayscore,
-						b.ip,
-						b.betfrom,
-						b.matchid,
-						b.betcheck,
-						b.transdesc,
-						b.betdaqid,
-						b.ExtraInfo,
-						b.WalletType,
-						ISNULL(b.RefCode, 0),
-						'Outright' AS Product,
-						1 AS WhTicket
-					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
-						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-						AND b.bettype = 10
-						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
-						AND (@SportType = 0 OR l.sporttype = @SportType)
-						AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
-						AND (@MatchId = 0 OR b.matchid = @MatchId)
-						AND 1 = CASE
-									WHEN s.ProductID = 1 THEN
-										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
-											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
-											ELSE 0
-										END
-									ELSE 1
-								END
-				END
-			END
-		END
-
-		-- Bettrans14 range
-		IF @FromDate <= @MoveBetsDay
-		BEGIN
+			-- Bettrans range
 			IF @ToDate > @MoveBetsDay
-				SET @TempToDate = @MoveBetsDay
-			ELSE
-				SET @TempToDate = @ToDate
+			BEGIN
+				IF @FromDate <= @MoveBetsDay
+					SET @TempFromDate = DATEADD(DAY, 1, @MoveBetsDay)
+				ELSE
+					SET @TempFromDate = @FromDate
 
-			IF @SportType = 0 AND @LeagueId = 0
-			BEGIN
-				INSERT INTO #Data (
-					TransId,
-					RefNo,
-					CustId,
-					Recommend,
-					Currency,
-					BetType,
-					BetId,
-					BetTeam,
-					Hdp1,
-					Hdp2,
-					OddsType,
-					Odds,
-					MOdds,
-					OddsSpread,
-					Stake,
-					Actual_Stake,
-					WinLost,
-					LicenseeWL,
-					Comm,
-					PlayerComm,
-					Status,
-					TransDate,
-					WinLostDate,
-					LiveIndicator,
-					LiveHomeScore,
-					LiveAwayScore,
-					Ip,
-					BetFrom,
-					MatchId,
-					BetCheck,
-					TransDesc,
-					BetdaqId,
-					ExtraInfo,
-					WalletType,
-					RefCode,
-					Product,
-					WhTicket)
-				SELECT
-					b.transid,
-					b.refno,
-					b.custid,
-					b.recommend,
-					b.currency,
-					b.bettype,
-					b.betid,
-					b.betteam,
-					b.hdp1,
-					b.hdp2,
-					b.oddstype,
-					b.odds,
-					b.modds,
-					b.oddsspread,
-					b.stake,
-					b.actual_stake,
-					(b.winlost - b.actual_stake) AS WinLost,
-					CASE
-						WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-						ELSE - (b.winlost - b.actual_stake)
-					END AS LiceseeWL,
-					b.comm,
-					b.playercomm,
-					b.status,
-					b.transdate,
-					b.winlostdate,
-					b.liveindicator,
-					b.livehomescore,
-					b.liveawayscore,
-					b.ip,
-					b.betfrom,
-					b.matchid,
-					b.betcheck,
-					b.transdesc,
-					b.betdaqid,
-					b.ExtraInfo,
-					b.WalletType,
-					ISNULL(b.RefCode, 0),
-					CASE
-						WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-						WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-						WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-						ELSE 'Unknown'
-					END AS Product,
-					2 AS WhTicket
-				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
-					INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-				WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
-					AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-					AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
-					AND b.bettype NOT BETWEEN 801 AND 899
-					AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
-						OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-					AND (@MatchId = 0 OR b.matchid = @MatchId)
-					AND 1 = CASE
-								WHEN s.ProductID = 1 THEN
-									CASE
-										WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
-										WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
-										ELSE 0
+				IF @SportType = 0 AND @LeagueId = 0
+				BEGIN
+					INSERT INTO #Data (
+						TransId,
+						RefNo,
+						CustId,
+						Recommend,
+						Currency,
+						BetType,
+						BetId,
+						BetTeam,
+						Hdp1,
+						Hdp2,
+						OddsType,
+						Odds,
+						MOdds,
+						OddsSpread,
+						Stake,
+						Actual_Stake,
+						WinLost,
+						LicenseeWL,
+						Comm,
+						PlayerComm,
+						Status,
+						TransDate,
+						WinLostDate,
+						LiveIndicator,
+						LiveHomeScore,
+						LiveAwayScore,
+						Ip,
+						BetFrom,
+						MatchId,
+						BetCheck,
+						TransDesc,
+						BetdaqId,
+						ExtraInfo,
+						WalletType,
+						RefCode,
+						Product,
+						WhTicket)
+					SELECT
+						b.transid,
+						b.refno,
+						b.custid,
+						b.recommend,
+						b.currency,
+						b.bettype,
+						b.betid,
+						b.betteam,
+						b.hdp1,
+						b.hdp2,
+						b.oddstype,
+						b.odds,
+						b.modds,
+						b.oddsspread,
+						b.stake,
+						b.actual_stake,
+						(b.winlost - b.actual_stake) AS WinLost,
+						CASE
+							WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+							ELSE - (b.winlost - b.actual_stake)
+						END AS LiceseeWL,
+						b.comm,
+						b.playercomm,
+						b.status,
+						b.transdate,
+						b.winlostdate,
+						b.liveindicator,
+						b.livehomescore,
+						b.liveawayscore,
+						b.ip,
+						b.betfrom,
+						b.matchid,
+						b.betcheck,
+						b.transdesc,
+						b.betdaqid,
+						b.ExtraInfo,
+						b.WalletType,
+						ISNULL(b.RefCode, 0),
+						CASE
+							WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
+							WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
+							WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
+							ELSE 'Unknown'
+						END AS Product,
+						1 AS WhTicket
+					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
+						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
+						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+						AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
+						AND b.bettype NOT BETWEEN 801 AND 899
+						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+						AND (@MatchId = 0 OR b.matchid = @MatchId)
+						AND 1 = CASE
+									WHEN s.ProductID = 1 THEN
+										CASE
+											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+											ELSE 0
+										END
+									ELSE 1
+								END
+				END
+				ELSE
+				BEGIN
+					IF @BetType <> 10
+					BEGIN
+						INSERT INTO #Data (
+							TransId,
+							RefNo,
+							CustId,
+							Recommend,
+							Currency,
+							BetType,
+							BetId,
+							BetTeam,
+							Hdp1,
+							Hdp2,
+							OddsType,
+							Odds,
+							MOdds,
+							OddsSpread,
+							Stake,
+							Actual_Stake,
+							WinLost,
+							LicenseeWL,
+							Comm,
+							PlayerComm,
+							Status,
+							TransDate,
+							WinLostDate,
+							LiveIndicator,
+							LiveHomeScore,
+							LiveAwayScore,
+							Ip,
+							BetFrom,
+							MatchId,
+							BetCheck,
+							TransDesc,
+							BetdaqId,
+							ExtraInfo,
+							WalletType,
+							RefCode,
+							Product,
+							WhTicket)
+						SELECT
+							b.transid,
+							b.refno,
+							b.custid,
+							b.recommend,
+							b.currency,
+							b.bettype,
+							b.betid,
+							b.betteam,
+							b.hdp1,
+							b.hdp2,
+							b.oddstype,
+							b.odds,
+							b.modds,
+							b.oddsspread,
+							b.stake,
+							b.actual_stake,
+							(b.winlost - b.actual_stake) AS WinLost,
+							CASE
+								WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+								ELSE - (b.winlost - b.actual_stake)
+							END AS LiceseeWL,
+							b.comm,
+							b.playercomm,
+							b.status,
+							b.transdate,
+							b.winlostdate,
+							b.liveindicator,
+							b.livehomescore,
+							b.liveawayscore,
+							b.ip,
+							b.betfrom,
+							b.matchid,
+							b.betcheck,
+							b.transdesc,
+							b.betdaqid,
+							b.ExtraInfo,
+							b.WalletType,
+							ISNULL(b.RefCode, 0),
+							CASE
+								WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
+								WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
+								WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
+								ELSE 'Unknown'
+							END AS Product,
+							1 AS WhTicket
+						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
+							INNER JOIN @TempAg AS a ON b.recommend = a.CustId
+							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
+							AND b.bettype NOT BETWEEN 801 AND 899
+							AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+							AND (@SportType = 0 OR m.sporttype = @SportType)
+							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
+							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND 1 = CASE
+										WHEN s.ProductID = 1 THEN
+											CASE
+												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+												ELSE 0
+											END
+										ELSE 1
 									END
-								ELSE 1
-							END
+					END
+					ELSE
+					BEGIN
+						INSERT INTO #Data (
+							TransId,
+							RefNo,
+							CustId,
+							Recommend,
+							Currency,
+							BetType,
+							BetId,
+							BetTeam,
+							Hdp1,
+							Hdp2,
+							OddsType,
+							Odds,
+							MOdds,
+							OddsSpread,
+							Stake,
+							Actual_Stake,
+							WinLost,
+							LicenseeWL,
+							Comm,
+							PlayerComm,
+							Status,
+							TransDate,
+							WinLostDate,
+							LiveIndicator,
+							LiveHomeScore,
+							LiveAwayScore,
+							Ip,
+							BetFrom,
+							MatchId,
+							BetCheck,
+							TransDesc,
+							BetdaqId,
+							ExtraInfo,
+							WalletType,
+							RefCode,
+							Product,
+							WhTicket)
+						SELECT
+							b.transid,
+							b.refno,
+							b.custid,
+							b.recommend,
+							b.currency,
+							b.bettype,
+							b.betid,
+							b.betteam,
+							b.hdp1,
+							b.hdp2,
+							b.oddstype,
+							b.odds,
+							b.modds,
+							b.oddsspread,
+							b.stake,
+							b.actual_stake,
+							(b.winlost - b.actual_stake) AS WinLost,
+							CASE
+								WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+								ELSE - (b.winlost - b.actual_stake)
+							END AS LiceseeWL,
+							b.comm,
+							b.playercomm,
+							b.status,
+							b.transdate,
+							b.winlostdate,
+							b.liveindicator,
+							b.livehomescore,
+							b.liveawayscore,
+							b.ip,
+							b.betfrom,
+							b.matchid,
+							b.betcheck,
+							b.transdesc,
+							b.betdaqid,
+							b.ExtraInfo,
+							b.WalletType,
+							ISNULL(b.RefCode, 0),
+							'Outright' AS Product,
+							1 AS WhTicket
+						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
+							INNER JOIN @TempAg AS a ON b.recommend = a.CustId
+							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
+							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+							AND b.bettype = 10
+							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
+							AND (@SportType = 0 OR l.sporttype = @SportType)
+							AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
+							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND 1 = CASE
+										WHEN s.ProductID = 1 THEN
+											CASE
+												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+												ELSE 0
+											END
+										ELSE 1
+									END
+					END
+				END
 			END
-			ELSE
+
+			-- Bettrans14 range
+			IF @FromDate <= @MoveBetsDay
 			BEGIN
-				IF @BetType <> 10
+				IF @ToDate > @MoveBetsDay
+					SET @TempToDate = @MoveBetsDay
+				ELSE
+					SET @TempToDate = @ToDate
+
+				IF @SportType = 0 AND @LeagueId = 0
 				BEGIN
 					INSERT INTO #Data (
 						TransId,
@@ -762,15 +673,12 @@ BEGIN
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 						AND b.bettype NOT BETWEEN 801 AND 899
 						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-						AND (@SportType = 0 OR m.sporttype = @SportType)
-						AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
 						AND (@MatchId = 0 OR b.matchid = @MatchId)
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
@@ -783,6 +691,233 @@ BEGIN
 								END
 				END
 				ELSE
+				BEGIN
+					IF @BetType <> 10
+					BEGIN
+						INSERT INTO #Data (
+							TransId,
+							RefNo,
+							CustId,
+							Recommend,
+							Currency,
+							BetType,
+							BetId,
+							BetTeam,
+							Hdp1,
+							Hdp2,
+							OddsType,
+							Odds,
+							MOdds,
+							OddsSpread,
+							Stake,
+							Actual_Stake,
+							WinLost,
+							LicenseeWL,
+							Comm,
+							PlayerComm,
+							Status,
+							TransDate,
+							WinLostDate,
+							LiveIndicator,
+							LiveHomeScore,
+							LiveAwayScore,
+							Ip,
+							BetFrom,
+							MatchId,
+							BetCheck,
+							TransDesc,
+							BetdaqId,
+							ExtraInfo,
+							WalletType,
+							RefCode,
+							Product,
+							WhTicket)
+						SELECT
+							b.transid,
+							b.refno,
+							b.custid,
+							b.recommend,
+							b.currency,
+							b.bettype,
+							b.betid,
+							b.betteam,
+							b.hdp1,
+							b.hdp2,
+							b.oddstype,
+							b.odds,
+							b.modds,
+							b.oddsspread,
+							b.stake,
+							b.actual_stake,
+							(b.winlost - b.actual_stake) AS WinLost,
+							CASE
+								WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+								ELSE - (b.winlost - b.actual_stake)
+							END AS LiceseeWL,
+							b.comm,
+							b.playercomm,
+							b.status,
+							b.transdate,
+							b.winlostdate,
+							b.liveindicator,
+							b.livehomescore,
+							b.liveawayscore,
+							b.ip,
+							b.betfrom,
+							b.matchid,
+							b.betcheck,
+							b.transdesc,
+							b.betdaqid,
+							b.ExtraInfo,
+							b.WalletType,
+							ISNULL(b.RefCode, 0),
+							CASE
+								WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
+								WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
+								WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
+								ELSE 'Unknown'
+							END AS Product,
+							2 AS WhTicket
+						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
+							INNER JOIN @TempAg AS a ON b.recommend = a.CustId
+							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
+							AND b.bettype NOT BETWEEN 801 AND 899
+							AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+							AND (@SportType = 0 OR m.sporttype = @SportType)
+							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
+							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND 1 = CASE
+										WHEN s.ProductID = 1 THEN
+											CASE
+												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+												ELSE 0
+											END
+										ELSE 1
+									END
+					END
+					ELSE
+					BEGIN
+						INSERT INTO #Data (
+							TransId,
+							RefNo,
+							CustId,
+							Recommend,
+							Currency,
+							BetType,
+							BetId,
+							BetTeam,
+							Hdp1,
+							Hdp2,
+							OddsType,
+							Odds,
+							MOdds,
+							OddsSpread,
+							Stake,
+							Actual_Stake,
+							WinLost,
+							LicenseeWL,
+							Comm,
+							PlayerComm,
+							Status,
+							TransDate,
+							WinLostDate,
+							LiveIndicator,
+							LiveHomeScore,
+							LiveAwayScore,
+							Ip,
+							BetFrom,
+							MatchId,
+							BetCheck,
+							TransDesc,
+							BetdaqId,
+							ExtraInfo,
+							WalletType,
+							RefCode,
+							Product,
+							WhTicket)
+						SELECT
+							b.transid,
+							b.refno,
+							b.custid,
+							b.recommend,
+							b.currency,
+							b.bettype,
+							b.betid,
+							b.betteam,
+							b.hdp1,
+							b.hdp2,
+							b.oddstype,
+							b.odds,
+							b.modds,
+							b.oddsspread,
+							b.stake,
+							b.actual_stake,
+							(b.winlost - b.actual_stake) AS WinLost,
+							CASE
+								WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+								ELSE - (b.winlost - b.actual_stake)
+							END AS LiceseeWL,
+							b.comm,
+							b.playercomm,
+							b.status,
+							b.transdate,
+							b.winlostdate,
+							b.liveindicator,
+							b.livehomescore,
+							b.liveawayscore,
+							b.ip,
+							b.betfrom,
+							b.matchid,
+							b.betcheck,
+							b.transdesc,
+							b.betdaqid,
+							b.ExtraInfo,
+							b.WalletType,
+							ISNULL(b.RefCode, 0),
+							'Outright' AS Product,
+							2 AS WhTicket
+						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
+							INNER JOIN @TempAg AS a ON b.recommend = a.CustId
+							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
+							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+							AND b.bettype = 10
+							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
+							AND (@SportType = 0 OR l.sporttype = @SportType)
+							AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
+							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND 1 = CASE
+										WHEN s.ProductID = 1 THEN
+											CASE
+												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+												ELSE 0
+											END
+										ELSE 1
+									END
+					END
+				END
+			END
+		END
+		ELSE
+		BEGIN
+			-- Bettrans range
+			IF @ToDate > @MoveBetsDay
+			BEGIN
+				IF @FromDate <= @MoveBetsDay
+					SET @TempFromDate = DATEADD(DAY, 1, @MoveBetsDay)
+				ELSE
+					SET @TempFromDate = @FromDate
+
+				IF @SportType = 0 AND @LeagueId = 0
 				BEGIN
 					INSERT INTO #Data (
 						TransId,
@@ -861,19 +996,22 @@ BEGIN
 						b.ExtraInfo,
 						b.WalletType,
 						ISNULL(b.RefCode, 0),
-						'Outright' AS Product,
-						2 AS WhTicket
-					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
+						CASE
+							WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
+							WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
+							WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
+							ELSE 'Unknown'
+						END AS Product,
+						1 AS WhTicket
+					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
+						INNER JOIN @TempCust AS c ON b.custid = c.CustId
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
-						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-						AND b.bettype = 10
-						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
-						AND (@SportType = 0 OR l.sporttype = @SportType)
-						AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
+						AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
+						AND b.bettype NOT BETWEEN 801 AND 899
+						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 						AND (@MatchId = 0 OR b.matchid = @MatchId)
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
@@ -885,10 +1023,559 @@ BEGIN
 									ELSE 1
 								END
 				END
+				ELSE
+				BEGIN
+					IF @BetType <> 10
+					BEGIN
+						INSERT INTO #Data (
+							TransId,
+							RefNo,
+							CustId,
+							Recommend,
+							Currency,
+							BetType,
+							BetId,
+							BetTeam,
+							Hdp1,
+							Hdp2,
+							OddsType,
+							Odds,
+							MOdds,
+							OddsSpread,
+							Stake,
+							Actual_Stake,
+							WinLost,
+							LicenseeWL,
+							Comm,
+							PlayerComm,
+							Status,
+							TransDate,
+							WinLostDate,
+							LiveIndicator,
+							LiveHomeScore,
+							LiveAwayScore,
+							Ip,
+							BetFrom,
+							MatchId,
+							BetCheck,
+							TransDesc,
+							BetdaqId,
+							ExtraInfo,
+							WalletType,
+							RefCode,
+							Product,
+							WhTicket)
+						SELECT
+							b.transid,
+							b.refno,
+							b.custid,
+							b.recommend,
+							b.currency,
+							b.bettype,
+							b.betid,
+							b.betteam,
+							b.hdp1,
+							b.hdp2,
+							b.oddstype,
+							b.odds,
+							b.modds,
+							b.oddsspread,
+							b.stake,
+							b.actual_stake,
+							(b.winlost - b.actual_stake) AS WinLost,
+							CASE
+								WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+								ELSE - (b.winlost - b.actual_stake)
+							END AS LiceseeWL,
+							b.comm,
+							b.playercomm,
+							b.status,
+							b.transdate,
+							b.winlostdate,
+							b.liveindicator,
+							b.livehomescore,
+							b.liveawayscore,
+							b.ip,
+							b.betfrom,
+							b.matchid,
+							b.betcheck,
+							b.transdesc,
+							b.betdaqid,
+							b.ExtraInfo,
+							b.WalletType,
+							ISNULL(b.RefCode, 0),
+							CASE
+								WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
+								WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
+								WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
+								ELSE 'Unknown'
+							END AS Product,
+							1 AS WhTicket
+						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
+							INNER JOIN @TempCust AS c ON b.custid = c.CustId
+							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
+							AND b.bettype NOT BETWEEN 801 AND 899
+							AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+							AND (@SportType = 0 OR m.sporttype = @SportType)
+							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
+							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND 1 = CASE
+										WHEN s.ProductID = 1 THEN
+											CASE
+												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+												ELSE 0
+											END
+										ELSE 1
+									END
+					END
+					ELSE
+					BEGIN
+						INSERT INTO #Data (
+							TransId,
+							RefNo,
+							CustId,
+							Recommend,
+							Currency,
+							BetType,
+							BetId,
+							BetTeam,
+							Hdp1,
+							Hdp2,
+							OddsType,
+							Odds,
+							MOdds,
+							OddsSpread,
+							Stake,
+							Actual_Stake,
+							WinLost,
+							LicenseeWL,
+							Comm,
+							PlayerComm,
+							Status,
+							TransDate,
+							WinLostDate,
+							LiveIndicator,
+							LiveHomeScore,
+							LiveAwayScore,
+							Ip,
+							BetFrom,
+							MatchId,
+							BetCheck,
+							TransDesc,
+							BetdaqId,
+							ExtraInfo,
+							WalletType,
+							RefCode,
+							Product,
+							WhTicket)
+						SELECT
+							b.transid,
+							b.refno,
+							b.custid,
+							b.recommend,
+							b.currency,
+							b.bettype,
+							b.betid,
+							b.betteam,
+							b.hdp1,
+							b.hdp2,
+							b.oddstype,
+							b.odds,
+							b.modds,
+							b.oddsspread,
+							b.stake,
+							b.actual_stake,
+							(b.winlost - b.actual_stake) AS WinLost,
+							CASE
+								WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+								ELSE - (b.winlost - b.actual_stake)
+							END AS LiceseeWL,
+							b.comm,
+							b.playercomm,
+							b.status,
+							b.transdate,
+							b.winlostdate,
+							b.liveindicator,
+							b.livehomescore,
+							b.liveawayscore,
+							b.ip,
+							b.betfrom,
+							b.matchid,
+							b.betcheck,
+							b.transdesc,
+							b.betdaqid,
+							b.ExtraInfo,
+							b.WalletType,
+							ISNULL(b.RefCode, 0),
+							'Outright' AS Product,
+							1 AS WhTicket
+						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
+							INNER JOIN @TempCust AS c ON b.custid = c.CustId
+							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
+							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+							AND b.bettype = 10
+							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
+							AND (@SportType = 0 OR l.sporttype = @SportType)
+							AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
+							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND 1 = CASE
+										WHEN s.ProductID = 1 THEN
+											CASE
+												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+												ELSE 0
+											END
+										ELSE 1
+									END
+					END
+				END
+			END
+
+			-- Bettrans14 range
+			IF @FromDate <= @MoveBetsDay
+			BEGIN
+				IF @ToDate > @MoveBetsDay
+					SET @TempToDate = @MoveBetsDay
+				ELSE
+					SET @TempToDate = @ToDate
+
+				IF @SportType = 0 AND @LeagueId = 0
+				BEGIN
+					INSERT INTO #Data (
+						TransId,
+						RefNo,
+						CustId,
+						Recommend,
+						Currency,
+						BetType,
+						BetId,
+						BetTeam,
+						Hdp1,
+						Hdp2,
+						OddsType,
+						Odds,
+						MOdds,
+						OddsSpread,
+						Stake,
+						Actual_Stake,
+						WinLost,
+						LicenseeWL,
+						Comm,
+						PlayerComm,
+						Status,
+						TransDate,
+						WinLostDate,
+						LiveIndicator,
+						LiveHomeScore,
+						LiveAwayScore,
+						Ip,
+						BetFrom,
+						MatchId,
+						BetCheck,
+						TransDesc,
+						BetdaqId,
+						ExtraInfo,
+						WalletType,
+						RefCode,
+						Product,
+						WhTicket)
+					SELECT
+						b.transid,
+						b.refno,
+						b.custid,
+						b.recommend,
+						b.currency,
+						b.bettype,
+						b.betid,
+						b.betteam,
+						b.hdp1,
+						b.hdp2,
+						b.oddstype,
+						b.odds,
+						b.modds,
+						b.oddsspread,
+						b.stake,
+						b.actual_stake,
+						(b.winlost - b.actual_stake) AS WinLost,
+						CASE
+							WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+							ELSE - (b.winlost - b.actual_stake)
+						END AS LiceseeWL,
+						b.comm,
+						b.playercomm,
+						b.status,
+						b.transdate,
+						b.winlostdate,
+						b.liveindicator,
+						b.livehomescore,
+						b.liveawayscore,
+						b.ip,
+						b.betfrom,
+						b.matchid,
+						b.betcheck,
+						b.transdesc,
+						b.betdaqid,
+						b.ExtraInfo,
+						b.WalletType,
+						ISNULL(b.RefCode, 0),
+						CASE
+							WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
+							WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
+							WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
+							ELSE 'Unknown'
+						END AS Product,
+						2 AS WhTicket
+					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
+						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
+					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+						AND t.CustId = b.custid
+						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+						AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
+						AND b.bettype NOT BETWEEN 801 AND 899
+						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+						AND (@MatchId = 0 OR b.matchid = @MatchId)
+						AND 1 = CASE
+									WHEN s.ProductID = 1 THEN
+										CASE
+											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+											ELSE 0
+										END
+									ELSE 1
+								END
+				END
+				ELSE
+				BEGIN
+					IF @BetType <> 10
+					BEGIN
+						INSERT INTO #Data (
+							TransId,
+							RefNo,
+							CustId,
+							Recommend,
+							Currency,
+							BetType,
+							BetId,
+							BetTeam,
+							Hdp1,
+							Hdp2,
+							OddsType,
+							Odds,
+							MOdds,
+							OddsSpread,
+							Stake,
+							Actual_Stake,
+							WinLost,
+							LicenseeWL,
+							Comm,
+							PlayerComm,
+							Status,
+							TransDate,
+							WinLostDate,
+							LiveIndicator,
+							LiveHomeScore,
+							LiveAwayScore,
+							Ip,
+							BetFrom,
+							MatchId,
+							BetCheck,
+							TransDesc,
+							BetdaqId,
+							ExtraInfo,
+							WalletType,
+							RefCode,
+							Product,
+							WhTicket)
+						SELECT
+							b.transid,
+							b.refno,
+							b.custid,
+							b.recommend,
+							b.currency,
+							b.bettype,
+							b.betid,
+							b.betteam,
+							b.hdp1,
+							b.hdp2,
+							b.oddstype,
+							b.odds,
+							b.modds,
+							b.oddsspread,
+							b.stake,
+							b.actual_stake,
+							(b.winlost - b.actual_stake) AS WinLost,
+							CASE
+								WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+								ELSE - (b.winlost - b.actual_stake)
+							END AS LiceseeWL,
+							b.comm,
+							b.playercomm,
+							b.status,
+							b.transdate,
+							b.winlostdate,
+							b.liveindicator,
+							b.livehomescore,
+							b.liveawayscore,
+							b.ip,
+							b.betfrom,
+							b.matchid,
+							b.betcheck,
+							b.transdesc,
+							b.betdaqid,
+							b.ExtraInfo,
+							b.WalletType,
+							ISNULL(b.RefCode, 0),
+							CASE
+								WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
+								WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
+								WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
+								ELSE 'Unknown'
+							END AS Product,
+							2 AS WhTicket
+						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
+							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+							CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
+						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+							AND t.CustId = b.custid
+							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
+							AND b.bettype NOT BETWEEN 801 AND 899
+							AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
+								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+							AND (@SportType = 0 OR m.sporttype = @SportType)
+							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
+							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND 1 = CASE
+										WHEN s.ProductID = 1 THEN
+											CASE
+												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+												ELSE 0
+											END
+										ELSE 1
+									END
+					END
+					ELSE
+					BEGIN
+						INSERT INTO #Data (
+							TransId,
+							RefNo,
+							CustId,
+							Recommend,
+							Currency,
+							BetType,
+							BetId,
+							BetTeam,
+							Hdp1,
+							Hdp2,
+							OddsType,
+							Odds,
+							MOdds,
+							OddsSpread,
+							Stake,
+							Actual_Stake,
+							WinLost,
+							LicenseeWL,
+							Comm,
+							PlayerComm,
+							Status,
+							TransDate,
+							WinLostDate,
+							LiveIndicator,
+							LiveHomeScore,
+							LiveAwayScore,
+							Ip,
+							BetFrom,
+							MatchId,
+							BetCheck,
+							TransDesc,
+							BetdaqId,
+							ExtraInfo,
+							WalletType,
+							RefCode,
+							Product,
+							WhTicket)
+						SELECT
+							b.transid,
+							b.refno,
+							b.custid,
+							b.recommend,
+							b.currency,
+							b.bettype,
+							b.betid,
+							b.betteam,
+							b.hdp1,
+							b.hdp2,
+							b.oddstype,
+							b.odds,
+							b.modds,
+							b.oddsspread,
+							b.stake,
+							b.actual_stake,
+							(b.winlost - b.actual_stake) AS WinLost,
+							CASE
+								WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
+								ELSE - (b.winlost - b.actual_stake)
+							END AS LiceseeWL,
+							b.comm,
+							b.playercomm,
+							b.status,
+							b.transdate,
+							b.winlostdate,
+							b.liveindicator,
+							b.livehomescore,
+							b.liveawayscore,
+							b.ip,
+							b.betfrom,
+							b.matchid,
+							b.betcheck,
+							b.transdesc,
+							b.betdaqid,
+							b.ExtraInfo,
+							b.WalletType,
+							ISNULL(b.RefCode, 0),
+							'Outright' AS Product,
+							2 AS WhTicket
+						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
+							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
+							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+							CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
+						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+							AND t.CustId = b.custid
+							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+							AND b.bettype = 10
+							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
+							AND (@SportType = 0 OR l.sporttype = @SportType)
+							AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
+							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND 1 = CASE
+										WHEN s.ProductID = 1 THEN
+											CASE
+												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
+												ELSE 0
+											END
+										ELSE 1
+									END
+					END
+				END
 			END
 		END
 
-		IF @Username IS NULL OR @Username = ''
+		IF @Username IS NULL OR @Username = '' OR @NumOfMem <= 5000
 		BEGIN
 			DELETE b
 			FROM #Data AS b
@@ -903,16 +1590,6 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			DECLARE @TempCust TABLE (CustId INT)
-
-			INSERT INTO @TempCust
-			SELECT c.custid
-			FROM dbo.Customer AS c WITH (NOLOCK)
-				INNER JOIN @TempAg AS a ON c.recommend = a.CustId
-			WHERE c.roleid = 1
-				AND (c.username LIKE + '%' + @Username + '%'
-					OR c.username2 LIKE + '%$%' + @Username + '%')
-
 			DELETE b
 			FROM #Data AS b
 			WHERE b.Product = 'Unknown'
