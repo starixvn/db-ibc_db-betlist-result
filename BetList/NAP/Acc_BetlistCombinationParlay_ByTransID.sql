@@ -30,6 +30,7 @@ AS
 		- 20170210@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112286]
 
 	Paramters Explanation:
 */
@@ -222,7 +223,8 @@ BEGIN
 		bm.odds,
 		bm.betteam,
 		CASE
-			WHEN @Status IN ('Void', 'Reject') THEN ''
+			WHEN @Status = 'Void' THEN ''
+			WHEN @Status = 'Reject' AND bm.status <> 'Reject' THEN ''
 			WHEN bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 			WHEN bm.status = 'WON' AND ISNULL(bm.statuswinlost, 0) = 1 THEN 'Half Won'
 			WHEN bm.status = 'LOSE' AND ISNULL(bm.statuswinlost, 0) = 3 THEN 'Half Lose'
@@ -260,7 +262,8 @@ BEGIN
 		bm.odds,
 		bm.betteam,
 		CASE
-			WHEN @Status IN ('Void', 'Reject') THEN ''
+			WHEN @Status = 'Void' THEN ''
+			WHEN @Status = 'Reject' AND bm.status <> 'Reject' THEN ''
 			WHEN bm.status = 'WON' AND ISNULL(bm.statuswinlost, 0) = 1 THEN 'Half Won'
 			WHEN bm.status = 'LOSE' AND ISNULL(bm.statuswinlost, 0) = 3 THEN 'Half Lose'
 			ELSE bm.status
@@ -297,7 +300,8 @@ BEGIN
 		bm.odds,
 		bm.betteam,
 		CASE
-			WHEN @Status IN ('Void', 'Reject') THEN ''
+			WHEN @Status = 'Void' THEN ''
+			WHEN @Status = 'Reject' AND bm.status <> 'Reject' THEN ''
 			WHEN bm.status = 'WON' AND ISNULL(bm.statuswinlost, 0) = 1 THEN 'Half Won'
 			WHEN bm.status = 'LOSE' AND ISNULL(bm.statuswinlost, 0) = 3 THEN 'Half Lose'
 			ELSE bm.status
