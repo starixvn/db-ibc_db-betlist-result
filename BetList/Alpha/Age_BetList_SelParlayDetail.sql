@@ -36,6 +36,7 @@ AS
 					- Add new param @CustId, remove param @Language
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190311@Kos: Move to DB06 [#Redmine: 110058]
+		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112286]
 */
 
 BEGIN
@@ -139,7 +140,8 @@ BEGIN
 			b.odds,
 			b.betteam,
 			CASE
-				WHEN @Status IN ('Void', 'Reject') THEN ''
+				WHEN @Status = 'Void' THEN ''
+				WHEN @Status = 'Reject' AND b.status <> 'Reject' THEN ''
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
@@ -184,7 +186,8 @@ BEGIN
 			b.odds,
 			b.betteam,
 			CASE
-				WHEN @Status IN ('Void', 'Reject') THEN ''
+				WHEN @Status = 'Void' THEN ''
+				WHEN @Status = 'Reject' AND b.status <> 'Reject' THEN ''
 				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
@@ -228,7 +231,8 @@ BEGIN
 			b.odds,
 			b.betteam,
 			CASE
-				WHEN @Status IN ('Void', 'Reject') THEN ''
+				WHEN @Status = 'Void' THEN ''
+				WHEN @Status = 'Reject' AND b.status <> 'Reject' THEN ''
 				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
@@ -249,12 +253,12 @@ BEGIN
 	SELECT DISTINCT * FROM @tmpParlay
 	ORDER BY TransId DESC
 END
-
-
-
-
-
 GO
+
+
+
+
+
 GRANT EXECUTE ON [dbo].[Age_BetList_SelParlayDetail] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelParlayDetail] TO [bodbDownlineNetView]
