@@ -21,6 +21,7 @@ AS
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 		- 20190121@Kos: Betting Ticket Center phase 3a [Redmine: #103555]
+		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 */
 
 BEGIN
@@ -1087,6 +1088,7 @@ BEGIN
 				WHEN @BaseCurrency = 'IDR' THEN e.IDR
 				WHEN @BaseCurrency = 'GBP' THEN e.GBP
 				WHEN @BaseCurrency = 'THB' THEN e.THB
+				WHEN @BaseCurrency = 'INH' THEN e.INH
 				ELSE 1
 			END AS Rate
 		FROM Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e

@@ -61,6 +61,7 @@ AS
 		- 20181210@Kos: Support new platform 'c' Mobile China View [#Redmine: 106088]
 		- 20190121@Kos: Betting Ticket Center phase 3a [Redmine: #103555]
 		- 20190305@Kos: Change param @LiveIndicator from TINYINT to VARCHAR(10) [Redmine: #108717]
+		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 */
 
 BEGIN
@@ -871,6 +872,7 @@ BEGIN
 						WHEN @BaseCurrency = 'IDR' THEN e.IDR
 						WHEN @BaseCurrency = 'GBP' THEN e.GBP
 						WHEN @BaseCurrency = 'THB' THEN e.THB
+						WHEN @BaseCurrency = 'INH' THEN e.INH
 						ELSE 1
 					END AS Rate
 				FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e

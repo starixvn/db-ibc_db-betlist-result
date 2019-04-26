@@ -37,6 +37,7 @@ AS
 					- Remove param @CurrencyId
 		- 20190411@Kos: Support search LIKE on username [Redmine: #111665]
 		- 20190422@Kos: Enhance performance for searching too many members [Redmine: #112313]
+		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 */
 
 BEGIN
@@ -643,6 +644,7 @@ BEGIN
 					WHEN @BaseCurrency = 'IDR' THEN e.IDR
 					WHEN @BaseCurrency = 'GBP' THEN e.GBP
 					WHEN @BaseCurrency = 'THB' THEN e.THB
+					WHEN @BaseCurrency = 'INH' THEN e.INH
 					ELSE 1
 				END AS Rate
 			FROM Lrf_f_GetExchangeDaily(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)) AS e
