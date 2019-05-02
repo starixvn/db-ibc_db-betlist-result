@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_CashOut_Detail]
 	@AgentList			VARCHAR(MAX),
@@ -20,6 +20,7 @@ AS
 		- 20180719@Kos: Support more base currencies [#Redmine: 80941]
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 		- 20181121@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
+		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 */
 
 BEGIN
@@ -541,6 +542,7 @@ BEGIN
 				WHEN @BaseCurrency = 'IDR' THEN e.IDR
 				WHEN @BaseCurrency = 'GBP' THEN e.GBP
 				WHEN @BaseCurrency = 'THB' THEN e.THB
+				WHEN @BaseCurrency = 'INH' THEN e.INH
 				ELSE 1
 			END AS Rate
 		FROM dbo.Lrf_f_GetExchangeDaily(@WinLostDate, @WinLostDate) AS e
@@ -609,14 +611,10 @@ BEGIN
 		LEFT JOIN @ExchangeRate AS e
 			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.exchangeid = b.Currency
 END
-
-
-
-
 GO
-GRANT EXECUTE ON [dbo].[Lrf_BetList_CashOut_Detail] TO [bodbAdminNet] AS [dbo]
-GO
+
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_CashOut_Detail] TO [bodbLicenseeNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_CashOut_Detail] TO [vnteam] AS [dbo]
 GO

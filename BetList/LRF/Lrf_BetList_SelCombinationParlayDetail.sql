@@ -1,11 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Lrf_BetList_SelCombinationParlayDetail]    Script Date: 12/04/2015 04:04:44 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelCombinationParlayDetail]
 	@AgentList		VARCHAR(MAX),
@@ -37,6 +30,7 @@ AS
 		- 20161007@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20180719@Kos: Support more base currencies [#Redmine: 80941]
+		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 */
 
 BEGIN
@@ -418,9 +412,10 @@ BEGIN
 				WHEN @BaseCurrency = 'IDR' THEN e.IDR
 				WHEN @BaseCurrency = 'GBP' THEN e.GBP
 				WHEN @BaseCurrency = 'THB' THEN e.THB
+				WHEN @BaseCurrency = 'INH' THEN e.INH
 				ELSE 1
 			END AS Rate
-		FROM Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e
+		FROM dbo.Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e
 		WHERE e.ExchangeId = @Currency
 			AND EXISTS (SELECT 1 FROM @tmpResults WHERE WinLostDate = e.exchangedate)
 
@@ -433,9 +428,10 @@ BEGIN
 				WHEN @BaseCurrency = 'IDR' THEN e.IDR
 				WHEN @BaseCurrency = 'GBP' THEN e.GBP
 				WHEN @BaseCurrency = 'THB' THEN e.THB
+				WHEN @BaseCurrency = 'INH' THEN e.INH
 				ELSE 1
 			END
-		FROM Lrf_f_GetExchangeDaily(@Today, @Today) AS e
+		FROM dbo.Lrf_f_GetExchangeDaily(@Today, @Today) AS e
 		WHERE e.ExchangeId = @Currency
 	END
 	ELSE
@@ -491,14 +487,9 @@ BEGIN
 
 	SELECT DISTINCT * FROM @tmpMatch
 END
-
-
-
-
 GO
-GRANT EXECUTE ON [dbo].[Lrf_BetList_SelCombinationParlayDetail] TO [bodbAdminNet] AS [dbo]
-GO
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelCombinationParlayDetail] TO [bodbLicenseeNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelCombinationParlayDetail] TO [vnteam] AS [dbo]
 GO
