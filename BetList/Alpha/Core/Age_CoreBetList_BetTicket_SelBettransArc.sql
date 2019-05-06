@@ -43,6 +43,7 @@ AS
 		- 20181006@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20181123@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 
 	Param's Explanation:
 
@@ -368,7 +369,10 @@ BEGIN
 		, m.matchid
 		, m.matchcode
 		, '' AS Race
-		, m.eventdate
+		, CASE
+			WHEN c.ProductID = 1 THEN m.globalshowtime
+			ELSE m.eventdate
+		END AS EventDate
 		, m.HomeID
 		, m.AwayID
 		, m.Betstatus
@@ -701,14 +705,10 @@ BEGIN
 
 	RETURN
 END
-
-
-
-
-
-
-
 GO
+
+
+
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_BetTicket_SelBettransArc] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_BetTicket_SelBettransArc] TO [bodbDownlineNetView]

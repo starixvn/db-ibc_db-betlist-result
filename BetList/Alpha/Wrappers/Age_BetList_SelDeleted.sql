@@ -61,6 +61,7 @@ AS
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 		- 20181011@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 */
 
 BEGIN
@@ -709,7 +710,10 @@ BEGIN
 					LeagueId = m.leagueid,
 					MatchCode = m.matchcode,
 					Race = '',
-					EventDate = m.eventdate,
+					EventDate = CASE
+									WHEN b.ProductId = 1 THEN m.GlobalShowTime
+									ELSE m.eventdate
+								END,
 					HomeId = m.homeid,
 					AwayId = m.awayid,
 					BetStatus = m.betstatus,
@@ -971,7 +975,10 @@ BEGIN
 					LeagueId = m.leagueid,
 					MatchCode = m.matchcode,
 					Race = '',
-					EventDate = m.eventdate,
+					EventDate = CASE
+									WHEN b.ProductId = 1 THEN m.GlobalShowTime
+									ELSE m.eventdate
+								END,
 					HomeId = m.homeid,
 					AwayId = m.awayid,
 					BetStatus = m.betstatus,

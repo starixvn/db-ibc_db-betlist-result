@@ -16,6 +16,7 @@ AS
 	Revisions:
 		- 20181115@Kos: Create new [#Redmine: 103577]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 */
 
 BEGIN
@@ -265,7 +266,8 @@ BEGIN
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
+				WHEN c.Product = 'SB' THEN m.GlobalShowTime
+				WHEN c.Product IN ('NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
 				WHEN c.Product IN ('BF') THEN m3.EventDate
 				ELSE b.winlostdate
 			END AS EventDate,
@@ -499,7 +501,8 @@ BEGIN
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
+				WHEN c.Product = 'SB' THEN m.globalshowtime
+				WHEN c.Product IN ('NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
 				WHEN c.Product IN ('BF') THEN m3.EventDate
 				ELSE b.winlostdate
 			END AS EventDate,
@@ -567,11 +570,11 @@ BEGIN
 
 	SELECT * FROM @BettransDetail
 END
-
-
-
-
 GO
+
+
+
+
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossByBettypeMatch] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossByBettypeMatch] TO [bodbDownlineNetView]

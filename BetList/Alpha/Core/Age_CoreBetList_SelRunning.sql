@@ -34,6 +34,7 @@ AS
 					- Don't support member level anymore
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -61,6 +62,7 @@ BEGIN
 		, BetId				BIGINT
 		, MatchCode			NVARCHAR(50)
 		, Race				NVARCHAR(20)
+		, EventDate			DATETIME
 		, MatchId			INT
 		, HomeId			INT
 		, AwayId			INT
@@ -118,6 +120,7 @@ BEGIN
 				, b.betid
 				, '' MatchCode
 				, '' Race
+				, '' AS EventDate
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
@@ -186,6 +189,7 @@ BEGIN
 				, b.BetID
 				, '' MatchCode
 				, '' Race
+				, '' AS EventDate
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
@@ -254,6 +258,7 @@ BEGIN
 				, b.BetID
 				, '' MatchCode
 				, '' Race
+				, '' AS EventDate
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
@@ -324,6 +329,7 @@ BEGIN
 				, b.BetID
 				, '' MatchCode
 				, '' Race
+				, '' AS EventDate
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
@@ -383,6 +389,7 @@ BEGIN
 				, b.BetID
 				, '' MatchCode
 				, '' Race
+				, '' AS EventDate
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
@@ -442,6 +449,7 @@ BEGIN
 				, b.BetID
 				, '' MatchCode
 				, '' Race
+				, '' AS EventDate
 				, b.matchid
 				, 0 HomeID
 				, 0 AwayID
@@ -506,6 +514,7 @@ BEGIN
 		SportType	= m.sporttype,
 		LeagueId	= m.leagueid,
 		MatchCode	= m.matchcode,
+		EventDate	= m.GlobalShowTime,
 		HomeId		= m.homeid,
 		AwayId		= m.awayid,
 		BetStatus	= m.betstatus,
@@ -547,10 +556,10 @@ BEGIN
 
 	SELECT * FROM @BettransDetail
 END
-
-
-
 GO
+
+
+
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_SelRunning] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_SelRunning] TO [bodbDownlineNetView]

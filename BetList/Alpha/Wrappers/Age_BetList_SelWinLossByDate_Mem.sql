@@ -90,6 +90,7 @@ AS
 		- 20181128@Kos: Hotfix - Running Casino ticket [#Redmine: 105393]
 		- 20181220@Kos: Hotfix - Jackpot Contribution [#Redmine: 106772]
 		- 20181227@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 */
 
 BEGIN
@@ -536,7 +537,8 @@ BEGIN
 								WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
 								ELSE '' END
 				,EventDate = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
+								WHEN c.Product = 'SB' THEN m.GlobalShowTime
+								WHEN c.Product IN ('NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
 								WHEN c.Product IN ('Outright') THEN o.eventdate
 								WHEN c.Product IN ('VR') THEN vo.EventDate
 								WHEN c.Product IN ('BF') THEN m3.EventDate
@@ -829,7 +831,8 @@ BEGIN
 								WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
 								ELSE '' END
 				,EventDate = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
+								WHEN c.Product = 'SB' THEN m.GlobalShowTime
+								WHEN c.Product IN ('NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
 								WHEN c.Product IN ('Outright') THEN o.eventdate
 								WHEN c.Product IN ('VR') THEN vo.EventDate
 								WHEN c.Product IN ('BF') THEN m3.EventDate
@@ -938,11 +941,11 @@ BEGIN
 
 	DROP TABLE #MemBetTicket
 END
-
-
-
-
 GO
+
+
+
+
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinLossByDate_Mem] TO [bodbDownlineNet] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinLossByDate_Mem] TO [bodbDownlineNetView] AS [dbo]

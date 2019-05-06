@@ -108,6 +108,7 @@ AS
 					- Remove param @Language
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 */
 
 BEGIN
@@ -129,6 +130,7 @@ BEGIN
 		BetId				BIGINT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(20),
+		EventDate			DATETIME,
 		MatchId				INT,
 		HomeId				INT,
 		AwayId				INT,
@@ -517,6 +519,7 @@ BEGIN
 				,LeagueId = m.leagueid
 				,MatchCode = m.matchcode
 				,Race = ''
+				,EventDate =  m.GlobalShowTime
 				,HomeId = m.homeid
 				,AwayId = m.awayid
 				,[Status] = CASE
@@ -541,6 +544,7 @@ BEGIN
 				,LeagueId = m.leagueID
 				,MatchCode = m.matchcode
 				,Race = m.GroupMatch
+				,EventDate = ''
 				,MatchId = 0
 				,HomeId = m.teamID
 				,AwayId  = 0
@@ -571,6 +575,7 @@ BEGIN
 				,LeagueId = 0
 				,MatchCode = ''
 				,Race = ''
+				,EventDate = ''
 				,MatchId = 0
 				,HomeId = 0
 				,AwayId  = 0
@@ -608,6 +613,7 @@ BEGIN
 				,LeagueId = m.leagueid
 				,MatchCode = m.matchcode
 				,Race = ''
+				,EventDate = m.eventdate
 				,MatchId = CASE WHEN b.ProductID IN (5, 27) THEN m.matchid ELSE 0 END
 				,HomeId = CASE WHEN b.ProductID IN (5, 27) THEN m.homeid ELSE 0 END
 				,AwayId = CASE WHEN b.ProductID IN (5, 27) THEN m.awayid ELSE 0 END
@@ -643,6 +649,7 @@ BEGIN
 				,LeagueId = r.LeagueID
 				,MatchCode = o.RacerNum
 				,Race = b.oddsid
+				,EventDate = ''
 				,HomeId = o.RacerID
 				,AwayId = 0
 				,BetTeam = ''
@@ -667,6 +674,7 @@ BEGIN
 				,LeagueId = 0
 				,MatchCode = ''
 				,Race = ''
+				,EventDate = ''
 				,MatchID = 0
 				,HomeId = 0
 				,AwayId = 0
@@ -712,6 +720,7 @@ BEGIN
 				,LeagueID = 0
 				,MatchCode = ''
 				,Race = ''
+				,EventDate = ''
 				,MatchID = 0
 				,HomeId = 0
 				,AwayID = 0
@@ -750,6 +759,7 @@ BEGIN
 				,LeagueID = m.leagueid
 				,MatchCode = ISNULL(m.MatchCode,'')
 				,Race = ''
+				,EventDate = m.GlobalShowTime
 				,HomeID = m.homeID
 				,AwayID = m.awayID
 				,LiveIndicator = 0
@@ -775,6 +785,7 @@ BEGIN
 				,LeagueID = 0
 				,MatchCode = ''
 				,Race = ''
+				,EventDate = ''
 				,MatchID = CASE WHEN b.ProductID = 12 THEN 255	ELSE 0 END
 				,HomeID = 0
 				,AwayID = 0
@@ -801,6 +812,7 @@ BEGIN
 				,LeagueId = m.League3rdId
 				,MatchCode = m.MatchNo
 				,Race = ''
+				,EventDate = ''
 				,MatchId = CASE WHEN b.ProductID = 30 THEN b.matchid ELSE 0 END
 				,HomeID = m.HomeId
 				,AwayID = m.AwayId
@@ -847,6 +859,7 @@ BEGIN
 				,BetID = 0
 				,MatchCode = ''
 				,Race = ''
+				,EventDate = ''
 				,MatchID = 0
 				,HomeID = 0
 				,AwayID = 0
@@ -945,6 +958,7 @@ BEGIN
 		,BetId
 		,MatchCode
 		,Race
+		,EventDate
 		,MatchId
 		,HomeId
 		,AwayId
@@ -986,12 +1000,11 @@ BEGIN
 	SELECT * FROM @BetListDetail
 	ORDER BY RefNo
 END
-
-
-
-
-
 GO
+
+
+
+
 GRANT EXECUTE ON [dbo].[Age_BetList_SelRunning_Mem] TO [bodbDownlineNet] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelRunning_Mem] TO [bodbDownlineNetView] AS [dbo]

@@ -81,6 +81,7 @@ AS
 		- 20181127@Kos: Enhance performance, don't use core anymore [#Redmine: 103577]
 		- 20181227@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 */
 
 BEGIN
@@ -573,7 +574,8 @@ BEGIN
 							WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
 							ELSE '' END
 			,EventDate = CASE
-							WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
+							WHEN c.Product = 'SB' THEN m.GlobalShowTime
+							WHEN c.Product IN ('NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
 							WHEN c.Product IN ('Outright') THEN o.eventdate
 							WHEN c.Product IN ('VR') THEN vo.EventDate
 							WHEN c.Product IN ('BF') THEN m3.EventDate
@@ -865,7 +867,7 @@ BEGIN
 							ELSE '' END
 			,Race = ''
 			,EventDate = CASE
-							WHEN c.Product IN ('MG') THEN m.eventdate
+							WHEN c.Product IN ('MG') THEN m.GlobalShowTime
 							WHEN c.Product IN ('BF') THEN m3.EventDate
 							ELSE b.winlostdate END
 			,HomeId = CASE
