@@ -37,6 +37,7 @@ AS
 
 	Revisions:
 		- 20190227@Kos: Create new [Redmine: 109230]
+		- 20190510@Kos: Fix bug for non-sport products [Redmine: 109521]
 */
 
 BEGIN
@@ -209,7 +210,7 @@ BEGIN
 			AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 			AND (m.sporttype IS NULL OR m.sporttype IN (SELECT SportType FROM @SportType))
 			AND (l.sporttype IS NULL OR l.sporttype IN (SELECT SportType FROM @SportType))
-			AND (vr.sporttype IS NULL OR l.sporttype IN (SELECT SportType FROM @SportType))
+			AND (vr.sporttype IS NULL OR vr.sporttype IN (SELECT SportType FROM @SportType))
 			AND (@LiveIndicator = 2
 				OR (b.bettype IN (9, 29, 2799) AND b.livehomescore IN (	SELECT 0 WHERE @LiveIndicator = 0
 																UNION	SELECT 2 WHERE @LiveIndicator = 0
@@ -263,8 +264,8 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			CASE
-				WHEN c.Product = 'SB' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
-				WHEN c.Product = 'SB' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+				WHEN c.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+				WHEN c.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 				ELSE b.status
 			END AS Status,
 			b.transdate,
