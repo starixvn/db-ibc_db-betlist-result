@@ -38,6 +38,7 @@ AS
 		- 20190411@Kos: Support search LIKE on username [Redmine: #111665]
 		- 20190422@Kos: Enhance performance for searching too many members [Redmine: #112313]
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
+		- 20190506@Kos: Result Pending for SettlementStatus = 5 [Redmine: #112886]
 */
 
 BEGIN
@@ -569,7 +570,9 @@ BEGIN
 						AND Status = 'Running'
 						AND (ISNULL(SecAcceptFlag, 0) = 0 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP)
 						AND ((',' + @StatusFilter + ',' NOT LIKE '%,2,%' AND ISNULL(SettlementStatus, 0) & 1 <> 0)			-- Result Pending
-							OR (',' + @StatusFilter + ',' NOT LIKE '%,3,%' AND ISNULL(SettlementStatus, 0) & 12 <> 0))		-- Under Settlement
+							OR (',' + @StatusFilter + ',' NOT LIKE '%,3,%'
+								AND ISNULL(SettlementStatus, 0) & 12 <> 0
+								AND ISNULL(SettlementStatus, 0) & 1 = 0))		-- Under Settlement
 				END
 			END
 
