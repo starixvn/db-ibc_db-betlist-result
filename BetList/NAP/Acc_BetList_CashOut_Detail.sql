@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_CashOut_Detail]
 	@TransId			BIGINT,
@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+		- 20190506@Kos: Show match KO time for single ticket [#Redmine: 112092]
 */
 
 BEGIN
@@ -143,7 +144,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
@@ -216,7 +217,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
@@ -289,7 +290,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
@@ -499,13 +500,9 @@ BEGIN
 	SELECT * FROM @Data
 	SELECT * FROM @CashOutData
 END
-
-
-
 GO
-GRANT	VIEW DEFINITION	ON	[Acc_BetList_CashOut_Detail]	TO	vnteam
-GRANT	EXECUTE	ON	[Acc_BetList_CashOut_Detail]	TO	bodbExtAccNet
-GRANT	EXECUTE	ON	[Acc_BetList_CashOut_Detail]	TO	bodbDownlineNetView
-GRANT	EXECUTE	ON	[Acc_BetList_CashOut_Detail]	TO	bodbDownlineNet
+
+
+
 GRANT	EXECUTE	ON	[Acc_BetList_CashOut_Detail]	TO	bodbAdminNet
 GO

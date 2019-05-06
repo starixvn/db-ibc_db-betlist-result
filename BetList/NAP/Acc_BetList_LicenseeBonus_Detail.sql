@@ -14,6 +14,7 @@ AS
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190506@Kos: Show match KO time for single ticket [#Redmine: 112092]
 
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
@@ -123,7 +124,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
@@ -190,7 +191,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
@@ -257,7 +258,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,

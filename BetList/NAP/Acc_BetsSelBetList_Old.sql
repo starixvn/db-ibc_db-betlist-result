@@ -1,6 +1,4 @@
-﻿/*<info serverAlias="DBARC-bodb_Archive" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE bodb_archive
-GO
+﻿/*<info serverAlias="DBARC-bodb_Archive" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_Old]
 	@FromDate	SMALLDATETIME,
@@ -91,6 +89,7 @@ AS
 		- 20180509@Kos: Support Keno 6 new Mini Games [#Redmine: 93759]
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
+		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
 */
 
 BEGIN
@@ -218,7 +217,10 @@ BEGIN
 			b.refno,
 			m.matchcode,
 			'' AS race,
-			m.eventdate,
+			CASE
+				WHEN s.ProductID = 1 THEN m.GlobalShowTime
+				ELSE m.eventdate
+			END AS EventDate,
 			0,
 			0,
 			CASE
@@ -1213,17 +1215,13 @@ BEGIN
 	DROP TABLE #BetListDetailData;
 	DROP TABLE #SportBettype
 END
-
-
-
-
-
-
-
 GO
+
+
+
+
+
+
+
 GRANT EXECUTE ON [dbo].[Acc_BetsSelBetList_Old] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetsSelBetList_Old] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetsSelBetList_Old] TO [vnteam]
 GO

@@ -48,6 +48,7 @@ AS
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -227,7 +228,7 @@ BEGIN
 				b.refno,
 				m.matchcode,
 				'' AS race,
-				'' AS eventdate,
+				m.GlobalShowTime AS EventDate,
 				b.sdiscount,
 				b.adiscount,
 				b.discount,
@@ -393,7 +394,7 @@ BEGIN
 				b.refno,
 				m.matchcode,
 				'' race,
-				'' AS eventdate,
+				m.GlobalShowTime AS EventDate,
 				b.sdiscount,
 				b.adiscount,
 				b.discount,
@@ -479,7 +480,7 @@ BEGIN
 				b.translogid AS refno,
 				m.matchcode,
 				'' race,
-				'' AS eventdate,
+				m.GlobalShowTime AS EventDate,
 				b.sdiscount,
 				b.adiscount,
 				b.discount,
@@ -982,10 +983,10 @@ BEGIN
 
 	SELECT DISTINCT * FROM @DetailData
 END
-
-
-
-
 GO
+
+
+
+
 GRANT EXECUTE ON [dbo].[Acc_BetListByIP_Soccer] TO [bodbAdminNet]
 GO

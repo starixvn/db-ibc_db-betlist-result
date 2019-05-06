@@ -78,6 +78,7 @@ AS
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
+		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
 */
 
 BEGIN
@@ -285,7 +286,10 @@ BEGIN
 					b.refno,
 					m.matchcode,
 					'' AS Race,
-					m.eventdate,
+					CASE
+						WHEN s.ProductID = 1 THEN m.GlobalShowTime
+						ELSE m.eventdate
+					END AS EventDate,
 					0 AS VirtualRate,
 					0 AS IsShowOTExRate,
 					CASE
@@ -384,7 +388,7 @@ BEGIN
 					b.translogid AS RefNo,
 					m.matchcode,
 					'' AS Race,
-					m.eventdate,
+					m.GlobalShowTime AS EventDate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
@@ -1840,7 +1844,7 @@ BEGIN
 					b.refno,
 					m.matchcode,
 					'' AS Race,
-					m.eventdate,
+					m.GlobalShowTime AS EventDate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
@@ -1927,7 +1931,10 @@ BEGIN
 					b.refno,
 					m.matchcode,
 					'' AS Race,
-					m.eventdate,
+					CASE
+						WHEN s.ProductID = 1 THEN m.GlobalShowTime
+						ELSE m.eventdate
+					END AS EventDate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					CASE
@@ -2628,7 +2635,7 @@ BEGIN
 					b.refno,
 					m.matchcode,
 					'' AS Race,
-					m.eventdate,
+					m.GlobalShowTime AS EventDate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
@@ -2712,7 +2719,10 @@ BEGIN
 					b.refno,
 					m.matchcode,
 					'' AS Race,
-					m.eventdate,
+					CASE
+						WHEN s.ProductID = 1 THEN m.GlobalShowTime
+						ELSE m.eventdate
+					END AS EventDate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					CASE
@@ -3349,7 +3359,7 @@ BEGIN
 					b.refno,
 					m.matchcode,
 					'' AS Race,
-					m.eventdate,
+					m.GlobalShowTime AS EventDate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetListByDayAll]
 	@CustId			INT,
@@ -122,6 +122,7 @@ AS
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 		- 20181011@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
 
 	Param's Explanation:
 		+ @TransType:
@@ -273,7 +274,10 @@ BEGIN
 				m.awayid,
 				m.matchcode,
 				'' AS race,
-				'' AS eventdate,
+				CASE
+					WHEN s.ProductID = 1 THEN m.GlobalShowTime
+					ELSE m.eventdate
+				END AS EventDate,
 				0,
 				0,
 				CASE
@@ -1178,7 +1182,10 @@ BEGIN
 				m.awayid,
 				m.matchcode,
 				'' AS race,
-				'' AS eventdate,
+				CASE
+					WHEN s.ProductID = 1 THEN m.GlobalShowTime
+					ELSE m.eventdate
+				END AS EventDate,
 				0,
 				0,
 				CASE
@@ -1287,7 +1294,7 @@ BEGIN
 				m.awayid,
 				m.matchcode,
 				'' AS race,
-				'' AS eventdate,
+				m.GlobalShowTime AS EventDate,
 				0,
 				0,
 				b.sdiscount,
@@ -3386,10 +3393,8 @@ BEGIN
 
 	SELECT * FROM @DetailData
 END
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Acc_BetListByDayAll] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetListByDayAll] TO [bodbExtAccNet]
 GO

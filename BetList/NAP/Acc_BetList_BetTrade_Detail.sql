@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_BetTrade_Detail]
 	@TransId	BIGINT,
@@ -13,6 +13,7 @@ AS
 	Revisions:
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
+		- 20190506@Kos: Show match KO time for single ticket [#Redmine: 112092]
 
 	Parameters:
 		- @TransId: TransId of ticket bettype 901
@@ -88,7 +89,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
@@ -154,7 +155,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
@@ -220,7 +221,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
@@ -280,14 +281,10 @@ BEGIN
 
 	SELECT * FROM @Data
 END
-
-
-
-
 GO
-GRANT	VIEW DEFINITION	ON	[Acc_BetList_BetTrade_Detail]	TO	vnteam
-GRANT	EXECUTE	ON	[Acc_BetList_BetTrade_Detail]	TO	bodbExtAccNet
-GRANT	EXECUTE	ON	[Acc_BetList_BetTrade_Detail]	TO	bodbDownlineNetView
-GRANT	EXECUTE	ON	[Acc_BetList_BetTrade_Detail]	TO	bodbDownlineNet
+
+
+
+
 GRANT	EXECUTE	ON	[Acc_BetList_BetTrade_Detail]	TO	bodbAdminNet
 GO

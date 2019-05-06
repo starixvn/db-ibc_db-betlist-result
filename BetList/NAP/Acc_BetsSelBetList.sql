@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList]
 	@FromDate		SMALLDATETIME,
@@ -119,6 +119,7 @@ AS
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 		- 20181011@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
 */
 
 BEGIN
@@ -270,7 +271,10 @@ BEGIN
 				b.refno,
 				m.matchcode,
 				'' AS race,
-				m.eventdate,
+				CASE
+					WHEN s.ProductID = 1 THEN m.GlobalShowTime
+					ELSE m.eventdate
+				END AS EventDate,
 				0,
 				0,
 				CASE
@@ -381,7 +385,7 @@ BEGIN
 				b.translogid AS refno,
 				m.matchcode,
 				'' AS race,
-				m.eventdate,
+				m.GlobalShowTime AS EventDate,
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
 				b.sdiscount,
@@ -1901,7 +1905,10 @@ BEGIN
 				b.refno,
 				m.matchcode,
 				'' AS race,
-				m.eventdate,
+				CASE
+					WHEN s.ProductID = 1 THEN m.GlobalShowTime
+					ELSE m.eventdate
+				END AS EventDate,
 				0,
 				0,
 				CASE
@@ -2810,10 +2817,9 @@ BEGIN
 	DROP TABLE #BetListDetailData
 	DROP TABLE #SportBettype
 END
-
-
-
 GO
-GRANT	EXECUTE	ON	Acc_BetsSelBetList	TO	bodbExtAccNet
+
+
+
 GRANT	EXECUTE	ON	Acc_BetsSelBetList	TO	bodbAdminNet
 GO
