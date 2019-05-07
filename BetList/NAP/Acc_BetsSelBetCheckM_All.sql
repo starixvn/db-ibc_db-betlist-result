@@ -3,7 +3,8 @@
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetCheckM_All]
 	@TransId	BIGINT,
 	@RefNo		BIGINT,
-	@CustId		INT
+	@CustId		INT,
+	@IsCN88		BIT = 0
 AS
 
 /*
@@ -31,6 +32,8 @@ AS
 					- Add new param @CustId, remove param @Language
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112286]
+		- 20190521@Kos: Support CN88 [Redmine: #112225]
+					- Add new param @IsCN88 BIT
 */
 
 BEGIN
@@ -126,6 +129,7 @@ BEGIN
 			CASE
 				WHEN @Status = 'Void' THEN ''
 				WHEN @Status = 'Reject' AND b.status <> 'Reject' THEN ''
+				WHEN @IsCN88 = 1 AND @Status = 'Reject' AND b.status = 'Reject' THEN ''
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
@@ -172,6 +176,7 @@ BEGIN
 			CASE
 				WHEN @Status = 'Void' THEN ''
 				WHEN @Status = 'Reject' AND b.status <> 'Reject' THEN ''
+				WHEN @IsCN88 = 1 AND @Status = 'Reject' AND b.status = 'Reject' THEN ''
 				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
@@ -217,6 +222,7 @@ BEGIN
 			CASE
 				WHEN @Status = 'Void' THEN ''
 				WHEN @Status = 'Reject' AND b.status <> 'Reject' THEN ''
+				WHEN @IsCN88 = 1 AND @Status = 'Reject' AND b.status = 'Reject' THEN ''
 				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status

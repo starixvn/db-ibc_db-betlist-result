@@ -4,7 +4,8 @@ ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_Old]
 	@FromDate	SMALLDATETIME,
 	@ToDate		SMALLDATETIME,
 	@CustId		INT,
-	@BetType	INT = 0
+	@BetType	INT = 0,
+	@IsCN88			BIT = 0
 AS
 
 /*
@@ -90,6 +91,8 @@ AS
 		- 20180515@Kos: Add Match No for Bullfighting [#Redmine: 84961]
 		- 20180709@Kos: Support Poker Games [#Redmine: 97565]
 		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
+		- 20190507@Kos: Support CN88 [Redmine: #112225]
+					- Add new param @IsCN88 BIT
 */
 
 BEGIN
@@ -108,6 +111,7 @@ BEGIN
 		SDiscount		SMALLMONEY,
 		ADiscount		SMALLMONEY,
 		Discount		SMALLMONEY,
+		PlayerDiscount	SMALLMONEY,
 		HomeId			INT,
 		AwayId			INT,
 		SettleTime		DATETIME,
@@ -235,6 +239,7 @@ BEGIN
 				WHEN s.ProductID = 26 THEN 0
 				ELSE b.discount
 			END AS Discount,
+			b.playerdiscount,
 			m.homeid,
 			m.awayid,
 			ISNULL(b.checktime, '') settleTime,
@@ -244,7 +249,11 @@ BEGIN
 			0 finalodds,
 			0 finalodds2,
 			b.OddsType,
-			b.status,
+			CASE
+				WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+				WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+				ELSE b.status
+			END AS status,
 			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 			b.stake,
 			b.actual_stake,
@@ -331,6 +340,7 @@ BEGIN
 				b.sdiscount,
 				b.adiscount,
 				b.discount,
+				b.playerdiscount,
 				0 AS homeid,
 				0 AS awayid,
 				'' AS settleTime,
@@ -409,6 +419,7 @@ BEGIN
 				b.sdiscount,
 				b.adiscount,
 				b.discount,
+				b.playerdiscount,
 				0 AS homeid,
 				odds.teamid AS awayid,
 				'' settleTime,
@@ -489,6 +500,7 @@ BEGIN
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
+			b.playerdiscount,
 			0 AS homeid,
 			0 AS awayid,
 			'' AS settleTime,
@@ -621,6 +633,7 @@ BEGIN
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
+			b.playerdiscount,
 			o.teamid AS homeid,
 			0 AS awayid,
 			'' AS settleTime,
@@ -717,6 +730,7 @@ BEGIN
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
+			b.playerdiscount,
 			o.RacerID AS homeID,
 			0 AS awayID,
 			'' settleTime,
@@ -812,6 +826,7 @@ BEGIN
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
+			b.playerdiscount,
 			0 AS homeid,
 			0 AS awayid,
 			'' AS settleTime,
@@ -890,6 +905,7 @@ BEGIN
 			b.sdiscount,
 			b.adiscount,
 			b.discount,
+			b.playerdiscount,
 			m.HomeId,
 			m.AwayId,
 			ISNULL(b.checktime, '') AS settleTime,
@@ -1084,15 +1100,22 @@ BEGIN
 	WHERE WalletType = 2 AND RefCode = 0
 
 	-- Get currency name
-	DECLARE @CurrencyName NVARCHAR(50)
+	DECLARE @UGroup		VARCHAR(3),
+		@CurrencyName	NVARCHAR(50),
+		@Username		NVARCHAR(50)
 
-	SELECT @CurrencyName = ex.currency
-	FROM bodb02.dbo.custInfo AS ci WITH (NOLOCK)
-		INNER JOIN bodb02.dbo.Exchange AS ex WITH (NOLOCK) ON ci.currency = ex.exchangeid
-	WHERE ci.custid = @CustId
+	SELECT
+		@Username = c.username,
+		@UGroup = c.ugroup,
+		@CurrencyName = ex.currency
+	FROM bodb02.dbo.Customer AS c WITH (NOLOCK)
+		INNER JOIN bodb02.dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
+	WHERE c.custid = @CustId
 
 	SELECT *,
-		@CurrencyName AS Currency
+		@CurrencyName AS Currency,
+		@Username AS Username,
+		@UGroup AS UGroup
 	FROM #BetListData
 	ORDER BY TransId
 
@@ -1216,10 +1239,6 @@ BEGIN
 	DROP TABLE #SportBettype
 END
 GO
-
-
-
-
 
 
 

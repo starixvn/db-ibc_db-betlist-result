@@ -4,7 +4,8 @@ ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_ByTransID]
 	@CustId			INT,
 	@RefNo			BIGINT,
 	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME
+	@BalanceUpDay	SMALLDATETIME,
+	@IsCN88			BIT = 0
 AS
 
 /*
@@ -107,6 +108,8 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
 		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
+		- 20190513@Kos: Support CN88 [Redmine: #112225]
+					- Add new param @IsCN88 BIT
 */
 
 BEGIN
@@ -133,6 +136,7 @@ BEGIN
 		SDiscount			SMALLMONEY,
 		ADiscount			SMALLMONEY,
 		Discount			SMALLMONEY,
+		PlayerDiscount		SMALLMONEY,
 		HomeId				INT,
 		AwayId				INT,
 		SettleTime			DATETIME,
@@ -308,6 +312,7 @@ BEGIN
 						WHEN s.ProductID = 26 THEN 0
 						ELSE b.discount
 					END AS Discount,
+					b.playerdiscount,
 					m.homeid,
 					m.awayid,
 					ISNULL(b.checktime,'') AS settleTime,
@@ -318,7 +323,9 @@ BEGIN
 					0 finalodds2,
 					b.OddsType,
 					CASE 
-						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'  
+						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+						WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+						WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 						ELSE b.status
 					END AS status,
 					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -404,6 +411,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					m.homeid,
 					m.awayid,
 					'' AS settleTime,
@@ -562,9 +570,10 @@ BEGIN
 					'' AS eventdate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
-					sdiscount,
-					adiscount,
-					discount,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' settleTime,
@@ -655,6 +664,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -764,6 +774,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -848,6 +859,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					odds.teamid AS awayid,
 					'' AS settleTime,
@@ -930,6 +942,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					o.RacerID AS homeID,
 					0 AS awayID,
 					'' settleTime,
@@ -1029,6 +1042,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -1125,6 +1139,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					m.HomeId,
 					m.AwayId,
 					ISNULL(b.checktime, '') settleTime,
@@ -1203,6 +1218,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					m.HomeId,
 					m.AwayId,
 					'' AS SettleTime,
@@ -1306,6 +1322,7 @@ BEGIN
 						AVG(brng.sdiscount) AS sdiscount,
 						AVG(brng.adiscount) AS adiscount,
 						AVG(brng.discount) AS discount,
+						AVG(brng.playerdiscount) AS playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
 						'' AS settleTime,
@@ -1409,6 +1426,7 @@ BEGIN
 						AVG(brng.sdiscount) AS sdiscount,
 						AVG(brng.adiscount) AS adiscount,
 						AVG(brng.discount) AS discount,
+						AVG(brng.playerdiscount) AS playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
 						'' AS settleTime,
@@ -1525,6 +1543,7 @@ BEGIN
 						b.sdiscount,
 						b.adiscount,
 						b.discount,
+						b.playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
 						'' AS settleTime,
@@ -1623,6 +1642,7 @@ BEGIN
 						AVG(blc.sdiscount) AS sdiscount,
 						AVG(blc.adiscount) AS adiscount,
 						AVG(blc.discount) AS discount,
+						AVG(blc.playerdiscount) AS playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
 						'' AS settleTime,
@@ -1717,6 +1737,7 @@ BEGIN
 						AVG(blc.sdiscount) AS sdiscount,
 						AVG(blc.adiscount) AS adiscount,
 						AVG(blc.discount) AS discount,
+						AVG(blc.playerdiscount) AS playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
 						'' AS settleTime,
@@ -1817,6 +1838,7 @@ BEGIN
 						b.sdiscount,
 						b.adiscount,
 						b.discount,
+						b.playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
 						'' AS settleTime,
@@ -1899,6 +1921,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -1976,6 +1999,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					m.homeid,
 					m.awayid,
 					ISNULL(b.checktime,'') settleTime,
@@ -2079,6 +2103,7 @@ BEGIN
 						WHEN s.ProductID = 26 THEN 0
 						ELSE b.discount
 					END AS Discount,
+					b.playerdiscount,
 					m.homeid,
 					m.awayid,
 					ISNULL(b.checktime,'') settleTime,
@@ -2088,7 +2113,11 @@ BEGIN
 					0 finalodds,
 					0 finalodds2,
 					b.OddsType,
-					b.status,
+					CASE
+						WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+						WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+						ELSE b.status
+					END AS status,
 					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -2242,9 +2271,10 @@ BEGIN
 					'' AS eventdate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
-					sdiscount,
-					adiscount,
-					discount,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' settleTime,
@@ -2322,6 +2352,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -2431,6 +2462,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					odds.teamid AS awayid,
 					'' settleTime,
@@ -2508,6 +2540,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					o.RacerID AS homeID,
 					0 AS awayID,
 					'' settleTime,
@@ -2606,6 +2639,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -2686,6 +2720,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -2796,6 +2831,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					m.HomeId,
 					m.AwayId,
 					ISNULL(b.checktime, '') settleTime,
@@ -2874,6 +2910,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					m.homeid,
 					m.awayid,
 					ISNULL(b.checktime,'') settleTime,
@@ -2977,6 +3014,7 @@ BEGIN
 						WHEN s.ProductID = 26 THEN 0
 						ELSE b.discount
 					END AS Discount,
+					b.playerdiscount,
 					m.homeid,
 					m.awayid,
 					ISNULL(b.checktime,'') settleTime,
@@ -2986,7 +3024,11 @@ BEGIN
 					0 finalodds,
 					0 finalodds2,
 					b.OddsType,
-					b.status,
+					CASE
+						WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+						WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+						ELSE b.status
+					END AS status,
 					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 					b.stake,
@@ -3143,6 +3185,7 @@ BEGIN
 					sdiscount,
 					adiscount,
 					discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' settleTime,
@@ -3223,6 +3266,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -3332,9 +3376,10 @@ BEGIN
 					'' AS eventdate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
-					sdiscount,
-					adiscount,
-					discount,
+					SDiscount,
+					ADiscount,
+					Discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' settleTime,
@@ -3412,6 +3457,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					odds.teamid AS awayid,  
 					'' settleTime,
@@ -3489,6 +3535,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					odds.teamid AS homeid,
 					0 AS awayid,
 					'' settleTime,
@@ -3583,6 +3630,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					o.RacerID AS homeID,
 					0 AS awayID,
 					'' settleTime,
@@ -3681,6 +3729,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -3761,6 +3810,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -3871,6 +3921,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					m.HomeId,
 					m.AwayId,
 					ISNULL(b.checktime, '') settleTime,
@@ -3949,6 +4000,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					m.homeid,
 					m.awayid,
 					ISNULL(b.checktime,'') settleTime,
@@ -4292,6 +4344,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -4392,6 +4445,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -4492,6 +4546,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -4630,6 +4685,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -4717,6 +4773,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -4804,6 +4861,7 @@ BEGIN
 					b.sdiscount,
 					b.adiscount,
 					b.discount,
+					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -4873,10 +4931,12 @@ BEGIN
 
 	SELECT b.*,
 		@CustId AS CustId,
-		ex.currency
+		ex.currency,
+		c.ugroup,
+		c.username
 	FROM @Data AS b
-		LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON b.CustId = ci.custid
-		LEFT JOIN dbo.Exchange AS ex WITH (NOLOCK) ON ci.currency = ex.exchangeid
+		LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
+		LEFT JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
 	ORDER BY b.TransId
 
 	SELECT * FROM @DetailData
