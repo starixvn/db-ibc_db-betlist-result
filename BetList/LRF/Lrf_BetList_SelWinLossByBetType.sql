@@ -53,6 +53,8 @@ AS
 		- 20180510@Kos: Support Keno 6 new Mini Games [#Redmine: 94829]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181227@Kos: Hotfix - Licensee WL/Comm on BA ticket [#Redmine: 107084]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 
 	Parameters:
 */
@@ -146,6 +148,7 @@ BEGIN
 		LeagueId		INT,
 		MatchId			INT,
 		MatchCode		VARCHAR(50),
+		EventDate		DATETIME,
 		IsNeutral		BIT,
 		HomeId			INT,
 		AwayId			INT,
@@ -604,6 +607,7 @@ BEGIN
 				m.leagueid,
 				b.matchid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				m.homeid,
 				m.awayid,
@@ -671,6 +675,7 @@ BEGIN
 				o.leagueid,
 				b.matchid,
 				o.matchcode,
+				b.winlostdate AS EventDate,
 				CONVERT(BIT, 0) AS IsNeutral,
 				o.teamid AS HomeId,
 				0 AS AwayId,
@@ -735,6 +740,7 @@ BEGIN
 				0 AS LeagueId,
 				0 AS MatchId,
 				'' AS MatchCode,
+				b.winlostdate AS EventDate,
 				CONVERT(BIT, 0) AS IsNeutral,
 				0 AS HomeId,
 				0 AS AwayId,
@@ -794,6 +800,7 @@ BEGIN
 				m.leagueid,
 				m.matchid,
 				m.matchcode,
+				b.winlostdate AS EventDate,
 				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				m.homeid,
 				m.awayid,
@@ -867,6 +874,7 @@ BEGIN
 				r.LeagueID,
 				b.matchid,
 				CONVERT(VARCHAR(50), o.RacerNum) AS MatchCode,
+				b.winlostdate AS EventDate,
 				CONVERT(BIT, 0) AS IsNeutral,
 				o.RacerID AS HomeId,
 				0 AS AwayId,
@@ -932,6 +940,7 @@ BEGIN
 				0 AS LeagueId,
 				0 AS MatchId,
 				'' AS MatchCode,
+				b.winlostdate AS EventDate,
 				CONVERT(BIT, 0) AS IsNeutral,
 				0 AS HomeId,
 				0 AS AwayId,
@@ -997,6 +1006,7 @@ BEGIN
 				m.leagueid,
 				b.matchid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				m.homeid,
 				m.awayid,
@@ -1064,6 +1074,7 @@ BEGIN
 				o.leagueid,
 				b.matchid,
 				o.matchcode,
+				b.winlostdate AS EventDate,
 				CONVERT(BIT, 0) AS IsNeutral,
 				o.teamid AS HomeId,
 				0 AS AwayId,
@@ -1128,6 +1139,7 @@ BEGIN
 				0 AS LeagueId,
 				0 AS MatchId,
 				'' AS MatchCode,
+				b.winlostdate AS EventDate,
 				CONVERT(BIT, 0) AS IsNeutral,
 				0 AS HomeId,
 				0 AS AwayId,
@@ -1187,6 +1199,7 @@ BEGIN
 				m.leagueid,
 				m.matchid,
 				m.matchcode,
+				b.winlostdate AS EventDate,
 				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				m.homeid,
 				m.awayid,
@@ -1260,6 +1273,7 @@ BEGIN
 				r.LeagueID,
 				b.matchid,
 				CONVERT(VARCHAR(50), o.RacerNum) AS MatchCode,
+				b.winlostdate AS EventDate,
 				CONVERT(BIT, 0) AS IsNeutral,
 				o.RacerID AS HomeId,
 				0 AS AwayId,
@@ -1325,6 +1339,7 @@ BEGIN
 				0 AS LeagueId,
 				0 AS MatchId,
 				'' AS MatchCode,
+				b.winlostdate AS EventDate,
 				CONVERT(BIT, 0) AS IsNeutral,
 				0 AS HomeId,
 				0 AS AwayId,
@@ -1469,10 +1484,10 @@ BEGIN
 	DROP TABLE #Data
 	DROP TABLE #TempData
 END
-
-
-
-
 GO
+
+
+
+
 GRANT	EXECUTE	ON	Lrf_BetList_SelWinLossByBetType	TO	bodbLicenseeNet
 GO

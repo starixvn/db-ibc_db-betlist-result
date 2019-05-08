@@ -21,6 +21,7 @@ AS
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 		- 20181121@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 */
 
 BEGIN
@@ -158,7 +159,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			m.homeid,
 			m.awayid,
 			m.betstatus,
@@ -226,7 +227,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			m.homeid,
 			m.awayid,
 			m.betstatus,
@@ -291,7 +292,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			m.homeid,
 			m.awayid,
 			m.betstatus,

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelByDayAll_Mem_Old]
 	@AgentList			VARCHAR(MAX),
@@ -93,6 +93,8 @@ AS
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
 		- 20190401@Kos: Don't support Microgaming Live Casino and Microgaming RNG Casino anymore [#Redmine: 107704]
+		- 20190419@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 
 	Param's Explanation:
 		+ @TransType:
@@ -176,6 +178,7 @@ BEGIN
 		BetType			SMALLINT,
 		MatchCode		NVARCHAR(50),
 		Race			NVARCHAR(50),
+		EventDate		DATETIME,
 		MatchId			INT,
 		TransId			BIGINT,
 		TransDate		DATETIME,
@@ -257,6 +260,7 @@ BEGIN
 			b.bettype,
 			m.matchcode,
 			'' AS race,
+			m.GlobalShowTime AS EventDate,
 			m.matchid,
 			b.transid,
 			b.transdate,
@@ -404,6 +408,7 @@ BEGIN
 			b.bettype,
 			CONVERT(VARCHAR(50), o.RacerNum) AS MatchCode,
 			'' AS race,
+			b.WinLostDate AS EventDate,
 			o.EventID AS matchid,
 			b.transid,
 			b.transdate,
@@ -466,6 +471,7 @@ BEGIN
 			b.bettype,
 			'',
 			'' AS race,
+			b.WinLostDate AS EventDate,
 			0,
 			CASE
 				WHEN b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
@@ -535,6 +541,7 @@ BEGIN
 			b.bettype,
 			m.matchcode,
 			m.groupmatch AS race,
+			b.WinLostDate AS EventDate,
 			m.orid,
 			b.transid,
 			b.transdate,
@@ -611,6 +618,7 @@ BEGIN
 			b.bettype,
 			'' AS MatchCode,
 			'' AS race,
+			b.WinLostDate AS EventDate,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.bettype
 				ELSE 0
@@ -712,6 +720,7 @@ BEGIN
 			b.bettype,
 			'' AS MatchCode,
 			'' AS Race,
+			b.WinLostDate AS EventDate,
 			0 AS MatchId,
 			b.transid,
 			b.transdate,
@@ -774,6 +783,7 @@ BEGIN
 			b.bettype,
 			'' AS MatchCode,
 			'' AS Race,
+			b.WinLostDate AS EventDate,
 			0 AS MatchId,
 			b.transid,
 			b.transdate,
@@ -1004,17 +1014,10 @@ BEGIN
 
 	DROP TABLE #TempExchange
 END
+GO
 
 
 
 
-
-
-
-
-
-GO 
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelByDayAll_Mem_Old] TO [vnteam]
-GO 
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelByDayAll_Mem_Old] TO [bodbLicenseeNet]
 GO

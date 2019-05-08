@@ -63,6 +63,8 @@ AS
 		- 20190305@Kos: Change param @LiveIndicator from TINYINT to VARCHAR(10) [Redmine: #108717]
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 		- 20190509@Kos: Fix licensee WL for BA tickets in bettrans14/bk range [Redmine: #113083]
+		- 20190515@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 */
 
 BEGIN
@@ -156,6 +158,7 @@ BEGIN
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
+		EventDate			DATETIME,
 		HomeId				INT,
 		AwayId				INT,
 		BetStatus			NVARCHAR(50),
@@ -213,6 +216,7 @@ BEGIN
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
+		EventDate			DATETIME,
 		HomeId				INT,
 		AwayId				INT,
 		BetStatus			NVARCHAR(50),
@@ -1009,6 +1013,10 @@ BEGIN
 								WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
 								ELSE ''
 							END,
+					EventDate = CASE
+								WHEN b.Product IN ('SB', 'CO') THEN m.GlobalShowTime
+								ELSE b.WinLostDate
+							END,
 					HomeId = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.homeid
 								WHEN b.Product IN ('Outright') THEN o.teamid
@@ -1159,6 +1167,10 @@ BEGIN
 								WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
 								ELSE ''
 							END,
+					EventDate = CASE
+								WHEN b.Product IN ('SB', 'CO') THEN m.GlobalShowTime
+								ELSE b.WinLostDate
+							END,
 					HomeId = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.homeid
 								WHEN b.Product IN ('Outright') THEN o.teamid
@@ -1307,6 +1319,10 @@ BEGIN
 								WHEN b.Product IN ('Outright') THEN o.groupmatch
 								WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
 								ELSE ''
+							END,
+					EventDate = CASE
+								WHEN b.Product IN ('SB', 'CO') THEN m.GlobalShowTime
+								ELSE b.WinLostDate
 							END,
 					HomeId = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.homeid
@@ -1478,6 +1494,7 @@ BEGIN
 		a.LeagueId,
 		a.MatchId,
 		a.MatchCode,
+		a.EventDate,
 		a.HomeId,
 		a.AwayId,
 		a.IsNeutral,

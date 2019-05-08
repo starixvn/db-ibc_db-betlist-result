@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_TotalBets_Sel430]
 	@AgentList	VARCHAR(MAX),
@@ -32,6 +32,8 @@ AS
 		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
 		- 20181114@Kos: Change getting ticket status [#Redmine: 104664]
 		- 20181121@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 */
 
 BEGIN
@@ -66,6 +68,7 @@ BEGIN
 		TransId				BIGINT,
 		RefNo				BIGINT,
 		MatchCode			VARCHAR(50),
+		EventDate			DATETIME,
 		HomeId				INT,
 		AwayId				INT,
 		Hdp1				SMALLMONEY,
@@ -105,6 +108,7 @@ BEGIN
 		b.transid,
 		b.refno,
 		m.matchcode,
+		m.GlobalShowTime AS EventDate,
 		m.homeid,
 		m.awayid,
 		b.hdp1,
@@ -115,7 +119,7 @@ BEGIN
 			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 			ELSE b.status
 		END AS status,
-		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,		
+		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 		b.stake,
 		b.actual_stake,
 		b.transdate,
@@ -241,11 +245,8 @@ BEGIN
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 END
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Lrf_TotalBets_Sel430] TO [bodbLicenseeNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_TotalBets_Sel430] TO vnteam
-GO
- 

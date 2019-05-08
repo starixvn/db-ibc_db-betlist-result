@@ -98,6 +98,8 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 		- 20190401@Kos: Don't support Microgaming Live Casino and Microgaming RNG Casino anymore [#Redmine: 107704]
 					- Remove params @ShowMGCLC and @ShowMGCRNG
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 */
 
 BEGIN
@@ -199,6 +201,7 @@ BEGIN
 		BetId				BIGINT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
+		EventDate			DATETIME,
 		HomeId				INT,
 		AwayId				INT,
 		Hdp1				SMALLMONEY,
@@ -244,6 +247,7 @@ BEGIN
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		TransDate		DATETIME,
+		WinLostDate		DATETIME,
 		BetTeam			NVARCHAR(20),
 		Discount		DECIMAL(9,8),
 		LiveIndicator	BIT,
@@ -280,6 +284,7 @@ BEGIN
 		b.stake,
 		b.actual_stake,
 		b.transdate,
+		b.winlostdate,
 		b.betteam,
 		b.discount,
 		b.liveindicator,
@@ -324,8 +329,9 @@ BEGIN
 			b.BetId,
 			m.matchcode,
 			'' AS Race,
-			m.homeID,
-			m.awayID,
+			m.GlobalShowTime AS EventDate,
+			m.homeid,
+			m.awayid,
 			b.Hdp1,
 			b.Hdp2,
 			b.Odds,
@@ -371,6 +377,7 @@ BEGIN
 			b.BetId,
 			m.matchcode,
 			m.groupmatch AS Race,
+			b.WinLostDate AS EventDate,
 			m.teamid AS homeID,
 			0 AS awayID,
 			0 AS hdp1,
@@ -422,6 +429,7 @@ BEGIN
 			b.BetId,
 			'' AS matchcode,
 			'' AS Race,
+			b.WinLostDate AS EventDate,
 			0 AS homeID,
 			0 AS awayID,
 			b.hdp1,
@@ -484,6 +492,7 @@ BEGIN
 			ISNULL(b.betid, 0),
 			m.matchcode,
 			'' AS Race,
+			m.GlobalShowTime AS EventDate,
 			m.homeid,
 			m.awayid,
 			b.hdp1,
@@ -552,6 +561,7 @@ BEGIN
 			ISNULL(b.betid, 0),
 			m.matchcode,
 			m.GroupMatch AS Race,
+			b.WinLostDate AS EventDate,
 			m.teamID AS homeID,
 			0 AS awayID,
 			0 AS hdp1,
@@ -612,6 +622,7 @@ BEGIN
 			ISNULL(b.betid, 0),
 			'' AS matchcode,
 			'' AS Race,
+			b.WinLostDate AS EventDate,
 			0 AS homeID,
 			0 AS awayID,
 			b.hdp1,
@@ -684,6 +695,7 @@ BEGIN
 			ISNULL(b.betid, 0),
 			m.matchcode,
 			'' AS Race,
+			b.WinLostDate AS EventDate,
 			m.homeID,
 			m.awayID,
 			b.hdp1,
@@ -745,6 +757,7 @@ BEGIN
 			ISNULL(b.BetID, 0),
 			CONVERT(VARCHAR(50), o.RacerNum) AS matchcode,
 			b.oddsid AS Race,
+			b.WinLostDate AS EventDate,
 			o.RacerID AS homeID,
 			0 AS awayID,
 			b.hdp1,
@@ -810,6 +823,7 @@ BEGIN
 			0 AS BetId,
 			'' AS MatchCode,
 			'' AS Race,
+			'' AS EventDate,
 			0 AS HomeId,
 			0 AS AwayId,
 			0 AS hdp1,
@@ -882,6 +896,7 @@ BEGIN
 			0 AS BetID,
 			'' AS matchcode,
 			'' AS Race,
+			'' AS EventDate,
 			0 AS homeID,
 			0 AS awayID,
 			0 AS hdp1,
@@ -961,6 +976,7 @@ BEGIN
 			0 AS BetID,
 			'' AS matchcode,
 			'' AS Race,
+			'' AS EventDate,
 			0 AS homeID,
 			0 AS awayID,
 			0 AS hdp1,
@@ -1028,6 +1044,7 @@ BEGIN
 			ISNULL(b.betid, 0),
 			'' AS MatchCode,
 			'' AS Race,
+			b.WinLostDate AS EventDate,
 			0 AS HomeId,
 			0 AS AwayId,
 			0 AS hdp1,
@@ -1204,7 +1221,7 @@ BEGIN
 
 	DROP TABLE #BetListSelRunningByDateMem
 END
-
+GO
 
 
 

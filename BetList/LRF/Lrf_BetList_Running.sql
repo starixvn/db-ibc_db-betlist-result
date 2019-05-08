@@ -39,6 +39,8 @@ AS
 		- 20190422@Kos: Enhance performance for searching too many members [Redmine: #112313]
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 		- 20190506@Kos: Result Pending for SettlementStatus = 5 [Redmine: #112886]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 */
 
 BEGIN
@@ -99,6 +101,7 @@ BEGIN
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
+		EventDate			DATETIME,
 		HomeId				INT,
 		AwayId				INT,
 		BetStatus			NVARCHAR(50),
@@ -160,6 +163,7 @@ BEGIN
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
+		EventDate			DATETIME,
 		HomeId				INT,
 		AwayId				INT,
 		BetStatus			NVARCHAR(50),
@@ -794,6 +798,10 @@ BEGIN
 							WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
 							ELSE ''
 						END,
+				EventDate = CASE
+								WHEN b.Product IN ('SB') THEN m.GlobalShowTime
+								ELSE b.WinLostDate
+							END,
 				HomeId = CASE
 							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.homeid
 							WHEN b.Product IN ('Outright') THEN o.teamid
@@ -918,6 +926,7 @@ BEGIN
 		a.LeagueId,
 		a.MatchId,
 		a.MatchCode,
+		a.EventDate,
 		a.HomeId,
 		a.AwayId,
 		a.IsNeutral,

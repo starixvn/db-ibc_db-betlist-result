@@ -1,7 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-set ANSI_NULLS ON
-set QUOTED_IDENTIFIER ON
-go
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Bettype]
 	@AgentList			VARCHAR(MAX),
@@ -82,6 +79,8 @@ AS
 		- 20180305@Kos: Don't support Live Casino anymore [#Redmine: 85965]
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 
 	Param's Explanation:
 */
@@ -105,7 +104,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -148,6 +147,7 @@ BEGIN
 		LeagueId		INT,
 		TransId			BIGINT,
 		MatchCode		VARCHAR(50),
+		EventDate		DATETIME,
 		HomeId			INT,
 		AwayId			INT,
 		Hdp1			SMALLMONEY,
@@ -199,6 +199,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -273,6 +274,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -348,6 +350,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				b.winlostdate AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -421,6 +424,7 @@ BEGIN
 				r.leagueID,
 				b.transid,
 				CONVERT(VARCHAR(50), o.RacerNum) AS MatchCode,
+				b.winlostdate AS EventDate,
 				o.RacerID AS homeID,
 				0 AS awayID,
 				b.hdp1,
@@ -490,6 +494,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -566,6 +571,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -641,6 +647,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				b.winlostdate AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -714,6 +721,7 @@ BEGIN
 				r.LeagueID,
 				b.transid,
 				CONVERT (VARCHAR(50), o.RacerNum) matchcode,
+				b.winlostdate AS EventDate,
 				o.RacerID AS homeID,
 				0 AS awayID,
 				b.hdp1,
@@ -894,6 +902,7 @@ BEGIN
 		LeagueId		INT,
 		TransId			BIGINT,
 		MatchCode		VARCHAR(50),
+		EventDate		DATETIME,
 		HomeId			INT,
 		AwayId			INT,
 		Hdp1			SMALLMONEY,
@@ -1074,14 +1083,10 @@ BEGIN
 	DROP TABLE #TempExchange
 	DROP TABLE #PagingData
 END
-
-
-
-
-
-
 GO
+
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_MatchWL_Bettype] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_MatchWL_Bettype] TO vnteam
 GO

@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByBettypeMatch]
 	@AgentList		VARCHAR(MAX),
@@ -47,6 +47,8 @@ AS
 		- 20170529@Kos: Support Licensee Bonus System [#Redmine: 72792]
 		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
 		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 */
 
 BEGIN
@@ -83,6 +85,7 @@ BEGIN
 		TransId				BIGINT,
 		MatchCode			VARCHAR(50),
 		Race				VARCHAR(50),
+		EventDate			DATETIME,
 		LeagueId			INT,
 		HomeId				INT,
 		AwayId				INT,
@@ -126,6 +129,7 @@ BEGIN
 			b.transid,
 			m.matchcode,
 			m.groupmatch AS Race,
+			b.winlostdate AS EventDate,
 			m.leagueid,
 			m.teamid AS HomeID,
 			0 AS AwayId,
@@ -181,6 +185,7 @@ BEGIN
 			b.transid,
 			m.matchcode,
 			'' AS Race,
+			m.GlobalShowTime AS EventDate,
 			m.leagueid,
 			m.homeid,
 			m.awayid,
@@ -332,10 +337,8 @@ BEGIN
 
 	DROP TABLE #Data
 END
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelRunningByBettypeMatch] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelRunningByBettypeMatch] TO [vnteam]
 GO

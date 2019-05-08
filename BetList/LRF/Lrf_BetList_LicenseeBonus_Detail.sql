@@ -19,6 +19,7 @@ AS
 		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106553]
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
@@ -142,7 +143,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			m.homeid,
 			m.awayid,
 			m.betstatus,
@@ -204,7 +205,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			m.homeid,
 			m.awayid,
 			m.betstatus,
@@ -266,7 +267,7 @@ BEGIN
 			ISNULL(b.betid, 0) AS BetId,
 			b.refno,
 			m.matchcode,
-			m.eventdate,
+			m.GlobalShowTime AS EventDate,
 			m.homeid,
 			m.awayid,
 			m.betstatus,

@@ -22,6 +22,8 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 		- 20190121@Kos: Betting Ticket Center phase 3a [Redmine: #103555]
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
+		- 20190503@Kos: Support Bet Builder [Redmine: #108298]
+					- Return additional column EventDate DATETIME
 */
 
 BEGIN
@@ -307,6 +309,7 @@ BEGIN
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
+		EventDate			DATETIME,
 		HomeId				INT,
 		AwayId				INT,
 		BetStatus			NVARCHAR(50),
@@ -382,6 +385,7 @@ BEGIN
 			0 AS MatchId,
 			'' AS MatchCode,
 			'' AS Race,
+			b.winlostdate AS EventDate,
 			0 AS HomeId,
 			0 AS AwayId,
 			'' AS BetStatus,
@@ -520,6 +524,10 @@ BEGIN
 				WHEN @Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
 				ELSE ''
 			END AS Race,
+			CASE
+				WHEN @Product IN ('SB', 'CO') THEN m.GlobalShowTime
+				ELSE b.WinLostDate
+			END AS EventDate,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.homeid
 				WHEN @Product IN ('Outright') THEN o.teamid
@@ -730,6 +738,10 @@ BEGIN
 				ELSE ''
 			END AS Race,
 			CASE
+				WHEN @Product IN ('SB', 'CO') THEN m.GlobalShowTime
+				ELSE b.WinLostDate
+			END AS EventDate,
+			CASE
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.homeid
 				WHEN @Product IN ('Outright') THEN o.teamid
 				WHEN @Product IN ('VR') THEN vo.RacerID
@@ -938,6 +950,10 @@ BEGIN
 				WHEN @Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
 				ELSE ''
 			END AS Race,
+			CASE
+				WHEN @Product IN ('SB', 'CO') THEN m.GlobalShowTime
+				ELSE b.WinLostDate
+			END AS EventDate,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.homeid
 				WHEN @Product IN ('Outright') THEN o.teamid
@@ -1179,6 +1195,7 @@ BEGIN
 		a.MatchId,
 		a.MatchCode,
 		a.Race,
+		a.EventDate,
 		a.HomeId,
 		a.AwayId,
 		a.IsNeutral,

@@ -124,6 +124,8 @@ AS
 		- 20181102@Kos: Remove DBLIC linked server [#Redmine: 103660]
 		- 20190401@Kos: Don't support Microgaming Live Casino and Microgaming RNG Casino anymore [#Redmine: 107704]
 					- Remove params @ShowMGCLC and @ShowMGCRNG
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 */
 
 BEGIN
@@ -228,6 +230,7 @@ BEGIN
 		MatchId			INT,
 		MatchCode		NVARCHAR(50),
 		Race			NVARCHAR(20),
+		EventDate		DATETIME,
 		HomeId			INT,
 		AwayId			INT,
 		BetStatus		NVARCHAR(50),
@@ -385,6 +388,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				m.betstatus,
@@ -439,6 +443,7 @@ BEGIN
 				m.orid, --MatchID
 				m.matchcode,
 				m.groupmatch,--Race
+				b.WinLostDate AS EventDate,
 				m.teamid, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -494,6 +499,7 @@ BEGIN
 				0, --MatchID
 				'',--MatchCode
 				'',--Race
+				b.WinLostDate AS EventDate,
 				0, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -552,6 +558,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				m.Betstatus,
@@ -622,6 +629,7 @@ BEGIN
 				m.orid,	--MatchID
 				m.matchcode,
 				m.groupmatch,--Race
+				b.WinLostDate AS EventDate,
 				m.teamid, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -687,6 +695,7 @@ BEGIN
 				0, --MatchID
 				'',--MatchCode
 				'',--Race
+				b.WinLostDate AS EventDate,
 				0, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -755,6 +764,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				m.betstatus,
@@ -824,6 +834,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				m.betstatus,
@@ -919,6 +930,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				b.winlostdate AS EventDate,
 				m.homeid,
 				m.awayid,
 				m.Betstatus,
@@ -973,7 +985,6 @@ BEGIN
 				b.betteam,
 				b.status,
 				b.refno,
-
 				b.Transdate,
 				b.winlostdate,
 				(b.winlost - b.actual_stake),
@@ -989,6 +1000,7 @@ BEGIN
 				o.EventID AS MatchId,
 				CONVERT(VARCHAR(50), o.RacerNum) MatchCode,
 				b.oddsid AS Race,
+				b.winlostdate AS EventDate,
 				o.RacerID AS HomeID,
 				0 AwayID,
 				r.Betstatus,
@@ -1064,6 +1076,7 @@ BEGIN
 				END AS MatchID,
 				'' AS MatchCode,
 				'' AS Race,
+				b.winlostdate AS EventDate,
 				0 AS HomeID,
 				0 AS AwayID,
 				0 AS Betstatus,
@@ -1139,6 +1152,7 @@ BEGIN
 				0 AS MatchID,
 				'' AS MatchCode,
 				'' AS Race,
+				b.winlostdate AS EventDate,
 				0 AS HomeID,
 				0 AS AwayID,
 				0 AS Betstatus,
@@ -1214,6 +1228,7 @@ BEGIN
 					0 AS MatchID,
 					'' AS MatchCode,
 					'' AS Race,
+					b.winlostdate AS EventDate,
 					0 AS HomeID,
 					0 AS AwayID,
 					0 AS Betstatus,
@@ -1292,11 +1307,12 @@ BEGIN
 				0 AS Liveindicator,
 				0 AS Livehomescore,
 				0 AS Liveawayscore,
-				b.IP,
+				b.ip,
 				0 AS LeagueID,
 				0 AS MatchID,
 				'' AS MatchCode,
 				'' AS Race,
+				b.winlostdate AS EventDate,
 				0 AS HomeID,
 				0 AS AwayID,
 				0 AS Betstatus,
@@ -1366,6 +1382,7 @@ BEGIN
 					0 AS MatchID,
 					'' AS MatchCode,
 					'' AS Race,
+					b.winlostdate AS EventDate,
 					0 AS HomeID,
 					0 AS AwayID,
 					0 AS Betstatus,
@@ -1504,6 +1521,7 @@ BEGIN
 				m.MatchID,
 				m.MatchCode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.HomeID,
 				m.AwayID,
 				m.Betstatus,
@@ -1558,6 +1576,7 @@ BEGIN
 				m.OrId, --MatchID
 				m.MatchCode,
 				m.GroupMatch,--Race
+				b.WinLostDate AS EventDate,
 				m.TeamID, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -1613,6 +1632,7 @@ BEGIN
 				0, --MatchID
 				'',--MatchCode
 				'',--Race
+				b.WinLostDate AS EventDate,
 				0, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -1672,6 +1692,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				m.betstatus,
@@ -1742,6 +1763,7 @@ BEGIN
 				m.OrId, --MatchID
 				m.MatchCode,
 				m.GroupMatch AS Race,
+				b.winlostdate AS EventDate,
 				m.TeamID, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -1807,6 +1829,7 @@ BEGIN
 				0, --MatchID
 				'',--MatchCode
 				'',--Race
+				b.winlostdate AS EventDate,
 				0, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -1875,6 +1898,7 @@ BEGIN
 				m.MatchID,
 				m.MatchCode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.HomeID,
 				m.AwayID,
 				m.Betstatus,
@@ -1944,6 +1968,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				m.betstatus,
@@ -2039,6 +2064,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				b.winlostdate AS EventDate,
 				m.homeid,
 				m.awayid,
 				m.betstatus,
@@ -2108,6 +2134,7 @@ BEGIN
 				o.EventID matchid,
 				CONVERT(VARCHAR(50),o.RacerNum) MatchCode,
 				b.oddsid AS Race,
+				b.winlostdate AS EventDate,
 				o.RacerID HomeID,
 				0 AwayID,
 				r.Betstatus,
@@ -2205,6 +2232,7 @@ BEGIN
 				END AS MatchID,
 				'' AS MatchCode,
 				'' AS Race,
+				b.winlostdate AS EventDate,
 				0 AS HomeID,
 				0 AS AwayID,
 				0 AS Betstatus,
@@ -2337,10 +2365,11 @@ BEGIN
 				m.MatchID,
 				m.MatchCode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.HomeID,
 				m.AwayID,
 				m.Betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.currency,
 				'' AS ShowTime,
 				b.betcheck,
@@ -2354,7 +2383,7 @@ BEGIN
 				b.OddsSpread
 			FROM
 				#TempBetList AS b
-				INNER JOIN bodb_Archive.dbo.MATCH_BK AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.ProductID = 1 AND sbt.EventType = 1
 		
@@ -2391,6 +2420,7 @@ BEGIN
 				m.OrId,--0, --MatchID
 				m.MatchCode,
 				m.GroupMatch,--Race
+				b.WinLostDate AS EventDate,
 				m.TeamID, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -2449,6 +2479,7 @@ BEGIN
 				0, --MatchID
 				'',--MatchCode
 				'',--Race
+				b.WinLostDate AS EventDate,
 				0, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -2508,6 +2539,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.HomeID,
 				m.AwayID,
 				m.Betstatus,
@@ -2577,6 +2609,7 @@ BEGIN
 				m.orid, --MatchID
 				m.MatchCode,
 				m.GroupMatch,--Race
+				b.winlostdate AS EventDate,
 				m.teamID, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -2642,6 +2675,7 @@ BEGIN
 				0, --MatchID
 				'',--MatchCode
 				'',--Race
+				b.winlostdate AS EventDate,
 				0, --HomeID
 				0, --AwayID
 				0, --Betstatus
@@ -2710,6 +2744,7 @@ BEGIN
 				m.MatchID,
 				m.MatchCode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.HomeID,
 				m.AwayID,
 				m.Betstatus,
@@ -2778,6 +2813,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				m.betstatus,
@@ -2873,6 +2909,7 @@ BEGIN
 				m.matchid,
 				m.matchcode,
 				'' AS Race,
+				b.winlostdate AS EventDate,
 				m.homeid,
 				m.awayid,
 				m.betstatus,
@@ -2942,6 +2979,7 @@ BEGIN
 				o.EventID matchid,
 				CONVERT(VARCHAR(50), o.RacerNum) AS MatchCode,
 				b.oddsid AS Race,
+				b.winlostdate AS EventDate,
 				o.RacerID HomeID,
 				0 AwayID,
 				r.Betstatus,
@@ -3039,6 +3077,7 @@ BEGIN
 				END AS MatchID,
 				'' AS MatchCode,
 				'' AS Race,
+				b.winlostdate AS EventDate,
 				0 AS HomeID,
 				0 AS AwayID,
 				0 AS Betstatus,

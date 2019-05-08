@@ -28,6 +28,8 @@ AS
 		- 20180801@Kos: Migrate to DB042 [#Redmine: 99020]
 		- 20181012@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 */
 
 BEGIN
@@ -66,6 +68,7 @@ BEGIN
 		BetId				BIGINT,
 		RefNo				BIGINT,
 		MatchCode			VARCHAR(50),
+		EventDate			DATETIME,
 		HomeId				INT,
 		AwayId				INT,
 		Hdp1				SMALLMONEY,
@@ -113,6 +116,7 @@ BEGIN
 			ISNULL(b.betid, 0),
 			b.refno,
 			'' AS matchcode,
+			b.winlostdate AS EventDate,
 			0 AS homeID,
 			0 AS awayID,
 			b.hdp1,
@@ -178,6 +182,7 @@ BEGIN
 			ISNULL(b.betid, 0),
 			b.refno,
 			m.matchcode,
+			m.GlobalShowTime AS EventDate,
 			m.homeid,
 			m.awayid,
 			b.hdp1,
@@ -321,10 +326,10 @@ BEGIN
 
 	DROP TABLE #Data
 END
-
-
-
-
 GO
+
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelRunningByBettypeList] TO [bodbLicenseeNet]
 GO

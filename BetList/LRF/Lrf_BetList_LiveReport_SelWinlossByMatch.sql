@@ -1,4 +1,5 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch]
 	@AgentList		VARCHAR(MAX),
 	@MatchId		INT,
@@ -51,6 +52,8 @@ AS
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180329@Kos: Support Fast Market 2 [#Redmine: 90879]
 		- 20181031@Patrick: DB052 indexes revolution [RedmineID: #103572]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -110,6 +113,7 @@ BEGIN
 		LeagueId		INT,
 		TransId			BIGINT,
 		MatchCode		VARCHAR(50),
+		EventDate		DATETIME,
 		HomeId			INT,
 		AwayId			INT,
 		Hdp1			SMALLMONEY,
@@ -161,6 +165,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -221,70 +226,6 @@ BEGIN
 			ORDER BY
 				b.status,
 				b.transid
-
-			-- BA for parlay
-			INSERT INTO #Data
-			SELECT TOP(@RowEnd)
-				m.sporttype,
-				b.username,
-				b.custid,
-				b.bettype,
-				m.leagueID,
-				b.transid,
-				m.matchcode,
-				m.homeID,
-				m.awayID,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.status,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				0 AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.matchid,
-				b.ip,
-				m.betstatus,
-				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
-				b.oddstype,
-				b.betid,
-				b.currency,
-				b.refno,
-				'' AS ShowTime,
-				'' AS betcheck,
-				'' AS transdesc,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo,
-				0 AS OriginalStake,
-				0 AS OriginalBetType,
-				0 AS WalletType,
-				0 AS RefCode,
-				0 AS OddsSpread
-			FROM
-				dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
-			WHERE
-				b.matchid = @MatchId
-				AND b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND sbt.ProductID = 1
-				AND sbt.EventType = 0
-				AND b.statusID IN (111, 112, 113)
-				AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
-					OR (@LiveIndicator = 1 AND b.livehomescore = 1)
-					OR (@LiveIndicator = 2))
-			ORDER BY
-				b.status,
-				b.transid
 		END
 
 		-- Sportsbook
@@ -299,6 +240,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -359,70 +301,6 @@ BEGIN
 			ORDER BY
 				b.status,
 				b.transid
-
-			-- Parlay
-			INSERT INTO #Data
-			SELECT TOP(@RowEnd)
-				m.sporttype,
-				b.username,
-				b.custid,
-				b.bettype,
-				m.leagueid,
-				b.transid,
-				m.matchcode,
-				m.homeid,
-				m.awayid,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.status,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.matchid, 
-				b.ip,
-				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
-				b.OddsType,
-				b.betid,
-				b.currency,
-				b.refno,
-				'' AS ShowTime,
-				'' AS betcheck,
-				'' AS transdesc,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo,
-				0 AS OriginalStake,
-				0 AS OriginalBetType,
-				0 AS WalletType,
-				0 AS RefCode,
-				0 AS OddsSpread
-			FROM
-				dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
-			WHERE
-				b.matchid = @MatchId
-				AND sbt.ProductID = 1
-				AND sbt.EventType = 0
-				AND b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.tpositiontaking <> 0
-				AND b.statusID IN (111, 112, 113)
-				AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
-					OR (@LiveIndicator = 1 AND b.livehomescore = 1)
-					OR (@LiveIndicator = 2))
-			ORDER BY
-				b.status,
-				b.transid
 		END
 
 		-- Virtual Sports, Betradar Virtual Sports
@@ -437,6 +315,7 @@ BEGIN
 				m.leagueID,
 				b.transid,
 				m.matchcode,
+				b.winlostdate AS EventDate,
 				m.homeID,
 				m.awayID,
 				b.hdp1,
@@ -511,6 +390,7 @@ BEGIN
 				m.leagueID,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeID,
 				m.awayID,
 				b.hdp1,
@@ -571,70 +451,6 @@ BEGIN
 			ORDER BY
 				b.status,
 				b.transid
-
-			-- BA for parlay
-			INSERT INTO #Data
-			SELECT TOP(@RowEnd)
-				m.sporttype,
-				b.username,
-				b.custid,
-				b.bettype,
-				m.leagueid,
-				b.transid,
-				m.matchcode,
-				m.homeid,
-				m.awayid,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.status,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				0 AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.matchid, 
-				b.ip,
-				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
-				b.oddstype,
-				b.betid,
-				b.currency,
-				b.refno,
-				'' AS ShowTime,
-				'' AS betcheck,
-				'' AS transdesc,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo,
-				0 AS OriginalStake,
-				0 AS OriginalBetType,
-				0 AS WalletType,
-				0 AS RefCode,
-				0 AS OddsSpread
-			FROM
-				dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN @TempAg AS t ON b.recommend = t.custid
-				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-			WHERE
-				b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.matchid = @MatchId
-				AND b.statusID IN (111, 112, 113)
-				AND b.tpositiontaking = 0
-				AND sbt.ProductID = 1
-				AND sbt.EventType = 0
-				AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
-					OR (@LiveIndicator = 1 AND b.livehomescore = 1)
-					OR (@LiveIndicator = 2))
-			ORDER BY
-				b.status,
-				b.transid
 		END
 
 		-- Sportsbook
@@ -649,6 +465,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -709,70 +526,6 @@ BEGIN
 			ORDER BY
 				b.status,
 				b.transid
-
-			-- Parlay
-			INSERT INTO #Data
-			SELECT TOP(@RowEnd)
-				m.sporttype,
-				b.username,
-				b.custid,
-				b.bettype,
-				m.leagueid,
-				b.transid,
-				m.matchcode,
-				m.homeid,
-				m.awayid,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.status,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.matchid,
-				b.ip,
-				m.betstatus,
-				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
-				b.oddstype,
-				b.betid,
-				b.currency,
-				b.refno,
-				'' AS ShowTime,
-				'' AS betcheck,
-				'' AS transdesc,
-				-1 AS BetdaqId,
-				'' AS ExtraInfo,
-				0 AS OriginalStake,
-				0 AS OriginalBetType,
-				0 AS WalletType,
-				0 AS RefCode,
-				0 AS OddsSpread
-			FROM
-				dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN @TempAg AS t ON b.recommend = t.custid
-				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN @SportBettype sbt ON sbt.Bettype = b.bettype
-			WHERE
-				b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.matchid = @MatchId
-				AND sbt.ProductID = 1
-				AND sbt.EventType = 0
-				AND b.tpositiontaking <> 0
-				AND b.statusID IN (111, 112, 113)
-				AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
-					OR (@LiveIndicator = 1 AND b.livehomescore = 1)
-					OR (@LiveIndicator = 2))
-			ORDER BY
-				b.status,
-				b.transid
 		END
 
 		-- Virtual Sports, Betradar Virtual Sports
@@ -787,6 +540,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				b.winlostdate AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -927,7 +681,7 @@ BEGIN
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY b.TransId) AS RowNum,
 				b.*,
-				SUBSTRING(c.username2,  CHARINDEX('$',c.username2) + 1, LEN(c.username2) - CHARINDEX('$',c.username2)) AS nickname,
+				SUBSTRING(c.username2,  CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
 				-- USD
 				b.Stake			* e.USD AS StakeUSD,
 				b.WinLost		* e.USD AS WinLostUSD,
@@ -958,14 +712,12 @@ BEGIN
 	DROP TABLE #Data
 	DROP TABLE #TempExchange
 END
-
-
-
-
-
-
 GO
+
+
+
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch] TO [vnteam]
 GO

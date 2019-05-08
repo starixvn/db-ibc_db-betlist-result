@@ -1,9 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_Monitor_MatchSel]
 AS
@@ -15,6 +10,8 @@ AS
 	Original: Age_Monitor_MatchSel
 	Revision:
 		- 20181008@Kos: Migrate to DB042 [RedmineID: #99464]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 
 	Parameter's Explanation:
 */
@@ -30,14 +27,13 @@ BEGIN
 		matchcode,
 		homeid,
 		awayid,
-		'' AS Race
+		'' AS Race,
+		GlobalShowTime AS EventDate
 	FROM dbo.match WITH (NOLOCK)
 	WHERE eventstatus <> 'completed'
 END
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Lrf_Monitor_MatchSel] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_Monitor_MatchSel] TO [vnteam]
 GO

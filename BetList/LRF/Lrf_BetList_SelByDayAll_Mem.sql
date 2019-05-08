@@ -99,6 +99,8 @@ AS
 		- 20181108@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 		- 20190401@Kos: Don't support Microgaming Live Casino and Microgaming RNG Casino anymore [#Redmine: 107704]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 
 	Param's Explanation:
 		+ @TransType:
@@ -181,6 +183,7 @@ BEGIN
 		BetType				SMALLINT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
+		EventDate			DATETIME,
 		MatchId				INT,
 		TransId				BIGINT,
 		TransDate			DATETIME,
@@ -268,6 +271,7 @@ BEGIN
 			b.bettype,
 			m.matchcode,
 			'' AS race,
+			m.GlobalShowTime AS EventDate,
 			m.matchid,
 			b.transid,
 			b.transdate,
@@ -367,6 +371,7 @@ BEGIN
 			b.bettype,
 			'' AS matchcode,
 			'' AS race,
+			b.WinLostDate AS EventDate,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.bettype
 				ELSE 0
@@ -465,6 +470,7 @@ BEGIN
 			b.bettype,
 			CONVERT (VARCHAR(50),o.RacerNum) AS matchcode,
 			'' AS race,
+			b.WinLostDate AS EventDate,
 			o.EventID AS matchid,
 			b.transid,
 			b.transdate,
@@ -531,6 +537,7 @@ BEGIN
 			b.bettype,
 			'',
 			'' AS race,
+			b.WinLostDate AS EventDate,
 			0, 
 			CASE
 				WHEN b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
@@ -602,6 +609,7 @@ BEGIN
 			b.bettype,
 			m.matchcode,
 			m.groupmatch AS race,
+			b.WinLostDate AS EventDate,
 			m.orid,
 			b.transid,
 			b.transdate,
@@ -681,6 +689,7 @@ BEGIN
 				b.bettype,
 				'' AS matchcode,
 				'' AS race,
+				b.WinLostDate AS EventDate,
 				0 AS matchid,
 				b.transid,
 				b.transdate,
@@ -758,6 +767,7 @@ BEGIN
 				b.bettype,
 				'' AS MatchCode,
 				'' AS Race,
+				b.WinLostDate AS EventDate,
 				0 AS MatchId,
 				b.transid,
 				b.transdate,
@@ -827,6 +837,7 @@ BEGIN
 				b.bettype,
 				'' AS MatchCode,
 				'' AS Race,
+				b.WinLostDate AS EventDate,
 				0 AS MatchId,
 				b.transid,
 				b.transdate,
@@ -952,6 +963,7 @@ BEGIN
 			b.bettype,
 			m.matchcode,
 			'' AS race,
+			m.GlobalShowTime AS EventDate,
 			m.matchid,
 			b.transid,
 			b.transdate,
@@ -1058,6 +1070,7 @@ BEGIN
 			b.bettype,
 			'' AS matchcode,
 			'' AS race,
+			b.WinLostDate AS EventDate,
 			b.bettype AS matchid,
 			b.transid,
 			b.transdate,
@@ -1120,6 +1133,7 @@ BEGIN
 			b.bettype,
 			CONVERT(VARCHAR(50),o.RacerNum) AS matchcode,
 			'' AS race,
+			b.WinLostDate AS EventDate,
 			o.EventID AS matchid,
 			b.transid,
 			b.transdate,
@@ -1186,6 +1200,7 @@ BEGIN
 			b.bettype,
 			'',
 			'',
+			b.WinLostDate AS EventDate,
 			0,
 			CASE
 				WHEN b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
@@ -1274,6 +1289,7 @@ BEGIN
 			b.bettype,
 			m.matchcode,
 			m.groupmatch AS race,
+			b.WinLostDate AS EventDate,
 			m.orid,
 			b.transid,
 			b.transdate,
@@ -1353,6 +1369,7 @@ BEGIN
 				b.bettype,
 				'' AS matchcode,
 				'' AS race,
+				b.WinLostDate AS EventDate,
 				0 AS matchid,
 				b.transid,
 				b.transdate,
@@ -1434,6 +1451,7 @@ BEGIN
 				t.gameID AS BetType,
 				'' AS matchcode,
 				'' AS race,
+				t.WinLostDate AS EventDate,
 				0 AS matchid,
 				t.translogid AS TransId,
 				t.transdate,
@@ -1519,6 +1537,7 @@ BEGIN
 					b.bettype,
 					'' AS matchcode,
 					'' AS race,
+					b.WinLostDate AS EventDate,
 					0 AS matchid,
 					b.transid,
 					b.transdate,
@@ -1594,6 +1613,7 @@ BEGIN
 					b.bettype,
 					'' AS matchcode,
 					'' AS race,
+					b.WinLostDate AS EventDate,
 					0 AS matchid,
 					b.transid,
 					b.transdate,
@@ -1690,6 +1710,7 @@ BEGIN
 					b.bettype,
 					'' AS matchcode,
 					'' AS race,
+					b.WinLostDate AS EventDate,
 					0 AS matchid,
 					b.transid,
 					b.transdate,
@@ -1775,6 +1796,7 @@ BEGIN
 				b.bettype,
 				'' AS MatchCode,
 				'' AS Race,
+				b.WinLostDate AS EventDate,
 				0 AS MatchId,
 				b.transid,
 				b.transdate,
@@ -1841,6 +1863,7 @@ BEGIN
 				b.bettype,
 				'' AS MatchCode,
 				'' AS Race,
+				b.WinLostDate AS EventDate,
 				0 AS MatchId,
 				b.transid,
 				b.transdate,
@@ -1910,6 +1933,7 @@ BEGIN
 				b.bettype,
 				'' AS MatchCode,
 				'' AS Race,
+				b.WinLostDate AS EventDate,
 				0 AS MatchId,
 				b.transid,
 				b.transdate,
@@ -1986,6 +2010,7 @@ BEGIN
 					b.bettype,
 					'' AS matchcode,
 					'' AS race,
+					b.WinLostDate AS EventDate,
 					0 AS matchid,
 					b.transid,
 					b.transdate,
@@ -2055,6 +2080,7 @@ BEGIN
 					b.bettype,
 					'' AS matchcode,
 					'' AS race,
+					b.WinLostDate AS EventDate,
 					0 AS matchid,
 					b.transid,
 					b.transdate,
@@ -2143,6 +2169,7 @@ BEGIN
 					b.bettype,
 					'' AS matchcode,
 					'' AS race,
+					b.WinLostDate AS EventDate,
 					0 AS matchid,
 					b.transid,
 					b.transdate,

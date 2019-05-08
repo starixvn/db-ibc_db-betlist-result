@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_WinlostByLeague_Mem]
 	@AgentList		VARCHAR(MAX),
@@ -45,6 +45,8 @@ AS
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 					- Move SP from DBEXT to DBACC
 		- 20181218@Kos: Add index hint to improve performance [#Redmine: 106553]
+		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+					- Return additional column EventDate DATETIME
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -82,7 +84,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -107,6 +109,7 @@ BEGIN
 		LeagueId		INT,
 		TransId			BIGINT,
 		MatchCode		VARCHAR(50),
+		EventDate		DATETIME,
 		HomeId			INT,
 		AwayId			INT,
 		Hdp1			SMALLMONEY,
@@ -191,6 +194,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -280,6 +284,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -378,6 +383,7 @@ BEGIN
 				m.leagueID,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeID,
 				m.awayID,
 				b.hdp1,
@@ -470,6 +476,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -571,6 +578,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -660,6 +668,7 @@ BEGIN
 				m.leagueid,
 				b.transid,
 				m.matchcode,
+				m.GlobalShowTime AS EventDate,
 				m.homeid,
 				m.awayid,
 				b.hdp1,
@@ -872,9 +881,9 @@ BEGIN
 	DROP TABLE #TempExchange
 	DROP TABLE #Data
 END
-
-
 GO
-GRANT	VIEW DEFINITION	ON	Lrf_BetList_WinlostByLeague_Mem	TO	vnteam
+
+
+
 GRANT	EXECUTE	ON	Lrf_BetList_WinlostByLeague_Mem	TO	bodbLicenseeNet
 GO
