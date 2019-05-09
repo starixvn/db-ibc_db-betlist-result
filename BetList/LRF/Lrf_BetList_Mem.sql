@@ -62,6 +62,7 @@ AS
 		- 20190121@Kos: Betting Ticket Center phase 3a [Redmine: #103555]
 		- 20190305@Kos: Change param @LiveIndicator from TINYINT to VARCHAR(10) [Redmine: #108717]
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
+		- 20190509@Kos: Fix licensee WL for BA tickets in bettrans14/bk range [Redmine: #113083]
 */
 
 BEGIN
@@ -741,7 +742,10 @@ BEGIN
 			-- Get Sport/Bettype info
 			UPDATE b
 			SET
-				BATransId = ba.TransID,
+				BATransId = CASE
+								WHEN b.TableID = 1 THEN ba.TransID
+								WHEN b.TableID IN (2, 3) THEN babk.TransID
+							END,
 				Product = CASE
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 8 THEN 'Keno'
@@ -759,7 +763,7 @@ BEGIN
 			FROM #Data AS b
 				INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.bettype = s.bettype
 				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID AND b.TableID = 1
-				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS babk WITH (NOLOCK) ON b.transid = babk.TransID AND b.TableID IN (2, 3)
+				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS babk WITH (NOLOCK) ON b.transid = babk.TransID AND b.TableID IN (2, 3)
 
 			DELETE #Data
 			WHERE Product = 'Unknown'
@@ -1509,11 +1513,6 @@ BEGIN
 	DROP TABLE #ExchangeRate
 END
 GO
-
-
-
-
-
 
 
 GRANT EXECUTE ON [dbo].[Lrf_BetList_Mem] TO [bodbLicenseeNet]
