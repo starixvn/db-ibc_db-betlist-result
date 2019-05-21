@@ -1,31 +1,20 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelByDayAll_Mem_Old]
-	@AgentList			VARCHAR(MAX),
-	@CustId				INT,
-	@FromDate			SMALLDATETIME,
-	@TransType			TINYINT			= 0,
-	@PageSize			INT				= 1000,
-	@PageIndex			INT				= 1,
-	@TotalRows			INT				= 0 OUTPUT,
-	@SumWinLost			MONEY			= 0 OUTPUT,
-	@SumLicenseeWL		MONEY			= 0 OUTPUT,
-	@SumComm			MONEY			= 0 OUTPUT,
-	@SumPlayerComm		MONEY			= 0 OUTPUT,
-	@SumWinLostUSD		MONEY			= 0 OUTPUT,
-	@SumLicenseeWLUSD	MONEY			= 0 OUTPUT,
-	@SumCommUSD			MONEY			= 0 OUTPUT,
-	@SumPlayerCommUSD	MONEY			= 0 OUTPUT,
-	@SumWinLostEUR		MONEY			= 0 OUTPUT,
-	@SumLicenseeWLEUR	MONEY			= 0 OUTPUT,
-	@SumCommEUR			MONEY			= 0 OUTPUT,
-	@SumPlayerCommEUR	MONEY			= 0 OUTPUT,
-	@SumWinLostGBP		MONEY			= 0 OUTPUT,
-	@SumLicenseeWLGBP	MONEY			= 0 OUTPUT,
-	@SumCommGBP			MONEY			= 0 OUTPUT,
-	@SumPlayerCommGBP	MONEY			= 0 OUTPUT,
-	@ErrCode			INT				= 0 OUTPUT,
-	@ErrMsg				NVARCHAR(4000)	= '' OUTPUT
+	@AgentList		VARCHAR(MAX),
+	@CustId			INT,
+	@FromDate		SMALLDATETIME,
+	@TransType		TINYINT			= 0,
+	@BaseCurrency	VARCHAR(10),
+	@PageSize		INT				= 1000,
+	@PageIndex		INT				= 1,
+	@TotalRows		INT				= 0 OUTPUT,
+	@SumWinLost		MONEY			= 0 OUTPUT,
+	@SumLicenseeWL	MONEY			= 0 OUTPUT,
+	@SumComm		MONEY			= 0 OUTPUT,
+	@SumPlayerComm	MONEY			= 0 OUTPUT,
+	@ErrCode		INT				= 0 OUTPUT,
+	@ErrMsg			NVARCHAR(4000)	= '' OUTPUT
 AS
 
 /*
@@ -95,6 +84,8 @@ AS
 		- 20190401@Kos: Don't support Microgaming Live Casino and Microgaming RNG Casino anymore [#Redmine: 107704]
 		- 20190419@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
+		- 20190527@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
+					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 
 	Param's Explanation:
 		+ @TransType:
@@ -150,7 +141,7 @@ BEGIN
 
 	IF @TransType = 1
 	BEGIN
-		INSERT INTO @TmpStatus
+		INSERT INTO @TmpStatus (StatusId)
 		SELECT 111 UNION ALL
 		SELECT 112 UNION ALL
 		SELECT 113 UNION ALL
@@ -158,13 +149,13 @@ BEGIN
 	END
 	ELSE IF @TransType = 2
 	BEGIN
-		INSERT INTO @TmpStatus
+		INSERT INTO @TmpStatus (StatusId)
 		SELECT 101 UNION ALL
 		SELECT 102
 	END
 	ELSE IF @TransType = 4
 	BEGIN
-		INSERT INTO @TmpStatus
+		INSERT INTO @TmpStatus (StatusId)
 		SELECT 111 UNION ALL
 		SELECT 112 UNION ALL
 		SELECT 113
@@ -902,68 +893,98 @@ BEGIN
 	SET WalletType = 0
 	WHERE WalletType = 2 AND RefCode = 0
 
-	SELECT *
-	INTO #TempExchange
-	FROM Lrf_f_GetExchangeDaily(@FromDate, @FromDate)
-	WHERE exchangeid IN (SELECT DISTINCT Currency FROM @Data)
+	-- Get exchange rate
+	DECLARE @Currency	INT,
+		@ExRate			FLOAT
+
+	SELECT @Currency = currency
+	FROM dbo.Customer WITH (NOLOCK)
+	WHERE custid = @CustId
+
+	SELECT @ExRate = CASE
+					WHEN @BaseCurrency = 'MYR' THEN e.MYR
+					WHEN @BaseCurrency = 'USD' THEN e.USD
+					WHEN @BaseCurrency = 'EUR' THEN e.EUR
+					WHEN @BaseCurrency = 'CNY' THEN e.CNY
+					WHEN @BaseCurrency = 'IDR' THEN e.IDR
+					WHEN @BaseCurrency = 'GBP' THEN e.GBP
+					WHEN @BaseCurrency = 'THB' THEN e.THB
+					WHEN @BaseCurrency = 'INH' THEN e.INH
+					ELSE 1
+				END
+	FROM dbo.Lrf_f_GetExchangeDaily(@FromDate, @FromDate) AS e
+	WHERE e.ExchangeId = @Currency
+
+	SET @ExRate = ISNULL(@ExRate, 1)
+
+	-- Return data
+	SELECT
+		@TotalRows 		= COUNT(TransId),
+		@SumWinlost		= SUM(WinLost)		* @ExRate,
+		@SumLicenseeWL	= SUM(LicenseeWL)	* @ExRate,
+		@SumComm		= SUM(Comm)			* @ExRate,
+		@SumPlayerComm	= SUM(PlayerComm)	* @ExRate
+	FROM @Data
 
 	SELECT
-		@TotalRows			= COUNT(b.TransId),
-		@SumWinLost			= SUM(ISNULL(b.WinLost, 0)),
-		@SumLicenseeWL		= SUM(ISNULL(b.LicenseeWL, 0)),
-		@SumComm			= SUM(ISNULL(b.Comm, 0)),
-		@SumPlayerComm		= SUM(ISNULL(b.PlayerComm, 0)),
-		-- USD
-		@SumWinLostUSD		= SUM(ISNULL(b.WinLost		* e.USD, 0)),
-		@SumLicenseeWLUSD	= SUM(ISNULL(b.LicenseeWL	* e.USD, 0)),
-		@SumCommUSD			= SUM(ISNULL(b.Comm			* e.USD, 0)),
-		@SumPlayerCommUSD	= SUM(ISNULL(b.PlayerComm	* e.USD, 0)),
-		-- EUR
-		@SumWinLostEUR		= SUM(ISNULL(b.WinLost		* e.EUR, 0)),
-		@SumLicenseeWLEUR	= SUM(ISNULL(b.LicenseeWL	* e.EUR, 0)),
-		@SumCommEUR			= SUM(ISNULL(b.Comm			* e.EUR, 0)),
-		@SumPlayerCommEUR	= SUM(ISNULL(b.PlayerComm	* e.EUR, 0)),
-		-- GBP
-		@SumWinLostGBP		= SUM(ISNULL(b.WinLost		* e.GBP, 0)),
-		@SumLicenseeWLGBP	= SUM(ISNULL(b.LicenseeWL	* e.GBP, 0)),
-		@SumCommGBP			= SUM(ISNULL(b.Comm			* e.GBP, 0)),
-		@SumPlayerCommGBP	= SUM(ISNULL(b.PlayerComm	* e.GBP, 0))
-	FROM @Data AS b
-		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
-
-	SELECT A.* 
-	FROM (
-			SELECT
-				ROW_NUMBER() OVER(ORDER BY b.TransId, b.RefNo) AS RowNum,
-				b.*,
-				-- USD
-				b.Stake			* e.USD AS StakeUSD,
-				b.Actual_stake	* e.USD AS Actual_StakeUSD,
-				b.WinLost		* e.USD AS WinLostUSD,
-				b.LicenseeWL	* e.USD AS LicenseeWLUSD,
-				b.Comm			* e.USD AS CommUSD,
-				b.PlayerComm	* e.USD AS PlayerCommUSD,
-				b.OriginalStake	* e.USD AS OriginalStakeUSD,
-				-- EUR
-				b.Stake			* e.EUR AS StakeEUR,
-				b.Actual_stake	* e.EUR AS Actual_StakeEUR,
-				b.WinLost		* e.EUR AS WinLostEUR,
-				b.LicenseeWL	* e.EUR AS LicenseeWLEUR,
-				b.Comm			* e.EUR AS CommEUR,
-				b.PlayerComm	* e.EUR AS PlayercommEUR,
-				b.OriginalStake	* e.EUR AS OriginalStakeEUR,
-				-- GBP
-				b.Stake			* e.GBP AS StakeGBP,
-				b.Actual_stake	* e.GBP AS Actual_StakeGBP,
-				b.WinLost		* e.GBP AS WinLostGBP,
-				b.LicenseeWL	* e.GBP AS LicenseeWLGBP,
-				b.Comm			* e.GBP AS CommGBP,
-				b.PlayerComm	* e.GBP AS PlayerCommGBP,
-				b.OriginalStake	* e.GBP AS OriginalStakeGBP
-			FROM @Data AS b
-				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
-		) AS A
-	WHERE A.RowNum BETWEEN (((@PageIndex - 1) * @PageSize) + 1) AND (@PageSize * @PageIndex)
+		a.SportType,
+		a.LeagueId,
+		a.HomeId,
+		a.AwayId,
+		a.BetType,
+		a.MatchCode,
+		a.Race,
+		a.EventDate,
+		a.MatchId,
+		a.TransId,
+		a.TransDate,
+		a.WinLostDate,
+		a.RefNo,
+		a.BetId,
+		a.OddsId,
+		a.Hdp1,
+		a.Hdp2,
+		a.Modds,
+		a.OddsType,
+		a.Odds,
+		a.BetTeam,
+		a.Status,
+		a.BetStatus,
+		a.Stake * @ExRate AS Stake,
+		a.Actual_Stake * @ExRate AS Actual_Stake,
+		a.WinLost * @ExRate AS WinLost,
+		a.LicenseeWL * @ExRate AS LicenseeWL,
+		a.Comm * @ExRate AS Comm,
+		a.PlayerComm * @ExRate AS PlayerComm,
+		a.LiveHomeScore,
+		a.LiveAwayScore,
+		a.LiveIndicator,
+		a.FinalHomeScore,
+		a.FinalAwayScore,
+		a.HtHomeScore,
+		a.HtAwayScore,
+		a.Ip,
+		a.Username,
+		a.IsNeutral,
+		a.Currency,
+		a.ShowTime,
+		a.BetCheck,
+		a.TransDesc,
+		a.BetdaqId,
+		a.ExtraInfo,
+		a.OriginalStake * @ExRate AS OriginalStake,
+		a.OriginalBetType,
+		a.WalletType,
+		a.RefCode,
+		a.OddsSpread
+	FROM
+	(
+		SELECT
+			ROW_NUMBER() OVER(ORDER BY b.TransId ASC, b.RefNo ASC) AS RowNum,
+			b.*
+		FROM @Data AS b
+	) AS a
+	WHERE a.RowNum BETWEEN (((@PageIndex - 1) * @PageSize) + 1) AND (@PageSize * @PageIndex)
 
 	-- Get sub tickets
 	DECLARE @BettransDetail TABLE(
@@ -973,10 +994,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		APositionTaking	SMALLMONEY,
 		BetType			SMALLINT,
-		BetTeam			NVARCHAR(10),
-		StakeEUR		MONEY,
-		StakeUSD		MONEY,
-		StakeGBP		MONEY
+		BetTeam			NVARCHAR(10)
 	)
 
 	-- Virtual Sports
@@ -989,17 +1007,13 @@ BEGIN
 		SELECT
 			bm.refno,
 			bm.odds,
-			bm.Stake,
+			bm.stake * @ExRate AS Stake,
 			bm.status,
 			bm.apositiontaking,
 			bm.bettype,
-			bm.betteam,
-			bm.stake * e.EUR,
-			bm.stake * e.USD,
-			bm.stake * e.GBP
+			bm.betteam
 		FROM bodb_Archive.dbo.bettransm AS bm with (NOLOCK)
 			INNER JOIN @Data b ON bm.refno = b.RefNo
-			INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.currency
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
 		WHERE bm.custid = @CustId
@@ -1010,9 +1024,7 @@ BEGIN
 	END
 
 	SELECT * FROM @BettransDetail
-	ORDER BY RefNo, BetType
-
-	DROP TABLE #TempExchange
+	ORDER BY RefNo ASC, BetType ASC
 END
 GO
 

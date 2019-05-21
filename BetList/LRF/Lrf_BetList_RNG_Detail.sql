@@ -1,10 +1,11 @@
 /*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_RNG_Detail]
-	@AgentList	VARCHAR(MAX),
-	@CustId		INT,
-	@RefNo		BIGINT,
-	@TransType	TINYINT	= 0
+	@AgentList		VARCHAR(MAX),
+	@CustId			INT,
+	@RefNo			BIGINT,
+	@TransType		TINYINT	= 0,
+	@BaseCurrency	VARCHAR(10)
 AS
 
 /*
@@ -26,6 +27,7 @@ AS
 		- 20180525@Kos: Support Pragmatic Casino [#Redmine: 92318]
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 109471]
 		- 20190401@Kos: Don't support Microgaming RNG Casino anymore [#Redmine: 107704]
+		- 20190524@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 
 	Parameters:
 		- @TransType
@@ -54,7 +56,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -73,11 +75,11 @@ BEGIN
 	WHERE ProductID IN (22, 24, 32)
 		OR (ProductID = 6 AND SubProduct <> '')
 
-	DECLARE @tmpStatus TABLE (statusId TINYINT)
+	DECLARE @tmpStatus TABLE (StatusId TINYINT)
 
 	IF @TransType = 0
 	BEGIN
-		INSERT INTO @tmpStatus
+		INSERT INTO @tmpStatus (StatusId)
 		SELECT 111 UNION ALL
 		SELECT 112 UNION ALL
 		SELECT 113 UNION ALL
@@ -89,7 +91,7 @@ BEGIN
 	END
 	ELSE IF @TransType = 1
 	BEGIN
-		INSERT INTO @tmpStatus
+		INSERT INTO @tmpStatus (StatusId)
 		SELECT 111 UNION ALL
 		SELECT 112 UNION ALL
 		SELECT 113 UNION ALL
@@ -99,13 +101,13 @@ BEGIN
 	END
 	ELSE IF @TransType = 2
 	BEGIN
-		INSERT INTO @tmpStatus
+		INSERT INTO @tmpStatus (StatusId)
 		SELECT 101 UNION ALL
 		SELECT 102
 	END 
 	ELSE IF @TransType = 3
 	BEGIN
-		INSERT INTO @tmpStatus
+		INSERT INTO @tmpStatus (StatusId)
 		SELECT 0 UNION ALL
 		SELECT 1
 	END
@@ -169,7 +171,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId 
 			AND brng.RefNo = @RefNo
-			AND brng.statusID IN (SELECT statusId FROM @tmpStatus)
+			AND brng.statusID IN (SELECT StatusId FROM @tmpStatus)
 	END
 	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @RefNo )
 	BEGIN
@@ -248,6 +250,22 @@ BEGIN
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
 	END
 
+	-- Get exchange rate
+	DECLARE @ExFromDate SMALLDATETIME,
+		@ExToDate SMALLDATETIME
+
+	SELECT
+		@ExFromDate = MIN(WinLostDate),
+		@ExToDate = MAX(WinLostDate)
+	FROM @tmpBettransRnG
+
+	-- Get exchange rate
+	DECLARE @ExchangeRate TABLE (
+		FirstExchangeDateByMonth	SMALLDATETIME,
+		LastExchangeDateByMonth		SMALLDATETIME,
+		Rate						FLOAT
+	)
+
 	-- get currency (for security)
 	DECLARE @Currency	INT
 
@@ -256,40 +274,49 @@ BEGIN
 	WHERE c.custid = @CustId
 		AND c.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 
-	-- get from date - to date
-	DECLARE @Fromdate DATETIME
-	DECLARE @Todate DATETIME
-
-	SELECT @Fromdate = MIN(WinLostDate),
-		@Todate = MAX(WinLostDate)
-	FROM @tmpBettransRnG
+	IF @BaseCurrency <> ''
+	BEGIN
+		INSERT INTO @ExchangeRate
+		SELECT
+			e.FirstExchangeDateByMonth,
+			e.LastExchangeDateByMonth,
+			CASE
+				WHEN @BaseCurrency = 'MYR' THEN e.MYR
+				WHEN @BaseCurrency = 'USD' THEN e.USD
+				WHEN @BaseCurrency = 'EUR' THEN e.EUR
+				WHEN @BaseCurrency = 'CNY' THEN e.CNY
+				WHEN @BaseCurrency = 'IDR' THEN e.IDR
+				WHEN @BaseCurrency = 'GBP' THEN e.GBP
+				WHEN @BaseCurrency = 'THB' THEN e.THB
+				WHEN @BaseCurrency = 'INH' THEN e.INH
+				ELSE 1
+			END AS Rate
+		FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
+		WHERE e.ExchangeId = @Currency
+			AND EXISTS (SELECT 1 FROM @tmpBettransRnG WHERE WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
+	END
 
 	SELECT
-		b.*,
-		@Currency AS CurrencyId,
-		CAST(b.Stake * e.USD AS MONEY) AS StakeUSD,
-		CAST(b.Stake * e.EUR AS MONEY) AS StakeEUR,
-		CAST(b.Stake * e.MYR AS MONEY) AS StakeMYR,
-		CAST(b.Stake * e.GBP AS MONEY) AS StakeGBP,
-		CAST(b.WinLost * e.USD AS MONEY) AS WinLostUSD,
-		CAST(b.WinLost * e.EUR AS MONEY) AS WinLostEUR,
-		CAST(b.WinLost * e.MYR AS MONEY) AS WinLostMYR,
-		CAST(b.WinLost * e.GBP AS MONEY) AS WinLostGBP,
-		CAST(b.LicenseeWL * e.USD AS MONEY) AS LicenseeWLUSD,
-		CAST(b.LicenseeWL * e.EUR AS MONEY) AS LicenseeWLEUR,
-		CAST(b.LicenseeWL * e.MYR AS MONEY) AS LicenseeWLMYR,
-		CAST(b.LicenseeWL * e.GBP AS MONEY) AS LicenseeWLGBP,
-		CAST(b.Comm * e.USD AS MONEY) AS CommUSD,
-		CAST(b.Comm * e.EUR AS MONEY) AS CommEUR,
-		CAST(b.Comm * e.MYR AS MONEY) AS CommMYR,
-		CAST(b.Comm * e.GBP AS MONEY) AS CommGBP,
-		CAST(b.PlayerComm * e.USD AS MONEY) AS PlayerCommUSD,
-		CAST(b.PlayerComm * e.EUR AS MONEY) AS PlayerCommEUR,
-		CAST(b.PlayerComm * e.MYR AS MONEY) AS PlayerCommMYR,
-		CAST(b.PlayerComm * e.GBP AS MONEY) AS PlayerCommGBP
+		b.TransId,
+		b.SportType,
+		b.BetType,
+		b.TransDate,
+		b.WinLostDate,
+		b.Status,
+		b.StatusId,
+		b.Odds,
+		b.Stake * ISNULL(e.Rate, 1) AS Stake,
+		b.Actual_Stake,
+		b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
+		b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
+		b.Comm * ISNULL(e.Rate, 1) AS Comm,
+		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		b.Ip,
+		b.TransDesc,
+		b.BetCheck,
+		@Currency AS CurrencyId
 	FROM @tmpBettransRnG AS b
-		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)) AS e
-			ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = @Currency
+		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY b.TransId ASC
 END
 GO

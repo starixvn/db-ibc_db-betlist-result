@@ -24,25 +24,14 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinloss_Mem]
 	@ShowPP				BIT			= 0,	-- Pragmatic Casino
 	@ShowBT				BIT			= 0,	-- Bet Trade
 	@ShowCO				BIT			= 0,	-- Cash Out
+	@BaseCurrency		VARCHAR(10),
 	@PageSize			INT			= 1000,
 	@PageIndex			INT			= 1,
 	@TotalRows			INT			= 0 OUTPUT,
 	@SumWinLost			MONEY		= 0 OUTPUT,
-	@SumWinLostUSD		MONEY		= 0 OUTPUT,
-	@SumWinLostEUR		MONEY		= 0 OUTPUT,
-	@SumWinLostGBP		MONEY		= 0 OUTPUT,
 	@SumLicenseeWL		MONEY		= 0 OUTPUT,
-	@SumLicenseeWLUSD	MONEY		= 0 OUTPUT,
-	@SumLicenseeWLEUR	MONEY		= 0 OUTPUT,
-	@SumLicenseeWLGBP	MONEY		= 0 OUTPUT,
 	@SumComm			MONEY		= 0 OUTPUT,
-	@SumCommUSD			MONEY		= 0 OUTPUT,
-	@SumCommEUR			MONEY		= 0 OUTPUT,
-	@SumCommGBP			MONEY		= 0 OUTPUT,
-	@SumPlayerComm		MONEY		= 0 OUTPUT,
-	@SumPlayerCommUSD	MONEY		= 0 OUTPUT,
-	@SumPLayerCommEUR	MONEY		= 0 OUTPUT,
-	@SumPLayerCommGBP	MONEY		= 0 OUTPUT
+	@SumPlayerComm		MONEY		= 0 OUTPUT
 AS
 
 /*
@@ -112,6 +101,8 @@ AS
 					- Remove params @ShowMGCLC and @ShowMGCRNG
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
+		- 20190520@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
+					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -232,6 +223,12 @@ BEGIN
 		OriginalStake	MONEY,
 		OriginalBetType	SMALLINT,
 		OddsSpread		MONEY
+	)
+
+	DECLARE @ExchangeRate TABLE (
+		FirstExchangeDateByMonth	SMALLDATETIME,
+		LastExchangeDateByMonth		SMALLDATETIME,
+		Rate						FLOAT
 	)
 
 	DECLARE @TempFromDate SMALLDATETIME
@@ -3377,11 +3374,49 @@ BEGIN
 	SET WalletType = 0
 	WHERE WalletType = 2 AND RefCode = 0
 
+	DECLARE @Currency	INT
+
+	SELECT @Currency = currency
+	FROM dbo.Customer WITH (NOLOCK)
+	WHERE custid = @CustId
+
+	DECLARE @ExFromDate SMALLDATETIME,
+		@ExToDate SMALLDATETIME
+
+	SELECT
+		@ExFromDate = MIN(WinLostDate),
+		@ExToDate = MAX(WinLostDate)
+	FROM @BetListByDateMem
+
 	-- Get exchange rate
-	SELECT *
-	INTO #TempExchange
-	FROM Lrf_f_GetExchangeDaily(@FDate, @TDate)
-	WHERE exchangeid IN (SELECT DISTINCT Currency FROM @BetListByDateMem)
+	INSERT INTO @ExchangeRate
+	SELECT
+		e.FirstExchangeDateByMonth,
+		e.LastExchangeDateByMonth,
+		CASE
+			WHEN @BaseCurrency = 'MYR' THEN e.MYR
+			WHEN @BaseCurrency = 'USD' THEN e.USD
+			WHEN @BaseCurrency = 'EUR' THEN e.EUR
+			WHEN @BaseCurrency = 'CNY' THEN e.CNY
+			WHEN @BaseCurrency = 'IDR' THEN e.IDR
+			WHEN @BaseCurrency = 'GBP' THEN e.GBP
+			WHEN @BaseCurrency = 'THB' THEN e.THB
+			WHEN @BaseCurrency = 'INH' THEN e.INH
+			ELSE 1
+		END AS Rate
+	FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
+	WHERE e.ExchangeId = @Currency
+		AND EXISTS (SELECT 1 FROM @BetListByDateMem WHERE WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
+
+	-- Return data
+	SELECT
+		@TotalRows		= COUNT(b.TransId),
+		@SumWinlost		= SUM(b.WinLost		* ISNULL(e.Rate, 1)),
+		@SumLicenseeWL	= SUM(b.LicenseeWL	* ISNULL(e.Rate, 1)),
+		@SumComm		= SUM(b.Comm		* ISNULL(e.Rate, 1)),
+		@SumPlayerComm	= SUM(b.PlayerComm	* ISNULL(e.Rate, 1))
+	FROM @BetListByDateMem AS b
+		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 
 	DECLARE @RowStart INT,
 		@RowEnd INT
@@ -3390,71 +3425,58 @@ BEGIN
 		@RowStart = @PageSize * @PageIndex + 1, 
 		@RowEnd = @RowStart + @PageSize - 1
 
-	SELECT
-		@TotalRows		= COUNT(b.TransId),
-		@SumWinlost		= SUM(ISNULL(b.WinLost, 0)),
-		@SumLicenseeWL	= SUM(ISNULL(b.LicenseeWL, 0)),
-		@SumComm		= SUM(ISNULL(b.Comm, 0)),
-		@SumPlayerComm	= SUM(ISNULL(b.PlayerComm, 0)),
-		-- USD
-		@SumWinlostUSD		= SUM(ISNULL(b.WinLost		* e.USD, 0)),
-		@SumLicenseeWLUSD	= SUM(ISNULL(b.LicenseeWL	* e.USD, 0)),
-		@SumCommUSD			= SUM(ISNULL(b.Comm			* e.USD, 0)),
-		@SumPlayerCommUSD	= SUM(ISNULL(b.PlayerComm	* e.USD, 0)),
-		-- EUR
-		@SumWinlostEUR		= SUM(ISNULL(b.WinLost		* e.EUR, 0)),
-		@SumLicenseeWLEUR	= SUM(ISNULL(b.LicenseeWL	* e.EUR, 0)),
-		@SumCommEUR			= SUM(ISNULL(b.Comm			* e.EUR, 0)),
-		@SumPlayerCommEUR	= SUM(ISNULL(b.PlayerComm	* e.EUR, 0)),
-		-- GBP
-		@SumWinlostGBP		= SUM(ISNULL(b.WinLost		* e.GBP, 0)),
-		@SumLicenseeWLGBP	= SUM(ISNULL(b.LicenseeWL	* e.GBP, 0)),
-		@SumCommGBP			= SUM(ISNULL(b.Comm			* e.GBP, 0)),
-		@SumPlayerCommGBP	= SUM(ISNULL(b.PlayerComm	* e.GBP, 0))
-	FROM @BetListByDateMem AS b
-		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
-
 	SELECT A.*
 	FROM
 		(
 		SELECT
-			ROW_NUMBER() OVER (ORDER BY TransID) AS RowNum,
-			d.*,
-			-- MYR
-			d.Stake			* e.MYR AS StakeMYR,
-			d.Actual_Stake	* e.MYR AS Actual_StakeMYR,
-			d.WinLost		* e.MYR AS WinLostMYR,
-			d.LicenseeWL	* e.MYR AS LicenseeWLMYR,
-			d.Comm			* e.MYR AS CommMYR,
-			d.PlayerComm	* e.MYR AS PlayerCommMYR,
-			d.OriginalStake	* e.MYR AS OriginalStakeMYR,
-			-- USD
-			d.Stake			* e.USD AS StakeUSD,
-			d.Actual_Stake	* e.USD AS Actual_StakeUSD,
-			d.WinLost		* e.USD AS WinLostUSD,
-			d.LicenseeWL	* e.USD AS LicenseeWLUSD,
-			d.Comm			* e.USD AS CommUSD,
-			d.PlayerComm	* e.USD AS PlayerCommUSD,
-			d.OriginalStake	* e.USD AS OriginalStakeUSD,
-			-- EUR
-			d.Stake			* e.EUR AS StakeEUR,
-			d.Actual_Stake	* e.EUR AS Actual_StakeEUR,
-			d.WinLost		* e.EUR AS WinLostEUR,
-			d.LicenseeWL	* e.EUR AS LicenseeWLEUR,
-			d.Comm			* e.EUR AS CommEUR,
-			d.PlayerComm	* e.EUR AS PlayerCommEUR,
-			d.OriginalStake	* e.EUR AS OriginalStakeEUR,
-			-- GBP
-			d.Stake			* e.GBP AS StakeGBP,
-			d.Actual_Stake	* e.GBP AS Actual_StakeGBP,
-			d.WinLost		* e.GBP AS WinLostGBP,
-			d.LicenseeWL	* e.GBP AS LicenseeWLGBP,
-			d.Comm			* e.GBP AS CommGBP,
-			d.PlayerComm	* e.GBP AS PlayerCommGBP,
-			d.OriginalStake	* e.GBP AS OriginalStakeGBP
+			ROW_NUMBER() OVER (ORDER BY d.TransId ASC) AS RowNum,
+			d.SportType,
+			d.TransId,
+			d.BetId,
+			d.BetType,
+			d.Hdp1,
+			d.Hdp2,
+			d.MOdds,
+			d.OddsType,
+			d.Odds,
+			d.Stake * ISNULL(e.Rate, 1) AS Stake,
+			d.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
+			d.BetTeam,
+			d.Status,
+			d.RefNo,
+			d.TransDate,
+			d.WinLostDate,
+			d.WinLost * ISNULL(e.Rate, 1) AS WinLost,
+			d.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
+			d.Comm * ISNULL(e.Rate, 1) AS Comm,
+			d.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+			d.LiveIndicator,
+			d.LiveHomeScore,
+			d.LiveAwayScore,
+			d.Ip,
+			d.LeagueId,
+			d.MatchId,
+			d.MatchCode,
+			d.Race,
+			d.HomeId,
+			d.AwayId,
+			d.BetStatus,
+			d.IsNeutral,
+			d.VirtualRate,
+			d.IsShowOTExRate,
+			d.Currency,
+			d.ShowTime,
+			d.BetCheck,
+			d.TransDesc,
+			d.BetdaqId,
+			d.ExtraInfo,
+			d.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
+			d.OriginalBetType,
+			d.WalletType,
+			d.RefCode,
+			d.OddsSpread
 		FROM @BetListByDateMem AS d
-			INNER JOIN #TempExchange AS e
-				ON e.ExchangeDate =  d.WinLostDate AND e.exchangeid = d.Currency
+			LEFT JOIN @ExchangeRate AS e ON d.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 
@@ -3466,10 +3488,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		APositionTaking	SMALLMONEY,
 		BetType			SMALLINT,
-		BetTeam			NVARCHAR(10),
-		StakeEUR		MONEY,
-		StakeUSD		MONEY,
-		StakeGBP		MONEY
+		BetTeam			NVARCHAR(10)
 	)
 
 	-- Virtual Sports
@@ -3484,19 +3503,16 @@ BEGIN
 			SELECT
 				bm.refno,
 				bm.odds,
-				bm.stake,
+				bm.stake * ISNULL(e.Rate, 1) AS Stake,
 				bm.status,
 				bm.apositiontaking,
 				bm.bettype,
-				bm.betteam,
-				bm.stake * e.EUR,
-				bm.stake * e.USD,
-				bm.stake * e.GBP
+				bm.betteam
 			FROM dbo.bettransm AS bm WITH (NOLOCK)
 				INNER JOIN @BetListByDateMem AS b ON bm.refno = b.refno
-				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+				LEFT JOIN @ExchangeRate AS e ON bm.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 			WHERE bm.custid = @CustId
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 3
@@ -3510,19 +3526,16 @@ BEGIN
 			SELECT
 				bm.refno,
 				bm.odds,
-				bm.stake,
+				bm.stake * ISNULL(e.Rate, 1) AS Stake,
 				bm.status,
 				bm.apositiontaking,
 				bm.bettype,
-				bm.betteam,
-				bm.stake * e.EUR,
-				bm.stake * e.USD,
-				bm.stake * e.GBP
+				bm.betteam
 			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 				INNER JOIN @BetListByDateMem AS b ON bm.refno = b.refno
-				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+				LEFT JOIN @ExchangeRate AS e ON bm.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 			WHERE bm.custid = @CustId
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 3
@@ -3536,19 +3549,16 @@ BEGIN
 			SELECT
 				bm.refno,
 				bm.odds,
-				bm.stake,
+				bm.stake * ISNULL(e.Rate, 1) AS Stake,
 				bm.status,
 				bm.apositiontaking,
 				bm.bettype,
-				bm.betteam,
-				bm.stake * e.EUR,
-				bm.stake * e.USD,
-				bm.stake * e.GBP
+				bm.betteam
 			FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 				INNER JOIN @BetListByDateMem AS b ON bm.refno = b.refno
-				INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.winlostdate AND e.exchangeid = b.currency
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
+				LEFT JOIN @ExchangeRate AS e ON bm.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 			WHERE bm.custid = @CustId
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 3
@@ -3558,9 +3568,7 @@ BEGIN
 	END 
 
 	SELECT DISTINCT * FROM @BettransDetail 
-	ORDER BY RefNo, Bettype
-
-	DROP TABLE #TempExchange
+	ORDER BY RefNo ASC, Bettype ASC
 END
 GO
 

@@ -36,6 +36,7 @@ AS
 		- 20181031@Patrick: DB052 indexes revolution [RedmineID: #103572]
 		- 20181207@Kos: Enhance performance [#Redmine: 103698]
 					- Add new params @SportType, @BaseCurrency
+		- 20190524@Kos: Support more base currency [#Redmine: 112531]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -342,6 +343,7 @@ BEGIN
 					WHEN @BaseCurrency = 'IDR' THEN e.IDR
 					WHEN @BaseCurrency = 'GBP' THEN e.GBP
 					WHEN @BaseCurrency = 'THB' THEN e.THB
+					WHEN @BaseCurrency = 'INH' THEN e.INH
 					ELSE 1
 				END AS Rate
 			FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
@@ -529,8 +531,8 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 END
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_LiveReport_SelWinlossNumberGame] TO [bodbLicenseeNet]
 GO

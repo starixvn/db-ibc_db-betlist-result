@@ -1,13 +1,14 @@
 ﻿/*<info serverAlias="DB042-bodb02,DBEXT-bodb02" executers="bodbLicenseeNet" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
-	@AgentList	VARCHAR(MAX),
-	@CustId		INT			= NULL,
-	@FromDate	DATETIME	= '',
-	@ToDate		DATETIME	= '',
-	@Username	VARCHAR(30)	= NULL, -- for API
-	@PageSize	INT			= 1000,
-	@PageIndex	INT			= 1,
+	@AgentList		VARCHAR(MAX),
+	@CustId			INT			= NULL,
+	@FromDate		DATETIME	= '',
+	@ToDate			DATETIME	= '',
+	@Username		VARCHAR(30)	= NULL, -- for API
+	@BaseCurrency	VARCHAR(10),
+	@PageSize		INT			= 1000,
+	@PageIndex		INT			= 1,
 	-- check for showing product
 	@ShowSB		BIT			= 0,	-- Sportsbook
 	@ShowNG		BIT			= 0,	-- Number Game
@@ -100,6 +101,7 @@ AS
 					- Remove params @ShowMGCLC and @ShowMGCRNG
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
+		- 20190527@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 */
 
 BEGIN
@@ -1138,40 +1140,77 @@ BEGIN
 	FROM #BetListSelRunningByDateMem
 
 	DECLARE @Currency	INT,
-		@USD	FLOAT,
-		@EUR	FLOAT,
-		@GBP	FLOAT
+		@ExRate			FLOAT
 
 	SELECT @Currency = currency
 	FROM dbo.Customer WITH (NOLOCK)
 	WHERE custid = @CustId
 
-	SELECT
-		@USD = USD,
-		@EUR = EUR,
-		@GBP = GBP
-	FROM Lrf_f_GetExchangeDaily(@Today, @Today)
-	WHERE exchangeid = @Currency
+	-- Get exchange rate
+	SELECT @ExRate = CASE
+					WHEN @BaseCurrency = 'MYR' THEN e.MYR
+					WHEN @BaseCurrency = 'USD' THEN e.USD
+					WHEN @BaseCurrency = 'EUR' THEN e.EUR
+					WHEN @BaseCurrency = 'CNY' THEN e.CNY
+					WHEN @BaseCurrency = 'IDR' THEN e.IDR
+					WHEN @BaseCurrency = 'GBP' THEN e.GBP
+					WHEN @BaseCurrency = 'THB' THEN e.THB
+					WHEN @BaseCurrency = 'INH' THEN e.INH
+					ELSE 1
+				END
+	FROM dbo.Lrf_f_GetExchangeDaily(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)) AS e
+	WHERE e.ExchangeId = @Currency
 
 	-- select to paging
-	SELECT A.*,
+	SELECT
+		a.SportType,
+		a.Username,
+		a.BetType,
+		a.LeagueId,
+		a.RefNo,
+		a.TransId,
+		a.BetId,
+		a.MatchCode,
+		a.Race,
+		a.EventDate,
+		a.HomeId,
+		a.AwayId,
+		a.Hdp1,
+		a.Hdp2,
+		a.Odds,
+		a.Modds,
+		a.Status,
+		a.SettlementStatus,
+		a.Stake * ISNULL(@ExRate, 1) AS Stake,
+		a.Actual_Stake * ISNULL(@ExRate, 1) AS Actual_Stake,
+		a.TransDate,
+		a.BetTeam,
+		a.Discount,
+		a.LiveIndicator,
+		a.LiveHomeScore,
+		a.LiveAwayScore,
+		a.Ip,
+		a.IsNeutral,
+		a.OddsType,
+		a.ShowTime,
+		a.MatchId,
+		a.BetCheck,
+		a.TransDesc,
+		a.BetdaqId,
+		a.ExtraInfo,
+		a.OriginalStake * ISNULL(@ExRate, 1) AS OriginalStake,
+		a.OriginalBetType,
+		a.WalletType,
+		a.RefCode,
+		a.OddsSpread,
 		@Currency AS Currency
 	FROM
 		(	SELECT
-				ROW_NUMBER() OVER(ORDER BY b.TransId DESC) AS RowNum,
-				b.*,
-				b.Stake * @USD AS StakeUSD,
-				b.Stake * @EUR AS StakeEUR,
-				b.Stake * @GBP AS StakeGBP,
-				b.Actual_Stake * @USD AS Actual_StakeUSD,
-				b.Actual_Stake * @EUR AS Actual_StakeEUR,
-				b.Actual_Stake * @GBP AS Actual_StakeGBP,
-				b.OriginalStake * @USD AS OriginalStakeUSD,
-				b.OriginalStake * @EUR AS OriginalStakeEUR,
-				b.OriginalStake * @GBP AS OriginalStakeGBP
-			FROM #BetListSelRunningByDateMem AS b
-		) AS A 
-	WHERE A.RowNum BETWEEN (((@PageIndex - 1) * @PageSize) + 1) AND (@PageSize * @PageIndex)
+				ROW_NUMBER() OVER(ORDER BY TransId DESC) AS RowNum,
+				*
+			FROM #BetListSelRunningByDateMem
+		) AS a
+	WHERE a.RowNum BETWEEN (((@PageIndex - 1) * @PageSize) + 1) AND (@PageSize * @PageIndex)
 
 	-- Get sub tickets
 	DECLARE @BetListDetail TABLE (
@@ -1181,10 +1220,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		APositionTaking	SMALLMONEY,
 		BetType			SMALLINT,
-		BetTeam			NVARCHAR(20),
-		StakeEUR		MONEY,
-		StakeUSD		MONEY,
-		StakeGBP		MONEY
+		BetTeam			NVARCHAR(20)
 	);
 
 	-- Virtual Sports
@@ -1197,14 +1233,11 @@ BEGIN
 		SELECT
 			bm.refno,
 			bm.odds,
-			bm.stake,
+			bm.stake * ISNULL(@ExRate, 1) AS Stake,
 			bm.status,
 			bm.apositiontaking,
 			bm.bettype,
-			'' AS betteam,
-			bm.stake * @EUR,
-			bm.stake * @USD,
-			bm.stake * @GBP
+			'' AS betteam
 		FROM dbo.bettransm AS bm WITH (NOLOCK)
 			INNER JOIN #BetListSelRunningByDateMem AS b ON bm.refno = b.RefNo
 			INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.bettype
@@ -1217,15 +1250,11 @@ BEGIN
 	END
 
 	SELECT * FROM @BetListDetail
-	ORDER BY RefNo
+	ORDER BY RefNo ASC
 
 	DROP TABLE #BetListSelRunningByDateMem
 END
 GO
-
-
-
-
 
 
 

@@ -52,6 +52,7 @@ AS
 		- 20181121@Kos: Support new platform 'o' Mobile App [#Redmine: 104521]
 		- 20181210@Kos: Support new platform 'c' Mobile China View [#Redmine: 106088]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
+		- 20190520@Kos: Support more base currency [#Redmine: 112531]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -522,6 +523,7 @@ BEGIN
 					WHEN @BaseCurrency = 'IDR' THEN e.IDR
 					WHEN @BaseCurrency = 'GBP' THEN e.GBP
 					WHEN @BaseCurrency = 'THB' THEN e.THB
+					WHEN @BaseCurrency = 'INH' THEN e.INH
 					ELSE 1
 				END AS Rate
 			FROM dbo.Lrf_f_GetExchangeDaily(CONVERT(VARCHAR(10), GETDATE(), 111), CONVERT(VARCHAR(10), GETDATE(), 111)) AS e
@@ -575,12 +577,10 @@ BEGIN
 		LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
 	ORDER BY b.TransId DESC
 END
-
-
-
-
-
-
 GO
+
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [bodbLicenseeNet]
 GO

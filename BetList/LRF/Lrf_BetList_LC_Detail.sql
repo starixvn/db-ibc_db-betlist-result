@@ -1,17 +1,11 @@
-/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_LC_Detail]
-	@AgentList	VARCHAR(MAX),
-	@CustId		INT,
-	@RefNo		BIGINT,
-	@TransType	TINYINT	= 0
+	@AgentList		VARCHAR(MAX),
+	@CustId			INT,
+	@RefNo			BIGINT,
+	@TransType		TINYINT	= 0,
+	@BaseCurrency	VARCHAR(10)
 AS
 
 /*
@@ -24,6 +18,7 @@ AS
 		- 20160727@Kos: Include Void/Rejected detail tickets view drilldown WON/LOSE/DRAW summary tickets
 					- Change to use inline function for SportBetTypeMatrix
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
+		- 20190524@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 
 	Parameters:
 		- @TransType
@@ -52,13 +47,13 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
 
 	-- Get SportBetTypeMatrix
-	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
 
@@ -66,15 +61,15 @@ BEGIN
 
 	-- Support AG Casino Single Wallet, AllBet
 	INSERT INTO @SportBettype
-	SELECT ProductID, BetType, EventType, SubProduct
+	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (11, 21)
 
-	DECLARE @tmpStatus TABLE (statusId TINYINT)
+	DECLARE @tmpStatus TABLE (StatusId TINYINT)
 
 	IF @TransType = 0
 	BEGIN
-		INSERT INTO @tmpStatus
+		INSERT INTO @tmpStatus (StatusId)
 		SELECT 111 UNION ALL
 		SELECT 112 UNION ALL
 		SELECT 113 UNION ALL
@@ -86,7 +81,7 @@ BEGIN
 	END
 	ELSE IF @TransType = 1
 	BEGIN
-		INSERT INTO @tmpStatus
+		INSERT INTO @tmpStatus (StatusId)
 		SELECT 111 UNION ALL
 		SELECT 112 UNION ALL
 		SELECT 113 UNION ALL
@@ -96,13 +91,13 @@ BEGIN
 	END
 	ELSE IF @TransType = 2
 	BEGIN
-		INSERT INTO @tmpStatus
+		INSERT INTO @tmpStatus (StatusId)
 		SELECT 101 UNION ALL
 		SELECT 102
 	END 
 	ELSE IF @TransType = 3
 	BEGIN
-		INSERT INTO @tmpStatus(statusId)
+		INSERT INTO @tmpStatus (StatusId)
 		SELECT 0 UNION ALL
 		SELECT 1
 	END
@@ -158,7 +153,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 		WHERE blc.custid = @CustId 
 			AND blc.RefNo = @RefNo
-			AND blc.statusID IN (SELECT statusId FROM @tmpStatus)
+			AND blc.statusID IN (SELECT StatusId FROM @tmpStatus)
 	END
 	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @RefNo )
 	BEGIN
@@ -223,67 +218,76 @@ BEGIN
 		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
 	END
 
-	-- Get currency (for security)
-	DECLARE @currency INT
+	-- Get exchange rate
+	DECLARE @ExFromDate SMALLDATETIME,
+		@ExToDate SMALLDATETIME
 
-	SELECT @currency = currency
+	SELECT
+		@ExFromDate = MIN(WinLostDate),
+		@ExToDate = MAX(WinLostDate)
+	FROM @tmpBettransLC
+
+	-- Get exchange rate
+	DECLARE @ExchangeRate TABLE (
+		FirstExchangeDateByMonth	SMALLDATETIME,
+		LastExchangeDateByMonth		SMALLDATETIME,
+		Rate						FLOAT
+	)
+
+	-- Get currency (for security)
+	DECLARE @Currency INT
+
+	SELECT @Currency = currency
 	FROM dbo.custinfo WITH (NOLOCK)
 	WHERE custid = @CustId
 		AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
 
-	-- Get from date - to date
-	DECLARE @Fromdate DATETIME
-	DECLARE @Todate DATETIME
-
-	SELECT @Fromdate = MIN(WinLostDate),
-		@Todate = MAX(WinLostDate)
-	FROM @tmpBettransLC
+	IF @BaseCurrency <> ''
+	BEGIN
+		INSERT INTO @ExchangeRate
+		SELECT
+			e.FirstExchangeDateByMonth,
+			e.LastExchangeDateByMonth,
+			CASE
+				WHEN @BaseCurrency = 'MYR' THEN e.MYR
+				WHEN @BaseCurrency = 'USD' THEN e.USD
+				WHEN @BaseCurrency = 'EUR' THEN e.EUR
+				WHEN @BaseCurrency = 'CNY' THEN e.CNY
+				WHEN @BaseCurrency = 'IDR' THEN e.IDR
+				WHEN @BaseCurrency = 'GBP' THEN e.GBP
+				WHEN @BaseCurrency = 'THB' THEN e.THB
+				WHEN @BaseCurrency = 'INH' THEN e.INH
+				ELSE 1
+			END AS Rate
+		FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
+		WHERE e.ExchangeId = @Currency
+			AND EXISTS (SELECT 1 FROM @tmpBettransLC WHERE WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
+	END
 
 	SELECT
-		TransId,
-		SportType,
-		BetType,
-		TransDate,
-		WinLostDate,
-		Status,
-		StatusId,
-		Odds,
-		Stake,
-		Actual_Stake,
-		CAST(Stake * e.USD AS MONEY) AS StakeUSD,
-		CAST(Stake * e.EUR AS MONEY) AS StakeEUR,
-		CAST(Stake * e.MYR AS MONEY) AS StakeMYR,
-		CAST(Stake * e.GBP AS MONEY) AS StakeGBP,
-		WinLost,
-		CAST(WinLost * e.USD AS MONEY) AS WinLostUSD,
-		CAST(WinLost * e.EUR AS MONEY) AS WinLostEUR,
-		CAST(WinLost * e.MYR AS MONEY) AS WinLostMYR,
-		CAST(WinLost * e.GBP AS MONEY) AS WinLostGBP,
-		Comm,
-		CAST(Comm * e.USD AS MONEY) AS CommUSD,
-		CAST(Comm * e.EUR AS MONEY) AS CommEUR,
-		CAST(Comm * e.MYR AS MONEY) AS CommMYR,
-		CAST(Comm * e.GBP AS MONEY) AS CommGBP,
-		PlayerComm,
-		CAST(PlayerComm * e.USD AS MONEY) AS PlayerCommUSD,
-		CAST(PlayerComm * e.EUR AS MONEY) AS PlayerCommEUR,
-		CAST(PlayerComm * e.MYR AS MONEY) AS PlayerCommMYR,
-		CAST(PlayerComm * e.GBP AS MONEY) AS PlayerCommGBP,
-		IP,
-		TransDesc,
-		BetCheck,
-		MatchCode
+		b.TransId,
+		b.SportType,
+		b.BetType,
+		b.TransDate,
+		b.WinLostDate,
+		b.Status,
+		b.StatusId,
+		b.Odds,
+		b.Stake * ISNULL(e.Rate, 1) AS Stake,
+		b.Actual_Stake,
+		b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
+		b.Comm * ISNULL(e.Rate, 1) AS Comm,
+		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		b.Ip,
+		b.TransDesc,
+		b.BetCheck,
+		b.MatchCode
 	FROM @tmpBettransLC AS b
-		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)) AS e
-			ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = @currency
+		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY b.TransId ASC
 END
+GO
 
 
-GO
-GRANT EXECUTE ON [dbo].[Lrf_BetList_LC_Detail] TO [bodbAdminNet] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[Lrf_BetList_LC_Detail] TO [bodbLicenseeNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_LC_Detail] TO [vnteam] AS [dbo]
 GO

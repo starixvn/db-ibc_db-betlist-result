@@ -1,21 +1,19 @@
-/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
+/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_CB_Detail]
-	@AgentList	VARCHAR(MAX),
-	@CustId		INT,
-	@RefNo		BIGINT
+	@AgentList		VARCHAR(MAX),
+	@CustId			INT,
+	@RefNo			BIGINT,
+	@BaseCurrency	VARCHAR(10)
 AS
 
 /*
 	Created by: Kos@20160915
 	Task: Get details info for Colossus Bets ticket
 	DB: DBEXT.bodb02
-	Original:
-		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
-	
 	Revisions:
+		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
+		- 20190528@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 */
 
 BEGIN
@@ -37,18 +35,10 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
-
-	-- Get currency (for security)
-	DECLARE @Currency INT
-
-	SELECT @Currency = currency
-	FROM dbo.custinfo WITH (NOLOCK)
-	WHERE custid = @CustId
-		AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
 
 	-- Get winlostdate of main ticket to use for exchange rate
 	DECLARE
@@ -166,6 +156,30 @@ BEGIN
 			AND bettype BETWEEN 18001 AND 18006
 	END
 
+	-- Get currency (for security)
+	DECLARE @Currency	INT,
+		@ExRate			FLOAT
+
+	SELECT @Currency = currency
+	FROM dbo.custinfo WITH (NOLOCK)
+	WHERE custid = @CustId
+		AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
+
+	-- Get exchange rate
+	SELECT @ExRate = CASE
+						WHEN @BaseCurrency = 'MYR' THEN e.MYR
+						WHEN @BaseCurrency = 'USD' THEN e.USD
+						WHEN @BaseCurrency = 'EUR' THEN e.EUR
+						WHEN @BaseCurrency = 'CNY' THEN e.CNY
+						WHEN @BaseCurrency = 'IDR' THEN e.IDR
+						WHEN @BaseCurrency = 'GBP' THEN e.GBP
+						WHEN @BaseCurrency = 'THB' THEN e.THB
+						WHEN @BaseCurrency = 'INH' THEN e.INH
+						ELSE 1
+					END
+	FROM dbo.Lrf_f_GetExchangeDaily(@WinLostDate, @WinLostDate) AS e
+	WHERE e.ExchangeId = @Currency
+
 	SELECT
 		b.TransId,
 		b.TransDate,
@@ -175,27 +189,15 @@ BEGIN
 		b.Status,
 		b.Discount,
 		b.OddsSpread,
-		b.WinLost,
-		CAST(b.WinLost * e.USD AS MONEY) AS WinLostUSD,
-		CAST(b.WinLost * e.EUR AS MONEY) AS WinLostEUR,
-		CAST(b.WinLost * e.MYR AS MONEY) AS WinLostMYR,
-		CAST(b.WinLost * e.GBP AS MONEY) AS WinLostGBP,
-		b.Comm,
-		CAST(b.Comm * e.USD AS MONEY) AS CommUSD,
-		CAST(b.Comm * e.EUR AS MONEY) AS CommEUR,
-		CAST(b.Comm * e.MYR AS MONEY) AS CommMYR,
-		CAST(b.Comm * e.GBP AS MONEY) AS CommGBP
+		b.WinLost * @ExRate AS WinLost,
+		b.Comm * @ExRate AS Comm
 	FROM @Data AS b
-		INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@WinLostDate, @WinLostDate)) AS e ON e.exchangeid = @Currency
 	ORDER BY b.TransId ASC
 END
-
-
-
 GO
-GRANT EXECUTE ON [dbo].[Lrf_BetList_CB_Detail] TO [bodbAdminNet] AS [dbo]
-GO
+
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_CB_Detail] TO [bodbLicenseeNet] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_CB_Detail] TO [vnteam] AS [dbo]
-GO
+

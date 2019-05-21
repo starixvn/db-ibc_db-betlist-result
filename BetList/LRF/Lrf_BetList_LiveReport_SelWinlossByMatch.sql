@@ -9,7 +9,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch]
 	@ShowBA			BIT = 0,
 	@ShowVS			BIT = 0,
 	@ShowVS2		BIT = 0,
-	@LiveIndicator	INT = 1
+	@LiveIndicator	INT = 1,
+	@BaseCurrency	VARCHAR(10)
 AS
 
 /*
@@ -54,6 +55,7 @@ AS
 		- 20181031@Patrick: DB052 indexes revolution [RedmineID: #103572]
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
+		- 20190523@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -81,7 +83,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -151,6 +153,13 @@ BEGIN
 		OddsSpread		MONEY
 	)
 
+	CREATE TABLE #ExchangeRate (
+		ExchangeId					INT,
+		FirstExchangeDateByMonth	SMALLDATETIME,
+		LastExchangeDateByMonth		SMALLDATETIME,
+		Rate						FLOAT
+	)
+
 	IF EXISTS (SELECT TOP(1) 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchID)
 	BEGIN
 		-- BA
@@ -186,7 +195,7 @@ BEGIN
 				b.matchid,
 				b.ip,
 				m.betstatus,
-				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				b.oddstype,
 				b.betid,
 				b.currency,
@@ -223,9 +232,6 @@ BEGIN
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))
-			ORDER BY
-				b.status,
-				b.transid
 		END
 
 		-- Sportsbook
@@ -298,9 +304,6 @@ BEGIN
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))
-			ORDER BY
-				b.status,
-				b.transid
 		END
 
 		-- Virtual Sports, Betradar Virtual Sports
@@ -336,7 +339,7 @@ BEGIN
 				b.matchid, 
 				b.ip,
 				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
+				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
 				b.betid,
 				b.currency,
@@ -371,9 +374,6 @@ BEGIN
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))
-			ORDER BY
-				b.status,
-				b.transid
 		END
 	END
 	ELSE
@@ -448,9 +448,6 @@ BEGIN
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))
-			ORDER BY
-				b.status,
-				b.transid
 		END
 
 		-- Sportsbook
@@ -523,9 +520,6 @@ BEGIN
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))
-			ORDER BY
-				b.status,
-				b.transid
 		END
 
 		-- Virtual Sports, Betradar Virtual Sports
@@ -596,9 +590,6 @@ BEGIN
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))
-			ORDER BY
-				b.status,
-				b.transid
 		END
 	END
 
@@ -661,60 +652,104 @@ BEGIN
 	SET WalletType = 0
 	WHERE WalletType = 2 AND RefCode = 0
 
-	DECLARE @Fromdate DATETIME
-	DECLARE @Todate DATETIME
+	-- Get exchange rate
+	DECLARE @Today SMALLDATETIME
+ 
+	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 
-	SELECT @Fromdate = MIN(winlostdate),
-		@Todate = MAX(winlostdate) 
+	DECLARE @ExFromDate SMALLDATETIME,
+		@ExToDate SMALLDATETIME
+
+	SELECT
+		@ExFromDate = MIN(WinLostDate),
+		@ExToDate = MAX(WinLostDate)
 	FROM #Data
 
-	CREATE NONCLUSTERED INDEX IDX_Index_data ON #Data(Currency)
-
-	SELECT *
-	INTO #TempExchange
-	FROM Lrf_f_GetExchangeDaily(@FromDate, @ToDate)
-	WHERE exchangeid IN (SELECT DISTINCT Currency FROM #Data)
+	INSERT INTO #ExchangeRate
+	SELECT
+		e.ExchangeId,
+		e.FirstExchangeDateByMonth,
+		e.LastExchangeDateByMonth,
+		CASE
+			WHEN @BaseCurrency = 'MYR' THEN e.MYR
+			WHEN @BaseCurrency = 'USD' THEN e.USD
+			WHEN @BaseCurrency = 'EUR' THEN e.EUR
+			WHEN @BaseCurrency = 'CNY' THEN e.CNY
+			WHEN @BaseCurrency = 'IDR' THEN e.IDR
+			WHEN @BaseCurrency = 'GBP' THEN e.GBP
+			WHEN @BaseCurrency = 'THB' THEN e.THB
+			WHEN @BaseCurrency = 'INH' THEN e.INH
+			ELSE 1
+		END AS Rate
+	FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
+	WHERE EXISTS (SELECT 1 FROM #Data
+				WHERE Currency = e.ExchangeId
+					AND WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
 
 	SELECT A.* 
 	FROM
 		(
 			SELECT
-				ROW_NUMBER() OVER(ORDER BY b.TransId) AS RowNum,
-				b.*,
+				ROW_NUMBER() OVER(ORDER BY b.TransId ASC) AS RowNum,
+				b.SportType,
+				b.Username,
 				SUBSTRING(c.username2,  CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
-				-- USD
-				b.Stake			* e.USD AS StakeUSD,
-				b.WinLost		* e.USD AS WinLostUSD,
-				b.LicenseeWL	* e.USD AS LicenseeWLUSD,
-				b.Comm			* e.USD AS CommUSD,
-				b.PlayerComm	* e.USD AS PlayerCommUSD,
-				b.OriginalStake	* e.USD AS OriginalStakeUSD,
-				-- EUR
-				b.Stake			* e.EUR AS StakeEUR,
-				b.WinLost		* e.EUR AS WinLostEUR,
-				b.LicenseeWL	* e.EUR AS LicenseeWLEUR,
-				b.Comm			* e.EUR AS CommEUR,
-				b.PlayerComm	* e.EUR AS PlayerCommEUR,
-				b.OriginalStake	* e.EUR AS OriginalStakeEUR,
-				-- GBP
-				b.Stake			* e.GBP AS StakeGBP,
-				b.WinLost		* e.GBP AS WinLostGBP,
-				b.LicenseeWL	* e.GBP AS LicenseeWLGBP,
-				b.Comm			* e.GBP AS CommGBP,
-				b.PlayerComm	* e.GBP AS PlayerCommGBP,
-				b.OriginalStake	* e.GBP AS OriginalStakeGBP
+				b.CustId,
+				b.BetType,
+				b.LeagueId,
+				b.TransId,
+				b.MatchCode,
+				b.EventDate,
+				b.HomeId,
+				b.AwayId,
+				b.Hdp1,
+				b.Hdp2,
+				b.Odds,
+				b.Status,
+				b.Stake * ISNULL(e.Rate, 1) AS Stake,
+				b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
+				b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
+				b.Comm * ISNULL(e.Rate, 1) AS Comm,
+				b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+				b.TransDate,
+				b.WinLostDate,
+				b.BetTeam,
+				b.LiveIndicator,
+				b.LiveHomeScore,
+				b.LiveAwayScore,
+				b.MatchId,
+				b.Ip,
+				b.BetStatus,
+				b.IsNeutral,
+				b.OddsType,
+				b.BetId,
+				b.Currency,
+				b.RefNo,
+				b.ShowTime,
+				b.BetCheck,
+				b.TransDesc,
+				b.BetdaqId,
+				b.ExtraInfo,
+				b.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
+				b.OriginalBetType,
+				b.WalletType,
+				b.RefCode,
+				b.OddsSpread
 			FROM #Data AS b
 				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
-				INNER JOIN #TempExchange AS e ON b.Currency = e.exchangeID AND b.WinLostDate = e.exchangeDate
+				LEFT JOIN #ExchangeRate AS e
+			ON e.ExchangeId = b.Currency
+				AND CASE
+						WHEN b.WinLostDate > @Today THEN @Today
+						ELSE b.WinLostDate
+					END BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 
 	DROP TABLE #Data
-	DROP TABLE #TempExchange
+	DROP TABLE #ExchangeRate
 END
 GO
-
-
 
 
 

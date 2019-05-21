@@ -1,11 +1,12 @@
 /*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByBettypeList]
-	@AgentList	VARCHAR(MAX),
-	@BetType	VARCHAR(50),
-	@PageSize	INT				= 1000,
-	@PageIndex	INT				= 1,
-	@TotalRows	INT				= 0 OUTPUT
+	@AgentList		VARCHAR(MAX),
+	@BetType		VARCHAR(50),
+	@BaseCurrency	VARCHAR(10),
+	@PageSize		INT				= 1000,
+	@PageIndex		INT				= 1,
+	@TotalRows		INT				= 0 OUTPUT
 AS
 
 /*
@@ -30,6 +31,7 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
+		- 20190520@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 */
 
 BEGIN
@@ -166,9 +168,6 @@ BEGIN
 			AND b.bettype IN (9, 29)
 			AND b.matchid = b.bettype
 			AND b.statusID IN (0, 1)
-		ORDER BY
-			b.status,
-			b.transid
 	END
 	ELSE
 	BEGIN
@@ -230,9 +229,6 @@ BEGIN
 			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 			AND ',' + @BetType + ',' LIKE '%,' + CONVERT(VARCHAR(5), b.bettype) + ',%'
 			AND b.statusID IN (0, 1)
-		ORDER BY
-			b.status,
-			b.transid
 	END
 
 	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
@@ -285,6 +281,36 @@ BEGIN
 	SET WalletType = 0
 	WHERE WalletType = 2 AND RefCode = 0
 
+	-- Get total rows
+	SELECT @TotalRows = COUNT(transid)
+	FROM #Data
+
+	-- Get exchange rate
+	CREATE TABLE #ExchangeRate (
+		ExchangeId	INT,
+		Rate		FLOAT
+	)
+
+	IF @TotalRows > 0
+	BEGIN
+		INSERT INTO #ExchangeRate
+		SELECT
+			e.ExchangeId,
+			CASE
+				WHEN @BaseCurrency = 'MYR' THEN e.MYR
+				WHEN @BaseCurrency = 'USD' THEN e.USD
+				WHEN @BaseCurrency = 'EUR' THEN e.EUR
+				WHEN @BaseCurrency = 'CNY' THEN e.CNY
+				WHEN @BaseCurrency = 'IDR' THEN e.IDR
+				WHEN @BaseCurrency = 'GBP' THEN e.GBP
+				WHEN @BaseCurrency = 'THB' THEN e.THB
+				WHEN @BaseCurrency = 'INH' THEN e.INH
+				ELSE 1
+			END AS Rate
+		FROM dbo.Lrf_f_GetExchangeDaily(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)) AS e
+		WHERE EXISTS (SELECT 1 FROM #Data WHERE Currency = e.ExchangeId)
+	END
+
 	DECLARE @RowStart	INT,
 		@RowEnd			INT
 
@@ -292,39 +318,57 @@ BEGIN
 		@RowStart = @PageSize * @PageIndex + 1,
 		@RowEnd = @RowStart + @PageSize - 1
 
-	DECLARE @Today SMALLDATETIME
-
-	SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
-
-	IF @TotalRows = 0
-	BEGIN
-		SELECT @TotalRows = COUNT(transid)
-		FROM #Data
-	END
-
 	SELECT A.*
 	FROM
 		(
 			SELECT
-				ROW_NUMBER() OVER(ORDER BY b.TransId) AS RowNum,
+				ROW_NUMBER() OVER(ORDER BY b.TransId ASC) AS RowNum,
 				SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
-				b.*,
-				b.Stake * e.USD AS StakeUSD,
-				b.Stake * e.EUR AS StakeEUR,
-				b.Stake * e.GBP AS StakeGBP,
-				b.Actual_Stake * e.USD AS Actual_StakeUSD,
-				b.Actual_Stake * e.EUR AS Actual_StakeEUR,
-				b.Actual_Stake * e.GBP AS Actual_StakeGBP,
-				b.OriginalStake * e.USD AS OriginalStakeUSD,
-				b.OriginalStake * e.EUR AS OriginalStakeEUR,
-				b.OriginalStake * e.GBP AS OriginalStakeGBP
+				b.CustId,
+				b.SportType,
+				b.Username,
+				b.BetType,
+				b.TransId,
+				b.BetId,
+				b.RefNo,
+				b.MatchCode,
+				b.HomeId,
+				b.AwayId,
+				b.Hdp1,
+				b.Hdp2,
+				b.Odds,
+				b.MOdds,
+				b.Status,
+				b.SettlementStatus,
+				b.Stake * ISNULL(e.Rate, 1) AS Stake,
+				b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
+				b.TransDate,
+				b.BetTeam,
+				b.LiveHomeScore,
+				b.LiveAwayScore,
+				b.LiveIndicator,
+				b.Discount,
+				b.LeagueId,
+				b.Ip,
+				b.IsNeutral,
+				b.OddsType,
+				b.Currency,
+				b.ShowTime,
+				b.BetCheck,
+				b.BetdaqId,
+				b.ExtraInfo,
+				b.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
+				b.OriginalBetType,
+				b.WalletType,
+				b.RefCode
 			FROM #Data AS b
-				INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = b.CustId
-				INNER JOIN (SELECT * FROM Lrf_f_GetExchangeDaily(@Today, @Today)) AS e ON e.exchangeid = b.Currency
+				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
+				LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = b.currency
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 
 	DROP TABLE #Data
+	DROP TABLE #ExchangeRate
 END
 GO
 

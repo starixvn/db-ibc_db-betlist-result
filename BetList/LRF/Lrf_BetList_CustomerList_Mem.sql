@@ -46,6 +46,7 @@ AS
 					- Remove params @ShowMGCLC and @ShowMGCRNG
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
+		- 20190523@Kos: Support more base currency [#Redmine: 112531]
 */
 
 BEGIN
@@ -2753,9 +2754,14 @@ BEGIN
 			e.exchangedate,
 			e.ExchangeId,
 			CASE
+				WHEN @BaseCurrency = 'MYR' THEN e.MYR
 				WHEN @BaseCurrency = 'USD' THEN e.USD
 				WHEN @BaseCurrency = 'EUR' THEN e.EUR
+				WHEN @BaseCurrency = 'CNY' THEN e.CNY
+				WHEN @BaseCurrency = 'IDR' THEN e.IDR
 				WHEN @BaseCurrency = 'GBP' THEN e.GBP
+				WHEN @BaseCurrency = 'THB' THEN e.THB
+				WHEN @BaseCurrency = 'INH' THEN e.INH
 				ELSE 1
 			END AS Rate
 		FROM Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e
@@ -2858,11 +2864,11 @@ BEGIN
 					ELSE ' '
 				END + '
 			) AS a
-		WHERE a.RowNum BETWEEN ' + CAST(@RowStart AS VARCHAR(50)) + ' AND ' + CAST(@RowEnd AS VARCHAR(50)) + '
+		WHERE a.RowNum BETWEEN @RowStart AND @RowEnd
 		ORDER BY a.RowNum'
 
 	INSERT INTO @PagingData
-	EXEC (@Sql)
+	EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
 	SELECT
 		@CustId AS CustId,
@@ -2915,7 +2921,7 @@ BEGIN
 	FROM @PagingData AS a
 		LEFT JOIN #ExchangeRate AS e
 			ON e.ExchangeDate = a.WinLostDate AND e.ExchangeId = a.Currency
-	ORDER BY a.RowNum
+	ORDER BY a.RowNum ASC
 
 	-- Get sub tickets
 	DECLARE @Detail TABLE (

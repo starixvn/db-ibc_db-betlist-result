@@ -1,15 +1,10 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 ALTER PROCEDURE [dbo].[Lrf_BetList_Exchange_Detail]
-	@AgentList	VARCHAR(MAX),
-	@CustId		INT,
-	@BetId		BIGINT
+	@AgentList		VARCHAR(MAX),
+	@CustId			INT,
+	@BetId			BIGINT,
+	@BaseCurrency	VARCHAR(10)
 AS
 
 /*
@@ -19,6 +14,7 @@ AS
 
 	Revisions:
 		- 20180302@Kos: First revision [#Redmine: 91048]
+		- 20190625@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 */
 
 BEGIN
@@ -40,7 +36,7 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		SELECT ErrCode = 100,
-			ErrMsg = N'Paramter invalid.'
+			ErrMsg = N'Parameter invalid.'
 
 		RETURN
 	END CATCH
@@ -80,25 +76,52 @@ BEGIN
 	SELECT @FDate = MIN(WinLostDate) FROM @Data
 	SELECT @TDate = MAX(WinLostDate) FROM @Data
 
-	SELECT * INTO #TempExchange
-	FROM Lrf_f_GetExchangeDaily(@FDate, @TDate)
-	WHERE ExchangeId IN (SELECT DISTINCT Currency FROM @Data)
+	DECLARE @ExchangeRate TABLE (
+		FirstExchangeDateByMonth	SMALLDATETIME,
+		LastExchangeDateByMonth		SMALLDATETIME,
+		Rate						FLOAT
+	)
+
+	DECLARE @Currency	INT
+
+	SELECT @Currency = currency
+	FROM dbo.Customer WITH (NOLOCK)
+	WHERE custid = @CustId
+
+	-- Get exchange rate
+	INSERT INTO @ExchangeRate
+	SELECT
+		e.FirstExchangeDateByMonth,
+		e.LastExchangeDateByMonth,
+		CASE
+			WHEN @BaseCurrency = 'MYR' THEN e.MYR
+			WHEN @BaseCurrency = 'USD' THEN e.USD
+			WHEN @BaseCurrency = 'EUR' THEN e.EUR
+			WHEN @BaseCurrency = 'CNY' THEN e.CNY
+			WHEN @BaseCurrency = 'IDR' THEN e.IDR
+			WHEN @BaseCurrency = 'GBP' THEN e.GBP
+			WHEN @BaseCurrency = 'THB' THEN e.THB
+			WHEN @BaseCurrency = 'INH' THEN e.INH
+			ELSE 1
+		END AS Rate
+	FROM dbo.Lrf_f_GetSubExchangeDaily(@FDate, @TDate) AS e
+	WHERE e.ExchangeId = @Currency
+		AND EXISTS (SELECT 1 FROM @Data WHERE WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
 
 	SELECT
-		b.*,
-		b.Stake	* e.GBP	AS StakeGBP,
-		b.Stake	* e.EUR	AS StakeEUR,
-		b.Stake	* e.USD	AS StakeUSD
+		b.TransId,
+		b.BetTaken,
+		b.WinLostDate,
+		b.Currency,
+		b.Stake * ISNULL(e.Rate, 1) AS Stake,
+		b.OddsRequest,
+		b.OddsMatched
 	FROM @Data AS b
-		INNER JOIN #TempExchange AS e ON e.ExchangeDate = b.WinLostDate AND e.exchangeid = b.Currency
-
-	DROP TABLE #TempExchange
+		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 END
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_Exchange_Detail] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_Exchange_Detail] TO vnteam
 GO
  
