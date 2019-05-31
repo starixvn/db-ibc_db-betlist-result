@@ -62,6 +62,7 @@ AS
 		- 20181011@Kos: Support Gold Deluxe - SicBo & BidMe [#Redmine: 101690]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
+		- 20190628@Kos: Support PH AIO 4a [Redmine: #112894]
 */
 
 BEGIN
@@ -723,10 +724,7 @@ BEGIN
 									WHEN b.ProductId IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									ELSE ISNULL(m.showtime, '')
 								END,
-					BetCheck = CASE
-									WHEN b.BetType IN (216, 217) THEN b.BetCheck
-									ELSE ''
-								END,
+					BetCheck = b.BetCheck,
 					ComStatus = '',
 					TransDesc = CASE
 									WHEN b.ProductId IN (1, 27) THEN ISNULL(b.transdesc, '')
@@ -988,10 +986,7 @@ BEGIN
 									WHEN b.ProductId IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									ELSE ISNULL(m.showtime, '')
 								END,
-					BetCheck = CASE
-									WHEN b.BetType IN (216, 217) THEN b.BetCheck
-									ELSE ''
-								END,
+					BetCheck = b.BetCheck,
 					ComStatus = '',
 					TransDesc = CASE
 									WHEN b.ProductId IN (1, 27) THEN ISNULL(b.transdesc, '')
