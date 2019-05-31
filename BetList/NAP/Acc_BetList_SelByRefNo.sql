@@ -5,7 +5,7 @@ ALTER PROCEDURE [dbo].[Acc_BetList_SelByRefNo]
 	@RefNo			BIGINT,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@SiteType		TINYINT			= 0
+	@Permission		VARCHAR(20)		= '1,2,3'
 AS
 
 /*
@@ -15,10 +15,10 @@ AS
 	Original: Acc_BetsSelBetList_ByTransID_Advance
 
 	Parameter Explanantion
-		- @SiteType:
-			- 0 : Get all
-			- 1 : Exclude deposit sites
-			- 2 : Exclude credit sites
+		- @Permission
+			- 1: Credit sites
+			- 2: Deposit sites
+			- 3: CN88
 	
 	Revisions:
 		- 20130121@Dan: change linked server DB06 to DBARC
@@ -79,6 +79,8 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
 		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
+		- 20190531@Kos: Add new input param @Permission VARCHAR(20) [#Redmine: 114125]
+					- Remove param @SiteType
 */
 
 BEGIN
@@ -250,21 +252,22 @@ BEGIN
 	INSERT INTO @DeniedSite (siteid, site, SpecialGroup)
 	EXECUTE(@SearchQuery)
 
-	IF @SiteType <> 0
-	BEGIN
-		INSERT INTO  @DeniedSite (SiteId, Site, SpecialGroup)
-		SELECT
-			s.siteid,
-			s.site,
-			s.SpecialGroup
-		FROM dbo.Site AS s WITH (NOLOCK)
-		WHERE NOT EXISTS (SELECT 1 FROM @DeniedSite WHERE SiteId = s.siteid)
-			AND s.isLicensee = CASE
-								WHEN @SiteType = 1 THEN 1
-								WHEN @SiteType = 2 THEN 0
-							END
-	END
-		
+	INSERT INTO @DeniedSite (SiteId, Site, SpecialGroup)
+	SELECT
+		s.siteid,
+		s.site,
+		s.SpecialGroup
+	FROM dbo.Site AS s WITH (NOLOCK)
+	WHERE NOT EXISTS (SELECT 1 FROM @DeniedSite WHERE SiteId = s.siteid)
+		AND ((s.isLicensee = 0									-- Don't have Credit sites permission
+				AND s.site <> 'cn88'
+				AND ',' + @Permission + ',' NOT LIKE '%,1,%')
+			OR (s.isLicensee = 1								-- Don't have Deposit sites permission
+				AND s.site <> 'cn88'
+				AND ',' + @Permission + ',' NOT LIKE '%,2,%')
+			OR (s.site = 'cn88'									-- Don't have CN88 site permission
+				AND ',' + @Permission + ',' NOT LIKE '%,3,%'))
+
 	IF @WinLostDate IS NOT NULL
 		AND NOT EXISTS ( SELECT 1
 						FROM dbo.customer AS c WITH (NOLOCK)

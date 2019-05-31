@@ -11,7 +11,7 @@ ALTER PROCEDURE [dbo].[Acc_BetList_SelByProduct]
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@SiteType		TINYINT			= 0
+	@Permission		VARCHAR(20)		= '1,2,3'
 AS
 
 /*
@@ -21,10 +21,10 @@ AS
 	Original:
 	
 	Parameter Explanantion
-		- @SiteType:
-			- 0 : Get all
-			- 1 : Exclude deposit sites
-			- 2 : Exclude credit sites
+		- @Permission
+			- 1: Credit sites
+			- 2: Deposit sites
+			- 3: CN88
 	
 	Revisions:
 		- 20160623@Kos: Hide special sites from unauthorized users [#Redmine: 48948]
@@ -39,6 +39,8 @@ AS
 		- 20180927@Kos: Add new permission to view Licensee account [#Redmine: 96118]
 		- 20181115@Kos: Hotfix - Bullfighting [#Redmine: 104833]
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
+		- 20190531@Kos: Add new input param @Permission VARCHAR(20) [#Redmine: 114125]
+					- Remove param @SiteType
 */
 
 BEGIN
@@ -143,20 +145,21 @@ BEGIN
 	INSERT INTO @DeniedSite
 	EXEC (@Sql)
 
-	IF @SiteType <> 0
-	BEGIN
-		INSERT INTO  @DeniedSite (SiteId, Site, SpecialGroup)
-		SELECT
-			s.siteid,
-			s.site,
-			s.SpecialGroup
-		FROM dbo.Site AS s WITH (NOLOCK)
-		WHERE NOT EXISTS (SELECT 1 FROM @DeniedSite WHERE SiteId = s.siteid)
-			AND s.isLicensee = CASE
-								WHEN @SiteType = 1 THEN 1
-								WHEN @SiteType = 2 THEN 0
-							END
-	END
+	INSERT INTO @DeniedSite (SiteId, Site, SpecialGroup)
+	SELECT
+		s.siteid,
+		s.site,
+		s.SpecialGroup
+	FROM dbo.Site AS s WITH (NOLOCK)
+	WHERE NOT EXISTS (SELECT 1 FROM @DeniedSite WHERE SiteId = s.siteid)
+		AND ((s.isLicensee = 0									-- Don't have Credit sites permission
+				AND s.site <> 'cn88'
+				AND ',' + @Permission + ',' NOT LIKE '%,1,%')
+			OR (s.isLicensee = 1								-- Don't have Deposit sites permission
+				AND s.site <> 'cn88'
+				AND ',' + @Permission + ',' NOT LIKE '%,2,%')
+			OR (s.site = 'cn88'									-- Don't have CN88 site permission
+				AND ',' + @Permission + ',' NOT LIKE '%,3,%'))
 
 	IF NOT EXISTS ( SELECT 1
 					FROM dbo.customer AS c WITH (NOLOCK)
