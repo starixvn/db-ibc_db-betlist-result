@@ -45,7 +45,8 @@ AS
 			- Specific bettypes: '1,3,5,7' (BetType1,BetType2,BetType3, ...)
 
 	Revisions:
-		- 20190405@Kos: Create new [Redmine: 111245]
+		- 20190405@Kos: Create new [Redmine: #111245]
+		- 20190606@Kos: Remove unused code [Redmine: #114242]
 */
 
 BEGIN
@@ -457,27 +458,6 @@ BEGIN
 				FROM @MemBetTicket AS b
 					INNER JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.RefNo = bm.refno
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-				WHERE b.EventType = 0
-
-				UNION ALL
-
-				SELECT
-					bm.transid,
-					bm.refno,
-					bm.bettype,
-					bm.matchid,
-					m.leagueid,
-					m.eventstatus,
-					m.GlobalShowTime,
-					CASE
-						WHEN m.GlobalShowTime <= CURRENT_TIMESTAMP THEN 1																			-- In-Play
-						WHEN CONVERT(DATE, m.GlobalShowTime) <= CONVERT(DATE, CURRENT_TIMESTAMP) AND m.GlobalShowTime > CURRENT_TIMESTAMP THEN 2	-- Today
-						WHEN CONVERT(DATE, m.GlobalShowTime) > CONVERT(DATE, CURRENT_TIMESTAMP) THEN 3												-- Early
-						ELSE 0
-					END AS Market
-				FROM @MemBetTicket AS b
-					INNER JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.RefNo = bm.refno
-					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 				WHERE b.EventType = 0
 
 				-- Update Market = 1 (In-Play) for Parlay ticket which all sub tickets are In-Play)
