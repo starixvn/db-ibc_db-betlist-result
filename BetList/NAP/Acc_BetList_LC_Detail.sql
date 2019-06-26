@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_LC_Detail]
 	@RefNo		BIGINT,
@@ -22,6 +22,7 @@ AS
 		- 20161111@Kos: Return currency name
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20181109@Kos: Move from DBAGE to DBACC [#Redmine: 104521]
+		- 20180626@Kos: Change code to prevent wrong index using [#Redmine: 115624]
 
 	Parameters:
 		- @TransType
@@ -86,6 +87,7 @@ BEGIN
 	-- Create temp table
 	CREATE TABLE #Data (
 		TransId			BIGINT,
+		CustId			INT,
 		SportType		INT,
 		BetType			INT,
 		TransDate		DATETIME,
@@ -138,7 +140,7 @@ BEGIN
 		BEGIN
 			SELECT @CurrencyName = ex.currency,
 				@WhTicket = 3
-			FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			WHERE b.transid = @RefNo
 		END
@@ -150,6 +152,7 @@ BEGIN
 		INSERT INTO #Data
 		SELECT
 			blc.transid,
+			blc.custid,
 			blc.productID AS SportType,
 			blc.gameID AS BetType,
 			blc.transdate,
@@ -186,8 +189,7 @@ BEGIN
 			END AS MatchCode
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
-		WHERE blc.custid = @CustId 
-			AND blc.RefNo = @RefNo
+		WHERE blc.RefNo = @RefNo
 			AND blc.statusID IN (SELECT statusId FROM @tmpStatus)
 	END
 	ELSE IF @WhTicket = 2
@@ -195,6 +197,7 @@ BEGIN
 		INSERT INTO #Data
 		SELECT
 			blc.transid,
+			blc.custid,
 			blc.productID AS SportType,
 			blc.gameID AS BetType,
 			blc.transdate,
@@ -231,13 +234,14 @@ BEGIN
 			END AS MatchCode
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
-		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
+		WHERE blc.RefNo = @RefNo
 	END
 	ELSE IF @WhTicket = 3
 	BEGIN
 		INSERT INTO #Data
 		SELECT
 			blc.transid,
+			blc.custid,
 			blc.productID AS SportType,
 			blc.gameID AS BetType,
 			blc.transdate,
@@ -274,8 +278,11 @@ BEGIN
 			END AS MatchCode
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
-		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
+		WHERE blc.RefNo = @RefNo
 	END
+
+	DELETE FROM #Data
+	WHERE CustId <> @CustId
 
 	-- Paging
 	SELECT @TotalRows = COUNT(1)
@@ -290,11 +297,9 @@ BEGIN
 
 	DROP TABLE #Data
 END
-
-
 GO
-GRANT	VIEW DEFINITION	ON	Acc_BetList_LC_Detail	TO	vnteam
-GRANT	EXECUTE	ON	Acc_BetList_LC_Detail	TO	bodbExtAccNet
+
+
 GRANT	EXECUTE	ON	Acc_BetList_LC_Detail	TO	bodbDownlineNetView
 GRANT	EXECUTE	ON	Acc_BetList_LC_Detail	TO	bodbDownlineNet
 GRANT	EXECUTE	ON	Acc_BetList_LC_Detail	TO	bodbAdminNet

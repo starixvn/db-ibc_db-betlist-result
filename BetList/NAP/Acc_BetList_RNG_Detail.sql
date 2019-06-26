@@ -27,6 +27,7 @@ AS
 		- 20180405@Kos: Support Pragmatic Casino [#Redmine: 92160]
 		- 20181109@Kos: Move from DBAGE to DBACC [#Redmine: 104521]
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
+		- 20180626@Kos: Change code to prevent wrong index using [#Redmine: 115624]
 
 	Parameters:
 		- @TransType
@@ -93,6 +94,7 @@ BEGIN
 	-- Create temp table
 	DECLARE @Data TABLE (
 		TransId			BIGINT,
+		CustId			INT,
 		SportType		INT,
 		BetType			INT,
 		TransDate		DATETIME,
@@ -160,6 +162,7 @@ BEGIN
 		INSERT INTO @Data
 		SELECT
 			brng.transid,
+			brng.custid,
 			brng.productID AS SportType,
 			brng.gameID AS BetType,
 			brng.transdate,
@@ -211,8 +214,7 @@ BEGIN
 			END AS ExtraInfo
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
-		WHERE brng.custid = @CustId 
-			AND brng.RefNo = @RefNo
+		WHERE brng.RefNo = @RefNo
 			AND brng.statusID IN (SELECT statusId FROM @tmpStatus)
 	END
 	ELSE IF @WhTicket = 2
@@ -220,6 +222,7 @@ BEGIN
 		INSERT INTO @Data
 		SELECT
 			brng.transid,
+			brng.custid,
 			brng.productID AS SportType,
 			brng.gameID AS BetType,
 			brng.transdate,
@@ -271,13 +274,14 @@ BEGIN
 			END AS ExtraInfo
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
-		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
+		WHERE brng.RefNo = @RefNo
 	END
 	ELSE IF @WhTicket = 3
 	BEGIN
 		INSERT INTO @Data
 		SELECT
 			brng.transid,
+			brng.custid,
 			brng.productID AS SportType,
 			brng.gameID AS BetType,
 			brng.transdate,
@@ -329,8 +333,11 @@ BEGIN
 			END AS ExtraInfo
 		FROM bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
-		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
+		WHERE brng.RefNo = @RefNo
 	END
+
+	DELETE FROM @Data
+	WHERE CustId <> @CustId
 
 	-- Paging
 	SELECT @TotalRows = COUNT(1)
@@ -340,7 +347,6 @@ BEGIN
 	FROM (
 		SELECT
 			ROW_NUMBER() OVER(ORDER BY TransId) AS RowNum,
-			@CustId AS CustId,
 			*
 		FROM @Data ) AS t
 	WHERE t.RowNum BETWEEN ((@PageIndex - 1) * @PageSize + 1) AND (@PageSize * @PageIndex)
