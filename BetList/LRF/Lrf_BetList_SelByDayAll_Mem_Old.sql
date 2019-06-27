@@ -86,6 +86,7 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20190527@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
+		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
 
 	Param's Explanation:
 		+ @TransType:
@@ -295,7 +296,7 @@ BEGIN
 				ELSE '' 
 			END AS ShowTime,
 			CASE 
-				WHEN sbt.ProductID = 1 AND b.bettype IN (216, 217) THEN b.betcheck
+				WHEN sbt.ProductID = 1 THEN b.betcheck
 				ELSE ''
 			END AS betcheck,
 			CASE 

@@ -65,6 +65,7 @@ AS
 		- 20190509@Kos: Fix licensee WL for BA tickets in bettrans14/bk range [Redmine: #113083]
 		- 20190515@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
+		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
 */
 
 BEGIN
@@ -1047,7 +1048,7 @@ BEGIN
 					BetCheck = CASE
 									WHEN b.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product IN ('SB', 'CO') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
@@ -1201,7 +1202,7 @@ BEGIN
 					BetCheck = CASE
 									WHEN b.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product IN ('SB', 'CO') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
@@ -1354,7 +1355,7 @@ BEGIN
 					BetCheck = CASE
 									WHEN b.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product IN ('SB', 'CO') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE

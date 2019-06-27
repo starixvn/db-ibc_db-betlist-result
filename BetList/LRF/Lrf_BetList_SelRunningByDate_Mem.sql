@@ -102,6 +102,7 @@ AS
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
 		- 20190527@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
+		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
 */
 
 BEGIN
@@ -353,7 +354,7 @@ BEGIN
 			b.OddsType,
 			'' AS ShowTime,
 			m.matchid,
-			CASE WHEN b.BetType IN (216, 217) THEN b.BetCheck ELSE '' END AS betcheck,
+			b.BetCheck,
 			b.TransDesc,
 			b.BetdaqId,
 			b.ExtraInfo,
@@ -519,10 +520,7 @@ BEGIN
 			b.oddstype,
 			'' AS ShowTime,
 			m.matchid,
-			CASE
-				WHEN b.bettype IN (216,217) THEN b.betcheck
-				ELSE ''
-			END AS betcheck,
+			b.betcheck,
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.betdaqid, -1) AS BetdaqId,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,

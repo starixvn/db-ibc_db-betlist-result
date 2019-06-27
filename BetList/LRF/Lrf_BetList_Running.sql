@@ -41,6 +41,7 @@ AS
 		- 20190506@Kos: Result Pending for SettlementStatus = 5 [Redmine: #112886]
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
+		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
 */
 
 BEGIN
@@ -832,7 +833,7 @@ BEGIN
 				BetCheck = CASE
 								WHEN b.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('Keno') THEN ISNULL(b.custom2, '')
-								WHEN b.Product IN ('SB') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
+								WHEN b.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 								ELSE ''
 							END,
 				TransDesc = CASE

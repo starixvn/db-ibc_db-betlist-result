@@ -50,6 +50,7 @@ AS
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
+		- 20190628@Kos: Support PH AIO 4a [Redmine: #115448]
 */
 
 BEGIN
@@ -1328,9 +1329,8 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('ParlayVS2') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('ParlayVS2', 'CO') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product IN ('CO') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
@@ -1453,9 +1453,8 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('ParlayVS2') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('ParlayVS2', 'CO') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product IN ('CO') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
@@ -1678,9 +1677,8 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('ParlayVS2') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('ParlayVS2', 'CO') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product IN ('CO') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
@@ -1802,9 +1800,8 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('ParlayVS2') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('ParlayVS2', 'CO') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product IN ('CO') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
