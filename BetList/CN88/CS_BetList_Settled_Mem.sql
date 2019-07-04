@@ -39,6 +39,7 @@ AS
 	Revisions:
 		- 20190227@Kos: Create new [Redmine: 109230]
 		- 20190510@Kos: Fix bug for non-sport products [Redmine: 109521]
+		- 20190704@Kos: Support PH AIO 4a [Redmine: 115866]
 		
 */
 
@@ -374,9 +375,8 @@ BEGIN
 					ELSE ''
 				END AS ShowTime,
 				CASE
-					WHEN c.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
+					WHEN c.Product IN ('SB', 'Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 					WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
-					WHEN c.Product IN ('SB') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
@@ -647,9 +647,8 @@ BEGIN
 					ELSE ''
 				END AS ShowTime,
 				CASE
-					WHEN c.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
+					WHEN c.Product IN ('SB', 'Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 					WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
-					WHEN c.Product IN ('SB') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,

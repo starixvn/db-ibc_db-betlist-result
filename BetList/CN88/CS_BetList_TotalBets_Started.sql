@@ -33,6 +33,7 @@ AS
 
 	Revisions:
 		- 20190314@Kos: Create new [Redmine: 112032]
+		- 20190704@Kos: Support PH AIO 4a [Redmine: 115866]
 */
 
 BEGIN
@@ -96,10 +97,7 @@ BEGIN
 			m.awayid,
 			m.betstatus,
 			ISNULL(m.IsNeutral, 0) AS IsNeutral,
-			CASE
-				WHEN b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
-				ELSE ''
-			END AS BetCheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread,
@@ -165,10 +163,7 @@ BEGIN
 			m.awayid,
 			m.betstatus,
 			ISNULL(m.IsNeutral, 0) AS IsNeutral,
-			CASE
-				WHEN b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
-				ELSE ''
-			END AS BetCheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread,
@@ -234,10 +229,7 @@ BEGIN
 			m.awayid,
 			m.betstatus,
 			ISNULL(m.IsNeutral, 0) AS IsNeutral,
-			CASE
-				WHEN b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
-				ELSE ''
-			END AS BetCheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread,
@@ -303,10 +295,7 @@ BEGIN
 			m.awayid,
 			m.betstatus,
 			ISNULL(m.IsNeutral, 0) AS IsNeutral,
-			CASE
-				WHEN b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
-				ELSE ''
-			END AS BetCheck,
+			ISNULL(b.betcheck, '') AS BetCheck,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread,
