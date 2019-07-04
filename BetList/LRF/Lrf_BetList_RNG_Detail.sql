@@ -28,6 +28,7 @@ AS
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 109471]
 		- 20190401@Kos: Don't support Microgaming RNG Casino anymore [#Redmine: 107704]
 		- 20190524@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
+		- 20190704@Kos: Support Card Club [Redmine: #115449]
 
 	Parameters:
 		- @TransType
@@ -72,7 +73,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32)
+	WHERE ProductID IN (22, 24, 32, 34)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (StatusId TINYINT)
@@ -164,7 +165,7 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32) THEN brng.Additional
+				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
@@ -204,7 +205,7 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32) THEN brng.Additional
+				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
@@ -242,7 +243,7 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32) THEN brng.Additional
+				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				ELSE ''
 			END AS MatchCode
 		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
@@ -314,6 +315,7 @@ BEGIN
 		b.Ip,
 		b.TransDesc,
 		b.BetCheck,
+		b.MatchCode,
 		@Currency AS CurrencyId
 	FROM @tmpBettransRnG AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
