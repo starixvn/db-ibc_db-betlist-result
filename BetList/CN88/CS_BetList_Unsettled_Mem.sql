@@ -23,8 +23,8 @@ AS
 			- 2: All (Live, Non-Live, Mix Live & Non-Live)
 
 	Revisions:
-		- 20190331@Kos: Create new [Redmine: 109230]
-		
+		- 20190331@Kos: Create new [Redmine: #109230]
+		- 20190705@Kos: Fix bug Virtual Racing [Redmine: #116333]
 */
 
 BEGIN
@@ -259,7 +259,7 @@ BEGIN
 			AND b.statusID IN (0, 1)
 			AND (m.sporttype IS NULL OR m.sporttype IN (SELECT SportType FROM @SportType))
 			AND (l.sporttype IS NULL OR l.sporttype IN (SELECT SportType FROM @SportType))
-			AND (vr.sporttype IS NULL OR l.sporttype IN (SELECT SportType FROM @SportType))
+			AND (vr.sporttype IS NULL OR vr.sporttype IN (SELECT SportType FROM @SportType))
 			AND (@LiveIndicator = 2
 				OR (b.bettype IN (9, 29, 2799) AND b.livehomescore IN (	SELECT 0 WHERE @LiveIndicator = 0
 																UNION	SELECT 2 WHERE @LiveIndicator = 0
