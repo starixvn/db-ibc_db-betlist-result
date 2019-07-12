@@ -51,6 +51,7 @@ AS
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
 		- 20190520@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
+		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
 */
 
 BEGIN
@@ -342,6 +343,7 @@ BEGIN
 				b.TransId,
 				b.MatchCode,
 				b.Race,
+				b.EventDate,
 				b.LeagueId,
 				b.HomeId,
 				b.AwayId,

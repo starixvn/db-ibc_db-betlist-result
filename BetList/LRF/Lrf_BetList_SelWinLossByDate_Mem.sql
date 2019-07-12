@@ -114,6 +114,7 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20190520@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
+		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
 */
 
 BEGIN
@@ -3284,6 +3285,7 @@ BEGIN
 			b.MatchId,
 			b.MatchCode,
 			b.Race,
+			b.EventDate,
 			b.HomeId,
 			b.AwayId,
 			b.BetStatus,

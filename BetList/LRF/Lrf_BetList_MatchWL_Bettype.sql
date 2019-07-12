@@ -73,6 +73,7 @@ AS
 		- 20190521@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Change input param @Sort data type from VARCHAR(100) to NVARCHAR(50)
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
+		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
 */
 
 BEGIN
@@ -1000,6 +1001,7 @@ BEGIN
 		b.LeagueId,
 		b.TransId,
 		b.MatchCode,
+		b.EventDate,
 		b.HomeId,
 		b.AwayId,
 		b.Hdp1,

@@ -50,6 +50,7 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20190521@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Don't return column ShowTime anymore
+		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -862,6 +863,7 @@ BEGIN
 			b.LeagueId,
 			b.TransId,
 			b.MatchCode,
+			b.EventDate,
 			b.HomeId,
 			b.AwayId,
 			b.Hdp1,
