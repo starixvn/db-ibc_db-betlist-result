@@ -47,6 +47,7 @@ AS
 		- 20190521@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Change input param @Sort data type from VARCHAR(100) to NVARCHAR(50)
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
+		- 20190715@Kos: Hotfix - Error in sorting [#Redmine: 116889]
 */
 
 BEGIN
@@ -569,7 +570,11 @@ BEGIN
 	DECLARE @Sql NVARCHAR(1000)
 
 	SET @Sql = 
-		'SELECT
+		'DECLARE @Today SMALLDATETIME
+
+		SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
+
+		SELECT
 			tmp.RowNum,
 			tmp.TransId,
 			tmp.RefNo,
