@@ -3,6 +3,8 @@
 ALTER PROCEDURE [dbo].[CS_BetList_TotalBets_Parlay]
 	@CustId			INT,
 	@RoleId			TINYINT,
+	@SubAccId		INT			= 0,
+	@IsAllDownline	BIT			= 0,
 	@Sport			SMALLINT	= 0,
 	@StakeCondition TINYINT		= 1,
 	@Stake			MONEY		= 0,
@@ -20,6 +22,10 @@ AS
 			- 2: Agent
 			- 3: Master
 			- 4: Super
+		- @SubAccId: Sub Account ID
+		- @IsAllDownline:
+			- 0: Not view all downline of CustId
+			- 1: View all downline of CustId
 		- @Sport:
 			- 0: All
 			- 1: Soccer only
@@ -41,7 +47,8 @@ AS
 
 	Revisions:
 		- 20190319@Kos: Create new [Redmine: 109230]
-		
+		- 20190716@Kos: Support subaccount permission [Redmine: #116825]
+					- Add new param @SubAccId, @IsAllDownline
 */
 
 BEGIN
@@ -52,6 +59,7 @@ BEGIN
 		RefNo			BIGINT,
 		CustId			INT,
 		Username		NVARCHAR(50),
+		DownlineCustId	INT,
 		BetType			SMALLINT,
 		BetId			BIGINT,
 		BetTeam			NVARCHAR(20),
@@ -104,6 +112,7 @@ BEGIN
 			b.refno,
 			b.custid,
 			b.username,
+			b.custid AS DownlineCustId,
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
 			b.betteam,
@@ -163,6 +172,7 @@ BEGIN
 			b.refno,
 			b.custid,
 			b.username,
+			b.recommend AS DownlineCustId,
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
 			b.betteam,
@@ -222,6 +232,7 @@ BEGIN
 			b.refno,
 			b.custid,
 			b.username,
+			b.mrecommend AS DownlineCustId,
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
 			b.betteam,
@@ -269,6 +280,20 @@ BEGIN
 			AND ((@StakeCondition = 0 AND b.Stake = @Stake)
 				OR (@StakeCondition = 1 AND b.Stake > @Stake)
 				OR (@StakeCondition = 2 AND b.Stake < @Stake))
+	END
+
+	SET @SubAccId = ISNULL(@SubAccId, 0)
+
+	IF @SubAccId <> 0 AND @IsAllDownline = 0
+	BEGIN
+		DECLARE @DownlineList TABLE (CustId INT)
+
+		INSERT INTO @DownlineList (CustId)
+		SELECT DownlineId
+		FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId)
+
+		DELETE FROM @MemBetTicket
+		WHERE DownlineCustId NOT IN (SELECT CustId FROM @DownlineList)
 	END
 
 	DECLARE @TicketPayout TABLE (

@@ -3,6 +3,8 @@
 ALTER PROCEDURE [dbo].[CS_Monitor_BetList]
 	@CustId				INT,
 	@RoleId				TINYINT,
+	@SubAccId			INT				= 0,
+	@IsAllDownline		BIT				= 0,
 	@SportTypeGroup		TINYINT			= 0,
 	@StakeList			VARCHAR(MAX),
 	@Market				VARCHAR(10)		= '',
@@ -23,6 +25,10 @@ AS
 			- 2: Agent
 			- 3: Master
 			- 4: Super
+		- @SubAccId: Sub Account ID
+		- @IsAllDownline:
+			- 0: Not view all downline of CustId
+			- 1: View all downline of CustId
 		- @StakeList: XML format (0: =, 1: >, 2: <)
 			- All Sports: '<ROOT><SportTypeGroup Id="0" Condition="0" Stake="50"/></ROOT>'
 			- Per Sports: '<ROOT>
@@ -47,6 +53,8 @@ AS
 	Revisions:
 		- 20190405@Kos: Create new [Redmine: #111245]
 		- 20190606@Kos: Remove unused code [Redmine: #114242]
+		- 20190716@Kos: Support subaccount permission [Redmine: #116825]
+					- Add new param @SubAccId, @IsAllDownline
 */
 
 BEGIN
@@ -57,6 +65,7 @@ BEGIN
 		RefNo				BIGINT,
 		CustId				INT,
 		Username			NVARCHAR(50),
+		DownlineCustId		INT,
 		BetType				SMALLINT,
 		BetId				BIGINT,
 		BetTeam				NVARCHAR(20),
@@ -102,6 +111,7 @@ BEGIN
 				RefNo,
 				CustId,
 				Username,
+				DownlineCustId,
 				BetType,
 				BetId,
 				BetTeam,
@@ -133,6 +143,7 @@ BEGIN
 				b.refno,
 				b.custid,
 				b.username,
+				b.custid AS DownlineCustId,
 				b.bettype,
 				ISNULL(b.betid, 0) AS BetId,
 				b.betteam,
@@ -171,6 +182,7 @@ BEGIN
 				RefNo,
 				CustId,
 				Username,
+				DownlineCustId,
 				BetType,
 				BetId,
 				BetTeam,
@@ -202,6 +214,7 @@ BEGIN
 				b.refno,
 				b.custid,
 				b.username,
+				b.recommend AS DownlineCustId,
 				b.bettype,
 				ISNULL(b.betid, 0) AS BetId,
 				b.betteam,
@@ -241,6 +254,7 @@ BEGIN
 				RefNo,
 				CustId,
 				Username,
+				DownlineCustId,
 				BetType,
 				BetId,
 				BetTeam,
@@ -272,6 +286,7 @@ BEGIN
 				b.refno,
 				b.custid,
 				b.username,
+				b.mrecommend AS DownlineCustId,
 				b.bettype,
 				ISNULL(b.betid, 0) AS BetId,
 				b.betteam,
@@ -302,6 +317,20 @@ BEGIN
 			WHERE b.srecommend = @CustId
 				AND b.statusID IN (0, 1)
 				AND b.transid > @MinTransId
+		END
+
+		SET @SubAccId = ISNULL(@SubAccId, 0)
+
+		IF @SubAccId <> 0 AND @IsAllDownline = 0
+		BEGIN
+			DECLARE @DownlineList TABLE (CustId INT)
+
+			INSERT INTO @DownlineList (CustId)
+			SELECT DownlineId
+			FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId)
+
+			DELETE FROM @MemBetTicket
+			WHERE DownlineCustId NOT IN (SELECT CustId FROM @DownlineList)
 		END
 
 		IF EXISTS (SELECT 1 FROM @MemBetTicket)
