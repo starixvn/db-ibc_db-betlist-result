@@ -99,6 +99,7 @@ AS
 		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
 		- 20190611@Kos: Support Card Club [#Redmine: 107645]
 					- Don't support Poker Games anymore
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 
 	Param's Explanation:
 		• @FromDate = @winlostdate
@@ -464,9 +465,10 @@ BEGIN
 				0 finalodds,
 				0 finalodds2,
 				b.oddstype,
-				CASE 
+				CASE
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-					ELSE b.status 
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
+					ELSE b.status
 				END AS status,
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
@@ -517,6 +519,7 @@ BEGIN
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.winlostdate = @Date
 				AND s.eventtype = 1
 				AND b.bettype <> 10

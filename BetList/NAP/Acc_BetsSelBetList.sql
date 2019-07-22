@@ -125,6 +125,7 @@ AS
 					- Add new param @IsCN88 BIT
 		- 20190611@Kos: Support Card Club [#Redmine: 107645]
 					- Don't support Poker Games anymore
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 */
 
 BEGIN
@@ -309,6 +310,7 @@ BEGIN
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 					WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 					WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS status,
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -378,6 +380,7 @@ BEGIN
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.custid = @CustId
 				AND b.matchid > 0
 				AND s.EventType = 1

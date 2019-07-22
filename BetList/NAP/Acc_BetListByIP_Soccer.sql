@@ -49,6 +49,7 @@ AS
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190503@Kos: Show match KO time for single ticket [#Redmine: 112092]
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 
 	Param's Explanation:
 		• @fromdate = @winlostdate
@@ -406,7 +407,9 @@ BEGIN
 				b.odds,
 				b.modds,
 				b.oddstype,
-				CASE WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				CASE
+					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status 
 				END AS status,
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -458,6 +461,7 @@ BEGIN
 			FROM dbo.bettrans AS b WITH (NOLOCK) 
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.creator
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.winlostdate = @Date
 				AND b.bettype < 19001
 				AND b.bettype NOT IN (10, 904)	--20120626@Elodie: exclude outright from sportbook
