@@ -84,6 +84,7 @@ AS
 		- 20190611@Kos: Support Card Club [Redmine: #107645]
 					- Don't support Poker Games anymore
 					- Remove param @Language
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 
 	Param's Explanation:
 		+ @TransType:
@@ -554,6 +555,7 @@ BEGIN
 											THEN 'Waiting'
 										ELSE b.status
 									END
+								WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 								ELSE b.status
 							END
 					,SettlementStatus = CASE
@@ -719,15 +721,16 @@ BEGIN
 									ELSE '' END
 					,Currency = b.currencyname
 				FROM @Tickets AS c
-					INNER JOIN dbo.bettrans AS b WITH(NOLOCK, INDEX=PK_bettrans) ON b.transid = c.transid
-					LEFT JOIN dbo.match AS m WITH(NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') AND b.matchid = m.matchid
-					LEFT JOIN dbo.bettransm AS bm WITH(NOLOCK) ON c.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
+					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
+					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') AND b.matchid = m.matchid
+					LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON c.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 					LEFT JOIN @temp_bettransX AS x ON c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet') AND c.Winlostdate >= @Yesterday AND x.RefNo = c.transid
-					LEFT JOIN dbo.outright AS o WITH(NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
-					LEFT JOIN dbo.League AS l WITH(NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
-					LEFT JOIN dbo.VSOutright AS vo WITH(NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
-					LEFT JOIN dbo.VSRaceInfo AS vr WITH(NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
-					LEFT JOIN dbo.Match3rd AS m3 WITH(NOLOCK) ON c.Product IN ('BF') AND b.matchid = m3.Match3rdId
+					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
+					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
+					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
+					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
+					LEFT JOIN dbo.Match3rd AS m3 WITH (NOLOCK) ON c.Product IN ('BF') AND b.matchid = m3.Match3rdId
+					LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 
 				-- Virtual Sports Racing
 				INSERT INTO @BettransDetail

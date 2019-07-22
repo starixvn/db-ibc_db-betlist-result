@@ -16,10 +16,11 @@ AS
 		- 20160623@Percy: Remove WITH recompile [RedmineID: #58288]
 		- 20180802@Patrick: indexes revolution [RedmineID: #98757]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 
 	Parameter's Explanation:
 		- @CustId : agent's ID
-		- @TransId: lastest transid 
+		- @TransId: latest transid 
 		- @LimitRowCount: max record return
 */
 
@@ -44,6 +45,7 @@ BEGIN
 		b.stake,
 		CASE
 			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+			WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 			ELSE b.status
 		END AS status,
 		b.betteam,
@@ -52,15 +54,16 @@ BEGIN
 		ISNULL(b.oddsspread, 0) AS OddsSpread,
 		ISNULL(b.ExtraInfo, '') AS ExtraInfo
 	FROM dbo.bettrans AS b WITH (NOLOCK)
+		LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 	WHERE b.recommend = @CustId
 		AND b.statusID IN (0, 1)
 		AND b.transid > @TransId
 		AND b.bettype IN (1, 7, 301, 303)
 	ORDER BY b.transid DESC
 END
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_HDP] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_HDP] TO [bodbDownlineNetView]

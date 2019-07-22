@@ -3,7 +3,7 @@
 ALTER PROCEDURE [dbo].[Age_Monitor_BetlistSel_Ag_AllBettypes]
 	@CustId			INT,
 	@TransId		BIGINT	= 0,
-	@LimitRowCount	INT		= 20 
+	@LimitRowCount	INT		= 20
 AS
 
 /*
@@ -26,12 +26,13 @@ AS
 		- 20180802@Patrick: indexes revolution [RedmineID: #98757]
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 
 	Parameter's Explanation:
 		- @CustId: agent's ID
-		- @TransId: lastest transid
+		- @TransId: latest transid
 		- @LimitRowCount: max record return
-*/ 
+*/
 
 BEGIN
 	SET NOCOUNT ON
@@ -77,6 +78,7 @@ BEGIN
 						THEN 'Waiting'
 					ELSE b.status
 				END
+			WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 			ELSE b.status
 		END AS status,
 		b.betteam,
@@ -87,6 +89,7 @@ BEGIN
 		ISNULL(b.oddsspread, 0) AS OddsSpread,
 		ISNULL(b.ExtraInfo, '') AS ExtraInfo
 	FROM dbo.bettrans AS b WITH (NOLOCK)
+		LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 	WHERE b.recommend = @CustId 
 		AND b.transid > @TransId
 		AND b.statusID IN (0, 1)
@@ -94,9 +97,9 @@ BEGIN
 		AND EXISTS (SELECT TOP 1 1 FROM __bettypeList AS s WHERE b.bettype = s.Bettype)
 	ORDER BY b.transid DESC
 END
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_AllBettypes] TO [bodbDownlineNet] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_AllBettypes] TO [bodbDownlineNetView] AS [dbo]

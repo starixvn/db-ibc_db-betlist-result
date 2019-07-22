@@ -35,6 +35,7 @@ AS
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -113,6 +114,281 @@ BEGIN
 				0 Sporttype
 				, b.custid
 				, b.Username
+				, b.bettype
+				, 0 LeagueID
+				, b.refno
+				, b.transid
+				, b.betid
+				, '' MatchCode
+				, '' Race
+				, '' AS EventDate
+				, b.matchid
+				, 0 HomeID
+				, 0 AwayID
+				, '' AS BetStatus
+				, b.hdp1
+				, b.hdp2
+				, b.odds
+				, b.modds
+				, CASE
+					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
+						CASE
+							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+										WHERE bm.custid = b.custid
+											AND bm.refno = b.refno
+											AND (bm.status = 'waiting'
+												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+								THEN 'Waiting'
+							ELSE b.status
+						END
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
+					ELSE b.status
+				END AS Status
+				, 0 AS SettlementStatus
+				, b.stake
+				, b.actual_stake
+				, b.transdate
+				, b.betteam
+				, b.apositiontaking
+				, b.mpositiontaking
+				, b.spositiontaking
+				, b.tpositiontaking
+				, b.discount AS Adiscount --Agent
+				, b.adiscount AS Mdiscount --Master
+				, b.sdiscount AS Sdiscount --Super
+				, b.liveindicator
+				, b.livehomescore
+				, b.liveawayscore
+				, b.ip
+				, CONVERT(BIT, 0) AS IsNeutral
+				, b.oddstype
+				, '' showtime
+				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+				, b.betcheck
+				, '' AS TransDesc
+				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
+				, bt.ProductID
+				, bt.EventType
+			FROM dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
+			WHERE b.recommend = @CustId AND b.statusID IN (0, 1)
+		END
+	
+		IF @RoleId = 3
+		BEGIN
+			INSERT INTO @Data
+			SELECT 
+				0 Sporttype
+				, b.custid
+				, b.Username
+				, b.bettype
+				, 0 LeagueID
+				, b.refno
+				, b.transid
+				, b.betid
+				, '' MatchCode
+				, '' Race
+				, '' AS EventDate
+				, b.matchid
+				, 0 HomeID
+				, 0 AwayID
+				, '' AS BetStatus
+				, b.hdp1
+				, b.hdp2
+				, b.odds
+				, b.modds
+				, CASE
+					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
+						CASE
+							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+										WHERE bm.custid = b.custid
+											AND bm.refno = b.refno
+											AND (bm.status = 'waiting'
+												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+								THEN 'Waiting'
+							ELSE b.status
+						END
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
+					ELSE b.status
+				END AS Status
+				, 0 AS SettlementStatus
+				, b.Stake
+				, b.actual_stake
+				, b.Transdate
+				, b.Betteam
+				, b.APositiontaking
+				, b.MPositiontaking
+				, b.SPositiontaking
+				, b.tpositiontaking
+				, b.discount AS Adiscount --Agent
+				, b.adiscount AS Mdiscount --Master
+				, b.sdiscount AS Sdiscount --Super
+				, b.Liveindicator
+				, b.Livehomescore
+				, b.Liveawayscore
+				, b.IP
+				, CONVERT(BIT,0) IsNeutral
+				, b.oddstype
+				, '' showtime
+				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+				, b.betcheck
+				, '' AS TransDesc
+				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
+				, bt.ProductID
+				, bt.EventType
+			FROM dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
+			WHERE b.mrecommend = @CustId AND b.statusID IN (0, 1)
+		END
+	
+		IF @RoleId = 4
+		BEGIN
+			INSERT INTO @Data
+			SELECT 
+				0 Sporttype
+				, b.custid
+				, b.Username
+				, b.bettype
+				, 0 LeagueID
+				, b.refno
+				, b.transid
+				, b.betid
+				, '' MatchCode
+				, '' Race
+				, '' AS EventDate
+				, b.matchid
+				, 0 HomeID
+				, 0 AwayID
+				, '' AS BetStatus
+				, b.hdp1
+				, b.hdp2
+				, b.odds
+				, b.modds
+				, CASE
+					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
+						CASE
+							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+										WHERE bm.custid = b.custid
+											AND bm.refno = b.refno
+											AND (bm.status = 'waiting'
+												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+								THEN 'Waiting'
+							ELSE b.status
+						END
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
+					ELSE b.status
+				END AS Status
+				, 0 AS SettlementStatus
+				, b.stake
+				, b.actual_stake
+				, b.Transdate
+				, b.Betteam
+				, b.APositiontaking
+				, b.MPositiontaking
+				, b.SPositiontaking
+				, b.tpositiontaking
+				, b.discount AS Adiscount --Agent
+				, b.adiscount AS Mdiscount --Master
+				, b.sdiscount AS Sdiscount --Super
+				, b.Liveindicator
+				, b.Livehomescore
+				, b.Liveawayscore
+				, b.IP
+				, CONVERT(BIT,0) IsNeutral
+				, b.oddstype
+				, '' showtime
+				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+				, b.BetCheck
+				, '' AS TransDesc
+				, CASE WHEN bt.SubProduct IN('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
+				, bt.ProductID
+				, bt.EventType
+			FROM dbo.bettrans b WITH (NOLOCK)
+				INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
+			WHERE b.srecommend = @CustId
+				AND b.statusID IN (0, 1)
+		END
+	END
+	ELSE
+	BEGIN
+		IF @RoleId = 2
+		BEGIN
+			INSERT INTO @Data
+			SELECT
+				0 Sporttype
+				, b.custid
+				, b.Username
+				, b.bettype
+				, 0 LeagueID
+				, b.refno
+				, b.transid
+				, b.betid
+				, '' MatchCode
+				, '' Race
+				, '' AS EventDate
+				, b.matchid
+				, 0 HomeID
+				, 0 AwayID
+				, '' AS BetStatus
+				, b.hdp1
+				, b.hdp2
+				, b.Odds
+				, b.Modds
+				, CASE
+					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
+					ELSE b.status
+				END AS status
+				, 0 AS SettlementStatus
+				, b.Stake
+				, b.actual_stake
+				, b.transdate
+				, b.betteam
+				, b.APositiontaking
+				, b.MPositiontaking
+				, b.SPositiontaking
+				, b.tpositiontaking
+				, b.discount AS Adiscount --Agent
+				, b.adiscount AS Mdiscount --Master
+				, b.sdiscount AS Sdiscount --Super
+				, b.Liveindicator
+				, b.Livehomescore
+				, b.Liveawayscore
+				, b.IP
+				, CONVERT(BIT,0) IsNeutral
+				, b.oddstype
+				, '' showtime
+				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+				, b.BetCheck
+				, ''transdesc
+				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
+				, bt.productid
+				, bt.eventtype
+			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_recommend)
+				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
+			WHERE b.recommend = @CustId
+				AND b.statusID IN (0, 1)
+				AND b.matchid = @MatchId
+		END
+	
+		IF @RoleId = 3
+		BEGIN
+			INSERT INTO @Data
+			SELECT 
+				0 Sporttype
+				, b.custid
+				, b.Username
 				, b.Bettype
 				, 0 LeagueID
 				, b.refno
@@ -130,223 +406,15 @@ BEGIN
 				, b.Odds
 				, b.Modds
 				, CASE
-					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
-						CASE
-							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
-										WHERE bm.custid = b.custid
-											AND bm.refno = b.refno
-											AND (bm.status = 'waiting'
-												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
-								THEN 'Waiting'
-							ELSE b.status
-						END
-					ELSE b.status
-				END AS Status
-				, 0 AS SettlementStatus
-				, b.Stake
-				, b.actual_stake
-				, b.Transdate
-				, b.Betteam
-				, b.APositiontaking
-				, b.MPositiontaking
-				, b.SPositiontaking
-				, b.tpositiontaking
-				, b.discount AS Adiscount --Agent
-				, b.adiscount AS Mdiscount --Master
-				, b.sdiscount AS Sdiscount --Super
-				, b.liveindicator
-				, b.livehomescore
-				, b.liveawayscore
-				, b.ip
-				,CONVERT(BIT,0) IsNeutral
-				, b.oddstype
-				, '' showtime
-				,CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
-				, b.betcheck
-				, '' AS TransDesc
-				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
-				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
-				, bt.ProductID
-				, bt.EventType
-			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-			WHERE b.recommend = @CustId
-				AND b.statusID IN (0, 1)
-		END
-	
-		IF @RoleId = 3
-		BEGIN
-			INSERT INTO @Data
-			SELECT 
-				0 Sporttype
-				, b.custid
-				, b.Username
-				, b.bettype
-				, 0 LeagueID
-				, b.refno
-				, b.TransID
-				, b.BetID
-				, '' MatchCode
-				, '' Race
-				, '' AS EventDate
-				, b.matchid
-				, 0 HomeID
-				, 0 AwayID
-				, '' AS BetStatus
-				, b.hdp1
-				, b.hdp2
-				, b.odds
-				, b.modds
-				, CASE
-					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
-						CASE
-							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
-										WHERE bm.custid = b.custid
-											AND bm.refno = b.refno
-											AND (bm.status = 'waiting'
-												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
-								THEN 'Waiting'
-							ELSE b.status
-						END
-					ELSE b.status
-				END AS Status
-				, 0 AS SettlementStatus
-				, b.Stake
-				, b.actual_stake
-				, b.Transdate
-				, b.Betteam
-				, b.APositiontaking
-				, b.MPositiontaking
-				, b.SPositiontaking
-				, b.tpositiontaking
-				, b.discount AS Adiscount --Agent
-				, b.adiscount AS Mdiscount --Master
-				, b.sdiscount AS Sdiscount --Super
-				, b.Liveindicator
-				, b.Livehomescore
-				, b.Liveawayscore
-				, b.IP
-				,CONVERT(BIT,0) IsNeutral
-				, b.oddstype
-				, '' showtime
-				,CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
-				, b.betcheck
-				, '' AS TransDesc
-				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
-				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
-				, bt.ProductID
-				, bt.EventType
-			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-			WHERE b.mrecommend = @CustId
-				AND b.statusID IN (0, 1)
-		END
-	
-		IF @RoleId = 4
-		BEGIN
-			INSERT INTO @Data
-			SELECT 
-				0 Sporttype
-				, b.custid
-				, b.Username
-				, b.Bettype
-				, 0 LeagueID
-				, b.refno
-				, b.TransID
-				, b.BetID
-				, '' MatchCode
-				, '' Race
-				, '' AS EventDate
-				, b.matchid
-				, 0 HomeID
-				, 0 AwayID
-				, '' AS BetStatus
-				, b.hdp1
-				, b.hdp2
-				, b.odds
-				, b.modds
-				, CASE
-					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
-						CASE
-							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
-										WHERE bm.custid = b.custid
-											AND bm.refno = b.refno
-											AND (bm.status = 'waiting'
-												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
-								THEN 'Waiting'
-							ELSE b.status
-						END
-					ELSE b.status
-				END AS Status
-				, 0 AS SettlementStatus
-				, b.Stake
-				, b.actual_stake
-				, b.Transdate
-				, b.Betteam
-				, b.APositiontaking
-				, b.MPositiontaking
-				, b.SPositiontaking
-				, b.tpositiontaking
-				, b.discount AS Adiscount --Agent
-				, b.adiscount AS Mdiscount --Master
-				, b.sdiscount AS Sdiscount --Super
-				, b.Liveindicator
-				, b.Livehomescore
-				, b.Liveawayscore
-				, b.IP
-				,CONVERT(BIT,0) IsNeutral
-				, b.oddstype
-				, '' showtime
-				,CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
-				, b.BetCheck
-				, '' AS TransDesc
-				, CASE WHEN bt.SubProduct IN('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
-				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
-				, bt.ProductID
-				, bt.EventType
-			FROM dbo.bettrans b WITH (NOLOCK)
-				INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
-			WHERE b.srecommend = @CustId
-				AND b.statusID IN (0, 1)
-		END
-	END
-	ELSE
-	BEGIN
-		IF @RoleId = 2
-		BEGIN
-			INSERT INTO @Data
-			SELECT
-				0 Sporttype
-				, b.custid
-				, b.Username
-				, b.Bettype
-				, 0 LeagueID
-				, b.refno
-				, b.TransID
-				, b.BetID
-				, '' MatchCode
-				, '' Race
-				, '' AS EventDate
-				, b.matchid
-				, 0 HomeID
-				, 0 AwayID
-				, '' AS BetStatus
-				, b.hdp1
-				, b.hdp2
-				, b.Odds
-				, b.Modds
-				,CASE
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS status
 				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
-				, b.Transdate
-				, b.Betteam
+				, b.transdate
+				, b.betteam
 				, b.APositiontaking
 				, b.MPositiontaking
 				, b.SPositiontaking
@@ -358,78 +426,19 @@ BEGIN
 				, b.Livehomescore
 				, b.Liveawayscore
 				, b.IP
-				,CONVERT(BIT,0) IsNeutral
+				, CONVERT(BIT,0) IsNeutral
 				, b.oddstype
 				, '' showtime
-				,CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 				, b.BetCheck
 				, ''transdesc
 				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
-			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_betrunning_recommend)
+			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_mrecommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-			WHERE b.recommend = @CustId
-				AND b.statusID IN (0, 1)
-				AND b.matchid = @MatchId
-		END
-	
-		IF @RoleId = 3
-		BEGIN
-			INSERT INTO @Data
-			SELECT 
-				0 Sporttype
-				, b.custid
-				, b.Username
-				, b.Bettype
-				, 0 LeagueID
-				, b.refno
-				, b.TransID
-				, b.BetID
-				, '' MatchCode
-				, '' Race
-				, '' AS EventDate
-				, b.matchid
-				, 0 HomeID
-				, 0 AwayID
-				, '' AS BetStatus
-				, b.hdp1
-				, b.hdp2
-				, b.Odds
-				, b.Modds
-				,CASE
-					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-					ELSE b.status
-				END AS status
-				, 0 AS SettlementStatus
-				, b.Stake
-				, b.actual_stake
-				, b.Transdate
-				, b.Betteam
-				, b.APositiontaking
-				, b.MPositiontaking
-				, b.SPositiontaking
-				, b.tpositiontaking
-				, b.discount AS Adiscount --Agent
-				, b.adiscount AS Mdiscount --Master
-				, b.sdiscount AS Sdiscount --Super
-				, b.Liveindicator
-				, b.Livehomescore
-				, b.Liveawayscore
-				, b.IP
-				,CONVERT(BIT,0) IsNeutral
-				, b.oddstype
-				, '' showtime
-				,CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
-				, b.BetCheck
-				, ''transdesc
-				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
-				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
-				, bt.productid
-				, bt.eventtype
-			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX=IX_betrunning_mrecommend)
-				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.mrecommend = @CustId
 				AND b.statusID IN (0, 1)
 				AND b.matchid = @MatchId
@@ -445,8 +454,8 @@ BEGIN
 				, b.Bettype
 				, 0 LeagueID
 				, b.refno
-				, b.TransID
-				, b.BetID
+				, b.transid
+				, b.betid
 				, '' MatchCode
 				, '' Race
 				, '' AS EventDate
@@ -460,13 +469,14 @@ BEGIN
 				, b.Modds
 				, CASE
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS status
 				, 0 AS SettlementStatus
 				, b.Stake
 				, b.actual_stake
-				, b.Transdate
-				, b.Betteam
+				, b.transdate
+				, b.betteam
 				, b.APositiontaking
 				, b.MPositiontaking
 				, b.SPositiontaking
@@ -478,18 +488,19 @@ BEGIN
 				, b.Livehomescore
 				, b.Liveawayscore
 				, b.IP
-				,CONVERT(BIT,0) IsNeutral
+				, CONVERT(BIT,0) IsNeutral
 				, b.oddstype
 				, '' showtime
-				,CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 				, b.BetCheck
 				, ''transdesc
 				, CASE WHEN bt.SubProduct IN('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
-			FROM dbo.bettrans b WITH (NOLOCK, INDEX=IX_betrunning_srecommend)
-				INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
+			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_srecommend)
+				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.srecommend = @CustId
 				AND b.statusID IN (0, 1)
 				AND b.matchid = @MatchId

@@ -111,6 +111,7 @@ AS
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 		- 20190611@Kos: Support Card Club [Redmine: #107645]
 					- Don't support Poker Games anymore
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 */
 
 BEGIN
@@ -119,7 +120,7 @@ BEGIN
 	IF @CustId IS NULL
 	BEGIN
 		SELECT @CustId = custid
-		FROM dbo.customer WITH (NOLOCK)
+		FROM dbo.Customer WITH (NOLOCK)
 		WHERE username = @Username
 	END
 
@@ -527,6 +528,7 @@ BEGIN
 				,AwayId = m.awayid
 				,[Status] = CASE
 								WHEN b.[Status] = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+								WHEN b.[Status] = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 								ELSE b.[Status]
 							END
 				,SettlementStatus = ISNULL(m.SettlementStatus, 0)
@@ -536,6 +538,7 @@ BEGIN
 				,ExtraInfo = ISNULL(b.ExtraInfo, '')
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.TableID = 1 -- bettrans
 				AND b.ProductID = 1
 				AND b.EventType = 1

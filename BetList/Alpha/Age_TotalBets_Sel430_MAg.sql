@@ -1,8 +1,8 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_TotalBets_Sel430_MAg]
 	@CustID	INT
- AS
+AS
 
 /*
 	Created: 20110915@TOM
@@ -22,6 +22,7 @@ ALTER PROCEDURE [dbo].[Age_TotalBets_Sel430_MAg]
 		- 20170721@Kos: Include bet type 416 Half Time/Full Time Correct Score (own) [Redmine: #53153]
 		- 20181008@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Remove param @Language
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 */
 
 BEGIN
@@ -44,6 +45,7 @@ BEGIN
 		b.modds,
 		CASE
 			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+			WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 			ELSE b.status
 		END AS status,
 		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -66,21 +68,19 @@ BEGIN
 		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 		b.oddstype,
 		ISNULL(b.transdesc, '') AS transdesc
- 	FROM dbo.bettrans AS b WITH (NOLOCK)
+	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 	WHERE b.mrecommend = @custid
 		AND b.bettype IN (4, 30, 152, 165, 166, 405, 413, 414, 416)
 		AND b.statusID IN (0, 1)
 	ORDER BY b.transid DESC
 END
-
-
-
-
 GO
+
+
+
 GRANT EXECUTE ON [dbo].[Age_TotalBets_Sel430_MAg] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_TotalBets_Sel430_MAg] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_TotalBets_Sel430_MAg] TO vnteam
 GO

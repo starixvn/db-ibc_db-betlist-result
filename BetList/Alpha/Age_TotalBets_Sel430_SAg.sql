@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_TotalBets_Sel430_SAg]
 	@CustId	INT
@@ -14,19 +14,20 @@ AS
 		- 21Nov2011@Johnson: get matchid column
 		- 20111122@Sophia: Add Checktime and SecAcceptFlag to show status waiting or running
 		- 20111216@Sophia: Remove function f_GetOddsByBettype , f_GetChoice , f_ShowOddsByBettype
-		- 20121004@Johnson: get comstatus to check double comm losing 	
+		- 20121004@Johnson: get comstatus to check double comm losing
 		- 20140611@Dom: Add new bettype ht correct score 152
 		- 20150407@Cody: Integrate new 60 bet types from BetRadar [Redmine: #32734]
 		- 20151203@Kos: Include bet type 405 2H Correct Score [Redmine: #47959]
 		- 20170721@Kos: Include bet type 416 Half Time/Full Time Correct Score (own) [Redmine: #53153]
 		- 20181008@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Remove param @Language
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT 
+	SELECT
 		m.sporttype,
 		b.username,
 		m.leagueid,
@@ -41,8 +42,9 @@ BEGIN
 		b.hdp2,
 		b.odds,
 		b.modds,
-		CASE 
+		CASE
 			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+			WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 			ELSE b.status
 		END AS status,
 		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -65,19 +67,18 @@ BEGIN
 		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 		b.oddstype,
 		ISNULL(b.transdesc, '') AS transdesc
- 	FROM dbo.bettrans AS b WITH (NOLOCK)
+	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 	WHERE b.srecommend = @custid
 		AND b.bettype IN (4, 30, 152, 165, 166, 405, 413, 414, 416)
 		AND b.statusID IN (0, 1)
 	ORDER BY b.transid DESC
 END
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Age_TotalBets_Sel430_SAg] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_TotalBets_Sel430_SAg] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_TotalBets_Sel430_SAg] TO vnteam
 GO

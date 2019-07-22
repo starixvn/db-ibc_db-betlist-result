@@ -85,6 +85,7 @@ AS
 		- 20190611@Kos: Support Card Club [Redmine: #107645]
 					- Don't support Poker Games anymore
 					- Remove param @Language
+		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 */
 
 BEGIN
@@ -492,6 +493,7 @@ BEGIN
 									THEN 'Waiting'
 								ELSE b.status
 							END
+						WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 						ELSE b.status
 					END
 			,SettlementStatus = CASE
@@ -638,6 +640,7 @@ BEGIN
 			LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 			LEFT JOIN dbo.Match3rd AS m3 WITH (NOLOCK) ON c.Product IN ('BF') AND b.matchid = m3.Match3rdId
+			LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 		WHERE c.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet') OR c.WinLostDate < @Yesterday
 
 		INSERT INTO #MemBetTicket
@@ -714,7 +717,7 @@ BEGIN
 			,ExtraInfo = ''
 			,Currency = b.currencyname
 		FROM @Tickets AS c
-			INNER JOIN dbo.bettrans AS b WITH (NOLOCK, INDEX=PK_bettrans) ON b.transid = c.TransId
+			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.TransId
 			INNER JOIN @temp_bettransX AS x ON x.RefNo = c.TransId
 		WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet') AND c.WinLostDate >= @Yesterday
 
