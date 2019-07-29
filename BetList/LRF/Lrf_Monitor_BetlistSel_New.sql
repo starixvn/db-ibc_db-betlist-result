@@ -53,6 +53,7 @@ AS
 		- 20181210@Kos: Support new platform 'c' Mobile China View [#Redmine: 106088]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 		- 20190520@Kos: Support more base currency [#Redmine: 112531]
+		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -249,6 +250,7 @@ BEGIN
 								THEN 'Waiting'
 							ELSE b.status
 						END
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS status,
 				b.betteam,
@@ -273,6 +275,7 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
 				INNER JOIN @TempAg AS a ON b.Recommend = a.CustId AND b.Currency = a.Currency
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.statusID IN (0, 1)
 				AND b.transid > @TransId
 				AND (@BetFrom = 0
@@ -375,6 +378,7 @@ BEGIN
 				b.betfrom,
 				CASE
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS status,
 				b.betteam,
@@ -399,6 +403,7 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
 				INNER JOIN @TempAg AS a ON b.Recommend = a.CustId AND b.Currency = a.Currency
+				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.statusID IN (0, 1)
 				AND b.transid > @TransId
 				AND b.bettype NOT IN (9, 29)

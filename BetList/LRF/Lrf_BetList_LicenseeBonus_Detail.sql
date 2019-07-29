@@ -20,6 +20,7 @@ AS
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106553]
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
+		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
@@ -153,6 +154,7 @@ BEGIN
 			b.oddstype,
 			CASE
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 				ELSE b.status
 			END AS status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -189,6 +191,7 @@ BEGIN
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @WinLostDate
 			AND b.recommend IN (SELECT CustId FROM @TempAg)

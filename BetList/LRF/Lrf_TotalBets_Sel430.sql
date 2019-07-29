@@ -37,6 +37,7 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20190520@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
+		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 */
 
 BEGIN
@@ -120,6 +121,7 @@ BEGIN
 		b.modds,
 		CASE
 			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+			WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 			ELSE b.status
 		END AS status,
 		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -153,6 +155,7 @@ BEGIN
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 	WHERE b.recommend IN (SELECT CustId FROM @TempAg)
 		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND b.bettype IN (4, 30, 152, 165, 166, 405, 413, 414, 416)

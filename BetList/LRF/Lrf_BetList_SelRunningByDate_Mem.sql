@@ -103,6 +103,7 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20190527@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
+		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 */
 
 BEGIN
@@ -282,6 +283,7 @@ BEGIN
 		CASE
 			WHEN b.bettype NOT IN (9, 29, 10) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1
 				AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+			WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 			ELSE b.status
 		END AS status,
 		b.stake,
@@ -313,6 +315,7 @@ BEGIN
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+		LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 	WHERE b.transdate >= @FromDate AND b.transdate <= @ToDate
 		AND b.custid = @CustID
 		AND sbt.ProductId = 1
@@ -504,6 +507,7 @@ BEGIN
 			b.modds,
 			CASE
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 				ELSE b.status
 			END AS status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -540,6 +544,7 @@ BEGIN
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+			LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 		WHERE
 			b.transdate >= @FromDate AND b.transdate <= @ToDate
 			AND b.custid = @CustID
