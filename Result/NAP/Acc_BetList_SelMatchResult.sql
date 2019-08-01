@@ -44,6 +44,7 @@ AS
 					- Move eventstatus data transform to web (no change for Tennis)
 		- 20181122@Kos: Support E-Sports phase 2 [Redmine: #101047]
 		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #110599]
+		- 20190806@Kos: Support PH AIO phase 4b [Redmine: #115235]
 */
 
 BEGIN
@@ -143,8 +144,8 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
-						AND (d.ResourceID <> '08'
-							OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+						AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+							OR d.HomeValue LIKE '%a%'
 							OR d.HomeValue LIKE '%h%')
 						AND d.ResourceId LIKE f.ResourceID)
 					OR (@SportType = 2
@@ -285,8 +286,8 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
-						AND (d.ResourceID <> '08'
-							OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+						AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+							OR d.HomeValue LIKE '%a%'
 							OR d.HomeValue LIKE '%h%')
 						AND d.ResourceID LIKE f.ResourceID)
 					OR (@SportType = 2
@@ -427,8 +428,8 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
-						AND (d.ResourceID <> '08'
-							OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+						AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+							OR d.HomeValue LIKE '%a%'
 							OR d.HomeValue LIKE '%h%')
 						AND d.ResourceId LIKE f.ResourceID)
 					OR (@SportType = 2

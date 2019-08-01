@@ -34,6 +34,7 @@ AS
 		- 20181204@Kos: Move to DBACC [Redmine: #105787]
 		- 20181206@Kos: Support E-Sports phase 2 [Redmine: #101047]
 		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #110599]
+		- 20190805@Kos: Support PH AIO 4b [Redmine: #115235]
 */
 
 BEGIN
@@ -168,8 +169,8 @@ BEGIN
 						END = LEN(d.ResourceID))
 				OR (p.SportType = 1			-- Soccer
 					AND d.SettlementStatusID > 0
-					AND (d.ResourceID <> '08'
-						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
 				OR (p.SportType = 2			-- Basketball
@@ -306,8 +307,8 @@ BEGIN
 						END = LEN(d.ResourceId))
 				OR (p.SportType = 1			-- Soccer
 					AND d.SettlementStatusID > 0
-					AND (d.ResourceID <> '08'
-						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
 				OR (p.SportType = 2			-- Basketball
@@ -447,8 +448,8 @@ BEGIN
 						END = LEN(d.ResourceId))
 				OR (p.SportType = 1			-- Soccer
 					AND d.SettlementStatusID > 0
-					AND (d.ResourceID <> '08'
-						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
 				OR (p.SportType = 2			-- Basketball
