@@ -14,6 +14,7 @@ AS
 
 	Revisions:
 		- 20190304@Kos: Create new [Redmine: 109230]
+		- 20190807@Kos: Support PH AIO phase 4b [Redmine: #116865]
 */
 
 BEGIN
@@ -108,8 +109,8 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
-						AND (d.ResourceID <> '08'
-							OR d.HomeValue LIKE '%a%'	-- Return '08' - Goal Sequence only if at least a goal scored
+						AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+							OR d.HomeValue LIKE '%a%'
 							OR d.HomeValue LIKE '%h%')
 						AND d.ResourceID LIKE f.ResourceID)
 					OR (@SportType = 2		-- Basketball
@@ -245,8 +246,8 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
-						AND (d.ResourceID <> '08'
-							OR d.HomeValue LIKE '%a%'	-- Return '08' - Goal Sequence only if at least a goal scored
+						AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+							OR d.HomeValue LIKE '%a%'
 							OR d.HomeValue LIKE '%h%')
 						AND d.ResourceId LIKE f.ResourceID)
 					OR (@SportType = 2		-- Basketball
@@ -385,8 +386,8 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
-						AND (d.ResourceID <> '08'
-							OR d.HomeValue LIKE '%a%'	-- Return '08' - Goal Sequence only if at least a goal scored
+						AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+							OR d.HomeValue LIKE '%a%'
 							OR d.HomeValue LIKE '%h%')
 						AND d.ResourceId LIKE f.ResourceID)
 					OR (@SportType = 2		-- Basketball

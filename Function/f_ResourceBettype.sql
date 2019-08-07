@@ -20,6 +20,8 @@ AS
 		- 20180320@Kos: Support Fast Market 2 [Redmine: #90708]
 		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20180906@Kos: Support E-Sports phase 2 [Redmine: #101047]
+		- 20190801@Kos: Support PH AIO phase 4b [Redmine: #115235]
+					- Change for "Next Goal" [Redmine: #115235]
 */
 
 BEGIN
@@ -30,9 +32,6 @@ BEGIN
 	---
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 2, 'Goal Record', 180, '180%')
-
-	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
-	VALUES (1, 2, 'Goal Record', 22, '160%')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 2, 'Goal Record', 160, '160%')
@@ -194,13 +193,13 @@ BEGIN
 
 	-- 3. PH All In One phase 2b
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
-	VALUES (1, 1, 'Goals', 422, '08')
+	VALUES (1, 0, 'None', 422, '08')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
-	VALUES (1, 1, 'Goals', 423, '08')
+	VALUES (1, 0, 'None', 423, '08')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
-	VALUES (1, 1, 'Goals', 425, '08')
+	VALUES (1, 0, 'None', 425, '08')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 1, 'Goals', 424, '424')
@@ -340,6 +339,40 @@ BEGIN
 	SELECT 43, 1, 'E-Sports', 9073, '9073%'	UNION ALL
 	SELECT 43, 1, 'E-Sports', 9074, '9074%'	UNION ALL
 	SELECT 43, 1, 'E-Sports', 9075, '9075%'
+
+	-- 8. PH All In One phase 4b & Next Goal
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 486, '08')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 488, '08')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 490, '08')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 491, '08')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 487, '09')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 489, '09')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 490, '09')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 492, '09')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 5, 'Corners', 479, '479')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 5, 'Corners', 481, '481')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 22, '08')
 
 	RETURN
 END

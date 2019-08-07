@@ -23,6 +23,8 @@ AS
 		- 20181003@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Move eventstatus data transform to web (no change for Tennis)
 		- 20181122@Kos: Support E-Sports phase 2 [Redmine: #101047]
+		- 20190805@Kos: Support PH AIO 4b [Redmine: #115235]
+					- Change for "Next Goal" [Redmine: #115235]
 */
 
 BEGIN
@@ -99,11 +101,17 @@ BEGIN
 			WHERE MatchID = @MatchId
 				AND ((@SportType = 1
 						AND SettlementStatusID > 0
-						AND (ResourceId NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-							OR (ResourceId = '08'
-								AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-						AND ResourceID NOT LIKE '217%'
+						AND (ResourceID NOT IN ('08', '09')
+							OR HomeValue LIKE '%a%'
+							OR HomeValue LIKE '%h%')
+						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+						AND ResourceID NOT LIKE '160%'
+						AND ResourceID NOT LIKE '164%'
+						AND ResourceID NOT LIKE '169%'
+						AND ResourceID NOT LIKE '180%'
 						AND ResourceID NOT LIKE '216%'
+						AND ResourceID NOT LIKE '217%'
 						AND ResourceID NOT LIKE '221%'
 						AND ResourceID NOT LIKE '222%'
 						AND ResourceID NOT LIKE '223%'
@@ -212,11 +220,17 @@ BEGIN
 			WHERE MatchID = @MatchId
 				AND ((@SportType = 1
 						AND SettlementStatusID > 0
-						AND (ResourceId NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-							OR (ResourceId = '08'
-								AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-						AND ResourceID NOT LIKE '217%'
+						AND (ResourceID NOT IN ('08', '09')
+							OR HomeValue LIKE '%a%'
+							OR HomeValue LIKE '%h%')
+						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+						AND ResourceID NOT LIKE '160%'
+						AND ResourceID NOT LIKE '164%'
+						AND ResourceID NOT LIKE '169%'
+						AND ResourceID NOT LIKE '180%'
 						AND ResourceID NOT LIKE '216%'
+						AND ResourceID NOT LIKE '217%'
 						AND ResourceID NOT LIKE '221%'
 						AND ResourceID NOT LIKE '222%'
 						AND ResourceID NOT LIKE '223%'

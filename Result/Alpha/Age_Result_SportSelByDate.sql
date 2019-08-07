@@ -32,6 +32,8 @@ AS
 		- 20180320@Kos: Exclude Fast Market 2 [Redmine: #90708]
 		- 20180410@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20180907@Kos: Support E-Sports phase 2 [Redmine: #101047]
+		- 20190805@Kos: Support PH AIO 4b [Redmine: #115235]
+					- Change for "Next Goal" [Redmine: #115235]
 */
 
 BEGIN
@@ -73,11 +75,17 @@ BEGIN
 								OR EXISTS (	SELECT 1
 											FROM dbo.ResultDetail AS BR WITH (NOLOCK)
 											WHERE BR.SettlementStatusID > 0
-												AND (BR.ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-													OR (BR.ResourceID = '08'
-														AND (BR.HomeValue LIKE '%a%' OR BR.HomeValue LIKE '%h%')))
-												AND BR.ResourceID NOT LIKE '217%'
+												AND (BR.ResourceID NOT IN ('08', '09')
+													OR BR.HomeValue LIKE '%a%'
+													OR BR.HomeValue LIKE '%h%')
+												AND BR.ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+													'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+												AND BR.ResourceID NOT LIKE '160%'
+												AND BR.ResourceID NOT LIKE '164%'
+												AND BR.ResourceID NOT LIKE '169%'
+												AND BR.ResourceID NOT LIKE '180%'
 												AND BR.ResourceID NOT LIKE '216%'
+												AND BR.ResourceID NOT LIKE '217%'
 												AND BR.ResourceID NOT LIKE '221%'
 												AND BR.ResourceID NOT LIKE '222%'
 												AND BR.ResourceID NOT LIKE '223%'
@@ -158,18 +166,24 @@ BEGIN
 							OR EXISTS (	SELECT 1
 										FROM dbo.ResultDetail14 AS BR WITH (NOLOCK)
 										WHERE BR.SettlementStatusID > 0
-											AND (BR.ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-												OR (BR.ResourceID = '08'
-													AND (BR.HomeValue LIKE '%a%' OR BR.HomeValue LIKE '%h%')))
-											AND BR.ResourceID NOT LIKE '217%'
-											AND BR.ResourceID NOT LIKE '216%'
-											AND BR.ResourceID NOT LIKE '221%'
-											AND BR.ResourceID NOT LIKE '222%'
-											AND BR.ResourceID NOT LIKE '223%'
-											AND BR.ResourceID NOT LIKE '224%'
-											AND BR.ResourceID NOT LIKE '225%'
-											AND BR.ResourceID NOT LIKE '226%'
-											AND BR.ResourceID NOT LIKE '227%'
+												AND (BR.ResourceID NOT IN ('08', '09')
+													OR BR.HomeValue LIKE '%a%'
+													OR BR.HomeValue LIKE '%h%')
+												AND BR.ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+													'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+												AND BR.ResourceID NOT LIKE '160%'
+												AND BR.ResourceID NOT LIKE '164%'
+												AND BR.ResourceID NOT LIKE '169%'
+												AND BR.ResourceID NOT LIKE '180%'
+												AND BR.ResourceID NOT LIKE '216%'
+												AND BR.ResourceID NOT LIKE '217%'
+												AND BR.ResourceID NOT LIKE '221%'
+												AND BR.ResourceID NOT LIKE '222%'
+												AND BR.ResourceID NOT LIKE '223%'
+												AND BR.ResourceID NOT LIKE '224%'
+												AND BR.ResourceID NOT LIKE '225%'
+												AND BR.ResourceID NOT LIKE '226%'
+												AND BR.ResourceID NOT LIKE '227%'
 											AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											AND m.matchid = BR.MatchId
 										)

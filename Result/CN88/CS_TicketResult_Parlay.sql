@@ -11,6 +11,7 @@ AS
 	Original: Age_BetList_SelMatchResultParlay
 	Revisions:
 		- 20190304@Kos: Create new [Redmine: 109230]
+		- 20190807@Kos: Support PH AIO phase 4b [Redmine: #116865]
 */
 
 BEGIN
@@ -145,8 +146,8 @@ BEGIN
 						END = LEN(d.ResourceID))
 				OR (p.SportType = 1			-- Soccer
 					AND d.SettlementStatusID > 0
-					AND (d.ResourceID <> '08'
-						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
 				OR (p.SportType = 2			-- Basketball
@@ -283,8 +284,8 @@ BEGIN
 						END = LEN(d.ResourceId))
 				OR (p.SportType = 1			-- Soccer
 					AND d.SettlementStatusID > 0
-					AND (d.ResourceID <> '08'
-						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
 				OR (p.SportType = 2			-- Basketball
@@ -424,8 +425,8 @@ BEGIN
 						END = LEN(d.ResourceId))
 				OR (p.SportType = 1			-- Soccer
 					AND d.SettlementStatusID > 0
-					AND (d.ResourceID <> '08'
-						OR d.HomeValue LIKE '%a%'		-- Return '08' - Goal Sequence only if at least a goal scored
+					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
 				OR (p.SportType = 2			-- Basketball
