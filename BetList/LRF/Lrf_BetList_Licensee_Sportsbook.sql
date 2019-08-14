@@ -53,6 +53,7 @@ AS
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
+		- 20190829@Kos: Support PH AIO 4b [Redmine: #118300]
 */
 
 BEGIN
@@ -216,7 +217,7 @@ BEGIN
 			FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', 'SB', @IsTest)
 			WHERE @BetType = 0
 				OR BetType IN (	SELECT @BetType
-								UNION SELECT GroupTypeId FROM dbo.f_GroupBettype() WHERE Bettype = @BetType)
+								UNION SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType)
 		END
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)

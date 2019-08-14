@@ -42,6 +42,7 @@ AS
 		- 20190313@Kos: Change param @LiveIndicator from TINYINT to VARCHAR(10) [Redmine: #108717]
 					- Add new param @Username VARCHAR(50)
 		- 20190422@Kos: Enhance performance for searching too many members [Redmine: #112313]
+		- 20190829@Kos: Support PH AIO 4b [Redmine: #118300]
 */
 
 
@@ -98,7 +99,7 @@ BEGIN
 			FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
 			WHERE (@BetType = 0
 				OR BetType IN (	SELECT @BetType
-								UNION SELECT GroupTypeId FROM dbo.f_GroupBettype() WHERE Bettype = @BetType))
+								UNION SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType))
 				AND BetType NOT IN (901, 902, 903, 904, 913, 914)
 				AND BetType NOT BETWEEN 801 AND 899
 		END
