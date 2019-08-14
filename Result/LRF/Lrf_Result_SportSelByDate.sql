@@ -36,6 +36,8 @@ AS
 		- 20180412@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
+		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
+					- Change for "Next Goal" [Redmine: #115235]
 
 	Sample test case:
 		exec Lrf_Result_SportSelByDate @EventDate='2013-10-06 00:00:00',@licenseeid=1
@@ -67,11 +69,17 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetail WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-						AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-							OR (ResourceID = '08'
-								AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-						AND ResourceID NOT LIKE '217%'
+						AND (ResourceID NOT IN ('08', '09')
+							OR HomeValue LIKE '%a%'
+							OR HomeValue LIKE '%h%')
+						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+						AND ResourceID NOT LIKE '160%'
+						AND ResourceID NOT LIKE '164%'
+						AND ResourceID NOT LIKE '169%'
+						AND ResourceID NOT LIKE '180%'
 						AND ResourceID NOT LIKE '216%'
+						AND ResourceID NOT LIKE '217%'
 						AND ResourceID NOT LIKE '221%'
 						AND ResourceID NOT LIKE '222%'
 						AND ResourceID NOT LIKE '223%'
@@ -133,11 +141,17 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetail14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-						AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-							OR (ResourceID = '08'
-								AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-						AND ResourceID NOT LIKE '217%'
+						AND (ResourceID NOT IN ('08', '09')
+							OR HomeValue LIKE '%a%'
+							OR HomeValue LIKE '%h%')
+						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+						AND ResourceID NOT LIKE '160%'
+						AND ResourceID NOT LIKE '164%'
+						AND ResourceID NOT LIKE '169%'
+						AND ResourceID NOT LIKE '180%'
 						AND ResourceID NOT LIKE '216%'
+						AND ResourceID NOT LIKE '217%'
 						AND ResourceID NOT LIKE '221%'
 						AND ResourceID NOT LIKE '222%'
 						AND ResourceID NOT LIKE '223%'
@@ -189,14 +203,14 @@ BEGIN
 	FROM dbo.Sports WITH (NOLOCK)
 	WHERE SportType IN (SELECT SportType FROM @Sport)
 		AND (SportType <> 161 OR EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 2))
-	ORDER BY SportType,
-		SportName
+	ORDER BY SportType ASC,
+		SportName ASC
 
 	DROP TABLE #LicenseeProduct
 END
-
-
-
 GO
+
+
+
 GRANT EXECUTE ON [dbo].Lrf_Result_SportSelByDate TO [bodbLicenseeNet]
 GO

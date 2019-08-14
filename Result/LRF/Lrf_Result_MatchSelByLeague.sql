@@ -43,6 +43,8 @@ AS
 		- 20181015@Kos: Support 2 new statuses Result Pending and Under Settlement [#Redmine: 102428]
 					- Move eventstatus data transform to web (no change for Tennis)
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
+		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
+					- Change for "Next Goal" [Redmine: #115235]
 
 	Sample call
 		exec Lrf_Result_MatchSelByLeague @FromDate='2014-10-15 00:00:00',@SportType=5,@LeagueID=0,@IsShowAll=1
@@ -128,11 +130,17 @@ BEGIN
 				FROM dbo.ResultDetail WITH (NOLOCK)
 				WHERE SettlementStatusID > 0
 					AND ((@SportType = 1
-							AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-								OR (ResourceID = '08'
-									AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-							AND ResourceID NOT LIKE '217%'
+							AND (ResourceID NOT IN ('08', '09')
+								OR HomeValue LIKE '%a%'
+								OR HomeValue LIKE '%h%')
+							AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+								'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+							AND ResourceID NOT LIKE '160%'
+							AND ResourceID NOT LIKE '164%'
+							AND ResourceID NOT LIKE '169%'
+							AND ResourceID NOT LIKE '180%'
 							AND ResourceID NOT LIKE '216%'
+							AND ResourceID NOT LIKE '217%'
 							AND ResourceID NOT LIKE '221%'
 							AND ResourceID NOT LIKE '222%'
 							AND ResourceID NOT LIKE '223%'
@@ -146,11 +154,17 @@ BEGIN
 				FROM dbo.ResultDetail14 WITH (NOLOCK)
 				WHERE SettlementStatusID > 0 
 					AND ((@SportType = 1
-							AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-								OR (ResourceID = '08'
-									AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-							AND ResourceID NOT LIKE '217%'
+							AND (ResourceID NOT IN ('08', '09')
+								OR HomeValue LIKE '%a%'
+								OR HomeValue LIKE '%h%')
+							AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+								'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+							AND ResourceID NOT LIKE '160%'
+							AND ResourceID NOT LIKE '164%'
+							AND ResourceID NOT LIKE '169%'
+							AND ResourceID NOT LIKE '180%'
 							AND ResourceID NOT LIKE '216%'
+							AND ResourceID NOT LIKE '217%'
 							AND ResourceID NOT LIKE '221%'
 							AND ResourceID NOT LIKE '222%'
 							AND ResourceID NOT LIKE '223%'
@@ -266,9 +280,9 @@ BEGIN
 				AND ( m.eventstatus NOT IN ('internal', 'closed')
 					OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-			ORDER BY m.eventdate,
-				m.sporttype,
-				m.leagueid
+			ORDER BY m.eventdate ASC,
+				m.sporttype ASC,
+				m.leagueid ASC
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
 	ELSE 
@@ -343,9 +357,9 @@ BEGIN
 				AND ( m.eventstatus NOT IN ('internal', 'closed')
 					OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-			ORDER BY m.eventdate,
-				m.sporttype,
-				m.leagueid
+			ORDER BY m.eventdate ASC,
+				m.sporttype ASC,
+				m.leagueid ASC
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
 	END
@@ -387,11 +401,17 @@ BEGIN
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND ( (@SportType = 1
 						AND SettlementStatusID > 0
-						AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-							OR (ResourceID = '08'
-								AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-						AND ResourceID NOT LIKE '217%'
+						AND (ResourceID NOT IN ('08', '09')
+							OR HomeValue LIKE '%a%'
+							OR HomeValue LIKE '%h%')
+						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+						AND ResourceID NOT LIKE '160%'
+						AND ResourceID NOT LIKE '164%'
+						AND ResourceID NOT LIKE '169%'
+						AND ResourceID NOT LIKE '180%'
 						AND ResourceID NOT LIKE '216%'
+						AND ResourceID NOT LIKE '217%'
 						AND ResourceID NOT LIKE '221%'
 						AND ResourceID NOT LIKE '222%'
 						AND ResourceID NOT LIKE '223%'
@@ -419,8 +439,8 @@ BEGIN
 			FROM dbo.ResultDetailES WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
 		ELSE IF @SportType = 193
 		BEGIN
@@ -436,8 +456,8 @@ BEGIN
 			FROM dbo.ResultDetail3rd WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND SettlementStatusID > 0
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
 	END
 	ELSE
@@ -457,11 +477,17 @@ BEGIN
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND ( (@SportType = 1
 						AND SettlementStatusID > 0
-						AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-							OR (ResourceID = '08'
-								AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-						AND ResourceID NOT LIKE '217%'
+						AND (ResourceID NOT IN ('08', '09')
+							OR HomeValue LIKE '%a%'
+							OR HomeValue LIKE '%h%')
+						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+						AND ResourceID NOT LIKE '160%'
+						AND ResourceID NOT LIKE '164%'
+						AND ResourceID NOT LIKE '169%'
+						AND ResourceID NOT LIKE '180%'
 						AND ResourceID NOT LIKE '216%'
+						AND ResourceID NOT LIKE '217%'
 						AND ResourceID NOT LIKE '221%'
 						AND ResourceID NOT LIKE '222%'
 						AND ResourceID NOT LIKE '223%'
@@ -474,8 +500,8 @@ BEGIN
 					OR (@SportType = 2
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
 		ELSE IF @SportType = 43
 		BEGIN
@@ -491,8 +517,8 @@ BEGIN
 			FROM dbo.ResultDetailES14 WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
 		ELSE IF @SportType = 193
 		BEGIN
@@ -508,8 +534,8 @@ BEGIN
 			FROM dbo.ResultDetail3rd14 WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND SettlementStatusID > 0
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
 	END
 

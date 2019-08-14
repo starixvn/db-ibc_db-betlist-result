@@ -32,6 +32,8 @@ AS
 		- 20180412@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20180806@Kos: Don't support Racing anymore [#Redmine: 99378]
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
+		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
+					- Change for "Next Goal" [Redmine: #115235]
 */
 
 BEGIN
@@ -58,11 +60,17 @@ BEGIN
 								FROM dbo.ResultDetail WITH (NOLOCK) 
 								WHERE SettlementStatusID > 0
 									AND ((@SportType = 1
-											AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-												OR (ResourceID = '08'
-													AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-											AND ResourceID NOT LIKE '217%'
+											AND (ResourceID NOT IN ('08', '09')
+												OR HomeValue LIKE '%a%'
+												OR HomeValue LIKE '%h%')
+											AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+												'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+											AND ResourceID NOT LIKE '160%'
+											AND ResourceID NOT LIKE '164%'
+											AND ResourceID NOT LIKE '169%'
+											AND ResourceID NOT LIKE '180%'
 											AND ResourceID NOT LIKE '216%'
+											AND ResourceID NOT LIKE '217%'
 											AND ResourceID NOT LIKE '221%'
 											AND ResourceID NOT LIKE '222%'
 											AND ResourceID NOT LIKE '223%'
@@ -89,8 +97,8 @@ BEGIN
 				) AS m
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
-			ORDER BY m.sporttype,
-				l.leaguename
+			ORDER BY m.sporttype ASC,
+				l.leaguename ASC
 		END
 		ELSE IF @SportType = 193
 		BEGIN
@@ -154,11 +162,17 @@ BEGIN
 								FROM dbo.ResultDetail14 WITH (NOLOCK) 
 								WHERE SettlementStatusID > 0
 									AND ((@SportType = 1
-											AND (ResourceID NOT IN ('00', '01', '08', '14F', '14L', '127F', '127L')
-												OR (ResourceID = '08'
-													AND (HomeValue LIKE '%a%' OR HomeValue LIKE '%h%')))
-											AND ResourceID NOT LIKE '217%'
+											AND (ResourceID NOT IN ('08', '09')
+												OR HomeValue LIKE '%a%'
+												OR HomeValue LIKE '%h%')
+											AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
+												'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+											AND ResourceID NOT LIKE '160%'
+											AND ResourceID NOT LIKE '164%'
+											AND ResourceID NOT LIKE '169%'
+											AND ResourceID NOT LIKE '180%'
 											AND ResourceID NOT LIKE '216%'
+											AND ResourceID NOT LIKE '217%'
 											AND ResourceID NOT LIKE '221%'
 											AND ResourceID NOT LIKE '222%'
 											AND ResourceID NOT LIKE '223%'
@@ -185,8 +199,8 @@ BEGIN
 				) AS m
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
-			ORDER BY m.sporttype,
-				l.leaguename
+			ORDER BY m.sporttype ASC,
+				l.leaguename ASC
 		END
 		ELSE IF @SportType = 193
 		BEGIN

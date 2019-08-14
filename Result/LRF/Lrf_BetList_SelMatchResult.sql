@@ -43,6 +43,7 @@ AS
 					- Move eventstatus data transform to web (no change for Tennis)
 		- 20181122@Kos: Support E-Sports 2 [#Redmine: 100721]
 		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #112376]
+		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
 
 		*******************
 		sample test case:
@@ -109,8 +110,8 @@ BEGIN
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId
-			ORDER BY m.eventdate,
-				m.matchcode
+			ORDER BY m.eventdate ASC,
+				m.matchcode ASC
 
 			-- Get sport type
 			SELECT @SportType = sporttype
@@ -151,9 +152,9 @@ BEGIN
 								OR d.ResourceID LIKE '225%'
 								OR d.ResourceID LIKE '226%'
 								OR d.ResourceID LIKE '227%')
-							AND (d.ResourceId NOT IN ('00', '01', '08')
-								OR (d.ResourceId = '08'
-									AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+							AND (d.ResourceId NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+								OR d.HomeValue LIKE '%a%'
+								OR d.HomeValue LIKE '%h%')
 							AND d.ResourceId LIKE f.ResourceID)
 						OR (@SportType = 2						-- Basketball
 							AND (LEN(d.ResourceId) = 2
@@ -161,7 +162,7 @@ BEGIN
 									AND d.ResourceId LIKE f.ResourceID
 									AND (@BetType NOT IN (606, 607, 613, 617)
 										OR d.ResourceId LIKE '%' + @ResourceId)))))
-				ORDER BY d.ResourceID
+				ORDER BY d.ResourceID ASC
 			END
 			ELSE IF @SportType = 43
 			BEGIN
@@ -181,7 +182,7 @@ BEGIN
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceId LIKE f.ResourceID
 							AND d.ResourceId LIKE '%' + @ResourceId))
-				ORDER BY d.ResourceID
+				ORDER BY d.ResourceID ASC
 			END
 			ELSE
 			BEGIN
@@ -203,7 +204,7 @@ BEGIN
 							OR (d.ResourceID LIKE f.ResourceID
 								AND (@BetType <> 2809
 									OR d.ResourceID LIKE '%' + @ResourceId))))
-				ORDER BY d.ResourceId
+				ORDER BY d.ResourceId ASC
 			END
 
 			RETURN
@@ -256,8 +257,8 @@ BEGIN
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId
-			ORDER BY m.eventdate,
-				m.matchcode
+			ORDER BY m.eventdate ASC,
+				m.matchcode ASC
 
 			-- Get sport type
 			SELECT @SportType = sporttype
@@ -298,9 +299,9 @@ BEGIN
 								OR d.ResourceID LIKE '225%'
 								OR d.ResourceID LIKE '226%'
 								OR d.ResourceID LIKE '227%')
-							AND (d.ResourceId NOT IN ('00', '01', '08')
-								OR (d.ResourceId = '08'
-									AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+							AND (d.ResourceId NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+								OR d.HomeValue LIKE '%a%'
+								OR d.HomeValue LIKE '%h%')
 							AND d.ResourceId LIKE f.ResourceID)
 						OR (@SportType = 2						-- Basketball
 							AND (LEN(d.ResourceId) = 2
@@ -308,7 +309,7 @@ BEGIN
 									AND d.ResourceId LIKE f.ResourceID
 									AND (@BetType NOT IN (606, 607, 613, 617)
 										OR d.ResourceId LIKE '%' + @ResourceId)))))
-				ORDER BY d.ResourceID
+				ORDER BY d.ResourceID ASC
 			END
 			ELSE IF @SportType = 43
 			BEGIN
@@ -328,7 +329,7 @@ BEGIN
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceId LIKE f.ResourceID
 							AND d.ResourceId LIKE '%' + @ResourceId))
-				ORDER BY d.ResourceID
+				ORDER BY d.ResourceID ASC
 			END
 			ELSE
 			BEGIN
@@ -350,7 +351,7 @@ BEGIN
 							OR (d.ResourceID LIKE f.ResourceID
 								AND (@BetType <> 2809
 									OR d.ResourceID LIKE '%' + @ResourceId))))
-				ORDER BY d.ResourceId
+				ORDER BY d.ResourceId ASC
 			END
 
 			RETURN
@@ -403,8 +404,8 @@ BEGIN
 				LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId
-			ORDER BY m.eventdate,
-				m.matchcode
+			ORDER BY m.eventdate ASC,
+				m.matchcode ASC
 
 			-- Get sport type
 			SELECT @SportType = Sporttype
@@ -445,9 +446,9 @@ BEGIN
 								OR d.ResourceID LIKE '225%'
 								OR d.ResourceID LIKE '226%'
 								OR d.ResourceID LIKE '227%')
-							AND (d.ResourceId NOT IN ('00', '01', '08')
-								OR (d.ResourceId = '08'
-									AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+							AND (d.ResourceId NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+								OR d.HomeValue LIKE '%a%'
+								OR d.HomeValue LIKE '%h%')
 							AND d.ResourceId LIKE f.ResourceID)
 						OR (@SportType = 2						-- Basketball
 							AND (LEN(d.ResourceId) = 2
@@ -455,7 +456,7 @@ BEGIN
 									AND d.ResourceId LIKE f.ResourceID
 									AND (@BetType NOT IN (606, 607, 613, 617)
 										OR d.ResourceId LIKE '%' + @ResourceId)))))
-				ORDER BY d.ResourceID
+				ORDER BY d.ResourceID ASC
 			END
 			ELSE IF @SportType = 43
 			BEGIN
@@ -475,7 +476,7 @@ BEGIN
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceId LIKE f.ResourceID
 							AND d.ResourceId LIKE '%' + @ResourceId))
-				ORDER BY d.ResourceID
+				ORDER BY d.ResourceID ASC
 			END
 			ELSE
 			BEGIN
@@ -497,7 +498,7 @@ BEGIN
 							OR (d.ResourceID LIKE f.ResourceID
 								AND (@BetType <> 2809
 									OR d.ResourceID LIKE '%' + @ResourceId))))
-				ORDER BY d.ResourceId
+				ORDER BY d.ResourceId ASC
 			END
 		END
 	END
@@ -539,7 +540,7 @@ BEGIN
 			FROM dbo.VSOutright AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventID = @MatchID AND (ISNULL(o.Placing, 0) <> 0)
-			ORDER BY o.Placing
+			ORDER BY o.Placing ASC
 		END
 		ELSE IF EXISTS (SELECT TOP(1) 1 FROM dbo.VSOutright14 WITH (NOLOCK) WHERE EventID = @MatchID)
 		BEGIN
@@ -561,7 +562,7 @@ BEGIN
 			FROM dbo.VSOutright14 AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventID = @MatchID AND (ISNULL(o.Placing, 0) <> 0)
-			ORDER BY o.Placing
+			ORDER BY o.Placing ASC
 		END
 		ELSE
 		BEGIN
@@ -583,7 +584,7 @@ BEGIN
 			FROM DBARC.bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventID = @MatchID AND (ISNULL(o.Placing, 0) <> 0)
-			ORDER BY o.Placing
+			ORDER BY o.Placing ASC
 		END
 
 		IF EXISTS (SELECT 1 FROM #tmpresult WHERE sporttype IN (181, 182, 183, 184, 185))
@@ -624,9 +625,9 @@ BEGIN
 				INNER JOIN #DataSumVHR AS d2 ON d.kickofftime = d2.kickofftime
 			WHERE (d.place < 5 AND d.sporttype <> 183)
 				OR (d.place < 2 AND d.sporttype = 183)
-			ORDER BY d.MeetingId,
-				d.KickOffTime,
-				d.Place
+			ORDER BY d.MeetingId ASC,
+				d.KickOffTime ASC,
+				d.Place ASC
 
 			DROP TABLE #DataSumVHR
 		END
@@ -639,8 +640,6 @@ BEGIN
 	END
 END
 GO
-
-
 
 
 

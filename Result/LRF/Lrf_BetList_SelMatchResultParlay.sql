@@ -27,6 +27,7 @@ AS
 					- Move eventstatus data transform to web (no change for Tennis)
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #112376]
+		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
 */
 
 BEGIN
@@ -163,9 +164,9 @@ BEGIN
 						END = LEN(d.ResourceId))
 				OR (p.SportType = 1								-- Soccer
 					AND d.SettlementStatusID > 0
-					AND (d.ResourceID NOT IN ('00', '01', '08')
-						OR (d.ResourceID = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+					AND (d.ResourceId NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+						OR d.HomeValue LIKE '%a%'
+						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
 				OR (p.SportType = 2								-- Basketball
 					AND (LEN(d.ResourceId) = 2
@@ -303,9 +304,9 @@ BEGIN
 						END = LEN(d.ResourceId))
 				OR (p.SportType = 1								-- Soccer
 					AND d.SettlementStatusID > 0
-					AND (d.ResourceID NOT IN ('00', '01', '08')
-						OR (d.ResourceID = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+					AND (d.ResourceId NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+						OR d.HomeValue LIKE '%a%'
+						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
 				OR (p.SportType = 2								-- Basketball
 					AND (LEN(d.ResourceId) = 2
@@ -443,9 +444,9 @@ BEGIN
 						END = LEN(d.ResourceId))
 				OR (p.SportType = 1								-- Soccer
 					AND d.SettlementStatusID > 0
-					AND (d.ResourceID NOT IN ('00', '01', '08')
-						OR (d.ResourceID = '08'
-							AND (d.HomeValue LIKE '%a%' OR d.HomeValue LIKE '%h%')))
+					AND (d.ResourceId NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+						OR d.HomeValue LIKE '%a%'
+						OR d.HomeValue LIKE '%h%')
 					AND d.ResourceId LIKE f.ResourceID)
 				OR (p.SportType = 2								-- Basketball
 					AND (LEN(d.ResourceId) = 2
@@ -503,19 +504,17 @@ BEGIN
 
 	-- Get data
 	SELECT DISTINCT * FROM @tmpParlay
-	ORDER BY LeagueId,
-		BetType,
-		EventDate,
-		MatchCode
+	ORDER BY LeagueId ASC,
+		BetType ASC,
+		EventDate ASC,
+		MatchCode ASC
 
 	SELECT DISTINCT * FROM @tmpResultDetail
-	ORDER BY MatchId,
-		ResourceId
+	ORDER BY MatchId ASC,
+		ResourceId ASC
 END
-
-
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResultParlay] TO [bodbLicenseeNet]
 GO
