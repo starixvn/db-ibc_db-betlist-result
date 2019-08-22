@@ -1,12 +1,12 @@
 ﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CS_BetList_Unsettled_Mem]
-	@CustId			INT,
-	@FromDate		SMALLDATETIME,
-	@ToDate			SMALLDATETIME,
-	@SportTypeGroup	TINYINT			= 0,
-	@BetTypeGroup	SMALLINT		= 0,
-	@LiveIndicator	TINYINT			= 2
+	@CustId				INT,
+	@FromDate			SMALLDATETIME,
+	@ToDate				SMALLDATETIME,
+	@SportTypeGroups	VARCHAR(MAX)	= '0',
+	@BetTypeGroup		SMALLINT		= 0,
+	@LiveIndicator		TINYINT			= 2
 AS
 
 /*
@@ -27,6 +27,7 @@ AS
 		- 20190705@Kos: Fix bug Virtual Racing [Redmine: #116333]
 		- 20190711@Kos: Support PH AIO 4a [Redmine: 115866]
 		- 20190723@Kos: Support new status Pending [#Redmine: 116863]
+		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
 */
 
 BEGIN
@@ -113,14 +114,14 @@ BEGIN
 
 	INSERT INTO @SportType
 	SELECT DISTINCT SportType
-	FROM dbo.CS_f_SporttypeMatrix_Sel (0, @SportTypeGroup, @BetTypeGroup, @IsTest)
+	FROM dbo.CS_f_SporttypeMatrix_Sel (0, @SportTypeGroups, @BetTypeGroup, @IsTest)
 
 	INSERT INTO @BetType
 	SELECT DISTINCT
 		ProductID,
 		Bettype,
 		EventType
-	FROM dbo.CS_f_BettypeMatrix_Sel (0, @SportTypeGroup, @BetTypeGroup, @IsTest)
+	FROM dbo.CS_f_BettypeMatrix_Sel (0, @SportTypeGroups, @BetTypeGroup, @IsTest)
 
 	DECLARE @TempFromDate SMALLDATETIME
 	DECLARE @TempToDate SMALLDATETIME
@@ -192,7 +193,7 @@ BEGIN
 		AND s.ProductId IN (8, 28)
 
 	-- bettrans range
-	IF @SportTypeGroup = 0
+	IF @SportTypeGroups = '0'
 	BEGIN
 		INSERT INTO @Tickets (
 			TransId,

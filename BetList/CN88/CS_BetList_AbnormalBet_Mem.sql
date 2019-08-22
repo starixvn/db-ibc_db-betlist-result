@@ -1,13 +1,13 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CS_BetList_AbnormalBet_Mem]
-	@CustId			INT,
-	@FromDate		SMALLDATETIME,
-	@ToDate			SMALLDATETIME,
-	@MoveBetsDay	SMALLDATETIME,
-	@SportTypeGroup	TINYINT			= 0,
-	@BetTypeGroup	SMALLINT		= 0,
-	@LiveIndicator	TINYINT			= 2
+	@CustId				INT,
+	@FromDate			SMALLDATETIME,
+	@ToDate				SMALLDATETIME,
+	@MoveBetsDay		SMALLDATETIME,
+	@SportTypeGroups	VARCHAR(MAX)	= '0',
+	@BetTypeGroup		SMALLINT		= 0,
+	@LiveIndicator		TINYINT			= 2
 AS
 
 /*
@@ -23,6 +23,7 @@ AS
 
 	Revisions:
 		- 20190227@Kos: Create new [Redmine: 109230]
+		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
 */
 
 BEGIN
@@ -33,7 +34,7 @@ BEGIN
 		@FromDate = @FromDate,
 		@ToDate = @ToDate,
 		@MoveBetsDay = @MoveBetsDay,
-		@SportTypeGroup = @SportTypeGroup,
+		@SportTypeGroups = @SportTypeGroups,
 		@BetTypeGroup = @BetTypeGroup,
 		@LiveIndicator = @LiveIndicator,
 		@StatusIdList = '102',

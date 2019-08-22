@@ -1,14 +1,14 @@
 ﻿/*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CS_BetList_Settled_Mem_Old]
-	@CustId			INT,
-	@FromDate		SMALLDATETIME,
-	@ToDate			SMALLDATETIME,
-	@SportTypeGroup	TINYINT			= 0,
-	@BetTypeGroup	SMALLINT		= 0,
-	@LiveIndicator	TINYINT			= 2,
-	@StatusIdList	VARCHAR(100)	= '111,112,113',
-	@AbnormalBets	TINYINT			= 0
+	@CustId				INT,
+	@FromDate			SMALLDATETIME,
+	@ToDate				SMALLDATETIME,
+	@SportTypeGroups	VARCHAR(MAX)	= '0',
+	@BetTypeGroup		SMALLINT		= 0,
+	@LiveIndicator		TINYINT			= 2,
+	@StatusIdList		VARCHAR(100)	= '111,112,113',
+	@AbnormalBets		TINYINT			= 0
 AS
 
 /*
@@ -17,7 +17,7 @@ AS
 	DB: DBARC.bodb_Archive
 
 	Param's Explanation:
-		- @SportTypeGroup: Sport type group (0: ALL)
+		- @SportTypeGroups: Sport type group ('0': ALL)
 		- @BetTypeGroup: Bet type group (0: ALL)
 		- @LiveIndicator: 
 			- 0: Non-Live, Mix Live & Non-Live (System Parlay bettype 29)
@@ -39,6 +39,7 @@ AS
 		- 20190227@Kos: Create new [Redmine: 109230]
 		- 20190510@Kos: Fix bug for non-sport products [Redmine: 109521]
 		- 20190704@Kos: Support PH AIO 4a [Redmine: 115866]
+		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
 */
 
 BEGIN
@@ -130,19 +131,19 @@ BEGIN
 
 	INSERT INTO @SportType
 	SELECT DISTINCT SportType
-	FROM bodb02.dbo.CS_f_SporttypeMatrix_Sel (0, @SportTypeGroup, @BetTypeGroup, @IsTest)
+	FROM bodb02.dbo.CS_f_SporttypeMatrix_Sel (0, @SportTypeGroups, @BetTypeGroup, @IsTest)
 
 	INSERT INTO @BetType
 	SELECT DISTINCT
 		ProductID,
 		Bettype,
 		EventType
-	FROM bodb02.dbo.CS_f_BettypeMatrix_Sel (0, @SportTypeGroup, @BetTypeGroup, @IsTest)
+	FROM bodb02.dbo.CS_f_BettypeMatrix_Sel (0, @SportTypeGroups, @BetTypeGroup, @IsTest)
 
 	DECLARE @TempFromDate SMALLDATETIME
 	DECLARE @TempToDate SMALLDATETIME
 
-	IF @SportTypeGroup = 0
+	IF @SportTypeGroups = '0'
 	BEGIN
 		INSERT INTO @Tickets (
 			TransId,

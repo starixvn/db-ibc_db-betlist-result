@@ -1,12 +1,12 @@
 ﻿/*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CS_BetList_CancelledBet_Mem_Old]
-	@CustId			INT,
-	@FromDate		SMALLDATETIME,
-	@ToDate			SMALLDATETIME,
-	@SportTypeGroup	TINYINT			= 0,
-	@BetTypeGroup	SMALLINT		= 0,
-	@LiveIndicator	TINYINT			= 2
+	@CustId				INT,
+	@FromDate			SMALLDATETIME,
+	@ToDate				SMALLDATETIME,
+	@SportTypeGroups	VARCHAR(MAX)	= '0',
+	@BetTypeGroup		SMALLINT		= 0,
+	@LiveIndicator		TINYINT			= 2
 AS
 
 /*
@@ -22,6 +22,7 @@ AS
 
 	Revisions:
 		- 20190227@Kos: Create new [Redmine: 109230]
+		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
 */
 
 BEGIN
@@ -31,7 +32,7 @@ BEGIN
 		@CustId = @CustId,
 		@FromDate = @FromDate,
 		@ToDate = @ToDate,
-		@SportTypeGroup = @SportTypeGroup,
+		@SportTypeGroups = @SportTypeGroups,
 		@BetTypeGroup = @BetTypeGroup,
 		@LiveIndicator = @LiveIndicator,
 		@StatusIdList = '101,102,103',
