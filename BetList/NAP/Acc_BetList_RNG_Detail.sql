@@ -29,6 +29,7 @@ AS
 		- 20190321@Kos: Support Pragmatic Promotion Prize [#Redmine: 108117]
 		- 20190626@Kos: Change code to prevent wrong index using [#Redmine: 115624]
 		- 20190611@Kos: Support Card Club [#Redmine: 107645]
+		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 
 	Parameters:
 		- @TransType
@@ -42,7 +43,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix --
-	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club
+	-- Support RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -52,7 +53,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (17, 22, 24, 32, 34)
+	WHERE ProductID IN (22, 24, 32, 34)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)

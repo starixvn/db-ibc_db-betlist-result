@@ -1,10 +1,11 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Acc_BetList_SelBettype]
 	@CustId			INT,
-	@FromDate		DATETIME,
-	@ToDate			DATETIME,
-	@MoveBetsDay	DATETIME,
-	@BalanceUpDay	DATETIME
+	@FromDate		SMALLDATETIME,
+	@ToDate			SMALLDATETIME,
+	@MoveBetsDay	SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME
 AS
 
 /*
@@ -24,6 +25,7 @@ AS
 		- 20170315@Kos: Exclude bet type 913, 914 [#Redmine: 71963]
 		- 20171019@Kos: Include Waiting tickets in translog [#Redmine: 84961]
 		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 */
 
 BEGIN
@@ -31,8 +33,8 @@ BEGIN
 
 	DECLARE @BettypeTable TABLE (BetType INT)
 
-	DECLARE @TempFromDate DATETIME
-	DECLARE @TempToDate DATETIME
+	DECLARE @TempFromDate SMALLDATETIME
+	DECLARE @TempToDate SMALLDATETIME
 
 	IF @ToDate > @MoveBetsDay
 	BEGIN
@@ -104,18 +106,21 @@ BEGIN
 	DELETE @BettypeTable
 	WHERE BetType IN ( SELECT BetType FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId)
 
+	-- Don't support inactive products anymore
+	DELETE b
+	FROM @BettypeTable AS b
+	WHERE EXISTS (SELECT 1 FROM dbo.SportBettypeMatrix WITH (NOLOCK)
+				WHERE BetType = b.BetType
+					AND ProductID IN (2, 4, 7, 9, 13, 17, 19, 26, 30, 31, 33))
+
 	SELECT
 		typeid,
 		typenamee
 	FROM dbo.bettype AS bt WITH (NOLOCK)
 		INNER JOIN (SELECT DISTINCT BetType FROM @BettypeTable) btt ON bt.typeid = btt.BetType
 END
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Acc_BetList_SelBettype] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelBettype] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_SelBettype] TO [vnteam]
 GO
