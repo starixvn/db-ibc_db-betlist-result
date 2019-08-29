@@ -42,13 +42,14 @@ AS
 			- 0 - All: All
 			- 1 - Asia: d (mobile), g (MG Download only)
 			- 2 - China: a (dep-Singbet), z (dep2-SingBet)
-			- 3 - Euro: e (Europe), u (dep-Euro), y (dep2-Euro)
+			- 3 - Euro: e (Europe), u (dep-Euro)
 			- 4 - WAP: m (dep-wap)
-			- 5 - Smart Site: s (smartphone), l (dep-smart)
+			- 5 - Smart Site: l (dep-smart)
 			- 6 - Tablet: r (dep2-tablet)
 			- 7 - New Asia: x (dep2-Asia)
 			- 8 - Mobile App: o (dep-New Mobile APP)
 			- 9 - Mobile China View: c (dep-MCV)
+			- 10 - Deep Link: t (Licensee-Deeplink)
 		- @LiveIndicator:
 			- 0 : Non-live
 			- 1 : Live
@@ -66,6 +67,8 @@ AS
 		- 20190515@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
 		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
+		- 20190829@Kos: Support betfrom Deeplink 't' [Redmine: #115448]
+					- Remove betfrom 's' and 'y'
 */
 
 BEGIN
@@ -270,7 +273,7 @@ BEGIN
 		END
 		ELSE IF @Platform = 3
 		BEGIN
-			SET @BetFromList = 'e,u,y'
+			SET @BetFromList = 'e,u'
 		END
 		ELSE IF @Platform = 4
 		BEGIN
@@ -278,7 +281,7 @@ BEGIN
 		END
 		ELSE IF @Platform = 5
 		BEGIN
-			SET @BetFromList = 's,l'
+			SET @BetFromList = 'l'
 		END
 		ELSE IF @Platform = 6
 		BEGIN
@@ -295,6 +298,10 @@ BEGIN
 		ELSE IF @Platform = 9
 		BEGIN
 			SET @BetFromList = 'c'
+		END
+		ELSE IF @Platform = 10
+		BEGIN
+			SET @BetFromList = 't'
 		END
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)

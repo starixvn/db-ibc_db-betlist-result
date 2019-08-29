@@ -86,6 +86,8 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20190524@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
+		- 20190829@Kos: Support betfrom Deeplink 't' [Redmine: #115448]
+					- Remove betfrom 's' and 'y'
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -96,13 +98,14 @@ AS
 			- 0 - All: All
 			- 1 - Asia: d (mobile), g (MG Download only)
 			- 2 - China: a (dep-Singbet), z (dep2-SingBet)
-			- 3 - Euro: e (Europe), u (dep-Euro), y (dep2-Euro)
+			- 3 - Euro: e (Europe), u (dep-Euro)
 			- 4 - WAP: m (dep-wap)
-			- 5 - Smart Site: s (smartphone), l (dep-smart)
+			- 5 - Smart Site: l (dep-smart)
 			- 6 - Tablet: r (dep2-tablet)
 			- 7 - New Asia: x (dep2-Asia)
 			- 8 - Mobile App: o (dep-New Mobile APP)
 			- 9 - Mobile China View: c (dep-MCV)
+			- 10 - Deep Link: t (Licensee-Deeplink)
 
 	Sample call:
 		DECLARE @p17 INT
@@ -210,8 +213,7 @@ BEGIN
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT 'e' UNION ALL
-		SELECT 'u' UNION ALL
-		SELECT 'y'
+		SELECT 'u'
 	END
 
 	-- WAP
@@ -225,7 +227,6 @@ BEGIN
 	IF @PlatformType IN (0, 5)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT 's' UNION ALL
 		SELECT 'l'
 	END
 
@@ -255,6 +256,13 @@ BEGIN
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT 'c'
+	END
+
+	-- Deeplink
+	IF @PlatformType IN (0, 10)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT 't'
 	END
 
 	DECLARE @Data AS TABLE (

@@ -65,16 +65,19 @@ AS
 		- @SportId = 999 -> Parlay and System Parlay
 		- @LiveIndicator (0 : non live, 1 : live , 2 : mix non live & live)
 		- @IncludeBetFrom: 1: show column betfrom, 0: hide
-		- @BetFrom: 0 - All: All
-					1 - Asia: d (mobile), g (MG Download only)
-					2 - China: a (dep-Singbet), z (dep2-SingBet)
-					3 - Euro: e (Europe), u (dep-Euro), y (dep2-Euro)
-					4 - WAP: m (dep-wap)
-					5 - Smart Site: s (smartphone), l (dep-smart)
-					6 - Tablet: r (dep2-tablet)
-					7 - New Asia: x (dep2-Asia)
-					8 - Mobile App: o (dep-New Mobile APP)
-					9 - Mobile China View: c (dep-MCV)
+		- @BetFrom: 
+			- 0 - All: All
+			- 1 - Asia: d (mobile), g (MG Download only)
+			- 2 - China: a (dep-Singbet), z (dep2-SingBet)
+			- 3 - Euro: e (Europe), u (dep-Euro)
+			- 4 - WAP: m (dep-wap)
+			- 5 - Smart Site: l (dep-smart)
+			- 6 - Tablet: r (dep2-tablet)
+			- 7 - New Asia: x (dep2-Asia)
+			- 8 - Mobile App: o (dep-New Mobile APP)
+			- 9 - Mobile China View: c (dep-MCV)
+			- 10 - Deep Link: t (Licensee-Deeplink)
+
 	Excecute sample :
 		[Lrf_Monitor_BetlistSel_New]
 			@LicenseeID = 14,
@@ -173,7 +176,7 @@ BEGIN
 		END
 		ELSE IF @BetFrom = 3
 		BEGIN
-			SET @BetFromList = 'e,u,y'
+			SET @BetFromList = 'e,u'
 		END
 		ELSE IF @BetFrom = 4
 		BEGIN
@@ -181,7 +184,7 @@ BEGIN
 		END
 		ELSE IF @BetFrom = 5
 		BEGIN
-			SET @BetFromList = 's,l'
+			SET @BetFromList = 'l'
 		END
 		ELSE IF @BetFrom = 6
 		BEGIN
@@ -198,6 +201,10 @@ BEGIN
 		ELSE IF @BetFrom = 9
 		BEGIN
 			SET @BetFromList = 'c'
+		END
+		ELSE IF @BetFrom = 10
+		BEGIN
+			SET @BetFromList = 't'
 		END
 
 		-- Check if @TransId and @TransId + 1 is combo ticket then reset @TransId
