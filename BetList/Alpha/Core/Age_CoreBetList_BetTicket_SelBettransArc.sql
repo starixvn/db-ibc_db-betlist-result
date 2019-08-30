@@ -46,6 +46,7 @@ AS
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 		- 20190524@Kos: Support BetBuilder [Redmine: #106905]
 		- 20190611@Kos: Support Card Club [Redmine: #107645]
+		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 
 	Param's Explanation:
 
@@ -72,9 +73,7 @@ BEGIN
 	/*
 		- Mix & System Parlay	: ProductId = 1
 		- Casino				: ProductId = 6
-		- Bingo					: ProductId = 7
 		- Keno					: ProductId = 8
-		- P2P					: ProductId = 9
 		- Gold Deluxe			: ProductId = 12
 		- AllBet				: ProductId = 21
 		- Macau Games			: ProductId = 22
@@ -83,7 +82,6 @@ BEGIN
 		- Mix Parlay			: ProductId = 27
 		- Lottery				: ProductId = 28
 		- Pragmatic Casino		: ProductId = 32
-		- Poker Games			: ProductId = 33
 		- Card Club				: ProductId = 34
 	*/
 	SELECT
@@ -96,9 +94,7 @@ BEGIN
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype = 71 THEN 251
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.matchid
-			WHEN c.ProductID = 7 THEN 252
 			WHEN c.ProductID = 8 THEN 202
-			WHEN c.ProductID = 9 THEN 253 
 			WHEN c.ProductID = 12 THEN 255
 			WHEN c.ProductID = 21 THEN 211
 			WHEN c.ProductID = 22 THEN 212
@@ -110,7 +106,6 @@ BEGIN
 			WHEN c.ProductId = 24 THEN 219
 			WHEN c.ProductId = 28 THEN 220
 			WHEN c.ProductId = 32 THEN 248
-			WHEN c.ProductId = 33 THEN 163
 			WHEN c.ProductId = 34 THEN b.matchid
 			ELSE 0
 		END AS Sporttype
@@ -121,7 +116,7 @@ BEGIN
 			ELSE ''
 		END AS Betteam
 		, CASE
-			WHEN c.ProductID IN (1, 23, 27, 33) THEN b.hdp1
+			WHEN c.ProductID IN (1, 23, 27) THEN b.hdp1
 			ELSE 0
 		END AS hdp1
 		, CASE
@@ -147,9 +142,7 @@ BEGIN
 		, 0 AS SettlementStatus
 		, b.Transdate
 		, b.winlostdate
-		, CASE WHEN b.bettype IN (23102, 23002, 23202) THEN 0
-				ELSE (b.winlost - b.actual_stake)
-			END AS WinLost
+		, (b.winlost - b.actual_stake) AS WinLost
 		, b.awinlost
 		, b.mwinlost
 		, b.swinlost
@@ -169,7 +162,7 @@ BEGIN
 			ELSE 0
 		END AS Liveindicator
 		, CASE
-			WHEN c.ProductID IN (1, 23, 33) THEN b.Livehomescore
+			WHEN c.ProductID IN (1, 23) THEN b.Livehomescore
 			ELSE 0
 		END AS Livehomescore
 		, CASE
@@ -197,14 +190,11 @@ BEGIN
 		, '' AS Placing
 		, '' AS showtime
 		, CASE 
-			WHEN c.ProductID IN (1, 9, 12, 27, 33) THEN ISNULL(b.betcheck, '')
+			WHEN c.ProductID IN (1, 12, 27) THEN ISNULL(b.betcheck, '')
 			WHEN c.ProductID = 8 THEN ISNULL(b.comstatus, '')
 			ELSE ''
 		END	AS betcheck
-		, CASE
-			WHEN c.ProductID = 33 THEN ISNULL(b.comstatus, '')
-			ELSE CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
-		END AS ComStatus
+		, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus
 		, CASE
 			WHEN c.ProductID = 6 AND b.bettype <> 71 THEN b.transdesc
 			WHEN c.ProductId IN (8, 22, 23, 24, 28, 32, 34) THEN b.transdesc
@@ -215,98 +205,17 @@ BEGIN
 			ELSE 0
 		END AS OddsSpread
 		, -1 AS BetdaqId
-		, CASE
-			WHEN c.ProductId = 33 THEN ISNULL(b.ExtraInfo, '')
-			ELSE ''
-		END AS ExtraInfo
-	FROM dbo.bettrans_bk AS b WITH (NOLOCK)
-		INNER JOIN @tempCust AS c ON b.transid = c.transid
-		INNER JOIN @custInfo AS ci ON c.custid = ci.custid
-	WHERE c.WhTicket = 3
-		AND c.EventType = 0
-		AND c.ProductID <> 15	-- not Colossus Bet
-
-	/*
-	- Colossus Bet : ProductId = 15
-	*/
-	UNION ALL
-	SELECT
-		b.transid
-		, b.refno
-		, b.custid
-		, ci.username
-		, 204 AS Sporttype
-		, b.bettype
-		, ISNULL(b.betid, 0)
-		, '' AS Betteam
-		, 0 AS hdp1
-		, 0 AS hdp2
-		, 0 AS OddsType
-		, b.oddsid
-		, 0 AS Odds
-		, 0 AS modds
-		, b.stake
-		, b.actual_stake
-		, b.status
-		, 0 AS SettlementStatus
-		, b.Transdate
-		, b.winlostdate
-		, (b.winlost - b.actual_stake) AS WinLost
-		, b.awinlost
-		, b.mwinlost
-		, b.swinlost
-		, b.playercomm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
-		, b.APositiontaking
-		, b.MPositiontaking
-		, b.SPositiontaking
-		, b.TPositiontaking
-		, b.discount
-		, b.adiscount
-		, b.sdiscount
-		, 0 AS Liveindicator
-		, 0 AS Livehomescore
-		, 0 AS Liveawayscore
-		, 0 AS finalhomescore
-		, 0 AS finalawayscore
-		, 0 AS hthomescore
-		, 0 AS htawayscore
-		, b.ip
-		, 0 AS LeagueID
-		, 0 AS MatchID
-		, '' AS MatchCode
-		, '' AS Race
-		, b.winlostdate AS eventdate
-		, 0 AS HomeID
-		, 0 AS AwayID
-		, '' AS Betstatus
-		, CONVERT(BIT, 0) AS IsNeutral
-		, '' AS Placing
-		, '' AS showtime
-		, ISNULL(bm.betcheck, '') AS BetCheck
-		, CASE WHEN b.comstatus = '1' THEN '1'
-				ELSE '0'
-		END AS comstatus
-		, '' AS transdesc
-		, 0 AS OddsSpread
-		, -1 AS BetdaqId
 		, '' AS ExtraInfo
 	FROM dbo.bettrans_bk AS b WITH (NOLOCK)
 		INNER JOIN @tempCust AS c ON b.transid = c.transid
 		INNER JOIN @custInfo AS ci ON c.custid = ci.custid
-		LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.refno AND bm.bettype = 18001
 	WHERE c.WhTicket = 3
 		AND c.EventType = 0
-		AND c.ProductID = 15
 
 	/*
 	- Sportsbook				: ProductID = 1
 	- Number Game				: ProductID = 3
-	- Live Casino				: ProductID = 4
 	- Virtual Sports			: ProductID = 5
-	- Lucky 3					: ProductID = 26
 	- Betradar Virtual Sports	: ProductID = 27
 	*/
 	UNION ALL
@@ -319,12 +228,9 @@ BEGIN
 		, b.bettype
 		, ISNULL(b.betid, 0)
 		, b.betteam
+		, b.hdp1
 		, CASE
-			WHEN c.ProductID IN (4) THEN 0
-			ELSE b.hdp1
-		END AS hdp1
-		, CASE
-			WHEN c.ProductID IN (3, 4, 26) THEN 0
+			WHEN c.ProductID IN (3) THEN 0
 			ELSE b.hdp2
 		END AS hdp2
 		, b.OddsType
@@ -350,15 +256,15 @@ BEGIN
 		, b.SPositiontaking
 		, b.TPositiontaking
 		, CASE
-			WHEN c.ProductID IN (1, 3, 4, 5, 27) THEN b.discount
+			WHEN c.ProductID IN (1, 3, 5, 27) THEN b.discount
 			ELSE 0
 		END AS ADiscount
 		, CASE
-			WHEN c.ProductID IN (1, 3, 4, 5, 27) THEN b.adiscount
+			WHEN c.ProductID IN (1, 3, 5, 27) THEN b.adiscount
 			ELSE 0
 		END AS MDiscount
 		, CASE
-			WHEN c.ProductID IN (1, 3, 4, 5, 27) THEN b.sdiscount
+			WHEN c.ProductID IN (1, 3, 5, 27) THEN b.sdiscount
 			ELSE 0
 		END AS SDiscount
 		, b.liveindicator
@@ -395,7 +301,7 @@ BEGIN
 			ELSE '0' 
 		END AS comstatus
 		, CASE
-			WHEN c.ProductID IN (1, 26, 27) THEN ISNULL(b.transdesc, '')
+			WHEN c.ProductID IN (1, 27) THEN ISNULL(b.transdesc, '')
 			ELSE ''
 		END AS TransDesc
 		, CASE
@@ -416,7 +322,6 @@ BEGIN
 
 	/* 
 		- Sportsbook outright	: ProductID = 1
-		- Horse Racing			: ProductID = 2
 	*/
 	UNION ALL
 	SELECT
@@ -560,82 +465,6 @@ BEGIN
 		INNER JOIN @custInfo AS ci ON c.custid = ci.custid
 	WHERE c.WhTicket = 3
 		AND c.EventType = 3
-
-	/*
-		EventType = 5
-		- Bullfighting	: ProductID = 30
-	*/
-	UNION ALL
-	SELECT
-		b.transid
-		, b.refno
-		, b.custid
-		, ci.username
-		, m.sporttype
-		, b.bettype
-		, ISNULL(b.betid, 0)
-		, b.betteam
-		, b.hdp1
-		, 0 AS Hdp2
-		, b.oddstype
-		, 0 AS OddsId
-		, b.odds
-		, 0 AS MOdds
-		, b.stake
-		, b.actual_stake
-		, b.status
-		, 0 AS SettlementStatus
-		, b.transdate
-		, b.winlostdate
-		, (b.winlost - b.actual_stake) AS WinLost
-		, b.awinlost
-		, b.mwinlost
-		, b.swinlost
-		, b.playercomm
-		, (b.comm - b.playercomm) AS comm
-		, (b.acomm - b.comm) AS acomm
-		, (b.scomm - b.acomm) AS scomm
-		, b.apositiontaking
-		, b.mpositiontaking
-		, b.spositiontaking
-		, b.tpositiontaking
-		, b.discount AS ADiscount
-		, b.adiscount AS MDiscount
-		, b.sdiscount AS SDiscount
-		, b.liveindicator
-		, 0 AS LiveHomeScore
-		, 0 AS LiveAwayScore
-		, 0 AS FinalHomeScore
-		, 0 AS FinalAwayScore
-		, 0 AS HtHomeScore
-		, 0 AS HtAwayScore
-		, b.ip
-		, m.League3rdId AS LeagueId
-		, m.Match3rdId
-		, m.MatchNo AS MatchCode
-		, '' AS Race
-		, m.eventdate
-		, m.HomeID
-		, m.AwayID
-		, '' AS BetStatus
-		, 0 AS IsNeutral
-		, '' AS Placing
-		, '' AS ShowTime
-		, ISNULL(b.betcheck, '') AS BetCheck
-		, CASE
-			WHEN b.comstatus = '1' THEN '1' 
-			ELSE '0' 
-		END AS comstatus
-		, ISNULL(b.transdesc, '') AS TransDesc
-		, 0 AS OddsSpread
-		, -1 AS BetdaqId
-		, '' AS ExtraInfo
-	FROM dbo.bettrans_bk AS b WITH (NOLOCK) --, INDEX=IX_custid)
-		INNER JOIN dbo.Match3rd_bk AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
-		INNER JOIN @tempCust AS c ON b.transid = c.transid
-		INNER JOIN @custInfo AS ci ON c.custid = ci.custid
-	WHERE c.WhTicket = 3
-		AND c.EventType = 5
 
 	/*
 		WhTicket = 8

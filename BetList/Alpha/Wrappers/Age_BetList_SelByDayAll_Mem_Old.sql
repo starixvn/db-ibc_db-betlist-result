@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelByDayAll_Mem_Old]
 	@CustId			INT
@@ -54,13 +54,14 @@ AS
 		- 20160712@Kos: Change to use inline function for SportBettypeMatrix
 		- 20180201@Kos: Don't support Cockfighting [#Redmine: 86086]
 		- 20180323@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 
 	Param's Explanation:
 		+ @TransType:
 			0: All
 			1: Betting Statement
 			2: VOID/Cancelled Bet
-			4: Grand Prize of Colossus Bet
+			4: Grand Prize of ONERnG Jackpot
 */
 
 BEGIN
@@ -82,8 +83,6 @@ BEGIN
 			END
 
 	-- Check SP Version
-	-- Don't support Deposit products (Playtech Casino, AG Casino, Microgaming Live Casino, Macau, Microgaming RNG Casino, Cash Out,
-	-- Exchange)
 	DECLARE @IsTest BIT = 0
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
@@ -91,20 +90,20 @@ BEGIN
 	-- Gather BettypeMatrix
 	IF @TransType <> 4
 	BEGIN
-		-- Don't support Deposit products (Playtech Casino, AG Casino, Microgaming Live Casino, Macau, Microgaming RNG Casino)
-		-- Don't support Cockfighting, BetTrade, CashOut, Exchange
+		-- Don't support Deposit products (Playtech Casino, AG Casino, Microgaming Live Casino, Macau, Microgaming RNG Casino, BetTrade, CashOut, Exchange)
+		-- Don't support Cockfighting, Horse Racing, Live Casino, Bingo, P2P, Bullfighting, Poker Games
 		INSERT INTO @BettypeMatrix
 		SELECT ProductID, BetType, EventType, SubProduct
 		FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID NOT IN (10, 11, 13, 14, 17, 19, 25, 31)
+		WHERE ProductID NOT IN (2, 4, 7, 9, 10, 11, 13, 14, 15, 17, 19, 25, 26, 30, 31, 33)
 			AND BetType NOT IN (901, 902, 903, 904)
 	END
-	ELSE		-- Grand Prize of  ONERnG Jackpot, Colossus Bet
+	ELSE		-- Grand Prize of ONERnG Jackpot
 	BEGIN
 		INSERT INTO @BettypeMatrix(ProductID, Bettype, EventType, SubProduct)
 		SELECT ProductID, Bettype, EventType, SubProduct
 		FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (6, 15)
+		WHERE ProductID = 6
 	END
 
 	-- CALL to core bet list
@@ -172,6 +171,4 @@ GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelByDayAll_Mem_Old] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_BetList_SelByDayAll_Mem_Old] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelByDayAll_Mem_Old] TO [vnteam]
 GO

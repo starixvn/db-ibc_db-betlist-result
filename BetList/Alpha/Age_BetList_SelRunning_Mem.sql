@@ -112,6 +112,7 @@ AS
 		- 20190611@Kos: Support Card Club [Redmine: #107645]
 					- Don't support Poker Games anymore
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
+		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 */
 
 BEGIN
@@ -613,7 +614,7 @@ BEGIN
 			WHERE b.bettype IN (9, 29)
 				AND b.matchid IN (9, 29)
 
-			-- Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+			-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
 			UPDATE b
 			SET SportType = m.sporttype
 				,LeagueId = m.leagueid
@@ -630,9 +631,6 @@ BEGIN
 								WHEN b.[Status] = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 								ELSE b.[Status]
 							END
-				,ADiscount = CASE WHEN b.ProductID = 26 THEN 0 ELSE b.ADiscount END
-				,MDiscount = CASE WHEN b.ProductID = 26 THEN 0 ELSE b.MDiscount END
-				,SDiscount = CASE WHEN b.ProductID = 26 THEN 0 ELSE b.SDiscount END
 				,OddsType = CASE WHEN b.ProductID IN (3, 5, 27) THEN b.OddsType ELSE 0 END
 				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT, 0))
 				,ShowTime = CASE
@@ -640,13 +638,13 @@ BEGIN
 								ELSE ''
 							END
 				,BetCheck = ''
-				,TransDesc = CASE WHEN b.ProductID IN (26, 27) THEN ISNULL(b.TransDesc, '') ELSE '' END
+				,TransDesc = CASE WHEN b.ProductID IN (27) THEN ISNULL(b.TransDesc, '') ELSE '' END
 				,OddsSpread = 0
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			WHERE b.TableID = 1 -- bettrans
-				AND b.ProductID IN (3, 5, 26, 27)
+				AND b.ProductID IN (3, 5, 27)
 				AND b.EventType = 1
 
 			-- Virtual Sports (EventType = 3)
@@ -768,12 +766,11 @@ BEGIN
 			WHERE b.TableID = 2 -- translog
 				AND b.SubProduct IN ('MG-SuperLive')
 
-			-- Keno, Gold Deluxe, Colossus Bet, Lottery (translog)
+			-- Keno, Gold Deluxe, Lottery (translog)
 			UPDATE b
 			SET SportType = CASE
 								WHEN b.ProductID = 8 THEN 202
 								WHEN b.ProductID = 12 THEN 255
-								WHEN b.ProductID = 15 THEN 204
 								WHEN b.ProductID = 28 THEN 220
 								ELSE 0
 							END
@@ -790,7 +787,6 @@ BEGIN
 				,ShowTime = ''
 				,BetCheck = CASE
 								WHEN b.ProductID = 12 THEN b.Gameid3rd
-								WHEN b.ProductID = 15 THEN b.Tranid3rd
 								WHEN b.ProductId = 8 THEN ISNULL(b.custom2, '')
 								ELSE '' 
 							END
@@ -799,32 +795,7 @@ BEGIN
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 2 -- translog
-				AND b.ProductID IN (8, 12, 15, 28)
-
-			-- Bullfighting
-			UPDATE b
-			SET SportType = m.SportType
-				,LeagueId = m.League3rdId
-				,MatchCode = m.MatchNo
-				,Race = ''
-				,EventDate = ''
-				,MatchId = CASE WHEN b.ProductID = 30 THEN b.matchid ELSE 0 END
-				,HomeID = m.HomeId
-				,AwayID = m.AwayId
-				,Hdp1 = CASE WHEN b.ProductID = 30 THEN CONVERT(SMALLMONEY, ISNULL(b.custom2, 0)) ELSE 0 END
-				,Hdp2 = 0
-				,BetTeam = CASE WHEN b.ProductID = 30 THEN b.custom3 ELSE '' END
-				,IsNeutral = 0
-				,SettlementStatus = 0
-				,OddsType = CASE WHEN b.ProductID = 30 THEN CONVERT(TINYINT, ISNULL(b.custom1, 0)) ELSE 0 END
-				,ShowTime = ''
-				,BetCheck = CASE WHEN b.ProductID = 30 THEN ISNULL(b.Tranid3rd, '') ELSE '' END
-				,TransDesc = CASE WHEN b.ProductID = 30 THEN ISNULL(b.transdesc, '') ELSE '' END
-				,ExtraInfo = ''
-			FROM @BetListSelRunningByDateMem AS b
-				INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.MatchId = m.Match3rdId
-			WHERE b.TableID = 2 -- translog
-				AND b.ProductID = 30
+				AND b.ProductID IN (8, 12, 28)
 		END -- got translog's data
 
 		-- Allbet, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club

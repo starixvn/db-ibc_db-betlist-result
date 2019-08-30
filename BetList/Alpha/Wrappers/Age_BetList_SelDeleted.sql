@@ -64,6 +64,7 @@ AS
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 		- 20190628@Kos: Support PH AIO 4a [Redmine: #112894]
 		- 20190723@Kos: Don't support Poker Games anymore [Redmine: #107645]
+		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 */
 
 BEGIN
@@ -608,7 +609,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 12, 15, 23, 27, 28, 30)
+			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28)
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -863,39 +864,6 @@ BEGIN
 					AND b.EventType = 0
 					AND b.ProductId <> 15
 
-				-- Colossus Bets
-				UPDATE b
-				SET
-					SportType = 204,
-					BetTeam = '',
-					Hdp1 = 0,
-					Hdp2 = 0,
-					OddsType = 0,
-					Odds = 0,
-					MOdds = 0,
-					LiveIndicator = 0,
-					LiveHomeScore = 0,
-					LiveAwayScore = 0,
-					LeagueId = 0,
-					MatchId = 0,
-					MatchCode = '',
-					Race = '',
-					EventDate = b.WinLostDate,
-					HomeId = 0,
-					AwayId  = 0,
-					BetStatus = '',
-					IsNeutral = 0,
-					Placing = '',
-					ShowTime = '',
-					BetCheck = ISNULL(bm.betcheck, ''),
-					ComStatus = '',
-					TransDesc = '',
-					OddsSpread = 0,
-					ExtraInfo = ''
-				FROM #PagingData AS b
-					LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.RefNo AND bm.bettype = 18001
-				WHERE b.WhTicket = 1 AND b.ProductId = 15
-
 				-- Virtual Sports (EventType = 3)
 				UPDATE b
 				SET
@@ -924,32 +892,6 @@ BEGIN
 				WHERE b.WhTicket = 1
 					AND b.ProductID = 5
 					AND b.EventType = 3
-
-				-- Bullfighting (EventType = 5)
-				UPDATE b
-				SET
-					SportType = m.SportType,
-					Hdp2 = 0,
-					OddsId = 0,
-					MOdds = 0,
-					LiveHomeScore = 0,
-					LiveAwayScore = 0,
-					LeagueId = m.League3rdId,
-					MatchCode = m.MatchNo,
-					Race = '',
-					EventDate = m.EventDate,
-					HomeId = m.HomeId,
-					AwayId = m.AwayId,
-					BetStatus = '',
-					IsNeutral = 0,
-					Placing = '',
-					ShowTime = '',
-					ComStatus = '',
-					OddsSpread = 0,
-					ExtraInfo = ''
-				FROM #PagingData AS b
-					INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.MatchId = m.Match3rdId
-				WHERE b.WhTicket = 1 AND b.ProductID = 30
 			END
 
 			-- bettrans14
@@ -1116,39 +1058,6 @@ BEGIN
 					AND b.EventType = 0
 					AND b.ProductId <> 15
 
-				-- Colossus Bets
-				UPDATE b
-				SET
-					SportType = 204,
-					BetTeam = '',
-					Hdp1 = 0,
-					Hdp2 = 0,
-					OddsType = 0,
-					Odds = 0,
-					MOdds = 0,
-					LiveIndicator = 0,
-					LiveHomeScore = 0,
-					LiveAwayScore = 0,
-					LeagueId = 0,
-					MatchId = 0,
-					MatchCode = '',
-					Race = '',
-					EventDate = b.WinLostDate,
-					HomeId = 0,
-					AwayId  = 0,
-					BetStatus = '',
-					IsNeutral = 0,
-					Placing = '',
-					ShowTime = '',
-					BetCheck = ISNULL(bm.betcheck, ''),
-					ComStatus = '',
-					TransDesc = '',
-					OddsSpread = 0,
-					ExtraInfo = ''
-				FROM #PagingData AS b
-					LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.RefNo AND bm.bettype = 18001
-				WHERE b.WhTicket = 2 AND b.ProductId = 15
-
 				-- Virtual Sports (EventType = 3)
 				UPDATE b
 				SET
@@ -1177,32 +1086,6 @@ BEGIN
 				WHERE b.WhTicket = 2
 					AND b.ProductID = 5
 					AND b.EventType = 3
-
-				-- Bullfighting (EventType = 5)
-				UPDATE b
-				SET
-					SportType = m.SportType,
-					Hdp2 = 0,
-					OddsId = 0,
-					MOdds = 0,
-					LiveHomeScore = 0,
-					LiveAwayScore = 0,
-					LeagueId = m.League3rdId,
-					MatchCode = m.MatchNo,
-					Race = '',
-					EventDate = m.EventDate,
-					HomeId = m.HomeId,
-					AwayId = m.AwayId,
-					BetStatus = '',
-					IsNeutral = 0,
-					Placing = '',
-					ShowTime = '',
-					ComStatus = '',
-					OddsSpread = 0,
-					ExtraInfo = ''
-				FROM #PagingData AS b
-					INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON b.MatchId = m.Match3rdId
-				WHERE b.WhTicket = 2 AND b.ProductID = 30
 			END
 
 			-- Get sub tickets

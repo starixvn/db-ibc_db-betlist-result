@@ -1,1 +1,2 @@
-BetList/LRF/Lrf_BetList_Licensee.sql
+BetList/Alpha/Wrappers/Age_BetList_SelWinLossByDate_Mem_Old.sql
+BetList/Alpha/Core/Age_CoreBetList_BetTicket_SelMainInfoArc.sql

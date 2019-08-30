@@ -34,6 +34,7 @@ AS
 		- 20160323@Kos: Support Colossus Bet Grand Prize [Redmine: #54643]
 		- 20160328@Kos: Support Grand Prize ticket which status is Expired
 		- 20180126@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 
 	Param's Explanation:
 		- @TransStatus		: string formation (0,1,102,103,111,112,113)
@@ -44,7 +45,6 @@ AS
 		- Age_BetList_SelWinLossByDate_Mem_Old
 	
 	Dependences:
-		
 */
 
 BEGIN
@@ -125,35 +125,6 @@ BEGIN
 								FROM bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
 								WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
 		END
-
-		-- Colossus Bet
-		IF EXISTS (SELECT TOP(1) 1 FROM @BettypeMatrix WHERE ProductID = 15)
-		BEGIN
-			INSERT INTO @tempCust (
-				TransID
-				, Refno
-				, CustID
-				, ProductID
-				, Bettype
-				, EventType
-				, WhTicket)
-			SELECT
-				b.transid
-				, b.refno
-				, b.custid
-				, bt.ProductId
-				, b.bettype
-				, bt.EventType
-				, 3 AS WhTicket
-			FROM dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
-				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-				INNER JOIN @TransStatus AS stt ON b.statusid = stt.statusid
-			WHERE b.winlostdate BETWEEN @FromDate AND @ToDate
-				AND b.custid = @CustId
-				AND EXISTS (	SELECT 1
-								FROM bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
-								WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
-		END
 	END
 
 	--CALL to get ticket info
@@ -161,10 +132,10 @@ BEGIN
 		@tempCust = @tempCust,
 		@ColumnOutput = @ColumnOutput
 END
-
-
-
 GO
+
+
+
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_MemArc_SelBetTicket] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_CoreBetList_MemArc_SelBetTicket] TO [bodbDownlineNetView]

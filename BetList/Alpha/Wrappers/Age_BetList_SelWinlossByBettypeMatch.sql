@@ -18,6 +18,7 @@ AS
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 		- 20190524@Kos: Support BetBuilder [Redmine: #106905]
+		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 */
 
 BEGIN
@@ -30,11 +31,11 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	-- Support Sportsbook, Number Game, Lucky 3, Virtual Sports, Betradar Virtual Sports and Bullfighting only
+	-- Support Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports only
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest) AS s
-	WHERE ProductID IN (1, 3, 5, 26, 27, 30)
+	WHERE ProductID IN (1, 3, 5, 27)
 		AND BetType NOT IN (901, 902, 903, 904)
 		AND (BetType = @BetType
 			OR EXISTS (SELECT 1 FROM dbo.f_GroupBettype() AS f WHERE f.GroupTypeId = @BetType AND f.Bettype = s.BetType))
@@ -42,35 +43,17 @@ BEGIN
 	DECLARE @IsBet14	BIT = 0,
 		@EventDate		DATETIME
 
-	IF EXISTS (SELECT 1 FROM @SportBettype WHERE EventType = 1)
+	SELECT @EventDate = eventdate
+	FROM dbo.match WITH (NOLOCK)
+	WHERE matchid = @MatchId
+
+	IF @EventDate IS NULL
 	BEGIN
+		SET @IsBet14 = 1
+
 		SELECT @EventDate = eventdate
-		FROM dbo.match WITH (NOLOCK)
+		FROM dbo.match14 WITH (NOLOCK)
 		WHERE matchid = @MatchId
-
-		IF @EventDate IS NULL
-		BEGIN
-			SET @IsBet14 = 1
-
-			SELECT @EventDate = eventdate
-			FROM dbo.match14 WITH (NOLOCK)
-			WHERE matchid = @MatchId
-		END
-	END
-	ELSE
-	BEGIN
-		SELECT @EventDate = EventDate
-		FROM dbo.Match3rd WITH (NOLOCK)
-		WHERE Match3rdId= @MatchId
-
-		IF @EventDate IS NULL
-		BEGIN
-			SET @IsBet14 = 1
-
-			SELECT @EventDate = EventDate
-			FROM dbo.Match3rd14 WITH (NOLOCK)
-			WHERE Match3rdId = @MatchId
-		END
 	END
 
 	IF @CustId IS NULL
@@ -98,9 +81,7 @@ BEGIN
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 26 THEN 'Lucky3'	-- Lucky3
 					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					WHEN s.EventType = 5 AND s.ProductID = 30 THEN 'BF'		-- Bullfighting
 					ELSE 'Unknown'
 				END AS Product
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
@@ -122,9 +103,7 @@ BEGIN
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 26 THEN 'Lucky3'	-- Lucky3
 					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					WHEN s.EventType = 5 AND s.ProductID = 30 THEN 'BF'		-- Bullfighting
 					ELSE 'Unknown'
 				END AS Product
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_MRecommend)
@@ -146,9 +125,7 @@ BEGIN
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 26 THEN 'Lucky3'	-- Lucky3
 					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					WHEN s.EventType = 5 AND s.ProductID = 30 THEN 'BF'		-- Bullfighting
 					ELSE 'Unknown'
 				END AS Product
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_SRecommend)
@@ -174,8 +151,7 @@ BEGIN
 			b.custid,
 			b.username,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.sporttype
-				WHEN c.Product IN ('BF') THEN m3.SportType
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 				ELSE 0
 			END AS SportType,
 			b.bettype,
@@ -187,13 +163,10 @@ BEGIN
 				ELSE 0
 			END AS Hdp2,
 			b.oddstype,
-			CASE
-				WHEN c.Product IN ('BF') THEN 0
-				ELSE b.oddsid
-			END AS OddsId,
+			b.oddsid,
 			b.odds,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN b.modds
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.modds
 				ELSE 0
 			END AS MOdds,
 			b.stake,
@@ -213,95 +186,80 @@ BEGIN
 			b.mpositiontaking,
 			b.spositiontaking,
 			b.tpositiontaking,
-			CASE
-				WHEN c.Product IN ('Lucky3') THEN 0
-				ELSE b.discount
-			END AS ADiscount,
-			CASE
-				WHEN c.Product IN ('Lucky3') THEN 0
-				ELSE b.adiscount
-			END AS MDiscount,
-			CASE
-				WHEN c.Product IN ('Lucky3') THEN 0
-				ELSE b.sdiscount
-			END AS SDiscount,
+			b.discount AS ADiscount,
+			b.adiscount AS MDiscount,
+			b.sdiscount AS SDiscount,
 			b.liveindicator,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN b.livehomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.livehomescore
 				ELSE 0
 			END AS LiveHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN b.liveawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveawayscore
 				ELSE 0
 			END AS LiveAwayScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.finalhomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalhomescore
 				ELSE 0
 			END AS FinalHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.finalawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalawayscore
 				ELSE 0
 			END AS FinalAwayScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.hthomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.hthomescore
 				ELSE 0
 			END AS HtHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.htawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.htawayscore
 				ELSE 0
 			END AS HtAwayScore,
 			b.ip,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.leagueid
-				WHEN c.Product IN ('BF') THEN m3.League3rdId
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.leagueid
 				ELSE 0
 			END AS LeagueId,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.matchid
-				WHEN c.Product IN ('BF') THEN m3.Match3rdId
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchid
 				ELSE 0
 			END AS MatchId,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.matchcode
-				WHEN c.Product IN ('BF') THEN m3.MatchNo
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchcode
 				ELSE ''
 			END AS MatchCode,
 			CASE
 				WHEN c.Product = 'SB' THEN m.GlobalShowTime
-				WHEN c.Product IN ('NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
-				WHEN c.Product IN ('BF') THEN m3.EventDate
+				WHEN c.Product IN ('NG', 'VS', 'VS2') THEN m.eventdate
 				ELSE b.winlostdate
 			END AS EventDate,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.homeid
-				WHEN c.Product IN ('BF') THEN m3.HomeId
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.homeid
 				ELSE 0
 			END AS HomeId,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.awayid
-				WHEN c.Product IN ('BF') THEN m3.AwayId
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.awayid
 				ELSE 0
 			END AS AwayId,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.betstatus
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.betstatus
 				ELSE ''
 			END AS BetStatus,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
 				ELSE 0
 			END AS IsNeutral,
 			CASE
 				WHEN c.Product IN ('VS', 'VS2') THEN CONVERT(NVARCHAR(50), m.kickofftime)
-				WHEN c.Product IN ('SB', 'NG', 'Lucky3') THEN ISNULL(m.showtime, '')
+				WHEN c.Product IN ('SB', 'NG') THEN ISNULL(m.showtime, '')
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN c.Product IN ('SB', 'BF') THEN ISNULL(b.betcheck, '')
+				WHEN c.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 			CASE
-				WHEN c.Product IN ('SB', 'Lucky3', 'VS2', 'BF') THEN ISNULL(b.transdesc, '')
+				WHEN c.Product IN ('SB', 'VS2') THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -315,8 +273,7 @@ BEGIN
 			END AS ExtraInfo
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK, INDEX = PK_bettrans) ON b.transid = c.TransId
-			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') AND b.matchid = m.matchid
-			LEFT JOIN dbo.Match3rd AS m3 WITH (NOLOCK) ON c.Product IN ('BF') AND b.matchid = m3.Match3rdId
+			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 		ORDER BY c.TransId DESC
 	END
 	ELSE	-- bettrans14 range
@@ -332,9 +289,7 @@ BEGIN
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 26 THEN 'Lucky3'	-- Lucky3
 					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					WHEN s.EventType = 5 AND s.ProductID = 30 THEN 'BF'		-- Bullfighting
 					ELSE 'Unknown'
 				END
 			FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
@@ -356,9 +311,7 @@ BEGIN
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 26 THEN 'Lucky3'	-- Lucky3
 					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					WHEN s.EventType = 5 AND s.ProductID = 30 THEN 'BF'		-- Bullfighting
 					ELSE 'Unknown'
 				END
 			FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_MRecommend)
@@ -380,9 +333,7 @@ BEGIN
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 26 THEN 'Lucky3'	-- Lucky3
 					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					WHEN s.EventType = 5 AND s.ProductID = 30 THEN 'BF'		-- Bullfighting
 					ELSE 'Unknown'
 				END
 			FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_SRecommend)
@@ -408,8 +359,7 @@ BEGIN
 			b.custid,
 			b.username,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.sporttype
-				WHEN c.Product IN ('BF') THEN m3.SportType
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 				ELSE 0
 			END AS SportType,
 			b.bettype,
@@ -421,13 +371,10 @@ BEGIN
 				ELSE 0
 			END AS Hdp2,
 			b.oddstype,
-			CASE
-				WHEN c.Product IN ('BF') THEN 0
-				ELSE b.oddsid
-			END AS OddsId,
+			b.oddsid,
 			b.odds,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN b.modds
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.modds
 				ELSE 0
 			END AS MOdds,
 			b.stake,
@@ -447,95 +394,80 @@ BEGIN
 			b.mpositiontaking,
 			b.spositiontaking,
 			b.tpositiontaking,
-			CASE
-				WHEN c.Product IN ('Lucky3') THEN 0
-				ELSE b.discount
-			END AS ADiscount,
-			CASE
-				WHEN c.Product IN ('Lucky3') THEN 0
-				ELSE b.adiscount
-			END AS MDiscount,
-			CASE
-				WHEN c.Product IN ('Lucky3') THEN 0
-				ELSE b.sdiscount
-			END AS SDiscount,
+			b.discount AS ADiscount,
+			b.adiscount AS MDiscount,
+			b.sdiscount AS SDiscount,
 			b.liveindicator,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN b.livehomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.livehomescore
 				ELSE 0
 			END AS LiveHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN b.liveawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveawayscore
 				ELSE 0
 			END AS LiveAwayScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.finalhomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalhomescore
 				ELSE 0
 			END AS FinalHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.finalawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalawayscore
 				ELSE 0
 			END AS FinalAwayScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.hthomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.hthomescore
 				ELSE 0
 			END AS HtHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.htawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.htawayscore
 				ELSE 0
 			END AS HtAwayScore,
 			b.ip,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.leagueid
-				WHEN c.Product IN ('BF') THEN m3.League3rdId
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.leagueid
 				ELSE 0
 			END AS LeagueId,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.matchid
-				WHEN c.Product IN ('BF') THEN m3.Match3rdId
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchid
 				ELSE 0
 			END AS MatchId,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.matchcode
-				WHEN c.Product IN ('BF') THEN m3.MatchNo
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchcode
 				ELSE ''
 			END AS MatchCode,
 			CASE
 				WHEN c.Product = 'SB' THEN m.globalshowtime
-				WHEN c.Product IN ('NG', 'VS', 'Lucky3', 'VS2') THEN m.eventdate
-				WHEN c.Product IN ('BF') THEN m3.EventDate
+				WHEN c.Product IN ('NG', 'VS', 'VS2') THEN m.eventdate
 				ELSE b.winlostdate
 			END AS EventDate,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.homeid
-				WHEN c.Product IN ('BF') THEN m3.HomeId
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.homeid
 				ELSE 0
 			END AS HomeId,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.awayid
-				WHEN c.Product IN ('BF') THEN m3.AwayId
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.awayid
 				ELSE 0
 			END AS AwayId,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.betstatus
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.betstatus
 				ELSE ''
 			END AS BetStatus,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
 				ELSE 0
 			END AS IsNeutral,
 			CASE
 				WHEN c.Product IN ('VS', 'VS2') THEN CONVERT(NVARCHAR(50), m.kickofftime)
-				WHEN c.Product IN ('SB', 'NG', 'Lucky3') THEN ISNULL(m.showtime, '')
+				WHEN c.Product IN ('SB', 'NG') THEN ISNULL(m.showtime, '')
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN c.Product IN ('SB', 'BF') THEN ISNULL(b.betcheck, '')
+				WHEN c.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 			CASE
-				WHEN c.Product IN ('SB', 'Lucky3', 'VS2', 'BF') THEN ISNULL(b.transdesc, '')
+				WHEN c.Product IN ('SB', 'VS2') THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -549,8 +481,7 @@ BEGIN
 			END AS ExtraInfo
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.TransId
-			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') AND b.matchid = m.matchid
-			LEFT JOIN dbo.Match3rd14 AS m3 WITH (NOLOCK) ON c.Product IN ('BF') AND b.matchid = m3.Match3rdId
+			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 		ORDER BY c.TransId DESC
 	END
 
