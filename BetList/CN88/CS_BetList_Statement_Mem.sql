@@ -19,18 +19,21 @@ AS
 			- 2: All (Live, Non-Live, Mix Live & Non-Live)
 			
 	Revisions:
-		- 20190227@Kos: Create new [Redmine: 109230]
+		- 20190227@Kos: Create new [Redmine: #109230]
+		- 20190910@Kos: Hotfix - wrong input param [Redmine: #119963]
 */
 
 BEGIN
 	SET NOCOUNT ON;
+
+	DECLARE @SportTypeGroups VARCHAR(10) = CONVERT(VARCHAR(10), @SportTypeGroup)
 
 	EXEC CS_BetList_Settled_Mem
 		@CustId = @CustId,
 		@FromDate = @Date,
 		@ToDate = @Date,
 		@MoveBetsDay = @MoveBetsDay,
-		@SportTypeGroup = @SportTypeGroup,
+		@SportTypeGroups = @SportTypeGroups,
 		@BetTypeGroup = 0,
 		@LiveIndicator = 2,
 		@StatusIdList = '101,102,103,111,112,113',
