@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 		- 20190304@Kos: Create new [Redmine: 109230]
+		- 20190912@Kos: Show LOSE combination details [Redmine: #117888]
 */
 
 BEGIN
@@ -286,7 +287,7 @@ BEGIN
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.MatchId = m.matchid
-		WHERE p.StatusId NOT IN (0, 1, 113)
+		WHERE p.StatusId NOT IN (0, 1)
 	END
 
 	IF @MinMatchdate <= @MoveBetDay
@@ -299,7 +300,7 @@ BEGIN
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.MatchId = m.matchid
-		WHERE p.StatusId NOT IN (0, 1, 113)
+		WHERE p.StatusId NOT IN (0, 1)
 	END
 
 	IF @MaxMatchdate > @MoveBetDay
@@ -312,11 +313,11 @@ BEGIN
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.MatchId = m.matchid
-		WHERE p.StatusId NOT IN (0, 1, 113)
+		WHERE p.StatusId NOT IN (0, 1)
 	END
 	
 	-- Calculate outstanding
-	SELECT @Outstanding = MAX(stake)
+	SELECT @Outstanding = MAX(Stake)
 	FROM @tmpBettrans
 
 	SELECT @Outstanding = @Outstanding - ISNULL(SUM(stake), 0)
@@ -334,31 +335,16 @@ BEGIN
 			WHEN 102 THEN 'VOID'
 			WHEN 103 THEN 'REFUND'
 			WHEN 111 THEN 'DRAW'
-			WHEN 112 THEN 'WON' 
+			WHEN 112 THEN 'WON'
+			WHEN 113 THEN 'LOSE'
 			ELSE '' 
 		END AS status,
 		Modds,
 		Stake,
-		WinLost - Stake AS winlost,
+		WinLost - Stake AS WinLost,
 		PlayerComm
 	FROM @tmpResults
-	WHERE StatusId NOT IN (0, 1, 113)
-
-	UNION ALL
-
-	SELECT DISTINCT
-		WinLostDate,
-		0 AS transid,
-		0 AS serial,
-		113 AS statusid,
-		'LOSE' AS status,
-		0 AS modds,
-		SUM(Stake) AS stake,
-		SUM(WinLost - Stake) AS winlost,
-		SUM(PlayerComm) AS playercomm
-	FROM @tmpResults
-	WHERE StatusId = 113
-	GROUP BY WinLostDate 
+	WHERE StatusId NOT IN (0, 1)
 	ORDER BY WinLostDate ASC
 
 	SELECT * FROM @tmpMatch
