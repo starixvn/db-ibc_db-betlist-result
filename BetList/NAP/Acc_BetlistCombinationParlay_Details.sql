@@ -1,29 +1,19 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
-/****** Object:  StoredProcedure [dbo].[Acc_BetlistCombinationParlay_Details]    Script Date: 4/8/2013 1:26:41 PM ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetlistCombinationParlay_Details]
 	@RefNo			BIGINT,
 	@TransId		BIGINT		= 0,
 	@BetId			BIGINT		= 0,
 	@CustId			INT,
-	@MoveBetDay		DATETIME,
-	@BalanceUpDay	DATETIME,
-	@Language		NVARCHAR(2)	= 'E',
+	@MoveBetDay		SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME,
 	@Outstanding	MONEY		= 0 OUTPUT
 AS
 
 /*
 	Created by: 20110802@Johnson
 	Task: Get details info for Combination Mix Parlay
-	DB: DBAGE.BODB02
+	DB: DBACC.BODB02
 	Original:
 	
 	Revisions:
@@ -39,6 +29,9 @@ AS
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20170210@Kos: Add DISTINCT to prevent duplicate ticket detail [Redmine: #71007]
 		- 20170801@Kos: Return TransId instead of 0 [Redmine: #73545]
+		- 20190912@Kos: Show LOSE combination details [Redmine: #117888]
+					- Remove param @Language
+					- Move from DBAGE.bodb02 to DBACC.bodb02
 */
 
 BEGIN
@@ -68,7 +61,7 @@ BEGIN
 		TransId		BIGINT,
 		RefNo		BIGINT,
 		MatchId		INT,
-		MatchDate	DATETIME,
+		MatchDate	SMALLDATETIME,
 		--for generating combination parlays
 		RN			TINYINT,	-- set No. for selection in the combination
 		Cnt			TINYINT,	-- total selection count, base on bettransm/14
@@ -76,10 +69,10 @@ BEGIN
 	)
 
 	DECLARE @tmpResults TABLE (
-		WinLostDate DATETIME,
+		WinLostDate SMALLDATETIME,
 		TransId		BIGINT,
 		Serial		BIGINT,
-		StatusId	INT,
+		StatusId	TINYINT,
 		Status		VARCHAR(20),
 		Modds		MONEY,
 		Stake		MONEY,
@@ -92,14 +85,14 @@ BEGIN
 		Serial	INT,
 		MatchId	INT
 	)
-	DECLARE @tmpMatch AS TABLE(
+	DECLARE @tmpMatch AS TABLE (
 		Serial	BIGINT,
 		HomeId	INT,
 		AwayId	INT
 	)
 
-	DECLARE @minMatchdate DATETIME,
-			@maxMatchdate DATETIME
+	DECLARE @minMatchdate SMALLDATETIME,
+			@maxMatchdate SMALLDATETIME
 
 	-- Get bettransm data
 	INSERT INTO @parlay_base (
@@ -115,7 +108,7 @@ BEGIN
 	FROM dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-	WHERE refno = @refno AND custid = @custid
+	WHERE bm.refno = @RefNo AND bm.custid = @CustId
 	UNION
 	SELECT
 		bm.transid,
@@ -125,17 +118,17 @@ BEGIN
 	FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-	WHERE refno = @refno
+	WHERE bm.refno = @RefNo
 	UNION
 	SELECT
 		bm.transid,
 		bm.refno,
 		m.matchid,
 		bm.matchdate
-	FROM DBARC.bodb_archive.dbo.bettransm AS bm WITH (NOLOCK)
-		INNER JOIN DBARC.bodb_archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+	FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+		INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-	WHERE refno = @refno
+	WHERE bm.refno = @RefNo
 
 	SELECT	@minMatchdate = MIN(matchdate),
 			@maxMatchdate = MAX(matchdate)
@@ -157,9 +150,9 @@ BEGIN
 				WHEN betcheck IS NULL THEN CONVERT(INT, hdp2)	-- old Parlay tickets
 				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
 			END AS Bitmap
-		FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH(NOLOCK) 
-		WHERE custid = @custid
-			AND refno = @refno
+		FROM bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) 
+		WHERE custid = @CustId
+			AND refno = @RefNo
 			AND matchid = 29
 			AND bettype = 29
 			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
@@ -180,8 +173,8 @@ BEGIN
 			b.winlost,
 			b.statusid,
 			b.playercomm
-		FROM DBARC.bodb_archive.dbo.betparlayresult AS b WITH (NOLOCK)
-		WHERE refno = @refno
+		FROM bodb_Archive.dbo.betparlayresult AS b WITH (NOLOCK)
+		WHERE refno = @RefNo
 	END
 
 	IF @minMatchdate <= @MoveBetDay		--- bettrans14 range
@@ -200,8 +193,8 @@ BEGIN
 				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
 			END AS Bitmap
 		FROM dbo.bettrans14 AS b WITH(NOLOCK) 
-		WHERE custid = @custid
-			AND refno = @refno
+		WHERE custid = @CustId
+			AND refno = @RefNo
 			AND matchid = 29
 			AND bettype = 29
 			AND transid NOT IN (SELECT TransId FROM @tmpBettrans)
@@ -223,8 +216,8 @@ BEGIN
 				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
 			END AS Bitmap
 		FROM dbo.bettrans AS b WITH(NOLOCK) 
-		WHERE custid = @custid
-			AND refno = @refno
+		WHERE custid = @CustId
+			AND refno = @RefNo
 			AND matchid = 29
 			AND bettype = 29
 			AND transid NOT IN (SELECT TransId FROM @tmpBettrans)
@@ -247,7 +240,7 @@ BEGIN
 		b.statusid,
 		b.playercomm
 	FROM dbo.BetParlayResult AS b WITH(NOLOCK) 
-	WHERE b.RefNo = @refno AND b.Serial NOT IN (SELECT Serial FROM @tmpResults)
+	WHERE b.RefNo = @RefNo AND b.Serial NOT IN (SELECT Serial FROM @tmpResults)
 
 	-- Generate betParlayDetail
 	IF @minMatchdate < @BalanceUpday
@@ -292,7 +285,7 @@ BEGIN
 			serial,
 			matchid
 		FROM dbo.BetParlayDetail WITH (NOLOCK)
-		WHERE refno = @refno
+		WHERE refno = @RefNo
 	END
 
 	-- Get homeid, awayid
@@ -305,8 +298,8 @@ BEGIN
 			m.awayid
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
-			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.MatchId = m.matchid
-		WHERE p.StatusId NOT IN (0, 1, 113)
+			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.MatchId = m.matchid
+		WHERE p.StatusId NOT IN (0, 1)
 	END
 
 	IF @MinMatchdate <= @MoveBetDay
@@ -319,7 +312,7 @@ BEGIN
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.MatchId = m.matchid
-		WHERE p.StatusId NOT IN (0, 1, 113)
+		WHERE p.StatusId NOT IN (0, 1)
 	END
 
 	IF @MaxMatchdate > @MoveBetDay
@@ -332,7 +325,7 @@ BEGIN
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.MatchId = m.matchid
-		WHERE p.StatusId NOT IN (0, 1, 113)
+		WHERE p.StatusId NOT IN (0, 1)
 	END
 	
 	-- Calculate outstanding
@@ -354,7 +347,8 @@ BEGIN
 			WHEN 102 THEN 'VOID'
 			WHEN 103 THEN 'REFUND'
 			WHEN 111 THEN 'DRAW'
-			WHEN 112 THEN 'WON' 
+			WHEN 112 THEN 'WON'
+			WHEN 113 THEN 'LOSE'
 			ELSE '' 
 		END AS status,
 		Modds,
@@ -362,40 +356,18 @@ BEGIN
 		WinLost - Stake AS winlost,
 		PlayerComm
 	FROM @tmpResults
-	WHERE StatusId NOT IN (0, 1, 113)
-
-	UNION ALL
-
-	SELECT DISTINCT
-		WinLostDate,
-		0 AS transid,
-		0 AS serial,
-		113 AS statusid,
-		'LOSE' AS status,
-		0 AS modds,
-		SUM(Stake) AS stake,
-		SUM(WinLost - Stake) AS winlost,
-		SUM(PlayerComm) AS playercomm
-	FROM @tmpResults
-	WHERE StatusId = 113
-	GROUP BY WinLostDate 
+	WHERE StatusId NOT IN (0, 1)
 	ORDER BY WinLostDate ASC
 
 	SELECT * FROM @tmpMatch
 END
-
-
-
-
-
 GO
+
+
+
 GRANT EXECUTE ON [dbo].[Acc_BetlistCombinationParlay_Details] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetlistCombinationParlay_Details] TO [bodbDownlineNetView]
 GO
 GRANT EXECUTE ON [dbo].[Acc_BetlistCombinationParlay_Details] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetlistCombinationParlay_Details] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetlistCombinationParlay_Details] TO [vnteam] 
 GO
