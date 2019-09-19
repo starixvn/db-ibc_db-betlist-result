@@ -126,6 +126,7 @@ AS
 		- 20190611@Kos: Support Card Club [#Redmine: 107645]
 					- Don't support Poker Games anymore
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
+		- 20190919@Kos: Hotfix - Wrong match showtime of Cash Out ticket [#Redmine: 120242]
 */
 
 BEGIN
@@ -279,7 +280,7 @@ BEGIN
 				m.matchcode,
 				'' AS race,
 				CASE
-					WHEN s.ProductID = 1 THEN m.GlobalShowTime
+					WHEN s.ProductID IN (1, 25) THEN m.GlobalShowTime
 					ELSE m.eventdate
 				END AS EventDate,
 				0,
@@ -1925,7 +1926,7 @@ BEGIN
 				m.matchcode,
 				'' AS race,
 				CASE
-					WHEN s.ProductID = 1 THEN m.GlobalShowTime
+					WHEN s.ProductID IN (1, 25) THEN m.GlobalShowTime
 					ELSE m.eventdate
 				END AS EventDate,
 				0,

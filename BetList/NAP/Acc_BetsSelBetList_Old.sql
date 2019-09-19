@@ -94,6 +94,7 @@ AS
 		- 20190507@Kos: Support CN88 [Redmine: #112225]
 					- Add new param @IsCN88 BIT
 		- 20190611@Kos: Support Card Club [#Redmine: 107645]
+		- 20190919@Kos: Hotfix - Wrong match showtime of Cash Out ticket [#Redmine: 120242]
 */
 
 BEGIN
@@ -223,7 +224,7 @@ BEGIN
 			m.matchcode,
 			'' AS race,
 			CASE
-				WHEN s.ProductID = 1 THEN m.GlobalShowTime
+				WHEN s.ProductID IN (1, 25) THEN m.GlobalShowTime
 				ELSE m.eventdate
 			END AS EventDate,
 			0,

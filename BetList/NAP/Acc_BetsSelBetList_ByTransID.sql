@@ -113,6 +113,7 @@ AS
 		- 20190611@Kos: Support Card Club [#Redmine: 107645]
 					- Don't support Poker Games in bettrans and bettrans14 range anymore
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
+		- 20190919@Kos: Hotfix - Wrong match showtime of Cash Out ticket [#Redmine: 120242]
 */
 
 BEGIN
@@ -286,7 +287,7 @@ BEGIN
 		-- Bettrans
 		IF @WinLostDate > @MoveBetsDay
 		BEGIN
-			-- Sportbooks, Number Game, Virtual Sports, Lucky 3, BetRadar Virtual Sports
+			-- Sportbooks, Number Game, Virtual Sports, Lucky 3, BetRadar Virtual Sports, Cash Out
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -298,7 +299,7 @@ BEGIN
 					m.matchcode,
 					'' AS race,
 					CASE
-						WHEN s.ProductID = 1 THEN m.GlobalShowTime
+						WHEN s.ProductID IN (1, 25) THEN m.GlobalShowTime
 						ELSE m.eventdate
 					END AS EventDate,
 					0 AS virtualrate,
@@ -2068,7 +2069,7 @@ BEGIN
 		-- Bettrans14
 		ELSE IF @WinLostDate <= @MoveBetsDay AND @WinLostDate >= @BalanceUpDay
 		BEGIN
-			-- Sportbooks, Number Game, Virtual Sports, Lucky 3, Betradar Virtual Sports
+			-- Sportbooks, Number Game, Virtual Sports, Lucky 3, Betradar Virtual Sports, Cash Out
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -2080,7 +2081,7 @@ BEGIN
 					m.matchcode,
 					'' AS race,
 					CASE
-						WHEN s.ProductID = 1 THEN m.GlobalShowTime
+						WHEN s.ProductID IN (1, 25) THEN m.GlobalShowTime
 						ELSE m.eventdate
 					END AS EventDate,
 					0 AS virtualrate,
@@ -2967,7 +2968,7 @@ BEGIN
 		-- bettrans_bk
 		ELSE IF @WinLostDate < @BalanceUpDay 
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Lucky 3, Betradar Virtual Sports
+			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Lucky 3, Betradar Virtual Sports, Cash Out
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -2979,7 +2980,7 @@ BEGIN
 					m.matchcode,
 					'' AS race,
 					CASE
-						WHEN s.ProductID = 1 THEN m.GlobalShowTime
+						WHEN s.ProductID IN (1, 25) THEN m.GlobalShowTime
 						ELSE m.eventdate
 					END AS EventDate,
 					0 AS virtualrate,
