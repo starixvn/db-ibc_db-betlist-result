@@ -31,7 +31,8 @@ AS
 			- 3: Running, Waiting
 
 	Revisions:
-		- 20190509@Kos: Created [Redmine: #116874]
+		- 20190905@Kos: Created [Redmine: #116874]
+		- 20190923@Kos: Support tickets which have winlostdate in the future [Redmine: #120690]
 */
 
 BEGIN
@@ -923,6 +924,13 @@ BEGIN
 				FROM dbo.Customer WITH (NOLOCK)
 				WHERE custid = @CustId
 
+				DECLARE @ExDate SMALLDATETIME
+
+				SET @ExDate = CASE
+									WHEN @_Date > CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120) THEN CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
+									ELSE @_Date
+								END
+
 				-- Get exchange rate
 				IF @BaseCurrency <> ''
 				BEGIN
@@ -937,7 +945,7 @@ BEGIN
 									WHEN @BaseCurrency = 'INH' THEN e.INH
 									ELSE 1
 								END
-					FROM dbo.Lrf_f_GetExchangeDaily(@_Date, @_Date) AS e
+					FROM dbo.Lrf_f_GetExchangeDaily(@ExDate, @ExDate) AS e
 					WHERE e.ExchangeId = @Currency
 				END
 
