@@ -37,6 +37,7 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190311@Kos: Move to DB06 [#Redmine: 110058]
 		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112286]
+		- 20190926@Kos: Hotfix - duplicate data during Balance Up [Redmine: #120962]
 */
 
 BEGIN
@@ -243,7 +244,7 @@ BEGIN
 			m.betstatus,
 			m.isNeutral,
 			b.betcheck,
-			b.transdesc
+			ISNULL(b.transdesc, '') AS transdesc
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
