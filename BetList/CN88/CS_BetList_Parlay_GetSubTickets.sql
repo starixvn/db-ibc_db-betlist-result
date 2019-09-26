@@ -12,7 +12,8 @@ AS
 	Original: Age_BetList_SelParlayDetail
 
 	Revisions:
-		- 20190304@Kos: Create new [Redmine: 109230]
+		- 20190304@Kos: Create new [Redmine: #109230]
+		- 20190926@Kos: Hotfix - duplicate data during Balance Up [Redmine: #120962]
 */
 
 BEGIN
@@ -216,7 +217,7 @@ BEGIN
 			m.betstatus,
 			m.isNeutral,
 			b.betcheck,
-			b.transdesc
+			ISNULL(b.transdesc, '') AS transdesc
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
