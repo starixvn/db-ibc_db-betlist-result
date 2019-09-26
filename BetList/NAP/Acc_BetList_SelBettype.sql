@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_SelBettype]
 	@CustId			INT,
@@ -10,7 +10,7 @@ AS
 
 /*
 	Created: Henry@20091228
-	DB: DBAGE.bodb02
+	DB: DBACC.bodb02
 
 	Revisions:
 		- 20100113@Henry: Newly created
@@ -26,16 +26,18 @@ AS
 		- 20171019@Kos: Include Waiting tickets in translog [#Redmine: 84961]
 		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
+		- 20191007@Kos: Move to DBACC [Redmine: #120379]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @BettypeTable TABLE (BetType INT)
+	DECLARE @BetTypeTable TABLE (BetType INT)
 
 	DECLARE @TempFromDate SMALLDATETIME
 	DECLARE @TempToDate SMALLDATETIME
 
+	-- bettrans range
 	IF @ToDate > @MoveBetsDay
 	BEGIN
 		IF @FromDate <= @MoveBetsDay
@@ -43,13 +45,13 @@ BEGIN
 		ELSE
 			SET @TempFromDate = @FromDate
 
-		INSERT INTO @BettypeTable
+		INSERT INTO @BetTypeTable
 		SELECT DISTINCT bettype
 		FROM dbo.bettrans WITH (NOLOCK)
 		WHERE bettype < 19001
 			AND bettype NOT IN (903, 904, 913, 914)
 			AND custid = @CustId
-			AND winlostdate BETWEEN @TempFromDate AND @todate
+			AND winlostdate BETWEEN @TempFromDate AND @ToDate
 			--exclude metric gaming running ticket
 			AND (bettype NOT BETWEEN 801 AND 806
 				OR (bettype BETWEEN 801 AND 806 AND statusID NOT IN (0, 1)))
@@ -61,25 +63,29 @@ BEGIN
 			AND statusID IN (0, 1)
 	END
 
-	IF @Fromdate <= @MoveBetsDay
+	-- bettrans14 range
+	IF @FromDate <= @MoveBetsDay AND @ToDate >= @BalanceUpDay
 	BEGIN
 		IF @ToDate >= @MoveBetsDay
 			SET @TempToDate = @MoveBetsDay
 		ELSE
 			SET @TempToDate = @ToDate
 
-		IF @BalanceUpDay < @FromDate
-			SELECT @BalanceUpDay = @FromDate
+		IF @FromDate < @BalanceUpDay
+			SET @TempFromDate = @BalanceUpDay
+		ELSE
+			SET @TempFromDate = @FromDate
 
-		INSERT INTO @BettypeTable
+		INSERT INTO @BetTypeTable
 		SELECT DISTINCT bettype
 		FROM dbo.bettrans14 WITH (NOLOCK)
 		WHERE bettype < 19001
 			AND bettype NOT IN (903, 904, 913, 914)
 			AND custid = @CustId
-			AND winlostdate BETWEEN @BalanceUpDay AND @TempToDate
+			AND winlostdate BETWEEN @TempFromDate AND @TempToDate
 	END
 
+	-- bettrans_bk range
 	IF @FromDate < @BalanceUpDay
 	BEGIN
 		IF @ToDate >= DATEADD(dd, -1, @BalanceUpDay)
@@ -87,9 +93,9 @@ BEGIN
 		ELSE
 			SET @TempToDate = @ToDate
 
-		INSERT INTO @BettypeTable
+		INSERT INTO @BetTypeTable
 		SELECT DISTINCT bettype
-		FROM DBARC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
 		WHERE bettype < 19001
 			AND bettype NOT IN (903, 904, 913, 914)
 			AND custid = @CustId
@@ -97,18 +103,18 @@ BEGIN
 	END
 
 	-- Replace multiple bettypes which have the same name by group bet type ID
-	INSERT INTO @BettypeTable
+	INSERT INTO @BetTypeTable
 	SELECT f.GroupTypeId
 	FROM (SELECT * FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f
-	WHERE f.BetType IN (SELECT DISTINCT BetType FROM @BettypeTable)
-		AND f.GroupTypeId NOT IN (SELECT DISTINCT BetType FROM @BettypeTable)
+	WHERE f.BetType IN (SELECT DISTINCT BetType FROM @BetTypeTable)
+		AND f.GroupTypeId NOT IN (SELECT DISTINCT BetType FROM @BetTypeTable)
 
-	DELETE @BettypeTable
+	DELETE @BetTypeTable
 	WHERE BetType IN ( SELECT BetType FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId)
 
 	-- Don't support inactive products anymore
 	DELETE b
-	FROM @BettypeTable AS b
+	FROM @BetTypeTable AS b
 	WHERE EXISTS (SELECT 1 FROM dbo.SportBettypeMatrix WITH (NOLOCK)
 				WHERE BetType = b.BetType
 					AND ProductID IN (2, 4, 7, 9, 13, 17, 19, 26, 30, 31, 33))
@@ -117,7 +123,7 @@ BEGIN
 		typeid,
 		typenamee
 	FROM dbo.bettype AS bt WITH (NOLOCK)
-		INNER JOIN (SELECT DISTINCT BetType FROM @BettypeTable) btt ON bt.typeid = btt.BetType
+		INNER JOIN (SELECT DISTINCT BetType FROM @BetTypeTable) btt ON bt.typeid = btt.BetType
 END
 GO
 
