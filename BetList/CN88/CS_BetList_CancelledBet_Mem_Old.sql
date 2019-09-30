@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[CS_BetList_CancelledBet_Mem_Old]
 	@CustId				INT,
+	@HeadlineId			INT				= 0,
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
 	@SportTypeGroups	VARCHAR(MAX)	= '0',
@@ -23,6 +24,7 @@ AS
 	Revisions:
 		- 20190227@Kos: Create new [Redmine: 109230]
 		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
+		- 20190920@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
 */
 
 BEGIN
@@ -30,6 +32,7 @@ BEGIN
 
 	EXEC CS_BetList_Settled_Mem_Old
 		@CustId = @CustId,
+		@HeadlineId = @HeadlineId,
 		@FromDate = @FromDate,
 		@ToDate = @ToDate,
 		@SportTypeGroups = @SportTypeGroups,

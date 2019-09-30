@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[CS_BetList_Settled_Mem_Old]
 	@CustId				INT,
+	@HeadlineId			INT				= 0,
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
 	@SportTypeGroups	VARCHAR(MAX)	= '0',
@@ -36,11 +37,12 @@ AS
 			- 2: Include both normal Void tickets and Abnormal Bet tickets
 
 	Revisions:
-		- 20190227@Kos: Create new [Redmine: 109230]
-		- 20190510@Kos: Fix bug for non-sport products [Redmine: 109521]
-		- 20190704@Kos: Support PH AIO 4a [Redmine: 115866]
-		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
+		- 20190227@Kos: Create new [Redmine: #109230]
+		- 20190510@Kos: Fix bug for non-sport products [Redmine: #109521]
+		- 20190704@Kos: Support PH AIO 4a [Redmine: #115866]
+		- 20190821@Kos: Support multiple sport filter [Redmine: #109230]
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
+		- 20191129@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
 */
 
 BEGIN
@@ -122,9 +124,10 @@ BEGIN
 	)
 
 	DECLARE @Tickets TABLE (
-		TransId	BIGINT,
-		RefNo	BIGINT,
-		Product	VARCHAR(30)
+		TransId		BIGINT,
+		RefNo		BIGINT,
+		WinLostDate	SMALLDATETIME,
+		Product		VARCHAR(30)
 	)
 
 	DECLARE @SportType TABLE (SportType SMALLINT)
@@ -149,11 +152,13 @@ BEGIN
 		INSERT INTO @Tickets (
 			TransId,
 			RefNo,
+			WinLostDate,
 			Product
 		)
 		SELECT
 			b.transid,
 			b.refno,
+			b.winlostdate,
 			CASE
 				WHEN s.EventType = 0 AND s.ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 				WHEN s.EventType = 0 AND s.ProductId = 8 THEN 'Keno'		-- Keno
@@ -183,11 +188,13 @@ BEGIN
 		INSERT INTO @Tickets (
 			TransId,
 			RefNo,
+			WinLostDate,
 			Product
 		)
 		SELECT
 			b.transid,
 			b.refno,
+			b.winlostdate,
 			CASE
 				WHEN s.EventType = 0 AND s.ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 				WHEN s.EventType = 0 AND s.ProductId = 8 THEN 'Keno'		-- Keno
@@ -221,7 +228,32 @@ BEGIN
 				OR (b.bettype NOT IN (9, 29, 2799) AND b.liveindicator = @LiveIndicator))
 	END
 
-	IF @@ROWCOUNT > 0
+	IF @HeadlineId > 0		-- Headline view
+	BEGIN
+		DECLARE @SuperId INT
+
+		DECLARE @tblWinLostDate TABLE (FromDate DATETIME, ToDate DATETIME)
+
+		SELECT @SuperId = srecommend
+		FROM bodb02.dbo.Customer WITH (NOLOCK)
+		WHERE custid = @CustId
+
+		INSERT INTO @tblWinlostDate (FromDate, ToDate)
+		SELECT DISTINCT
+			CASE WHEN FromDate < @FromDate THEN @FromDate ELSE FromDate END,
+			CASE WHEN ToDate > @ToDate THEN @ToDate ELSE ToDate END
+		FROM bodb02.dbo.Acc_GroupExtraPTSetting WITH (NOLOCK)
+		WHERE UplineId = @HeadlineId
+			AND SuperId = @SuperId
+			AND FromDate <= @ToDate
+			AND ToDate >= @FromDate
+
+		DELETE b
+		FROM @Tickets AS b
+		WHERE NOT EXISTS (SELECT 1 FROM @tblWinlostDate WHERE b.winlostdate BETWEEN FromDate AND ToDate)
+	END
+
+	IF EXISTS (SELECT 1 FROM @Tickets)
 	BEGIN
 		INSERT INTO #MemBetTicket
 		SELECT

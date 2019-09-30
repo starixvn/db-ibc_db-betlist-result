@@ -2,7 +2,8 @@
 
 ALTER PROCEDURE [dbo].[CS_BetList_Parlay_GetSubTickets]
 	@TransId	BIGINT,
-	@CustId		INT
+	@CustId		INT,
+	@HeadlineId	INT		= 0
 AS
 
 /*
@@ -14,6 +15,7 @@ AS
 	Revisions:
 		- 20190304@Kos: Create new [Redmine: #109230]
 		- 20190926@Kos: Hotfix - duplicate data during Balance Up [Redmine: #120962]
+		- 20190920@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
 */
 
 BEGIN
@@ -59,12 +61,14 @@ BEGIN
 
 	DECLARE @RefNo		BIGINT,
 		@CurrencyName	NVARCHAR(50),
-		@Status			NVARCHAR(10)
+		@Status			NVARCHAR(10),
+		@WinLostDate	SMALLDATETIME
 
 	SELECT
 		@RefNo = b.refno,
 		@CurrencyName = ex.currency,
-		@Status = b.status
+		@Status = b.status,
+		@WinLostDate = b.winlostdate
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 	WHERE b.transid = @TransId AND b.custid = @CustId
@@ -74,7 +78,8 @@ BEGIN
 		SELECT
 			@RefNo = b.refno,
 			@CurrencyName = ex.currency,
-			@Status = b.status
+			@Status = b.status,
+			@WinLostDate = b.winlostdate
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 		WHERE b.transid = @TransId AND b.custid = @CustId
@@ -84,10 +89,34 @@ BEGIN
 			SELECT
 				@RefNo = b.refno,
 				@CurrencyName = ex.currency,
-				@Status = b.status
+				@Status = b.status,
+				@WinLostDate = b.winlostdate
 			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			WHERE b.transid = @TransId AND b.custid = @CustId
+		END
+	END
+
+	IF @HeadlineId > 0		-- Headline view
+	BEGIN
+		DECLARE @SuperId INT
+
+		DECLARE @tblWinLostDate TABLE (FromDate DATETIME, ToDate DATETIME)
+
+		SELECT @SuperId = srecommend
+		FROM bodb02.dbo.Customer WITH (NOLOCK)
+		WHERE custid = @CustId
+
+		INSERT INTO @tblWinlostDate (FromDate, ToDate)
+		SELECT DISTINCT
+			FromDate,
+			ToDate
+		FROM bodb02.dbo.Acc_GroupExtraPTSetting WITH (NOLOCK)
+		WHERE UplineId = @HeadlineId AND SuperId = @SuperId
+
+		IF NOT EXISTS (SELECT 1 FROM @tblWinlostDate WHERE @WinLostDate BETWEEN FromDate AND ToDate)
+		BEGIN
+			SET @RefNo = NULL
 		END
 	END
 

@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[CS_BetList_Parlay_TicketDetail]
 	@TransId		BIGINT		= 0,
 	@BetId			BIGINT		= 0,
 	@CustId			INT,
+	@HeadlineId		INT			= 0,
 	@MoveBetDay		SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
 	@Outstanding	MONEY		= 0 OUTPUT
@@ -21,6 +22,7 @@ AS
 		- 20190912@Kos: Show LOSE combination details [Redmine: #117888]
 		- 20191104@Kos: Hotfix - Duplicate data in Balance Up time [Redmine: #123093]
 		- 20191115@Kos: Show (N) for neutral match [Redmine: #123772]
+		- 20191126@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
 */
 
 BEGIN
@@ -83,6 +85,58 @@ BEGIN
 
 	DECLARE @minMatchdate SMALLDATETIME,
 			@maxMatchdate SMALLDATETIME
+
+	IF @HeadlineId > 0		-- Headline view
+	BEGIN
+		DECLARE @SuperId INT
+
+		DECLARE @tblWinLostDate TABLE (FromDate DATETIME, ToDate DATETIME)
+
+		SELECT @SuperId = srecommend
+		FROM bodb02.dbo.Customer WITH (NOLOCK)
+		WHERE custid = @CustId
+
+		INSERT INTO @tblWinlostDate (FromDate, ToDate)
+		SELECT DISTINCT
+			FromDate,
+			ToDate
+		FROM bodb02.dbo.Acc_GroupExtraPTSetting WITH (NOLOCK)
+		WHERE UplineId = @HeadlineId AND SuperId = @SuperId
+
+		DECLARE @WinLostDate SMALLDATETIME
+
+		SELECT @WinLostDate = winlostdate
+		FROM dbo.bettrans WITH (NOLOCK)
+		WHERE custid = @CustId
+			AND refno = @RefNo
+			AND matchid = 29
+			AND bettype = 29
+
+		IF @WinLostDate IS NULL
+		BEGIN
+			SELECT @WinLostDate = winlostdate
+			FROM dbo.bettrans14 WITH (NOLOCK)
+			WHERE custid = @CustId
+				AND refno = @RefNo
+				AND matchid = 29
+				AND bettype = 29
+
+			IF @WinLostDate IS NULL
+			BEGIN
+				SELECT @WinLostDate = winlostdate
+				FROM bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
+				WHERE custid = @CustId
+					AND refno = @RefNo
+					AND matchid = 29
+					AND bettype = 29
+			END
+		END
+
+		IF NOT EXISTS (SELECT 1 FROM @tblWinlostDate WHERE @WinLostDate BETWEEN FromDate AND ToDate)
+		BEGIN
+			SET @RefNo = NULL
+		END
+	END
 
 	-- Get bettransm data
 	INSERT INTO @parlay_base (

@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[CS_BetList_WinLoss_Mem]
 	@CustId				INT,
+	@HeadlineId			INT				= 0,
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
 	@MoveBetsDay		SMALLDATETIME,
@@ -25,6 +26,7 @@ AS
 		- 20190227@Kos: Create new [Redmine: #109230]
 		- 20190821@Kos: Support multiple sport filter [Redmine: #109230]
 		- 20191021@Kos: Include Void/Reject/Refund tickets [Redmine: #120802]
+		- 20191203@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
 */
 
 BEGIN
@@ -32,6 +34,7 @@ BEGIN
 
 	EXEC CS_BetList_Settled_Mem
 		@CustId = @CustId,
+		@HeadlineId = @HeadlineId,
 		@FromDate = @FromDate,
 		@ToDate = @ToDate,
 		@MoveBetsDay = @MoveBetsDay,
