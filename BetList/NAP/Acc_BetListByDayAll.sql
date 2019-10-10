@@ -128,6 +128,7 @@ AS
 		- 20190919@Kos: Hotfix - Wrong match showtime of Cash Out ticket [#Redmine: 120242]
 		- 20190924@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
+		- 20191105@Kos: Support Non-peak Hours Promotion [#Redmine: 121121]
 
 	Param's Explanation:
 		+ @TransType:
@@ -615,7 +616,7 @@ BEGIN
 				AND s.EventType = 3
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
-			-- RNG Casino, Keno, Gold Deluxe, AG Casino, AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Card Club
+			-- RNG Casino, Keno, Gold Deluxe, AG Casino, AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Card Club, NPH Promotion
 			INSERT INTO @Data
 			SELECT
 				CASE
@@ -633,7 +634,7 @@ BEGIN
 					WHEN s.ProductID = 24 THEN 219
 					WHEN s.ProductID = 28 THEN 220
 					WHEN s.ProductID = 32 THEN 248
-					WHEN s.ProductID = 34 THEN b.matchid
+					WHEN s.ProductID IN (34, 37) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -728,14 +729,17 @@ BEGIN
 				END AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				CASE
+					WHEN s.ProductID = 37 THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND s.ProductID IN (6, 8, 11, 12, 21, 22, 23, 24, 28, 32, 34)
+				AND s.ProductID IN (6, 8, 11, 12, 21, 22, 23, 24, 28, 32, 34, 37)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Colossus Bet
@@ -1716,7 +1720,7 @@ BEGIN
 					AND b.statusID IN (0, 1)
 			END
 
-			-- Keno, Gold Deluxe, Lottery (bettrans)
+			-- Keno, Gold Deluxe, Lottery, NPH Promotion (bettrans)
 			IF EXISTS (SELECT TOP(1) 1 FROM @tmpStatus WHERE statusID NOT IN (0, 1))
 			BEGIN
 				INSERT INTO @Data
@@ -1725,6 +1729,7 @@ BEGIN
 						WHEN s.ProductId = 8 THEN 202
 						WHEN s.ProductId = 12 THEN 255
 						WHEN s.ProductID = 28 THEN 220
+						WHEN s.ProductID = 37 THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					0 AS leagueid,
@@ -1806,14 +1811,17 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					CASE
+						WHEN s.ProductID = 37 THEN ISNULL(b.ExtraInfo, '')
+						ELSE ''
+					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE  b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND s.ProductID IN (8, 12, 28)
+					AND s.ProductID IN (8, 12, 28, 37)
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 			END
 

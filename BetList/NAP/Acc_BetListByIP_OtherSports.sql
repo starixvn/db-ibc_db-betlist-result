@@ -106,6 +106,7 @@ AS
 					- Don't support Microgaming Live Casino, Microgaming RNG Casino, Lucky 3, Poker Games anymore [Redmine: #119018]
 					- Add new params @MoveBetsDay and @BalanceUpDay
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
+		- 20191105@Kos: Support Non-peak Hours Promotion [#Redmine: 121121]
 */
 
 BEGIN
@@ -551,6 +552,7 @@ BEGIN
 						WHEN s.ProductID = 28 THEN 'Lottery'
 						WHEN s.ProductID = 32 THEN 'PP'								-- Pragmatic Play Casino
 						WHEN s.ProductID = 34 THEN 'CC'								-- Card Club
+						WHEN s.ProductID = 37 THEN 'NPHP'							-- NPH Promotion
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.ProductID = 3 THEN 'NG'								-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -818,7 +820,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC') THEN b.matchid		-- ONERnG, Card Club
+									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -965,7 +967,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Outright') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Outright', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -1224,7 +1226,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC') THEN b.matchid		-- ONERnG, Card Club
+									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1353,7 +1355,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Outright') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Outright', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -1416,7 +1418,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC') THEN b.matchid		-- ONERnG, Card Club
+									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1545,7 +1547,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Outright') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Outright', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE

@@ -118,6 +118,7 @@ AS
 		- 20191022@Kos: Show Running status for Marked CN88 tickets [Redmine: 122391]
 					- Move to DBACC
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
+		- 20191105@Kos: Support Non-peak Hours Promotion [Redmine: #121121]					
 */
 
 BEGIN
@@ -646,8 +647,8 @@ BEGIN
 					AND b.transid = @TransId
 			END
 
-			-- Keno, Gold Deluxe, Lottery
-			IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE Bettype = @BetType AND ProductID IN (8, 12, 28))
+			-- Keno, Gold Deluxe, Lottery, NPH Promotion
+			IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE Bettype = @BetType AND ProductID IN (8, 12, 28, 37))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -701,6 +702,7 @@ BEGIN
 						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 28 THEN 220
+						WHEN s.ProductID = 37 THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					b.ip,
@@ -733,13 +735,16 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					CASE
+						WHEN s.ProductID = 37 THEN ISNULL(b.ExtraInfo, '')
+						ELSE ''
+					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND s.ProductId IN (8, 12, 28)
+					AND s.ProductId IN (8, 12, 28, 37)
 			END
 
 			-- NG2
@@ -2130,8 +2135,8 @@ BEGIN
 					AND b.bettype IN (9, 29, 2799)
 			END
 
-			-- Keno, Gold Deluxe, Lottery, Card Club
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE Bettype = @BetType AND ProductID IN (8, 12, 28, 34))
+			-- Keno, Gold Deluxe, Lottery, Card Club, NPH Promotion
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE Bettype = @BetType AND ProductID IN (8, 12, 28, 34, 37))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2185,7 +2190,7 @@ BEGIN
 						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 28 THEN 220
-						WHEN s.ProductID = 34 THEN b.matchid
+						WHEN s.ProductID IN (34, 37) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					b.ip,
@@ -2218,13 +2223,16 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					CASE
+						WHEN s.ProductID = 37 THEN ISNULL(b.ExtraInfo, '')
+						ELSE ''
+					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND s.ProductID IN (8, 12, 28, 34)
+					AND s.ProductID IN (8, 12, 28, 34, 37)
 			END
 
 			-- Outright
@@ -2939,10 +2947,10 @@ BEGIN
 					AND b.bettype IN (9, 29, 2799)
 			END
 
-			-- RNG Casino, Keno, Gold Deluxe, Lottery, Card Club
+			-- RNG Casino, Keno, Gold Deluxe, Lottery, Card Club, NPH Promotion
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType 
-							AND (ProductID IN (8, 12, 28, 34)
+							AND (ProductID IN (8, 12, 28, 34, 37)
 								OR (ProductID = 6 AND SubProduct = '')))
 			BEGIN
 				INSERT INTO @Data
@@ -2998,7 +3006,7 @@ BEGIN
 						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 28 THEN 220
-						WHEN s.ProductID = 34 THEN b.matchid
+						WHEN s.ProductID IN (34, 37) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					b.ip,
@@ -3031,13 +3039,16 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					CASE
+						WHEN s.ProductID = 37 THEN ISNULL(b.ExtraInfo, '')
+						ELSE ''
+					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
 				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND (s.ProductID IN (8, 12, 28, 34)
+					AND (s.ProductID IN (8, 12, 28, 34, 37)
 						OR (s.ProductID = 6 AND s.SubProduct = ''))
 			END
 
