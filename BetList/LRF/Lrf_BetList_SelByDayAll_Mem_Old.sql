@@ -88,6 +88,7 @@ AS
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
 		- 20190704@Kos: Support Card Club [Redmine: #115449]
+		- 20191010@Kos: Support Non-peak Hours Promotion [#Redmine: 121121]
 
 	Param's Explanation:
 		+ @TransType:
@@ -226,7 +227,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 37)
 		AND BetType NOT IN (904, 914)
 
 	IF @TransType = 4	-- support only for Colossus Bets
@@ -590,7 +591,7 @@ BEGIN
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
 			AND b.bettype = 10
 
-		-- RNG Casino, Keno, AG Casino, AllBet, Macau Games, Fishing World, Lottery, Pragmatic Casino, Card Club
+		-- RNG Casino, Keno, AG Casino, AllBet, Macau Games, Fishing World, Lottery, Pragmatic Casino, Card Club, NPH Promotion
 		INSERT INTO @Data
 		SELECT
 			CASE
@@ -603,7 +604,7 @@ BEGIN
 				WHEN sbt.ProductID = 24 THEN 219
 				WHEN sbt.ProductID = 28 THEN 220
 				WHEN sbt.ProductID = 32 THEN 248
-				WHEN sbt.ProductID = 34 THEN b.matchid
+				WHEN sbt.ProductID IN (34, 37) THEN b.matchid
 				ELSE 0
 			END AS SportType,
 			0 AS leagueid,
@@ -690,7 +691,10 @@ BEGIN
 				ELSE ''
 			END AS transdesc,
 			-1 AS BetdaqId,
-			'' AS ExtraInfo,
+			CASE
+				WHEN sbt.ProductID = 37 THEN ISNULL(b.ExtraInfo, '')
+				ELSE ''
+			END AS ExtraInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,
@@ -701,7 +705,7 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-			AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34)
+			AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 37)
 			AND sbt.EventType = 0
 
 		-- Colossus Bets

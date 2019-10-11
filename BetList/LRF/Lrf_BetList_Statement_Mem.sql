@@ -26,6 +26,7 @@ AS
 	DB: DBACC.bodb02
 	Param's Explanation:
 		- @TransType:
+			- 0: All
 			- 1: Won, Lose, Draw
 			- 2: Void, Reject, Refund
 			- 3: Running, Waiting
@@ -35,6 +36,7 @@ AS
 		- 20190923@Kos: Support tickets which have winlostdate in the future [Redmine: #120690]
 		- 20191011@Kos: Fix bug translog [Redmine: #120690]
 		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
+		- 20191105@Kos: Support Non-peak Hours Promotion [#Redmine: 121121]
 */
 
 BEGIN
@@ -330,6 +332,7 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @_Date
 				AND 1 = CASE
+							WHEN @TransType = 0 THEN 1
 							WHEN @TransType = 1 AND b.statusID IN (111, 112, 113) THEN 1
 							WHEN @TransType = 2 AND b.statusID IN (101, 102, 103) THEN 1
 							WHEN @TransType = 3 AND b.statusID IN (0, 1) THEN 1
@@ -375,7 +378,7 @@ BEGIN
 				WHERE b.BetType = 912
 			END
 
-			IF @TransType = 3
+			IF @TransType IN (0, 3)
 			BEGIN
 				-- translog
 				INSERT INTO #Data (
@@ -528,6 +531,7 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @_Date
 				AND 1 = CASE
+							WHEN @TransType = 0 THEN 1
 							WHEN @TransType = 1 AND b.statusID IN (111, 112, 113) THEN 1
 							WHEN @TransType = 2 AND b.statusID IN (101, 102, 103) THEN 1
 							ELSE 0
@@ -662,6 +666,7 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @_Date
 				AND 1 = CASE
+							WHEN @TransType = 0 THEN 1
 							WHEN @TransType = 1 AND b.statusID IN (111, 112, 113) THEN 1
 							WHEN @TransType = 2 AND b.statusID IN (101, 102, 103) THEN 1
 							ELSE 0
@@ -722,6 +727,7 @@ BEGIN
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 32 THEN 'PP'								-- Pragmatic Play Casino
 							WHEN s.ProductID = 34 THEN 'CC'								-- Card Club
+							WHEN s.ProductID = 37 THEN 'NPHP'							-- Non-peak Hour Promotion
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 							WHEN s.ProductID = 3 THEN 'NG'								-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -1009,7 +1015,7 @@ BEGIN
 									ELSE b.transid
 								END,
 						SportType = CASE
-										WHEN b.Product IN ('OneRNG', 'CC') THEN b.matchid		-- ONERnG, Card Club
+										WHEN b.Product IN ('OneRNG', 'CC', 'NPHP') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1177,7 +1183,7 @@ BEGIN
 									ELSE -1
 								END,
 						ExtraInfo = CASE
-										WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+										WHEN b.Product IN ('SB', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
 										ELSE ''
 									END,
 						OriginalStake = CASE
@@ -1278,7 +1284,7 @@ BEGIN
 									ELSE b.transid
 								END,
 						SportType = CASE
-										WHEN b.Product IN ('OneRNG', 'CC') THEN b.matchid		-- ONERnG, Card Club
+										WHEN b.Product IN ('OneRNG', 'CC', 'NPHP') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1402,7 +1408,7 @@ BEGIN
 									ELSE -1
 								END,
 						ExtraInfo = CASE
-										WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+										WHEN b.Product IN ('SB', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
 										ELSE ''
 									END,
 						OriginalStake = CASE
@@ -1456,7 +1462,7 @@ BEGIN
 									ELSE b.transid
 								END,
 						SportType = CASE
-										WHEN b.Product IN ('OneRNG', 'CC') THEN b.matchid		-- ONERnG, Card Club
+										WHEN b.Product IN ('OneRNG', 'CC', 'NPHP') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1580,7 +1586,7 @@ BEGIN
 									ELSE -1
 								END,
 						ExtraInfo = CASE
-										WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+										WHEN b.Product IN ('SB', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
 										ELSE ''
 									END,
 						OriginalStake = CASE
