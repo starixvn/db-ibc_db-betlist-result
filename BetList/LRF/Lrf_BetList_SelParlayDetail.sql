@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelParlayDetail]
 	@TransId	BIGINT,
@@ -7,8 +7,8 @@ AS
 
 /*
 	Created: Henry@20101210
-	Task : get parlay tickets
-	DB: DBEXT.bodb02
+	Task: Get parlay sub tickets
+	DB: DBACC.bodb02
 	Original: [Age_BetList_SelParlayDetail]
 
 	Revisions:
@@ -29,6 +29,7 @@ AS
 					- Add new param @CustId, remove param @Langkey
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112733]
+		- 20191011@Kos: Move from DBEXT.bodb02 to DBACC.bodb02 [Redmine: #117888]
 */
 
 BEGIN
@@ -98,7 +99,7 @@ BEGIN
 				@RefNo = b.refno,
 				@CurrencyId = b.currency,
 				@Status = b.status
-			FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			WHERE b.transid = @TransId AND b.custid = @CustId
 		END
 	END
@@ -197,7 +198,7 @@ BEGIN
 	END
 
 	IF EXISTS (	SELECT 1
-				FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
+				FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 				WHERE b.refno = @RefNo AND b.custid = @CustId )
 	BEGIN
@@ -236,9 +237,9 @@ BEGIN
 				ELSE b.status
 			END AS status,
 			ISNULL(b.transdesc, '') AS transdesc
-		FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
