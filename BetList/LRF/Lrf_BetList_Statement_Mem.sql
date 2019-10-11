@@ -33,6 +33,7 @@ AS
 	Revisions:
 		- 20190905@Kos: Created [Redmine: #116874]
 		- 20190923@Kos: Support tickets which have winlostdate in the future [Redmine: #120690]
+		- 20191011@Kos: Fix bug translog [Redmine: #120690]
 */
 
 BEGIN
@@ -373,62 +374,65 @@ BEGIN
 				WHERE b.BetType = 912
 			END
 
-			-- translog
-			INSERT INTO #Data (
-				TransId,
-				RefNo,
-				CustId,
-				Recommend,
-				Currency,
-				BetType,
-				Odds,
-				Stake,
-				Actual_Stake,
-				Status,
-				TransDate,
-				WinLostDate,
-				LiveIndicator,
-				Ip,
-				BetFrom,
-				TransDesc,
-				ProductId,
-				EventId,
-				Custom1,
-				Custom2,
-				Custom3,
-				Gameid3rd,
-				Tranid3rd,
-				TableID
-			)
-			SELECT
-				b.translogid AS TransId,
-				b.translogid AS RefNo,
-				b.custid,
-				b.recommend,
-				b.currency,
-				b.gameID AS BetType,
-				b.odds,
-				b.stake,
-				b.actual_stake,
-				b.status,
-				b.transdate,
-				b.transdate AS WinLostDate,
-				b.liveindicator,
-				b.ip,
-				b.betfrom,
-				b.transdesc,
-				b.productID,
-				b.eventID,
-				b.custom1,
-				b.custom2,
-				b.custom3,
-				b.GameId3rd,
-				b.TranId3rd,
-				4 AS TableID
-			FROM dbo.translog AS b WITH (NOLOCK)
-			WHERE b.custid = @CustId
-				AND b.winlostdate = @_Date
-				AND b.statusID IN (0, 1)
+			IF @TransType = 3
+			BEGIN
+				-- translog
+				INSERT INTO #Data (
+					TransId,
+					RefNo,
+					CustId,
+					Recommend,
+					Currency,
+					BetType,
+					Odds,
+					Stake,
+					Actual_Stake,
+					Status,
+					TransDate,
+					WinLostDate,
+					LiveIndicator,
+					Ip,
+					BetFrom,
+					TransDesc,
+					ProductId,
+					EventId,
+					Custom1,
+					Custom2,
+					Custom3,
+					Gameid3rd,
+					Tranid3rd,
+					TableID
+				)
+				SELECT
+					b.translogid AS TransId,
+					b.translogid AS RefNo,
+					b.custid,
+					b.recommend,
+					b.currency,
+					b.gameID AS BetType,
+					b.odds,
+					b.stake,
+					b.actual_stake,
+					b.status,
+					b.transdate,
+					b.transdate AS WinLostDate,
+					b.liveindicator,
+					b.ip,
+					b.betfrom,
+					b.transdesc,
+					b.productID,
+					b.eventID,
+					b.custom1,
+					b.custom2,
+					b.custom3,
+					b.GameId3rd,
+					b.TranId3rd,
+					4 AS TableID
+				FROM dbo.translog AS b WITH (NOLOCK)
+				WHERE b.custid = @CustId
+					AND b.winlostdate = @_Date
+					AND b.statusID IN (0, 1)
+			END
 		END
 		ELSE IF @_Date BETWEEN @BalanceUpDay AND @MoveBetsDay		-- bettrans14 range
 		BEGIN
@@ -1051,6 +1055,7 @@ BEGIN
 										ELSE b.actual_stake
 									END,
 						Status = CASE
+									WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet') AND x.Status IS NOT NULL THEN x.Status
 									WHEN b.Product = 'SB' AND b.bettype NOT IN (9, 29)
 										AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 									WHEN b.bettype IN (9, 29, 2799) AND b.status = 'running' THEN
