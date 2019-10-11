@@ -56,6 +56,7 @@ AS
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
 		- 20190523@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
+		- 20191011@Kos: Support drop table LicenseeBATransaction [Redmine: #103656]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -219,7 +220,7 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN bodb_licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
+				INNER JOIN bodb_licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE

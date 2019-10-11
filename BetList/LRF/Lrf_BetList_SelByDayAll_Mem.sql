@@ -94,6 +94,7 @@ AS
 		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
 		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 		- 20190813@Kos: Support Card Club [Redmine: #115449]
+		- 20191011@Kos: Support drop table LicenseeBATransaction [Redmine: #103656]
 
 	Param's Explanation:
 		+ @TransType:
@@ -342,7 +343,7 @@ BEGIN
 			END AS OddsSpread
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
+			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS BA WITH (NOLOCK) ON b.transid = BA.transid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE
 			b.custid = @CustId
@@ -584,7 +585,7 @@ BEGIN
 		FROM 
 			dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
+			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @CustId
 			AND b.winlostdate = @FromDate
@@ -654,7 +655,7 @@ BEGIN
 			dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright14 AS m WITH (NOLOCK) on b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) on m.leagueid = l.leagueid
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
+			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @CustId
 			AND b.winlostdate = @FromDate
@@ -1048,7 +1049,7 @@ BEGIN
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
+			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 			LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 		WHERE
 			b.custid = @CustId
@@ -1267,7 +1268,7 @@ BEGIN
 		FROM 
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
+			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @CustId
 			AND b.winlostdate = @FromDate
@@ -1342,7 +1343,7 @@ BEGIN
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) on b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) on m.leagueid = l.leagueid
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction AS BA WITH (NOLOCK) ON b.transid = BA.transid
+			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE
 			b.custid = @CustId
 			AND b.winlostdate = @FromDate
