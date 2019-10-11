@@ -1,23 +1,28 @@
 ﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BA_MonitorBetList]
-  @TotalRow INT,
-  @Amount INT = 0,
-  @LastTransId BIGINT = 0
- /*
+	@TotalRow INT,
+	@Amount INT = 0,
+	@LastTransId BIGINT = 0
+AS
+
+/*
 	Created: Johnson
-	DB: DB052.BODB02
+	DB: DBEXT.BODB02
 	Date: 2011-06-14
 	Task: BA Monitor Bets 
 		
 	Revision:
 		- 20110808@Henry: add param @LastTransId
+		- 20191011@Kos: Support drop table LicenseeBATransaction [Redmine: #103656]
+
 	Param's Explanation:
 	+	@TotalRow: Total rows the SP will return
 	+	@Amount: to constrainst the stake, stake should greater than or equal to param amount
 	+	@LastTransId: return from lastTransId forward, default is 0
- */
- AS
+*/
+
+BEGIN
 	SET NOCOUNT ON
 	
 	DECLARE @tmpBetList TABLE(		
@@ -81,7 +86,7 @@ ALTER PROCEDURE [dbo].[Acc_BA_MonitorBetList]
 		b.CurrencyName,
 		b.UserName
 	FROM bettrans b WITH (NOLOCK)
-		INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction ba WITH(NOLOCK)  ON ba.transid = b.transid  
+		INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_active ba WITH(NOLOCK)  ON ba.transid = b.transid  
 		INNER JOIN MATCH m WITH(NOLOCK) ON b.matchid = m.matchid
 	WHERE b.statusID IN (0,1)
 	
@@ -115,8 +120,7 @@ ALTER PROCEDURE [dbo].[Acc_BA_MonitorBetList]
 		CONVERT(BIT,0) IsNeutral,
 		b.CurrencyName,
 		b.UserName
-		
-	FROM bodb_Licensee.dbo.LicenseeBATransaction ba WITH(NOLOCK)  
+	FROM bodb_Licensee.dbo.LicenseeBATransaction_active ba WITH(NOLOCK)  
 		INNER JOIN dbo.bettrans b WITH(NOLOCK) ON ba.TransID = b.transid
 	WHERE b.statusID IN( 0,1)
 		AND b.bettype = 9
@@ -153,7 +157,7 @@ ALTER PROCEDURE [dbo].[Acc_BA_MonitorBetList]
 		b.CurrencyName,
 		b.UserName
 		
-	FROM bodb_Licensee.dbo.LicenseeBATransaction ba WITH(NOLOCK)  
+	FROM bodb_Licensee.dbo.LicenseeBATransaction_active ba WITH(NOLOCK)  
 		INNER JOIN dbo.bettrans b WITH(NOLOCK) ON ba.TransID = b.transid
 	WHERE b.statusID IN( 0,1)
 		AND b.bettype = 29	
@@ -190,7 +194,7 @@ ALTER PROCEDURE [dbo].[Acc_BA_MonitorBetList]
 		b.CurrencyName,
 		b.UserName
 		
-	FROM bodb_Licensee.dbo.LicenseeBATransaction ba WITH(NOLOCK)   
+	FROM bodb_Licensee.dbo.LicenseeBATransaction_active ba WITH(NOLOCK)   
 		INNER JOIN dbo.bettrans b WITH(NOLOCK) ON ba.TransID = b.transid
 		INNER JOIN dbo.outright m WITH(NOLOCK) ON b.matchid = m.orid
 		INNER JOIN dbo.league l WITH(NOLOCK) ON m.leagueid = l.leagueid		
@@ -218,8 +222,8 @@ ALTER PROCEDURE [dbo].[Acc_BA_MonitorBetList]
 		stake >= @Amount
 		AND transid > @LastTransId
 	ORDER BY transid DESC
-
-
+END
+GO
 
 
 GRANT EXECUTE ON [dbo].[Acc_BA_MonitorBetList] TO bodbAdminNet
