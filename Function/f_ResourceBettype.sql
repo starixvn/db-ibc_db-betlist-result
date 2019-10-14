@@ -22,6 +22,7 @@ AS
 		- 20180906@Kos: Support E-Sports phase 2 [Redmine: #101047]
 		- 20190801@Kos: Support PH AIO phase 4b [Redmine: #115235]
 					- Change for "Next Goal" [Redmine: #115235]
+		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 */
 
 BEGIN
@@ -373,6 +374,13 @@ BEGIN
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 0, 'None', 22, '08')
+
+	-- 9. Badminton All In One phase 2
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (9, 1, 'Badminton AIO', 712, '712%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (9, 1, 'Badminton AIO', 713, '713%')
 
 	RETURN
 END

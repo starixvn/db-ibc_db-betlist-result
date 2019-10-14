@@ -45,6 +45,7 @@ AS
 		- 20181122@Kos: Support E-Sports phase 2 [Redmine: #101047]
 		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #110599]
 		- 20190806@Kos: Support PH AIO phase 4b [Redmine: #115235]
+		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 */
 
 BEGIN
@@ -97,8 +98,8 @@ BEGIN
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
 		WHERE m.matchid = @MatchId
-		ORDER BY m.eventdate,
-			m.matchcode
+		ORDER BY m.eventdate ASC,
+			m.matchcode ASC
 
 		-- Get sport type
 		SELECT @SportType = sporttype
@@ -111,7 +112,7 @@ BEGIN
 			SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 
 		-- Get result detail
-		IF @SportType NOT IN (43, 193)
+		IF @SportType NOT IN (9, 43, 193)
 		BEGIN
 			SELECT
 				d.MatchId,
@@ -154,9 +155,29 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY d.ResourceID
+			ORDER BY d.ResourceID ASC
 		END
-		ELSE IF @SportType = 43
+		ELSE IF @SportType = 9		-- Badminton
+		BEGIN
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetailOS AS d WITH (NOLOCK)
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE d.MatchId = @MatchId
+				AND (LEN(d.ResourceId) IN (2, 4)
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND d.ResourceId LIKE '%' + @ResourceId))
+			ORDER BY d.ResourceID ASC
+		END
+		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			SELECT
 				d.MatchId,
@@ -174,7 +195,7 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
-			ORDER BY d.ResourceID
+			ORDER BY d.ResourceID ASC
 		END
 		ELSE
 		BEGIN
@@ -196,7 +217,7 @@ BEGIN
 						OR (d.ResourceID LIKE f.ResourceID
 							AND (@BetType <> 2809
 								OR d.ResourceID LIKE '%' + @ResourceId))))
-			ORDER BY d.ResourceId
+			ORDER BY d.ResourceId ASC
 		END
 	END
 	ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)
@@ -239,8 +260,8 @@ BEGIN
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 		WHERE m.matchid = @MatchId
-		ORDER BY m.eventdate,
-			m.matchcode
+		ORDER BY m.eventdate ASC,
+			m.matchcode ASC
 
 		-- Get sport type
 		SELECT @SportType = sporttype
@@ -253,7 +274,7 @@ BEGIN
 			SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 
 		-- Get result detail
-		IF @SportType NOT IN (43, 193)
+		IF @SportType NOT IN (9, 43, 193)
 		BEGIN
 			SELECT
 				d.MatchID,
@@ -296,9 +317,29 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY d.ResourceID
+			ORDER BY d.ResourceID ASC
 		END
-		ELSE IF @SportType = 43
+		ELSE IF @SportType = 9		-- Badminton
+		BEGIN
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetailOS14 AS d WITH (NOLOCK)
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE d.MatchId = @MatchId
+				AND (LEN(d.ResourceId) IN (2, 4)
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND d.ResourceId LIKE '%' + @ResourceId))
+			ORDER BY d.ResourceID ASC
+		END
+		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			SELECT
 				d.MatchId,
@@ -316,7 +357,7 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
-			ORDER BY d.ResourceID
+			ORDER BY d.ResourceID ASC
 		END
 		ELSE
 		BEGIN
@@ -338,7 +379,7 @@ BEGIN
 						OR (d.ResourceID LIKE f.ResourceID
 							AND (@BetType <> 2809
 								OR d.ResourceID LIKE '%' + @ResourceId))))
-			ORDER BY d.ResourceId
+			ORDER BY d.ResourceId ASC
 		END
 	END
 	ELSE
@@ -382,8 +423,8 @@ BEGIN
 			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_bk AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 		WHERE m.matchid = @MatchId
-		ORDER BY m.eventdate,
-			m.matchcode
+		ORDER BY m.eventdate ASC,
+			m.matchcode ASC
 
 		SELECT @SportType = Sporttype
 		FROM DBARC.bodb_archive.dbo.match_BK WITH (NOLOCK)
@@ -395,7 +436,7 @@ BEGIN
 			SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 
 		-- Get result detail
-		IF @SportType NOT IN (43, 193)
+		IF @SportType NOT IN (9, 43, 193)
 		BEGIN
 			SELECT
 				d.MatchId,
@@ -438,9 +479,29 @@ BEGIN
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY d.ResourceId
+			ORDER BY d.ResourceId ASC
 		END
-		ELSE IF @SportType = 43
+		ELSE IF @SportType = 9		-- Badminton
+		BEGIN
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM DBARC.bodb_Archive.dbo.ResultDetailOS_bk AS d WITH (NOLOCK)
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE d.MatchId = @MatchId
+				AND (LEN(d.ResourceId) IN (2, 4)
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceId LIKE f.ResourceID
+						AND d.ResourceId LIKE '%' + @ResourceId))
+			ORDER BY d.ResourceID ASC
+		END
+		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			SELECT
 				d.MatchId,
@@ -458,7 +519,7 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
-			ORDER BY d.ResourceID
+			ORDER BY d.ResourceID ASC
 		END
 		ELSE
 		BEGIN
@@ -480,7 +541,7 @@ BEGIN
 						OR (d.ResourceID LIKE f.ResourceID
 							AND (@BetType <> 2809
 								OR d.ResourceID LIKE '%' + @ResourceId))))
-			ORDER BY d.ResourceId
+			ORDER BY d.ResourceId ASC
 		END
 	END
 END
