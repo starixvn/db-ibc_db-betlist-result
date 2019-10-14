@@ -1,9 +1,10 @@
-﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_Rpt_DailyWLDirect_Result_Old]
-	@MatchId	INT,
-	@BetType	INT,
-	@TraderName	NVARCHAR(100) OUTPUT
+	@MatchId		INT,
+	@BetType		INT,
+	@LiveIndicator	TINYINT = 2,
+	@TraderName		NVARCHAR(100) OUTPUT
 AS
 
 /*
@@ -11,6 +12,12 @@ AS
 	Task: show popup of match information
 	DB: DBACC.bodb02
 	Original: Acc_BetList_SelMatchResult_Old
+
+	Param's Explanation:
+		+ @LiveIndicator:
+			0: Non-live
+			1: Live
+			2: All (Live & non-live)
 
 	Revisions:
 		- 20141023@Sophia: Get data from ResultDetail table (support Sporting solution) (RedmineID :#23671)
@@ -26,6 +33,8 @@ AS
 		- 20181108@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 104013]
 					- Move eventstatus data transform to web (no change for Tennis)
 		- 20181025@Kos: Support E-Sports 2 [Redmine: #100635]
+		- 20191014@Kos: Support new table Trader [Redmine: #120746]
+					- Add new param @LiveIndicator
 */
 
 BEGIN
@@ -69,13 +78,35 @@ BEGIN
 		LEFT JOIN bodb_Archive.dbo.ResultDetail_bk AS r WITH (NOLOCK) ON r.MatchId = m.matchid AND r.ResourceId = '00'
 	WHERE m.matchid = @MatchId
 
-	-- Get trader name
-	SELECT @TraderName = c.username
-	FROM bodb_Archive.dbo.Dot_Admin_Assignment_Operator_bk AS o WITH (NOLOCK)
-		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
-		INNER JOIN DBDW.bodb_Account.dbo.TradingBettypeMapping AS m WITH (NOLOCK)
-			ON o.OperatorType = m.OperatorType AND o.bettype = m.TradingBetType
-	WHERE o.matchid = @MatchId AND m.TicketBetType = @BetType
+	DECLARE @CutOffDate SMALLDATETIME = '2019-11-01 00:00:00'
+	DECLARE @EventDate SMALLDATETIME
+
+	SELECT @EventDate = eventdate
+	FROM bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
+	WHERE matchid = @MatchId
+
+	IF @EventDate < @CutOffDate
+	BEGIN
+		SELECT @TraderName = c.username
+		FROM bodb_Archive.dbo.Dot_Admin_Assignment_Operator_bk AS o WITH (NOLOCK)
+			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
+			INNER JOIN DBDW.bodb_Account.dbo.TradingBettypeMapping AS m WITH (NOLOCK)
+				ON o.OperatorType = m.OperatorType AND o.bettype = m.TradingBetType
+		WHERE o.matchid = @MatchId AND m.TicketBetType = @BetType
+	END
+	ELSE
+	BEGIN
+		-- Get trader name
+		SELECT TOP(1) @TraderName = c.username
+		FROM bodb_Archive.dbo.Dot_Admin_Assignment_Trader_bk AS t WITH (NOLOCK)
+			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON t.TraderID = c.custid
+		WHERE t.matchid = @MatchId
+			AND t.bettype = @BetType
+			AND (@LiveIndicator = 2 OR t.liveindicator = @LiveIndicator)
+		ORDER BY
+			t.UpdatedTime DESC,
+			t.ID DESC
+	END
 
 	DECLARE @SportType SMALLINT
 
@@ -117,14 +148,8 @@ BEGIN
 		ORDER BY ResourceID
 	END
 END
-
-
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_Rpt_DailyWLDirect_Result_Old] TO [bodbExtAccNet]
-GO
+
+
 GRANT EXECUTE ON [dbo].[Acc_Rpt_DailyWLDirect_Result_Old] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_Rpt_DailyWLDirect_Result_Old] TO [vnteam]
 GO
