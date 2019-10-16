@@ -38,6 +38,7 @@ AS
 		- 20180907@Kos: Support E-Sports phase 2 [Redmine: #101047]
 		- 20190805@Kos: Support PH AIO 4b [Redmine: #115235]
 					- Change for "Next Goal" [Redmine: #115235]
+		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 */
 
 BEGIN
@@ -124,6 +125,15 @@ BEGIN
 					FROM dbo.ResultDetailES14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0 AND @SportType = 43
 				) AS e ON m.Matchid = e.MatchId
+			LEFT JOIN
+				(	SELECT DISTINCT MatchID
+					FROM dbo.ResultDetailOS WITH (NOLOCK)
+					WHERE SettlementStatusID > 0 AND @SportType = 9
+					UNION ALL
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
+					WHERE SettlementStatusID > 0 AND @SportType = 9
+				) AS o ON o.MatchID = m.matchid
 		WHERE
 			m.eventdate >= @EventDate
 			AND m.eventdate <= @ToDate
@@ -131,12 +141,13 @@ BEGIN
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
 				OR (mr.IsHTCal = 1 AND m.eventstatus ='running')
 				OR (ISNULL(R.MatchID, 0) <> 0 AND m.eventstatus = 'running')
-				OR (ISNULL(e.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
+				OR (ISNULL(e.MatchID, 0) <> 0 AND m.eventstatus = 'running')
+				OR (ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 			AND m.sporttype NOT IN (201, 162)
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-		ORDER BY m.sporttype,
-			l.leaguename
+		ORDER BY m.sporttype ASC,
+			l.leaguename ASC
 	END
 	ELSE IF @SportType IN (181, 182, 184, 183, 185)
 	BEGIN
@@ -192,17 +203,14 @@ BEGIN
 				OR (ISNULL(R.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-		ORDER BY m.sporttype,
-			l.leaguename
+		ORDER BY m.sporttype ASC,
+			l.leaguename ASC
 	END
 END
-
-
-
-
-
-
 GO
+
+
+
 GRANT EXECUTE ON [dbo].[Age_Result_LeagueSelByDate] TO [bodbDownlineNet] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_Result_LeagueSelByDate] TO [bodbDownlineNetView] AS [dbo]

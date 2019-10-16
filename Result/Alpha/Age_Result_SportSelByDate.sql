@@ -34,6 +34,7 @@ AS
 		- 20180907@Kos: Support E-Sports phase 2 [Redmine: #101047]
 		- 20190805@Kos: Support PH AIO 4b [Redmine: #115235]
 					- Change for "Next Goal" [Redmine: #115235]
+		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 */
 
 BEGIN
@@ -97,6 +98,13 @@ BEGIN
 												AND m.matchid = BR.MatchId
 											)
 								OR EXISTS (	SELECT 1
+											FROM dbo.ResultDetailOS AS o WITH (NOLOCK)
+											WHERE o.SettlementStatusID > 0
+												AND m.matchid = o.MatchId
+												AND m.sporttype = 9		-- Badminton
+												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
+											)
+								OR EXISTS (	SELECT 1
 											FROM dbo.ResultDetailES AS e WITH (NOLOCK)
 											WHERE e.SettlementStatusID > 0
 												AND m.matchid = e.MatchId
@@ -131,8 +139,8 @@ BEGIN
 						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
 			) AS t
 			ON s.SportType = t.sporttype
-		ORDER BY s.SportType,
-			s.SportName
+		ORDER BY s.SportType ASC,
+			s.SportName ASC
 	END
 	ELSE
 	BEGIN
@@ -188,6 +196,13 @@ BEGIN
 											AND m.matchid = BR.MatchId
 										)
 							OR EXISTS (	SELECT 1
+											FROM dbo.ResultDetailOS14 AS o WITH (NOLOCK)
+											WHERE o.SettlementStatusID > 0
+												AND m.matchid = o.MatchId
+												AND m.sporttype = 9		-- Badminton
+												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
+											)
+							OR EXISTS (	SELECT 1
 										FROM dbo.ResultDetailES14 AS e WITH (NOLOCK)
 										WHERE e.SettlementStatusID > 0
 											AND m.matchid = e.MatchId
@@ -222,8 +237,8 @@ BEGIN
 						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
 			) t
 			ON s.SportType = t.sporttype
-		ORDER BY s.SportType,
-			s.SportName
+		ORDER BY s.SportType ASC,
+			s.SportName ASC
 	END
 END
 

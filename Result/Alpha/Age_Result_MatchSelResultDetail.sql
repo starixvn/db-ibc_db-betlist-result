@@ -25,6 +25,7 @@ AS
 		- 20181122@Kos: Support E-Sports phase 2 [Redmine: #101047]
 		- 20190805@Kos: Support PH AIO 4b [Redmine: #115235]
 					- Change for "Next Goal" [Redmine: #115235]
+		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 */
 
 BEGIN
@@ -124,10 +125,27 @@ BEGIN
 					OR (@SportType = 2
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
-		ELSE IF @SportType = 43
+		ELSE IF @SportType = 9		-- Badminton
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailOS WITH (NOLOCK)
+			WHERE MatchID = @MatchId
+				AND (LEN(ResourceID) IN (2, 4) OR SettlementStatusID > 0)
+			ORDER BY MatchID ASC,
+				ResourceId ASC
+		END
+		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -141,8 +159,8 @@ BEGIN
 			FROM dbo.ResultDetailES WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
 		ELSE IF @SportType = 193
 		BEGIN
@@ -157,8 +175,8 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetail3rd WITH (NOLOCK)
 			WHERE MatchID = @MatchId AND SettlementStatusID > 0
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
 	END
 	ELSE
@@ -243,10 +261,27 @@ BEGIN
 					OR (@SportType = 2
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
-		ELSE IF @SportType = 43
+		ELSE IF @SportType = 9		-- Badminton
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailOS14 WITH (NOLOCK)
+			WHERE MatchID = @MatchId
+				AND (LEN(ResourceID) IN (2, 4) OR SettlementStatusID > 0)
+			ORDER BY MatchID ASC,
+				ResourceId ASC
+		END
+		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -260,8 +295,8 @@ BEGIN
 			FROM dbo.ResultDetailES14 WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
 		ELSE IF @SportType = 193
 		BEGIN
@@ -276,8 +311,8 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetail3rd14 WITH (NOLOCK)
 			WHERE MatchID = @MatchId AND SettlementStatusID > 0
-			ORDER BY MatchID,
-				ResourceId
+			ORDER BY MatchID ASC,
+				ResourceId ASC
 		END
 	END
 
