@@ -21,8 +21,9 @@ AS
 			- 2: All (Live, Non-Live, Mix Live & Non-Live)
 
 			Revisions:
-		- 20190227@Kos: Create new [Redmine: 109230]
-		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
+		- 20190227@Kos: Create new [Redmine: #109230]
+		- 20190821@Kos: Support multiple sport filter [Redmine: #109230]
+		- 20191021@Kos: Include Void/Reject/Refund tickets [Redmine: #120802]
 */
 
 BEGIN
@@ -35,7 +36,8 @@ BEGIN
 		@SportTypeGroups = @SportTypeGroups,
 		@BetTypeGroup = @BetTypeGroup,
 		@LiveIndicator = @LiveIndicator,
-		@StatusIdList = '111,112,113'
+		@StatusIdList = '101,102,103,111,112,113',
+		@AbnormalBets = 2
 END
 GO
 
