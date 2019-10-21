@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResultParlay]
 	@RefNo	BIGINT
@@ -7,7 +7,7 @@ AS
 /*
 	Created: Henry@20101210
 	Task: Get Parlay ticket result
-	DB: DBEXT.bodb02
+	DB: DBACC.bodb02
 	Original: Age_BetList_SelMatchResultParlay
 	Revisions:
 		- 20110907@Sophia: Add column IsHTCal, calculate for Pending result
@@ -28,6 +28,7 @@ AS
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #112376]
 		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
+		- 20191028@Kos: Move to DBACC [Redmine: #122267]
 */
 
 BEGIN
@@ -363,7 +364,7 @@ BEGIN
 	END
 
 	IF EXISTS (	SELECT 1
-				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+				FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo)
 	BEGIN
@@ -410,12 +411,12 @@ BEGIN
 					bm.matchid,
 					bm.bettype,
 					bm.betcheck
-				FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+				FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo ) AS bm
-			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_bk AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
+			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+			LEFT OUTER JOIN bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
+			LEFT JOIN bodb_Archive.dbo.ResultDetail_bk AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (1, 2, 5))
 		BEGIN
@@ -428,7 +429,7 @@ BEGIN
 				d.ResultStatusID,
 				d.SettlementStatusID,
 				d.OtherInfo
-			FROM DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
+			FROM bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
@@ -467,7 +468,7 @@ BEGIN
 				d.ResultStatusID,
 				d.SettlementStatusID,
 				d.OtherInfo
-			FROM DBARC.bodb_Archive.dbo.ResultDetailES_bk AS d WITH (NOLOCK)
+			FROM bodb_Archive.dbo.ResultDetailES_bk AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
@@ -489,7 +490,7 @@ BEGIN
 				d.ResultStatusID,
 				d.SettlementStatusID,
 				d.OtherInfo
-			FROM DBARC.bodb_Archive.dbo.ResultDetail3rd_BK AS d WITH (NOLOCK)
+			FROM bodb_Archive.dbo.ResultDetail3rd_BK AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
