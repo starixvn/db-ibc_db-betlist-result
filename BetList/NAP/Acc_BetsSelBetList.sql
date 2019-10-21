@@ -128,6 +128,7 @@ AS
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20190919@Kos: Hotfix - Wrong match showtime of Cash Out ticket [#Redmine: 120242]
 		- 20190924@Kos: Don't support inactive products anymore [Redmine: #119100]
+		- 20191021@Kos: Fix bettransRnG performance issue [Redmine: #122371]
 */
 
 BEGIN
@@ -1212,6 +1213,71 @@ BEGIN
 				OPTION (RECOMPILE)
 			END
 
+			DECLARE @TmpData TABLE (
+				RefNo			BIGINT,
+				Odds			MONEY,
+				Stake			MONEY,
+				Actual_Stake	MONEY,
+				Status			NVARCHAR(10),
+				SDiscount		SMALLMONEY,
+				ADiscount		SMALLMONEY,
+				Discount		SMALLMONEY,
+				PlayerDiscount	SMALLMONEY,
+				SPositionTaking	SMALLMONEY,
+				MPositionTaking	SMALLMONEY,
+				APositionTaking	SMALLMONEY,
+				WinLost			MONEY,
+				Commission		MONEY,
+				SComm			MONEY,
+				AComm			MONEY,
+				Comm			MONEY,
+				AWinLost		MONEY,
+				MWinLost		MONEY,
+				SWinLost		MONEY,
+				OddsSpread		SMALLMONEY
+			)
+
+			INSERT INTO @TmpData
+			SELECT
+				brng.RefNo,
+				CASE
+					WHEN s.ProductId = 6 THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+					ELSE 0
+				END AS Odds,
+				SUM(brng.stake) AS Stake,
+				SUM(brng.actual_stake) AS Actual_Stake,
+				CASE
+					WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
+					WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
+					ELSE 'Draw'
+				END AS Status,
+				AVG(brng.sdiscount) AS SDiscount,
+				AVG(brng.adiscount) AS ADiscount,
+				AVG(brng.discount) AS Discount,
+				AVG(brng.playerdiscount) AS PlayerDiscount,
+				AVG(brng.spositiontaking) AS SPositionTaking,
+				AVG(brng.mpositiontaking) AS MPositionTaking,
+				AVG(brng.apositiontaking) AS APositionTaking,
+				SUM(brng.winlost - brng.actual_stake) AS WinLost,
+				SUM(brng.playercomm) AS Commission,
+				SUM(brng.scomm - brng.acomm) AS SComm,
+				SUM(brng.acomm - brng.comm) AS AComm,
+				SUM(brng.comm - brng.playercomm) AS Comm,
+				SUM(brng.awinlost) AS AWinLost,
+				SUM(brng.mwinlost) AS MWinLost,
+				SUM(brng.swinlost) AS SWinLost,
+				CASE
+					WHEN s.ProductId = 6 THEN ISNULL(SUM(brng.BetStake), 0)
+					ELSE 0
+				END AS OddsSpread
+			FROM dbo.bettransRnG AS brng WITH (NOLOCK)
+				INNER JOIN #SportBettype AS s ON s.Bettype = brng.gameID
+			WHERE brng.custid = @CustId
+				AND brng.statusID NOT IN (0, 1)
+				AND s.ProductId IN (6, 22, 24, 32, 34)
+			GROUP BY brng.RefNo,
+				s.ProductID
+
 			IF @ToDate >= @Yesterday AND @FromDate <= @Today
 			BEGIN
 				-- Yesterday and today settled ticket
@@ -1226,37 +1292,29 @@ BEGIN
 					'' AS eventdate,
 					0,
 					0,
-					AVG(brng.sdiscount) AS sdiscount,
-					AVG(brng.adiscount) AS adiscount,
-					AVG(brng.discount) AS discount,
-					AVG(brng.playerdiscount) AS playerdiscount,
+					t.SDiscount,
+					t.ADiscount,
+					t.Discount,
+					t.PlayerDiscount,
 					0 AS homeid,
 					0 AS awayid,
 					'' settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					CASE
-						WHEN s.ProductID = 6
-							THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
-						ELSE 0
-					END AS Odds,
+					t.Odds,
 					0 AS finalodds,
 					0 AS finalodds2,
 					0 AS OddsType,
-					CASE 
-						WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
-						WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
-						ELSE 'Draw'
-					END AS Status,
+					t.Status,
 					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-					SUM(brng.stake) AS stake,
-					SUM(brng.actual_stake) AS actual_stake,
+					t.Stake,
+					t.Actual_Stake,
 					b.transdate,
 					'' AS betteam,
-					AVG(brng.spositiontaking) AS spositiontaking,
-					AVG(brng.mpositiontaking) AS mpositiontaking,
-					AVG(brng.apositiontaking) AS apositiontaking,
+					t.SPositionTaking,
+					t.MPositionTaking,
+					t.APositionTaking,
 					0 AS spositiontaking2,
 					0 AS mpositiontaking2,
 					0 AS apositiontaking2,
@@ -1280,14 +1338,14 @@ BEGIN
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
-					SUM(brng.winlost - brng.actual_stake) AS winlost,
-					SUM(brng.playercomm) AS commission,
-					SUM(brng.scomm - brng.acomm) AS scomm,
-					SUM(brng.acomm - brng.comm) AS acomm,
-					SUM(brng.comm - brng.playercomm) AS comm,
-					SUM(brng.awinlost) AS awinlost,
-					SUM(brng.mwinlost) AS mwinlost,
-					SUM(brng.swinlost) AS swinlost,
+					t.WinLost,
+					t.Commission,
+					t.SComm,
+					t.AComm,
+					t.Comm,
+					t.AWinLost,
+					t.MWinLost,
+					t.SWinLost,
 					'' AS showtime,
 					b.winlostdate,
 					'' AS BetCheck,
@@ -1295,37 +1353,19 @@ BEGIN
 						WHEN s.ProductID IN (6, 22, 24, 32, 34) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
-					CASE
-						WHEN s.ProductID = 6 THEN ISNULL(SUM(brng.BetStake), 0)
-						ELSE 0
-					END AS OddsSpread,
+					t.OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
-					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
+					INNER JOIN @TmpData AS t ON t.RefNo = b.transid
 					INNER JOIN #SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId 
 					AND s.ProductId IN (6, 22, 24, 32, 34)
 					AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 					AND b.winlostdate BETWEEN @Yesterday AND @Today
-					AND brng.statusID NOT IN (0, 1)
-				GROUP BY
-					b.transid,
-					ISNULL(b.betid, 0),
-					b.Bettype,
-					b.refno,
-					b.transdate,
-					b.winlostdate,
-					b.custid,
-					b.ip,
-					b.betfrom,
-					b.comstatus,
-					b.matchid,
-					b.transdesc,
-					s.ProductID
 				OPTION (RECOMPILE)
 			END
 		END
