@@ -28,6 +28,7 @@ AS
 		- 20190711@Kos: Support PH AIO 4a [Redmine: 115866]
 		- 20190723@Kos: Support new status Pending [#Redmine: 116863]
 		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
+		- 20191022@Kos: Show Running status for Marked tickets [Redmine: 122391]
 */
 
 BEGIN
@@ -329,7 +330,6 @@ BEGIN
 							THEN 'Waiting'
 						ELSE b.status
 					END
-				WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 				ELSE b.status
 			END AS Status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -438,7 +438,6 @@ BEGIN
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueid
 			LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
-			LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 
 		-- Get ticket detail
 		-- Virtual Sports Racing
