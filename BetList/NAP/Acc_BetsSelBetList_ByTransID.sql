@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_ByTransID]
 	@CustId			INT,
@@ -11,7 +11,7 @@ AS
 /*
 	Created by: Henry
 	Task: Bet List By TransID
-	DB: DBAGE.bodb02
+	DB: DBACC.bodb02
 	Original: Acc_BetsSelBetList
 
 	Revisions:
@@ -115,6 +115,8 @@ AS
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20190919@Kos: Hotfix - Wrong match showtime of Cash Out ticket [#Redmine: 120242]
 		- 20190924@Kos: Don't support inactive products anymore [Redmine: #119100]
+		- 20191022@Kos: Show Running status for Marked CN88 tickets [Redmine: 122391]
+					- Move to DBACC
 */
 
 BEGIN
@@ -274,7 +276,7 @@ BEGIN
 			@WinLostDate = b.winlostdate,
 			@BetType = b.bettype,
 			@RefNo = b.refno
-		FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
 		WHERE b.custid = @CustId
 			AND ( b.transid = @RefNo
@@ -322,7 +324,7 @@ BEGIN
 						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 						WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 						WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
-						WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
+						WHEN @IsCN88 = 0 AND b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 						ELSE b.status
 					END AS status,
 					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -2783,9 +2785,9 @@ BEGIN
 						ELSE 0
 					END AS RefCode
 				FROM
-					DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType
-					INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+					INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				WHERE b.transid = @TransId AND s.EventType = 1
 
 				-- Get more info for BetTrade tickets
@@ -2798,7 +2800,7 @@ BEGIN
 						b.LiveAwayScore = ob.liveawayscore,
 						b.BetId = ob.bettype
 					FROM @Data AS b
-						INNER JOIN DBARC.bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
+						INNER JOIN bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
 					WHERE b.SportType = 1 AND b.BetType = 901
 				END
 
@@ -2812,8 +2814,8 @@ BEGIN
 						b.Comm = ISNULL(cb.awinlost, 0),
 						b.BetId = ob.bettype
 					FROM @Data AS b
-						INNER JOIN DBARC.bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
-						LEFT JOIN DBARC.bodb_Archive.dbo.bettrans_bk AS cb WITH (NOLOCK)
+						INNER JOIN bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
+						LEFT JOIN bodb_Archive.dbo.bettrans_bk AS cb WITH (NOLOCK)
 							ON b.RefNo = cb.RefNo
 							AND cb.BetType = 903
 							AND cb.custid = @CustId
@@ -2832,7 +2834,7 @@ BEGIN
 						b.OriginalBetType = ob.bettype,
 						b.BetdaqId = ob.transid
 					FROM @Data AS b
-						INNER JOIN DBARC.bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
+						INNER JOIN bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
 					WHERE b.BetType = 911
 				END
 
@@ -2848,9 +2850,9 @@ BEGIN
 						b.Stake = cob.stake,
 						b.Comm = ISNULL(cb.AWinLost, 0)
 					FROM @Data AS b
-						INNER JOIN DBARC.bodb_Archive.dbo.bettrans_bk AS cob WITH (NOLOCK) ON b.RefNo = cob.transid
-						INNER JOIN DBARC.bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON cob.RefNo = ob.transid
-						LEFT JOIN DBARC.bodb_Archive.dbo.bettrans_bk AS cb WITH (NOLOCK)
+						INNER JOIN bodb_Archive.dbo.bettrans_bk AS cob WITH (NOLOCK) ON b.RefNo = cob.transid
+						INNER JOIN bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON cob.RefNo = ob.transid
+						LEFT JOIN bodb_Archive.dbo.bettrans_bk AS cb WITH (NOLOCK)
 							ON b.RefNo = cb.RefNo
 							AND cb.BetType = 913
 							AND cb.custid = @CustId
@@ -2934,7 +2936,7 @@ BEGIN
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				WHERE b.transid = @TransId
 					AND b.matchid IN (9, 29, 2799)
 					AND b.bettype IN (9, 29, 2799)
@@ -3035,7 +3037,7 @@ BEGIN
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
 					AND (s.ProductID IN (8, 12, 28, 34)
@@ -3114,9 +3116,9 @@ BEGIN
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-					INNER JOIN DBARC.bodb_archive.dbo.Outright_bk AS odds WITH (NOLOCK) ON b.matchid = odds.orid
-					INNER JOIN dbo.league l WITH (NOLOCK) ON odds.leagueid = l.leagueid
+				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					INNER JOIN bodb_archive.dbo.Outright_bk AS odds WITH (NOLOCK) ON b.matchid = odds.orid
+					INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
 				WHERE b.bettype = 10 AND b.transid = @TransId
 			END
 
@@ -3197,8 +3199,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode
 				FROM
-					DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-					INNER JOIN DBARC.bodb_archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
+					bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					INNER JOIN bodb_archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType 
 					LEFT JOIN (
@@ -3210,8 +3212,8 @@ BEGIN
 							f.apositiontaking apositiontaking2,
 							f.mpositiontaking mpositiontaking2,
 							f.spositiontaking spositiontaking2
-						FROM DBARC.bodb_archive.dbo.bettransm AS t WITH (NOLOCK)
-							INNER JOIN DBARC.bodb_archive.dbo.bettransm AS f WITH (NOLOCK) ON t.refno = f.refno
+						FROM bodb_archive.dbo.bettransm AS t WITH (NOLOCK)
+							INNER JOIN bodb_archive.dbo.bettransm AS f WITH (NOLOCK) ON t.refno = f.refno
 						WHERE t.bettype = 1231 AND f.bettype = 1232
 						) bm ON b.refno = bm.refno
 				WHERE b.transid = @TransId
@@ -3291,9 +3293,9 @@ BEGIN
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-					LEFT JOIN DBARC.bodb_archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
+					LEFT JOIN bodb_archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 				WHERE b.transid = @TransId AND s.ProductID = 15
 			END
 
@@ -3403,7 +3405,7 @@ BEGIN
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
 					AND (s.ProductID IN (11, 21, 22, 23, 24, 32)
@@ -3489,13 +3491,13 @@ BEGIN
 					ISNULL(b.WalletType, 0) AS WalletType,
 					ISNULL(b.RefCode, 0) AS RefCode
 				FROM
-					DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					INNER JOIN @Data AS b1
 						ON b.custid = b1.CustId
 						AND b.winlostdate = b1.WinLostDate
 						AND b.RefCode = b1.RefCode
 						AND b.transid <> b1.transid
-					INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+					INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			END
 		END
 	END
@@ -3581,7 +3583,7 @@ BEGIN
 				bm.bettype,
 				bm.betteam,
 				'' AS TransDesc
-			FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+			FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sp ON bm.bettype = sp.bettype
 				INNER JOIN @Data AS b ON bm.custid = b.CustId AND bm.refno = b.RefNo
 			WHERE sp.ProductID = 5 AND sp.EventType = 3
@@ -3646,7 +3648,7 @@ BEGIN
 				bg.bettype,
 				bg.betteam,
 				bg.TransDesc
-			FROM DBARC.bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
+			FROM bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sp ON bg.bettype = sp.bettype
 				INNER JOIN @Data AS b ON bg.custid = b.CustId AND bg.refno = b.TransId AND bg.bettype = b.bettype
 			WHERE sp.ProductID = 12
@@ -3684,7 +3686,7 @@ BEGIN
 			@TransId = b.transid,
 			@WinLostDate = b.winlostdate,
 			@BetType = b.gameID
-		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.gameID = sp.Bettype
 		WHERE b.custid = @CustId AND b.transid = @RefNo
 	END
@@ -3986,7 +3988,7 @@ BEGIN
 					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM DBARC.bodb_archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
+				FROM bodb_archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @WinLostDate
@@ -4028,7 +4030,7 @@ BEGIN
 			@TransId = b.transid,
 			@WinLostDate = b.winlostdate,
 			@BetType = b.gameID
-		FROM DBARC.bodb_archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
+		FROM bodb_archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
 		WHERE b.custid = @CustId AND b.transid = @RefNo
 	END
@@ -4292,7 +4294,7 @@ BEGIN
 					'' AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
-				FROM DBARC.bodb_archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
+				FROM bodb_archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @WinLostDate
