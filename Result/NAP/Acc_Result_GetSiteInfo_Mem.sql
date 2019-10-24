@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_Result_GetSiteInfo_Mem]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_Result_GetSiteInfo_Mem]
 	@CustId		INT			= 0,
 	@Username	VARCHAR(30)	= ''
 AS
@@ -7,7 +8,9 @@ AS
 	Created: Kos@20170207
 	Task: Get site info of a member
 	DB: DBAGE.bodb02
+	
 	Revisions:
+		20170207@Kos: Initialize SP
 */
 
 BEGIN
@@ -35,11 +38,4 @@ BEGIN
 
 	SELECT * FROM @Site
 END
-
-
- 
-GO
-GRANT EXECUTE ON [dbo].[Acc_Result_GetSiteInfo_Mem] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_Result_GetSiteInfo_Mem] TO [vnteam]
 GO

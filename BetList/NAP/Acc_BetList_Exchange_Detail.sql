@@ -1,11 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_BetList_Exchange_Detail]
 	@CustId	INT,
 	@BetId	BIGINT
@@ -53,11 +46,4 @@ BEGIN
 
 	SELECT * FROM @Data
 END
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_Exchange_Detail] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_Exchange_Detail] TO vnteam
-GO
- 

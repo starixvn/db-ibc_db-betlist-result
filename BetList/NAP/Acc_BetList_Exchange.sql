@@ -1,5 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_BetList_Exchange]
 	@CustId		INT,
 	@FromDate	DATETIME,
@@ -160,11 +159,4 @@ BEGIN
 	SELECT * FROM @PagingData
 	SELECT * FROM @Detail
 END
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_BetList_Exchange] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetList_Exchange] TO vnteam
-GO
- 
