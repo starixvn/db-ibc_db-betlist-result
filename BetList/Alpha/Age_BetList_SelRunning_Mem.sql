@@ -113,6 +113,7 @@ AS
 					- Don't support Poker Games anymore
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
+		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 */
 
 BEGIN
@@ -529,7 +530,6 @@ BEGIN
 				,AwayId = m.awayid
 				,[Status] = CASE
 								WHEN b.[Status] = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-								WHEN b.[Status] = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 								ELSE b.[Status]
 							END
 				,SettlementStatus = ISNULL(m.SettlementStatus, 0)
@@ -539,7 +539,6 @@ BEGIN
 				,ExtraInfo = ISNULL(b.ExtraInfo, '')
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.TableID = 1 -- bettrans
 				AND b.ProductID = 1
 				AND b.EventType = 1

@@ -23,6 +23,7 @@ AS
 		- 20181008@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 					- Remove param @Language
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
+		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 */
 
 BEGIN
@@ -45,7 +46,6 @@ BEGIN
 		b.modds,
 		CASE
 			WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-			WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 			ELSE b.status
 		END AS status,
 		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -70,7 +70,6 @@ BEGIN
 		ISNULL(b.transdesc, '') AS transdesc
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 	WHERE b.mrecommend = @custid
 		AND b.bettype IN (4, 30, 152, 165, 166, 405, 413, 414, 416)
 		AND b.statusID IN (0, 1)

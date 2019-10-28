@@ -26,6 +26,7 @@ AS
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
+		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 
 	Parameter's Explanation:
 		- @CustId: agent ID
@@ -77,7 +78,6 @@ BEGIN
 						THEN 'Waiting'
 					ELSE b.status
 				END
-			WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 			ELSE b.status
 		END AS status,
 		b.betteam,
@@ -88,7 +88,6 @@ BEGIN
 		0 AS OddsSpread,
 		ISNULL(b.ExtraInfo, '') AS ExtraInfo
 	FROM dbo.bettrans AS b WITH (NOLOCK)
-		LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 	WHERE b.recommend = @CustId
 		AND b.statusID IN (0,1)
 		AND b.transid > @TransId

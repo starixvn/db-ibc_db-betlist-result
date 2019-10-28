@@ -36,6 +36,7 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
+		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -142,7 +143,6 @@ BEGIN
 								THEN 'Waiting'
 							ELSE b.status
 						END
-					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS Status
 				, 0 AS SettlementStatus
@@ -173,7 +173,6 @@ BEGIN
 				, bt.EventType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.recommend = @CustId AND b.statusID IN (0, 1)
 		END
 	
@@ -212,7 +211,6 @@ BEGIN
 								THEN 'Waiting'
 							ELSE b.status
 						END
-					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS Status
 				, 0 AS SettlementStatus
@@ -243,7 +241,6 @@ BEGIN
 				, bt.EventType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.mrecommend = @CustId AND b.statusID IN (0, 1)
 		END
 	
@@ -282,7 +279,6 @@ BEGIN
 								THEN 'Waiting'
 							ELSE b.status
 						END
-					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS Status
 				, 0 AS SettlementStatus
@@ -313,7 +309,6 @@ BEGIN
 				, bt.EventType
 			FROM dbo.bettrans b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
-				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.srecommend = @CustId
 				AND b.statusID IN (0, 1)
 		END
@@ -345,7 +340,6 @@ BEGIN
 				, b.Modds
 				, CASE
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS status
 				, 0 AS SettlementStatus
@@ -376,7 +370,6 @@ BEGIN
 				, bt.eventtype
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_recommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.recommend = @CustId
 				AND b.statusID IN (0, 1)
 				AND b.matchid = @MatchId
@@ -407,7 +400,6 @@ BEGIN
 				, b.Modds
 				, CASE
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS status
 				, 0 AS SettlementStatus
@@ -438,7 +430,6 @@ BEGIN
 				, bt.eventtype
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_mrecommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.mrecommend = @CustId
 				AND b.statusID IN (0, 1)
 				AND b.matchid = @MatchId
@@ -469,7 +460,6 @@ BEGIN
 				, b.Modds
 				, CASE
 					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-					WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 					ELSE b.status
 				END AS status
 				, 0 AS SettlementStatus
@@ -500,7 +490,6 @@ BEGIN
 				, bt.eventtype
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_srecommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-				LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			WHERE b.srecommend = @CustId
 				AND b.statusID IN (0, 1)
 				AND b.matchid = @MatchId

@@ -86,6 +86,7 @@ AS
 					- Remove param @Language
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
+		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 
 	Param's Explanation:
 		+ @TransType:
@@ -543,7 +544,6 @@ BEGIN
 											THEN 'Waiting'
 										ELSE b.status
 									END
-								WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 								ELSE b.status
 							END
 					,SettlementStatus = CASE
@@ -706,7 +706,6 @@ BEGIN
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
 					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
-					LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 
 				-- Virtual Sports Racing
 				INSERT INTO @BettransDetail
