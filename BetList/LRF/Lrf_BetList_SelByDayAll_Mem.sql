@@ -95,6 +95,7 @@ AS
 		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 		- 20190813@Kos: Support Card Club [Redmine: #115449]
 		- 20191011@Kos: Support drop table LicenseeBATransaction [Redmine: #103656]
+		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
 
 	Param's Explanation:
 		+ @TransType:
@@ -975,7 +976,6 @@ BEGIN
 			CASE
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1
 					AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-				WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 				ELSE b.status
 			END AS status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -1050,7 +1050,6 @@ BEGIN
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
-			LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 		WHERE
 			b.custid = @CustId
 			AND b.winlostdate = @FromDate

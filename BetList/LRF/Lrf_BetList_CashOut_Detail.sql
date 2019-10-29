@@ -6,6 +6,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_CashOut_Detail]
 	@RefNo				BIGINT,
 	@BetType			SMALLINT,
 	@OriginalTransId	BIGINT		= 0,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay		SMALLDATETIME,
 	@BaseCurrency		VARCHAR(10)	= ''
 AS
 
@@ -23,6 +25,8 @@ AS
 		- 20190426@Kos: Support base currency INH [Redmine: #112603]
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
+		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
+				- Add @MoveBetsDay and @BalanceUpDay input params
 */
 
 BEGIN
@@ -63,13 +67,13 @@ BEGIN
 		END
 		ELSE	-- CashOut bet ticket
 		BEGIN
-			IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @TransId )
+			IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @TransId AND winlostdate > @MoveBetsDay)
 			BEGIN
 				SELECT @OriginalTransId = refno
 				FROM dbo.bettrans WITH (NOLOCK)
 				WHERE transid = @RefNo AND bettype = 911
 			END
-			ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @TransId )
+			ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @TransId AND winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay )
 			BEGIN
 				SELECT @OriginalTransId = refno
 				FROM dbo.bettrans14 WITH (NOLOCK)
@@ -170,7 +174,6 @@ BEGIN
 			b.oddstype,
 			CASE
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-				WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 				ELSE b.status
 			END AS status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -209,7 +212,6 @@ BEGIN
 			END AS OriginalBetType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-			LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 		WHERE b.transid = @OriginalTransId
 			AND b.recommend IN (SELECT CustId FROM @TempAg)
 			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)

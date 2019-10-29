@@ -27,6 +27,7 @@ AS
 		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
 		- 20190730@Kos: Support new status Pending [#Redmine: 117729]
 		- 20191018@Kos: Support other products [#Redmine: 122267]
+		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
 */
 
 BEGIN
@@ -613,7 +614,6 @@ BEGIN
 								THEN 'Waiting'
 							ELSE b.status
 						END
-				WHEN @Product = 'SB' AND b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 				ELSE b.status
 			END AS Status,
 			CASE
@@ -734,7 +734,6 @@ BEGIN
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 			LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON @Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON @Product IN ('VR') AND vr.EventID = vo.EventID
-			LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 		WHERE b.transid IN (@TransId, @BonusTransId)
 
 		-- Get more info for CashOut tickets
