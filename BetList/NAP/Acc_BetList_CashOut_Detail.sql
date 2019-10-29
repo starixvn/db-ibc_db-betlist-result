@@ -17,6 +17,7 @@ AS
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20190506@Kos: Show match KO time for single ticket [#Redmine: 112092]
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
+		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
 */
 
 BEGIN
@@ -158,7 +159,6 @@ BEGIN
 			b.oddstype,
 			CASE
 				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-				WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 				ELSE b.status
 			END AS status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -201,7 +201,6 @@ BEGIN
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-			LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 		WHERE b.transid = @OriginalTransId
 	END
 	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @OriginalTransId )

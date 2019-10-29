@@ -105,6 +105,7 @@ AS
 		- 20190827@Kos: Support bk range [Redmine: #119018]
 					- Don't support Microgaming Live Casino, Microgaming RNG Casino, Lucky 3, Poker Games anymore [Redmine: #119018]
 					- Add new params @MoveBetsDay and @BalanceUpDay
+		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
 */
 
 BEGIN
@@ -873,7 +874,6 @@ BEGIN
 											THEN 'Waiting'
 										ELSE b.status
 									END
-								WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 								ELSE b.status
 							END,
 					SettlementStatus = CASE
@@ -983,7 +983,6 @@ BEGIN
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
 					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
-					LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet')
 						OR b.WinLostDate < @Yesterday)

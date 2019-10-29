@@ -117,6 +117,7 @@ AS
 		- 20190924@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20191022@Kos: Show Running status for Marked CN88 tickets [Redmine: 122391]
 					- Move to DBACC
+		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
 */
 
 BEGIN
@@ -324,7 +325,6 @@ BEGIN
 						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 						WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 						WHEN @IsCN88 = 1 AND s.ProductID IN (1, 5, 27) AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
-						WHEN @IsCN88 = 0 AND b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 						ELSE b.status
 					END AS status,
 					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -394,7 +394,6 @@ BEGIN
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-					LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 				WHERE b.transid = @TransId AND s.EventType = 1
 
 				UNION ALL -- translog metric gaming
@@ -1816,7 +1815,6 @@ BEGIN
 					b.OddsType,
 					CASE 
 						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'  
-						WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 						ELSE b.status
 					END AS status,
 					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -1874,7 +1872,6 @@ BEGIN
 						AND b.RefCode = b1.RefCode
 						AND b.transid <> b1.transid
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-					LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			END
 		END
 
@@ -4317,8 +4314,6 @@ BEGIN
 	SELECT * FROM @DetailData
 END
 GO
-
-
 
 
 GRANT EXECUTE ON [dbo].[Acc_BetsSelBetList_ByTransID] TO [bodbAdminNet]

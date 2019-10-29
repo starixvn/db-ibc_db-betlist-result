@@ -86,6 +86,7 @@ AS
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20190919@Kos: Hotfix - Wrong match showtime of Cash Out ticket [#Redmine: 120242]
 		- 20190924@Kos: Don't support inactive products anymore [Redmine: #119100]
+		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
 */
 
 BEGIN
@@ -314,7 +315,6 @@ BEGIN
 					b.OddsType,
 					CASE
 						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-						WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 						ELSE b.status
 					END AS status,
 					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -378,7 +378,6 @@ BEGIN
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-					LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 				WHERE b.transid = @TransId AND s.EventType = 1
 
 				UNION ALL -- translog metric gaming
@@ -1676,7 +1675,6 @@ BEGIN
 					b.oddstype,
 					CASE
 						WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-						WHEN b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 						ELSE b.status
 					END AS status,
 					ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
@@ -1730,7 +1728,6 @@ BEGIN
 						AND b.RefCode = b1.RefCode
 						AND b.transid <> b1.TransId
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-					LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 			END
 		END
 
@@ -3813,7 +3810,7 @@ BEGIN
 	FROM @Data AS b
 		LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON b.CustId = ci.custid
 		LEFT JOIN dbo.Exchange AS ex WITH (NOLOCK) ON ci.currency = ex.exchangeid
-	ORDER BY b.TransId
+	ORDER BY b.TransId ASC
 
 	SELECT * FROM @DetailData
 END

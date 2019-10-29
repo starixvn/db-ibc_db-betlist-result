@@ -28,11 +28,11 @@ AS
 			- 113: Lose
 			- 2: Result Pending
 			- 3: Under Settlement
-			- 4: Pending
 			- 99: Abnormal Bets
 
 	Revisions:
 		- 20190925@Kos: Create new [Redmine: #120379]
+		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
 */
 
 BEGIN
@@ -193,7 +193,6 @@ BEGIN
 	IF ',' + @StatusIdList + ',' LIKE '%,1,%'
 		OR ',' + @StatusIdList + ',' LIKE '%,2,%'
 		OR ',' + @StatusIdList + ',' LIKE '%,3,%'
-		OR ',' + @StatusIdList + ',' LIKE '%,4,%'
 	BEGIN
 		SET @StatusIdList = @StatusIdList + ',0'
 	END
@@ -820,15 +819,12 @@ BEGIN
 
 			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,0,%'	-- Not include Running
 			BEGIN
-				DELETE b
-				FROM @Data AS b
-					LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
+				DELETE @Data
 				WHERE (Product <> 'SB' AND Status = 'Running')
 					OR (Product = 'SB'
 						AND Status = 'Running'
 						AND (ISNULL(SecAcceptFlag, 0) <> 1 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP))	-- not Waiting (Second Accept)
 						AND ISNULL(SettlementStatus, 0) & 13 = 0															-- not Result Pending, Under Settlement
-						AND mt.TransId IS NULL																				-- not Pending
 			END
 
 			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,1,%'	-- Not include Waiting
@@ -844,25 +840,14 @@ BEGIN
 			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,2,%'		-- Not include Result Pending
 				OR ',' + @OriginalStatusIdList + ',' NOT LIKE '%,3,%'	-- Not include Under Settlement
 			BEGIN
-				DELETE b
-				FROM @Data AS b
+				DELETE @Data
 				WHERE Product = 'SB'
 					AND Status = 'Running'
-					AND NOT EXISTS (SELECT 1 FROM dbo.MarkedTransaction WITH (NOLOCK) WHERE TransId = b.TransId)		-- not Pending
-					AND (ISNULL(SecAcceptFlag, 0) = 0 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP)		-- not Waiting (Second Accept)
-					AND ((',' + @OriginalStatusIdList + ',' NOT LIKE '%,2,%' AND ISNULL(SettlementStatus, 0) & 1 <> 0)			-- Result Pending
+					AND (ISNULL(SecAcceptFlag, 0) = 0 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP)			-- not Waiting (Second Accept)
+					AND ((',' + @OriginalStatusIdList + ',' NOT LIKE '%,2,%' AND ISNULL(SettlementStatus, 0) & 1 <> 0)		-- Result Pending
 						OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,3,%'
 							AND ISNULL(SettlementStatus, 0) & 12 <> 0
 							AND ISNULL(SettlementStatus, 0) & 1 = 0))		-- Under Settlement
-			END
-
-			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,4,%'	-- Not include Pending
-			BEGIN
-				DELETE b
-				FROM @Data AS b
-				WHERE Product = 'SB'
-					AND Status = 'Running'
-					AND EXISTS (SELECT 1 FROM dbo.MarkedTransaction WITH (NOLOCK) WHERE TransId = b.TransId)
 			END
 		END
 
@@ -1188,7 +1173,6 @@ BEGIN
 											THEN 'Waiting'
 										ELSE b.status
 									END
-								WHEN @IsCN88 = 0 AND b.status = 'running' AND mt.TransId IS NOT NULL THEN 'Pending'
 								WHEN @IsCN88 = 1 AND b.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 								WHEN @IsCN88 = 1 AND b.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 								ELSE b.status
@@ -1300,7 +1284,6 @@ BEGIN
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
 					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
-					LEFT JOIN dbo.MarkedTransaction AS mt WITH (NOLOCK) ON b.transid = mt.TransId
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet')
 						OR b.WinLostDate < @Yesterday)
