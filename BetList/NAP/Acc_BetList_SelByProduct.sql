@@ -44,6 +44,7 @@ AS
 		- 20190611@Kos: Support Card Club [#Redmine: 107645]
 					- Don't support Poker Games anymore
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
+		- 20191029@Kos: Support Spadegaming [Redmine: #122140]
 */
 
 BEGIN
@@ -362,8 +363,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club
-			IF @ProductId IN (22, 24, 32, 34)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming
+			IF @ProductId IN (22, 24, 32, 34, 36)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -374,7 +375,7 @@ BEGIN
 						0 AS BetId,
 						b.refno,
 						CASE
-							WHEN s.productID IN (24, 32, 34) THEN b.Additional
+							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
 							ELSE ''
 						END AS MatchCode,
 						b.sdiscount,
@@ -563,8 +564,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club
-			IF @ProductId IN (22, 24, 32, 34)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming
+			IF @ProductId IN (22, 24, 32, 34, 36)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -575,7 +576,7 @@ BEGIN
 						0 AS BetId,
 						b.refno,
 						CASE
-							WHEN s.productID IN (24, 32, 34) THEN b.Additional
+							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
 							ELSE ''
 						END AS MatchCode,
 						b.sdiscount,
