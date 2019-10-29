@@ -1,7 +1,4 @@
 /*<info serverAlias="DBAGE-bodb02,DBACC-bodb02,DB042-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" isFunction="1" isNested="1"></info>*/
-USE [bodb02]
-GO
-
 ALTER FUNCTION [dbo].[f_AddRelatedProducts]
 (
 	@ProductIds VARCHAR(MAX) = ''

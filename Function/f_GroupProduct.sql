@@ -1,7 +1,4 @@
 /*<info serverAlias="DBAGE-bodb02,DBACC-bodb02,DB042-bodb02" selecters="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" isFunction="1" isNested="1"></info>*/
-USE [bodb02]
-GO
-
 ALTER FUNCTION [dbo].[f_GroupProduct]
 (
 )
@@ -17,20 +14,23 @@ AS
 	Revisions:
 		- 20170622@Percy: Create new [RedmineID: #78339]
 		- 20180418@Razor: Add Pragmatic under Macau Games [RedmineID: #92647]
-		- 20190612@Percy: Add Card Club under Macau Games [RedmineID: #115611]
+		- 20190612@Percy: Add Card Club under Macau Games [RedmineID: #107703]
+		- 20191029@Percy: Add Spadegaming under Macau Games [RedmineID: #107703]
 */
 
 RETURN
 	-- Virtual Sports: Betradar Virtual Sports, Virtual Sports
-	SELECT 27 AS ProductId, 5 AS GroupProductId
+	SELECT 5 AS ProductId, 5 AS GroupProductId
 	UNION ALL
-	SELECT 5, 5
+	SELECT 27, 5
 	
-	-- Macau Games: Macau Games, Pragmatic, Card Club
+	-- Macau Games: Macau Games, Pragmatic, Card Club, Spadegaming
+	UNION ALL	
+	SELECT 22, 22
 	UNION ALL	
 	SELECT 32, 22
-	UNION ALL	
+	UNION ALL
 	SELECT 34, 22
 	UNION ALL
-	SELECT 22, 22
+	SELECT 36, 22
 GO

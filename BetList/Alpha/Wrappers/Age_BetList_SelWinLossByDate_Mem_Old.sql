@@ -96,6 +96,7 @@ AS
 					- Remove param @Language, @Error, @ErrorMsg
 					- Don't return TPositiontaking, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore, Placing anymore
 		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
+		- 20191128@Kos: Support Spadegaming [Redmine: #122140]
 */
 
 BEGIN
@@ -315,6 +316,7 @@ BEGIN
 						WHEN s.ProductID = 28 THEN 'Lottery'
 						WHEN s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
 						WHEN s.ProductID = 34 THEN 'CC'		-- Card Club
+						WHEN s.ProductID = 36 THEN 'SG'		-- Spadegaming
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 						WHEN s.ProductID = 3 THEN 'NG'		-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
@@ -340,7 +342,7 @@ BEGIN
 							ELSE b.transid
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('OneRNG', 'CC') THEN b.matchid		-- ONERnG, Card Club
+								WHEN b.Product IN ('OneRNG', 'CC', 'SG') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -461,7 +463,7 @@ BEGIN
 							END,
 				ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE

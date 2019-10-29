@@ -89,6 +89,7 @@ AS
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
+		- 20191128@Kos: Support Spadegaming [Redmine: #122140]
 */
 
 BEGIN
@@ -234,7 +235,8 @@ BEGIN
 			WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 			WHEN s.EventType = 0 AND s.ProductID = 28 THEN 'Lottery'
 			WHEN s.EventType = 0 AND s.ProductID = 32 THEN 'PP'			-- Pragmatic Play Casino
-			WHEN s.ProductID = 34					THEN 'CC'		-- Card Club
+			WHEN s.ProductID = 34					THEN 'CC'			-- Card Club
+			WHEN s.ProductID = 36					THEN 'SG'			-- Spadegaming
 			WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 			WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 			WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports:: sportsbook
@@ -254,7 +256,7 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM @Tickets)
 	BEGIN
 		-- bettransRnG
-		IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC') AND WinLostDate >= @Yesterday)
+		IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG') AND WinLostDate >= @Yesterday)
 		BEGIN
 			-- Running
 			INSERT INTO @temp_bettransX
@@ -282,7 +284,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-			WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC')
+			WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG')
 				AND c.WinLostDate >= @Yesterday
 				AND brng.statusID IN (0, 1)
 			GROUP BY
@@ -325,7 +327,7 @@ BEGIN
 				END AS OddsSpread
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-			WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC')
+			WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG')
 				AND c.WinLostDate >= @Yesterday
 				AND brng.statusID NOT IN (0, 1)
 			GROUP BY
@@ -416,7 +418,7 @@ BEGIN
 			,CustId = b.custid
 			,Username = b.username
 			,SportType = CASE
-							WHEN c.Product IN ('OneRNG', 'CC') THEN b.matchid		-- ONERnG, Card Club
+							WHEN c.Product IN ('OneRNG', 'CC', 'SG') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
 							WHEN c.Product = 'Keno' THEN 202
 							WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 							WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -592,7 +594,7 @@ BEGIN
 							ELSE '' END
 			,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 			,TransDesc = CASE
-							WHEN c.Product IN ('OneRNG', 'CC', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP') THEN b.transdesc
+							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP') THEN b.transdesc
 							WHEN c.Product IN ('SB', 'VS2') THEN ISNULL(b.transdesc, '')
 							ELSE '' END
 			,OddsSpread = CASE
@@ -611,7 +613,7 @@ BEGIN
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueid = l.leagueid
 			LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
-		WHERE c.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet') OR c.WinLostDate < @Yesterday
+		WHERE c.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet') OR c.WinLostDate < @Yesterday
 
 		INSERT INTO #MemBetTicket
 		SELECT TransId = b.transid
@@ -619,7 +621,7 @@ BEGIN
 			,CustId = b.custid
 			,Username = b.username
 			,SportType = CASE
-							WHEN c.Product IN ('OneRNG', 'CC') THEN b.matchid
+							WHEN c.Product IN ('OneRNG', 'CC', 'SG') THEN b.matchid
 							WHEN c.Product = 'AllBet' THEN 211 -- AllBet
 							WHEN c.Product = 'VB' THEN 212 -- Macau Games
 							WHEN c.Product = 'FW' THEN 219 -- Fishing World
@@ -678,7 +680,7 @@ BEGIN
 			,BetCheck = ''
 			,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 			,TransDesc = CASE
-							WHEN c.Product IN ('OneRNG', 'VB', 'FW', 'PP', 'CC') THEN b.transdesc
+							WHEN c.Product IN ('OneRNG', 'VB', 'FW', 'PP', 'CC', 'SG') THEN b.transdesc
 							ELSE '' END
 			,OddsSpread = CASE
 							WHEN c.Product IN ('OneRNG') THEN x.OddsSpread
@@ -689,7 +691,7 @@ BEGIN
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.TransId
 			INNER JOIN @temp_bettransX AS x ON x.RefNo = c.TransId
-		WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet') AND c.WinLostDate >= @Yesterday
+		WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet') AND c.WinLostDate >= @Yesterday
 
 		-- Virtual Sports Racing
 		INSERT INTO @BettransDetail
