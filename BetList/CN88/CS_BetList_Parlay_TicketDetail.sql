@@ -5,8 +5,8 @@ ALTER PROCEDURE [dbo].[CS_BetList_Parlay_TicketDetail]
 	@TransId		BIGINT		= 0,
 	@BetId			BIGINT		= 0,
 	@CustId			INT,
-	@MoveBetDay		DATETIME,
-	@BalanceUpDay	DATETIME,
+	@MoveBetDay		SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME,
 	@Outstanding	MONEY		= 0 OUTPUT
 AS
 
@@ -19,6 +19,7 @@ AS
 	Revisions:
 		- 20190304@Kos: Create new [Redmine: 109230]
 		- 20190912@Kos: Show LOSE combination details [Redmine: #117888]
+		- 20191104@Kos: Hotfix - Duplicate data in Balance Up time [Redmine: #123093]
 */
 
 BEGIN
@@ -78,8 +79,8 @@ BEGIN
 		AwayId	INT
 	)
 
-	DECLARE @minMatchdate DATETIME,
-			@maxMatchdate DATETIME
+	DECLARE @minMatchdate SMALLDATETIME,
+			@maxMatchdate SMALLDATETIME
 
 	-- Get bettransm data
 	INSERT INTO @parlay_base (
@@ -347,7 +348,7 @@ BEGIN
 	WHERE StatusId NOT IN (0, 1)
 	ORDER BY WinLostDate ASC
 
-	SELECT * FROM @tmpMatch
+	SELECT DISTINCT * FROM @tmpMatch
 END
 GO
 
