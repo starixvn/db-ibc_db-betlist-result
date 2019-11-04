@@ -32,6 +32,7 @@ AS
 		- 20190912@Kos: Show LOSE combination details [Redmine: #117888]
 					- Remove param @Language
 					- Move from DBAGE.bodb02 to DBACC.bodb02
+		- 20191104@Kos: Hotfix - Duplicate data in Balance Up time [Redmine: #123093]
 */
 
 BEGIN
@@ -359,7 +360,7 @@ BEGIN
 	WHERE StatusId NOT IN (0, 1)
 	ORDER BY WinLostDate ASC
 
-	SELECT * FROM @tmpMatch
+	SELECT DISTINCT * FROM @tmpMatch
 END
 GO
 
