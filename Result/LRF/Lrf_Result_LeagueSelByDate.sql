@@ -34,6 +34,7 @@ AS
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
 					- Change for "Next Goal" [Redmine: #115235]
+		- 20191107@Kos: Support Badminton AIO phase 2 [Redmine: #120336]
 */
 
 BEGIN
@@ -85,6 +86,11 @@ BEGIN
 								FROM dbo.ResultDetailES WITH (NOLOCK)
 								WHERE SettlementStatusID > 0 AND @SportType = 43
 							) AS e ON m.matchid + 1 = e.MatchID + 1
+						LEFT JOIN (
+								SELECT DISTINCT MatchID
+								FROM dbo.ResultDetailOS WITH (NOLOCK)
+								WHERE SettlementStatusID > 0 AND @SportType = 9
+							) AS o ON o.MatchID + 1 = m.matchid + 1
 					WHERE m.eventdate = @EventDate
 						AND m.sporttype NOT IN (162, 201)
 						AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
@@ -93,7 +99,8 @@ BEGIN
 							OR (m.eventstatus = 'running'
 								AND (mr.IsHTCal = 1
 									OR ISNULL(r.MatchID, 0) <> 0
-									OR ISNULL(e.MatchID, 0) <> 0)))
+									OR ISNULL(e.MatchID, 0) <> 0
+									OR ISNULL(o.MatchID, 0) <> 0)))
 				) AS m
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
@@ -187,6 +194,11 @@ BEGIN
 								FROM dbo.ResultDetailES14 WITH (NOLOCK)
 								WHERE SettlementStatusID > 0 AND @SportType = 43
 							) AS e ON m.matchid + 1 = e.MatchID + 1
+						LEFT JOIN (
+								SELECT DISTINCT MatchID
+								FROM dbo.ResultDetailOS14 WITH (NOLOCK)
+								WHERE SettlementStatusID > 0 AND @SportType = 9
+							) AS o ON o.MatchID + 1 = m.matchid + 1
 					WHERE m.eventdate = @EventDate
 						AND m.sporttype NOT IN (162, 201)
 						AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
@@ -195,7 +207,8 @@ BEGIN
 							OR (m.eventstatus = 'running'
 								AND (mr.IsHTCal = 1
 									OR ISNULL(r.MatchID, 0) <> 0
-									OR ISNULL(e.MatchID, 0) <> 0)))
+									OR ISNULL(e.MatchID, 0) <> 0
+									OR ISNULL(o.MatchID, 0) <> 0)))
 				) AS m
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
@@ -246,9 +259,9 @@ BEGIN
 		END
 	END
 END
-
-
-
 GO
+
+
+
 GRANT	EXECUTE	ON	Lrf_Result_LeagueSelByDate	TO	bodbLicenseeNet
 GO

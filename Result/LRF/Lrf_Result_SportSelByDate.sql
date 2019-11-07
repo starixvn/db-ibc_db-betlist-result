@@ -38,6 +38,7 @@ AS
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
 					- Change for "Next Goal" [Redmine: #115235]
+		- 20191107@Kos: Support Badminton AIO phase 2 [Redmine: #120336]
 
 	Sample test case:
 		exec Lrf_Result_SportSelByDate @EventDate='2013-10-06 00:00:00',@licenseeid=1
@@ -98,6 +99,11 @@ BEGIN
 					FROM dbo.ResultDetailES WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
 				) AS e ON m.matchid = e.MatchID AND m.sporttype = 43
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetailOS WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+				) AS o ON o.MatchID = m.matchid AND m.sporttype = 9
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
@@ -107,7 +113,8 @@ BEGIN
 						OR ISNULL(ss.MatchID, 0) <> 0		-- Sportting Solution, BAIO show running Match but settled least one type
 						OR ISNULL(br.MatchID, 0) <> 0		-- BetRadar show running Match but settled least one type
 						OR ISNULL(b.MatchID, 0) <> 0		-- BetRadar Virtual Basketball show running Match but settled least one type
-						OR ISNULL(e.MatchID, 0) <> 0)))		-- E-Sports show running Match but settled least one type
+						OR ISNULL(e.MatchID, 0) <> 0		-- E-Sports show running Match but settled least one type
+						OR ISNULL(o.MatchID, 0) <> 0)))		-- Badminton show running Match but settled least one type
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
@@ -170,6 +177,11 @@ BEGIN
 					FROM dbo.ResultDetailES14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
 				) AS e ON m.matchid = e.MatchID AND m.sporttype = 43
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+				) AS o ON o.MatchID = m.matchid AND m.sporttype = 9
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
@@ -179,7 +191,8 @@ BEGIN
 						OR ISNULL(ss.MatchID, 0) <> 0		-- Sportting Solution, BAIO show running Match but settled least one type
 						OR ISNULL(br.MatchID, 0) <> 0		-- BetRadar show running Match but settled least one type
 						OR ISNULL(b.MatchID, 0) <> 0		-- BetRadar Virtual Basketball show running Match but settled least one type
-						OR ISNULL(e.MatchID, 0) <> 0)))		-- E-Sports show running Match but settled least one type
+						OR ISNULL(e.MatchID, 0) <> 0		-- E-Sports show running Match but settled least one type
+						OR ISNULL(o.MatchID, 0) <> 0)))		-- Badminton show running Match but settled least one type
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)

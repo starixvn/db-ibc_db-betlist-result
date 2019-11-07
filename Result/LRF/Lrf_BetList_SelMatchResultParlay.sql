@@ -29,6 +29,7 @@ AS
 		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #112376]
 		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
 		- 20191028@Kos: Move to DBACC [Redmine: #122267]
+		- 20191107@Kos: Support Badminton AIO phase 2 [Redmine: #120336]
 */
 
 BEGIN
@@ -177,6 +178,28 @@ BEGIN
 								OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 9)
+		BEGIN
+			INSERT INTO @tmpResultDetail
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetailOS AS d WITH (NOLOCK)
+				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE p.SportType = 9		-- Badminton
+				AND (LEN(d.ResourceID) IN (2, 4)
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceID LIKE f.ResourceID
+						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+		END
+
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
 		BEGIN
 			INSERT INTO @tmpResultDetail
@@ -317,6 +340,28 @@ BEGIN
 								OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 9)
+		BEGIN
+			INSERT INTO @tmpResultDetail
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetailOS14 AS d WITH (NOLOCK)
+				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
+			WHERE p.SportType = 9		-- Badminton
+				AND (LEN(d.ResourceID) IN (2, 4)
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceID LIKE f.ResourceID
+						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+		END
+
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
 		BEGIN
 			INSERT INTO @tmpResultDetail
@@ -455,6 +500,28 @@ BEGIN
 							AND d.ResourceId LIKE f.ResourceID
 							AND (p.BetType NOT IN (606, 607, 613, 617)
 								OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
+		END
+
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 9)
+		BEGIN
+			INSERT INTO @tmpResultDetail
+			SELECT
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM bodb_Archive.dbo.ResultDetailOS_bk AS d WITH (NOLOCK)
+				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
+				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
+					ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
+			WHERE p.SportType = 9		-- Badminton
+				AND (LEN(d.ResourceID) IN (2, 4)
+					OR (d.SettlementStatusID > 0
+						AND d.ResourceID LIKE f.ResourceID
+						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)

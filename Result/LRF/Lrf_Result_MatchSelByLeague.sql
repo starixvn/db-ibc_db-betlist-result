@@ -45,6 +45,7 @@ AS
 		- 20181018@Kos: Support E-Sports 2 [#Redmine: 100721]
 		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
 					- Change for "Next Goal" [Redmine: #115235]
+		- 20191107@Kos: Support Badminton AIO phase 2 [Redmine: #120336]
 
 	Sample call
 		exec Lrf_Result_MatchSelByLeague @FromDate='2014-10-15 00:00:00',@SportType=5,@LeagueID=0,@IsShowAll=1
@@ -183,6 +184,14 @@ BEGIN
 				WHERE SettlementStatusID > 0 AND @SportType = 43
 				UNION ALL
 				SELECT DISTINCT MatchID
+				FROM dbo.ResultDetailOS WITH (NOLOCK)
+				WHERE SettlementStatusID > 0 AND @SportType = 9
+				UNION ALL
+				SELECT DISTINCT MatchID
+				FROM dbo.ResultDetailOS14 WITH (NOLOCK)
+				WHERE SettlementStatusID > 0 AND @SportType = 9
+				UNION ALL
+				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetail3rd WITH (NOLOCK)
 				WHERE SettlementStatusID > 0 AND @SportType = 193
 				UNION ALL
@@ -280,9 +289,6 @@ BEGIN
 				AND ( m.eventstatus NOT IN ('internal', 'closed')
 					OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-			ORDER BY m.eventdate ASC,
-				m.sporttype ASC,
-				m.leagueid ASC
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
 	ELSE 
@@ -357,9 +363,6 @@ BEGIN
 				AND ( m.eventstatus NOT IN ('internal', 'closed')
 					OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-			ORDER BY m.eventdate ASC,
-				m.sporttype ASC,
-				m.leagueid ASC
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
 	END
@@ -425,7 +428,22 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType = 43
+		ELSE IF @SportType = 9		-- Badminton
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailOS WITH (NOLOCK)
+			WHERE MatchID IN (SELECT MatchId FROM #Match)
+				AND (LEN(ResourceID) IN (2, 4) OR SettlementStatusID > 0)
+		END
+		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -439,8 +457,6 @@ BEGIN
 			FROM dbo.ResultDetailES WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
-			ORDER BY MatchID ASC,
-				ResourceId ASC
 		END
 		ELSE IF @SportType = 193
 		BEGIN
@@ -456,8 +472,6 @@ BEGIN
 			FROM dbo.ResultDetail3rd WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND SettlementStatusID > 0
-			ORDER BY MatchID ASC,
-				ResourceId ASC
 		END
 	END
 	ELSE
@@ -500,10 +514,23 @@ BEGIN
 					OR (@SportType = 2
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
-			ORDER BY MatchID ASC,
-				ResourceId ASC
 		END
-		ELSE IF @SportType = 43
+		ELSE IF @SportType = 9		-- Badminton
+		BEGIN
+			INSERT INTO @Detail
+			SELECT
+				MatchId,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailOS14 WITH (NOLOCK)
+			WHERE MatchID IN (SELECT MatchId FROM #Match)
+				AND (LEN(ResourceID) IN (2, 4) OR SettlementStatusID > 0)
+		END
+		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -517,8 +544,6 @@ BEGIN
 			FROM dbo.ResultDetailES14 WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
-			ORDER BY MatchID ASC,
-				ResourceId ASC
 		END
 		ELSE IF @SportType = 193
 		BEGIN
@@ -534,19 +559,17 @@ BEGIN
 			FROM dbo.ResultDetail3rd14 WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND SettlementStatusID > 0
-			ORDER BY MatchID ASC,
-				ResourceId ASC
 		END
 	END
 
 	SELECT * FROM @Detail
+	ORDER BY MatchId ASC,
+		ResourceId ASC
 
 	DROP TABLE #Match
 END
-
-
-
-
 GO
+
+
 GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelByLeague] TO [bodbLicenseeNet] AS [dbo]
 GO
