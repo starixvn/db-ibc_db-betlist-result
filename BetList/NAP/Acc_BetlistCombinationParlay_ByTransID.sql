@@ -31,8 +31,7 @@ AS
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112286]
-
-	Paramters Explanation:
+		- 20191114@Kos: Show (N) for neutral match [Redmine: #123772]
 */
 
 BEGIN
@@ -180,9 +179,10 @@ BEGIN
 	)
 
 	DECLARE @tmpMatch AS TABLE(
-		Serial	BIGINT,
-		HomeId	INT,
-		AwayId	INT
+		Serial		BIGINT,
+		HomeId		INT,
+		AwayId		INT,
+		IsNeutral	BIT
 	)
 
 	-- Get bettransm data
@@ -588,7 +588,8 @@ BEGIN
 			SELECT
 				p.serial,
 				m.homeid,
-				m.awayid
+				m.awayid,
+				m.IsNeutral
 			FROM @tmpResults AS p
 				INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -636,7 +637,8 @@ BEGIN
 			SELECT
 				p.serial,
 				m.homeid,
-				m.awayid
+				m.awayid,
+				m.IsNeutral
 			FROM @tmpResults AS p
 				INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 				INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -647,8 +649,9 @@ BEGIN
 			INSERT INTO @tmpMatch
 			SELECT
 				p.serial,
-				homeid,
-				awayid
+				m.homeid,
+				m.awayid,
+				m.IsNeutral
 			FROM @tmpResults AS p
 				INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -659,8 +662,9 @@ BEGIN
 			INSERT INTO @tmpMatch
 			SELECT
 				p.serial,
-				homeid,
-				awayid
+				m.homeid,
+				m.awayid,
+				m.IsNeutral
 			FROM @tmpResults AS p
 				INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid

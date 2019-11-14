@@ -33,6 +33,7 @@ AS
 					- Remove param @Language
 					- Move from DBAGE.bodb02 to DBACC.bodb02
 		- 20191104@Kos: Hotfix - Duplicate data in Balance Up time [Redmine: #123093]
+		- 20191114@Kos: Show (N) for neutral match [Redmine: #123772]
 */
 
 BEGIN
@@ -49,7 +50,7 @@ BEGIN
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
-	DECLARE @tmpBettrans AS TABLE(
+	DECLARE @tmpBettrans AS TABLE (
 		TransId	BIGINT,
 		RefNo	BIGINT,
 		Stake	MONEY,
@@ -58,7 +59,7 @@ BEGIN
 		Bitmap	INT			-- Combination Bitmap
 	)
 
-	DECLARE @parlay_base AS TABLE(
+	DECLARE @parlay_base AS TABLE (
 		TransId		BIGINT,
 		RefNo		BIGINT,
 		MatchId		INT,
@@ -87,9 +88,10 @@ BEGIN
 		MatchId	INT
 	)
 	DECLARE @tmpMatch AS TABLE (
-		Serial	BIGINT,
-		HomeId	INT,
-		AwayId	INT
+		Serial		BIGINT,
+		HomeId		INT,
+		AwayId		INT,
+		IsNeutral	BIT
 	)
 
 	DECLARE @minMatchdate SMALLDATETIME,
@@ -296,7 +298,8 @@ BEGIN
 		SELECT
 			p.serial,
 			m.homeid,
-			m.awayid
+			m.awayid,
+			m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.MatchId = m.matchid
@@ -309,7 +312,8 @@ BEGIN
 		SELECT
 			p.serial,
 			m.homeid,
-			m.awayid
+			m.awayid,
+			m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.MatchId = m.matchid
@@ -322,7 +326,8 @@ BEGIN
 		SELECT
 			p.serial,
 			m.homeid,
-			m.awayid
+			m.awayid,
+			m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.MatchId = m.matchid
