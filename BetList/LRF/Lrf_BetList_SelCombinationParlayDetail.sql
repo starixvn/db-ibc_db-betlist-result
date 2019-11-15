@@ -32,6 +32,7 @@ AS
 		- 20191011@Kos: Show LOSE combination details [Redmine: #117888]
 					- Move from DBEXT.bodb02 to DBACC.bodb02
 					- Don't return column Order, TransId anymore
+		- 20191115@Kos: Show (N) for neutral match [Redmine: #123772]
 */
 
 BEGIN
@@ -112,9 +113,10 @@ BEGIN
 	)
 
 	DECLARE @tmpMatch AS TABLE(
-		Serial	BIGINT,
-		HomeId	INT,
-		AwayId	INT
+		Serial		BIGINT,
+		HomeId		INT,
+		AwayId		INT,
+		IsNeutral	BIT
 	)
 
 	DECLARE @minMatchdate SMALLDATETIME,
@@ -341,7 +343,8 @@ BEGIN
 		SELECT
 			p.serial,
 			m.homeid,
-			m.awayid
+			m.awayid,
+			m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.MatchId = m.matchid
@@ -354,7 +357,8 @@ BEGIN
 		SELECT
 			p.serial,
 			m.homeid,
-			m.awayid
+			m.awayid,
+			m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -367,7 +371,8 @@ BEGIN
 		SELECT
 			p.serial,
 			m.homeid,
-			m.awayid
+			m.awayid,
+			m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
