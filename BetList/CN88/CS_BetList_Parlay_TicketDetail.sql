@@ -20,6 +20,7 @@ AS
 		- 20190304@Kos: Create new [Redmine: 109230]
 		- 20190912@Kos: Show LOSE combination details [Redmine: #117888]
 		- 20191104@Kos: Hotfix - Duplicate data in Balance Up time [Redmine: #123093]
+		- 20191115@Kos: Show (N) for neutral match [Redmine: #123772]
 */
 
 BEGIN
@@ -74,9 +75,10 @@ BEGIN
 		MatchId	INT
 	)
 	DECLARE @tmpMatch AS TABLE(
-		Serial	BIGINT,
-		HomeId	INT,
-		AwayId	INT
+		Serial		BIGINT,
+		HomeId		INT,
+		AwayId		INT,
+		IsNeutral	BIT
 	)
 
 	DECLARE @minMatchdate SMALLDATETIME,
@@ -284,7 +286,8 @@ BEGIN
 		SELECT
 			p.serial,
 			m.homeid,
-			m.awayid
+			m.awayid,
+			m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.MatchId = m.matchid
@@ -297,7 +300,8 @@ BEGIN
 		SELECT
 			p.serial,
 			m.homeid,
-			m.awayid
+			m.awayid,
+			m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.MatchId = m.matchid
@@ -310,7 +314,8 @@ BEGIN
 		SELECT
 			p.serial,
 			m.homeid,
-			m.awayid
+			m.awayid,
+			m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.MatchId = m.matchid
