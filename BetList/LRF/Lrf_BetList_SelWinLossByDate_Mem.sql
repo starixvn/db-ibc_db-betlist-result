@@ -117,6 +117,7 @@ AS
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
 		- 20190716@Kos: Support Card Club [Redmine: #115449]
+		- 20191119@Kos: Don't support bettype Promotion Prize (4300) and Tournament Prize (4299) [Redmine: #123804]
 */
 
 BEGIN
@@ -156,7 +157,7 @@ BEGIN
 	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 24, 25, 27, 28, 32, 34)
 
 	DELETE @SportBettype
-	WHERE Bettype IN (904, 914)
+	WHERE Bettype IN (904, 914, 4299, 4300)
 
 	IF @ShowBT = 0
 	BEGIN
