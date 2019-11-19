@@ -32,6 +32,7 @@ AS
 		- 20181025@Kos: Support E-Sports 2 [Redmine: #100635]
 		- 20191014@Kos: Support new table Trader [Redmine: #120746]
 					- Add new param @LiveIndicator
+		- 20191118@Kos: Support BMAIO [Redmine: #124017]
 */
 
 BEGIN
@@ -96,7 +97,7 @@ BEGIN
 		FROM dbo.match WITH (NOLOCK)
 		WHERE matchid = @MatchId
 
-		-- Get result detail for Basketball, Tennis, E-Sports main result only
+		-- Get result detail for Basketball, Tennis, E-Sports, Badminton main result only
 		IF @SportType IN (2, 5)
 		BEGIN
 			SELECT
@@ -112,7 +113,7 @@ BEGIN
 				AND LEN(ResourceID) = 2
 				AND (@SportType = 2
 					OR (@SportType = 5 AND SettlementStatusID > 0))
-			ORDER BY ResourceID
+			ORDER BY ResourceID ASC
 		END
 		ELSE IF @SportType = 43
 		BEGIN
@@ -126,7 +127,21 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailES WITH (NOLOCK)
 			WHERE MatchID = @MatchId AND LEN(ResourceID) = 2
-			ORDER BY ResourceID
+			ORDER BY ResourceID ASC
+		END
+		ELSE IF @SportType = 9
+		BEGIN
+			SELECT
+				MatchID,
+				ResourceID,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailOS WITH (NOLOCK)
+			WHERE MatchID = @MatchId AND LEN(ResourceID) IN (2, 4)
+			ORDER BY ResourceID ASC
 		END
 	END
 	ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)	-- Bettrans14 range
@@ -186,7 +201,7 @@ BEGIN
 		FROM dbo.match14 WITH (NOLOCK)
 		WHERE matchid = @MatchId
 
-		-- Get result detail for Basketball, Tennis, E-Sports main result only
+		-- Get result detail for Basketball, Tennis, E-Sports, Badminton main result only
 		IF @SportType IN (2, 5)
 		BEGIN
 			SELECT
@@ -202,7 +217,7 @@ BEGIN
 				AND LEN(ResourceID) = 2
 				AND (@SportType = 2
 					OR (@SportType = 5 AND SettlementStatusID > 0))
-			ORDER BY ResourceID
+			ORDER BY ResourceID ASC
 		END
 		ELSE IF @SportType = 43
 		BEGIN
@@ -216,7 +231,21 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailES14 WITH (NOLOCK)
 			WHERE MatchID = @MatchId AND LEN(ResourceID) = 2
-			ORDER BY ResourceID
+			ORDER BY ResourceID ASC
+		END
+		ELSE IF @SportType = 9
+		BEGIN
+			SELECT
+				MatchID,
+				ResourceID,
+				HomeValue,
+				AwayValue,
+				ResultStatusID,
+				SettlementStatusID,
+				OtherInfo
+			FROM dbo.ResultDetailOS14 WITH (NOLOCK)
+			WHERE MatchID = @MatchId AND LEN(ResourceID) IN (2, 4)
+			ORDER BY ResourceID ASC
 		END
 	END
 END
