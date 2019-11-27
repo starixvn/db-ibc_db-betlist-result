@@ -107,6 +107,7 @@ AS
 					- Add new params @MoveBetsDay and @BalanceUpDay
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20191105@Kos: Support Non-peak Hours Promotion [#Redmine: 121121]
+		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 */
 
 BEGIN
@@ -194,7 +195,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		WinLost			MONEY,
 		Commission		MONEY,
-		OddsSpread		SMALLMONEY
+		OddsSpread		MONEY
 	)
 
 	DECLARE @Date DATETIME

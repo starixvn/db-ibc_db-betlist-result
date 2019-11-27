@@ -14,6 +14,7 @@ AS
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20190506@Kos: Show match KO time for single ticket [#Redmine: 112092]
+		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 
 	Parameters:
 		- @TransId: TransId of ticket bettype 901
@@ -76,7 +77,7 @@ BEGIN
 		WinLostDate			SMALLDATETIME,
 		BetCheck			NVARCHAR(50),
 		TransDesc			NVARCHAR(1000),
-		OddsSpread			SMALLMONEY
+		OddsSpread			MONEY
 	)
 
 	-- Get ticket

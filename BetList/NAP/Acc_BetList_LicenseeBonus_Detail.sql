@@ -17,6 +17,7 @@ AS
 		- 20190506@Kos: Show match KO time for single ticket [#Redmine: 112092]
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
+		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
@@ -79,7 +80,7 @@ BEGIN
 		WinLostDate			SMALLDATETIME,
 		BetCheck			NVARCHAR(50),
 		TransDesc			NVARCHAR(1000),
-		OddsSpread			SMALLMONEY,
+		OddsSpread			MONEY,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
 		ExtraInfo			VARCHAR(1000)
