@@ -40,6 +40,7 @@ AS
 		- 20190510@Kos: Fix bug for non-sport products [Redmine: 109521]
 		- 20190704@Kos: Support PH AIO 4a [Redmine: 115866]
 		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
+		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 */
 
 BEGIN
@@ -102,7 +103,7 @@ BEGIN
 		BetCheck		NVARCHAR(50),
 		ComStatus		NVARCHAR(20),
 		TransDesc		NVARCHAR(1000),
-		OddsSpread		SMALLMONEY,
+		OddsSpread		MONEY,
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000)
 	);

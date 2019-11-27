@@ -55,6 +55,7 @@ AS
 		- 20190606@Kos: Remove unused code [Redmine: #114242]
 		- 20190716@Kos: Support subaccount permission [Redmine: #116825]
 					- Add new param @SubAccId, @IsAllDownline
+		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 */
 
 BEGIN
@@ -89,7 +90,7 @@ BEGIN
 		Ip					NVARCHAR(15),
 		BetCheck			NVARCHAR(50),
 		TransDesc			NVARCHAR(1000),
-		OddsSpread			SMALLMONEY,
+		OddsSpread			MONEY,
 		ExtraInfo			VARCHAR(1000),
 		MatchId				INT,
 		SportType			SMALLINT,

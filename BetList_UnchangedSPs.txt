@@ -1,6 +1,7 @@
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettype_Ag.sql
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettype_MAg.sql
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettype_Sag.sql
-BetList/Alpha/Wrappers/Age_BetList_SelRunningBybettypeMatch_Ag.sql
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettypeMatch_MAg.sql
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettypeMatch_SAg.sql
+BetList/CN88/CS_BetList_AbnormalBet_Mem.sql
+BetList/CN88/CS_BetList_AbnormalBet_Mem_Old.sql
+BetList/CN88/CS_BetList_CancelledBet_Mem.sql
+BetList/CN88/CS_BetList_CancelledBet_Mem_Old.sql
+BetList/CN88/CS_BetList_Statement_Mem.sql
+BetList/CN88/CS_BetList_WinLoss_Mem.sql
+BetList/CN88/CS_BetList_WinLoss_Mem_Old.sql

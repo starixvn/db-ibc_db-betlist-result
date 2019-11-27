@@ -29,6 +29,7 @@ AS
 		- 20190723@Kos: Support new status Pending [#Redmine: 116863]
 		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
 		- 20191022@Kos: Show Running status for Marked tickets [Redmine: 122391]
+		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 */
 
 BEGIN
@@ -85,7 +86,7 @@ BEGIN
 		BetCheck			NVARCHAR(50),
 		ComStatus			NVARCHAR(20),
 		TransDesc			NVARCHAR(1000),
-		OddsSpread			SMALLMONEY,
+		OddsSpread			MONEY,
 		BetdaqId			BIGINT,
 		ExtraInfo			VARCHAR(1000),
 		Currency			NVARCHAR(50)
