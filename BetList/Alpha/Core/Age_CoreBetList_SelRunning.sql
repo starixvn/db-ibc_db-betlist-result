@@ -36,7 +36,8 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
-		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
+		- 20191028@Kos: Show Running status for Marked tickets [Redmine: #122391]
+		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -96,7 +97,7 @@ BEGIN
 		, ComStatus			NVARCHAR(20)
 		, BetCheck			NVARCHAR(50)
 		, TransDesc			NVARCHAR(1000)
-		, OddsSpread		SMALLMONEY
+		, OddsSpread		MONEY
 		, ExtraInfo			VARCHAR(1000)
 		, ProductId			TINYINT
 		, EventType			TINYINT

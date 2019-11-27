@@ -95,6 +95,7 @@ AS
 					- Don't support bettype 71, 72 anymore
 					- Remove param @Language, @Error, @ErrorMsg
 					- Don't return TPositiontaking, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore, Placing anymore
+		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
 */
 
 BEGIN
@@ -114,7 +115,7 @@ BEGIN
 		OddsType		TINYINT,
 		Odds			MONEY,
 		MOdds			MONEY,
-		OddsSpread		SMALLMONEY,
+		OddsSpread		MONEY,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,

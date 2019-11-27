@@ -65,6 +65,7 @@ AS
 		- 20190628@Kos: Support PH AIO 4a [Redmine: #112894]
 		- 20190723@Kos: Don't support Poker Games anymore [Redmine: #107645]
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
+		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
 */
 
 BEGIN
@@ -107,7 +108,7 @@ BEGIN
 		BetCheck		NVARCHAR(50),
 		ComStatus		NVARCHAR(20),
 		TransDesc		NVARCHAR(1000),
-		OddsSpread		SMALLMONEY,
+		OddsSpread		MONEY,
 		ExtraInfo		VARCHAR(1000),
 		ProductId		TINYINT,
 		EventType		INT,
@@ -152,7 +153,7 @@ BEGIN
 		BetCheck		NVARCHAR(50),
 		ComStatus		NVARCHAR(20),
 		TransDesc		NVARCHAR(1000),
-		OddsSpread		SMALLMONEY,
+		OddsSpread		MONEY,
 		ExtraInfo		VARCHAR(1000),
 		ProductId		TINYINT,
 		EventType		INT,

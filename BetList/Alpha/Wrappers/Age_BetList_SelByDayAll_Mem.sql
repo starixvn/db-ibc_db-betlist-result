@@ -87,6 +87,7 @@ AS
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
+		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
 
 	Param's Explanation:
 		+ @TransType:
@@ -185,7 +186,7 @@ BEGIN
 		, BetCheck			NVARCHAR(50)
 		, ComStatus			NVARCHAR(20)
 		, TransDesc			NVARCHAR(1000)
-		, OddsSpread		SMALLMONEY
+		, OddsSpread		MONEY
 		, BetdaqId			BIGINT
 		, ExtraInfo			VARCHAR(1000)
 		, Currency			NVARCHAR(50)
@@ -219,7 +220,7 @@ BEGIN
 		, Discount			SMALLMONEY
 		, ADiscount			SMALLMONEY
 		, SDiscount			SMALLMONEY
-		, OddsSpread		SMALLMONEY
+		, OddsSpread		MONEY
 	)
 
 	DECLARE @BettransDetail TABLE (
