@@ -27,6 +27,7 @@ AS
 		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
 				- Add @MoveBetsDay and @BalanceUpDay input params
+		- 20191128@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 */
 
 BEGIN
@@ -126,7 +127,7 @@ BEGIN
 		WinLostDate			SMALLDATETIME,
 		BetCheck			NVARCHAR(50),
 		TransDesc			NVARCHAR(1000),
-		OddsSpread			SMALLMONEY,
+		OddsSpread			MONEY,
 		BetdaqId			BIGINT,
 		ExtraInfo			VARCHAR(1000),
 		OriginalStake		MONEY,

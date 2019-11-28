@@ -37,6 +37,7 @@ AS
 		- 20191011@Kos: Fix bug translog [Redmine: #120690]
 		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
 		- 20191105@Kos: Support Non-peak Hours Promotion [#Redmine: 121121]
+		- 20191128@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 */
 
 BEGIN
@@ -225,7 +226,7 @@ BEGIN
 		LicenseeWL		MONEY,
 		PlayerComm		MONEY,
 		Comm			MONEY,
-		OddsSpread		SMALLMONEY
+		OddsSpread		MONEY
 	)
 
 	DECLARE @Currency	INT,

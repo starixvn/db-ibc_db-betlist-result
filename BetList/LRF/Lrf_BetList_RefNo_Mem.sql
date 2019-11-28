@@ -28,6 +28,7 @@ AS
 		- 20190730@Kos: Support new status Pending [#Redmine: 117729]
 		- 20191018@Kos: Support other products [#Redmine: 122267]
 		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
+		- 20191128@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 */
 
 BEGIN
@@ -438,7 +439,7 @@ BEGIN
 			LicenseeWL		MONEY,
 			PlayerComm		MONEY,
 			Comm			MONEY,
-			OddsSpread		SMALLMONEY
+			OddsSpread		MONEY
 		)
 
 		IF @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet') AND @WinLostDate >= @Yesterday
