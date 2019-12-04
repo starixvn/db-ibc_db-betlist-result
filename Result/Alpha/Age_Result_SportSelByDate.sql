@@ -8,7 +8,7 @@ AS
 
 /*
 	Created:
-	Task:
+	Task: Alpha Result Report - Load Sport dropdownlist
 	DB: DBAGE.bodb02
 	Original:
 	Revision:
@@ -35,6 +35,7 @@ AS
 		- 20190805@Kos: Support PH AIO 4b [Redmine: #115235]
 					- Change for "Next Goal" [Redmine: #115235]
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
+		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 */
 
 BEGIN
@@ -80,7 +81,7 @@ BEGIN
 													OR BR.HomeValue LIKE '%a%'
 													OR BR.HomeValue LIKE '%h%')
 												AND BR.ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-													'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+													'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490')
 												AND BR.ResourceID NOT LIKE '160%'
 												AND BR.ResourceID NOT LIKE '164%'
 												AND BR.ResourceID NOT LIKE '169%'
@@ -94,6 +95,8 @@ BEGIN
 												AND BR.ResourceID NOT LIKE '225%'
 												AND BR.ResourceID NOT LIKE '226%'
 												AND BR.ResourceID NOT LIKE '227%'
+												AND BR.ResourceID NOT LIKE '486%'
+												AND BR.ResourceID NOT LIKE '487%'
 												AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 												AND m.matchid = BR.MatchId
 											)
@@ -178,7 +181,7 @@ BEGIN
 													OR BR.HomeValue LIKE '%a%'
 													OR BR.HomeValue LIKE '%h%')
 												AND BR.ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-													'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+													'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490')
 												AND BR.ResourceID NOT LIKE '160%'
 												AND BR.ResourceID NOT LIKE '164%'
 												AND BR.ResourceID NOT LIKE '169%'
@@ -192,6 +195,8 @@ BEGIN
 												AND BR.ResourceID NOT LIKE '225%'
 												AND BR.ResourceID NOT LIKE '226%'
 												AND BR.ResourceID NOT LIKE '227%'
+												AND BR.ResourceID NOT LIKE '486%'
+												AND BR.ResourceID NOT LIKE '487%'
 											AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											AND m.matchid = BR.MatchId
 										)

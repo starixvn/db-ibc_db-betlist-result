@@ -8,9 +8,9 @@ AS
 
 /*
 	Created: 20150401@Sophia
-	Task: Matrix of Bettype vs ResourceID, for matching with betId/ betcheck of ticket
-		Store only Bettypes of BetRadar which use Table ResultDetail
+	Task: Matrix of Bettype vs ResourceID, support to show result popup of SB ticket
 	DB: DBAGE.bodb02, DBEXT.bodb02, DBACC.bodb02
+
 	Revisions:
 		- 20160505@Kos: Support Fast Market [#Redmine: 56589]
 		- 20160829@Kos: Support PH All In One phase 2b [#Redmine: 62882]
@@ -23,6 +23,7 @@ AS
 		- 20190801@Kos: Support PH AIO phase 4b [Redmine: #115235]
 					- Change for "Next Goal" [Redmine: #115235]
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
+		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 */
 
 BEGIN
@@ -346,10 +347,19 @@ BEGIN
 	VALUES (1, 0, 'None', 486, '08')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 486, '486%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 0, 'None', 488, '08')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 488, '488')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 0, 'None', 490, '08')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 490, '490')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 0, 'None', 491, '08')
@@ -358,7 +368,13 @@ BEGIN
 	VALUES (1, 0, 'None', 487, '09')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 487, '487%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 0, 'None', 489, '09')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 0, 'None', 489, '489')
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 0, 'None', 490, '09')

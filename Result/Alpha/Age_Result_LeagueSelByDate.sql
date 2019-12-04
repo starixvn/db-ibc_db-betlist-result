@@ -9,7 +9,7 @@ AS
 
 /*
 	Created:
-	Task:
+	Task: Alpha Result Report - Load League dropdownlist
 	DB: DBAGE.bodb02
 	Original: LeagueSelForResult
 
@@ -39,6 +39,7 @@ AS
 		- 20190805@Kos: Support PH AIO 4b [Redmine: #115235]
 					- Change for "Next Goal" [Redmine: #115235]
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
+		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 */
 
 BEGIN
@@ -76,7 +77,7 @@ BEGIN
 									OR HomeValue LIKE '%a%'
 									OR HomeValue LIKE '%h%')
 								AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-									'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+									'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490')
 								AND ResourceID NOT LIKE '160%'
 								AND ResourceID NOT LIKE '164%'
 								AND ResourceID NOT LIKE '169%'
@@ -89,7 +90,9 @@ BEGIN
 								AND ResourceID NOT LIKE '224%'
 								AND ResourceID NOT LIKE '225%'
 								AND ResourceID NOT LIKE '226%'
-								AND ResourceID NOT LIKE '227%')
+								AND ResourceID NOT LIKE '227%'
+								AND ResourceID NOT LIKE '486%'
+								AND ResourceID NOT LIKE '487%')
 							OR @SportType IN (2, 5) )
 					UNION ALL
 					SELECT DISTINCT MatchID
@@ -100,7 +103,7 @@ BEGIN
 									OR HomeValue LIKE '%a%'
 									OR HomeValue LIKE '%h%')
 								AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-									'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+									'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490')
 								AND ResourceID NOT LIKE '160%'
 								AND ResourceID NOT LIKE '164%'
 								AND ResourceID NOT LIKE '169%'
@@ -113,7 +116,9 @@ BEGIN
 								AND ResourceID NOT LIKE '224%'
 								AND ResourceID NOT LIKE '225%'
 								AND ResourceID NOT LIKE '226%'
-								AND ResourceID NOT LIKE '227%')
+								AND ResourceID NOT LIKE '227%'
+								AND ResourceID NOT LIKE '486%'
+								AND ResourceID NOT LIKE '487%')
 							OR @SportType IN (2, 5))
 				) AS R ON m.Matchid = R.MatchId
 			LEFT JOIN
