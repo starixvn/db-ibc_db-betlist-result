@@ -27,8 +27,9 @@ AS
 		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
 		- 20190730@Kos: Support new status Pending [#Redmine: 117729]
 		- 20191018@Kos: Support other products [#Redmine: 122267]
-		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
+		- 20191031@Kos: Show Running status for Marked tickets [Redmine: #120309]
 		- 20191128@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
+		- 20191205@Kos: Support Saba Promotion [Redmine: #124612]
 */
 
 BEGIN
@@ -65,7 +66,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 37)
 		AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914)
 		AND BetType NOT BETWEEN 801 AND 899
 
@@ -309,6 +310,7 @@ BEGIN
 						WHEN @ProductId = 24 THEN 'FW'			-- Fishing World
 						WHEN @ProductId = 32 THEN 'PP'			-- Pragmatic Play Casino
 						WHEN @ProductId = 34 THEN 'CC'			-- Card Club
+						WHEN @ProductId = 37 THEN 'SPR'			-- Saba Promotion
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 						WHEN @EventType = 0 AND @ProductId = 28 THEN 'Lottery'
@@ -539,7 +541,7 @@ BEGIN
 			b.recommend,
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
-				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet') THEN b.matchid
+				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet', 'SPR') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
@@ -706,7 +708,7 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+				WHEN @Product IN ('SB', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -788,7 +790,7 @@ BEGIN
 			b.recommend,
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
-				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet') THEN b.matchid
+				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet', 'SPR') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
@@ -924,7 +926,7 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+				WHEN @Product IN ('SB', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -1005,7 +1007,7 @@ BEGIN
 			b.recommend,
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
-				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet') THEN b.matchid
+				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'Allbet', 'SPR') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
@@ -1141,7 +1143,7 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+				WHEN @Product IN ('SB', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
