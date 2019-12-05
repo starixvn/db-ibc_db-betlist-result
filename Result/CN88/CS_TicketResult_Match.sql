@@ -16,10 +16,20 @@ AS
 		- 20190304@Kos: Create new [Redmine: 109230]
 		- 20190807@Kos: Support PH AIO phase 4b [Redmine: #116865]
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #121610]
+		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @ResultDetail TABLE (
+		MatchId				INT,
+		ResourceId			VARCHAR(20),
+		HomeValue			VARCHAR(50),
+		AwayValue			VARCHAR(50),
+		ResultStatusID		TINYINT,
+		SettlementStatusID	TINYINT,
+		OtherInfo			VARCHAR(50))
 
 	DECLARE @ResourceId	VARCHAR(20),
 		@SportType		SMALLINT
@@ -68,8 +78,6 @@ BEGIN
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
 		WHERE m.matchid = @MatchId
-		ORDER BY m.eventdate ASC,
-			m.matchcode ASC
 
 		-- Get sport type
 		SELECT @SportType = sporttype
@@ -84,6 +92,7 @@ BEGIN
 		-- Get result detail
 		IF @SportType NOT IN (9, 43, 193)
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -110,20 +119,20 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
-						AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
-							OR d.HomeValue LIKE '%a%'
-							OR d.HomeValue LIKE '%h%')
-						AND d.ResourceID LIKE f.ResourceID)
+						AND d.ResourceID LIKE f.ResourceID
+						AND (@BetType NOT IN (486, 487)
+							OR d.ResourceId IN ('08', '09')
+							OR d.ResourceId LIKE '%' + @ResourceId))
 					OR (@SportType = 2		-- Basketball
 						AND (LEN(d.ResourceId) = 2
 							OR (d.SettlementStatusID > 0
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceID LIKE '%' + @ResourceId)))))
-			ORDER BY d.ResourceID ASC
 		END
 		ELSE IF @SportType = 9		-- Badminton
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -140,10 +149,10 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
-			ORDER BY d.ResourceID ASC
 		END
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -160,10 +169,10 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
-			ORDER BY d.ResourceID ASC
 		END
 		ELSE
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchID,
 				d.ResourceId,
@@ -182,7 +191,6 @@ BEGIN
 						OR (d.ResourceId LIKE f.ResourceID
 							AND (@BetType <> 2809
 								OR d.ResourceID LIKE '%' + @ResourceId))))
-			ORDER BY d.ResourceId ASC
 		END
 	END
 	ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)
@@ -225,8 +233,6 @@ BEGIN
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
 		WHERE m.matchid = @MatchId
-		ORDER BY m.eventdate ASC,
-			m.matchcode ASC
 
 		-- Get sport type
 		SELECT @SportType = sporttype
@@ -241,6 +247,7 @@ BEGIN
 		-- Get result detail
 		IF @SportType NOT IN (9, 43, 193)
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -267,20 +274,20 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
-						AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
-							OR d.HomeValue LIKE '%a%'
-							OR d.HomeValue LIKE '%h%')
-						AND d.ResourceId LIKE f.ResourceID)
+						AND d.ResourceId LIKE f.ResourceID
+						AND (@BetType NOT IN (486, 487)
+							OR d.ResourceId IN ('08', '09')
+							OR d.ResourceId LIKE '%' + @ResourceId))
 					OR (@SportType = 2		-- Basketball
 						AND (LEN(d.ResourceId) = 2
 							OR (d.SettlementStatusID > 0
 								AND d.ResourceID LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceID LIKE '%' + @ResourceId)))))
-			ORDER BY d.ResourceID ASC
 		END
 		ELSE IF @SportType = 9		-- Badminton
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -297,10 +304,10 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
-			ORDER BY d.ResourceID ASC
 		END
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -317,10 +324,10 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
-			ORDER BY d.ResourceID ASC
 		END
 		ELSE
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchID,
 				d.ResourceId,
@@ -339,7 +346,6 @@ BEGIN
 						OR (d.ResourceID LIKE f.ResourceID
 							AND (@BetType <> 2809
 								OR d.ResourceID LIKE '%' + @ResourceId))))
-			ORDER BY d.ResourceId ASC
 		END
 	END
 	ELSE
@@ -385,8 +391,6 @@ BEGIN
 			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 		WHERE m.matchid = @MatchId
-		ORDER BY m.eventdate ASC,
-			m.matchcode ASC
 
 		-- Get sport type
 		SELECT @SportType = Sporttype
@@ -401,6 +405,7 @@ BEGIN
 		-- Get result detail
 		IF @SportType NOT IN (9, 43, 193)
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -427,20 +432,20 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
-						AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
-							OR d.HomeValue LIKE '%a%'
-							OR d.HomeValue LIKE '%h%')
-						AND d.ResourceId LIKE f.ResourceID)
+						AND d.ResourceId LIKE f.ResourceID
+						AND (@BetType NOT IN (486, 487)
+							OR d.ResourceId IN ('08', '09')
+							OR d.ResourceId LIKE '%' + @ResourceId))
 					OR (@SportType = 2		-- Basketball
 						AND (LEN(d.ResourceId) = 2
 							OR (d.SettlementStatusID > 0
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
-			ORDER BY d.ResourceId ASC
 		END
 		ELSE IF @SportType = 9		-- Badminton
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -457,10 +462,10 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
-			ORDER BY d.ResourceID ASC
 		END
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -477,10 +482,10 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
-			ORDER BY d.ResourceID ASC
 		END
 		ELSE
 		BEGIN
+			INSERT INTO @ResultDetail
 			SELECT
 				d.MatchID,
 				d.ResourceId,
@@ -499,9 +504,38 @@ BEGIN
 						OR (d.ResourceID LIKE f.ResourceID
 							AND (@BetType <> 2809
 								OR d.ResourceID LIKE '%' + @ResourceId))))
-			ORDER BY d.ResourceId ASC
 		END
 	END
+
+	-- Don't show ResourceID '4860X', '488', '490' if ResourceID '08' exists
+	IF EXISTS (SELECT 1 FROM @ResultDetail WHERE ResourceId = '08')
+	BEGIN
+		DELETE FROM @ResultDetail
+		WHERE ResourceId IN ('488', '490') OR ResourceId LIKE '486%'
+	END
+
+	-- Don't show ResourceID '4870X', '489' if ResourceID '09' exists
+	IF EXISTS (SELECT 1 FROM @ResultDetail WHERE ResourceId = '09')
+	BEGIN
+		DELETE FROM @ResultDetail
+		WHERE ResourceId = '489' OR ResourceId LIKE '487%'
+	END
+
+	-- Don't show ResourceID '09' if ResourceID '490' exists
+	IF EXISTS (SELECT 1 FROM @ResultDetail WHERE ResourceId = '490')
+	BEGIN
+		DELETE FROM @ResultDetail
+		WHERE ResourceId = '09'
+	END
+
+	-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+	DELETE FROM @ResultDetail
+	WHERE ResourceId IN ('08', '09')
+		AND HomeValue NOT LIKE '%a%'
+		AND HomeValue NOT LIKE '%h%'
+
+	SELECT * FROM @ResultDetail
+	ORDER BY ResourceId ASC
 END
 GO
 
