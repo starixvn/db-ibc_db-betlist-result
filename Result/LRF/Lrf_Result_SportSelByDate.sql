@@ -8,7 +8,7 @@ AS
 
 /*
 	Created: 20101201@Jacob
-	Task:
+	Task: LRF Result Report - Load Sport dropdownlist
 	DB: DBEXT.bodb02
 	Original: Age_Result_SportSelByDate
 	Revisions:
@@ -39,9 +39,7 @@ AS
 		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
 					- Change for "Next Goal" [Redmine: #115235]
 		- 20191107@Kos: Support Badminton AIO phase 2 [Redmine: #120336]
-
-	Sample test case:
-		exec Lrf_Result_SportSelByDate @EventDate='2013-10-06 00:00:00',@licenseeid=1
+		- 20191206@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 */
 
 BEGIN
@@ -50,7 +48,7 @@ BEGIN
 	SELECT DISTINCT ProductID
 	INTO #LicenseeProduct
 	FROM bodb_licensee.dbo.LicenseeProduct3rd WITH (NOLOCK)
-	WHERE licenseeID = @LicenseeId
+	WHERE LicenseeID = @LicenseeId
 
 	DECLARE @Sport AS TABLE (SportType INT)
 
@@ -74,7 +72,7 @@ BEGIN
 							OR HomeValue LIKE '%a%'
 							OR HomeValue LIKE '%h%')
 						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490')
 						AND ResourceID NOT LIKE '160%'
 						AND ResourceID NOT LIKE '164%'
 						AND ResourceID NOT LIKE '169%'
@@ -88,6 +86,8 @@ BEGIN
 						AND ResourceID NOT LIKE '225%'
 						AND ResourceID NOT LIKE '226%'
 						AND ResourceID NOT LIKE '227%'
+						AND ResourceID NOT LIKE '486%'
+						AND ResourceID NOT LIKE '487%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
 			LEFT JOIN (
 					SELECT DISTINCT MatchID
@@ -152,7 +152,7 @@ BEGIN
 							OR HomeValue LIKE '%a%'
 							OR HomeValue LIKE '%h%')
 						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490')
 						AND ResourceID NOT LIKE '160%'
 						AND ResourceID NOT LIKE '164%'
 						AND ResourceID NOT LIKE '169%'
@@ -166,6 +166,8 @@ BEGIN
 						AND ResourceID NOT LIKE '225%'
 						AND ResourceID NOT LIKE '226%'
 						AND ResourceID NOT LIKE '227%'
+						AND ResourceID NOT LIKE '486%'
+						AND ResourceID NOT LIKE '487%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
 			LEFT JOIN (
 					SELECT DISTINCT MatchID

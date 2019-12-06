@@ -10,7 +10,7 @@ AS
 
 /*
 	Created: 20101201@Jacob
-	Task: Retrieve all matches of league by date
+	Task: LRF Result Report - Load match list
 	DB: DBEXT.bodb02
 	Original: Age_Result_MatchSelByLeague
 
@@ -19,7 +19,7 @@ AS
 		- 20110401@Henry: Not show BetDaq's match in result page
 		- 20110907@Sophia: Add column IsHTCal, calculate for Pending Result. And edit Condition Where (mr.ishtcal=1 OR mr.calculate=1)
 		- 20110930@Henry: Add column IsPending. Edit condition OR to show the row which have mr.IsPending = 1 AND (m.eventstatus = 'running' OR m.eventstatus = 'closed')
-		- 20111025@Henry: Edit condition OR to show the rows which have eventstatus IN ('running','closed')
+		- 20111025@Henry: Edit condition OR to show the rows which have eventstatus IN ('running', 'closed')
 		- 20120910@Henry: return homeid2
 		- 20131017@Jim: Remove ticket running
 		- 20131017@Jim: Turn to use GlobalShowTime for display the Kick-off-Time
@@ -46,9 +46,7 @@ AS
 		- 20190814@Kos: Support PH AIO phase 4b [Redmine: #118300]
 					- Change for "Next Goal" [Redmine: #115235]
 		- 20191107@Kos: Support Badminton AIO phase 2 [Redmine: #120336]
-
-	Sample call
-		exec Lrf_Result_MatchSelByLeague @FromDate='2014-10-15 00:00:00',@SportType=5,@LeagueID=0,@IsShowAll=1
+		- 20191206@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 */
 
 BEGIN 
@@ -135,7 +133,7 @@ BEGIN
 								OR HomeValue LIKE '%a%'
 								OR HomeValue LIKE '%h%')
 							AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-								'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+								'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490')
 							AND ResourceID NOT LIKE '160%'
 							AND ResourceID NOT LIKE '164%'
 							AND ResourceID NOT LIKE '169%'
@@ -148,7 +146,9 @@ BEGIN
 							AND ResourceID NOT LIKE '224%'
 							AND ResourceID NOT LIKE '225%'
 							AND ResourceID NOT LIKE '226%'
-							AND ResourceID NOT LIKE '227%')
+							AND ResourceID NOT LIKE '227%'
+							AND ResourceID NOT LIKE '486%'
+							AND ResourceID NOT LIKE '487%')
 						OR @SportType = 2)
 				UNION ALL
 				SELECT DISTINCT MatchID
@@ -159,7 +159,7 @@ BEGIN
 								OR HomeValue LIKE '%a%'
 								OR HomeValue LIKE '%h%')
 							AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-								'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+								'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490')
 							AND ResourceID NOT LIKE '160%'
 							AND ResourceID NOT LIKE '164%'
 							AND ResourceID NOT LIKE '169%'
@@ -172,7 +172,9 @@ BEGIN
 							AND ResourceID NOT LIKE '224%'
 							AND ResourceID NOT LIKE '225%'
 							AND ResourceID NOT LIKE '226%'
-							AND ResourceID NOT LIKE '227%')
+							AND ResourceID NOT LIKE '227%'
+							AND ResourceID NOT LIKE '486%'
+							AND ResourceID NOT LIKE '487%')
 						OR @SportType = 2)
 				UNION ALL
 				SELECT DISTINCT MatchID
@@ -408,7 +410,7 @@ BEGIN
 							OR HomeValue LIKE '%a%'
 							OR HomeValue LIKE '%h%')
 						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490')
 						AND ResourceID NOT LIKE '160%'
 						AND ResourceID NOT LIKE '164%'
 						AND ResourceID NOT LIKE '169%'
@@ -421,7 +423,9 @@ BEGIN
 						AND ResourceID NOT LIKE '224%'
 						AND ResourceID NOT LIKE '225%'
 						AND ResourceID NOT LIKE '226%'
-						AND ResourceID NOT LIKE '227%')
+						AND ResourceID NOT LIKE '227%'
+						AND ResourceID NOT LIKE '486%'
+						AND ResourceID NOT LIKE '487%')
 					OR (@SportType = 5
 						AND SettlementStatusID > 0)
 					OR (@SportType = 2
@@ -495,7 +499,7 @@ BEGIN
 							OR HomeValue LIKE '%a%'
 							OR HomeValue LIKE '%h%')
 						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215')
+							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490')
 						AND ResourceID NOT LIKE '160%'
 						AND ResourceID NOT LIKE '164%'
 						AND ResourceID NOT LIKE '169%'
@@ -508,7 +512,9 @@ BEGIN
 						AND ResourceID NOT LIKE '224%'
 						AND ResourceID NOT LIKE '225%'
 						AND ResourceID NOT LIKE '226%'
-						AND ResourceID NOT LIKE '227%')
+						AND ResourceID NOT LIKE '227%'
+						AND ResourceID NOT LIKE '486%'
+						AND ResourceID NOT LIKE '487%')
 					OR (@SportType = 5
 						AND SettlementStatusID > 0)
 					OR (@SportType = 2
