@@ -25,6 +25,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowLT		BIT			= 0,	-- Lottery
 	@ShowPP		BIT			= 0,	-- Pragmatic Casino
 	@ShowCC		BIT			= 0,	-- Card Club
+	@ShowSG		BIT			= 0,	-- Spadegaming
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -107,6 +108,7 @@ AS
 		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 		- 20190813@Kos: Support Card Club [Redmine: #115449]
 		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
+		- 20191209@Kos: Support Spadegaming [Redmine: #124103]
 */
 
 BEGIN
@@ -179,7 +181,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -197,6 +199,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowLT = 0		THEN 28 END
 		OR ProductID	= CASE WHEN @ShowPP = 0		THEN 32 END
 		OR ProductID	= CASE WHEN @ShowCC = 0		THEN 34 END
+		OR ProductID	= CASE WHEN @ShowSG = 0		THEN 36 END
 	-- end filer bettypes by sporttype
 
 	CREATE TABLE #BetListSelRunningByDateMem (
@@ -879,15 +882,15 @@ BEGIN
 			AND sbt.ProductID IN (8, 15, 28)
 	END
 
-	-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club
-	IF (@ShowCS = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1 OR @ShowCC = 1)
+	-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming
+	IF (@ShowCS = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1 OR @ShowCC = 1 OR @ShowSG = 1)
 		AND EXISTS (SELECT 1 FROM dbo.bettransRnG WITH (NOLOCK) WHERE custid = @CustId AND statusID IN (0, 1))
 	BEGIN
 		-- Yesterday and today running ticket
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
 			CASE
-				WHEN sbt.ProductID IN (6, 34) THEN b.matchid
+				WHEN sbt.ProductID IN (6, 34, 36) THEN b.matchid
 				WHEN sbt.ProductID = 22 THEN 212
 				WHEN sbt.ProductID = 24 THEN 219
 				WHEN sbt.ProductID = 32 THEN 248
@@ -940,7 +943,7 @@ BEGIN
 			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.winlostdate BETWEEN @Yesterday AND @Today
 			AND brng.custid = @CustId
-			AND (sbt.ProductID IN (22, 24, 32, 34)
+			AND (sbt.ProductID IN (22, 24, 32, 34, 36)
 				OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 			AND sbt.EventType = 0
 			AND brng.statusID IN (0, 1)

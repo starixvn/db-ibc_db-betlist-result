@@ -27,6 +27,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_CustomerList_Mem]
 	@ShowLT			BIT	= 0,	-- Lottery
 	@ShowPP			BIT	= 0,	-- Pragmatic Casino
 	@ShowCC			BIT = 0,	-- Card Club
+	@ShowSG			BIT = 0,	-- Spadegaming
 	@ShowBT			BIT	= 0,	-- Bet Trade
 	@ShowCO			BIT	= 0,	-- Cash Out
 	@TotalRows		INT		= 0 OUTPUT,
@@ -49,6 +50,7 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20190523@Kos: Support more base currency [#Redmine: 112531]
 		- 20190704@Kos: Support Card Club [Redmine: #115449]
+		- 20191209@Kos: Support Spadegaming [Redmine: #124103]
 */
 
 BEGIN
@@ -100,6 +102,7 @@ BEGIN
 		OR (ProductID = 28 AND @ShowLT = 1)						-- Lottery
 		OR (ProductID = 32 AND @ShowPP = 1)						-- Pragmatic Casino
 		OR (ProductID = 34 AND @ShowCC = 1)						-- Card Club
+		OR (ProductID = 36 AND @ShowSG = 1)						-- Spadegaming
 		OR (BetType IN (901, 902, 903) AND @ShowBT = 1)			-- BetTrade
 
 	DELETE @SportBettype
@@ -813,19 +816,19 @@ BEGIN
 				AND sbt.ProductID IN (8, 28)
 		END
 
-		-- RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club
-		IF (@ShowCS = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1 OR @ShowCC = 1)
+		-- RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club, Spadegaming
+		IF (@ShowCS = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1 OR @ShowCC = 1 OR @ShowSG = 1)
 			AND EXISTS (SELECT 1 FROM dbo.bettrans AS b WITH (NOLOCK)
 							INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 						WHERE b.custid = @CustId
-							AND (sbt.ProductID IN (22, 24, 32, 34)
+							AND (sbt.ProductID IN (22, 24, 32, 34, 36)
 								OR (sbt.ProductID = 6 AND sbt.SubProduct <> '')))
 		BEGIN
 			-- Up to yesterday settled ticket
 			INSERT INTO #Data
 			SELECT
 				CASE
-					WHEN sbt.ProductID IN (6, 34) THEN b.matchid
+					WHEN sbt.ProductID IN (6, 34, 36) THEN b.matchid
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 32 THEN 248
@@ -884,7 +887,7 @@ BEGIN
 				AND b.winlostdate < @Yesterday	-- not yesterday and today
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND (sbt.ProductID IN (22, 24, 32, 34)
+				AND (sbt.ProductID IN (22, 24, 32, 34, 36)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 
 			IF @ToDate >= @Yesterday AND @TempFromDate <= @Today
@@ -893,7 +896,7 @@ BEGIN
 				INSERT INTO #Data
 				SELECT
 					CASE
-						WHEN sbt.ProductID IN (6, 34) THEN b.matchid
+						WHEN sbt.ProductID IN (6, 34, 36) THEN b.matchid
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
 						WHEN sbt.ProductID = 32 THEN 248
@@ -956,7 +959,7 @@ BEGIN
 					AND b.winlostdate BETWEEN @Yesterday AND @Today
 					AND b.custid = @CustId
 					AND brng.statusID NOT IN (0, 1)
-					AND (sbt.ProductID IN (22, 24, 32, 34)
+					AND (sbt.ProductID IN (22, 24, 32, 34, 36)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 				GROUP BY
 					b.transid,
@@ -1763,8 +1766,9 @@ BEGIN
 				AND sbt.EventType = 3
 		END
 
-		-- RNG Casino, Keno, AG Casino, AllBet, Voidbridge, Fishing World, Lottery, Pragmatic Casino, Card Club
-		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1 OR @ShowCC = 1
+		-- RNG Casino, Keno, AG Casino, AllBet, Voidbridge, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming
+		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1
+			OR @ShowCC = 1 OR @ShowSG = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1777,7 +1781,7 @@ BEGIN
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
 					WHEN sbt.ProductID = 32 THEN 248
-					WHEN sbt.ProductID = 34 THEN b.matchid
+					WHEN sbt.ProductID IN (34, 36) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.transid,
@@ -1825,7 +1829,7 @@ BEGIN
 				END AS BetCheck,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-					WHEN sbt.ProductID IN (8, 22, 24, 28, 32, 34) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (8, 22, 24, 28, 32, 34, 36) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -1842,7 +1846,7 @@ BEGIN
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113, 101, 102, 103)
-				AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34)
+				AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36)
 		END
 
 		-- Colossus Bets
@@ -2483,8 +2487,9 @@ BEGIN
 				AND sbt.EventType = 3
 		END
 
-		-- RNG Casino, Keno, AG Casino, AllBet, Voidbridge, Fishing World, Lottery, Pragmatic Casino, Card Club
-		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1 OR @ShowCC = 1
+		-- RNG Casino, Keno, AG Casino, AllBet, Voidbridge, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming
+		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1
+			OR @ShowCC = 1 OR @ShowSG = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -2498,7 +2503,7 @@ BEGIN
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
 					WHEN sbt.ProductID = 32 THEN 248
-					WHEN sbt.ProductID = 34 THEN b.matchid
+					WHEN sbt.ProductID IN (34, 36) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.transid,
@@ -2565,7 +2570,7 @@ BEGIN
 				END AS BetCheck,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-					WHEN sbt.ProductID IN (8, 22, 24, 28, 32, 34) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (8, 22, 24, 28, 32, 34, 36) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -2581,7 +2586,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.custid = @CustId
-				AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34)
+				AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36)
 				AND b.statusID IN (111, 112, 113, 101, 102, 103)
 		END
 
