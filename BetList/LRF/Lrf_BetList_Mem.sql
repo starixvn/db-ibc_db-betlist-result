@@ -50,6 +50,7 @@ AS
 			- 8 - Mobile App: o (dep-New Mobile APP)
 			- 9 - Mobile China View: c (dep-MCV)
 			- 10 - Deep Link: t (Licensee-Deeplink)
+			- 11 - Others: v (Licensee Odds Feed)
 		- @LiveIndicator:
 			- 0 : Non-live
 			- 1 : Live
@@ -69,6 +70,7 @@ AS
 		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
 		- 20190829@Kos: Support betfrom Deeplink 't' [Redmine: #115448]
 					- Remove betfrom 's' and 'y'
+		- 20191216@Kos: Support betfrom Licensee Odds Feed 'v' [Redmine: #125553]
 */
 
 BEGIN
@@ -302,6 +304,10 @@ BEGIN
 		ELSE IF @Platform = 10
 		BEGIN
 			SET @BetFromList = 't'
+		END
+		ELSE IF @Platform = 11
+		BEGIN
+			SET @BetFromList = 'v'
 		END
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)
