@@ -115,6 +115,7 @@ AS
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20191029@Kos: Support Spadegaming [Redmine: #122140]
+		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 */
 
 BEGIN
@@ -286,6 +287,7 @@ BEGIN
 		,TransDate
 		,WinLostDate --bettrans.transdate
 		,MatchId
+		,SportType
 		,BetType
 		,Status
 		,Actual_Stake
@@ -326,6 +328,7 @@ BEGIN
 		,TransDate = transdate
 		,WinLostDate = transdate
 		,MatchId = eventID
+		,SportType = productID
 		,BetType = gameID
 		,Status = status
 		,Actual_Stake = actual_stake
@@ -766,12 +769,13 @@ BEGIN
 			WHERE b.TableID = 2 -- translog
 				AND b.SubProduct IN ('MG-SuperLive')
 
-			-- Keno, Gold Deluxe, Lottery (translog)
+			-- Keno, Gold Deluxe, Lottery, Virtual Games (translog)
 			UPDATE b
 			SET SportType = CASE
 								WHEN b.ProductID = 8 THEN 202
 								WHEN b.ProductID = 12 THEN 255
 								WHEN b.ProductID = 28 THEN 220
+								WHEN b.ProductID = 38 THEN b.SportType
 								ELSE 0
 							END
 				,LeagueID = 0
@@ -786,16 +790,16 @@ BEGIN
 				,SettlementStatus = 0
 				,ShowTime = ''
 				,BetCheck = CASE
-								WHEN b.ProductID = 12 THEN b.Gameid3rd
+								WHEN b.ProductID IN (12, 38) THEN b.Gameid3rd
 								WHEN b.ProductId = 8 THEN ISNULL(b.custom2, '')
 								ELSE '' 
 							END
-				,TransDesc = CASE WHEN b.ProductID IN (8, 28) THEN b.transdesc ELSE '' END
+				,TransDesc = CASE WHEN b.ProductID IN (8, 28, 38) THEN b.transdesc ELSE '' END
 				,OddsSpread = 0
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 2 -- translog
-				AND b.ProductID IN (8, 12, 28)
+				AND b.ProductID IN (8, 12, 28, 38)
 		END -- got translog's data
 
 		-- Allbet, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming

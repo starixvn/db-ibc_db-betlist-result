@@ -89,6 +89,7 @@ AS
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
 		- 20191128@Kos: Support Spadegaming [Redmine: #122140]
+		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 
 	Param's Explanation:
 		+ @TransType:
@@ -111,12 +112,12 @@ BEGIN
 
 	IF @TransType <> 4
 	BEGIN
-		-- Don't support Deposit products (Playtech Casino, AG Casino, Microgaming Live Casino, Macau, Microgaming RNG Casino, BetTrade, Cash Out)
+		-- Don't support Deposit products (Playtech Casino, AG Casino, Microgaming Live Casino, Macau, Microgaming RNG Casino, BetTrade, Cash Out, Saba Promotion)
 		-- Don't support Racing, Live Casino, RNG Casino (bettype 71, 72), Bingo, P2P, Cockfighting, Exchange, Poker Games, Bullfighting, Lucky 3, Colossus Bets
 		INSERT INTO @SportBettype
 		SELECT ProductID, Bettype, EventType, SubProduct
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID NOT IN (2, 4, 7, 9, 10, 11, 13, 14, 15, 17, 19, 25, 26, 30, 31, 33)
+		WHERE ProductID NOT IN (2, 4, 7, 9, 10, 11, 13, 14, 15, 17, 19, 25, 26, 30, 31, 33, 37)
 			AND BetType NOT IN (901, 902, 903, 904, 71, 72)
 	END
 	ELSE		-- Grand Prize of ONERnG Jackpot, Colossus Bet
@@ -271,6 +272,7 @@ BEGIN
 					WHEN s.EventType = 0 AND s.ProductID = 32 THEN 'PP'			-- Pragmatic Play Casino
 					WHEN s.ProductID = 34					THEN 'CC'			-- Card Club
 					WHEN s.ProductID = 36					THEN 'SG'			-- Spadegaming
+					WHEN s.ProductID = 38					THEN 'VRG'			-- Virtual Games
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports:: sportsbook
@@ -477,7 +479,7 @@ BEGIN
 					,CustId = b.custid
 					,Username = b.username
 					,SportType = CASE
-									WHEN c.Product IN ('OneRNG', 'CC', 'SG') THEN b.matchid
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG') THEN b.matchid
 									WHEN c.Product = 'Keno' THEN 202
 									WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe
 									WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -516,7 +518,7 @@ BEGIN
 					,OddsId = b.oddsid
 					,Odds = CASE
 								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
-								WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery') THEN b.Odds
+								WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG') THEN b.Odds
 								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.odds
 								WHEN c.Product IN ('Outright') THEN b.odds
 								WHEN c.Product IN ('VR') THEN b.odds
@@ -681,7 +683,7 @@ BEGIN
 									WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 									ELSE '' END
 					,BetCheck = CASE 
-									WHEN c.Product IN ('GD') THEN ISNULL(b.betcheck, '')
+									WHEN c.Product IN ('GD', 'VRG') THEN ISNULL(b.betcheck, '')
 									WHEN c.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 									WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 									WHEN c.Product IN ('SB') THEN ISNULL(b.betcheck, '')
@@ -689,7 +691,7 @@ BEGIN
 								END
 					,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 					,TransDesc = CASE
-									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP') THEN b.transdesc
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG') THEN b.transdesc
 									WHEN c.Product IN ('SB', 'VS2') THEN ISNULL(b.transdesc, '')
 									ELSE '' END
 					,OddsSpread = CASE
@@ -759,9 +761,10 @@ BEGIN
 					b.winlostdate,
 					CASE
 						WHEN s.BetType BETWEEN 801 AND 899 THEN 'MG'				-- Metric Gaming
-						WHEN s.EventType = 0 AND s.ProductID = 8 THEN 'Keno'
-						WHEN s.EventType = 0 AND s.ProductID = 12 THEN 'GD'			-- Gold Deluxe
-						WHEN s.EventType = 0 AND s.ProductID = 28 THEN 'Lottery'
+						WHEN s.ProductID = 8 THEN 'Keno'
+						WHEN s.ProductID = 12 THEN 'GD'			-- Gold Deluxe
+						WHEN s.ProductID = 28 THEN 'Lottery'
+						WHEN s.ProductID = 38 THEN 'VRG'		-- Virtual Games
 						ELSE 'Unknown'
 					END AS Product
 				FROM dbo.translog AS b WITH (NOLOCK)
@@ -769,7 +772,7 @@ BEGIN
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @Date
 					AND b.statusID IN (0, 1)
-					AND (s.ProductID IN (8, 12, 15, 28, 30)
+					AND (s.ProductID IN (8, 12, 28, 38)
 						OR s.Bettype BETWEEN 801 AND 899)
 
 				DELETE FROM @Tickets WHERE Product = 'Unknown'
@@ -786,6 +789,7 @@ BEGIN
 										WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 										WHEN c.Product = 'Lottery' THEN 220 -- Lottery
 										WHEN c.Product = 'MG' THEN m.sporttype
+										WHEN c.Product = 'VRG' THEN b.productID
 										ELSE 0
 									END
 						,BetType = b.gameID
@@ -795,7 +799,8 @@ BEGIN
 						,Hdp2 = 0
 						,OddsType = CASE 
 										WHEN c.Product IN ('MG') THEN CONVERT(TINYINT, ISNULL(b.custom1, 0))
-										ELSE 0 END
+										ELSE 0
+									END
 						,OddsId = 0
 						,Odds = b.odds
 						,MOdds = 0
@@ -867,12 +872,12 @@ BEGIN
 										WHEN c.Product IN ('MG') THEN ISNULL(m.showtime, '')
 										ELSE '' END
 						,BetCheck = CASE 
-										WHEN c.Product IN ('GD') AND b.gameid IN (1701, 1702) THEN b.Gameid3rd
+										WHEN c.Product IN ('GD', 'VRG') THEN b.Gameid3rd
 										WHEN c.Product IN ('Keno') THEN ISNULL(b.custom2, '')
 										ELSE '' END
 						,ComStatus = 0
 						,TransDesc = CASE
-										WHEN c.Product IN ('MG', 'Keno', 'Lottery') THEN b.transdesc
+										WHEN c.Product IN ('MG', 'Keno', 'Lottery', 'VRG') THEN b.transdesc
 										ELSE '' END
 						,OddsSpread = 0
 						,BetdaqId = -1
@@ -1023,6 +1028,7 @@ BEGIN
 					WHEN s.EventType = 0 AND s.ProductID = 32 THEN 'PP'			-- Pragmatic Play Casino
 					WHEN s.ProductID = 34					THEN 'CC'			-- Card Club
 					WHEN s.ProductID = 36					THEN 'SG'			-- Spadegaming
+					WHEN s.ProductID = 38					THEN 'VRG'			-- Virtual Games
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports:: sportsbook
@@ -1051,7 +1057,7 @@ BEGIN
 					,CustId = b.custid
 					,Username = b.username
 					,SportType = CASE
-									WHEN c.Product IN ('OneRNG', 'CC', 'SG') THEN b.matchid
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG') THEN b.matchid
 									WHEN c.Product = 'Keno' THEN 202
 									WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 									WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -1089,7 +1095,7 @@ BEGIN
 									ELSE 0 END
 					,OddsId = b.oddsid
 					,Odds = CASE 
-								WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery') THEN b.Odds
+								WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG') THEN b.Odds
 								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.odds
 								WHEN c.Product IN ('Outright') THEN b.odds
 								WHEN c.Product IN ('VR') THEN b.odds
@@ -1199,14 +1205,14 @@ BEGIN
 									WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 									ELSE '' END
 					,BetCheck = CASE 
-									WHEN c.Product IN ('GD') THEN ISNULL(b.betcheck, '')
+									WHEN c.Product IN ('GD', 'VRG') THEN ISNULL(b.betcheck, '')
 									WHEN c.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 									WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 									WHEN c.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 									ELSE '' END
 					,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 					,TransDesc = CASE
-									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP') THEN b.transdesc	
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG') THEN b.transdesc	
 									WHEN c.Product IN ('SB', 'VS2') THEN ISNULL(b.transdesc, '')
 									ELSE '' END
 					,OddsSpread = CASE

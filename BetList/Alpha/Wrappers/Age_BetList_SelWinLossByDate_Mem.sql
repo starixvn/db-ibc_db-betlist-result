@@ -97,6 +97,7 @@ AS
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
 		- 20191128@Kos: Support Spadegaming [Redmine: #122140]
+		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 */
 
 BEGIN
@@ -257,6 +258,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
 							WHEN s.ProductID = 34						THEN 'CC'	-- Card Club
 							WHEN s.ProductID = 36						THEN 'SG'	-- Spadegaming
+							WHEN s.ProductID = 38						THEN 'VRG'	-- Virtual Games
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
@@ -364,7 +366,7 @@ BEGIN
 				,CustId = b.custid
 				,Username = b.username
 				,SportType = CASE
-								WHEN c.Product IN ('OneRNG', 'CC', 'SG') THEN b.matchid	-- ONERnG, Card Club, Spadegaming
+								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG') THEN b.matchid	-- ONERnG, Card Club, Spadegaming
 								WHEN c.Product = 'Keno' THEN 202
 								WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe
 								WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -404,7 +406,7 @@ BEGIN
 				,OddsId = b.oddsid
 				,Odds = CASE
 							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
-							WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery') THEN b.Odds
+							WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG') THEN b.Odds
 							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.odds
 							WHEN c.Product IN ('Outright') THEN b.odds
 							WHEN c.Product IN ('VR') THEN b.odds
@@ -550,14 +552,14 @@ BEGIN
 								WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 								ELSE '' END
 				,BetCheck = CASE 
-								WHEN c.Product IN ('GD') THEN ISNULL(b.betcheck, '')
+								WHEN c.Product IN ('GD', 'VRG') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 								WHEN c.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 								ELSE '' END
 				,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 				,TransDesc = CASE
-								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP') THEN b.transdesc
+								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG') THEN b.transdesc
 								WHEN c.Product IN ('SB', 'VS2') THEN ISNULL(b.transdesc, '')
 								ELSE '' END
 				,OddsSpread = CASE
@@ -640,6 +642,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
 							WHEN s.ProductID = 34					THEN 'CC'		-- Card Club
 							WHEN s.ProductID = 36					THEN 'SG'		-- Spadegaming
+							WHEN s.ProductID = 38						THEN 'VRG'	-- Virtual Games
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
@@ -661,7 +664,7 @@ BEGIN
 				,CustId = b.custid
 				,Username = b.username
 				,SportType = CASE
-								WHEN c.Product IN ('OneRNG', 'CC', 'SG') THEN b.matchid
+								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG') THEN b.matchid
 								WHEN c.Product = 'Keno' THEN 202
 								WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 								WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -698,7 +701,7 @@ BEGIN
 								ELSE 0 END
 				,OddsId = b.oddsid
 				,Odds = CASE 
-							WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery') THEN b.Odds
+							WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG') THEN b.Odds
 							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.odds
 							WHEN c.Product IN ('Outright') THEN b.odds
 							WHEN c.Product IN ('VR') THEN b.odds
@@ -808,14 +811,14 @@ BEGIN
 								WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 								ELSE '' END
 				,BetCheck = CASE 
-								WHEN c.Product IN ('GD') THEN ISNULL(b.betcheck, '')
+								WHEN c.Product IN ('GD', 'VRG') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 								WHEN c.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 								ELSE '' END
 				,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 				,TransDesc = CASE
-								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP') THEN b.transdesc
+								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG') THEN b.transdesc
 								WHEN c.Product IN ('SB', 'VS2') THEN ISNULL(b.transdesc, '')
 								ELSE '' END
 				,OddsSpread = CASE
