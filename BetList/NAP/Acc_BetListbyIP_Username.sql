@@ -46,6 +46,7 @@ AS
 		- 20190531@Kos: Add new input param @Permission VARCHAR(20) [#Redmine: 114125]
 					- Remove param @SiteType
 		- 20190823@Kos: Support bk range [#Redmine: 119018]
+		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 */
 
  BEGIN
@@ -141,7 +142,7 @@ AS
 		WHERE b.winlostdate = @FromDate
 			AND b.ip = @Ip
 			AND b.statusID IN (0, 1)
-			AND (s.productID IN (8, 12, 15, 28)
+			AND (s.productID IN (8, 12, 15, 28, 38)
 				OR b.gameID BETWEEN 801 AND 899)
 		GROUP BY b.custid
 	END
