@@ -47,6 +47,7 @@ AS
 		- 20190806@Kos: Support PH AIO phase 4b [Redmine: #115235]
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
+		- 20191220@Kos: Support PH AIO phase 5 [Redmine: #124455]
 */
 
 BEGIN
@@ -114,10 +115,11 @@ BEGIN
 		FROM dbo.match WITH (NOLOCK)
 		WHERE matchid = @MatchId
 
-		IF @SportType = 5
-			SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
-		ELSE
-			SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
+		SELECT @ResourceId = CASE
+								WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
+								WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
+								ELSE RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
+							END
 
 		-- Get result detail
 		IF @SportType NOT IN (9, 43, 193)
@@ -155,7 +157,7 @@ BEGIN
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
 						AND d.ResourceId LIKE f.ResourceID
-						AND (@BetType NOT IN (486, 487)
+						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
 							OR d.ResourceId LIKE '%' + @ResourceId))
 					OR (@SportType = 2
@@ -274,10 +276,11 @@ BEGIN
 		FROM dbo.match14 WITH (NOLOCK)
 		WHERE matchid = @MatchId
 
-		IF @SportType = 5
-			SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
-		ELSE
-			SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
+		SELECT @ResourceId = CASE
+								WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
+								WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
+								ELSE RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
+							END
 
 		-- Get result detail
 		IF @SportType NOT IN (9, 43, 193)
@@ -315,9 +318,9 @@ BEGIN
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
 						AND d.ResourceID LIKE f.ResourceID
-						AND (@BetType NOT IN (486, 487)
+						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
-							OR d.ResourceId LIKE '%' + @ResourceId))
+							OR d.ResourceID LIKE '%' + @ResourceId))
 					OR (@SportType = 2
 						AND (LEN(d.ResourceId) = 2
 							OR (d.SettlementStatusID > 0
@@ -434,10 +437,11 @@ BEGIN
 		FROM DBARC.bodb_archive.dbo.match_BK WITH (NOLOCK)
 		WHERE matchid = @MatchId
 
-		IF @SportType = 5
-			SELECT @ResourceId = LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
-		ELSE
-			SELECT @ResourceId = RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
+		SELECT @ResourceId = CASE
+								WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
+								WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
+								ELSE RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
+							END
 
 		-- Get result detail
 		IF @SportType NOT IN (9, 43, 193)
@@ -475,7 +479,7 @@ BEGIN
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%')
 						AND d.ResourceId LIKE f.ResourceID
-						AND (@BetType NOT IN (486, 487)
+						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
 							OR d.ResourceId LIKE '%' + @ResourceId))
 					OR (@SportType = 2
