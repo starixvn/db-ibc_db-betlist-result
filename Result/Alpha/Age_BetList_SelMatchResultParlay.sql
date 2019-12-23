@@ -36,6 +36,7 @@ AS
 		- 20190325@Kos: Hotfix - Bet ID contain '8' [Redmine: #110599]
 		- 20190805@Kos: Support PH AIO 4b [Redmine: #115235]
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
+		- 20191223@Kos: Support PH AIO phase 5 [Redmine: #124455]
 */
 
 BEGIN
@@ -173,7 +174,12 @@ BEGIN
 					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
 						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
-					AND d.ResourceId LIKE f.ResourceID)
+					AND d.ResourceID LIKE f.ResourceID
+					AND (p.BetType NOT IN (395, 385, 384, 383, 382, 381)
+						OR d.ResourceID LIKE '%' + CASE
+														WHEN p.BetType = 395 THEN RIGHT(p.BetCheck, 2)
+														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+													END))
 				OR (p.SportType = 2			-- Basketball
 					AND (LEN(d.ResourceID) = 2
 						OR (d.SettlementStatusID > 0
@@ -333,7 +339,12 @@ BEGIN
 					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
 						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
-					AND d.ResourceId LIKE f.ResourceID)
+					AND d.ResourceId LIKE f.ResourceID
+					AND (p.BetType NOT IN (395, 385, 384, 383, 382, 381)
+						OR d.ResourceID LIKE '%' + CASE
+														WHEN p.BetType = 395 THEN RIGHT(p.BetCheck, 2)
+														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+													END))
 				OR (p.SportType = 2			-- Basketball
 					AND (LEN(d.ResourceID) = 2
 						OR (d.SettlementStatusID > 0
@@ -493,10 +504,15 @@ BEGIN
 						END = LEN(d.ResourceId))
 				OR (p.SportType = 1			-- Soccer
 					AND d.SettlementStatusID > 0
-					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
+					AND (d.ResourceId NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
 						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
-					AND d.ResourceId LIKE f.ResourceID)
+					AND d.ResourceId LIKE f.ResourceID
+					AND (p.BetType NOT IN (395, 385, 384, 383, 382, 381)
+						OR d.ResourceId LIKE '%' + CASE
+														WHEN p.BetType = 395 THEN RIGHT(p.BetCheck, 2)
+														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+													END))
 				OR (p.SportType = 2			-- Basketball
 					AND (LEN(d.ResourceId) = 2
 						OR (d.SettlementStatusID > 0
