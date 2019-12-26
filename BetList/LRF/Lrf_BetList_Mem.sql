@@ -50,7 +50,8 @@ AS
 			- 8 - Mobile App: o (dep-New Mobile APP)
 			- 9 - Mobile China View: c (dep-MCV)
 			- 10 - Deep Link: t (Licensee-Deeplink)
-			- 11 - Others: v (Licensee Odds Feed)
+			- 11 - Native App: 0 (Native App)
+			- 88 - Others: v (Licensee Odds Feed)
 		- @LiveIndicator:
 			- 0 : Non-live
 			- 1 : Live
@@ -71,6 +72,7 @@ AS
 		- 20190829@Kos: Support betfrom Deeplink 't' [Redmine: #115448]
 					- Remove betfrom 's' and 'y'
 		- 20191216@Kos: Support betfrom Licensee Odds Feed 'v' [Redmine: #125553]
+		- 20191226@Kos: Support betfrom Native Apps '0' [Redmine: #125824]
 */
 
 BEGIN
@@ -306,6 +308,10 @@ BEGIN
 			SET @BetFromList = 't'
 		END
 		ELSE IF @Platform = 11
+		BEGIN
+			SET @BetFromList = '0'
+		END
+		ELSE IF @Platform = 88
 		BEGIN
 			SET @BetFromList = 'v'
 		END

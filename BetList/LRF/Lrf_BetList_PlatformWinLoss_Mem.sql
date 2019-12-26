@@ -89,6 +89,7 @@ AS
 		- 20190829@Kos: Support betfrom Deeplink 't' [Redmine: #115448]
 					- Remove betfrom 's' and 'y'
 		- 20191216@Kos: Support betfrom Licensee Odds Feed 'v' [Redmine: #125553]
+		- 20191226@Kos: Support betfrom Native Apps '0' [Redmine: #125824]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -107,7 +108,8 @@ AS
 			- 8 - Mobile App: o (dep-New Mobile APP)
 			- 9 - Mobile China View: c (dep-MCV)
 			- 10 - Deep Link: t (Licensee-Deeplink)
-			- 11 - Others: v (Licensee Odds Feed)
+			- 11 - Native App: 0 (Native App)
+			- 88 - Others: v (Licensee Odds Feed)
 
 	Sample call:
 		DECLARE @p17 INT
@@ -267,8 +269,15 @@ BEGIN
 		SELECT 't'
 	END
 
-	-- Others
+	-- Native App
 	IF @PlatformType IN (0, 11)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT '0'
+	END
+
+	-- Others
+	IF @PlatformType IN (0, 88)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT 'v'
