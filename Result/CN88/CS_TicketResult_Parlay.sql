@@ -13,6 +13,7 @@ AS
 		- 20190304@Kos: Create new [Redmine: 109230]
 		- 20190807@Kos: Support PH AIO phase 4b [Redmine: #116865]
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #121610]
+		- 20200108@Kos: Support PH AIO phase 5 [Redmine: #124455]
 */
 
 BEGIN
@@ -150,7 +151,12 @@ BEGIN
 					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
 						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
-					AND d.ResourceId LIKE f.ResourceID)
+					AND d.ResourceID LIKE f.ResourceID
+					AND (p.BetType NOT IN (395, 385, 384, 383, 382, 381)
+						OR d.ResourceID LIKE '%' + CASE
+														WHEN p.BetType = 395 THEN RIGHT(p.BetCheck, 2)
+														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+													END))
 				OR (p.SportType = 2			-- Basketball
 					AND (LEN(d.ResourceID) = 2
 						OR (d.SettlementStatusID > 0
@@ -310,7 +316,12 @@ BEGIN
 					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
 						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
-					AND d.ResourceId LIKE f.ResourceID)
+					AND d.ResourceId LIKE f.ResourceID
+					AND (p.BetType NOT IN (395, 385, 384, 383, 382, 381)
+						OR d.ResourceID LIKE '%' + CASE
+														WHEN p.BetType = 395 THEN RIGHT(p.BetCheck, 2)
+														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+													END))
 				OR (p.SportType = 2			-- Basketball
 					AND (LEN(d.ResourceID) = 2
 						OR (d.SettlementStatusID > 0
@@ -473,7 +484,12 @@ BEGIN
 					AND (d.ResourceID NOT IN ('08', '09')		-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
 						OR d.HomeValue LIKE '%a%'
 						OR d.HomeValue LIKE '%h%')
-					AND d.ResourceId LIKE f.ResourceID)
+					AND d.ResourceId LIKE f.ResourceID
+					AND (p.BetType NOT IN (395, 385, 384, 383, 382, 381)
+						OR d.ResourceID LIKE '%' + CASE
+														WHEN p.BetType = 395 THEN RIGHT(p.BetCheck, 2)
+														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+													END))
 				OR (p.SportType = 2			-- Basketball
 					AND (LEN(d.ResourceId) = 2
 						OR (d.SettlementStatusID > 0

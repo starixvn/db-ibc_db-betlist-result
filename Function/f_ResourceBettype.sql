@@ -24,6 +24,7 @@ AS
 					- Change for "Next Goal" [Redmine: #115235]
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
+		- 20191220@Kos: Support PH AIO phase 5 [Redmine: #124455]
 */
 
 BEGIN
@@ -397,6 +398,50 @@ BEGIN
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (9, 1, 'Badminton AIO', 713, '713%')
+
+	-- 10. Extra Time (PH All In One phase 5)
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 11, 'Extra Time', 396, '08')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 11, 'Extra Time', 395, '395%')
+
+	-- 11. Penalty Shootout (PH All In One phase 5)
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 393, '393')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 391, '391')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 390, '390')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 387, '387')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 386, '386')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 385, '385%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 384, '384%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 383, '383%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 382, '382%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 382, '381%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 381, '382%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 381, '381%')
 
 	RETURN
 END
