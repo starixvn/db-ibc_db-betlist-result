@@ -99,6 +99,7 @@ AS
 		- 20191105@Kos: Support Non-peak Hours Promotion [#Redmine: 121121]
 		- 20191209@Kos: Support Spadegaming [Redmine: #124103]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20200208@Kos: Support Virtual Games [Redmine: #124911]
 
 	Param's Explanation:
 		+ @TransType:
@@ -238,7 +239,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914)
@@ -666,10 +667,10 @@ BEGIN
 			AND b.bettype = 10
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Keno, AG Casino, AllBet, Macau Games, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming, NPH Promotion
+		-- Keno, AG Casino, AllBet, Macau Games, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming, NPH Promotion, Virtual Games
 		IF @TransType = 1 OR @TransType = 2
 		BEGIN
-			INSERT INTO @Data 
+			INSERT INTO @Data
 			SELECT
 				CASE
 					WHEN sbt.ProductID = 8 THEN 202
@@ -679,7 +680,7 @@ BEGIN
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
 					WHEN sbt.ProductID = 32 THEN 248
-					WHEN sbt.ProductID IN (34, 36, 37) THEN b.matchid
+					WHEN sbt.ProductID IN (34, 36, 37, 38) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -701,7 +702,7 @@ BEGIN
 				0 AS modds,
 				0 AS Oddstype,
 				CASE
-					WHEN sbt.ProductID IN (8, 28) THEN b.odds
+					WHEN sbt.ProductID IN (8, 28, 38) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				'' AS betteam,
@@ -729,10 +730,11 @@ BEGIN
 				'' AS ShowTime,
 				CASE
 					WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
+					WHEN sbt.ProductID = 38 THEN ISNULL(b.betcheck, '')
 					ELSE ''
 				END AS betcheck,
 				CASE
-					WHEN sbt.ProductID IN (8, 22, 24, 28, 32, 34, 36) THEN b.transdesc
+					WHEN sbt.ProductID IN (8, 22, 24, 28, 32, 34, 36, 38) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				-1 AS BetdaqId,
@@ -751,7 +753,7 @@ BEGIN
 			WHERE
 				b.custid = @CustId
 				AND b.winlostdate = @FromDate 
-				AND sbt.ProductID IN (8, 11, 21, 22, 24, 28, 32, 34, 36, 37)
+				AND sbt.ProductID IN (8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38)
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 				AND @TransType <> 4
@@ -1355,7 +1357,7 @@ BEGIN
 			AND b.bettype = 10
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
-		-- Keno, Lottery, NPH Promotion (bettrans)
+		-- Keno, Lottery, NPH Promotion, Virtual Games (bettrans)
 		IF @TransType = 1 OR @TransType = 2
 		BEGIN
 			INSERT INTO @Data
@@ -1363,7 +1365,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 28 THEN 220
-					WHEN sbt.ProductId = 37 THEN b.matchid
+					WHEN sbt.ProductId IN (37, 38) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -1385,7 +1387,7 @@ BEGIN
 				b.modds,
 				0 AS Oddstype,
 				CASE
-					WHEN sbt.ProductID IN (8, 28) THEN b.odds
+					WHEN sbt.ProductID IN (8, 28, 38) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				'' AS betteam,
@@ -1413,10 +1415,11 @@ BEGIN
 				'' AS ShowTime,
 				CASE
 					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
+					WHEN sbt.ProductID = 38 THEN ISNULL(b.betcheck, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
-					WHEN sbt.ProductID IN (8, 28) THEN b.transdesc
+					WHEN sbt.ProductID IN (8, 28, 38) THEN b.transdesc
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -1435,12 +1438,12 @@ BEGIN
 			WHERE
 				b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND sbt.ProductID IN (8, 28, 37)
+				AND sbt.ProductID IN (8, 28, 37, 38)
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 
-		-- Keno, Colossus Bets, Lottery (translog)
+		-- Keno, Colossus Bets, Lottery, Virtual Games (translog)
 		IF @TransType = 3
 		BEGIN
 			INSERT INTO @Data
@@ -1449,6 +1452,7 @@ BEGIN
 					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 15 THEN 204
 					WHEN sbt.ProductId = 28 THEN 220
+					WHEN sbt.ProductId = 38 THEN t.productid
 					ELSE 0
 				END AS SportType,
 				0 AS LeagueId,
@@ -1470,7 +1474,7 @@ BEGIN
 				0 AS modds,
 				0 AS OddsType,
 				CASE
-					WHEN sbt.ProductID IN (8, 28) THEN t.odds
+					WHEN sbt.ProductID IN (8, 28, 38) THEN t.odds
 					ELSE 0
 				END AS Odds,
 				'' AS betteam,
@@ -1499,10 +1503,11 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 15 THEN t.Tranid3rd
 					WHEN sbt.ProductId = 8 THEN ISNULL(t.custom2, '')
+					WHEN sbt.ProductId = 38 THEN ISNULL(t.Gameid3rd, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
-					WHEN sbt.ProductID IN (8, 28) THEN t.transdesc
+					WHEN sbt.ProductID IN (8, 28, 38) THEN t.transdesc
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -1519,7 +1524,7 @@ BEGIN
 				t.custid = @CustId
 				AND t.statusID IN (0,1)
 				AND t.winlostdate = @FromDate
-				AND sbt.ProductID IN (8, 15, 28)
+				AND sbt.ProductID IN (8, 15, 28, 38)
 				AND t.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 
@@ -2526,7 +2531,6 @@ BEGIN
 	ORDER BY RefNo ASC, BetType ASC
 END
 GO
-
 
 
 GRANT EXECUTE ON [dbo].[Lrf_BetList_SelByDayAll_Mem] TO [bodbLicenseeNet]
