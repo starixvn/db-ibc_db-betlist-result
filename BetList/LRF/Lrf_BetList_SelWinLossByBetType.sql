@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByBetType]
 	@BaseCurrency	VARCHAR(10),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= N'TransId ASC',
+	@Sort			NVARCHAR(50)	= N'TransDate ASC',
 	@TotalRows		INT				= 0 OUTPUT,
 	@SumWinLost		MONEY			= 0 OUTPUT,
 	@SumLicenseeWL	MONEY			= 0 OUTPUT,
@@ -48,6 +48,7 @@ AS
 					- Change input param @Sort data type from VARCHAR(100) to NVARCHAR(50)
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 		- 20190715@Kos: Hotfix - Error in sorting [#Redmine: 116889]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN
@@ -100,6 +101,7 @@ BEGIN
 		RefNo			BIGINT,
 		Recommend		INT,
 		Currency		SMALLINT,
+		TransDate		DATETIME,
 		WinLostDate		DATETIME,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
@@ -203,6 +205,7 @@ BEGIN
 				b.refno,
 				b.recommend,
 				b.currency,
+				b.transdate,
 				b.winlostdate,
 				b.stake,
 				b.actual_stake,
@@ -241,6 +244,7 @@ BEGIN
 				b.refno,
 				b.recommend,
 				b.currency,
+				b.transdate,
 				b.winlostdate,
 				b.stake,
 				b.actual_stake,
@@ -278,6 +282,7 @@ BEGIN
 				b.refno,
 				b.recommend,
 				b.currency,
+				b.transdate,
 				b.winlostdate,
 				b.stake,
 				b.actual_stake,
@@ -328,6 +333,7 @@ BEGIN
 				b.refno,
 				b.recommend,
 				b.currency,
+				b.transdate,
 				b.winlostdate,
 				b.stake,
 				b.actual_stake,
@@ -366,6 +372,7 @@ BEGIN
 				b.refno,
 				b.recommend,
 				b.currency,
+				b.transdate,
 				b.winlostdate,
 				b.stake,
 				b.actual_stake,
@@ -403,6 +410,7 @@ BEGIN
 				b.refno,
 				b.recommend,
 				b.currency,
+				b.transdate,
 				b.winlostdate,
 				b.stake,
 				b.actual_stake,
@@ -1464,7 +1472,7 @@ BEGIN
 		LEFT JOIN #ExchangeRate AS e
 			ON e.ExchangeId = b.Currency
 				AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
-	ORDER BY b.RowNum
+	ORDER BY b.RowNum ASC
 
 	-- Get sub tickets
 	DECLARE @BettransDetail TABLE (

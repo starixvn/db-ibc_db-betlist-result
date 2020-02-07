@@ -11,7 +11,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Outright]
 	@BaseCurrency		VARCHAR(10),
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 0,
-	@Sort				NVARCHAR(50)	= N'TransId ASC',
+	@Sort				NVARCHAR(50)	= N'TransDate ASC',
 	@TotalRows			INT				= 0 OUTPUT,
 	@SumWinLost			MONEY			= 0 OUTPUT,
 	@SumLicenseeWL		MONEY			= 0 OUTPUT,
@@ -47,6 +47,7 @@ AS
 					- Change input param @Sort data type from VARCHAR(100) to NVARCHAR(50)
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 					- Don't return column AwayId, IsNeutral, IsBA anymore
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN

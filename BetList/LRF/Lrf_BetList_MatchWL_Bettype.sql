@@ -19,7 +19,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Bettype]
 	@ShowVS2			BIT				= 0,
 	@ShowBA				BIT				= 0,
 	@Date				SMALLDATETIME	= NULL,
-	@Sort				NVARCHAR(50)	= N'TransId ASC'
+	@Sort				NVARCHAR(50)	= N'TransDate ASC'
 AS
 
 /*
@@ -74,6 +74,7 @@ AS
 					- Change input param @Sort data type from VARCHAR(100) to NVARCHAR(50)
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN

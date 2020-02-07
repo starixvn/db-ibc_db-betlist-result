@@ -17,7 +17,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Parlay]
 	@SumLicenseeWL	MONEY			= 0 OUTPUT,
 	@SumComm		MONEY			= 0 OUTPUT,
 	@SumPlayerComm	MONEY			= 0 OUTPUT,
-	@Sort			NVARCHAR(50)	= N'TransId ASC'
+	@Sort			NVARCHAR(50)	= N'TransDate ASC'
 AS
 
 /*
@@ -47,6 +47,7 @@ AS
 					- Change input param @Sort data type from VARCHAR(100) to NVARCHAR(50)
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 					- Don't return column IsNeutral, IsBA anymore
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN

@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_CustomerList_Mem]
 	@BaseCurrency	VARCHAR(10)		= '',
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			VARCHAR(50)		= 'Transid ASC',
+	@Sort			VARCHAR(50)		= 'TransDate ASC',
 	-- check for showing product
 	@ShowSB			BIT	= 0,	-- Sportsbook
 	@ShowBA			BIT	= 0,	-- BA
@@ -51,6 +51,7 @@ AS
 		- 20190523@Kos: Support more base currency [#Redmine: 112531]
 		- 20190704@Kos: Support Card Club [Redmine: #115449]
 		- 20191209@Kos: Support Spadegaming [Redmine: #124103]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN

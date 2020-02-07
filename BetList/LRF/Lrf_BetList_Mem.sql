@@ -14,7 +14,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Mem]
 	@LiveIndicator	VARCHAR(10)		= '0,1,2',
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= N'Transid ASC',
+	@Sort			NVARCHAR(50)	= N'TransDate ASC',
 	@ProductList	VARCHAR(200)	= '',
 	@ShowBA			BIT				= 0,	-- BA
 	@TotalRows		INT				= 0 OUTPUT,
@@ -73,6 +73,7 @@ AS
 					- Remove betfrom 's' and 'y'
 		- 20191216@Kos: Support betfrom Licensee Odds Feed 'v' [Redmine: #125553]
 		- 20191226@Kos: Support betfrom Native Apps '0' [Redmine: #125824]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN
@@ -1541,7 +1542,7 @@ BEGIN
 	FROM
 		#PagingData AS a
 		LEFT JOIN #ExchangeRate AS e ON a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
-	ORDER BY a.RowNum
+	ORDER BY a.RowNum ASC
 
 	SELECT DISTINCT * FROM @Detail
 

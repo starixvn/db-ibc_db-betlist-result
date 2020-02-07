@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_Running]
 	@AgentList			VARCHAR(MAX),
@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Running]
 	@StatusFilter		VARCHAR(10)		= '1,2,3',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
-	@Sort				NVARCHAR(50)	= N'TransId ASC',
+	@Sort				NVARCHAR(50)	= N'TransDate DESC',
 	@ProductList		VARCHAR(200)	= '',
 	@ShowBA				BIT				= 0,	-- BA
 	@TotalRows			INT				= 0 OUTPUT,
@@ -19,7 +19,7 @@ AS
 /*
 	Created: Kos@20180613
 	Task: Betting Ticket Center - Running Bet List
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Param's Explanation:
 		- @StatusFilter:
 			- 1: Running, Waiting
@@ -44,6 +44,7 @@ AS
 		- 20190627@Kos: Support PH AIO 4a [Redmine: #115448]
 		- 20190730@Kos: Support new status Pending [#Redmine: 117729]
 		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN
@@ -962,11 +963,6 @@ BEGIN
 	DROP TABLE #ExchangeRate
 END
 GO
-
-
-
-
-
 
 
 GRANT EXECUTE ON [dbo].[Lrf_BetList_Running] TO [bodbLicenseeNet]

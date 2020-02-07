@@ -12,7 +12,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossParlay]
 	@BaseCurrency	VARCHAR(10),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= 'Transid DESC',
+	@Sort			NVARCHAR(50)	= 'TransDate ASC',
 	@LiveIndicator	INT				= 1
 AS
 
@@ -44,6 +44,7 @@ AS
 		- 20190521@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Change input param @Sort data type from VARCHAR(100) to NVARCHAR(50)
 					- Don't return column IsNeutral, IsBA anymore
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -477,7 +478,7 @@ BEGIN
 						WHEN b.WinLostDate > @Today THEN @Today
 						ELSE b.WinLostDate
 					END BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
-	ORDER BY b.RowNum
+	ORDER BY b.RowNum ASC
 
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@AgentList		VARCHAR(MAX),
@@ -35,7 +35,7 @@ AS
 /*
 	Created: Henry@20101210
 	Task: Bet List
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original [Age_BetList_SelRunningByDate_Mem]
 	Revisions:
 		- 20110303@Henry: suppport based currency
@@ -109,6 +109,7 @@ AS
 		- 20190813@Kos: Support Card Club [Redmine: #115449]
 		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
 		- 20191209@Kos: Support Spadegaming [Redmine: #124103]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN
@@ -1209,7 +1210,7 @@ BEGIN
 		@Currency AS Currency
 	FROM
 		(	SELECT
-				ROW_NUMBER() OVER(ORDER BY TransId DESC) AS RowNum,
+				ROW_NUMBER() OVER(ORDER BY TransDate DESC) AS RowNum,
 				*
 			FROM #BetListSelRunningByDateMem
 		) AS a

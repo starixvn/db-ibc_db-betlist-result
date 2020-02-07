@@ -16,7 +16,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee]
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
-	@Sort				NVARCHAR(50)	= N'Transid ASC',
+	@Sort				NVARCHAR(50)	= N'TransDate ASC',
 	@Product			VARCHAR(10)		= '',
 	@TotalRows			INT				= 0 OUTPUT,
 	@SumStake			MONEY			= 0 OUTPUT,
@@ -52,6 +52,7 @@ AS
 					- Remove input param @ShowBA
 		- 20190313@Kos: Change param @LiveIndicator from TINYINT to VARCHAR(10) [Redmine: #108717]
 					- Add new param @Username, @ConvertToBaseCur
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN
@@ -111,9 +112,6 @@ BEGIN
 	END
 END
 GO
-
-
-
 
 
 GRANT EXECUTE ON [dbo].[Lrf_BetList_Licensee] TO [bodbLicenseeNet]

@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossVHRacing]
 	@BaseCurrency	VARCHAR(10),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= N'Transid DESC',
+	@Sort			NVARCHAR(50)	= N'TransDate ASC',
 	@SumWL			MONEY			= 0 OUTPUT,
 	@SumLicenseeWL	MONEY			= 0 OUTPUT
 AS
@@ -31,6 +31,7 @@ AS
 					- Remove params @SUMWLUSD, @SUMLicenseeWLUSD, @SUMWLEUR, ...
 					- Don't return column AwayId, IsNeutral, BetStatus, Betteam, LiveIndicator, Discount, PlayerDiscount, APositiontaking anymore
 					- Change input param @Sort data type from VARCHAR(20) to NVARCHAR(50)
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN

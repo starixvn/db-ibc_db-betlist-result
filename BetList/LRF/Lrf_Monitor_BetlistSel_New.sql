@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_Monitor_BetlistSel_New]
 	@AgentList		VARCHAR(MAX),
@@ -21,7 +21,7 @@ AS
 /*
 	Created: Scott@20130418
 	Task: LRF Monitor lastest bets list(all bettypes and all sports) with filter by League and Sport
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original: [Lrf_Monitor_BetlistSel]
 	Revision:
 		- 20130618@Jim: Restrict permission of Licensee Users by currency
@@ -55,6 +55,7 @@ AS
 		- 20190520@Kos: Support more base currency [#Redmine: 112531]
 		- 20191216@Kos: Support betfrom Licensee Odds Feed 'v' [Redmine: #125553]
 		- 20191226@Kos: Support betfrom Native Apps '0' [Redmine: #125824]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -591,10 +592,10 @@ BEGIN
 				LEFT JOIN @ExchangeRate AS e ON e.exchangeid = d.CurrencyId
 			WHERE (@MinStake = 0 OR d.Stake * ISNULL(e.Rate, 1) >= @MinStake)
 				AND (@MaxStake = 0 OR d.Stake * ISNULL(e.Rate, 1) <= @MaxStake)
-			ORDER BY d.TransId DESC
+			ORDER BY d.TransDate DESC
 		) AS b
 		LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
-	ORDER BY b.TransId DESC
+	ORDER BY b.TransDate DESC
 END
 GO
 

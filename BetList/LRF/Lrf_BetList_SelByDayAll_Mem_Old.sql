@@ -90,6 +90,7 @@ AS
 		- 20190704@Kos: Support Card Club [Redmine: #115449]
 		- 20191010@Kos: Support Non-peak Hours Promotion [#Redmine: 121121]
 		- 20191209@Kos: Support Spadegaming [Redmine: #124103]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 
 	Param's Explanation:
 		+ @TransType:
@@ -988,7 +989,7 @@ BEGIN
 	FROM
 	(
 		SELECT
-			ROW_NUMBER() OVER(ORDER BY b.TransId ASC, b.RefNo ASC) AS RowNum,
+			ROW_NUMBER() OVER(ORDER BY b.TransDate ASC) AS RowNum,
 			b.*
 		FROM @Data AS b
 	) AS a

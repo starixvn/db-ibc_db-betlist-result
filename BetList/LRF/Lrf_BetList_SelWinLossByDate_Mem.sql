@@ -121,6 +121,7 @@ AS
 		- 20191114@Kos: Rewrite SP to enhance performance [Redmine: #123832]
 		- 20191119@Kos: Don't support bettype Promotion Prize (4300) and Tournament Prize (4299) [Redmine: #123804]
 		- 20191209@Kos: Support Spadegaming [Redmine: #124103]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN
@@ -1003,7 +1004,7 @@ BEGIN
 				FROM
 					(
 						SELECT
-							ROW_NUMBER() OVER (ORDER BY TransId ASC) AS RowNum,
+							ROW_NUMBER() OVER (ORDER BY TransDate ASC) AS RowNum,
 							*
 						FROM #Data
 					) AS a
@@ -1635,7 +1636,7 @@ BEGIN
 	FROM
 		#PagingData AS a
 		LEFT JOIN #ExchangeRate AS e ON a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
-	ORDER BY a.RowNum
+	ORDER BY a.RowNum ASC
 
 	SELECT DISTINCT * FROM @Detail
 

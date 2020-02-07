@@ -51,6 +51,7 @@ AS
 		- 20190521@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Don't return column ShowTime anymore
 		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -854,7 +855,7 @@ BEGIN
 	SELECT A.*
 	FROM (
 		SELECT
-			ROW_NUMBER() OVER (ORDER BY b.Status ASC, b.transid ASC) AS RowNum,
+			ROW_NUMBER() OVER (ORDER BY b.Status ASC, b.TransDate ASC) AS RowNum,
 			b.SportType,
 			b.Username,
 			SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS NickName,

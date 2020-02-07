@@ -11,7 +11,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Statement_Mem]
 	@BaseCurrency	VARCHAR(10),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= N'Transid ASC',
+	@Sort			NVARCHAR(50)	= N'TransDate ASC',
 	@TotalRows		INT				= 0 OUTPUT,
 	@SumStake		MONEY			= 0 OUTPUT,
 	@SumWinLost		MONEY			= 0 OUTPUT,
@@ -39,6 +39,7 @@ AS
 		- 20191105@Kos: Support Non-peak Hours Promotion [#Redmine: 121121]
 		- 20191128@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20200102@Kos: Support Spadegaming [Redmine: #124103]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN
@@ -1696,7 +1697,7 @@ BEGIN
 		b.WalletType,
 		b.RefCode
 	FROM #PagingData AS b
-	ORDER BY b.TransId ASC
+	ORDER BY b.RowNum ASC
 
 	SELECT DISTINCT * FROM @DetailData
 

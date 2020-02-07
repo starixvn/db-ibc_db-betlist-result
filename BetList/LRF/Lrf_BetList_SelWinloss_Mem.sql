@@ -109,6 +109,7 @@ AS
 		- 20190716@Kos: Support Card Club [Redmine: #115449]
 		- 20191119@Kos: Don't support bettype Promotion Prize (4300) and Tournament Prize (4299) [Redmine: #123804]
 		- 20191206@Kos: Support Spadegaming [Redmine: #124103]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -3435,7 +3436,7 @@ BEGIN
 	FROM
 		(
 		SELECT
-			ROW_NUMBER() OVER (ORDER BY d.TransId ASC) AS RowNum,
+			ROW_NUMBER() OVER (ORDER BY d.TransDate ASC) AS RowNum,
 			d.SportType,
 			d.TransId,
 			d.BetId,

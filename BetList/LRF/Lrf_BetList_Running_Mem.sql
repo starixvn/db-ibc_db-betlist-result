@@ -1,11 +1,11 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_Running_Mem]
 	@AgentList	VARCHAR(MAX),
 	@CustId		INT,
 	@PageSize	INT				= 1000,
 	@PageIndex	INT				= 1,
-	@Sort		NVARCHAR(50)	= N'TransId ASC',
+	@Sort		NVARCHAR(50)	= N'TransDate DESC',
 	@TotalRows	INT				= 0 OUTPUT,
 	@SumStake	MONEY			= 0 OUTPUT
 AS
@@ -13,11 +13,12 @@ AS
 /*
 	Created: Kos@20190717
 	Task: Player Admin - Running Bet List
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 
 	Revisions:
 		- 20190717@Kos: Created [#Redmine: 112658]
 		- 20200102@Kos: Support Spadegaming [Redmine: #124103]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN

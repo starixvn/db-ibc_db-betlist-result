@@ -90,6 +90,7 @@ AS
 					- Remove betfrom 's' and 'y'
 		- 20191216@Kos: Support betfrom Licensee Odds Feed 'v' [Redmine: #125553]
 		- 20191226@Kos: Support betfrom Native Apps '0' [Redmine: #125824]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -2435,7 +2436,7 @@ BEGIN
 	FROM
 		(
 			SELECT
-				ROW_NUMBER () OVER (ORDER BY d.TransId ASC) AS RowNum,
+				ROW_NUMBER () OVER (ORDER BY d.TransDate ASC) AS RowNum,
 				d.*
 			FROM @Data AS d
 		) a

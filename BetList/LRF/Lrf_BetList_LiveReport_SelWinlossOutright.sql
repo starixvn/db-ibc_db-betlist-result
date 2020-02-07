@@ -34,6 +34,7 @@ AS
 		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
 		- 20190521@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Don't return column AwayId, IsNeutral, IsBA anymore
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN
@@ -170,7 +171,7 @@ BEGIN
 				b.winlostdate,
 				b.currency
 			FROM
-				dbo.bettrans AS b WITH (NOLOCK) 
+				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE
@@ -220,7 +221,7 @@ BEGIN
 				b.winlostdate,
 				b.currency
 			FROM
-				dbo.bettrans14 AS b WITH (NOLOCK) 
+				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 			WHERE
@@ -262,7 +263,7 @@ BEGIN
 				b.winlostdate,
 				b.currency
 			FROM
-				dbo.bettrans14 AS b WITH (NOLOCK) 
+				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 			WHERE
@@ -353,11 +354,11 @@ BEGIN
 		a.Currency
 	FROM (
 			SELECT
-				ROW_NUMBER() OVER(ORDER BY Transid ASC) AS RowNum,
+				ROW_NUMBER() OVER(ORDER BY b.TransDate ASC) AS RowNum,
 				b.*
 			FROM #AgWinlossOutright AS b
 		) AS a
-		INNER JOIN dbo.customer AS c WITH(NOLOCK) ON c.custid = a.custid
+		INNER JOIN dbo.customer AS c WITH (NOLOCK) ON c.custid = a.custid
 		LEFT JOIN #ExchangeRate AS e
 			ON e.ExchangeId = a.Currency
 				AND CASE

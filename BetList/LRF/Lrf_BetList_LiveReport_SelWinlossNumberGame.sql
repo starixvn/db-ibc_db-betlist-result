@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossNumberGame]
 	@BaseCurrency	VARCHAR(10)		= '',
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= 'Transid DESC',
+	@Sort			NVARCHAR(50)	= 'TransDate ASC',
 	@LiveIndicator	INT				= 1
 AS
 
@@ -37,6 +37,7 @@ AS
 		- 20181207@Kos: Enhance performance [#Redmine: 103698]
 					- Add new params @SportType, @BaseCurrency
 		- 20190524@Kos: Support more base currency [#Redmine: 112531]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -447,7 +448,7 @@ BEGIN
 			LEFT JOIN #ExchangeRate AS e
 				ON e.ExchangeId = b.Currency
 					AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
-		ORDER BY b.RowNum
+		ORDER BY b.RowNum ASC
 	END
 	ELSE
 	BEGIN

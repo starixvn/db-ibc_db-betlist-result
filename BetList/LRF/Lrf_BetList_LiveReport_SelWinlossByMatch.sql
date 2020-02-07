@@ -57,6 +57,7 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20190523@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 		- 20191011@Kos: Support drop table LicenseeBATransaction [Redmine: #103656]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -691,7 +692,7 @@ BEGIN
 	FROM
 		(
 			SELECT
-				ROW_NUMBER() OVER(ORDER BY b.TransId ASC) AS RowNum,
+				ROW_NUMBER() OVER(ORDER BY b.TransDate ASC) AS RowNum,
 				b.SportType,
 				b.Username,
 				SUBSTRING(c.username2,  CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,

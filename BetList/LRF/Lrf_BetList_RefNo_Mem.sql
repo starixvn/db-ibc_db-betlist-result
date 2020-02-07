@@ -31,6 +31,7 @@ AS
 		- 20191128@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20191205@Kos: Support Saba Promotion [Redmine: #124612]
 		- 20191209@Kos: Support Spadegaming [Redmine: #124103]
+		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 */
 
 BEGIN
@@ -1958,6 +1959,7 @@ BEGIN
 		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = a.CustId
 		LEFT JOIN @ExchangeRate AS e
 			ON e.ExchangeDate = a.WinLostDate AND e.ExchangeId = a.Currency
+	ORDER BY a.TransDate ASC
 
 	SELECT DISTINCT * FROM @Detail
 END
