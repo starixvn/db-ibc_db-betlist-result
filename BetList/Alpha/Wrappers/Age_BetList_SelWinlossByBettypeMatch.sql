@@ -19,10 +19,19 @@ AS
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
 		- 20190524@Kos: Support BetBuilder [Redmine: #106905]
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
+		- 20200214@Kos: Fix performance issue with f_GroupBettype func [Redmine: #128448]
 */
 
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @GroupBetType TABLE (BetType INT, GroupTypeId INT)
+
+	INSERT INTO @GroupBetType
+	SELECT
+		bettype,
+		GroupTypeId
+	FROM dbo.f_GroupBettype()
 
 	-- Gather SportBetTypeMatrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
@@ -38,7 +47,7 @@ BEGIN
 	WHERE ProductID IN (1, 3, 5, 27)
 		AND BetType NOT IN (901, 902, 903, 904)
 		AND (BetType = @BetType
-			OR EXISTS (SELECT 1 FROM dbo.f_GroupBettype() AS f WHERE f.GroupTypeId = @BetType AND f.Bettype = s.BetType))
+			OR EXISTS (SELECT 1 FROM @GroupBetType AS f WHERE f.GroupTypeId = @BetType AND f.BetType = s.BetType))
 
 	DECLARE @IsBet14	BIT = 0,
 		@EventDate		DATETIME
@@ -501,8 +510,6 @@ BEGIN
 	SELECT * FROM @BettransDetail
 END
 GO
-
-
 
 
 GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossByBettypeMatch] TO [bodbDownlineNet]
