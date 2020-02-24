@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_TotalBets_Sel430]
 	@AgentList		VARCHAR(MAX),
@@ -11,7 +11,7 @@ AS
 /*
 	Created: Henry@20101209
 	Task: Betlist for Correct score and first correct score
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original:
 	Revisions:
 		- 20111229@Jim: change the way to get odds/oddstype/betteam to web dev

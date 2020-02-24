@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByBettypeList]
 	@AgentList		VARCHAR(MAX),
@@ -12,7 +12,7 @@ AS
 /*
 	Created: Hannah@20140708
 	Task: Betlist
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original: [Lrf_BetList_SelRunningByBettype]
 	Revisions:
 		- 20140708@Hannah: Clone from Lrf_BetList_SelRunningByBettype to support muilti bettype

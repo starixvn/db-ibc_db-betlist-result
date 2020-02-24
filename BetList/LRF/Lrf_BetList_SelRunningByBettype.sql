@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByBettype]
 	@AgentList		VARCHAR(MAX),
@@ -12,7 +12,7 @@ AS
 /*
 	Created: Henry@20101209
 	Task: Betlist
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original:[Age_BetList_SelRunningByBettype_Ag]
 	Revisions:
 		- 20110216@Jacob: Add column nickname IN the result SET

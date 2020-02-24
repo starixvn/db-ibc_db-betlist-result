@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByMultipleBettypeMatch]
 	@AgentList		VARCHAR(MAX),
@@ -15,7 +15,7 @@ AS
 /*
 	Created: 20140522@Jim
 	Task: Betlist
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original: [Lrf_BetList_SelRunningByBettypeMatch]
 	Revisions:
 		- 20140522@Jim: Clone from Lrf_BetList_SelRunningByBettypeMatch to support muilti bettype

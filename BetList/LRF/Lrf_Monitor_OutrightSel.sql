@@ -1,9 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_Monitor_OutrightSel]
 AS
@@ -11,7 +6,7 @@ AS
 /*
 	Created: Henry@20111011
 	Task: Monitor lastest bets list - get outright running
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original: Age_Monitor_OutrightSel
 	Revision:
 		- 20181008@Kos: Migrate to DB042 [RedmineID: #99464]

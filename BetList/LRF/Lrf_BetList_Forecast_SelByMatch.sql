@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_Forecast_SelByMatch]
 	@AgentList		VARCHAR(MAX),
@@ -17,7 +17,7 @@ AS
 /*
 	Created: Victor@20130802
 	Task: Forecast
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original: [Lrf_BetList_Forecast_SelByMatch]
 	Revisions:
 		- 20131010@Victor: Add handicap parameter to show betlist of a specific handicap line

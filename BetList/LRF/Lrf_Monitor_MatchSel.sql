@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_Monitor_MatchSel]
 AS
@@ -6,7 +6,7 @@ AS
 /*
 	Created: Henry@20111011
 	Task: Monitor lastest bets list - get match running
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original: Age_Monitor_MatchSel
 	Revision:
 		- 20181008@Kos: Migrate to DB042 [RedmineID: #99464]
