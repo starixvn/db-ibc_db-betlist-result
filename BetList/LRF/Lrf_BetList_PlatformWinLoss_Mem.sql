@@ -91,6 +91,7 @@ AS
 		- 20191216@Kos: Support betfrom Licensee Odds Feed 'v' [Redmine: #125553]
 		- 20191226@Kos: Support betfrom Native Apps '0' [Redmine: #125824]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20200302@Kos: Support 3 new betfrom [Redmine: #129253]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -110,6 +111,9 @@ AS
 			- 9 - Mobile China View: c (dep-MCV)
 			- 10 - Deep Link: t (Licensee-Deeplink)
 			- 11 - Native App: 0 (Native App)
+			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop)
+			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile)
+			- 14 - E-Sports App: 3 (E-Sports App)
 			- 88 - Others: v (Licensee Odds Feed)
 
 	Sample call:
@@ -275,6 +279,27 @@ BEGIN
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT '0'
+	END
+
+	-- E-Sports Web Desktop
+	IF @PlatformType IN (0, 12)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT '1'
+	END
+
+	-- E-Sports Web Mobile
+	IF @PlatformType IN (0, 13)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT '2'
+	END
+
+	-- E-Sports App
+	IF @PlatformType IN (0, 14)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT '3'
 	END
 
 	-- Others

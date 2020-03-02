@@ -51,6 +51,9 @@ AS
 			- 9 - Mobile China View: c (dep-MCV)
 			- 10 - Deep Link: t (Licensee-Deeplink)
 			- 11 - Native App: 0 (Native App)
+			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop)
+			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile)
+			- 14 - E-Sports App: 3 (E-Sports App)
 			- 88 - Others: v (Licensee Odds Feed)
 		- @LiveIndicator:
 			- 0 : Non-live
@@ -74,6 +77,7 @@ AS
 		- 20191216@Kos: Support betfrom Licensee Odds Feed 'v' [Redmine: #125553]
 		- 20191226@Kos: Support betfrom Native Apps '0' [Redmine: #125824]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20200302@Kos: Support 3 new betfrom [Redmine: #129253]
 */
 
 BEGIN
@@ -311,6 +315,18 @@ BEGIN
 		ELSE IF @Platform = 11
 		BEGIN
 			SET @BetFromList = '0'
+		END
+		ELSE IF @Platform = 12
+		BEGIN
+			SET @BetFromList = '1'
+		END
+		ELSE IF @Platform = 13
+		BEGIN
+			SET @BetFromList = '2'
+		END
+		ELSE IF @Platform = 14
+		BEGIN
+			SET @BetFromList = '3'
 		END
 		ELSE IF @Platform = 88
 		BEGIN
