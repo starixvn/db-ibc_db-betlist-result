@@ -25,6 +25,7 @@ AS
 		- 20200427@Kos: Support Sexy Gaming [Redmine: #130859]
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
+		- 20200616@Kos: Support SA Gaming [Redmine: #128493]
 */
 
 BEGIN
@@ -347,6 +348,7 @@ BEGIN
 						WHEN s.ProductID = 34 THEN 'CC'								-- Card Club
 						WHEN s.ProductID = 36 THEN 'SG'								-- Spadegaming
 						WHEN s.ProductID = 38 THEN 'VRG'							-- Virtual Games
+						WHEN s.ProductID = 39 THEN 'SAG'							-- SA Gaming
 						WHEN s.ProductID = 40 THEN 'TG'								-- Table Games
 						WHEN s.ProductID = 42 THEN 'SBC'							-- Saba.club
 						WHEN s.ProductID = 43 THEN 'I4D'							-- Indo 4D
@@ -397,14 +399,14 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate >= @Yesterday
 			AND b.statusID IN (0, 1)
-			AND s.ProductID IN (11, 21, 45)
+			AND s.ProductID IN (11, 21, 39, 45)
 		GROUP BY b.RefNo,
 			b.gameID
 
 		-- Delete settled only summary ticket
 		DELETE b
 		FROM #Data AS b
-		WHERE b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'Allbet', 'AG', 'SXG')
+		WHERE b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'Allbet', 'AG', 'SAG', 'SXG')
 			AND b.Winlostdate >= @Yesterday
 			AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 
@@ -414,7 +416,7 @@ BEGIN
 		FROM @TmpData AS b
 			INNER JOIN #Data AS d ON d.TransId = b.RefNo AND d.BetType = b.BetType
 		WHERE d.Winlostdate >= @Yesterday
-			AND d.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'Allbet', 'AG', 'SXG')
+			AND d.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'Allbet', 'AG', 'SAG', 'SXG')
 
 		INSERT INTO #Data (
 			TransId,
@@ -500,6 +502,7 @@ BEGIN
 				WHEN s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
 				WHEN s.ProductID = 34 THEN 'CC'		-- Card Club
 				WHEN s.ProductID = 36 THEN 'SG'		-- Spadegaming
+				WHEN s.ProductID = 39 THEN 'SAG'	-- SA Gaming
 				WHEN s.ProductID = 42 THEN 'SBC'	-- Saba.club
 				WHEN s.ProductID = 45 THEN 'SXG'	-- Sexy Gaming
 				ELSE 'Unknown'
@@ -596,7 +599,7 @@ BEGIN
 							ELSE b.TransId
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'CB', 'SBC', 'SXG') THEN b.MatchId
+								WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'CB', 'SBC', 'SXG', 'SAG') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('Outright') THEN l.sporttype
@@ -628,15 +631,15 @@ BEGIN
 							ELSE 0
 						END,
 				Stake = CASE
-							WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'Allbet', 'AG', 'SXG') AND x.Stake IS NOT NULL THEN x.Stake
+							WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'Allbet', 'AG', 'SAG', 'SXG') AND x.Stake IS NOT NULL THEN x.Stake
 							ELSE b.stake 
 						END,
 				Actual_Stake = CASE
-									WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'Allbet', 'AG', 'SXG') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
+									WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'Allbet', 'AG', 'SAG', 'SXG') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
 									ELSE b.actual_stake
 								END,
 				Status = CASE
-							WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'SXG') AND x.RefNo IS NOT NULL THEN 'Running'
+							WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'SAG', 'SXG') AND x.RefNo IS NOT NULL THEN 'Running'
 							WHEN b.Product = 'SB'
 								AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 							WHEN b.Product = 'Parlay' AND b.status = 'running' THEN
@@ -763,7 +766,7 @@ BEGIN
 							END
 			FROM #PagingData AS b
 				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
-				LEFT JOIN @TmpData AS x ON b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'Allbet', 'SXG') AND b.Winlostdate >= @Yesterday AND x.RefNo = b.TransId
+				LEFT JOIN @TmpData AS x ON b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'Allbet', 'SAG', 'SXG') AND b.Winlostdate >= @Yesterday AND x.RefNo = b.TransId
 				LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
 				LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid

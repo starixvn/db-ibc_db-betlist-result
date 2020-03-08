@@ -27,6 +27,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowCC		BIT			= 0,	-- Card Club
 	@ShowSG		BIT			= 0,	-- Spadegaming
 	@ShowVRG	BIT			= 0,	-- Virtual Games
+	@ShowSAG	BIT			= 0,	-- SA Gaming
 	@ShowTG		BIT			= 0,	-- Table Games
 	@ShowSBC	BIT			= 0,	-- Saba.club
 	@ShowI4D	BIT			= 0,	-- Indo 4D
@@ -121,6 +122,7 @@ AS
 		- 20200427@Kos: Support Sexy Gaming [Redmine: #130859]
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
+		- 20200616@Kos: Support SA Gaming [Redmine: #128493]
 */
 
 BEGIN
@@ -193,7 +195,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 40, 42, 43, 45)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -213,6 +215,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowCC = 0		THEN 34 END
 		OR ProductID	= CASE WHEN @ShowSG = 0		THEN 36 END
 		OR ProductID	= CASE WHEN @ShowVRG = 0	THEN 38 END
+		OR ProductID	= CASE WHEN @ShowSAG = 0	THEN 39 END
 		OR ProductID	= CASE WHEN @ShowTG = 0		THEN 40 END
 		OR ProductID	= CASE WHEN @ShowSBC = 0	THEN 42 END
 		OR ProductID	= CASE WHEN @ShowI4D = 0	THEN 43 END
@@ -980,8 +983,8 @@ BEGIN
 			sbt.ProductID
 	END
 
-	-- AG Casino, AllBet, Sexy Gaming
-	IF (@ShowAGC = 1 OR @ShowAB = 1 OR @ShowSXG = 1)
+	-- AG Casino, AllBet, SA Gaming, Sexy Gaming
+	IF (@ShowAGC = 1 OR @ShowAB = 1 OR @ShowSAG = 1 OR @ShowSXG = 1)
 		AND EXISTS (SELECT 1 FROM dbo.bettransLC WITH (NOLOCK) WHERE custid = @CustId AND statusID IN (0, 1))
 	BEGIN
 		-- Yesterday and today running ticket
@@ -990,7 +993,7 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID = 11 THEN 250
 				WHEN sbt.ProductID = 21 THEN 211
-				WHEN sbt.ProductID = 45 THEN b.matchid
+				WHEN sbt.ProductID IN (39, 45) THEN b.matchid
 				ELSE 0
 			END AS Sporttype,
 			@Username AS UserName,
@@ -1040,7 +1043,7 @@ BEGIN
 			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.winlostdate BETWEEN @Yesterday AND @Today		-- yesterday and today
 			AND blc.custid = @CustId
-			AND sbt.ProductID IN (11, 21, 45)
+			AND sbt.ProductID IN (11, 21, 39, 45)
 			AND sbt.EventType = 0
 			AND blc.statusID IN (0, 1)
 		GROUP BY

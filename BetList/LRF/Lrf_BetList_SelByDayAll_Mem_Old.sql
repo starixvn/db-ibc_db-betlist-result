@@ -100,6 +100,7 @@ AS
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20200714@Kos: Support PP Jackpot [Redmine: #137290]
+		- 20200728@Kos: Support SA Gaming [Redmine: #128493]
 
 	Param's Explanation:
 		+ @TransType:
@@ -238,7 +239,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 40, 42, 43, 45)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45)
 		AND BetType NOT IN (904, 914)
 
 	IF @TransType = 4	-- support only for Colossus Bets
@@ -603,7 +604,7 @@ BEGIN
 			AND b.bettype = 10
 
 		-- RNG Casino, Keno, AG Casino, AllBet, Macau Games, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming
-		-- NPH Promotion, Virtual Games, Table Games, Indo 4D, Sexy Gaming, Saba.club
+		-- NPH Promotion, Virtual Games, SA Gaming, Table Games, Indo 4D, Sexy Gaming, Saba.club
 		INSERT INTO @Data
 		SELECT
 			CASE
@@ -616,7 +617,7 @@ BEGIN
 				WHEN sbt.ProductID = 24 THEN 219
 				WHEN sbt.ProductID = 28 THEN 220
 				WHEN sbt.ProductID = 32 THEN 248
-				WHEN sbt.ProductID IN (34, 36, 37, 38, 40, 42, 43, 45) THEN b.matchid
+				WHEN sbt.ProductID IN (34, 36, 37, 38, 39, 40, 42, 43, 45) THEN b.matchid
 				ELSE 0
 			END AS SportType,
 			0 AS leagueid,
@@ -725,7 +726,7 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-			AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38, 40, 42, 43, 45)
+			AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45)
 			AND sbt.EventType = 0
 
 		-- Colossus Bets
