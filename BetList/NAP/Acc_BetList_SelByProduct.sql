@@ -48,6 +48,7 @@ AS
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 		- 20200222@Kos: Support SA Gaming [Redmine: #128048]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
+		- 20200331@Kos: Support Saba.club [Redmine: #130769]		
 */
 
 BEGIN
@@ -512,8 +513,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming
-			IF @ProductId IN (22, 24, 32, 34, 36)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club
+			IF @ProductId IN (22, 24, 32, 34, 36, 42)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -852,8 +853,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming
-			IF @ProductId IN (22, 24, 32, 34, 36)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club
+			IF @ProductId IN (22, 24, 32, 34, 36, 42)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN

@@ -31,6 +31,7 @@ AS
 		- 20190611@Kos: Support Card Club [#Redmine: 107645]
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20191029@Kos: Support Spadegaming [Redmine: #122140]
+		- 20200322@Kos: Support Saba.club [Redmine: #130769]
 
 	Parameters:
 		- @TransType
@@ -54,7 +55,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)

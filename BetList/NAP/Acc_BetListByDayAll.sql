@@ -134,6 +134,7 @@ AS
 		- 20200222@Kos: Support SA Gaming [Redmine: #128048]
 		- 20200323@Kos: Support Indo 4D [Redmine: #130857]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
+		- 20200331@Kos: Support Saba.club [Redmine: #130769]		
 
 	Param's Explanation:
 		+ @TransType:
@@ -621,8 +622,8 @@ BEGIN
 				AND s.EventType = 3
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
-			-- RNG Casino, Keno, Gold Deluxe, AG Casino, AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Card Club, NPH Promotion, Spadegaming, Virtual Games
-			-- Card Club, NPH Promotion, Spadegaming, Virtual Games, SA Gaming, Indo 4D, Sexy Gaming
+			-- RNG Casino, Keno, Gold Deluxe, AG Casino, AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino
+			-- Card Club, NPH Promotion, Spadegaming, Virtual Games, SA Gaming, Indo 4D, Sexy Gaming, Saba.club
 			INSERT INTO @Data
 			SELECT
 				CASE
@@ -640,7 +641,7 @@ BEGIN
 					WHEN s.ProductID = 24 THEN 219
 					WHEN s.ProductID = 28 THEN 220
 					WHEN s.ProductID = 32 THEN 248
-					WHEN s.ProductID IN (34, 36, 37, 38, 39, 43, 45) THEN b.matchid
+					WHEN s.ProductID IN (34, 36, 37, 38, 39, 42, 43, 45) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -745,7 +746,7 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND s.ProductID IN (6, 8, 11, 12, 21, 22, 23, 24, 28, 32, 34, 36, 37, 38, 39, 43, 45)
+				AND s.ProductID IN (6, 8, 11, 12, 21, 22, 23, 24, 28, 32, 34, 36, 37, 38, 39, 42, 43, 45)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Colossus Bet
@@ -1832,14 +1833,14 @@ BEGIN
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 			END
 
-			-- RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club, Spadegaming
+			-- RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club
 			IF @TransType = 1	-- before yesterday settled ticket
 				AND @FromDate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 			BEGIN
 				INSERT INTO @Data
 				SELECT 
 					CASE
-						WHEN s.ProductID IN (6, 34, 36) THEN b.matchid
+						WHEN s.ProductID IN (6, 34, 36, 42) THEN b.matchid
 						WHEN s.ProductID = 22 THEN 212
 						WHEN s.ProductID = 24 THEN 219
 						WHEN s.ProductID = 32 THEN 248
@@ -1927,7 +1928,7 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND s.ProductId IN (6, 22, 24, 32, 34, 36)
+					AND s.ProductId IN (6, 22, 24, 32, 34, 36, 42)
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 			END
 
@@ -1938,7 +1939,7 @@ BEGIN
 				INSERT INTO @Data
 				SELECT
 					CASE
-						WHEN s.ProductID IN (6, 34, 36) THEN b.matchid
+						WHEN s.ProductID IN (6, 34, 36, 42) THEN b.matchid
 						WHEN s.ProductID = 22 THEN 212
 						WHEN s.ProductID = 24 THEN 219
 						WHEN s.ProductID = 32 THEN 248
@@ -2032,7 +2033,7 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND s.ProductId IN (6, 22, 24, 32, 34, 36)
+					AND s.ProductId IN (6, 22, 24, 32, 34, 36, 42)
 					AND brng.statusID NOT IN (0, 1)
 				GROUP BY
 					b.transid,
@@ -2059,7 +2060,7 @@ BEGIN
 				INSERT INTO @Data
 				SELECT 
 					CASE
-						WHEN s.ProductID IN (6, 34, 36) THEN b.matchid
+						WHEN s.ProductID IN (6, 34, 36, 42) THEN b.matchid
 						WHEN s.ProductID = 22 THEN 212
 						WHEN s.ProductID = 24 THEN 219
 						WHEN s.ProductID = 32 THEN 248
@@ -2142,7 +2143,7 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND s.ProductId IN (6, 22, 24, 32, 34, 36)
+					AND s.ProductId IN (6, 22, 24, 32, 34, 36, 42)
 					AND brng.statusID IN (0, 1)
 				GROUP BY
 					b.transid,
