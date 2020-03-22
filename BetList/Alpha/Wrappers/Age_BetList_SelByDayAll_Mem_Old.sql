@@ -61,6 +61,7 @@ AS
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 		- 20200301@Kos: Support SA Gaming [Redmine: #122140]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
+		- 20200331@Kos: Support Saba.club [Redmine: #130769]		
 
 	Param's Explanation:
 		+ @TransType:
@@ -275,6 +276,7 @@ BEGIN
 							WHEN s.ProductID = 36 THEN 'SG'		-- Spadegaming
 							WHEN s.ProductID = 38 THEN 'VRG'	-- Virtual Games
 							WHEN s.ProductID = 39 THEN 'SAG'	-- SA Gaming
+							WHEN s.ProductID = 42 THEN 'SBC'	-- Saba.club
 							WHEN s.ProductID = 45 THEN 'SXG'	-- Sexy Gaming
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.ProductID = 3 THEN 'NG'		-- Number Game
@@ -300,7 +302,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'SXG') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
+									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'SBC', 'SXG') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe

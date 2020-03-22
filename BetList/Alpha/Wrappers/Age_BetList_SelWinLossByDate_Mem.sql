@@ -100,6 +100,7 @@ AS
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 		- 20200302@Kos: Support SA Gaming [Redmine: #128048]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
+		- 20200331@Kos: Support Saba.club [Redmine: #130769]		
 */
 
 BEGIN
@@ -262,6 +263,7 @@ BEGIN
 							WHEN s.ProductID = 36						THEN 'SG'	-- Spadegaming
 							WHEN s.ProductID = 38						THEN 'VRG'	-- Virtual Games
 							WHEN s.ProductID = 39						THEN 'SAG'	-- SA Gaming
+							WHEN s.ProductID = 42						THEN 'SBC'	-- Saba.club
 							WHEN s.ProductID = 45						THEN 'SXG'	-- Sexy Gaming
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
@@ -277,14 +279,13 @@ BEGIN
 			AND b.winlostdate BETWEEN @f_date AND @t_date
 			AND 1 = CASE
 						WHEN b.statusID > 1 THEN 1
-						WHEN s.ProductID IN (21, 22, 24, 32, 34, 36, 39, 45)
-							OR (s.ProductID = 6 AND s.SubProduct <> '') THEN 1 -- don't care status of casino's summary rows.
+						WHEN s.ProductID IN (6, 21, 22, 24, 32, 34, 36, 39, 42, 45) THEN 1 -- don't care status of casino's summary rows.
 						ELSE 0
 					END
 
 		IF @@ROWCOUNT > 0
 		BEGIN
-			IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG') AND WinLostDate >= @Yesterday) -- bettransRnG
+			IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC') AND WinLostDate >= @Yesterday) -- bettransRnG
 			BEGIN
 				INSERT INTO @temp_bettransX
 				SELECT RefNo = c.transid
@@ -315,7 +316,7 @@ BEGIN
 					,OddsSpread = CASE WHEN c.Product IN ('OneRNG') THEN ISNULL(SUM(brng.BetStake), 0) ELSE 0 END
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.transid
-				WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG')
+				WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC')
 					AND c.WinLostDate >= @Yesterday
 					AND brng.statusID NOT IN (0, 1)
 				GROUP BY c.transid, c.Product
@@ -358,7 +359,7 @@ BEGIN
 
 			DELETE b
 			FROM @Tickets AS b
-			WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG')
+			WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG')
 				AND b.Winlostdate >= @Yesterday
 				AND NOT EXISTS (SELECT 1 FROM @temp_bettransX WHERE RefNo = b.TransId)
 
@@ -371,7 +372,7 @@ BEGIN
 				,CustId = b.custid
 				,Username = b.username
 				,SportType = CASE
-								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'SXG') THEN b.matchid	-- ONERnG, Card Club, Spadegaming
+								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'SBC', 'SXG') THEN b.matchid	-- ONERnG, Card Club, Spadegaming
 								WHEN c.Product = 'Keno' THEN 202
 								WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe
 								WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -423,61 +424,61 @@ BEGIN
 							WHEN c.Product IN ('VR') THEN b.modds
 							ELSE 0 END
 				,Stake = CASE
-							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.Stake IS NOT NULL THEN x.Stake
+							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.Stake IS NOT NULL THEN x.Stake
 							ELSE b.stake END
 				,Actual_Stake = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
 								ELSE b.actual_stake END
 				,Status = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.status IS NOT NULL THEN x.status
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.status IS NOT NULL THEN x.status
 								ELSE b.status
 							END
 				,TransDate = b.transdate
 				,WinLostDate = b.winlostdate
 				,WinLost = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.WinLost IS NOT NULL THEN x.WinLost
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.WinLost IS NOT NULL THEN x.WinLost
 								ELSE b.winlost - b.actual_stake END
 				,AWinLost = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.AWinLost IS NOT NULL THEN x.AWinLost
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.AWinLost IS NOT NULL THEN x.AWinLost
 								ELSE b.awinLost END
 				,MWinLost = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.MWinLost IS NOT NULL THEN x.MWinLost
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.MWinLost IS NOT NULL THEN x.MWinLost
 								ELSE b.mwinLost END
 				,SWinLost = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.SWinLost IS NOT NULL THEN x.SWinLost
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.SWinLost IS NOT NULL THEN x.SWinLost
 								ELSE b.SwinLost END
 				,PlayerComm = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.PlayerComm IS NOT NULL THEN x.PlayerComm
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.PlayerComm IS NOT NULL THEN x.PlayerComm
 								ELSE b.playercomm END
 				,Comm = CASE
-							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.Comm IS NOT NULL THEN x.Comm
+							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.Comm IS NOT NULL THEN x.Comm
 							ELSE b.comm - b.playercomm END
 				,AComm = CASE
-							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.AComm IS NOT NULL THEN x.AComm
+							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.AComm IS NOT NULL THEN x.AComm
 							ELSE b.acomm - b.comm END
 				,SComm = CASE
-							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.SComm IS NOT NULL THEN x.SComm
+							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.SComm IS NOT NULL THEN x.SComm
 							ELSE b.scomm - b.acomm END
 				,APositionTaking = CASE
-										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.APositiontaking IS NOT NULL THEN x.APositiontaking
+										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.APositiontaking IS NOT NULL THEN x.APositiontaking
 										ELSE b.APositiontaking END
 				,MPositionTaking = CASE
-										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.MPositiontaking IS NOT NULL THEN x.MPositiontaking
+										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.MPositiontaking IS NOT NULL THEN x.MPositiontaking
 										ELSE b.MPositiontaking END
 				,SPositionTaking = CASE
-										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.SPositiontaking IS NOT NULL THEN x.SPositiontaking
+										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.SPositiontaking IS NOT NULL THEN x.SPositiontaking
 										ELSE b.SPositiontaking END
 				,TPositionTaking = CASE
-										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.TPositiontaking IS NOT NULL THEN x.TPositiontaking
+										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.TPositiontaking IS NOT NULL THEN x.TPositiontaking
 										ELSE b.TPositiontaking END
 				,ADiscount = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.discount IS NOT NULL THEN x.discount
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.discount IS NOT NULL THEN x.discount
 								ELSE b.discount END
 				,MDiscount = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.adiscount IS NOT NULL THEN x.adiscount
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.adiscount IS NOT NULL THEN x.adiscount
 								ELSE b.adiscount END
 				,SDiscount = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND x.sdiscount IS NOT NULL THEN x.sdiscount
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.sdiscount IS NOT NULL THEN x.sdiscount
 								ELSE b.sdiscount END	
 				,LiveIndicator = CASE
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay') THEN b.liveindicator
@@ -579,7 +580,7 @@ BEGIN
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
-				LEFT JOIN @temp_bettransX AS x ON c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SXG') AND c.Winlostdate >= @Yesterday AND x.RefNo = c.transid
+				LEFT JOIN @temp_bettransX AS x ON c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG') AND c.Winlostdate >= @Yesterday AND x.RefNo = c.transid
 				LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
 				LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
@@ -649,6 +650,7 @@ BEGIN
 							WHEN s.ProductID = 36					THEN 'SG'		-- Spadegaming
 							WHEN s.ProductID = 38					THEN 'VRG'		-- Virtual Games
 							WHEN s.ProductID = 39					THEN 'SAG'		-- SA Gaming
+							WHEN s.ProductID = 42					THEN 'SBC'		-- Saba.club
 							WHEN s.ProductID = 45					THEN 'SXG'		-- Sexy Gaming
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
@@ -671,7 +673,7 @@ BEGIN
 				,CustId = b.custid
 				,Username = b.username
 				,SportType = CASE
-								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'SXG') THEN b.matchid
+								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'SBC', 'SXG') THEN b.matchid
 								WHEN c.Product = 'Keno' THEN 202
 								WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 								WHEN c.Product = 'AllBet' THEN 211 -- AllBet
