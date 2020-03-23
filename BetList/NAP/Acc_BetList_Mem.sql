@@ -37,6 +37,7 @@ AS
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20191128@Kos: Support Spadegaming [Redmine: #122140]
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
+		- 20200323@Kos: Support Indo 4D [Redmine: #130857]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 */
 
@@ -791,6 +792,7 @@ BEGIN
 						WHEN s.ProductID = 36 THEN 'SG'								-- Spadegaming
 						WHEN s.ProductID = 37 THEN 'NPHP'							-- NPH Promotion
 						WHEN s.ProductID = 38 THEN 'VRG'							-- Virtual Games
+						WHEN s.ProductID = 43 THEN 'I4D'							-- Indo 4D
 						WHEN s.ProductID = 45 THEN 'SXG'							-- Sexy Gaming
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.ProductID = 3 THEN 'NG'								-- Number Game
@@ -1126,7 +1128,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SXG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
+									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'I4D', 'SXG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1162,7 +1164,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG') THEN b.odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'I4D') THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1263,7 +1265,7 @@ BEGIN
 								END,
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'I4D') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1305,7 +1307,7 @@ BEGIN
 									WHEN b.Product = 'GD' THEN 255			-- Gold Deluxe
 									WHEN b.Product = 'CB' THEN 204			-- Colossus Bet
 									WHEN b.Product = 'Lottery' THEN 220		-- Lottery
-									WHEN b.Product = 'VRG' THEN b.ProductId	-- Virtual Games
+									WHEN b.Product IN ('VRG', 'I4D') THEN b.ProductId	-- Virtual Games, Indo 4D
 									ELSE 0
 								END,
 					BetId = 0,
@@ -1318,7 +1320,7 @@ BEGIN
 								END,
 					Odds = CASE
 								WHEN b.BetType BETWEEN 801 AND 806 THEN b.Odds
-								WHEN b.Product IN ('Keno', 'Lottery', 'GD', 'VRG') THEN b.Odds
+								WHEN b.Product IN ('Keno', 'Lottery', 'GD', 'VRG', 'I4D') THEN b.Odds
 								ELSE 0
 							END,
 					OddsId = 0,
@@ -1378,7 +1380,7 @@ BEGIN
 					ComStatus = 0,
 					TransDesc = CASE
 									WHEN b.BetType BETWEEN 801 AND 806 THEN b.transdesc
-									WHEN b.Product IN ('Keno', 'Lottery', 'CB', 'VRG') THEN b.transdesc
+									WHEN b.Product IN ('Keno', 'Lottery', 'CB', 'VRG', 'I4D') THEN b.transdesc
 									ELSE ''
 								END,
 					OddsSpread = 0,
@@ -1604,7 +1606,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SXG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
+									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'I4D', 'SXG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1640,7 +1642,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG') THEN b.odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'I4D') THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1726,7 +1728,7 @@ BEGIN
 								END,
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'I4D') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1803,7 +1805,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SXG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
+									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'I4D', 'SXG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1839,7 +1841,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG') THEN b.odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'I4D') THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1925,7 +1927,7 @@ BEGIN
 								END,
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'I4D') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
