@@ -28,6 +28,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowSG		BIT			= 0,	-- Spadegaming
 	@ShowVRG	BIT			= 0,	-- Virtual Games
 	@ShowTG		BIT			= 0,	-- Table Games
+	@ShowI4D	BIT			= 0,	-- Indo 4D
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -114,6 +115,7 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200221@Kos: Support Virtual Games [Redmine: #124911]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
+		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 */
 
 BEGIN
@@ -186,7 +188,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 40)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 40, 43)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -207,6 +209,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowSG = 0		THEN 36 END
 		OR ProductID	= CASE WHEN @ShowVRG = 0	THEN 38 END
 		OR ProductID	= CASE WHEN @ShowTG = 0		THEN 40 END
+		OR ProductID	= CASE WHEN @ShowI4D = 0	THEN 43 END
 	-- end filer bettypes by sporttype
 
 	CREATE TABLE #BetListSelRunningByDateMem (
@@ -819,8 +822,8 @@ BEGIN
 			AND b.statusID IN (0, 1)
 	END
 
-	-- Keno, Colossus Bets, Lottery, Virtual Games, Table Games (translog)
-	IF @ShowKN = 1 OR @ShowCB = 1 OR @ShowLT = 1 OR @ShowVRG = 1 OR @ShowTG = 1
+	-- Keno, Colossus Bets, Lottery, Virtual Games, Table Games, Indo 4D (translog)
+	IF @ShowKN = 1 OR @ShowCB = 1 OR @ShowLT = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowI4D = 1
 	BEGIN
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
@@ -828,7 +831,7 @@ BEGIN
 				WHEN sbt.ProductID = 8 THEN 202
 				WHEN sbt.ProductID = 15 THEN 204
 				WHEN sbt.ProductID = 28 THEN 220
-				WHEN sbt.ProductID IN (38, 40) THEN t.productid
+				WHEN sbt.ProductID IN (38, 40, 43) THEN t.productid
 				ELSE 0
 			END AS SportType,
 			@Username AS UserName,
@@ -845,7 +848,7 @@ BEGIN
 			0 AS hdp1,
 			0 AS hdp2,
 			CASE
-				WHEN sbt.ProductID IN (8, 28, 38, 40) THEN t.odds
+				WHEN sbt.ProductID IN (8, 28, 38, 40, 43) THEN t.odds
 				ELSE 0
 			END AS Odds,
 			0 AS MOdds,
@@ -871,7 +874,7 @@ BEGIN
 				ELSE '' 
 			END AS BetCheck,
 			CASE
-				WHEN sbt.ProductID IN (8, 28, 38, 40) THEN ISNULL(t.transdesc, '')
+				WHEN sbt.ProductID IN (8, 28, 38, 40, 43) THEN ISNULL(t.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			-1 AS BetdaqId,
@@ -888,7 +891,7 @@ BEGIN
 			t.transdate BETWEEN @FromDate AND @ToDate
 			AND t.custid = @CustID
 			AND t.statusID IN (0, 1)
-			AND sbt.ProductID IN (8, 15, 28, 38, 40)
+			AND sbt.ProductID IN (8, 15, 28, 38, 40, 43)
 	END
 
 	-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming

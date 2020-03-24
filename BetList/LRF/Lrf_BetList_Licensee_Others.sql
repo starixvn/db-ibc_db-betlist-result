@@ -52,6 +52,7 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20190628@Kos: Support PH AIO 4a [Redmine: #115448]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
+		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 */
 
 BEGIN
@@ -324,6 +325,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 40 THEN 'TG'
+							WHEN s.ProductID = 43 THEN 'I4D'
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 25 THEN 'CO'			-- Cash Out
@@ -419,6 +421,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 40 THEN 'TG'
+							WHEN s.ProductID = 43 THEN 'I4D'
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 25 THEN 'CO'			-- Cash Out
@@ -439,7 +442,7 @@ BEGIN
 							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 						AND ((s.EventType = 1 AND s.ProductID IN (3, 5, 25, 27) AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND s.ProductID = 5 AND vr.sporttype = @SportType)
-							OR (s.ProductID IN (8, 28, 40) AND b.matchid = @SportType))
+							OR (s.ProductID IN (8, 28, 40, 43) AND b.matchid = @SportType))
 				END
 			END
 			ELSE		-- Customer level
@@ -523,6 +526,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 40 THEN 'TG'
+							WHEN s.ProductID = 43 THEN 'I4D'
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 25 THEN 'CO'			-- Cash Out
@@ -618,6 +622,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 40 THEN 'TG'
+							WHEN s.ProductID = 43 THEN 'I4D'
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 25 THEN 'CO'			-- Cash Out
@@ -638,7 +643,7 @@ BEGIN
 							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 						AND ((s.EventType = 1 AND s.ProductID IN (3, 5, 25, 27) AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND s.ProductID = 5 AND vr.sporttype = @SportType)
-							OR (s.ProductID IN (8, 28, 40) AND b.matchid = @SportType))
+							OR (s.ProductID IN (8, 28, 40, 43) AND b.matchid = @SportType))
 				END
 			END
 
@@ -769,6 +774,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 40 THEN 'TG'
+							WHEN s.ProductID = 43 THEN 'I4D'
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 25 THEN 'CO'			-- Cash Out
@@ -864,6 +870,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 40 THEN 'TG'
+							WHEN s.ProductID = 43 THEN 'I4D'
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 25 THEN 'CO'			-- Cash Out
@@ -884,7 +891,7 @@ BEGIN
 							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 						AND ((s.EventType = 1 AND s.ProductID IN (3, 5, 25, 27) AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND s.ProductID = 5 AND vr.sporttype = @SportType)
-							OR (s.ProductID IN (8, 28, 40) AND b.matchid = @SportType))
+							OR (s.ProductID IN (8, 28, 40, 43) AND b.matchid = @SportType))
 				END
 			END
 			ELSE		-- Customer level
@@ -968,6 +975,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 40 THEN 'TG'
+							WHEN s.ProductID = 43 THEN 'I4D'
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 25 THEN 'CO'			-- Cash Out
@@ -1064,6 +1072,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 40 THEN 'TG'
+							WHEN s.ProductID = 43 THEN 'I4D'
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 25 THEN 'CO'			-- Cash Out
@@ -1085,7 +1094,7 @@ BEGIN
 							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 						AND ((s.EventType = 1 AND s.ProductID IN (3, 5, 25, 27) AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND s.ProductID = 5 AND vr.sporttype = @SportType)
-							OR (s.ProductID IN (8, 28, 40) AND b.matchid = @SportType))
+							OR (s.ProductID IN (8, 28, 40, 43) AND b.matchid = @SportType))
 				END
 			END
 
@@ -1247,7 +1256,7 @@ BEGIN
 				UPDATE b
 				SET
 					SportType = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG') THEN b.MatchId
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D') THEN b.MatchId
 									WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									ELSE 0
@@ -1269,7 +1278,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG') THEN b.Odds
+								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1343,7 +1352,7 @@ BEGIN
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('CO', 'VS2', 'Keno', 'Lottery', 'TG') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('CO', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1371,7 +1380,7 @@ BEGIN
 				UPDATE b
 				SET
 					SportType = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG') THEN b.MatchId
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D') THEN b.MatchId
 									WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									ELSE 0
@@ -1393,7 +1402,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG') THEN b.Odds
+								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1467,7 +1476,7 @@ BEGIN
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('CO', 'VS2', 'Keno', 'Lottery', 'TG') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('CO', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1596,7 +1605,7 @@ BEGIN
 				UPDATE b
 				SET
 					SportType = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG') THEN b.MatchId
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D') THEN b.MatchId
 									WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									ELSE 0
@@ -1618,7 +1627,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG') THEN b.Odds
+								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D') THEN b.Odds
 								ELSE 0 END,
 					MOdds = CASE 
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
@@ -1691,7 +1700,7 @@ BEGIN
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('CO', 'VS2', 'Keno', 'Lottery', 'TG') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('CO', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1719,7 +1728,7 @@ BEGIN
 				UPDATE b
 				SET
 					SportType = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG') THEN b.MatchId
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D') THEN b.MatchId
 									WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									ELSE 0
@@ -1741,7 +1750,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG') THEN b.Odds
+								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D') THEN b.Odds
 								ELSE 0 END,
 					MOdds = CASE 
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
@@ -1814,7 +1823,7 @@ BEGIN
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('CO', 'VS2', 'Keno', 'Lottery', 'TG') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('CO', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE

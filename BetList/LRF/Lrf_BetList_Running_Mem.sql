@@ -21,6 +21,7 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200208@Kos: Support Virtual Games [Redmine: #124911]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
+		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 */
 
 BEGIN
@@ -344,6 +345,7 @@ BEGIN
 						WHEN s.ProductID = 36 THEN 'SG'								-- Spadegaming
 						WHEN s.ProductID = 38 THEN 'VRG'							-- Virtual Games
 						WHEN s.ProductID = 40 THEN 'TG'								-- Table Games
+						WHEN s.ProductID = 43 THEN 'I4D'							-- Indo 4D
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -587,7 +589,7 @@ BEGIN
 							ELSE b.TransId
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG') THEN b.ProductId
+								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('Outright') THEN l.sporttype
 								WHEN b.Product IN ('VR') THEN vr.SportType
@@ -611,7 +613,7 @@ BEGIN
 							ELSE 0
 						END,
 				Odds = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'VRG', 'TG') THEN b.Odds
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D') THEN b.Odds
 							ELSE 0
 						END,
 				MOdds = CASE 
@@ -720,7 +722,7 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 'CC', 'SG', 'VRG', 'TG') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 'CC', 'SG', 'VRG', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE

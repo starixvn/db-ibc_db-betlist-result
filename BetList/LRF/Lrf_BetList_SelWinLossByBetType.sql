@@ -50,6 +50,7 @@ AS
 		- 20190715@Kos: Hotfix - Error in sorting [#Redmine: 116889]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
+		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 */
 
 BEGIN
@@ -87,7 +88,7 @@ BEGIN
 	SELECT DISTINCT ProductId, Bettype, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @IsTest)
 	WHERE
-		ProductID IN (1, 3, 5, 8, 27, 28, 40)
+		ProductID IN (1, 3, 5, 8, 27, 28, 40, 43)
 		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 		AND BetType IN (
 			SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
@@ -953,8 +954,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
-		-- Keno, Lottery, Table Games
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (8, 28, 40) AND Bettype = @BetType)
+		-- Keno, Lottery, Table Games, Indo 4D
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (8, 28, 40, 43) AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -967,7 +968,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 28 THEN 220
-					WHEN sbt.ProductId = 40 THEN b.matchid
+					WHEN sbt.ProductId IN (40, 43) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.bettype,
@@ -1353,8 +1354,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 
-		-- Keno, Lottery, Table Games
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (8, 28, 40) AND Bettype = @BetType)
+		-- Keno, Lottery, Table Games, Indo 4D
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (8, 28, 40, 43) AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1367,7 +1368,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 28 THEN 220
-					WHEN sbt.ProductId = 40 THEN b.matchid
+					WHEN sbt.ProductId IN (40, 43) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.bettype,

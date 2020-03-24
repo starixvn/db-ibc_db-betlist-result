@@ -93,6 +93,7 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200208@Kos: Support Virtual Games [Redmine: #124911]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
+		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 
 	Param's Explanation:
 		+ @TransType:
@@ -231,7 +232,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 40)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 40, 43)
 		AND BetType NOT IN (904, 914)
 
 	IF @TransType = 4	-- support only for Colossus Bets
@@ -596,7 +597,7 @@ BEGIN
 			AND b.bettype = 10
 
 		-- RNG Casino, Keno, AG Casino, AllBet, Macau Games, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming
-		-- NPH Promotion, Virtual Games, Table Games
+		-- NPH Promotion, Virtual Games, Table Games, Indo 4D
 		INSERT INTO @Data
 		SELECT
 			CASE
@@ -609,7 +610,7 @@ BEGIN
 				WHEN sbt.ProductID = 24 THEN 219
 				WHEN sbt.ProductID = 28 THEN 220
 				WHEN sbt.ProductID = 32 THEN 248
-				WHEN sbt.ProductID IN (34, 36, 37, 38, 40) THEN b.matchid
+				WHEN sbt.ProductID IN (34, 36, 37, 38, 40, 43) THEN b.matchid
 				ELSE 0
 			END AS SportType,
 			0 AS leagueid,
@@ -650,7 +651,7 @@ BEGIN
 			END AS Oddstype,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-				WHEN sbt.ProductID IN (8, 28, 38, 40) THEN b.Odds
+				WHEN sbt.ProductID IN (8, 28, 38, 40, 43) THEN b.Odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -693,7 +694,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-				WHEN sbt.ProductID IN (8, 22, 24, 28, 32, 34, 36, 38, 40) THEN b.transdesc
+				WHEN sbt.ProductID IN (8, 22, 24, 28, 32, 34, 36, 38, 40, 43) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			-1 AS BetdaqId,
@@ -711,7 +712,7 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-			AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38, 40)
+			AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38, 40, 43)
 			AND sbt.EventType = 0
 
 		-- Colossus Bets
