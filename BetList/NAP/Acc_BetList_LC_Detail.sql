@@ -23,6 +23,7 @@ AS
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20181109@Kos: Move from DBAGE to DBACC [#Redmine: 104521]
 		- 20180626@Kos: Change code to prevent wrong index using [#Redmine: 115624]
+		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 
 	Parameters:
 		- @TransType
@@ -45,7 +46,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (11, 21)	-- Support AG Casino, AllBet only
+	WHERE ProductID IN (11, 21, 45)	-- Support AG Casino, AllBet, Sexy Gaming only
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
 
@@ -180,11 +181,11 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
@@ -225,11 +226,11 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
@@ -269,11 +270,11 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
