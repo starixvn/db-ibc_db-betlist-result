@@ -131,6 +131,7 @@ AS
 		- 20191105@Kos: Support Non-peak Hours Promotion [#Redmine: 121121]
 		- 20191126@Kos: Support Spadegaming [Redmine: #122140]
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
+		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 
 	Param's Explanation:
 		+ @TransType:
@@ -618,7 +619,8 @@ BEGIN
 				AND s.EventType = 3
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
-			-- RNG Casino, Keno, Gold Deluxe, AG Casino, AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino, Card Club, NPH Promotion, Spadegaming, Virtual Games
+			-- RNG Casino, Keno, Gold Deluxe, AG Casino, AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino
+			-- Card Club, NPH Promotion, Spadegaming, Virtual Games, Sexy Gaming
 			INSERT INTO @Data
 			SELECT
 				CASE
@@ -636,7 +638,7 @@ BEGIN
 					WHEN s.ProductID = 24 THEN 219
 					WHEN s.ProductID = 28 THEN 220
 					WHEN s.ProductID = 32 THEN 248
-					WHEN s.ProductID IN (34, 36, 37, 38) THEN b.matchid
+					WHEN s.ProductID IN (34, 36, 37, 38, 45) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -741,7 +743,7 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND s.ProductID IN (6, 8, 11, 12, 21, 22, 23, 24, 28, 32, 34, 36, 37, 38)
+				AND s.ProductID IN (6, 8, 11, 12, 21, 22, 23, 24, 28, 32, 34, 36, 37, 38, 45)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Colossus Bet
@@ -2159,7 +2161,7 @@ BEGIN
 				OPTION (RECOMPILE)
 			END
 
-			-- AG Casino, AllBet
+			-- AG Casino, AllBet, Sexy Gaming
 			IF @TransType = 1	-- before yesterday settled ticket
 				AND @FromDate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 			BEGIN
@@ -2168,6 +2170,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 21 THEN 211
+						WHEN s.ProductID = 45 THEN b.matchid
 						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
@@ -2243,7 +2246,7 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND s.ProductID IN (11, 21)
+					AND s.ProductID IN (11, 21, 45)
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 			END
 
@@ -2256,6 +2259,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 21 THEN 211
+						WHEN s.ProductID = 45 THEN b.matchid
 						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
@@ -2336,7 +2340,7 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND s.ProductID IN (11, 21)
+					AND s.ProductID IN (11, 21, 45)
 					AND blc.statusID NOT IN (0, 1)
 				GROUP BY
 					b.transid,
@@ -2351,7 +2355,8 @@ BEGIN
 					b.Username,
 					b.betfrom,
 					b.comstatus,
-					s.ProductID
+					s.ProductID,
+					b.matchid
 				OPTION (RECOMPILE)
 			END
 
@@ -2363,6 +2368,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 21 THEN 211
+						WHEN s.ProductID = 45 THEN b.matchid
 						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
@@ -2439,7 +2445,7 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND s.ProductID IN (11, 21)
+					AND s.ProductID IN (11, 21, 45)
 					AND blc.statusID IN (0, 1)
 				GROUP BY
 					b.transid,
@@ -2454,7 +2460,8 @@ BEGIN
 					b.Username,
 					b.betfrom,
 					b.comstatus,
-					s.ProductID
+					s.ProductID,
+					b.matchid
 				OPTION (RECOMPILE)
 			END
 

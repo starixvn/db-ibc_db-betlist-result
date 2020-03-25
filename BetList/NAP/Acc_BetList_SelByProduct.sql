@@ -46,6 +46,7 @@ AS
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20191029@Kos: Support Spadegaming [Redmine: #122140]
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
+		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 */
 
 BEGIN
@@ -371,8 +372,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet
-			IF @ProductId = 21
+			-- AllBet, Sexy Gaming
+			IF @ProductId IN (21, 45)
 			BEGIN
 				IF @GameId <> '' OR @BetId <> ''
 				BEGIN
@@ -633,8 +634,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet
-			IF @ProductId = 21
+			-- AllBet, Sexy Gaming
+			IF @ProductId IN (21, 45)
 			BEGIN
 				IF @GameId <> '' OR @BetId <> ''
 				BEGIN
