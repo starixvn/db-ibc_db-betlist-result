@@ -45,6 +45,7 @@ AS
 		- 20190730@Kos: Support new status Pending [#Redmine: 117729]
 		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20200402@Kos: Support Table Games [Redmine: #131447]
 */
 
 BEGIN
@@ -538,9 +539,10 @@ BEGIN
 				BATransId = ba.TransID,
 				Product = CASE
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
-							WHEN s.EventType = 0 AND s.ProductID = 8 THEN 'Keno'
+							WHEN s.ProductID = 8 THEN 'Keno'
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
-							WHEN s.EventType = 0 AND s.ProductID = 28 THEN 'Lottery'
+							WHEN s.ProductID = 28 THEN 'Lottery'
+							WHEN s.ProductID = 40 THEN 'TG'								-- Table Games
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -719,7 +721,7 @@ BEGIN
 							ELSE b.TransId
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('Keno', 'Lottery') THEN b.ProductId
+								WHEN b.Product IN ('Keno', 'Lottery', 'TG') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('Outright') THEN l.sporttype
 								WHEN b.Product IN ('VR') THEN vr.SportType
@@ -742,7 +744,7 @@ BEGIN
 							ELSE 0
 						END,
 				Odds = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery') THEN b.Odds
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG') THEN b.Odds
 							ELSE 0
 						END,
 				MOdds = CASE 
@@ -840,7 +842,7 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'TG') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
