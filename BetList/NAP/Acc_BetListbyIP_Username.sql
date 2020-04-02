@@ -48,6 +48,7 @@ AS
 		- 20190823@Kos: Support bk range [#Redmine: 119018]
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 		- 20200323@Kos: Support Indo 4D [Redmine: #130857]
+		- 20200402@Kos: Support Table Games [Redmine: #129433]
 */
 
  BEGIN
@@ -143,7 +144,7 @@ AS
 		WHERE b.winlostdate = @FromDate
 			AND b.ip = @Ip
 			AND b.statusID IN (0, 1)
-			AND (s.productID IN (8, 12, 15, 28, 38, 43)
+			AND (s.productID IN (8, 12, 15, 28, 38, 40, 43)
 				OR b.gameID BETWEEN 801 AND 899)
 		GROUP BY b.custid
 	END
