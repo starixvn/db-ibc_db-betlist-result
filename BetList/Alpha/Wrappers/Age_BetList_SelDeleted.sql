@@ -67,6 +67,7 @@ AS
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
+		- 20200402@Kos: Support Table Games [Redmine: #129433]
 */
 
 BEGIN
@@ -611,7 +612,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38)
+			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40)	-- Only support these products
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -786,6 +787,7 @@ BEGIN
 				- Mix Parlay (VS2)		: ProductId = 27
 				- Lottery				: ProductId = 28
 				- Virtual Games			: ProductId = 38
+				- Table Games			: ProductId = 40
 				*/
 				UPDATE b
 				SET
@@ -798,7 +800,7 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId = 38 THEN b.MatchId
+									WHEN b.ProductId IN (38, 40) THEN b.MatchId
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -818,7 +820,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38) THEN b.Odds
+								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -858,7 +860,7 @@ BEGIN
 								END,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (8, 23, 28, 38) THEN b.transdesc
+									WHEN b.ProductId IN (8, 23, 28, 38, 40) THEN b.transdesc
 									ELSE ''
 								END,
 					OddsSpread = 0,
@@ -983,6 +985,7 @@ BEGIN
 				- Mix Parlay			: ProductId = 27
 				- Lottery				: ProductId = 28
 				- Virtual Games			: ProductId = 38
+				- Table Games			: ProductId = 40
 				*/
 				UPDATE b
 				SET
@@ -995,7 +998,7 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId = 38 THEN b.MatchId
+									WHEN b.ProductId IN (38, 40) THEN b.MatchId
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -1015,7 +1018,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38) THEN b.Odds
+								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1055,7 +1058,7 @@ BEGIN
 								END,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (8, 23, 28, 38) THEN b.transdesc
+									WHEN b.ProductId IN (8, 23, 28, 38, 40) THEN b.transdesc
 									ELSE ''
 								END,
 					OddsSpread = 0

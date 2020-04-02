@@ -119,6 +119,7 @@ AS
 		- 20200302@Kos: Support SA Gaming [Redmine: #128048]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 		- 20200331@Kos: Support Saba.club [Redmine: #130769]
+		- 20200402@Kos: Support Table Games [Redmine: #129433]
 */
 
 BEGIN
@@ -778,7 +779,7 @@ BEGIN
 								WHEN b.ProductID = 8 THEN 202
 								WHEN b.ProductID = 12 THEN 255
 								WHEN b.ProductID = 28 THEN 220
-								WHEN b.ProductID = 38 THEN b.SportType
+								WHEN b.ProductID IN (38, 40) THEN b.SportType
 								ELSE 0
 							END
 				,LeagueID = 0
@@ -797,12 +798,12 @@ BEGIN
 								WHEN b.ProductId = 8 THEN ISNULL(b.custom2, '')
 								ELSE '' 
 							END
-				,TransDesc = CASE WHEN b.ProductID IN (8, 28, 38) THEN b.transdesc ELSE '' END
+				,TransDesc = CASE WHEN b.ProductID IN (8, 28, 38, 40) THEN b.transdesc ELSE '' END
 				,OddsSpread = 0
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 2 -- translog
-				AND b.ProductID IN (8, 12, 28, 38)
+				AND b.ProductID IN (8, 12, 28, 38, 40)
 		END -- got translog's data
 
 		-- Allbet, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, SA Gaming, Sexy Gaming, Saba.club
@@ -974,7 +975,6 @@ BEGIN
 	ORDER BY RefNo ASC
 END
 GO
-
 
 
 
