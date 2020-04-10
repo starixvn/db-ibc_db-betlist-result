@@ -50,6 +50,7 @@ AS
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 		- 20200331@Kos: Support Saba.club [Redmine: #130769]
 		- 20200421@Kos: Support IBCBet Live Casino [Redmine: #130688]
+		- 20200514@Kos: Support BBIN [Redmine: #131362]
 */
 
 BEGIN
@@ -576,6 +577,68 @@ BEGIN
 						AND b.TranId3rd = @BetId
 				END
 			END
+
+			-- BBIN
+			IF @ProductId IN (47)
+			BEGIN
+				IF @GameId <> '' OR @BetId <> ''
+				BEGIN
+					INSERT INTO @Data
+					SELECT
+						bg.bettype,
+						bg.transid,
+						0 AS BetId,
+						bg.refno,
+						'' AS MatchCode,
+						bg.sdiscount,
+						bg.adiscount,
+						bg.discount,
+						0 AS HomeId,
+						0 AS AwayId,
+						0 AS Hdp1,
+						0 AS Hdp2,
+						0 AS Odds,
+						0 AS OddsType,
+						bg.status,
+						'' AS ComStatus,
+						bg.stake,
+						bg.actual_stake,
+						bg.transdate,
+						ISNULL(bg.betteam, '') AS BetTeam,
+						bg.spositiontaking,
+						bg.mpositiontaking,
+						bg.apositiontaking,
+						0 AS LiveIndicator,
+						bg.custid,
+						0 AS LiveHomeScore,
+						0 AS LiveAwayScore,
+						0 AS LeagueId,
+						bg.matchid AS SportType,
+						b.ip,
+						bg.betfrom,
+						0 AS MatchId,
+						bg.winlost - bg.actual_stake AS WinLost,
+						bg.playercomm AS Commission,
+						bg.scomm - bg.acomm AS SComm,
+						bg.acomm - bg.comm AS AComm,
+						bg.comm - bg.playercomm AS Comm,
+						bg.awinlost,
+						bg.mwinlost,
+						bg.swinlost,
+						bg.winlostdate,
+						ISNULL(bg.BetID3rd, '') AS BetCheck,
+						bg.transdesc,
+						0 AS OddsSpread,
+						'' AS ExtraInfo
+					FROM dbo.bettransg AS bg WITH (NOLOCK)
+						INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
+						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = bg.refno AND b.custid = bg.custid
+					WHERE b.custid = @CustId
+						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
+						AND (@GameId = '' OR bg.betteam = @GameId)
+						AND (@BetId = '' OR bg.BetID3rd = @BetId)
+				END
+			END
 		END
 
 		-- bettrans14 range
@@ -916,6 +979,68 @@ BEGIN
 						AND b.TranId3rd = @BetId
 				END
 			END
+
+			-- BBIN
+			IF @ProductId IN (47)
+			BEGIN
+				IF @GameId <> '' OR @BetId <> ''
+				BEGIN
+					INSERT INTO @Data
+					SELECT
+						bg.bettype,
+						bg.transid,
+						0 AS BetId,
+						bg.refno,
+						'' AS MatchCode,
+						bg.sdiscount,
+						bg.adiscount,
+						bg.discount,
+						0 AS HomeId,
+						0 AS AwayId,
+						0 AS Hdp1,
+						0 AS Hdp2,
+						0 AS Odds,
+						0 AS OddsType,
+						bg.status,
+						'' AS ComStatus,
+						bg.stake,
+						bg.actual_stake,
+						bg.transdate,
+						ISNULL(bg.betteam, '') AS BetTeam,
+						bg.spositiontaking,
+						bg.mpositiontaking,
+						bg.apositiontaking,
+						0 AS LiveIndicator,
+						bg.custid,
+						0 AS LiveHomeScore,
+						0 AS LiveAwayScore,
+						0 AS LeagueId,
+						bg.matchid AS SportType,
+						b.ip,
+						bg.betfrom,
+						0 AS MatchId,
+						bg.winlost - bg.actual_stake AS WinLost,
+						bg.playercomm AS Commission,
+						bg.scomm - bg.acomm AS SComm,
+						bg.acomm - bg.comm AS AComm,
+						bg.comm - bg.playercomm AS Comm,
+						bg.awinlost,
+						bg.mwinlost,
+						bg.swinlost,
+						bg.winlostdate,
+						ISNULL(bg.BetID3rd, '') AS BetCheck,
+						bg.transdesc,
+						0 AS OddsSpread,
+						'' AS ExtraInfo
+					FROM dbo.bettransg14 AS bg WITH (NOLOCK)
+						INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
+						INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = bg.refno AND b.custid = bg.custid
+					WHERE b.custid = @CustId
+						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
+						AND (@GameId = '' OR bg.betteam = @GameId)
+						AND (@BetId = '' OR bg.BetID3rd = @BetId)
+				END
+			END
 		END
 	END
 
@@ -967,10 +1092,12 @@ BEGIN
 	END
 
 	SELECT DISTINCT b.*,
-		ci.username
+		ci.username,
+		ex.currency
 	FROM @Data AS b
 		LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON b.CustId = ci.custid
-	ORDER BY b.TransId
+		LEFT JOIN dbo.Exchange AS ex WITH (NOLOCK) ON ci.currency = ex.exchangeid
+	ORDER BY b.TransId ASC
 
 	SELECT DISTINCT * FROM @DetailData
 END
