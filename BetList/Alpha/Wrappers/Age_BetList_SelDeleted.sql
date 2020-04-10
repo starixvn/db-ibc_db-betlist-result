@@ -68,6 +68,7 @@ AS
 		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200410@Kos: Support BBIN [Redmine: #131362]
 */
 
 BEGIN
@@ -612,7 +613,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40)	-- Only support these products
+			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40, 47)	-- Only support these products
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -788,6 +789,7 @@ BEGIN
 				- Lottery				: ProductId = 28
 				- Virtual Games			: ProductId = 38
 				- Table Games			: ProductId = 40
+				- BBIN					: ProductId = 47
 				*/
 				UPDATE b
 				SET
@@ -800,7 +802,7 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId IN (38, 40) THEN b.MatchId
+									WHEN b.ProductId IN (38, 40, 47) THEN b.MatchId
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -986,6 +988,7 @@ BEGIN
 				- Lottery				: ProductId = 28
 				- Virtual Games			: ProductId = 38
 				- Table Games			: ProductId = 40
+				- BBIN					: ProductId = 47
 				*/
 				UPDATE b
 				SET
@@ -998,7 +1001,7 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId IN (38, 40) THEN b.MatchId
+									WHEN b.ProductId IN (38, 40, 47) THEN b.MatchId
 									ELSE 0
 								END,
 					BetTeam = CASE

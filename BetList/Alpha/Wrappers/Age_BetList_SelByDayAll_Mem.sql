@@ -97,6 +97,7 @@ AS
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200507@Kos: Support IBCBet Live Casino [Redmine: #130688]
+		- 20200514@Kos: Support BBIN [Redmine: #131362]
 
 	Param's Explanation:
 		+ @TransType:
@@ -288,6 +289,7 @@ BEGIN
 					WHEN s.ProductID = 42					THEN 'SBC'			-- Saba.club
 					WHEN s.ProductID = 45					THEN 'SXG'			-- Sexy Gaming
 					WHEN s.ProductID = 46					THEN 'IBCLC'		-- IBCBet Live Casino
+					WHEN s.ProductID = 47					THEN 'BBIN'			-- BBIN
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports:: sportsbook
@@ -493,7 +495,7 @@ BEGIN
 					,CustId = b.custid
 					,Username = b.username
 					,SportType = CASE
-									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC') THEN b.matchid
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN') THEN b.matchid
 									WHEN c.Product = 'Keno' THEN 202
 									WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe
 									WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -1057,6 +1059,7 @@ BEGIN
 					WHEN s.ProductID = 42					THEN 'SBC'			-- Saba.club
 					WHEN s.ProductID = 45					THEN 'SXG'			-- Sexy Gaming
 					WHEN s.ProductID = 46					THEN 'IBCLC'		-- IBCBet Live Casino
+					WHEN s.ProductID = 47					THEN 'BBIN'			-- BBIN
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports:: sportsbook
@@ -1085,7 +1088,7 @@ BEGIN
 					,CustId = b.custid
 					,Username = b.username
 					,SportType = CASE
-									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC') THEN b.matchid
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN') THEN b.matchid
 									WHEN c.Product = 'Keno' THEN 202
 									WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 									WHEN c.Product = 'AllBet' THEN 211 -- AllBet

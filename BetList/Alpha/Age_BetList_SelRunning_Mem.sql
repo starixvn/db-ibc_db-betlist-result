@@ -122,6 +122,7 @@ AS
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200507@Kos: Support IBCBet Live Casino [Redmine: #130688]
+		- 20200514@Kos: Support BBIN [Redmine: #131362]
 */
 
 BEGIN
@@ -719,7 +720,7 @@ BEGIN
 			WHERE b.TableID = 1 -- bettrans
 				AND b.matchid = 2799
 
-			-- NG2 bettrans
+			-- NG2, BBIN bettrans
 			UPDATE b
 			SET Sporttype = CASE
 								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2501 AND 2539 THEN 213
@@ -727,6 +728,7 @@ BEGIN
 								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2581 AND 2619 THEN 215
 								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2621 AND 2659 THEN 216
 								WHEN b.ProductId = 23 AND b.BetType BETWEEN 2681 AND 2699 THEN 218
+								WHEN b.ProductID = 47 THEN b.MatchId
 								ELSE 0
 							END
 				,LeagueID = 0
@@ -748,9 +750,13 @@ BEGIN
 				,ComStatus = ''
 				,BetCheck = ''
 				,ExtraInfo = ''
+				,TransDesc = CASE
+								WHEN b.ProductID = 47 THEN ''
+								ELSE b.TransDesc
+							END
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 1 -- bettrans
-				AND b.ProductID = 23
+				AND b.ProductID IN (23, 47)
 		END -- got bettrans' data
 
 		IF (@hasData & 2 = 2) -- got translog's data
