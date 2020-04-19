@@ -26,6 +26,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinloss_Mem]
 	@ShowSG				BIT			= 0,	-- Spadegaming
 	@ShowVRG			BIT			= 0,	-- Virtual Games
 	@ShowTG				BIT			= 0,	-- Table Games
+	@ShowSBC			BIT			= 0,	-- Saba.club
 	@ShowI4D			BIT			= 0,	-- Indo 4D
 	@ShowBT				BIT			= 0,	-- Bet Trade
 	@ShowCO				BIT			= 0,	-- Cash Out
@@ -118,6 +119,7 @@ AS
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
+		- 20200507@Kos: Support Saba.club [Redmine: #132702]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -260,7 +262,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 38, 40, 43)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 38, 40, 42, 43)
 
 	DELETE FROM @SportBettype
 	WHERE Bettype IN (904, 914, 4299, 4300)
@@ -290,6 +292,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowSG = 0		THEN 36 END
 		OR ProductID	= CASE WHEN @ShowVRG = 0	THEN 38 END
 		OR ProductID	= CASE WHEN @ShowTG = 0		THEN 40 END
+		OR ProductID	= CASE WHEN @ShowSBC = 0	THEN 42 END
 		OR ProductID	= CASE WHEN @ShowI4D = 0	THEN 43 END
 
 	IF @tdate > @MoveBetsDay
@@ -1125,14 +1128,14 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club, Spadegaming
-		IF @ShowCS = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1 OR @ShowCC = 1 OR @ShowSG = 1
+		-- RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club
+		IF @ShowCS = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1 OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowSBC = 1
 		BEGIN
 			-- Up to yesterday settled ticket
 			INSERT INTO @BetListByDateMem
 			SELECT
 				CASE
-					WHEN sbt.ProductID IN (6, 34, 36) THEN b.matchid
+					WHEN sbt.ProductID IN (6, 34, 36, 42) THEN b.matchid
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 32 THEN 248
@@ -1191,7 +1194,7 @@ BEGIN
 				b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.winlostdate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
 				AND b.custid = @CustId
-				AND (sbt.ProductID IN (22, 24, 32, 34, 36)
+				AND (sbt.ProductID IN (22, 24, 32, 34, 36, 42)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 				AND b.statusID IN (111, 112, 113)
 
@@ -1202,7 +1205,7 @@ BEGIN
 				INSERT INTO @BetListByDateMem
 				SELECT
 					CASE
-						WHEN sbt.ProductID IN (6, 34, 36) THEN b.matchid
+						WHEN sbt.ProductID IN (6, 34, 36, 42) THEN b.matchid
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
 						WHEN sbt.ProductID = 32 THEN 248
@@ -1266,7 +1269,7 @@ BEGIN
 					AND b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) 
 						AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
 					AND b.custid = @CustId 
-					AND (sbt.ProductID IN (22, 24, 32, 34, 36)
+					AND (sbt.ProductID IN (22, 24, 32, 34, 36, 42)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND brng.statusID <> 0
 				GROUP BY
@@ -2257,9 +2260,9 @@ BEGIN
 		END
 
 		-- RNG Casino, Keno, AG Casino, AllBet, Voidbridge, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming
-		-- Virtual Games, Table Games, Indo 4D
+		-- Virtual Games, Table Games, Indo 4D, Saba.club
 		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1
-			OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowI4D = 1
+			OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowSBC = 1 OR @ShowI4D = 1
 		BEGIN
 			INSERT INTO @BetListByDateMem
 			SELECT
@@ -2273,7 +2276,7 @@ BEGIN
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
 					WHEN sbt.ProductID = 32 THEN 248
-					WHEN sbt.ProductID IN (34, 36, 38, 40, 43) THEN b.matchid
+					WHEN sbt.ProductID IN (34, 36, 38, 40, 42, 43) THEN b.matchid
 					ELSE 0
 				END AS Sporttype,
 				b.transid,
@@ -2362,7 +2365,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @tdate
 				AND b.custid = @CustId
-				AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 38, 40, 43)
+				AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 38, 40, 42, 43)
 				AND b.statusID IN (111, 112, 113)
 		END
 
@@ -3189,9 +3192,9 @@ BEGIN
 		END
 
 		-- RNG Casino, Keno, AG Casino, AllBet, Voidbridge, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming
-		-- Virtual Games, Table Games, Indo 4D
+		-- Virtual Games, Table Games, Indo 4D, Saba.club
 		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1
-			OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowI4D = 1
+			OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowSBC = 1 OR @ShowI4D = 1
 		BEGIN
 			INSERT INTO @BetListByDateMem
 			SELECT
@@ -3205,7 +3208,7 @@ BEGIN
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
 					WHEN sbt.ProductID = 32 THEN 248
-					WHEN sbt.ProductID IN (34, 36, 38, 40, 43) THEN b.matchid
+					WHEN sbt.ProductID IN (34, 36, 38, 40, 42, 43) THEN b.matchid
 					ELSE 0
 				END AS Sporttype,
 				b.transid,
@@ -3294,7 +3297,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
-				AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 38, 40, 43)
+				AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 38, 40, 42, 43)
 				AND b.ruben = 1
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
 		END

@@ -30,6 +30,7 @@ AS
 		- 20190524@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 		- 20190704@Kos: Support Card Club [Redmine: #115449]
 		- 20191209@Kos: Support Spadegaming [Redmine: #124103]
+		- 20200419@Kos: Support Saba.club [Redmine: #132702]
 
 	Parameters:
 		- @TransType
@@ -74,7 +75,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (StatusId TINYINT)
