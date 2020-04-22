@@ -34,6 +34,7 @@ AS
 		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112286]
 		- 20190521@Kos: Support CN88 [Redmine: #112225]
 					- Add new param @IsCN88 BIT
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -52,29 +53,30 @@ BEGIN
 	WHERE ProductID IN (1, 27)
 
 	DECLARE @BetListMP TABLE (
-		TransId			BIGINT,
-		BetType			INT,
-		Stake			MONEY,
-		Currency		NVARCHAR(50),
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		BetTeam			NVARCHAR(10),
-		Status			NVARCHAR(10),
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		LiveIndicator	BIT,
-		LeagueId		INT,
-		SportType		SMALLINT,
-		IsNeutral		BIT,
-		MatchId			INT,
-		MatchCode		NVARCHAR(50),
-		EventDate		DATETIME,
-		ShowTime		NVARCHAR(50),
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000)
+		TransId				BIGINT,
+		BetType				INT,
+		Stake				MONEY,
+		Currency			NVARCHAR(50),
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		BetTeam				NVARCHAR(10),
+		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		LiveIndicator		BIT,
+		LeagueId			INT,
+		SportType			SMALLINT,
+		IsNeutral			BIT,
+		MatchId				INT,
+		MatchCode			NVARCHAR(50),
+		EventDate			DATETIME,
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000)
 	)
 
 	-- Get currency name
@@ -135,6 +137,7 @@ BEGIN
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
 			END AS status,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -181,6 +184,7 @@ BEGIN
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
 			END AS status,
+			0 AS SettlementStatus,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -227,6 +231,7 @@ BEGIN
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
 			END AS status,
+			0 AS SettlementStatus,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,

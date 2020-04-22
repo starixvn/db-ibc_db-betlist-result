@@ -26,7 +26,7 @@ AS
 			- 111: Draw
 			- 112: Won
 			- 113: Lose
-			- 2: Result Pending
+			- 2: Delay Payout
 			- 3: Under Settlement
 			- 99: Abnormal Bets
 
@@ -40,8 +40,9 @@ AS
 		- 20200222@Kos: Support SA Gaming [Redmine: #128048]
 		- 20200323@Kos: Support Indo 4D [Redmine: #130857]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
-		- 20200331@Kos: Support Saba.club [Redmine: #130769]		
+		- 20200331@Kos: Support Saba.club [Redmine: #130769]
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -200,10 +201,14 @@ BEGIN
 	END
 
 	IF ',' + @StatusIdList + ',' LIKE '%,1,%'
-		OR ',' + @StatusIdList + ',' LIKE '%,2,%'
 		OR ',' + @StatusIdList + ',' LIKE '%,3,%'
 	BEGIN
 		SET @StatusIdList = @StatusIdList + ',0'
+	END
+
+	IF ',' + @StatusIdList + ',' LIKE '%,2,%'
+	BEGIN
+		SET @StatusIdList = @StatusIdList + ',0,111,112,113'
 	END
 
 	DECLARE @TempToDate	SMALLDATETIME,
@@ -797,7 +802,7 @@ BEGIN
 						WHEN s.ProductID = 38 THEN 'VRG'							-- Virtual Games
 						WHEN s.ProductID = 39 THEN 'SAG'							-- SA Gaming
 						WHEN s.ProductID = 40 THEN 'TG'								-- Table Games
-						WHEN s.ProductID = 42 THEN 'SBC'							-- Saba.club						
+						WHEN s.ProductID = 42 THEN 'SBC'							-- Saba.club
 						WHEN s.ProductID = 43 THEN 'I4D'							-- Indo 4D
 						WHEN s.ProductID = 45 THEN 'SXG'							-- Sexy Gaming
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
@@ -819,52 +824,84 @@ BEGIN
 				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'FW', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'SXG')
 					OR WinLostDate < @Yesterday)
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
-			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
+			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'		-- Abnormal Bets
 				AND Status = 'Void'
 				AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 1)
-			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,102,%'
+			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,102,%'	-- Void
 				AND Status = 'Void'
 				AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 0)
 
-		IF EXISTS (SELECT 1 FROM @Data WHERE Product = 'SB' AND Status IN ('Waiting', 'Running'))
+		IF EXISTS (SELECT 1 FROM @Data WHERE Product = 'SB' AND Status IN ('Waiting', 'Running', 'Draw', 'Won', 'Lose'))
 		BEGIN
 			UPDATE b
 			SET b.SettlementStatus = m.SettlementStatus
 			FROM @Data AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.matchid
-			WHERE b.Product = 'SB' AND b.Status IN ('Waiting', 'Running')
+			WHERE b.Product = 'SB' AND b.Status IN ('Waiting', 'Running', 'Draw', 'Won', 'Lose')
+
+			UPDATE b
+			SET b.SettlementStatus = m.SettlementStatus
+			FROM @Data AS b
+				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.EventId
+			WHERE b.TableID = 4
+				AND b.BetType BETWEEN 801 AND 806
+				AND b.Status IN ('Waiting', 'Running', 'Draw', 'Won', 'Lose')
 
 			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,0,%'	-- Not include Running
 			BEGIN
 				DELETE @Data
-				WHERE (Product <> 'SB' AND Status = 'Running')
-					OR (Product = 'SB'
-						AND Status = 'Running'
-						AND (ISNULL(SecAcceptFlag, 0) <> 1 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP))	-- not Waiting (Second Accept)
-						AND ISNULL(SettlementStatus, 0) & 13 = 0															-- not Result Pending, Under Settlement
+				WHERE Product = 'SB'
+					AND Status = 'Running'
+					AND (ISNULL(SecAcceptFlag, 0) <> 1 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP)	-- not Waiting (Second Accept)
+					AND ISNULL(SettlementStatus, 0) & 13 = 0															-- not Result Pending, Under Settlement
 			END
 
 			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,1,%'	-- Not include Waiting
 			BEGIN
 				DELETE FROM @Data
-				WHERE Status = 'Waiting'
-					OR (Product = 'SB'						-- Waiting (Second Accept)
-						AND Status = 'Running'
-						AND ISNULL(SecAcceptFlag, 0) = 1
-						AND ISNULL(CheckTime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)
+				WHERE Product = 'SB'
+					AND (Status = 'Waiting'
+						OR (Status = 'Running'		-- Waiting (Second Accept)
+							AND ISNULL(SecAcceptFlag, 0) = 1
+							AND ISNULL(CheckTime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP))
 			END
 
-			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,2,%'		-- Not include Result Pending
-				OR ',' + @OriginalStatusIdList + ',' NOT LIKE '%,3,%'	-- Not include Under Settlement
+			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,111,%'		-- Not include Draw, Won, Lose
+				OR ',' + @OriginalStatusIdList + ',' NOT LIKE '%,112,%'
+				OR ',' + @OriginalStatusIdList + ',' NOT LIKE '%,113,%'
+			BEGIN
+				DELETE FROM @Data
+				WHERE Product = 'SB'
+					AND (ISNULL(SettlementStatus, 0) & 1 = 0		-- isPending flag (bit 1) = 0
+						OR (Stake = 0								-- Cash Out All
+							AND BetdaqId = 0
+							AND ExtraInfo LIKE '%p25%'))
+					AND ((Status = 'Draw' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,111,%')
+						OR (Status = 'Won' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,112,%')
+						OR (Status = 'Lose' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,113,%'))
+			END
+
+			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,2,%'		-- Not include Delay Payout
+			BEGIN
+				DELETE @Data
+				WHERE Product = 'SB'
+					AND ISNULL(SettlementStatus, 0) & 1 <> 0		-- isPending flag (bit 1) = 1
+					AND ((Status = 'Running'
+							AND (ISNULL(SecAcceptFlag, 0) = 0 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP))		-- not Waiting (Second Accept)
+						OR Status IN ('Draw', 'Won', 'Lose'))
+					AND (Stake <> 0									-- Not Cash Out All
+						OR BetdaqId <> 0
+						OR ExtraInfo NOT LIKE '%p25%')
+			END
+
+			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,3,%'	-- Not include Under Settlement
 			BEGIN
 				DELETE @Data
 				WHERE Product = 'SB'
 					AND Status = 'Running'
 					AND (ISNULL(SecAcceptFlag, 0) = 0 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP)			-- not Waiting (Second Accept)
-					AND ((',' + @OriginalStatusIdList + ',' NOT LIKE '%,2,%' AND ISNULL(SettlementStatus, 0) & 1 <> 0)		-- Result Pending
-						OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,3,%'
-							AND ISNULL(SettlementStatus, 0) & 12 <> 0
-							AND ISNULL(SettlementStatus, 0) & 1 = 0))		-- Under Settlement
+					AND ISNULL(SettlementStatus, 0) & 12 <> 0	-- isUnderSettlement flag (bit 3) = 1 OR isSystemSettlement flag (bit 4) = 1
+					AND ISNULL(SettlementStatus, 0) & 1 = 0		-- isPending flag (bit 1) = 0
 			END
 		END
 
@@ -1331,7 +1368,10 @@ BEGIN
 							END,
 					OddsId = 0,
 					MOdds = 0,
-					SettlementStatus = 0,
+					SettlementStatus = CASE
+											WHEN b.BetType BETWEEN 801 AND 806 THEN ISNULL(m.SettlementStatus, 0)
+											ELSE 0
+										END,
 					WinLost = 0,
 					AWinLost = 0,
 					MWinLost = 0,

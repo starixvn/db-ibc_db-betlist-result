@@ -56,6 +56,7 @@ AS
 					- Don't support Microgaming Live Casino, Microgaming RNG Casino, Lucky 3, Poker Games anymore [Redmine: #119018]
 					- Add new params @MoveBetsDay and @BalanceUpDay
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -871,7 +872,7 @@ BEGIN
 					OddsType = CONVERT(TINYINT, ISNULL(b.custom1, 0)),
 					OddsId = 0,
 					MOdds = 0,
-					SettlementStatus = 0,
+					SettlementStatus = ISNULL(m.SettlementStatus, 0),
 					WinLost = 0,
 					Commission = 0,
 					LiveIndicator = 0,

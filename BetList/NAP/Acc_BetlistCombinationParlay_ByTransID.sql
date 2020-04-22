@@ -32,6 +32,7 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112286]
 		- 20191114@Kos: Show (N) for neutral match [Redmine: #123772]
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -132,34 +133,35 @@ BEGIN
 	)
 
 	DECLARE @parlay_base AS TABLE (
-		TransId			BIGINT,
-		RefNo			BIGINT,
-		WinLostDate		SMALLDATETIME,
-		BetType			INT,
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		BetTeam			VARCHAR(20),
-		Status			NVARCHAR(10),
-		LiveHomeScore	INT,
-		LiveAwayScore	INT,
-		LiveIndicator	BIT,
-		LeagueId		INT,
-		SportType		INT,
-		IsNeutral		BIT,
-		MatchId			INT,
-		MatchCode		VARCHAR(50),
-		EventDate		DATETIME,
-		MatchDate		DATETIME,
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000),
-		SetStake		MONEY,
+		TransId				BIGINT,
+		RefNo				BIGINT,
+		WinLostDate			SMALLDATETIME,
+		BetType				INT,
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		BetTeam				VARCHAR(20),
+		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
+		LiveHomeScore		INT,
+		LiveAwayScore		INT,
+		LiveIndicator		BIT,
+		LeagueId			INT,
+		SportType			INT,
+		IsNeutral			BIT,
+		MatchId				INT,
+		MatchCode			VARCHAR(50),
+		EventDate			DATETIME,
+		MatchDate			DATETIME,
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000),
+		SetStake			MONEY,
 		--for generating combination parlays
-		RN				TINYINT,	-- set No. for selection in the combination
-		Cnt				TINYINT,	-- total selection count, base on bettransm/14
-		bCnt			TINYINT		-- total selection count, stored in bettrans
+		RN					TINYINT,	-- set No. for selection in the combination
+		Cnt					TINYINT,	-- total selection count, base on bettransm/14
+		bCnt				TINYINT		-- total selection count, stored in bettrans
 	)
 
 	DECLARE @tmpResults AS TABLE(
@@ -198,6 +200,7 @@ BEGIN
 		Odds,
 		BetTeam,
 		Status,
+		SettlementStatus,
 		LiveHomeScore,
 		LiveAwayScore,
 		LiveIndicator,
@@ -230,6 +233,7 @@ BEGIN
 			WHEN bm.status = 'LOSE' AND ISNULL(bm.statuswinlost, 0) = 3 THEN 'Half Lose'
 			ELSE bm.status
 		END AS status,
+		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 		bm.livehomescore,
 		bm.liveawayscore,
 		bm.liveindicator,
@@ -268,6 +272,7 @@ BEGIN
 			WHEN bm.status = 'LOSE' AND ISNULL(bm.statuswinlost, 0) = 3 THEN 'Half Lose'
 			ELSE bm.status
 		END AS status,
+		0 AS SettlementStatus,
 		bm.livehomescore,
 		bm.liveawayscore,
 		bm.liveindicator,
@@ -306,6 +311,7 @@ BEGIN
 			WHEN bm.status = 'LOSE' AND ISNULL(bm.statuswinlost, 0) = 3 THEN 'Half Lose'
 			ELSE bm.status
 		END AS status,
+		0 AS SettlementStatus,
 		bm.livehomescore,
 		bm.liveawayscore,
 		bm.liveindicator,
@@ -717,6 +723,7 @@ BEGIN
 		Odds,
 		BetTeam,
 		Status,
+		SettlementStatus,
 		LiveHomeScore,
 		LiveAwayScore,
 		LiveIndicator,
