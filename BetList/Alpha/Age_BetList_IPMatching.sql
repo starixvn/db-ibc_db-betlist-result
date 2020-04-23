@@ -14,7 +14,7 @@ AS
 	
 	Revisions:
 		- 20200116@Kos: Created [Redmine: #124701]
-
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -346,7 +346,7 @@ BEGIN
 				Stake = b.stake,
 				Actual_Stake = b.actual_stake,
 				Status = b.status,
-				SettlementStatus = 0,
+				SettlementStatus = ISNULL(m.SettlementStatus, 0),
 				TransDate = b.transdate,
 				WinLostDate = b.winlostdate,
 				WinLost = 0,

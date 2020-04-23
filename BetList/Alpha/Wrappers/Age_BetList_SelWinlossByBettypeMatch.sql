@@ -20,6 +20,7 @@ AS
 		- 20190524@Kos: Support BetBuilder [Redmine: #106905]
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20200214@Kos: Fix performance issue with f_GroupBettype func [Redmine: #128448]
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -181,6 +182,7 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			b.status,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			b.transdate,
 			b.winlostdate,
 			b.winlost - b.actual_stake AS WinLost,
@@ -389,6 +391,7 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			b.status,
+			0 AS SettlementStatus,
 			b.transdate,
 			b.winlostdate,
 			b.winlost - b.actual_stake AS WinLost,

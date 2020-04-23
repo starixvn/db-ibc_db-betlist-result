@@ -120,6 +120,7 @@ AS
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 		- 20200331@Kos: Support Saba.club [Redmine: #130769]
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -764,7 +765,7 @@ BEGIN
 				,AwayID = m.awayID
 				,LiveIndicator = 0
 				,IsNeutral = ISNULL(m.IsNeutral, 0)
-				,SettlementStatus = 0
+				,SettlementStatus = ISNULL(m.SettlementStatus, 0)
 				,OddsType = CASE WHEN b.SubProduct IN ('MG-SuperLive') THEN CONVERT(TINYINT, ISNULL(b.custom1, 0)) ELSE 0 END
 				,ShowTime = ISNULL(m.showtime,'')
 				,ExtraInfo = ''

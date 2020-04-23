@@ -92,8 +92,9 @@ AS
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 		- 20200302@Kos: Support SA Gaming [Redmine: #128048]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
-		- 20200331@Kos: Support Saba.club [Redmine: #130769]		
+		- 20200331@Kos: Support Saba.club [Redmine: #130769]
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 
 	Param's Explanation:
 		+ @TransType:
@@ -818,7 +819,10 @@ BEGIN
 						,Stake = b.stake
 						,Actual_Stake = b.actual_stake
 						,Status = b.status
-						,SettlementStatus = 0
+						,SettlementStatus = CASE 
+												WHEN c.Product IN ('MG') THEN ISNULL(m.SettlementStatus, 0)
+												ELSE 0
+											END
 						,TransDate = b.transdate
 						,WinLostDate = b.winlostdate
 						,WinLost = 0

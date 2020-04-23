@@ -100,8 +100,9 @@ AS
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 		- 20200302@Kos: Support SA Gaming [Redmine: #128048]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
-		- 20200331@Kos: Support Saba.club [Redmine: #130769]		
+		- 20200331@Kos: Support Saba.club [Redmine: #130769]
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -145,6 +146,7 @@ BEGIN
 		, Stake				MONEY
 		, Actual_Stake		MONEY
 		, Status			NVARCHAR(10)
+		, SettlementStatus	TINYINT
 		, TransDate			DATETIME
 		, WinLostDate		SMALLDATETIME
 		, WinLost			MONEY
@@ -435,6 +437,10 @@ BEGIN
 								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.status IS NOT NULL THEN x.status
 								ELSE b.status
 							END
+				,SettlementStatus = CASE
+										WHEN c.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
+										ELSE 0
+									END
 				,TransDate = b.transdate
 				,WinLostDate = b.winlostdate
 				,WinLost = CASE
@@ -726,7 +732,8 @@ BEGIN
 							ELSE 0 END
 				,Stake = b.stake
 				,Actual_Stake = b.actual_stake
-				,Status = b.status
+				,Status = b.Status
+				,SettlementStatus = 0
 				,TransDate = b.transdate
 				,WinLostDate = b.winlostdate
 				,WinLost = b.winlost - b.actual_stake
