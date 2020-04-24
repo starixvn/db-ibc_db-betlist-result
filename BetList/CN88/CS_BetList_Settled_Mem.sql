@@ -44,6 +44,7 @@ AS
 		- 20190821@Kos: Support multiple sport filter [Redmine: 109230]
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20191129@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -61,62 +62,63 @@ BEGIN
 	END
 
 	CREATE TABLE #MemBetTicket (
-		TransId			BIGINT,
-		RefNo			BIGINT,
-		CustId			INT,
-		Username		NVARCHAR(50),
-		SportType		SMALLINT,
-		BetType			SMALLINT,
-		BetId			BIGINT,
-		BetTeam			NVARCHAR(20),
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		OddsType		TINYINT,
-		Odds			MONEY,
-		MOdds			MONEY,
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		Status			NVARCHAR(10),
-		TransDate		DATETIME,
-		WinLostDate		SMALLDATETIME,
-		WinLost			MONEY,
-		AWinLost		MONEY,
-		MWinLost		MONEY,
-		SWinLost		MONEY,
-		PlayerComm		MONEY,
-		Comm			MONEY,
-		AComm			MONEY,
-		SComm			MONEY,
-		APositionTaking	SMALLMONEY,
-		MPositionTaking	SMALLMONEY,
-		SPositionTaking	SMALLMONEY,
-		TPositionTaking	SMALLMONEY,
-		PlayerDiscount	SMALLMONEY,
-		ADiscount		SMALLMONEY,
-		MDiscount		SMALLMONEY,
-		SDiscount		SMALLMONEY,
-		LiveIndicator	BIT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		Ip				NVARCHAR(15),
-		LeagueId		INT,
-		MatchId			INT,
-		MatchCode		NVARCHAR(50),
-		Race			NVARCHAR(20),
-		EventDate		DATETIME,
-		HomeId			INT,
-		AwayId			INT,
-		BetStatus		NVARCHAR(50),
-		IsNeutral		BIT,
-		Placing			NVARCHAR(20),
-		ShowTime		NVARCHAR(50),
-		BetCheck		NVARCHAR(50),
-		ComStatus		NVARCHAR(20),
-		TransDesc		NVARCHAR(1000),
-		OddsSpread		MONEY,
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000),
-		Currency		NVARCHAR(50),
+		TransId				BIGINT,
+		RefNo				BIGINT,
+		CustId				INT,
+		Username			NVARCHAR(50),
+		SportType			SMALLINT,
+		BetType				SMALLINT,
+		BetId				BIGINT,
+		BetTeam				NVARCHAR(20),
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		OddsType			TINYINT,
+		Odds				MONEY,
+		MOdds				MONEY,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
+		TransDate			DATETIME,
+		WinLostDate			SMALLDATETIME,
+		WinLost				MONEY,
+		AWinLost			MONEY,
+		MWinLost			MONEY,
+		SWinLost			MONEY,
+		PlayerComm			MONEY,
+		Comm				MONEY,
+		AComm				MONEY,
+		SComm				MONEY,
+		APositionTaking		SMALLMONEY,
+		MPositionTaking		SMALLMONEY,
+		SPositionTaking		SMALLMONEY,
+		TPositionTaking		SMALLMONEY,
+		PlayerDiscount		SMALLMONEY,
+		ADiscount			SMALLMONEY,
+		MDiscount			SMALLMONEY,
+		SDiscount			SMALLMONEY,
+		LiveIndicator		BIT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		Ip					NVARCHAR(15),
+		LeagueId			INT,
+		MatchId				INT,
+		MatchCode			NVARCHAR(50),
+		Race				NVARCHAR(20),
+		EventDate			DATETIME,
+		HomeId				INT,
+		AwayId				INT,
+		BetStatus			NVARCHAR(50),
+		IsNeutral			BIT,
+		Placing				NVARCHAR(20),
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(50),
+		ComStatus			NVARCHAR(20),
+		TransDesc			NVARCHAR(1000),
+		OddsSpread			MONEY,
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		Currency			NVARCHAR(50),
 	);
 
 	DECLARE @BettransDetail TABLE (
@@ -324,6 +326,10 @@ BEGIN
 					WHEN c.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 					ELSE b.status
 				END AS Status,
+				CASE
+					WHEN c.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
+					ELSE 0
+				END AS SettlementStatus,
 				b.transdate,
 				b.winlostdate,
 				(b.winlost - b.actual_stake) AS WinLost,
@@ -607,6 +613,7 @@ BEGIN
 					WHEN c.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 					ELSE b.status
 				END AS Status,
+				0 AS SettlementStatus,
 				b.transdate,
 				b.winlostdate,
 				(b.winlost - b.actual_stake) AS WinLost,
@@ -767,8 +774,6 @@ BEGIN
 	DROP TABLE #MemBetTicket
 END
 GO
-
-
 
 
 

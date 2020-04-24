@@ -16,6 +16,7 @@ AS
 		- 20190304@Kos: Create new [Redmine: #109230]
 		- 20190926@Kos: Hotfix - duplicate data during Balance Up [Redmine: #120962]
 		- 20190920@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
+		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -34,29 +35,30 @@ BEGIN
 	WHERE ProductID IN (1, 27)
 
 	DECLARE @tmpParlay TABLE (
-		TransId			BIGINT,
-		SportType		INT,
-		LeagueId		INT,
-		BetType			INT,
-		Stake			MONEY,
-		Currency		NVARCHAR(50),
-		MatchId			INT,
-		EventDate		DATETIME,
-		ShowTime		NVARCHAR(50),
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		BetTeam			NVARCHAR(50),
-		Status			NVARCHAR(10),
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		LiveIndicator	BIT,
-		BetStatus		NVARCHAR(50),
-		IsNeutral		BIT,
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000)
+		TransId				BIGINT,
+		SportType			INT,
+		LeagueId			INT,
+		BetType				INT,
+		Stake				MONEY,
+		Currency			NVARCHAR(50),
+		MatchId				INT,
+		EventDate			DATETIME,
+		ShowTime			NVARCHAR(50),
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		BetTeam				NVARCHAR(50),
+		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		LiveIndicator		BIT,
+		BetStatus			NVARCHAR(50),
+		IsNeutral			BIT,
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000)
 	)
 
 	DECLARE @RefNo		BIGINT,
@@ -152,6 +154,7 @@ BEGIN
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
 			END AS Status,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -195,7 +198,8 @@ BEGIN
 				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
-			END AS status,
+			END AS Status,
+			0 AS SettlementStatus,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -239,7 +243,8 @@ BEGIN
 				WHEN b.status = 'WON' AND ISNULL(b.statuswinlost, 0) = 1 THEN 'Half Won'
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
-			END AS status,
+			END AS Status,
+			0 AS SettlementStatus,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -250,7 +255,7 @@ BEGIN
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		WHERE b.refno = @RefNo AND b.custID = @CustId
+		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
 	SELECT DISTINCT * FROM @tmpParlay

@@ -1,1 +1,2 @@
-BetList/LRF/Lrf_BetList_Licensee.sql
+BetList/CN88/CS_BetList_Statement_Mem.sql
+BetList/CN88/CS_BetList_WinLoss_Mem.sql
