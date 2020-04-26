@@ -52,6 +52,7 @@ AS
 					- Don't return column ShowTime anymore
 		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -107,49 +108,50 @@ BEGIN
 	WHERE BetType NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 
 	CREATE TABLE #Data (
-		SportType		INT,
-		Username		NVARCHAR(50),
-		CustId			INT,
-		BetType			INT,
-		LeagueId		INT,
-		TransId			BIGINT,
-		MatchCode		VARCHAR(50),
-		EventDate		DATETIME,
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		Odds2			MONEY,
-		Status			NVARCHAR(50),
-		Stake			MONEY,
-		WinLost			MONEY,
-		LicenseeWL		MONEY,
-		Comm			MONEY,
-		PlayerComm		MONEY,
-		TransDate		DATETIME,
-		WinLostDate		SMALLDATETIME,
-		BetTeam			VARCHAR(50),
-		LiveIndicator	INT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		MatchId			INT,
-		StatusId		INT,
-		BetStatus		NVARCHAR(50),
-		IsNeutral		BIT,
-		OddsType		INT,
-		BetId			BIGINT,
-		Currency		SMALLINT,
-		RefNo			BIGINT,
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000),
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000),
-		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT,
-		WalletType		TINYINT,
-		RefCode			BIGINT,
-		OddsSpread		MONEY
+		SportType			INT,
+		Username			NVARCHAR(50),
+		CustId				INT,
+		BetType				INT,
+		LeagueId			INT,
+		TransId				BIGINT,
+		MatchCode			VARCHAR(50),
+		EventDate			DATETIME,
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		Odds2				MONEY,
+		Status				NVARCHAR(50),
+		SettlementStatus	TINYINT,
+		Stake				MONEY,
+		WinLost				MONEY,
+		LicenseeWL			MONEY,
+		Comm				MONEY,
+		PlayerComm			MONEY,
+		TransDate			DATETIME,
+		WinLostDate			SMALLDATETIME,
+		BetTeam				VARCHAR(50),
+		LiveIndicator		INT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		MatchId				INT,
+		StatusId			INT,
+		BetStatus			NVARCHAR(50),
+		IsNeutral			BIT,
+		OddsType			INT,
+		BetId				BIGINT,
+		Currency			SMALLINT,
+		RefNo				BIGINT,
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000),
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		OriginalStake		MONEY,
+		OriginalBetType		SMALLINT,
+		WalletType			TINYINT,
+		RefCode				BIGINT,
+		OddsSpread			MONEY
 	)
 
 	DECLARE @ExchangeRate TABLE (
@@ -232,6 +234,7 @@ BEGIN
 					ELSE b.odds
 				END AS odds2,
 				b.status,
+				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
@@ -278,8 +281,6 @@ BEGIN
 				AND b.custid = @CustId
 				AND b.tpositiontaking = 0	-- getBA
 				AND (@MatchId = 0 OR m.matchid = @MatchId)
-			ORDER BY b.status,
-				b.transid
 		END
 
 		IF @ShowSB = 1
@@ -321,6 +322,7 @@ BEGIN
 					ELSE b.odds
 				END odds2,
 				b.status,
+				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
@@ -367,8 +369,6 @@ BEGIN
 				AND b.custid = @CustId
 				AND b.tpositiontaking <> 0
 				AND (@MatchId = 0 OR m.matchid = @MatchId)
-			ORDER BY b.status,
-				b.transid
 		END
 	END
 
@@ -419,6 +419,7 @@ BEGIN
 					ELSE b.odds
 				END odds2,
 				b.status,
+				0 AS SettlementStatus,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
@@ -465,8 +466,6 @@ BEGIN
 				AND b.custid = @CustId
 				AND b.tpositiontaking = 0
 				AND (@MatchId = 0 OR m.matchid = @MatchId)
-			ORDER BY b.status,
-				b.transid
 		END
 
 		IF @ShowSB = 1
@@ -508,6 +507,7 @@ BEGIN
 					ELSE b.odds
 				END odds2,
 				b.status,
+				0 AS SettlementStatus,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
@@ -554,8 +554,6 @@ BEGIN
 				AND b.custid = @CustId
 				AND b.tpositiontaking <> 0
 				AND (@MatchId = 0 OR m.matchid = @MatchId)
-			ORDER BY b.status,
-				b.transid
 		END
 	END
 
@@ -606,6 +604,7 @@ BEGIN
 					ELSE b.odds
 				END AS odds2,
 				b.status,
+				0 AS SettlementStatus,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
@@ -652,8 +651,6 @@ BEGIN
 				AND b.custid = @CustId
 				AND b.tpositiontaking = 0	-- getBA
 				AND (@MatchId = 0 OR m.matchid = @MatchId)
-			ORDER BY b.status,
-				b.transid
 		END
 
 		IF @ShowSB = 1
@@ -695,6 +692,7 @@ BEGIN
 					ELSE b.odds
 				END odds2,
 				b.status,
+				0 AS SettlementStatus,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
@@ -741,8 +739,6 @@ BEGIN
 				AND b.custid = @CustId
 				AND b.tpositiontaking <> 0
 				AND (@MatchId = 0 OR m.matchid = @MatchId)
-			ORDER BY b.status,
-				b.transid
 		END
 	END
 
@@ -872,6 +868,7 @@ BEGIN
 			b.Odds,
 			b.Odds2,
 			b.Status,
+			b.SettlementStatus,
 			b.Stake * ISNULL(e.Rate, 1) AS Stake,
 			b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
 			b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,

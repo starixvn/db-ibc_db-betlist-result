@@ -128,6 +128,7 @@ AS
 		- 20200221@Kos: Support Virtual Games [Redmine: #124911]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
+		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -219,6 +220,7 @@ BEGIN
 		PlayerComm			MONEY,
 		Comm				MONEY,
 		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
 		TransDate			DATETIME,
 		WinLostDate			SMALLDATETIME,
 		LiveIndicator		BIT,
@@ -277,6 +279,7 @@ BEGIN
 		PlayerComm			MONEY,
 		Comm				MONEY,
 		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
 		TransDate			DATETIME,
 		WinLostDate			SMALLDATETIME,
 		LiveIndicator		BIT,
@@ -1085,6 +1088,10 @@ BEGIN
 								WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet') AND x.Status IS NOT NULL THEN x.Status
 								ELSE b.status
 							END,
+					SettlementStatus = CASE
+										WHEN b.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
+										ELSE 0
+									END,
 					WinLost = CASE
 									WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet') AND x.WinLost IS NOT NULL THEN x.WinLost
 									ELSE b.WinLost
@@ -1261,6 +1268,7 @@ BEGIN
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
@@ -1416,6 +1424,7 @@ BEGIN
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
@@ -1614,6 +1623,7 @@ BEGIN
 		a.OddsType,
 		a.OddsSpread,
 		a.Status,
+		a.SettlementStatus,
 		a.LiveIndicator,
 		a.LiveHomeScore,
 		a.LiveAwayScore,

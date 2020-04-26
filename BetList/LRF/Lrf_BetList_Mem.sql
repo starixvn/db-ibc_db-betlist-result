@@ -38,6 +38,7 @@ AS
 			- 112: Won
 			- 113: Lose
 			- 99: Abnormal Bets
+			- 2: Delay Payout
 		- @Platform:
 			- 0 - All: All
 			- 1 - Asia: d (mobile), g (MG Download only)
@@ -80,6 +81,7 @@ AS
 		- 20200302@Kos: Support 3 new betfrom [Redmine: #129253]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
+		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -162,6 +164,8 @@ BEGIN
 		PlayerComm			MONEY,
 		Comm				MONEY,
 		Status				NVARCHAR(10),
+		StatusId			TINYINT,
+		SettlementStatus	TINYINT,
 		TransDate			DATETIME,
 		WinLostDate			SMALLDATETIME,
 		LiveIndicator		BIT,
@@ -220,6 +224,8 @@ BEGIN
 		PlayerComm			MONEY,
 		Comm				MONEY,
 		Status				NVARCHAR(10),
+		StatusId			TINYINT,
+		SettlementStatus	TINYINT,
 		TransDate			DATETIME,
 		WinLostDate			SMALLDATETIME,
 		LiveIndicator		BIT,
@@ -339,9 +345,14 @@ BEGIN
 
 		SET @OriginalStatusIdList = @StatusIdList
 
-		IF ',' + @StatusIdList + ',' LIKE '%,99,%'
+		IF ',' + @StatusIdList + ',' LIKE '%,99,%'		-- Abnormal Bet
 		BEGIN
 			SET @StatusIdList = @StatusIdList + ',102'
+		END
+
+		IF ',' + @StatusIdList + ',' LIKE '%,2,%'		-- Delay Payout
+		BEGIN
+			SET @StatusIdList = @StatusIdList + ',111,112,113'
 		END
 
 		DECLARE @TempToDate	SMALLDATETIME,
@@ -379,6 +390,7 @@ BEGIN
 				PlayerComm,
 				Comm,
 				Status,
+				StatusId,
 				TransDate,
 				WinLostDate,
 				LiveIndicator,
@@ -418,6 +430,7 @@ BEGIN
 				b.playercomm,
 				b.comm,
 				b.status,
+				b.statusID,
 				b.transdate,
 				b.winlostdate,
 				b.liveindicator,
@@ -517,6 +530,7 @@ BEGIN
 				PlayerComm,
 				Comm,
 				Status,
+				StatusId,
 				TransDate,
 				WinLostDate,
 				LiveIndicator,
@@ -556,6 +570,7 @@ BEGIN
 				b.playercomm,
 				b.comm,
 				b.status,
+				b.statusID,
 				b.transdate,
 				b.winlostdate,
 				b.liveindicator,
@@ -650,6 +665,7 @@ BEGIN
 				PlayerComm,
 				Comm,
 				Status,
+				StatusId,
 				TransDate,
 				WinLostDate,
 				LiveIndicator,
@@ -689,6 +705,7 @@ BEGIN
 				b.playercomm,
 				b.comm,
 				b.status,
+				b.statusID,
 				b.transdate,
 				b.winlostdate,
 				b.liveindicator,
@@ -821,6 +838,43 @@ BEGIN
 				OR (@ShowBA = 0
 					AND Product IN ('SB', 'Parlay', 'Outright')
 					AND BATransId IS NOT NULL)
+				OR (Product <> 'SB'
+					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
+
+			IF EXISTS (SELECT 1 FROM #Data WHERE Product = 'SB' AND Status IN ('Draw', 'Won', 'Lose'))
+			BEGIN
+				UPDATE b
+				SET b.SettlementStatus = m.SettlementStatus
+				FROM #Data AS b
+					INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.matchid
+				WHERE b.Product = 'SB' AND b.Status IN ('Draw', 'Won', 'Lose')
+
+				IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,111,%'		-- Not include Draw, Won, Lose
+					OR ',' + @OriginalStatusIdList + ',' NOT LIKE '%,112,%'
+					OR ',' + @OriginalStatusIdList + ',' NOT LIKE '%,113,%'
+				BEGIN
+					DELETE FROM #Data
+					WHERE Product = 'SB'
+						AND (ISNULL(SettlementStatus, 0) & 1 = 0		-- isPending flag (bit 1) = 0
+							OR (Stake = 0								-- Cash Out All
+								AND BetdaqId = 0
+								AND ExtraInfo LIKE '%p25%'))
+						AND ((Status = 'Draw' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,111,%')
+							OR (Status = 'Won' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,112,%')
+							OR (Status = 'Lose' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,113,%'))
+				END
+
+				IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,2,%'		-- Not include Delay Payout
+				BEGIN
+					DELETE #Data
+					WHERE Product = 'SB'
+						AND ISNULL(SettlementStatus, 0) & 1 <> 0		-- isPending flag (bit 1) = 1
+						AND Status IN ('Draw', 'Won', 'Lose')
+						AND (Stake <> 0									-- Not Cash Out All
+							OR BetdaqId <> 0
+							OR ExtraInfo NOT LIKE '%p25%')
+				END
+			END
 
 			UPDATE #Data
 			SET
@@ -1020,6 +1074,10 @@ BEGIN
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					SettlementStatus = CASE
+										WHEN b.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
+										ELSE 0
+									END,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
@@ -1174,6 +1232,7 @@ BEGIN
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
@@ -1327,6 +1386,7 @@ BEGIN
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
@@ -1528,6 +1588,7 @@ BEGIN
 		a.OddsType,
 		a.OddsSpread,
 		a.Status,
+		a.SettlementStatus,
 		a.LiveIndicator,
 		a.LiveHomeScore,
 		a.LiveAwayScore,

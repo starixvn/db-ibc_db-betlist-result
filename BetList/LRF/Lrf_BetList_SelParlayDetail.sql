@@ -30,6 +30,7 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 107165]
 		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112733]
 		- 20191011@Kos: Move from DBEXT.bodb02 to DBACC.bodb02 [Redmine: #117888]
+		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -48,33 +49,34 @@ BEGIN
 	WHERE ProductID IN (1, 27)
 
 	DECLARE @tmpParlay TABLE (
-		TransId			BIGINT,
-		BetId			TINYINT,
-		BetCheck		VARCHAR(100),
-		SportType		INT,
-		LeagueId		INT,
-		BetType			INT,
-		Stake			MONEY,
-		CurrencyId		INT,
-		MatchId			INT,
-		EventDate		DATETIME,
-		ShowTime		NVARCHAR(50),
-		HomeId			INT,
-		AwayId			INT,
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		Odds			MONEY,
-		BetTeam			NVARCHAR(50),
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		LiveIndicator	BIT,
-		BetStatus		NVARCHAR(50),
-		IsNeutral		BIT,
-		Status			NVARCHAR(10),
-		TransDesc		NVARCHAR(1000))
+		TransId				BIGINT,
+		BetId				TINYINT,
+		BetCheck			VARCHAR(100),
+		SportType			INT,
+		LeagueId			INT,
+		BetType				INT,
+		Stake				MONEY,
+		CurrencyId			INT,
+		MatchId				INT,
+		EventDate			DATETIME,
+		ShowTime			NVARCHAR(50),
+		HomeId				INT,
+		AwayId				INT,
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		Odds				MONEY,
+		BetTeam				NVARCHAR(50),
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		LiveIndicator		BIT,
+		BetStatus			NVARCHAR(50),
+		IsNeutral			BIT,
+		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
+		TransDesc			NVARCHAR(1000))
 
 	DECLARE @RefNo		BIGINT,
-		@CurrencyId		INT,
+		@CurrencyId		TINYINT,
 		@Status			NVARCHAR(10)
 
 	SELECT
@@ -144,6 +146,7 @@ BEGIN
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
 			END AS status,
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -190,6 +193,7 @@ BEGIN
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
 			END AS status,
+			0 AS SettlementStatus,
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM dbo.bettransm14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -236,6 +240,7 @@ BEGIN
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
 			END AS status,
+			0 AS SettlementStatus,
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype

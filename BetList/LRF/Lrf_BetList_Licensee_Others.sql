@@ -37,6 +37,7 @@ AS
 			- 112: Won
 			- 113: Lose
 			- 99: Abnormal Bets
+			- 2: Delay Payout
 		- @LiveIndicator:
 			- 0 : Non-live
 			- 1 : Live
@@ -53,6 +54,7 @@ AS
 		- 20190628@Kos: Support PH AIO 4a [Redmine: #115448]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
+		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -79,106 +81,108 @@ BEGIN
 	END CATCH
 
 	CREATE TABLE #Data (
-		TransId			BIGINT,
-		RefNo			BIGINT,
-		CustId			INT,
-		Recommend		INT,
-		Currency		SMALLINT,
-		SportType		SMALLINT,
-		BetType			SMALLINT,
-		BetId			BIGINT,
-		BetTeam			NVARCHAR(20),
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		OddsId			INT,
-		OddsType		TINYINT,
-		Odds			MONEY,
-		MOdds			MONEY,
-		OddsSpread		MONEY,
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		WinLost			MONEY,
-		LicenseeWL		MONEY,
-		Comm			MONEY,
-		PlayerComm		MONEY,
-		Status			NVARCHAR(10),
-		TransDate		DATETIME,
-		WinLostDate		SMALLDATETIME,
-		LiveIndicator	BIT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		Ip				NVARCHAR(15),
-		BetFrom			NVARCHAR(1),
-		LeagueId		INT,
-		MatchId			INT,
-		MatchCode		NVARCHAR(50),
-		Race			NVARCHAR(50),
-		EventDate		DATETIME,
-		HomeId			INT,
-		AwayId			INT,
-		BetStatus		NVARCHAR(50),
-		IsNeutral		BIT,
-		Placing			NVARCHAR(20),
-		ShowTime		NVARCHAR(50),
-		BetCheck		NVARCHAR(50),
-		ComStatus		NVARCHAR(20),
-		TransDesc		NVARCHAR(1000),
-		BetdaqId		BIGINT,
-		OriginalBetType	SMALLINT,
-		Product			VARCHAR(30),
-		WhTicket		TINYINT
+		TransId				BIGINT,
+		RefNo				BIGINT,
+		CustId				INT,
+		Recommend			INT,
+		Currency			SMALLINT,
+		SportType			SMALLINT,
+		BetType				SMALLINT,
+		BetId				BIGINT,
+		BetTeam				NVARCHAR(20),
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		OddsId				INT,
+		OddsType			TINYINT,
+		Odds				MONEY,
+		MOdds				MONEY,
+		OddsSpread			MONEY,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		WinLost				MONEY,
+		LicenseeWL			MONEY,
+		Comm				MONEY,
+		PlayerComm			MONEY,
+		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
+		TransDate			DATETIME,
+		WinLostDate			SMALLDATETIME,
+		LiveIndicator		BIT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		Ip					NVARCHAR(15),
+		BetFrom				NVARCHAR(1),
+		LeagueId			INT,
+		MatchId				INT,
+		MatchCode			NVARCHAR(50),
+		Race				NVARCHAR(50),
+		EventDate			DATETIME,
+		HomeId				INT,
+		AwayId				INT,
+		BetStatus			NVARCHAR(50),
+		IsNeutral			BIT,
+		Placing				NVARCHAR(20),
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(50),
+		ComStatus			NVARCHAR(20),
+		TransDesc			NVARCHAR(1000),
+		BetdaqId			BIGINT,
+		OriginalBetType		SMALLINT,
+		Product				VARCHAR(30),
+		WhTicket			TINYINT
 	)
 
 	CREATE TABLE #PagingData (
-		RowNum			INT,
-		TransId			BIGINT,
-		RefNo			BIGINT,
-		CustId			INT,
-		Recommend		INT,
-		Currency		SMALLINT,
-		SportType		SMALLINT,
-		BetType			SMALLINT,
-		BetId			BIGINT,
-		BetTeam			NVARCHAR(20),
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		OddsId			INT,
-		OddsType		TINYINT,
-		Odds			MONEY,
-		MOdds			MONEY,
-		OddsSpread		MONEY,
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		WinLost			MONEY,
-		LicenseeWL		MONEY,
-		Comm			MONEY,
-		PlayerComm		MONEY,
-		Status			NVARCHAR(10),
-		TransDate		DATETIME,
-		WinLostDate		SMALLDATETIME,
-		LiveIndicator	BIT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		Ip				NVARCHAR(15),
-		BetFrom			NVARCHAR(1),
-		LeagueId		INT,
-		MatchId			INT,
-		MatchCode		NVARCHAR(50),
-		Race			NVARCHAR(50),
-		EventDate		DATETIME,
-		HomeId			INT,
-		AwayId			INT,
-		BetStatus		NVARCHAR(50),
-		IsNeutral		BIT,
-		Placing			NVARCHAR(20),
-		ShowTime		NVARCHAR(50),
-		BetCheck		NVARCHAR(50),
-		ComStatus		NVARCHAR(20),
-		TransDesc		NVARCHAR(1000),
-		BetdaqId		BIGINT,
-		OriginalBetType	SMALLINT,
-		Product			VARCHAR(30),
-		WhTicket		TINYINT
+		RowNum				INT,
+		TransId				BIGINT,
+		RefNo				BIGINT,
+		CustId				INT,
+		Recommend			INT,
+		Currency			SMALLINT,
+		SportType			SMALLINT,
+		BetType				SMALLINT,
+		BetId				BIGINT,
+		BetTeam				NVARCHAR(20),
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		OddsId				INT,
+		OddsType			TINYINT,
+		Odds				MONEY,
+		MOdds				MONEY,
+		OddsSpread			MONEY,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		WinLost				MONEY,
+		LicenseeWL			MONEY,
+		Comm				MONEY,
+		PlayerComm			MONEY,
+		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
+		TransDate			DATETIME,
+		WinLostDate			SMALLDATETIME,
+		LiveIndicator		BIT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		Ip					NVARCHAR(15),
+		BetFrom				NVARCHAR(1),
+		LeagueId			INT,
+		MatchId				INT,
+		MatchCode			NVARCHAR(50),
+		Race				NVARCHAR(50),
+		EventDate			DATETIME,
+		HomeId				INT,
+		AwayId				INT,
+		BetStatus			NVARCHAR(50),
+		IsNeutral			BIT,
+		Placing				NVARCHAR(20),
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(50),
+		ComStatus			NVARCHAR(20),
+		TransDesc			NVARCHAR(1000),
+		BetdaqId			BIGINT,
+		OriginalBetType		SMALLINT,
+		Product				VARCHAR(30),
+		WhTicket			TINYINT
 	)
 
 	DECLARE @Detail TABLE (
@@ -1285,6 +1289,7 @@ BEGIN
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
@@ -1409,6 +1414,7 @@ BEGIN
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
@@ -1567,6 +1573,7 @@ BEGIN
 				a.Comm * ISNULL(e.Rate, 1) AS Comm,
 				a.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
 				a.Status,
+				a.SettlementStatus,
 				a.TransDate,
 				a.WinLostDate,
 				a.LiveIndicator,
@@ -1633,6 +1640,7 @@ BEGIN
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
@@ -1756,6 +1764,7 @@ BEGIN
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
@@ -1930,6 +1939,7 @@ BEGIN
 					a.Comm * ISNULL(e.Rate, 1) AS Comm,
 					a.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
 					a.Status,
+					a.SettlementStatus,
 					a.TransDate,
 					a.WinLostDate,
 					a.LiveIndicator,

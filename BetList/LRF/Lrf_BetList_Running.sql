@@ -23,7 +23,7 @@ AS
 	Param's Explanation:
 		- @StatusFilter:
 			- 1: Running, Waiting
-			- 2: Result Pending
+			- 2: Delay Payout
 			- 3: Under Settlement
 
 	Revisions:
@@ -47,6 +47,7 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
+		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -571,17 +572,24 @@ BEGIN
 						OR (Product = 'SB'
 							AND (Status = 'Waiting'																										-- Waiting
 								OR (Status = 'Running' AND ISNULL(SecAcceptFlag, 0) = 1 AND ISNULL(CheckTime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)	-- Waiting (Second Accept)
-								OR (Status = 'Running' AND ISNULL(SettlementStatus, 0) & 13 = 0)))								-- Running (normal)
+								OR (Status = 'Running' AND ISNULL(SettlementStatus, 0) & 13 = 0)								-- Running (normal)
+								OR (Status = 'Running'			-- Cash Out All
+									AND Stake = 0
+									AND BetdaqId = 0
+									AND ExtraInfo LIKE '%p25%')))
 				END
 				
-				IF ',' + @StatusFilter + ',' NOT LIKE '%,2,%'		-- Not include Result Pending
+				IF ',' + @StatusFilter + ',' NOT LIKE '%,2,%'		-- Not include Delay Payout
 					OR ',' + @StatusFilter + ',' NOT LIKE '%,3,%'	-- Not include Under Settlement
 				BEGIN
 					DELETE #Data
 					WHERE Product = 'SB'
 						AND Status = 'Running'
 						AND (ISNULL(SecAcceptFlag, 0) = 0 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP)
-						AND ((',' + @StatusFilter + ',' NOT LIKE '%,2,%' AND ISNULL(SettlementStatus, 0) & 1 <> 0)			-- Result Pending
+						AND (Stake <> 0						-- Not Cash Out All
+							OR BetdaqId <> 0
+							OR ExtraInfo NOT LIKE '%p25%')
+						AND ((',' + @StatusFilter + ',' NOT LIKE '%,2,%' AND ISNULL(SettlementStatus, 0) & 1 <> 0)			-- Delay Payout
 							OR (',' + @StatusFilter + ',' NOT LIKE '%,3,%'
 								AND ISNULL(SettlementStatus, 0) & 12 <> 0
 								AND ISNULL(SettlementStatus, 0) & 1 = 0))		-- Under Settlement

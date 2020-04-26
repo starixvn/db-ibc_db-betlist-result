@@ -40,6 +40,7 @@ AS
 			- 112: Won
 			- 113: Lose
 			- 99: Abnormal Bets
+			- 2: Delay Payout
 		- @LiveIndicator:
 			- 0 : Non-live
 			- 1 : Live
@@ -54,6 +55,7 @@ AS
 		- 20190509@Kos: Show match KO time for single ticket [Redmine: #112731]
 					- Return additional column EventDate DATETIME
 		- 20190829@Kos: Support PH AIO 4b [Redmine: #118300]
+		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 */
 
 BEGIN
@@ -80,108 +82,112 @@ BEGIN
 	END CATCH
 
 	CREATE TABLE #Data (
-		TransId			BIGINT,
-		RefNo			BIGINT,
-		CustId			INT,
-		Recommend		INT,
-		Currency		SMALLINT,
-		SportType		SMALLINT,
-		BetType			SMALLINT,
-		BetId			BIGINT,
-		BetTeam			NVARCHAR(20),
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		OddsType		TINYINT,
-		Odds			MONEY,
-		MOdds			MONEY,
-		OddsSpread		MONEY,
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		WinLost			MONEY,
-		LicenseeWL		MONEY,
-		Comm			MONEY,
-		PlayerComm		MONEY,
-		Status			NVARCHAR(10),
-		TransDate		DATETIME,
-		WinLostDate		SMALLDATETIME,
-		LiveIndicator	BIT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		Ip				NVARCHAR(15),
-		BetFrom			NVARCHAR(1),
-		LeagueId		INT,
-		MatchId			INT,
-		MatchCode		NVARCHAR(50),
-		Race			NVARCHAR(50),
-		EventDate		DATETIME,
-		HomeId			INT,
-		AwayId			INT,
-		BetStatus		NVARCHAR(50),
-		IsNeutral		BIT,
-		ShowTime		NVARCHAR(50),
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000),
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000),
-		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT,
-		WalletType		TINYINT,
-		RefCode			BIGINT,
-		Product			VARCHAR(30),
-		WhTicket		TINYINT
+		TransId				BIGINT,
+		RefNo				BIGINT,
+		CustId				INT,
+		Recommend			INT,
+		Currency			SMALLINT,
+		SportType			SMALLINT,
+		BetType				SMALLINT,
+		BetId				BIGINT,
+		BetTeam				NVARCHAR(20),
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		OddsType			TINYINT,
+		Odds				MONEY,
+		MOdds				MONEY,
+		OddsSpread			MONEY,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		WinLost				MONEY,
+		LicenseeWL			MONEY,
+		Comm				MONEY,
+		PlayerComm			MONEY,
+		Status				NVARCHAR(10),
+		StatusId			TINYINT,
+		SettlementStatus	TINYINT,
+		TransDate			DATETIME,
+		WinLostDate			SMALLDATETIME,
+		LiveIndicator		BIT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		Ip					NVARCHAR(15),
+		BetFrom				NVARCHAR(1),
+		LeagueId			INT,
+		MatchId				INT,
+		MatchCode			NVARCHAR(50),
+		Race				NVARCHAR(50),
+		EventDate			DATETIME,
+		HomeId				INT,
+		AwayId				INT,
+		BetStatus			NVARCHAR(50),
+		IsNeutral			BIT,
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000),
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		OriginalStake		MONEY,
+		OriginalBetType		SMALLINT,
+		WalletType			TINYINT,
+		RefCode				BIGINT,
+		Product				VARCHAR(30),
+		WhTicket			TINYINT
 	)
 
 	CREATE TABLE #PagingData (
-		RowNum			INT,
-		TransId			BIGINT,
-		RefNo			BIGINT,
-		CustId			INT,
-		Recommend		INT,
-		Currency		SMALLINT,
-		SportType		SMALLINT,
-		BetType			SMALLINT,
-		BetId			BIGINT,
-		BetTeam			NVARCHAR(20),
-		Hdp1			SMALLMONEY,
-		Hdp2			SMALLMONEY,
-		OddsType		TINYINT,
-		Odds			MONEY,
-		MOdds			MONEY,
-		OddsSpread		MONEY,
-		Stake			MONEY,
-		Actual_Stake	MONEY,
-		WinLost			MONEY,
-		LicenseeWL		MONEY,
-		Comm			MONEY,
-		PlayerComm		MONEY,
-		Status			NVARCHAR(10),
-		TransDate		DATETIME,
-		WinLostDate		SMALLDATETIME,
-		LiveIndicator	BIT,
-		LiveHomeScore	SMALLINT,
-		LiveAwayScore	SMALLINT,
-		Ip				NVARCHAR(15),
-		BetFrom			NVARCHAR(1),
-		LeagueId		INT,
-		MatchId			INT,
-		MatchCode		NVARCHAR(50),
-		Race			NVARCHAR(50),
-		EventDate		DATETIME,
-		HomeId			INT,
-		AwayId			INT,
-		BetStatus		NVARCHAR(50),
-		IsNeutral		BIT,
-		ShowTime		NVARCHAR(50),
-		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000),
-		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000),
-		OriginalStake	MONEY,
-		OriginalBetType	SMALLINT,
-		WalletType		TINYINT,
-		RefCode			BIGINT,
-		Product			VARCHAR(30),
-		WhTicket		TINYINT
+		RowNum				INT,
+		TransId				BIGINT,
+		RefNo				BIGINT,
+		CustId				INT,
+		Recommend			INT,
+		Currency			SMALLINT,
+		SportType			SMALLINT,
+		BetType				SMALLINT,
+		BetId				BIGINT,
+		BetTeam				NVARCHAR(20),
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		OddsType			TINYINT,
+		Odds				MONEY,
+		MOdds				MONEY,
+		OddsSpread			MONEY,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		WinLost				MONEY,
+		LicenseeWL			MONEY,
+		Comm				MONEY,
+		PlayerComm			MONEY,
+		Status				NVARCHAR(10),
+		StatusId			TINYINT,
+		SettlementStatus	TINYINT,
+		TransDate			DATETIME,
+		WinLostDate			SMALLDATETIME,
+		LiveIndicator		BIT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		Ip					NVARCHAR(15),
+		BetFrom				NVARCHAR(1),
+		LeagueId			INT,
+		MatchId				INT,
+		MatchCode			NVARCHAR(50),
+		Race				NVARCHAR(50),
+		EventDate			DATETIME,
+		HomeId				INT,
+		AwayId				INT,
+		BetStatus			NVARCHAR(50),
+		IsNeutral			BIT,
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(50),
+		TransDesc			NVARCHAR(1000),
+		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
+		OriginalStake		MONEY,
+		OriginalBetType		SMALLINT,
+		WalletType			TINYINT,
+		RefCode				BIGINT,
+		Product				VARCHAR(30),
+		WhTicket			TINYINT
 	)
 
 	DECLARE @Detail TABLE (
@@ -224,9 +230,14 @@ BEGIN
 
 		SET @OriginalStatusIdList = @StatusIdList
 
-		IF ',' + @StatusIdList + ',' LIKE '%,99,%'
+		IF ',' + @StatusIdList + ',' LIKE '%,99,%'		-- Abnormal Bet
 		BEGIN
 			SET @StatusIdList = @StatusIdList + ',102'
+		END
+
+		IF ',' + @StatusIdList + ',' LIKE '%,2,%'		-- Delay Payout
+		BEGIN
+			SET @StatusIdList = @StatusIdList + ',111,112,113'
 		END
 
 		DECLARE @TempCust TABLE (CustId INT)
@@ -283,6 +294,7 @@ BEGIN
 						Comm,
 						PlayerComm,
 						Status,
+						StatusId,
 						TransDate,
 						WinLostDate,
 						LiveIndicator,
@@ -324,6 +336,7 @@ BEGIN
 						b.comm,
 						b.playercomm,
 						b.status,
+						b.statusID,
 						b.transdate,
 						b.winlostdate,
 						b.liveindicator,
@@ -391,6 +404,7 @@ BEGIN
 							Comm,
 							PlayerComm,
 							Status,
+							StatusId,
 							TransDate,
 							WinLostDate,
 							LiveIndicator,
@@ -432,6 +446,7 @@ BEGIN
 							b.comm,
 							b.playercomm,
 							b.status,
+							b.statusID,
 							b.transdate,
 							b.winlostdate,
 							b.liveindicator,
@@ -500,6 +515,7 @@ BEGIN
 							Comm,
 							PlayerComm,
 							Status,
+							StatusId,
 							TransDate,
 							WinLostDate,
 							LiveIndicator,
@@ -541,6 +557,7 @@ BEGIN
 							b.comm,
 							b.playercomm,
 							b.status,
+							b.statusID,
 							b.transdate,
 							b.winlostdate,
 							b.liveindicator,
@@ -614,6 +631,7 @@ BEGIN
 						Comm,
 						PlayerComm,
 						Status,
+						StatusId,
 						TransDate,
 						WinLostDate,
 						LiveIndicator,
@@ -655,6 +673,7 @@ BEGIN
 						b.comm,
 						b.playercomm,
 						b.status,
+						b.statusID,
 						b.transdate,
 						b.winlostdate,
 						b.liveindicator,
@@ -722,6 +741,7 @@ BEGIN
 							Comm,
 							PlayerComm,
 							Status,
+							StatusId,
 							TransDate,
 							WinLostDate,
 							LiveIndicator,
@@ -763,6 +783,7 @@ BEGIN
 							b.comm,
 							b.playercomm,
 							b.status,
+							b.statusID,
 							b.transdate,
 							b.winlostdate,
 							b.liveindicator,
@@ -831,6 +852,7 @@ BEGIN
 							Comm,
 							PlayerComm,
 							Status,
+							StatusId,
 							TransDate,
 							WinLostDate,
 							LiveIndicator,
@@ -872,6 +894,7 @@ BEGIN
 							b.comm,
 							b.playercomm,
 							b.status,
+							b.statusID,
 							b.transdate,
 							b.winlostdate,
 							b.liveindicator,
@@ -947,6 +970,7 @@ BEGIN
 						Comm,
 						PlayerComm,
 						Status,
+						StatusId,
 						TransDate,
 						WinLostDate,
 						LiveIndicator,
@@ -988,6 +1012,7 @@ BEGIN
 						b.comm,
 						b.playercomm,
 						b.status,
+						b.statusID,
 						b.transdate,
 						b.winlostdate,
 						b.liveindicator,
@@ -1055,6 +1080,7 @@ BEGIN
 							Comm,
 							PlayerComm,
 							Status,
+							StatusId,
 							TransDate,
 							WinLostDate,
 							LiveIndicator,
@@ -1096,6 +1122,7 @@ BEGIN
 							b.comm,
 							b.playercomm,
 							b.status,
+							b.statusID,
 							b.transdate,
 							b.winlostdate,
 							b.liveindicator,
@@ -1164,6 +1191,7 @@ BEGIN
 							Comm,
 							PlayerComm,
 							Status,
+							StatusId,
 							TransDate,
 							WinLostDate,
 							LiveIndicator,
@@ -1205,6 +1233,7 @@ BEGIN
 							b.comm,
 							b.playercomm,
 							b.status,
+							b.statusID,
 							b.transdate,
 							b.winlostdate,
 							b.liveindicator,
@@ -1278,6 +1307,7 @@ BEGIN
 						Comm,
 						PlayerComm,
 						Status,
+						StatusId,
 						TransDate,
 						WinLostDate,
 						LiveIndicator,
@@ -1319,6 +1349,7 @@ BEGIN
 						b.comm,
 						b.playercomm,
 						b.status,
+						b.statusID,
 						b.transdate,
 						b.winlostdate,
 						b.liveindicator,
@@ -1387,6 +1418,7 @@ BEGIN
 							Comm,
 							PlayerComm,
 							Status,
+							StatusId,
 							TransDate,
 							WinLostDate,
 							LiveIndicator,
@@ -1428,6 +1460,7 @@ BEGIN
 							b.comm,
 							b.playercomm,
 							b.status,
+							b.statusID,
 							b.transdate,
 							b.winlostdate,
 							b.liveindicator,
@@ -1497,6 +1530,7 @@ BEGIN
 							Comm,
 							PlayerComm,
 							Status,
+							StatusId,
 							TransDate,
 							WinLostDate,
 							LiveIndicator,
@@ -1538,6 +1572,7 @@ BEGIN
 							b.comm,
 							b.playercomm,
 							b.status,
+							b.statusID,
 							b.transdate,
 							b.winlostdate,
 							b.liveindicator,
@@ -1587,6 +1622,8 @@ BEGIN
 			FROM #Data AS b
 			WHERE b.Product = 'Unknown'
 				OR NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
+				OR (b.Product <> 'SB'
+					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 				OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
 					AND b.Status = 'Void'
 					AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 1)
@@ -1601,12 +1638,49 @@ BEGIN
 			WHERE b.Product = 'Unknown'
 				OR NOT EXISTS (SELECT 1 FROM @TempCust WHERE CustId = b.CustId)
 				OR NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
+				OR (b.Product <> 'SB'
+					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 				OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
 					AND b.Status = 'Void'
 					AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 1)
 				OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,102,%'
 					AND b.Status = 'Void'
 					AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 0)
+		END
+
+		IF EXISTS (SELECT 1 FROM #Data WHERE Product = 'SB' AND Status IN ('Draw', 'Won', 'Lose'))
+		BEGIN
+			UPDATE b
+			SET b.SettlementStatus = m.SettlementStatus
+			FROM #Data AS b
+				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.matchid
+			WHERE b.Product = 'SB' AND b.Status IN ('Draw', 'Won', 'Lose')
+
+			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,111,%'		-- Not include Draw, Won, Lose
+				OR ',' + @OriginalStatusIdList + ',' NOT LIKE '%,112,%'
+				OR ',' + @OriginalStatusIdList + ',' NOT LIKE '%,113,%'
+			BEGIN
+				DELETE FROM #Data
+				WHERE Product = 'SB'
+					AND (ISNULL(SettlementStatus, 0) & 1 = 0		-- isPending flag (bit 1) = 0
+						OR (Stake = 0								-- Cash Out All
+							AND BetdaqId = 0
+							AND ExtraInfo LIKE '%p25%'))
+					AND ((Status = 'Draw' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,111,%')
+						OR (Status = 'Won' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,112,%')
+						OR (Status = 'Lose' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,113,%'))
+			END
+
+			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,2,%'		-- Not include Delay Payout
+			BEGIN
+				DELETE #Data
+				WHERE Product = 'SB'
+					AND ISNULL(SettlementStatus, 0) & 1 <> 0		-- isPending flag (bit 1) = 1
+					AND Status IN ('Draw', 'Won', 'Lose')
+					AND (Stake <> 0						-- Not Cash Out All
+						OR BetdaqId <> 0
+						OR ExtraInfo NOT LIKE '%p25%')
+			END
 		END
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -1810,6 +1884,10 @@ BEGIN
 							WHEN b.Product IN ('SB') THEN b.OddsSpread
 							ELSE 0
 						END,
+					SettlementStatus = CASE
+										WHEN b.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
+										ELSE 0
+									END,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB') THEN b.LiveIndicator
 										ELSE 0
@@ -1948,6 +2026,7 @@ BEGIN
 							WHEN b.Product IN ('SB') THEN b.OddsSpread
 							ELSE 0
 						END,
+					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB') THEN b.LiveIndicator
 										ELSE 0
@@ -2063,6 +2142,7 @@ BEGIN
 				a.OddsType,
 				a.OddsSpread,
 				a.Status,
+				a.SettlementStatus,
 				a.LiveIndicator,
 				a.LiveHomeScore,
 				a.LiveAwayScore,
@@ -2146,6 +2226,10 @@ BEGIN
 							WHEN b.Product IN ('SB') THEN b.OddsSpread
 							ELSE 0
 						END,
+					SettlementStatus = CASE
+										WHEN b.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
+										ELSE 0
+									END,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB') THEN b.LiveIndicator
 										ELSE 0
@@ -2284,6 +2368,7 @@ BEGIN
 							WHEN b.Product IN ('SB') THEN b.OddsSpread
 							ELSE 0
 						END,
+					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB') THEN b.LiveIndicator
 										ELSE 0
@@ -2415,6 +2500,7 @@ BEGIN
 					a.OddsType,
 					a.OddsSpread,
 					a.Status,
+					a.SettlementStatus,
 					a.LiveIndicator,
 					a.LiveHomeScore,
 					a.LiveAwayScore,
