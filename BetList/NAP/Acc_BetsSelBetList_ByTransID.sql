@@ -126,6 +126,7 @@ AS
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 		- 20200331@Kos: Support Saba.club [Redmine: #130769]
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200427@Kos: Hotfix - Miss Sexy Gaming [Redmine: #133255]
 */
 
 BEGIN
@@ -2149,7 +2150,7 @@ BEGIN
 			END
 
 			-- Keno, Gold Deluxe, Lottery, Card Club, NPH Promotion, Spadegaming, Virtual Games, Table Games, Indo 4D, Sexy Gaming, Saba.club
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE Bettype = @BetType AND ProductID IN (8, 12, 28, 34, 36, 37, 38, 40, 42, 43))
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE Bettype = @BetType AND ProductID IN (8, 12, 28, 34, 36, 37, 38, 40, 42, 43, 45))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
