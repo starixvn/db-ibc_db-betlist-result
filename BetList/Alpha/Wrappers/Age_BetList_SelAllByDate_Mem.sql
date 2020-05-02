@@ -94,8 +94,9 @@ AS
 		- 20200302@Kos: Support SA Gaming [Redmine: #128048]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 		- 20200331@Kos: Support Saba.club [Redmine: #130769]
-		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200402@Kos: Support Table Game [Redmine: #129433]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 */
 
 BEGIN
@@ -497,6 +498,8 @@ BEGIN
 									THEN 'Waiting'
 								ELSE b.status
 							END
+						WHEN c.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+						WHEN c.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 						ELSE b.status
 					END
 			,SettlementStatus = CASE

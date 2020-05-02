@@ -103,6 +103,7 @@ AS
 		- 20200331@Kos: Support Saba.club [Redmine: #130769]
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 */
 
 BEGIN
@@ -435,6 +436,8 @@ BEGIN
 								ELSE b.actual_stake END
 				,Status = CASE
 								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SAG', 'SBC', 'SXG') AND x.status IS NOT NULL THEN x.status
+								WHEN c.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+								WHEN c.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 								ELSE b.status
 							END
 				,SettlementStatus = CASE
@@ -732,7 +735,11 @@ BEGIN
 							ELSE 0 END
 				,Stake = b.stake
 				,Actual_Stake = b.actual_stake
-				,Status = b.Status
+				,Status = CASE
+							WHEN c.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+							WHEN c.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+							ELSE b.status
+						END
 				,SettlementStatus = 0
 				,TransDate = b.transdate
 				,WinLostDate = b.winlostdate

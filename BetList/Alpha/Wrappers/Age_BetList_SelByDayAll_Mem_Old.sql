@@ -61,8 +61,9 @@ AS
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 		- 20200301@Kos: Support SA Gaming [Redmine: #122140]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
-		- 20200331@Kos: Support Saba.club [Redmine: #130769]		
-		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200331@Kos: Support Saba.club [Redmine: #130769]
+		- 20200402@Kos: Support Table Game [Redmine: #129433]
+		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 
 	Param's Explanation:
 		+ @TransType:
@@ -350,6 +351,11 @@ BEGIN
 					Comm = b.Comm - b.PlayerComm,
 					AComm = b.AComm - b.Comm,
 					SComm = b.SComm - b.AComm,
+					Status = CASE
+							WHEN b.Product = 'TG' AND b.Status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+							WHEN b.Product = 'TG' AND b.Status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+							ELSE b.Status
+						END,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
