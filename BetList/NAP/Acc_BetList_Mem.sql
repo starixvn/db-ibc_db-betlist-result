@@ -41,8 +41,9 @@ AS
 		- 20200323@Kos: Support Indo 4D [Redmine: #130857]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 		- 20200331@Kos: Support Saba.club [Redmine: #130769]
-		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200402@Kos: Support Table Game [Redmine: #129433]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 */
 
 BEGIN
@@ -1229,6 +1230,8 @@ BEGIN
 									END
 								WHEN @IsCN88 = 1 AND b.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 								WHEN @IsCN88 = 1 AND b.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+								WHEN b.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+								WHEN b.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 								ELSE b.status
 							END,
 					SettlementStatus = CASE
@@ -1698,6 +1701,8 @@ BEGIN
 					Status = CASE
 								WHEN @IsCN88 = 1 AND b.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 								WHEN @IsCN88 = 1 AND b.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+								WHEN b.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+								WHEN b.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 								ELSE b.status
 							END,
 					SettlementStatus = 0,
@@ -1897,6 +1902,8 @@ BEGIN
 					Status = CASE
 								WHEN @IsCN88 = 1 AND b.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 								WHEN @IsCN88 = 1 AND b.Product IN ('SB', 'VS', 'VS2') AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+								WHEN b.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+								WHEN b.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 								ELSE b.status
 							END,
 					SettlementStatus = 0,

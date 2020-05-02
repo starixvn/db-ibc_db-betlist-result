@@ -134,8 +134,9 @@ AS
 		- 20200222@Kos: Support SA Gaming [Redmine: #128048]
 		- 20200323@Kos: Support Indo 4D [Redmine: #130857]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
-		- 20200331@Kos: Support Saba.club [Redmine: #130769]		
-		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200331@Kos: Support Saba.club [Redmine: #130769]
+		- 20200402@Kos: Support Table Game [Redmine: #129433]
+		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 
 	Param's Explanation:
 		+ @TransType:
@@ -624,7 +625,7 @@ BEGIN
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
 			-- RNG Casino, Keno, Gold Deluxe, AG Casino, AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino
-			-- Card Club, NPH Promotion, Spadegaming, Virtual Games, SA Gaming, Indo 4D, Sexy Gaming, Saba.club, Table Games
+			-- Card Club, NPH Promotion, Spadegaming, Virtual Games, SA Gaming, Indo 4D, Sexy Gaming, Saba.club, Table Game
 			INSERT INTO @Data
 			SELECT
 				CASE
@@ -685,7 +686,11 @@ BEGIN
 				0 AS finalodds2,
 				0 AS OddsType,
 				'' AS betteam,
-				b.status,
+				CASE
+					WHEN s.ProductID = 40 AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+					WHEN s.ProductID = 40 AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+					ELSE b.status
+				END AS status,
 				0 AS SettlementStatus,
 				'' AS betstatus,
 				'' AS comstatus,
@@ -1774,7 +1779,11 @@ BEGIN
 					0 AS finalodds2,
 					0 AS OddsType,
 					'' AS betteam,
-					b.status,
+					CASE
+						WHEN s.ProductID = 40 AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+						WHEN s.ProductID = 40 AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+						ELSE b.status
+					END AS status,
 					0 AS SettlementStatus,
 					'' AS betstatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,

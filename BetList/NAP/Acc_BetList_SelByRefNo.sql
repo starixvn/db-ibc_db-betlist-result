@@ -94,7 +94,8 @@ AS
 		- 20200323@Kos: Support Indo 4D [Redmine: #130857]
 		- 20200324@Kos: Support Sexy Gaming [Redmine: #130680]
 		- 20200331@Kos: Support Saba.club [Redmine: #130769]
-		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20200402@Kos: Support Table Game [Redmine: #129433]
+		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 */
 
 BEGIN
@@ -736,7 +737,11 @@ BEGIN
 					0 AS finalodds,
 					0 AS finalodds2,
 					0 AS OddsType,
-					b.status,
+					CASE
+						WHEN s.ProductID = 40 AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+						WHEN s.ProductID = 40 AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+						ELSE b.status
+					END AS status,
 					0 AS SettlementStatus,
 					'' AS comstatus,
 					b.stake,
@@ -2201,7 +2206,11 @@ BEGIN
 					0 AS finalodds,
 					0 AS finalodds2,
 					0 AS OddsType,
-					b.status,
+					CASE
+						WHEN s.ProductID = 40 AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+						WHEN s.ProductID = 40 AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+						ELSE b.status
+					END AS status,
 					0 AS SettlementStatus,
 					'' AS comstatus,
 					b.stake,
