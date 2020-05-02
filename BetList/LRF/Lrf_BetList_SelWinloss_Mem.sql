@@ -117,6 +117,7 @@ AS
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -1064,7 +1065,11 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				ISNULL(b.betteam, ''),
-				b.status,
+				CASE
+					WHEN sbt.ProductID = 40 AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+					WHEN sbt.ProductID = 40 AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+					ELSE b.status
+				END AS status,
 				0 AS SettlementStatus,
 				b.refno,
 				b.transdate,
@@ -2301,7 +2306,11 @@ BEGIN
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN ISNULL(b.betteam, '')
 					ELSE ''
 				END AS Betteam,
-				b.status,
+				CASE
+					WHEN sbt.ProductID = 40 AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+					WHEN sbt.ProductID = 40 AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+					ELSE b.status
+				END AS status,
 				0 AS SettlementStatus,
 				b.refno,
 				b.Transdate,
@@ -3229,7 +3238,11 @@ BEGIN
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN ISNULL(b.betteam, '')
 					ELSE ''
 				END AS Betteam,
-				b.status,
+				CASE
+					WHEN sbt.ProductID = 40 AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+					WHEN sbt.ProductID = 40 AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+					ELSE b.status
+				END AS status,
 				0 AS SettlementStatus,
 				b.refno,
 				b.transdate,

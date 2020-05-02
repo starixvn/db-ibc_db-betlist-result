@@ -102,6 +102,7 @@ AS
 		- 20200208@Kos: Support Virtual Games [Redmine: #124911]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
+		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 
 	Param's Explanation:
 		+ @TransType:
@@ -709,7 +710,11 @@ BEGIN
 					ELSE 0
 				END AS Odds,
 				'' AS betteam,
-				b.status,
+				CASE
+					WHEN sbt.ProductID = 40 AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+					WHEN sbt.ProductID = 40 AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+					ELSE b.status
+				END AS status,
 				0 AS SettlementStatus,
 				'' AS betstatus,
 				b.stake,
@@ -1394,7 +1399,11 @@ BEGIN
 					ELSE 0
 				END AS Odds,
 				'' AS betteam,
-				b.status,
+				CASE
+					WHEN sbt.ProductID = 40 AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+					WHEN sbt.ProductID = 40 AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+					ELSE b.status
+				END AS status,
 				0 AS SettlementStatus,
 				0 AS betstatus,
 				b.stake,

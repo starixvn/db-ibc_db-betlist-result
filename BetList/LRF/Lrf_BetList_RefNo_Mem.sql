@@ -35,6 +35,7 @@ AS
 		- 20200221@Kos: Support Virtual Games [Redmine: #124911]
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
+		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 */
 
 BEGIN
@@ -627,6 +628,8 @@ BEGIN
 								THEN 'Waiting'
 							ELSE b.status
 						END
+				WHEN @Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+				WHEN @Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 				ELSE b.status
 			END AS Status,
 			CASE
@@ -845,8 +848,8 @@ BEGIN
 			b.playercomm,
 			b.comm,
 			CASE
-				WHEN @Product IN ('SB', 'CO')
-					AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				WHEN @Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+				WHEN @Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 				ELSE b.status
 			END AS Status,
 			0 AS SettlementStatus,
@@ -1061,8 +1064,8 @@ BEGIN
 			b.playercomm,
 			b.comm,
 			CASE
-				WHEN @Product IN ('SB', 'CO')
-					AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				WHEN @Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+				WHEN @Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 				ELSE b.status
 			END AS Status,
 			0 AS SettlementStatus,

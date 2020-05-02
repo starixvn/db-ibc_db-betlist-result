@@ -82,6 +82,7 @@ AS
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 */
 
 BEGIN
@@ -1074,6 +1075,11 @@ BEGIN
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					Status = CASE
+								WHEN b.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+								WHEN b.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+								ELSE b.status
+							END,
 					SettlementStatus = CASE
 										WHEN b.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
 										ELSE 0
@@ -1232,6 +1238,11 @@ BEGIN
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
+					Status = CASE
+								WHEN b.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+								WHEN b.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+								ELSE b.status
+							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
@@ -1385,6 +1396,11 @@ BEGIN
 					MOdds = CASE 
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
+							END,
+					Status = CASE
+								WHEN b.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+								WHEN b.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+								ELSE b.status
 							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
