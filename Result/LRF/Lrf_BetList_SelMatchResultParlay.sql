@@ -31,6 +31,7 @@ AS
 		- 20191028@Kos: Move to DBACC [Redmine: #122267]
 		- 20191107@Kos: Support Badminton AIO phase 2 [Redmine: #120336]
 		- 20191223@Kos: Support PH AIO phase 5 [Redmine: #126005]
+		- 20200507@Kos: Support E-Sports phase 3 [Redmine: #132386]
 */
 
 BEGIN
@@ -174,7 +175,8 @@ BEGIN
 					AND (p.BetType NOT IN (395, 385, 384, 383, 382, 381)
 						OR d.ResourceID LIKE '%' + CASE
 														WHEN p.BetType = 395 THEN RIGHT(p.BetCheck, 2)
-														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+														WHEN p.BetType IN (385, 384, 383, 382, 381) THEN RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+														ELSE ''
 													END))
 				OR (p.SportType = 2								-- Basketball
 					AND (LEN(d.ResourceId) = 2
@@ -341,7 +343,8 @@ BEGIN
 					AND (p.BetType NOT IN (395, 385, 384, 383, 382, 381)
 						OR d.ResourceID LIKE '%' + CASE
 														WHEN p.BetType = 395 THEN RIGHT(p.BetCheck, 2)
-														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+														WHEN p.BetType IN (385, 384, 383, 382, 381) THEN RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+														ELSE ''
 													END))
 				OR (p.SportType = 2								-- Basketball
 					AND (LEN(d.ResourceId) = 2
@@ -508,7 +511,8 @@ BEGIN
 					AND (p.BetType NOT IN (395, 385, 384, 383, 382, 381)
 						OR d.ResourceId LIKE '%' + CASE
 														WHEN p.BetType = 395 THEN RIGHT(p.BetCheck, 2)
-														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+														WHEN p.BetType IN (385, 384, 383, 382, 381) THEN RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+														ELSE ''
 													END))
 				OR (p.SportType = 2								-- Basketball
 					AND (LEN(d.ResourceId) = 2

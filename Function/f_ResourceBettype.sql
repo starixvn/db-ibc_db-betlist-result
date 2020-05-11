@@ -25,6 +25,7 @@ AS
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20191220@Kos: Support PH AIO phase 5 [Redmine: #124455]
+		- 20200507@Kos: Support E-Sports phase 3 [Redmine: #132386]
 */
 
 BEGIN
@@ -341,7 +342,8 @@ BEGIN
 	SELECT 43, 1, 'E-Sports', 9072, '9072%'	UNION ALL
 	SELECT 43, 1, 'E-Sports', 9073, '9073%'	UNION ALL
 	SELECT 43, 1, 'E-Sports', 9074, '9074%'	UNION ALL
-	SELECT 43, 1, 'E-Sports', 9075, '9075%'
+	SELECT 43, 1, 'E-Sports', 9075, '9075%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9087, '9087%'
 
 	-- 8. PH All In One phase 4b & Next Goal
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)

@@ -1,1 +1,1 @@
-BetList/LRF/Lrf_BetList_Licensee.sql
+Result/LRF/Lrf_BetList_SelMatchResult.sql
