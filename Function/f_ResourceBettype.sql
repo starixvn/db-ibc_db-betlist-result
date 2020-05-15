@@ -26,6 +26,7 @@ AS
 		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20191220@Kos: Support PH AIO phase 5 [Redmine: #124455]
 		- 20200507@Kos: Support E-Sports phase 3 [Redmine: #132386]
+		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
 */
 
 BEGIN
@@ -444,6 +445,9 @@ BEGIN
 
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 12, 'Penalty Shootout', 381, '381%')
+
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 12, 'Penalty Shootout', 376, '376')
 
 	RETURN
 END
