@@ -19,6 +19,7 @@ AS
 					- Change to use inline function for SportBetTypeMatrix
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20190524@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
+		- 20200427@Kos: Support Sexy Gaming [Redmine: #130859]
 
 	Parameters:
 		- @TransType
@@ -63,7 +64,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (11, 21)
+	WHERE ProductID IN (11, 21, 45)
 
 	DECLARE @tmpStatus TABLE (StatusId TINYINT)
 
@@ -142,11 +143,11 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
@@ -175,11 +176,11 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
@@ -206,11 +207,11 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 45) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode
 		FROM DBARC.bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
