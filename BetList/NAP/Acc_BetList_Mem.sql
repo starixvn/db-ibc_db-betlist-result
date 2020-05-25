@@ -47,6 +47,7 @@ AS
 		- 20200507@Kos: Support IBCBet Live Casino [Redmine: #130688]
 		- 20200514@Kos: Support BBIN [Redmine: #131362]
 		- 20200526@Kos: Support RNG War [Redmine: #132017]
+		- 20200609@Kos: Support ION [Redmine: #132329]
 */
 
 BEGIN
@@ -340,7 +341,7 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND (',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-				OR (s.ProductID IN (6, 21, 22, 24, 32, 34, 36, 39, 42, 45, 46, 50)
+				OR (s.ProductID IN (6, 21, 22, 24, 32, 34, 36, 39, 42, 45, 46, 50, 52)
 					AND b.winlostdate >= @Yesterday))		-- Don't care status of yesterday and today summary casino rows
 
 		-- Get more info for CashOut tickets
@@ -812,6 +813,7 @@ BEGIN
 						WHEN s.ProductID = 46 THEN 'IBCLC'							-- IBCBet Live Casino
 						WHEN s.ProductID = 47 THEN 'BBIN'							-- BBIN
 						WHEN s.ProductID = 50 THEN 'RNGW'							-- RNG War
+						WHEN s.ProductID = 52 THEN 'ION'							-- ION
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.ProductID = 3 THEN 'NG'								-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -828,7 +830,7 @@ BEGIN
 			OR Product IS NULL
 			OR BetType IN (903, 904, 913, 914)
 			OR (Product <> 'SB'
-				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'FW', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC')
+				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'FW', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION')
 					OR WinLostDate < @Yesterday)
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'		-- Abnormal Bets
@@ -1076,7 +1078,7 @@ BEGIN
 				END
 			END
 
-			IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC') AND WinLostDate >= @Yesterday)		-- bettransLC
+			IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION') AND WinLostDate >= @Yesterday)		-- bettransLC
 			BEGIN
 				-- Running
 				IF ',' + @OriginalStatusIdList + ',' LIKE '%,0,%'
@@ -1106,7 +1108,7 @@ BEGIN
 						0 AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC')
+					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION')
 						AND c.WinLostDate >= @Yesterday
 						AND blc.statusID IN (0, 1)
 					GROUP BY
@@ -1148,7 +1150,7 @@ BEGIN
 						0 AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC')
+					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION')
 						AND c.WinLostDate >= @Yesterday
 						AND blc.statusID NOT IN (0, 1)
 					GROUP BY
@@ -1164,7 +1166,7 @@ BEGIN
 
 			DELETE b
 			FROM @Data AS b
-			WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'Allbet', 'SAG', 'SXG', 'IBCLC')
+			WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION')
 				AND b.Winlostdate >= @Yesterday
 				AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 
@@ -1178,7 +1180,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
+									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN', 'ION') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1348,7 +1350,7 @@ BEGIN
 					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 				WHERE b.TableID = 1
-					AND (b.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG', 'IBCLC')
+					AND (b.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION')
 						OR b.WinLostDate < @Yesterday)
 
 				-- translog
@@ -1528,7 +1530,7 @@ BEGIN
 					b.Creator,
 					b.Currency,
 					CASE
-						WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC') THEN b.matchid
+						WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION') THEN b.matchid
 						WHEN b.Product = 'AllBet' THEN 211 -- AllBet
 						WHEN b.Product = 'VB' THEN 212 -- Macau Games
 						WHEN b.Product = 'FW' THEN 219 -- Fishing World
@@ -1608,10 +1610,10 @@ BEGIN
 					b.Product
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
-				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'Allbet', 'SAG', 'SXG', 'IBCLC') AND b.WinLostDate >= @Yesterday
+				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION') AND b.WinLostDate >= @Yesterday
 
 				DELETE FROM @Data
-				WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'Allbet', 'SAG', 'SXG', 'IBCLC') AND WinLostDate >= @Yesterday
+				WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION') AND WinLostDate >= @Yesterday
 
 				INSERT INTO @Data
 				SELECT * FROM @TmpCasinoData
@@ -1661,7 +1663,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
+									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN', 'ION') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1862,7 +1864,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
+									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN', 'ION') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion, Spadegaming
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -2135,7 +2137,6 @@ BEGIN
 	SELECT DISTINCT * FROM @DetailData
 END
 GO
-
 
 
 GRANT	EXECUTE	ON	Acc_BetList_Mem	TO	bodbAdminNet

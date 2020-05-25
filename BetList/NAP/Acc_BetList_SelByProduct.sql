@@ -51,6 +51,7 @@ AS
 		- 20200331@Kos: Support Saba.club [Redmine: #130769]
 		- 20200421@Kos: Support IBCBet Live Casino [Redmine: #130688]
 		- 20200514@Kos: Support BBIN [Redmine: #131362]
+		- 20200525@Kos: Support ION [Redmine: #132329]
 */
 
 BEGIN
@@ -376,10 +377,11 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming
-			IF @ProductId IN (21, 39, 45, 46)
+			-- AllBet, SA Gaming, Sexy Gaming, ION
+			IF @ProductId IN (21, 39, 45, 46, 52)
 			BEGIN
-				IF @GameId <> '' OR @BetId <> ''
+				IF (@GameId <> '' AND @ProductId <> 52)
+					OR @BetId <> ''
 				BEGIN
 					INSERT INTO @Data
 					SELECT
@@ -510,7 +512,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 52) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
@@ -778,10 +780,11 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino
-			IF @ProductId IN (21, 39, 45, 46)
+			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION
+			IF @ProductId IN (21, 39, 45, 46, 52)
 			BEGIN
-				IF @GameId <> '' OR @BetId <> ''
+				IF (@GameId <> '' AND @ProductId <> 52)
+					OR @BetId <> ''
 				BEGIN
 					INSERT INTO @Data
 					SELECT
@@ -912,7 +915,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 52) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
