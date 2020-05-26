@@ -83,6 +83,7 @@ AS
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 */
 
 BEGIN
@@ -1168,7 +1169,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -1328,7 +1329,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -1487,7 +1488,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE

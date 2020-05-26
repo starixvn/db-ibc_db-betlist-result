@@ -1,22 +1,22 @@
 ﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Outright]
-	@AgentList			VARCHAR(MAX),
-	@FromDate			SMALLDATETIME,
-	@ToDate				SMALLDATETIME,
-	@ShowBA				BIT				= 0,
-	@ShowSB				BIT				= 0,
-	@ExcludeReject		BIT				= 0,
-	@MoveBetsDay		SMALLDATETIME,
-	@BaseCurrency		VARCHAR(10),
-	@PageSize			INT				= 1000,
-	@PageIndex			INT				= 0,
-	@Sort				NVARCHAR(50)	= N'TransDate ASC',
-	@TotalRows			INT				= 0 OUTPUT,
-	@SumWinLost			MONEY			= 0 OUTPUT,
-	@SumLicenseeWL		MONEY			= 0 OUTPUT,
-	@SumComm			MONEY			= 0 OUTPUT,
-	@SumPlayerComm		MONEY			= 0 OUTPUT
+	@AgentList		VARCHAR(MAX),
+	@FromDate		SMALLDATETIME,
+	@ToDate			SMALLDATETIME,
+	@ShowBA			BIT				= 0,
+	@ShowSB			BIT				= 0,
+	@ExcludeReject	BIT				= 0,
+	@MoveBetsDay	SMALLDATETIME,
+	@BaseCurrency	VARCHAR(10),
+	@PageSize		INT				= 1000,
+	@PageIndex		INT				= 0,
+	@Sort			NVARCHAR(50)	= N'TransDate ASC',
+	@TotalRows		INT				= 0 OUTPUT,
+	@SumWinLost		MONEY			= 0 OUTPUT,
+	@SumLicenseeWL	MONEY			= 0 OUTPUT,
+	@SumComm		MONEY			= 0 OUTPUT,
+	@SumPlayerComm	MONEY			= 0 OUTPUT
 AS
 
 /*
@@ -48,6 +48,7 @@ AS
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 					- Don't return column AwayId, IsNeutral, IsBA anymore
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 */
 
 BEGIN
@@ -101,7 +102,8 @@ BEGIN
 		MatchId			INT, 
 		Ip				VARCHAR(30),
 		WinLostDate		SMALLDATETIME,
-		Currency		SMALLINT
+		Currency		SMALLINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	CREATE TABLE #ExchangeRate (
@@ -151,7 +153,8 @@ BEGIN
 				b.matchid,
 				b.ip,
 				b.winlostdate,
-				b.currency
+				b.currency,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
@@ -196,9 +199,10 @@ BEGIN
 				b.matchid,
 				b.ip,
 				b.winlostdate,
-				b.currency
+				b.currency,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM
-				dbo.bettrans AS b WITH (NOLOCK) 
+				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE b.bettype = 10
@@ -249,7 +253,8 @@ BEGIN
 				b.matchid,
 				b.ip,
 				b.winlostdate,
-				b.currency
+				b.currency,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK) 
 				INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
@@ -294,7 +299,8 @@ BEGIN
 				b.matchid,
 				b.ip,
 				b.winlostdate,
-				b.currency
+				b.currency,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
@@ -391,7 +397,8 @@ BEGIN
 		MatchId			INT, 
 		Ip				VARCHAR(30),
 		WinLostDate		SMALLDATETIME,
-		Currency		SMALLINT
+		Currency		SMALLINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	-- Exchange rate is different for each day => Stake order may be different from StakeUSD order
@@ -477,7 +484,8 @@ BEGIN
 		b.MatchId, 
 		b.Ip,
 		b.WinLostDate,
-		Currency
+		b.Currency,
+		b.ExtraInfo
 	FROM #PagingData AS b
 		LEFT JOIN #ExchangeRate AS e
 			ON e.ExchangeId = b.Currency

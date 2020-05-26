@@ -35,7 +35,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByDate_Mem]
 	@ShowSG				BIT				= 0,	-- Spadegaming
 	@ShowVRG			BIT				= 0,	-- Virtual Games
 	@ShowTG				BIT				= 0,	-- Table Games
-	@ShowSBC			BIT				= 0,		-- Saba.club
+	@ShowSBC			BIT				= 0,	-- Saba.club
 	@ShowI4D			BIT				= 0,	-- Indo 4D
 	@ShowSXG			BIT				= 0		-- Sexy Gaming
 AS
@@ -134,6 +134,7 @@ AS
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200511@Kos: Support Sexy Gaming [Redmine: #130859]
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 */
 
 BEGIN
@@ -1209,7 +1210,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -1371,7 +1372,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -1532,7 +1533,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE

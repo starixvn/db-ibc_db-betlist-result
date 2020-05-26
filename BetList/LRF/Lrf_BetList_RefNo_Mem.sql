@@ -38,6 +38,7 @@ AS
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200511@Kos: Support Sexy Gaming [Redmine: #130859]
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 */
 
 BEGIN
@@ -724,7 +725,7 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN @Product IN ('SB', 'SPR') THEN ISNULL(b.ExtraInfo, '')
+				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -941,7 +942,7 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN @Product IN ('SB', 'SPR') THEN ISNULL(b.ExtraInfo, '')
+				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -1157,7 +1158,7 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN @Product IN ('SB', 'SPR') THEN ISNULL(b.ExtraInfo, '')
+				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE

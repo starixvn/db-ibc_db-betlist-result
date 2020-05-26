@@ -53,6 +53,7 @@ AS
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 */
 
 BEGIN
@@ -743,7 +744,7 @@ BEGIN
 				'' AS BetCheck,
 				'' AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -809,7 +810,7 @@ BEGIN
 				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -1153,7 +1154,7 @@ BEGIN
 				'' AS BetCheck,
 				'' AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -1219,7 +1220,7 @@ BEGIN
 				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,

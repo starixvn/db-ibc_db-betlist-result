@@ -97,6 +97,7 @@ AS
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200511@Kos: Support Sexy Gaming [Redmine: #130859]
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 
 	Param's Explanation:
 		+ @TransType:
@@ -516,7 +517,7 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc,
 			-1 AS BetdaqId,
-			'' AS ExtraInfo,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,
@@ -583,7 +584,7 @@ BEGIN
 			'' AS betcheck,
 			'' AS transdesc,
 			-1 AS BetdaqId,
-			'' AS ExtraInfo,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,

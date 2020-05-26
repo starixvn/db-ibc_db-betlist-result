@@ -48,6 +48,7 @@ AS
 		- 20200402@Kos: Support Table Games [Redmine: #131447]
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 */
 
 BEGIN
@@ -540,18 +541,18 @@ BEGIN
 			SET
 				BATransId = ba.TransID,
 				Product = CASE
-							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 							WHEN s.ProductID = 8 THEN 'Keno'
-							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 40 THEN 'TG'								-- Table Games
 							WHEN s.ProductID = 43 THEN 'I4D'							-- Indo 4D
+							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
+							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
-							WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'			-- Betradar Virtual Sports
+							WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'		-- Betradar Virtual Sports
 							WHEN s.EventType = 2 AND s.ProductID = 1 THEN 'Outright'
-							WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'			-- Virtual Sports Racing							
+							WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'			-- Virtual Sports Racing
 							ELSE 'Unknown'
 						END
 			FROM #Data AS b
@@ -864,7 +865,7 @@ BEGIN
 								ELSE -1
 							END,
 				ExtraInfo = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END,
 				OriginalStake = CASE

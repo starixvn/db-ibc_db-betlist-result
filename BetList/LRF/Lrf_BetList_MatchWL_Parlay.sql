@@ -48,6 +48,7 @@ AS
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 					- Don't return column IsNeutral, IsBA anymore
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 */
 
 BEGIN
@@ -106,7 +107,8 @@ BEGIN
 		Ip				VARCHAR(30),
 		Currency		SMALLINT,
 		AWinLost		MONEY,
-		BetCheck		NVARCHAR(50)
+		BetCheck		NVARCHAR(50),
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	CREATE TABLE #ExchangeRate (
@@ -157,14 +159,14 @@ BEGIN
 				b.ip,
 				b.currency,
 				b.awinlost,
-				ISNULL(b.betcheck, '') AS BetCheck
+				ISNULL(b.betcheck, '') AS BetCheck,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @BetType
-				AND b.matchid = @BetType
 				AND b.tpositiontaking = 0
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -204,14 +206,17 @@ BEGIN
 				b.ip,
 				b.currency,
 				b.awinlost,
-				ISNULL(b.betcheck, '') AS BetCheck
+				ISNULL(b.betcheck, '') AS BetCheck,
+				CASE
+					WHEN b.bettype IN (9, 29) THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @BetType
-				AND b.matchid = @BetType
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -258,14 +263,14 @@ BEGIN
 				b.ip,
 				b.currency,
 				b.awinlost,
-				ISNULL(b.betcheck, '') AS BetCheck
+				ISNULL(b.betcheck, '') AS BetCheck,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.bettype = @BetType
-				AND b.matchid = @BetType
 				AND b.tpositiontaking = 0
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -282,7 +287,7 @@ BEGIN
 				b.refno,
 				CASE
 					WHEN bettype <> 29 THEN b.transid
-					ELSE CASE WHEN ISNULL(b.BetID,0) = 0 THEN b.transid ELSE betid END
+					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE betid END
 				END AS transid,
 				ISNULL(b.betid, 0),
 				b.hdp1,
@@ -305,14 +310,17 @@ BEGIN
 				b.ip,
 				b.currency,
 				b.awinlost,
-				ISNULL(b.betcheck, '') AS BetCheck
+				ISNULL(b.betcheck, '') AS BetCheck,
+				CASE
+					WHEN b.bettype IN (9, 29) THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE
 				b.recommend IN (SELECT CustId FROM @TempAg)
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.bettype = @BetType
-				AND b.matchid = @BetType
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -400,7 +408,8 @@ BEGIN
 		Ip				VARCHAR(30),
 		Currency		SMALLINT,
 		AWinLost		MONEY,
-		BetCheck		NVARCHAR(50)
+		BetCheck		NVARCHAR(50),
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	-- Exchange rate is different for each day => Stake order may be different from StakeUSD order
@@ -487,7 +496,8 @@ BEGIN
 		b.Ip,
 		b.Currency,
 		b.AWinLost,
-		b.BetCheck
+		b.BetCheck,
+		b.ExtraInfo
 	FROM #PagingData AS b
 		LEFT JOIN #ExchangeRate AS e
 			ON e.ExchangeId = b.Currency

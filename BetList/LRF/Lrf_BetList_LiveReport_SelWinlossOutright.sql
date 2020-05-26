@@ -35,6 +35,7 @@ AS
 		- 20190521@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Don't return column AwayId, IsNeutral, IsBA anymore
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 */
 
 BEGIN
@@ -86,7 +87,8 @@ BEGIN
 		MatchId			INT,
 		Ip				VARCHAR(30),
 		WinLostDate		SMALLDATETIME,
-		Currency		SMALLINT
+		Currency		SMALLINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	DECLARE @TempFromDate	SMALLDATETIME,
@@ -127,7 +129,8 @@ BEGIN
 				b.matchid,
 				b.ip,
 				b.winlostdate,
-				b.currency
+				b.currency,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
@@ -169,7 +172,8 @@ BEGIN
 				b.matchid, 
 				b.ip,
 				b.winlostdate,
-				b.currency
+				b.currency,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
@@ -219,7 +223,8 @@ BEGIN
 				b.matchid,
 				b.ip,
 				b.winlostdate,
-				b.currency
+				b.currency,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
@@ -261,7 +266,8 @@ BEGIN
 				b.matchid,
 				b.ip,
 				b.winlostdate,
-				b.currency
+				b.currency,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
@@ -351,7 +357,8 @@ BEGIN
 		a.MatchId,
 		a.Ip,
 		a.WinLostDate,
-		a.Currency
+		a.Currency,
+		a.ExtraInfo
 	FROM (
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY b.TransDate ASC) AS RowNum,

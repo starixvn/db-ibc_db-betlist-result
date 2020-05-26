@@ -24,6 +24,7 @@ AS
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 		- 20200427@Kos: Support Sexy Gaming [Redmine: #130859]
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 */
 
 BEGIN
@@ -723,7 +724,7 @@ BEGIN
 								WHEN b.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('Keno') THEN ISNULL(b.custom2, '')
 								WHEN b.Product IN ('VRG') THEN ISNULL(b.Gameid3rd, '')
-								WHEN b.Product IN ('SB') AND b.bettype IN (216, 217) THEN ISNULL(b.betcheck, '')
+								WHEN b.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('CB') THEN ISNULL(b.Tranid3rd, '')
 								ELSE ''
 							END,
@@ -740,7 +741,7 @@ BEGIN
 								ELSE -1
 							END,
 				ExtraInfo = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END,
 				OriginalStake = CASE

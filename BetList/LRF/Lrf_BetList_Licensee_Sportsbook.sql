@@ -56,6 +56,7 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20190829@Kos: Support PH AIO 4b [Redmine: #118300]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 */
 
 BEGIN
@@ -1956,7 +1957,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -2095,7 +2096,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -2298,7 +2299,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -2437,7 +2438,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
