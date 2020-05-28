@@ -105,6 +105,7 @@ AS
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200513@Kos: Support IBCBet Live Casino [Redmine: #130688]
 		- 20200514@Kos: Support BBIN [Redmine: #131362]
+		- 20200526@Kos: Support RNG War [Redmine: #132017]
 */
 
 BEGIN
@@ -332,6 +333,7 @@ BEGIN
 						WHEN s.ProductID = 45 THEN 'SXG'	-- Sexy Gaming
 						WHEN s.ProductID = 46 THEN 'IBCLC'	-- IBCBet Live Casino
 						WHEN s.ProductID = 47 THEN 'BBIN'	-- BBIN
+						WHEN s.ProductID = 50 THEN 'RNGW'	-- RNG War
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 						WHEN s.ProductID = 3 THEN 'NG'		-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
@@ -357,7 +359,7 @@ BEGIN
 							ELSE b.transid
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
+								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe

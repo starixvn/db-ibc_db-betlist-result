@@ -123,6 +123,7 @@ AS
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200507@Kos: Support IBCBet Live Casino [Redmine: #130688]
 		- 20200514@Kos: Support BBIN [Redmine: #131362]
+		- 20200526@Kos: Support RNG War [Redmine: #132017]
 */
 
 BEGIN
@@ -398,7 +399,7 @@ BEGIN
 			AND statusID IN (0, 1)
 			AND gameid IN (
 					SELECT DISTINCT BetType FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-					WHERE ProductID IN (6, 22, 24, 32, 34, 36, 42)
+					WHERE ProductID IN (6, 22, 24, 32, 34, 36, 42, 50)
 				)
 		GROUP BY RefNo, gameID
 	) AS s ON s.TransID = d.TransId
@@ -526,7 +527,7 @@ BEGIN
 
 		DELETE @BetListSelRunningByDateMem
 		WHERE ProductID IS NULL
-			OR (ProductID IN (21, 39, 6, 22, 24, 32, 34, 36, 42, 45, 46) AND TableID = 1)
+			OR (ProductID IN (21, 39, 6, 22, 24, 32, 34, 36, 42, 45, 46, 50) AND TableID = 1)
 
 		IF (@hasData & 1 = 1) --got bettrans' data
 		BEGIN
@@ -815,14 +816,14 @@ BEGIN
 		END -- got translog's data
 
 		-- Allbet, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, SA Gaming
-		-- Sexy Gaming, Saba.club, IBCBet Live Casino
-		IF EXISTS ( SELECT 1 FROM @BetListSelRunningByDateMem WHERE ProductId IN (21, 6, 22, 24, 32, 34, 36, 39, 42, 45, 46))
+		-- Sexy Gaming, Saba.club, IBCBet Live Casino, RNG War
+		IF EXISTS ( SELECT 1 FROM @BetListSelRunningByDateMem WHERE ProductId IN (21, 6, 22, 24, 32, 34, 36, 39, 42, 45, 46, 50))
 		BEGIN
 			UPDATE d
 			SET TransDate = s.transdate
 				,WinLostDate = s.winlostdate -- winlostdate
 				,Sporttype = CASE
-									WHEN d.ProductID IN (6, 34, 36, 39, 42, 45, 46) THEN s.matchid
+									WHEN d.ProductID IN (6, 34, 36, 39, 42, 45, 46, 50) THEN s.matchid
 									WHEN d.ProductID = 21 THEN 211
 									WHEN d.ProductID = 22 THEN 212
 									WHEN d.ProductID = 24 THEN 219
@@ -865,12 +866,12 @@ BEGIN
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS d
 				INNER JOIN dbo.bettrans AS s WITH (NOLOCK) on d.transid = s.transid
-			WHERE d.ProductID IN (21, 6, 22, 24, 32, 34, 36, 42, 45, 46)
+			WHERE d.ProductID IN (21, 6, 22, 24, 32, 34, 36, 42, 45, 46, 50)
 				--AND s.statusID > 1 -- settled only
 
 			-- DELETE before yesterday one or not IN From - To range
 			DELETE @BetListSelRunningByDateMem
-			WHERE ProductID IN (21, 6, 22, 24, 32, 34, 36, 39, 42, 45, 46)
+			WHERE ProductID IN (21, 6, 22, 24, 32, 34, 36, 39, 42, 45, 46, 50)
 				AND (WinLostDate < DATEADD(dd, DATEDIFF(dd, 0, CURRENT_TIMESTAMP) - 1, 0) --yesterday
 					OR TransDate < CASE @GetAll WHEN 1 THEN TransDate ELSE @FromDate END
 					OR TransDate > CASE @GetAll WHEN 1 THEN transdate ELSE @ToDate END)
