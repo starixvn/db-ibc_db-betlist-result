@@ -125,6 +125,7 @@ AS
 		- 20200514@Kos: Support BBIN [Redmine: #131362]
 		- 20200526@Kos: Support RNG War [Redmine: #132017]
 		- 20200609@Kos: Support ION [Redmine: #132329]
+		- 20200617@Kos: Fix bug SA Gaming [Redmine: #128048]
 */
 
 BEGIN
@@ -867,7 +868,7 @@ BEGIN
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS d
 				INNER JOIN dbo.bettrans AS s WITH (NOLOCK) on d.transid = s.transid
-			WHERE d.ProductID IN (21, 6, 22, 24, 32, 34, 36, 42, 45, 46, 50, 52)
+			WHERE d.ProductID IN (21, 6, 22, 24, 32, 34, 36, 39, 42, 45, 46, 50, 52)
 				--AND s.statusID > 1 -- settled only
 
 			-- DELETE before yesterday one or not IN From - To range
