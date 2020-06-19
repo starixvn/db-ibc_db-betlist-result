@@ -57,6 +57,7 @@ AS
 		- 20191226@Kos: Support betfrom Native Apps '0' [Redmine: #125824]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200302@Kos: Support 3 new betfrom [Redmine: #129253]
+		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -82,9 +83,9 @@ AS
 			- 9 - Mobile China View: c (dep-MCV)
 			- 10 - Deep Link: t (Licensee-Deeplink)
 			- 11 - Native App: 0 (Native App)
-			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop)
-			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile)
-			- 14 - E-Sports App: 3 (E-Sports App)
+			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
+			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
+			- 14 - E-Sports App: 3 (E-Sports App), 6 (eGamer App)
 			- 88 - Others: v (Licensee Odds Feed)
 
 	Excecute sample :
@@ -221,15 +222,15 @@ BEGIN
 		END
 		ELSE IF @BetFrom = 12
 		BEGIN
-			SET @BetFromList = '1'
+			SET @BetFromList = '1,4'
 		END
 		ELSE IF @BetFrom = 13
 		BEGIN
-			SET @BetFromList = '2'
+			SET @BetFromList = '2,5'
 		END
 		ELSE IF @BetFrom = 14
 		BEGIN
-			SET @BetFromList = '3'
+			SET @BetFromList = '3,6'
 		END
 		ELSE IF @BetFrom = 88
 		BEGIN

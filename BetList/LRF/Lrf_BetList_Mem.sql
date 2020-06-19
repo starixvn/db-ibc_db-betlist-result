@@ -52,9 +52,9 @@ AS
 			- 9 - Mobile China View: c (dep-MCV)
 			- 10 - Deep Link: t (Licensee-Deeplink)
 			- 11 - Native App: 0 (Native App)
-			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop)
-			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile)
-			- 14 - E-Sports App: 3 (E-Sports App)
+			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
+			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
+			- 14 - E-Sports App: 3 (E-Sports App), 6 (eGamer App)
 			- 88 - Others: v (Licensee Odds Feed)
 		- @LiveIndicator:
 			- 0 : Non-live
@@ -84,6 +84,7 @@ AS
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
+		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
 */
 
 BEGIN
@@ -328,15 +329,15 @@ BEGIN
 		END
 		ELSE IF @Platform = 12
 		BEGIN
-			SET @BetFromList = '1'
+			SET @BetFromList = '1,4'
 		END
 		ELSE IF @Platform = 13
 		BEGIN
-			SET @BetFromList = '2'
+			SET @BetFromList = '2,5'
 		END
 		ELSE IF @Platform = 14
 		BEGIN
-			SET @BetFromList = '3'
+			SET @BetFromList = '3,6'
 		END
 		ELSE IF @Platform = 88
 		BEGIN

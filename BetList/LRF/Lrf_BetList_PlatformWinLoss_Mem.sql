@@ -99,6 +99,7 @@ AS
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
+		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -118,9 +119,9 @@ AS
 			- 9 - Mobile China View: c (dep-MCV)
 			- 10 - Deep Link: t (Licensee-Deeplink)
 			- 11 - Native App: 0 (Native App)
-			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop)
-			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile)
-			- 14 - E-Sports App: 3 (E-Sports App)
+			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
+			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
+			- 14 - E-Sports App: 3 (E-Sports App), 6 (eGamer App)
 			- 88 - Others: v (Licensee Odds Feed)
 
 	Sample call:
@@ -294,21 +295,24 @@ BEGIN
 	IF @PlatformType IN (0, 12)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT '1'
+		SELECT '1' UNION ALL
+		SELECT '4'
 	END
 
 	-- E-Sports Web Mobile
 	IF @PlatformType IN (0, 13)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT '2'
+		SELECT '2' UNION ALL
+		SELECT '5'
 	END
 
 	-- E-Sports App
 	IF @PlatformType IN (0, 14)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT '3'
+		SELECT '3' UNION ALL
+		SELECT '6'
 	END
 
 	-- Others
