@@ -47,6 +47,7 @@ AS
 		- 20191107@Kos: Support Badminton AIO phase 2 [Redmine: #120336]
 		- 20191206@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20200107@Kos: Support PH AIO phase 5 [Redmine: #126005]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 
 		*******************
 		sample test case:
@@ -655,7 +656,7 @@ BEGIN
 				'' AS IsSCR,
 				'' AS FOddsStatus
 			FROM dbo.VSOutright14 AS o WITH (NOLOCK)
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventID = @MatchID AND (ISNULL(o.Placing, 0) <> 0)
 			ORDER BY o.Placing ASC
 		END
@@ -677,7 +678,7 @@ BEGIN
 				'' AS IsSCR,
 				'' AS FOddsStatus
 			FROM DBARC.bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK)
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN DBARC.bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventID = @MatchID AND (ISNULL(o.Placing, 0) <> 0)
 			ORDER BY o.Placing ASC
 		END

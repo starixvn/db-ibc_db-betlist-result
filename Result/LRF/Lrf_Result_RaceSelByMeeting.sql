@@ -1,19 +1,11 @@
-﻿USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Lrf_Result_RaceSelByMeeting]    Script Date: 02/21/2014 00:20:48 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Lrf_Result_RaceSelByMeeting    Script Date: 12/12/2013 3:38:52 AM ******/
-/****** Object:  Stored Procedure dbo.Lrf_Result_RaceSelByMeeting    Script Date: 12/10/2013 4:57:39 PM ******/
-
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_Result_RaceSelByMeeting]
-	@FromDate	DATETIME,
-	@LeagueId	INT			= 0,
-	@SportType	SMALLINT	= 151,
-	@IsShowAll	BIT			= 1		-- 1: Show All; 0: is NOT show Test
+	@FromDate		DATETIME,
+	@MoveBetsDay	SMALLDATETIME,
+	@LeagueId		INT			= 0,
+	@SportType		SMALLINT	= 151,
+	@IsShowAll		BIT			= 1		-- 1: Show All; 0: is NOT show Test
 AS
 
 /*
@@ -28,6 +20,9 @@ AS
 		- 20131129@Jim: Support 182 – Virtual Greyhounds, 184 – Virtual Motor Racing
 		- 20140506@Hannah: Support 183 - Virtual Speedway, 185 - Virtual Cycling
 		- 20170531@Kos: Prevent data duplication during Move Bet process [#Redmine: 77065]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+					- Add new param @MoveBetsDay SMALLDATETIME
+					- Clean unused code
 */
 
 BEGIN
@@ -53,216 +48,67 @@ BEGIN
 
 	SELECT @isShowAll = CASE @isShowAll WHEN 1 THEN NULL ELSE 0 END
 
-	-- Horse Racing
-	IF @SportType IN (151, 152, 153)
-	BEGIN
-		INSERT INTO #Data
-		SELECT
-			o.leagueid meetingid,
-			o.eventdate,
-			o.kickofftime,
-			l.lcolor,
-			o.groupmatch AS racename,
-			CASE WHEN CONVERT(INT,o.placing) = 0 THEN 5 ELSE ISNULL(CONVERT(INT,o.Placing),5) END place,
-			o.matchcode horseNo,
-			o.teamid Horseid,
-			o.odds,
-			o.placeodds,
-			o.oddsstatus status,
-			CONVERT(VARCHAR(20), o.IsFavor),
-			o.IsSCR,
-			o.FOddsStatus,
-			l.sporttype
-		FROM 
-			(	SELECT
-					leagueid, teamid, eventdate, kickofftime, groupmatch, matchcode, placing, oddsstatus, odds, placeodds,
-					IsFavor, IsSCR, FOddsStatus
-				FROM dbo.outright WITH (NOLOCK)
-				WHERE eventdate = @FromDate
-				UNION 
-				SELECT
-					leagueid, teamid, eventdate, kickofftime, groupmatch, matchcode, placing, oddsstatus, odds, placeodds,
-					IsFavor, IsSCR, 'completed' FOddsStatus
-				FROM dbo.outright14 WITH (NOLOCK)
-				WHERE eventdate = @FromDate
-				UNION 
-				SELECT
-					leagueid, teamid, eventdate, kickofftime, groupmatch, matchcode, placing, oddsstatus, odds, placeodds,
-					IsFavor, IsSCR, 'completed' FOddsStatus
-				FROM DBARC.bodb_Archive.dbo.outright_bk WITH (NOLOCK)
-				WHERE eventdate = @FromDate
-			 ) o 
-			INNER JOIN dbo.league AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-		WHERE l.sporttype =  @SportType
-			AND o.leagueid = CASE WHEN @leagueid = 0 THEN o.leagueid ELSE @leagueid END
-			AND (oddsstatus = 'completed' OR FoddsStatus = 'completed')
-			AND l.isTest = ISNULL(@isShowAll, l.isTest)
-			--AND o.placing<5
-			--AND ISNULL( o.placing,0)<>0
-		ORDER BY o.leagueid,
-			CAST(o.groupmatch AS INT),
-			o.placing
-
-		SELECT meetingid,
-			racename,
-			COUNT(place) rc
-		INTO #DataSUM
-		FROM #Data
-		WHERE place < 5
-		GROUP BY meetingid,
-			racename
-
-		SELECT
-			d.meetingid,
-			d.racename,
-			temp.results AS TF,
-			temp2.results2 AS SCR
-		INTO #tmp
-		FROm #Data d
-			INNER JOIN #DataSum d2 ON d.meetingid = d2.meetingid AND d.racename = d2.racename
-			CROSS APPLY (
-				SELECT STUFF (
-								(
-								SELECT CAST(horseNo AS VARCHAR(10)) +  ','
-								FROM #Data d
-								WHERE d.meetingid = d2.meetingid
-									AND d.racename = d2.racename
-									AND d.IsFavor <> '0'
-								FOR XML PATH(''), TYPE).value('.','VARCHAR(MAX)')
-								,1,2,''
-								)
-				) temp(results)
-			CROSS APPLY (
-				SELECT STUFF (
-								(
-								SELECT CAST(horseNo AS VARCHAR(10)) + ',' 
-								FROM #Data d
-								WHERE d.meetingid = d2.meetingid
-									AND d.racename = d2.racename
-									AND d.IsSCR <> 0
-								FOR XML PATH(''), TYPE).value('.','VARCHAR(MAX)')
-								,1,2,''
-								)
-				) temp2(results2)
-		ORDER BY d.meetingid,
-			d.racename,
-			d.place
-
-		SELECT DISTINCT
-			d.*,
-			d3.TF,
-			d3.SCR,
-			d2.rc AS [RowCount]
-		FROm #Data AS d
-			INNER JOIN #DataSum AS d2 ON d.meetingid = d2.meetingid AND d.racename = d2.racename
-			INNER JOIN #tmp AS d3 ON d.meetingid = d3.meetingid AND d.racename = d3.racename
-		WHERE d.place < 5
-		ORDER BY d.meetingid,
-			d.racename,
-			d.place
-
-		DROP TABLE #DataSum
-		DROP TABLE #tmp
-	END
-
 	-- Virtual Sports
 	IF @SportType IN (181, 182, 183, 184, 185)
 	BEGIN
-		INSERT INTO #Data
-		SELECT
-			o.leagueid meetingid,
-			o.eventdate,
-			o.kickofftime,
-			o.lcolor,
-			o.groupmatch AS racename,
-			CASE WHEN CONVERT(INT,o.placing) = 0 THEN 5 ELSE isnull(CONVERT(INT,placing),5) END place,
-			o.matchcode horseNo,
-			o.teamid Horseid,
-			o.odds,
-			o.placeodds,
-			o.oddsstatus status,
-			o.IsFavor,
-			o.IsSCR,
-			o.FOddsStatus,
-			l.sporttype
-		FROM
-			(
+		IF @FromDate > @MoveBetsDay
+		BEGIN
+			INSERT INTO #Data
 			SELECT
-				vsr.leagueid,
-				vso.RacerID teamid,
-				vso.Colours lcolor,
+				vsr.leagueid meetingid,
 				vso.EventDate,
 				vsr.EventTime kickofftime,
-				NULL groupmatch,
-				CONVERT(VARCHAR(20), vso.RacerNum)  matchcode,
-				vso.placing,
-				vsr.EventStatus oddsstatus,
-				vso.Winodds odds,
+				vso.Colours lcolor,
+				NULL AS racename,
+				CASE WHEN CONVERT(INT,vso.placing) = 0 THEN 5 ELSE ISNULL(CONVERT(INT,vso.Placing),5) END place,
+				CONVERT(VARCHAR(20), vso.RacerNum) horseNo,
+				vso.RacerID Horseid,
+				vso.Winodds AS Odds,
 				vso.PlaceOdds,
-				CONVERT(VARCHAR(20),vso.IsFavor) IsFavor,
-				NULL IsSCR,
-				'' FOddsStatus
+				vsr.EventStatus status,
+				vso.IsFavor,
+				NULL AS IsSCR,
+				'' AS FOddsStatus,
+				l.sporttype
 			FROM dbo.VSOutright AS vso WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
-			WHERE vso.EventDate = @FromDate 
-				AND vsr.LeagueID = CASE WHEN @leagueid = 0 THEN leagueid ELSE @leagueid END
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON vsr.leagueid = l.leagueid
+			WHERE vso.EventDate = @FromDate
+				AND vsr.LeagueID = CASE WHEN @LeagueId = 0 THEN vsr.LeagueID ELSE @LeagueId END
 				AND vso.Placing < 5
 				AND ISNULL(vso.Placing, 0) <> 0
 				AND vsr.SportType = @SportType
-				AND vsr.EventStatus ='completed'
-			UNION ALL
+				AND vsr.EventStatus = 'completed'
+		END
+		ELSE
+		BEGIN
+			INSERT INTO #Data
 			SELECT
-				vsr.leagueid,
-				vso14.RacerID teamid,
-				vso14.Colours lcolor,
-				vso14.EventDate,
+				vsr.leagueid meetingid,
+				vso.EventDate,
 				vsr.EventTime kickofftime,
-				NULL groupmatch,
-				CONVERT(VARCHAR(20),vso14.RacerNum) matchcode,
-				vso14.placing,
-				vsr.EventStatus  oddsstatus,
-				vso14.Winodds odds,
-				vso14.PlaceOdds,
-				CONVERT(VARCHAR(20),vso14.IsFavor) IsFavor,
-				NULL IsSCR,
-				'' FOddsStatus
-			FROM dbo.VSOutright14 AS vso14 WITH (NOLOCK)
-				INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON vso14.EventID = vsr.EventID
-			WHERE vso14.EventDate = @FromDate
-				AND vsr.LeagueID = CASE WHEN @leagueid = 0 THEN leagueid ELSE @leagueid END
-				AND vso14.Placing < 5
-				AND ISNULL(vso14.Placing, 0) <> 0
+				vso.Colours lcolor,
+				NULL AS racename,
+				CASE WHEN CONVERT(INT,vso.placing) = 0 THEN 5 ELSE ISNULL(CONVERT(INT,vso.Placing),5) END place,
+				CONVERT(VARCHAR(20), vso.RacerNum) horseNo,
+				vso.RacerID Horseid,
+				vso.Winodds AS Odds,
+				vso.PlaceOdds,
+				vsr.EventStatus status,
+				vso.IsFavor,
+				NULL AS IsSCR,
+				'' AS FOddsStatus,
+				l.sporttype
+			FROM dbo.VSOutright14 AS vso WITH (NOLOCK)
+				INNER JOIN dbo.VSRaceInfo14 AS vsr WITH (NOLOCK) ON vso.EventID = vsr.EventID
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON vsr.leagueid = l.leagueid
+			WHERE vso.EventDate = @FromDate
+				AND vsr.LeagueID = CASE WHEN @LeagueId = 0 THEN vsr.LeagueID ELSE @LeagueId END
+				AND vso.Placing < 5
+				AND ISNULL(vso.Placing, 0) <> 0
 				AND vsr.SportType = @SportType
 				AND vsr.EventStatus = 'completed'
-			UNION ALL
-			SELECT
-				vsr.leagueid,
-				bk.RacerID teamid,
-				'' AS  lcolor,
-				bk.EventDate,
-				vsr.EventTime kickofftime,
-				NULL groupmatch,
-				CONVERT(VARCHAR(20),bk.RacerNum) matchcode,
-				bk.placing,
-				vsr.EventStatus  oddsstatus,
-				bk.Winodds odds,
-				bk.PlaceOdds,
-				CONVERT(VARCHAR(20),bk.IsFavor) IsFavor,
-				NULL IsSCR,
-				'' FOddsStatus
-			FROM DBARC.bodb_Archive.dbo.VSOutright_bk AS bk WITH (NOLOCK)
-			INNER JOIN dbo.VSRaceInfo AS vsr WITH (NOLOCK) ON bk.EventID = vsr.EventID
-				WHERE eventdate = @FromDate
-					AND leagueid = CASE WHEN @leagueid = 0 THEN leagueid  ELSE @leagueid END 
-					AND placing < 5
-					AND ISNULL(placing, 0) <> 0
-					AND vsr.SportType = @SportType
-					AND vsr.EventStatus ='completed'
-			 ) o 
-			INNER JOIN dbo.HRCode AS c WITH (NOLOCK) ON c.CodeID = o.teamid
-			INNER JOIN dbo.league AS l WITH (NOLOCK) ON o.LeagueID = l.leagueid
-			--WHERE	c.CodeType=11
-			ORDER BY o.leagueid, o.kickofftime
+		END
 
 		SELECT KickOffTime,
 			COUNT(place) rc
@@ -301,20 +147,13 @@ BEGIN
 			INNER JOIN #DataSumVHR AS d2 ON d.kickofftime = d2.kickofftime
 		WHERE (d.place < 5 AND d.sporttype <> 183)
 			OR (d.place < 2 AND d.sporttype = 183)
-		ORDER BY meetingid,
-			kickofftime,
-			place
+		ORDER BY d.MeetingId ASC,
+			d.KickOffTime ASC,
+			d.Place ASC
+
 		DROP TABLE #DataSumVHR
 	END
 
 	DROP TABLE #Data
- END
-
- 
-GO 
- GRANT EXECUTE ON [dbo].[Lrf_Result_RaceSelByMeeting] TO [vnteam]
-GO 
- GRANT VIEW DEFINITION ON [dbo].[Lrf_Result_RaceSelByMeeting] TO [vnteam]
-GO 
- GRANT EXECUTE ON [dbo].[Lrf_Result_RaceSelByMeeting] TO [bodbLicenseeNet]
+END
 GO

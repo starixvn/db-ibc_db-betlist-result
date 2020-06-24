@@ -37,6 +37,7 @@ AS
 		- 20191107@Kos: Support Badminton AIO phase 2 [Redmine: #120336]
 		- 20191206@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 */
 
 BEGIN
@@ -142,7 +143,7 @@ BEGIN
 				l.leagueid,
 				@EventDate,
 				@SportType
-			FROM dbo.league AS l WITH (NOLOCK)
+			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
 				INNER JOIN (
 						SELECT DISTINCT EventID
@@ -252,14 +253,11 @@ BEGIN
 				l.leagueid,
 				@EventDate,
 				@SportType
-			FROM dbo.league AS l WITH (NOLOCK)
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
-				INNER JOIN (
-						SELECT DISTINCT EventID
-						FROM dbo.VSOutright14 WITH (NOLOCK)
-						WHERE EventDate = @EventDate
-					) o ON r.EventID = o.EventID
-			WHERE r.EventStatus ='completed'
+			FROM dbo.League AS l WITH (NOLOCK)
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
+				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON r.EventID = o.EventID
+			WHERE o.EventDate = @EventDate
+				AND r.EventStatus ='completed'
 				AND r.sporttype = @SportType
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 		END

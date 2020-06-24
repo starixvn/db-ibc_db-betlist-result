@@ -41,6 +41,7 @@ AS
 		- 20191107@Kos: Support Badminton AIO phase 2 [Redmine: #120336]
 		- 20191206@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 */
 
 BEGIN
@@ -207,7 +208,7 @@ BEGIN
 					FROM dbo.VSOutright14 WITH (NOLOCK)
 					WHERE EventDate = @EventDate
 				) AS o
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON r.LeagueID = l.leagueid
 			WHERE l.sporttype IN (181, 183, 185)
 				AND r.EventStatus = 'completed'
