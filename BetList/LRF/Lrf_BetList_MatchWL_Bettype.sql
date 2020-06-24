@@ -19,6 +19,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Bettype]
 	@ShowVS2		BIT				= 0,
 	@ShowBA			BIT				= 0,
 	@Date			SMALLDATETIME	= NULL,
+	@MoveBetsDay	SMALLDATETIME,
 	@Sort			NVARCHAR(50)	= N'TransDate ASC'
 AS
 
@@ -76,6 +77,8 @@ AS
 		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+					- Add new param @MoveBetsDay SMALLDATETIME
 */
 
 BEGIN
@@ -185,8 +188,7 @@ BEGIN
 		Rate						FLOAT
 	)
 
-	IF EXISTS (SELECT TOP(1) 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId
-		UNION SELECT TOP(1) 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE EventID = @MatchId )
+	IF @_Date > @MoveBetsDay
 	BEGIN
 		IF @ShowBA = 1
 		BEGIN
@@ -768,7 +770,7 @@ BEGIN
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE
 				o.EventID = @MatchId
@@ -1071,7 +1073,7 @@ BEGIN
 	-- Virtual Sports
 	IF @ShowVS = 1
 	BEGIN
-		IF EXISTS (SELECT TOP(1) 1 FROM dbo.VSOutright WITH (NOLOCK) WHERE EventID = @MatchId)
+		IF @_Date > @MoveBetsDay
 		BEGIN
 			INSERT INTO @BettransDetail
 			SELECT
@@ -1098,7 +1100,7 @@ BEGIN
 				AND sbtg.EventType = 3
 		END
 
-		IF EXISTS (SELECT TOP(1) 1 FROM dbo.VSOutright14 WITH (NOLOCK) WHERE EventID = @MatchId)
+		IF @_Date <= @MoveBetsDay
 		BEGIN
 			INSERT INTO @BettransDetail
 			SELECT

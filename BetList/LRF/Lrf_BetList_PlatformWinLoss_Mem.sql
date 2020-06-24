@@ -100,6 +100,7 @@ AS
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -1754,7 +1755,7 @@ BEGIN
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.EventType = 3
 				AND sbt.ProductID = 5
@@ -2349,7 +2350,7 @@ BEGIN
 			FROM
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.EventType = 3
 				AND sbt.ProductID = 5

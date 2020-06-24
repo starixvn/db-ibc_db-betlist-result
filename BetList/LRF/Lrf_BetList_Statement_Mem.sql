@@ -47,6 +47,7 @@ AS
 		- 20200511@Kos: Support Sexy Gaming [Redmine: #130859]
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 */
 
 BEGIN
@@ -1456,7 +1457,7 @@ BEGIN
 						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
 						LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
-						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
+						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 					WHERE b.TableID = 2
 
 					-- Get ticket detail
@@ -1639,7 +1640,7 @@ BEGIN
 						LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
 						LEFT JOIN bodb_Archive.dbo.VSOutright_bk AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
-						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
+						LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 					WHERE b.TableID = 3
 
 					-- Get ticket detail

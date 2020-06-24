@@ -56,6 +56,7 @@ AS
 		- 20200416@Kos: Support Indo 4D [Redmine: #130859]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 */
 
 BEGIN
@@ -889,7 +890,7 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (3, 5, 25, 27)
 						LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
-						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
+						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
@@ -1090,7 +1091,7 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (3, 5, 25, 27)
 						LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
-						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
+						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
 						CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND t.CustId = b.custid
@@ -1511,7 +1512,7 @@ BEGIN
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
-					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
+					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 				WHERE b.WhTicket = 2
 			END
 
@@ -1871,7 +1872,7 @@ BEGIN
 				FROM #Data AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
-					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
+					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 				WHERE b.WhTicket = 2
 			END
 			

@@ -105,6 +105,7 @@ AS
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200511@Kos: Support Saba.club [Redmine: #131447]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 
 	Param's Explanation:
 		+ @TransType:
@@ -522,7 +523,7 @@ BEGIN
 		FROM 
 			dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+			INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE
 			b.custid = @CustId

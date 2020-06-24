@@ -43,6 +43,7 @@ AS
 					- Add new param @Username VARCHAR(50)
 		- 20190422@Kos: Enhance performance for searching too many members [Redmine: #112313]
 		- 20190829@Kos: Support PH AIO 4b [Redmine: #118300]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 */
 
 
@@ -210,7 +211,7 @@ BEGIN
 						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
-						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
+						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
@@ -306,9 +307,6 @@ BEGIN
 	SELECT @TotalRows = @TotalRowsBettrans + @TotalRowsBettrans14
 END
 GO
-
-
-
 
 
 

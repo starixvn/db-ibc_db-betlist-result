@@ -32,6 +32,7 @@ AS
 					- Don't return column AwayId, IsNeutral, BetStatus, Betteam, LiveIndicator, Discount, PlayerDiscount, APositiontaking anymore
 					- Change input param @Sort data type from VARCHAR(20) to NVARCHAR(50)
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 */
 
 BEGIN
@@ -194,7 +195,7 @@ BEGIN
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @TempAg AS t ON b.recommend = t.CustId
 			INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+			INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 		WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 			AND r.SportType = @SportType
@@ -413,7 +414,7 @@ BEGIN
 	END
 
 	SELECT DISTINCT * FROM @Bettransm
-	ORDER BY RefNo, Bettype
+	ORDER BY RefNo ASC, Bettype ASC
 
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate

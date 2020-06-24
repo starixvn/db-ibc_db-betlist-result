@@ -54,6 +54,7 @@ AS
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 */
 
 BEGIN
@@ -1364,7 +1365,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.orid
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 			WHERE td.WhTicket = 2
 				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate

@@ -123,6 +123,7 @@ AS
 		- 20200511@Kos: Support Sexy Gaming [Redmine: #130859]
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
+		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -2256,7 +2257,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE
 				b.winlostdate BETWEEN @BalanceUpDay AND @tdate
@@ -3188,7 +3189,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
