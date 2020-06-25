@@ -100,6 +100,7 @@ AS
 		- 20200514@Kos: Support BBIN [Redmine: #131362]
 		- 20200526@Kos: Support RNG War [Redmine: #132017]
 		- 20200609@Kos: Support ION [Redmine: #132329]
+		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 */
 
 BEGIN
@@ -2152,7 +2153,7 @@ BEGIN
 				FROM 
 					dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+					INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType 
 					LEFT JOIN (
 						SELECT 
@@ -2852,9 +2853,9 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode
 				FROM 
-					bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK) 
-					INNER JOIN bodb_archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+					bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK) 
+					INNER JOIN bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
+					INNER JOIN bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
 					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType
 					LEFT JOIN (
 						SELECT
