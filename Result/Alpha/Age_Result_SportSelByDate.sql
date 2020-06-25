@@ -10,7 +10,7 @@ AS
 	Created:
 	Task: Alpha Result Report - Load Sport dropdownlist
 	DB: DBAGE.bodb02
-	Original:
+
 	Revision:
 		- 20110307@Lukas: Get more sporttype 152, 153
 		- 20110908@Sophia: Add Condition Where : OR (eventstatus = 'running' AND (mr.ishtcal=1 OR mr.calculate=1))
@@ -37,6 +37,7 @@ AS
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
+		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 */
 
 BEGIN
@@ -234,7 +235,7 @@ BEGIN
 					FROM dbo.League AS l WITH (NOLOCK)
 					WHERE EXISTS (	SELECT 1
 									FROM dbo.VSOutright14 AS o WITH (NOLOCK)
-										INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+										INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
 									WHERE o.EventDate = @EventDate
 										AND r.EventStatus = 'completed'
 										AND r.LeagueID = l.leagueid
@@ -247,11 +248,4 @@ BEGIN
 			s.SportName ASC
 	END
 END
-
-
-
-GO
-GRANT EXECUTE ON [dbo].[Age_Result_SportSelByDate] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_Result_SportSelByDate] TO [bodbDownlineNetView] AS [dbo]
 GO

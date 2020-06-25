@@ -41,6 +41,7 @@ AS
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
+		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 */
 
 BEGIN
@@ -157,25 +158,36 @@ BEGIN
 	END
 	ELSE IF @SportType IN (181, 182, 184, 183, 185)
 	BEGIN
-		SELECT DISTINCT
-			l.leaguename,
-			l.leagueid,
-			o.EventDate,
-			r.sporttype
-		FROM dbo.League AS l WITH (NOLOCK)
-			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
-			INNER JOIN
-			(
-				SELECT DISTINCT EventID, EventDate, EventStatus
-				FROM dbo.VSoutright WITH (NOLOCK)
-				UNION
-				SELECT DISTINCT EventID, EventDate, EventStatus
-				FROM dbo.VSOutright14 WITH (NOLOCK)
-			) o ON r.EventID = o.EventID
-		WHERE o.EventDate >= @EventDate AND o.EventDate <= @ToDate
-			AND r.EventStatus ='completed'
-			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-			AND r.SportType = @SportType
+		IF @EventDate > @MoveBetsDay
+		BEGIN
+			SELECT DISTINCT
+				l.leaguename,
+				l.leagueid,
+				o.EventDate,
+				r.sporttype
+			FROM dbo.League AS l WITH (NOLOCK)
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
+				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON r.EventID = o.EventID
+			WHERE o.EventDate >= @EventDate AND o.EventDate <= @ToDate
+				AND r.EventStatus ='completed'
+				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND r.SportType = @SportType
+		END
+		ELSE
+		BEGIN
+			SELECT DISTINCT
+				l.leaguename,
+				l.leagueid,
+				o.EventDate,
+				r.sporttype
+			FROM dbo.League AS l WITH (NOLOCK)
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
+				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON r.EventID = o.EventID
+			WHERE o.EventDate >= @EventDate AND o.EventDate <= @ToDate
+				AND r.EventStatus ='completed'
+				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND r.SportType = @SportType
+		END
 	END
 	ELSE IF @SportType = 193
 	BEGIN
