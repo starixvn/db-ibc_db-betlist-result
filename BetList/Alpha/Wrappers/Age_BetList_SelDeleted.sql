@@ -69,6 +69,7 @@ AS
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
 		- 20200410@Kos: Support BBIN [Redmine: #131362]
+		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 */
 
 BEGIN
@@ -1094,7 +1095,7 @@ BEGIN
 					ExtraInfo = ''
 				FROM #PagingData AS b
 					INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.OddsId = o.Orid
-					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+					INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
 				WHERE b.WhTicket = 2
 					AND b.ProductID = 5
 					AND b.EventType = 3

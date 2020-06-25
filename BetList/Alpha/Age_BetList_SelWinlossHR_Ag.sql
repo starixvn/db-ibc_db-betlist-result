@@ -1,4 +1,5 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossHR_Ag]
 	@CustId			INT				= NULL, -- AgentID
 	@BetType		INT,
@@ -12,7 +13,7 @@ AS
 	Created:
 	Task: Betlist
 	DB: DBAGE.bodb02
-	Original:
+
 	Revisions:
 		- 20090407@Amy: remove refno
 		- 20090421@Henry: Include more columns: comm, acomm, scomm, awinlost, mwinlost, swinlost
@@ -28,6 +29,7 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20180201@Kos: Don't support Racing anymore [Redmine: #86086]
+		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 */
 
 BEGIN
@@ -207,7 +209,7 @@ BEGIN
 			r.EventTime AS ShowTime
 		FROM dbo.bettrans14 b WITH (NOLOCK)
 			INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.orid
-			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+			INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 		WHERE b.recommend = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 			AND b.matchid = @Race
@@ -216,8 +218,8 @@ BEGIN
 	END
 
 	SELECT * FROM @AgWinlossHR
-	ORDER BY Status,
-		Transid
+	ORDER BY Status ASC,
+		TransId ASC
 
 	-- Get sub tickets
 	DECLARE @Bettransm TABLE (
@@ -275,15 +277,6 @@ BEGIN
 	END
 
 	SELECT DISTINCT * FROM @Bettransm
-	ORDER BY RefNo, Bettype
+	ORDER BY RefNo ASC, Bettype ASC
 END
-
-
-	
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossHR_Ag] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossHR_Ag] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelWinlossHR_Ag] TO [vnteam]
 GO
