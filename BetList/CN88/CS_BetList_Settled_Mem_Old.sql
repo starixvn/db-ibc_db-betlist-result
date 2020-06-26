@@ -43,6 +43,7 @@ AS
 		- 20190821@Kos: Support multiple sport filter [Redmine: #109230]
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20191129@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
+		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 */
 
 BEGIN
@@ -214,7 +215,7 @@ BEGIN
 			LEFT JOIN dbo.outright_bk AS o WITH (NOLOCK) ON o.orid = b.matchid AND s.EventType = 2 AND s.ProductId = 1
 			LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON l.leagueid = o.leagueid AND s.EventType = 2 AND s.ProductId = 1
 			LEFT JOIN dbo.VSOutright_bk AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductId = 5
-			LEFT JOIN bodb02.dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductId = 5
+			LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductId = 5
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @ToDate
 			AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
@@ -414,7 +415,7 @@ BEGIN
 			LEFT JOIN dbo.outright_bk AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueid
 			LEFT JOIN dbo.VSOutright_bk AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
-			LEFT JOIN bodb02.dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
+			LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 
 		-- Get ticket detail
 		-- Virtual Sports Racing

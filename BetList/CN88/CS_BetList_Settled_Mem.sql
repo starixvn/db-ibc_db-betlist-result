@@ -45,6 +45,7 @@ AS
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20191129@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 */
 
 BEGIN
@@ -541,7 +542,7 @@ BEGIN
 				LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON o.orid = b.matchid AND s.EventType = 2 AND s.ProductId = 1
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = o.leagueid AND s.EventType = 2 AND s.ProductId = 1
 				LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductId = 5
-				LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductId = 5
+				LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductId = 5
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
@@ -726,7 +727,7 @@ BEGIN
 				LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueid
 				LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
-				LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
+				LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 
 			-- Get ticket detail
 			-- Virtual Sports Racing
