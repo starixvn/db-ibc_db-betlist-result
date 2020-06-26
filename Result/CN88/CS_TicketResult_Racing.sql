@@ -12,6 +12,7 @@ AS
 
 	Revisions:
 		- 20190304@Kos: Create new [Redmine: 109230]
+		- 20200626@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 */
 
 BEGIN
@@ -73,7 +74,7 @@ BEGIN
 			'' AS IsSCR,
 			'' AS FOddsStatus
 		FROM dbo.VSOutright14 AS o WITH (NOLOCK)
-			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+			INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 		WHERE o.EventID = @MatchId AND (ISNULL(o.Placing, 0) <> 0)
 		ORDER BY o.Placing
 	END
@@ -95,7 +96,7 @@ BEGIN
 			'' AS IsSCR,
 			'' AS FOddsStatus
 		FROM DBARC.bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK)
-			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+			INNER JOIN DBARC.bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
 		WHERE o.EventID = @MatchId AND (ISNULL(o.placing, 0) <> 0)
 		ORDER BY o.placing
 	END
