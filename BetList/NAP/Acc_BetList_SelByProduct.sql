@@ -52,6 +52,8 @@ AS
 		- 20200421@Kos: Support IBCBet Live Casino [Redmine: #130688]
 		- 20200514@Kos: Support BBIN [Redmine: #131362]
 		- 20200525@Kos: Support ION [Redmine: #132329]
+		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
+					- Return additional column BetdaqId BIGINT
 */
 
 BEGIN
@@ -121,7 +123,8 @@ BEGIN
 		BetCheck		NVARCHAR(2000),
 		TransDesc		NVARCHAR(1000),
 		OddsSpread		SMALLMONEY,
-		ExtraInfo		VARCHAR(1000)
+		ExtraInfo		VARCHAR(1000),
+		BetdaqId		BIGINT
 	)
 
 	DECLARE @DetailData TABLE (
@@ -243,7 +246,8 @@ BEGIN
 							ELSE ''
 						END AS TransDesc,
 						0 AS OddsSpread,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						-1 AS BetdaqId
 					FROM dbo.translog AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
@@ -303,7 +307,8 @@ BEGIN
 							b.betcheck,
 							'' AS TransDesc,
 							0 AS OddsSpread,
-							'' AS ExtraInfo
+							'' AS ExtraInfo,
+							-1 AS BetdaqId
 						FROM dbo.bettrans AS b WITH (NOLOCK)
 							INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 						WHERE b.custid = @CustId
@@ -366,7 +371,8 @@ BEGIN
 							b.betcheck,
 							ISNULL(b.transdesc, '') AS TransDesc,
 							0 AS OddsSpread,
-							'' AS ExtraInfo
+							'' AS ExtraInfo,
+							-1 AS BetdaqId
 						FROM dbo.bettrans AS b WITH (NOLOCK)
 							INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 						WHERE b.custid = @CustId
@@ -501,7 +507,8 @@ BEGIN
 						END AS BetCheck,
 						b.transdesc,
 						0 AS OddsSpread,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						-1 AS BetdaqId
 					FROM dbo.bettransLC AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 						LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
@@ -539,7 +546,10 @@ BEGIN
 						0 AS AwayId,
 						0 AS Hdp1,
 						0 AS Hdp2,
-						b.odds,
+						CASE
+							WHEN s.ProductID = 32 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+							ELSE b.odds
+						END AS Odds,
 						0 AS OddsType,
 						b.status,
 						'' AS ComStatus,
@@ -570,8 +580,18 @@ BEGIN
 						b.winlostdate,
 						b.TranId3rd AS BetCheck,
 						b.transdesc,
-						0 AS OddsSpread,
-						'' AS ExtraInfo
+						CASE
+							WHEN s.ProductID = 32 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							ELSE 0
+						END AS OddsSpread,
+						CASE
+							WHEN s.ProductID = 32 THEN ISNULL(b.JackpotInfo, '')
+							ELSE ''
+						END AS ExtraInfo,
+						CASE
+							WHEN s.ProductID = 32 THEN ISNULL(b.RefNo2, -1)
+							ELSE -1
+						END AS BetdaqId
 					FROM dbo.bettransRnG AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
@@ -631,7 +651,8 @@ BEGIN
 						ISNULL(bg.BetID3rd, '') AS BetCheck,
 						bg.transdesc,
 						0 AS OddsSpread,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						-1 AS BetdaqId
 					FROM dbo.bettransg AS bg WITH (NOLOCK)
 						INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = bg.refno AND b.custid = bg.custid
@@ -705,7 +726,8 @@ BEGIN
 						b.betcheck,
 						'' AS TransDesc,
 						0 AS OddsSpread,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						-1 AS BetdaqId
 					FROM dbo.bettrans14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 					WHERE b.custid = @CustId
@@ -770,7 +792,8 @@ BEGIN
 						b.betcheck,
 						ISNULL(b.transdesc, '') AS TransDesc,
 						0 AS OddsSpread,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						-1 AS BetdaqId
 					FROM dbo.bettrans14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 					WHERE b.custid = @CustId
@@ -904,7 +927,8 @@ BEGIN
 						END AS BetCheck,
 						b.transdesc,
 						0 AS OddsSpread,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						-1 AS BetdaqId
 					FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 						LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
@@ -942,7 +966,10 @@ BEGIN
 						0 AS AwayId,
 						0 AS Hdp1,
 						0 AS Hdp2,
-						b.odds,
+						CASE
+							WHEN s.ProductID = 32 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+							ELSE b.odds
+						END AS Odds,
 						0 AS OddsType,
 						b.status,
 						'' AS ComStatus,
@@ -973,8 +1000,18 @@ BEGIN
 						b.winlostdate,
 						b.TranId3rd AS BetCheck,
 						b.transdesc,
-						0 AS OddsSpread,
-						'' AS ExtraInfo
+						CASE
+							WHEN s.ProductID = 32 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							ELSE 0
+						END AS OddsSpread,
+						CASE
+							WHEN s.ProductID = 32 THEN ISNULL(b.JackpotInfo, '')
+							ELSE ''
+						END AS ExtraInfo,
+						CASE
+							WHEN s.ProductID = 32 THEN ISNULL(b.RefNo2, -1)
+							ELSE -1
+						END AS BetdaqId
 					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
@@ -1034,7 +1071,8 @@ BEGIN
 						ISNULL(bg.BetID3rd, '') AS BetCheck,
 						bg.transdesc,
 						0 AS OddsSpread,
-						'' AS ExtraInfo
+						'' AS ExtraInfo,
+						-1 AS BetdaqId
 					FROM dbo.bettransg14 AS bg WITH (NOLOCK)
 						INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 						INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = bg.refno AND b.custid = bg.custid

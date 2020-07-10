@@ -49,6 +49,7 @@ AS
 		- 20200526@Kos: Support RNG War [Redmine: #132017]
 		- 20200609@Kos: Support ION [Redmine: #132329]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
+		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
 */
 
 BEGIN
@@ -1039,7 +1040,7 @@ BEGIN
 					SELECT
 						c.TransId AS RefNo,
 						CASE
-							WHEN Product = 'OneRNG' THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+							WHEN Product IN ('OneRNG', 'PP') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 							ELSE 0
 						END AS Odds,
 						SUM(brng.stake) AS Stake,
@@ -1065,7 +1066,7 @@ BEGIN
 						AVG(brng.adiscount) AS adiscount,
 						AVG(brng.sdiscount) AS sdiscount,
 						CASE
-							WHEN c.Product IN ('OneRNG') THEN ISNULL(SUM(brng.BetStake), 0)
+							WHEN c.Product IN ('OneRNG', 'PP') THEN ISNULL(SUM(brng.BetStake), 0)
 							ELSE 0
 						END AS OddsSpread
 					FROM @Data AS c
@@ -1217,7 +1218,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D') THEN b.odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'PP') THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1324,7 +1325,7 @@ BEGIN
 									ELSE ''
 								END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'CO', 'OneRNG') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					BetdaqId = CASE
@@ -1548,7 +1549,7 @@ BEGIN
 					x.Odds,
 					0 AS MOdds,
 					CASE
-						WHEN b.Product IN ('OneRNG') THEN x.OddsSpread
+						WHEN b.Product IN ('OneRNG', 'PP') THEN x.OddsSpread
 						ELSE 0
 					END AS OddsSpread,
 					x.Stake,
@@ -1700,7 +1701,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D') THEN b.odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'PP') THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1792,7 +1793,7 @@ BEGIN
 									ELSE ''
 								END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'CO', 'OneRNG') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					BetdaqId = CASE
@@ -1901,7 +1902,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D') THEN b.odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'PP') THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1993,7 +1994,7 @@ BEGIN
 									ELSE ''
 								END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'CO', 'OneRNG') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					BetdaqId = CASE

@@ -1,11 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_Jackpot_Detail]
 	@TransId	BIGINT,
@@ -20,13 +13,14 @@ AS
 	Original:
 	Revisions:
 		- 20180207@Kos: Support ONERnG Jackpot [#Redmine: 88652]
+		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix
-	-- Support RNG Casino Single Wallet
+	-- Support RNG Casino Single Wallet, PP
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -36,7 +30,8 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID = 6 AND SubProduct <> ''
+	WHERE (ProductID = 32)
+		OR (ProductID = 6 AND SubProduct <> '')
 
 	-- Create temp table
 	DECLARE @Data TABLE (
@@ -106,12 +101,12 @@ BEGIN
 			(b.scomm - b.acomm) AS scomm,
 			b.ip,
 			CASE
-				WHEN sbt.productID = 6 THEN b.TranId3rd
+				WHEN sbt.productID IN (6, 32) THEN b.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			b.transdesc,
 			CASE
-				WHEN sbt.ProductID = 6 THEN ISNULL(b.RefNo2, -1)
+				WHEN sbt.ProductID IN (6, 32) THEN ISNULL(b.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId
 		FROM dbo.bettransRnG AS b WITH (NOLOCK)
@@ -152,12 +147,12 @@ BEGIN
 			(b.scomm - b.acomm) AS scomm,
 			b.ip,
 			CASE
-				WHEN sbt.productID = 6 THEN b.TranId3rd
+				WHEN sbt.productID IN (6, 32) THEN b.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			b.transdesc,
 			CASE
-				WHEN sbt.ProductID = 6 THEN ISNULL(b.RefNo2, -1)
+				WHEN sbt.ProductID IN (6, 32) THEN ISNULL(b.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId
 		FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
@@ -198,12 +193,12 @@ BEGIN
 			(b.scomm - b.acomm) AS scomm,
 			b.ip,
 			CASE
-				WHEN sbt.productID = 6 THEN b.TranId3rd
+				WHEN sbt.productID IN (6, 32) THEN b.TranId3rd
 				ELSE ''
 			END AS BetCheck,
 			b.transdesc,
 			CASE
-				WHEN sbt.ProductID = 6 THEN ISNULL(b.RefNo2, -1)
+				WHEN sbt.ProductID IN (6, 32) THEN ISNULL(b.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId
 		FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
@@ -213,12 +208,4 @@ BEGIN
 
 	SELECT * FROM @Data
 END
-
-
-GO
-GRANT	VIEW DEFINITION	ON	Acc_BetList_Jackpot_Detail	TO	vnteam
-GRANT	EXECUTE	ON	Acc_BetList_Jackpot_Detail	TO	bodbExtAccNet
-GRANT	EXECUTE	ON	Acc_BetList_Jackpot_Detail	TO	bodbDownlineNetView
-GRANT	EXECUTE	ON	Acc_BetList_Jackpot_Detail	TO	bodbDownlineNet
-GRANT	EXECUTE	ON	Acc_BetList_Jackpot_Detail	TO	bodbAdminNet
 GO

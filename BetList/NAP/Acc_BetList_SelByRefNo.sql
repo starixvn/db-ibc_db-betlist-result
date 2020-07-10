@@ -101,6 +101,7 @@ AS
 		- 20200526@Kos: Support RNG War [Redmine: #132017]
 		- 20200609@Kos: Support ION [Redmine: #132329]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
+		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
 */
 
 BEGIN
@@ -1139,7 +1140,7 @@ BEGIN
 						0 AS hdp1,
 						0 AS hdp2,
 						CASE
-							WHEN s.ProductID = 6
+							WHEN s.ProductID IN (6, 32)
 								THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 							ELSE 0
 						END AS Odds,
@@ -1198,7 +1199,7 @@ BEGIN
 							ELSE ''
 						END AS TransDesc,
 						CASE
-							WHEN s.ProductID = 6 THEN ISNULL(SUM(brng.BetStake), 0)
+							WHEN s.ProductID IN (6, 32) THEN ISNULL(SUM(brng.BetStake), 0)
 							ELSE 0
 						END AS OddsSpread,
 						0 AS OriginalBetType,
@@ -1251,7 +1252,7 @@ BEGIN
 						0 AS hdp1,
 						0 AS hdp2,
 						CASE
-							WHEN s.ProductID = 6 THEN b.odds
+							WHEN s.ProductID IN (6, 32) THEN b.odds
 							ELSE 0
 						END AS Odds,
 						0 AS finalodds,
@@ -1305,7 +1306,7 @@ BEGIN
 							ELSE ''
 						END AS TransDesc,
 						CASE
-							WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+							WHEN s.ProductID IN (6, 32) THEN ISNULL(b.oddsspread, 0)
 							ELSE 0
 						END AS OddsSpread,
 						0 AS OriginalBetType,
@@ -2206,7 +2207,7 @@ BEGIN
 						ELSE 0
 					END AS hdp2,
 					CASE
-						WHEN s.ProductID IN (6, 8, 12, 23, 28, 38, 40, 43) THEN b.odds
+						WHEN s.ProductID IN (6, 8, 12, 23, 28, 32, 38, 40, 43) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -2285,7 +2286,7 @@ BEGIN
 						ELSE ''
 					END AS TransDesc,
 					CASE
-						WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+						WHEN s.ProductID IN (6, 32) THEN ISNULL(b.oddsspread, 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,
@@ -2909,7 +2910,7 @@ BEGIN
 						ELSE 0
 					END AS hdp2,
 					CASE
-						WHEN s.ProductId IN (6, 23) THEN b.odds
+						WHEN s.ProductId IN (6, 23, 32) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -2978,7 +2979,7 @@ BEGIN
 						ELSE ''
 					END AS TransDesc,
 					CASE
-						WHEN s.ProductID = 6 THEN ISNULL(b.oddsspread, 0)
+						WHEN s.ProductID IN (6, 32) THEN ISNULL(b.oddsspread, 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,
@@ -3297,7 +3298,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID = 6 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+						WHEN s.ProductID IN (6, 32) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 						ELSE b.odds
 					END AS Odds,
 					0 AS finalodds,
@@ -3342,16 +3343,16 @@ BEGIN
 					b.TranId3rd AS BetCheck,
 					b.transdesc,
 					CASE
-						WHEN s.ProductID = 6 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+						WHEN s.ProductID IN (6, 32) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,
 					CASE
-						WHEN s.ProductID = 6 THEN ISNULL(b.RefNo2, -1)
+						WHEN s.ProductID IN (6, 32) THEN ISNULL(b.RefNo2, -1)
 						ELSE -1
 					END AS BetdaqId,
 					CASE
-						WHEN s.ProductID = 6 THEN ISNULL(b.JackpotInfo, '')
+						WHEN s.ProductID IN (6, 32) THEN ISNULL(b.JackpotInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					0 AS WalletType,
@@ -3396,7 +3397,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID = 6 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+						WHEN s.ProductID IN (6, 32) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 						ELSE b.odds
 					END AS Odds,
 					0 AS finalodds,
@@ -3441,16 +3442,16 @@ BEGIN
 					b.TranId3rd AS BetCheck,
 					b.transdesc,
 					CASE
-						WHEN s.ProductID = 6 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+						WHEN s.ProductID IN (6, 32) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,
 					CASE
-						WHEN s.ProductID = 6 THEN ISNULL(b.RefNo2, -1)
+						WHEN s.ProductID IN (6, 32) THEN ISNULL(b.RefNo2, -1)
 						ELSE -1
 					END AS BetdaqId,
 					CASE
-						WHEN s.ProductID = 6 THEN ISNULL(b.JackpotInfo, '')
+						WHEN s.ProductID IN (6, 32) THEN ISNULL(b.JackpotInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					0 AS WalletType,
