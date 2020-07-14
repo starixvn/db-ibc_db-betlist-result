@@ -106,6 +106,7 @@ AS
 		- 20200511@Kos: Support Saba.club [Redmine: #131447]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+		- 20200714@Kos: Support PP Jackpot [Redmine: #137290]
 
 	Param's Explanation:
 		+ @TransType:
@@ -709,7 +710,7 @@ BEGIN
 				0 AS modds,
 				0 AS Oddstype,
 				CASE
-					WHEN sbt.ProductID IN (8, 28, 38, 40, 43) THEN b.odds
+					WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 43) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				'' AS betteam,
@@ -757,7 +758,10 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				CASE
+					WHEN sbt.ProductID = 32 THEN ISNULL(b.oddsspread, 0)
+					ELSE 0
+				END AS OddsSpread
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
@@ -1575,7 +1579,10 @@ BEGIN
 					0 AS hdp2,
 					0 AS modds,
 					0 AS Oddstype,
-					0 AS odds,
+					CASE
+						WHEN sbt.ProductID = 32 THEN b.odds
+						ELSE 0
+					END AS Odds,
 					'' AS betteam,
 					b.status,
 					0 AS SettlementStatus,
@@ -1607,8 +1614,11 @@ BEGIN
 					0 AS OriginalBetType,
 					0 AS WalletType,
 					0 AS RefCode,
-					0 AS OddsSpread
-				FROM 
+					CASE
+						WHEN sbt.ProductID = 32 THEN ISNULL(b.oddsspread, 0)
+						ELSE 0
+					END AS OddsSpread
+				FROM
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 				WHERE
@@ -1648,7 +1658,11 @@ BEGIN
 					0 AS hdp2,
 					0 AS modds,
 					0 AS Oddstype,
-					0 AS odds,
+					CASE
+						WHEN sbt.ProductID = 32
+							THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+						ELSE 0
+					END AS Odds,
 					'' AS betteam,
 					CASE 
 						WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
@@ -1684,7 +1698,10 @@ BEGIN
 					0 AS OriginalBetType,
 					0 AS WalletType,
 					0 AS RefCode,
-					0 AS OddsSpread
+					CASE
+						WHEN sbt.ProductID = 32 THEN ISNULL(SUM(brng.BetStake), 0)
+						ELSE 0
+					END AS OddsSpread
 				FROM 
 					dbo.bettransRnG AS brng WITH (NOLOCK)
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid

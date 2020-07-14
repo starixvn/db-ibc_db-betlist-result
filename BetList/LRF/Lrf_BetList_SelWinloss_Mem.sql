@@ -124,6 +124,7 @@ AS
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+		- 20200714@Kos: Support PP Jackpot [Redmine: #137290]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -267,9 +268,7 @@ BEGIN
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 38, 40, 42, 43, 45)
-
-	DELETE FROM @SportBettype
-	WHERE Bettype IN (904, 914, 4299, 4300)
+		AND Bettype NOT IN (904, 914, 4299, 4300, 4297, 4298)
 
 	IF @ShowBT = 0
 	BEGIN

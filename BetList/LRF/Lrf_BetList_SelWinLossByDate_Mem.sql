@@ -136,6 +136,7 @@ AS
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+		- 20200714@Kos: Support PP Jackpot [Redmine: #137290]
 */
 
 BEGIN
@@ -193,7 +194,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowSXG = 1	THEN 45 END
 
 	DELETE @SportBettype
-	WHERE BetType IN (71, 73, 904, 914, 4299, 4300)
+	WHERE BetType IN (71, 73, 904, 914, 4299, 4300, 4297, 4298)
 		OR BetType BETWEEN 801 AND 899
 
 	IF @ShowBT = 0

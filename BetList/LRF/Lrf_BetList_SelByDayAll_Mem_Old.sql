@@ -99,6 +99,7 @@ AS
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+		- 20200714@Kos: Support PP Jackpot [Redmine: #137290]
 
 	Param's Explanation:
 		+ @TransType:
@@ -656,7 +657,7 @@ BEGIN
 			END AS Oddstype,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-				WHEN sbt.ProductID IN (8, 28, 38, 40, 43) THEN b.Odds
+				WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 43) THEN b.Odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -715,7 +716,10 @@ BEGIN
 			0 AS OriginalBetType,
 			0 AS WalletType,
 			0 AS RefCode,
-			0 AS OddsSpread
+			CASE
+				WHEN sbt.ProductID = 32 THEN ISNULL(b.oddsspread, 0)
+				ELSE 0
+			END AS OddsSpread
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 		WHERE b.custid = @CustId
@@ -785,7 +789,7 @@ BEGIN
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
 			AND sbt.ProductID = 15
 	END
-	ELSE IF @transtype = 4		-- Grand Prize Jackpot Win
+	ELSE IF @TransType = 4		-- Grand Prize Jackpot Win
 	BEGIN
 		-- Colossus Bets
 		INSERT INTO @Data

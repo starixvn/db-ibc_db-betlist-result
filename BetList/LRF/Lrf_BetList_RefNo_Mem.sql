@@ -40,6 +40,7 @@ AS
 		- 20200518@Kos: Support Saba.club [Redmine: #132702]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+		- 20200709@Kos: Support PP Jackpot [Redmine: #137290]
 */
 
 BEGIN
@@ -469,7 +470,7 @@ BEGIN
 				INSERT INTO @TmpData
 				SELECT
 					CASE
-						WHEN @Product = 'OneRNG' THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
+						WHEN @Product IN ('OneRNG', 'PP') THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
 						ELSE 0
 					END AS Odds,
 					SUM(stake) AS Stake,
@@ -484,7 +485,7 @@ BEGIN
 					SUM(playercomm) AS Commission,
 					SUM(comm) AS Comm,
 					CASE
-						WHEN @Product = ('OneRNG') THEN ISNULL(SUM(BetStake), 0)
+						WHEN @Product IN ('OneRNG', 'PP') THEN ISNULL(SUM(BetStake), 0)
 						ELSE 0
 					END AS OddsSpread
 				FROM dbo.bettransRnG WITH (NOLOCK)
@@ -584,7 +585,7 @@ BEGIN
 			END AS OddsType,
 			CASE
 				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D') THEN b.odds
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D', 'PP') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -592,7 +593,8 @@ BEGIN
 				ELSE 0
 			END AS MOdds,
 			CASE
-				WHEN @Product IN ('SB', 'CO') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('PP') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+				WHEN @Product IN ('SB', 'CO', 'PP') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			CASE
@@ -833,7 +835,7 @@ BEGIN
 				ELSE 0
 			END AS OddsType,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D') THEN b.odds
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D', 'PP') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -841,7 +843,7 @@ BEGIN
 				ELSE 0
 			END AS MOdds,
 			CASE
-				WHEN @Product IN ('SB', 'CO') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('SB', 'CO', 'PP') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			b.stake,
@@ -1049,7 +1051,7 @@ BEGIN
 				ELSE 0
 			END AS OddsType,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D') THEN b.odds
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D', 'PP') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -1057,7 +1059,7 @@ BEGIN
 				ELSE 0
 			END AS MOdds,
 			CASE
-				WHEN @Product IN ('SB', 'CO') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('SB', 'CO', 'PP') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			b.stake,
@@ -1336,9 +1338,15 @@ BEGIN
 			0 AS Hdp1,
 			0 AS Hdp2,
 			0 AS OddsType,
-			odds,
+			CASE
+				WHEN @Product = 'PP' AND statusID IN (111, 112, 113) THEN ISNULL(ContributionRate, 0)
+				ELSE odds
+			END AS Odds,
 			0 AS MOdds,
-			0 AS OddsSpread,
+			CASE
+				WHEN @Product = 'PP' AND statusID IN (111, 112, 113) THEN ISNULL(BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
 			stake,
 			actual_stake,
 			CASE
@@ -1379,8 +1387,14 @@ BEGIN
 			'' AS ShowTime,
 			TranId3rd AS BetCheck,
 			transdesc,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo,
+			CASE
+				WHEN @Product = 'PP' THEN ISNULL(RefNo2, -1)
+				ELSE -1
+			END AS BetdaqId,
+			CASE
+				WHEN @Product = 'PP' THEN ISNULL(JackpotInfo, '')
+				ELSE ''
+			END AS ExtraInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,
@@ -1407,9 +1421,15 @@ BEGIN
 			0 AS Hdp1,
 			0 AS Hdp2,
 			0 AS OddsType,
-			odds,
+			CASE
+				WHEN @Product = 'PP' AND statusID IN (111, 112, 113) THEN ISNULL(ContributionRate, 0)
+				ELSE odds
+			END AS Odds,
 			0 AS MOdds,
-			0 AS OddsSpread,
+			CASE
+				WHEN @Product = 'PP' AND statusID IN (111, 112, 113) THEN ISNULL(BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
 			stake,
 			actual_stake,
 			CASE
@@ -1450,8 +1470,14 @@ BEGIN
 			'' AS ShowTime,
 			TranId3rd AS BetCheck,
 			transdesc,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo,
+			CASE
+				WHEN @Product = 'PP' THEN ISNULL(RefNo2, -1)
+				ELSE -1
+			END AS BetdaqId,
+			CASE
+				WHEN @Product = 'PP' THEN ISNULL(JackpotInfo, '')
+				ELSE ''
+			END AS ExtraInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,
@@ -1478,9 +1504,15 @@ BEGIN
 			0 AS Hdp1,
 			0 AS Hdp2,
 			0 AS OddsType,
-			odds,
+			CASE
+				WHEN @Product = 'PP' AND statusID IN (111, 112, 113) THEN ISNULL(ContributionRate, 0)
+				ELSE odds
+			END AS Odds,
 			0 AS MOdds,
-			0 AS OddsSpread,
+			CASE
+				WHEN @Product = 'PP' AND statusID IN (111, 112, 113) THEN ISNULL(BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
 			stake,
 			actual_stake,
 			CASE
@@ -1521,8 +1553,14 @@ BEGIN
 			'' AS ShowTime,
 			TranId3rd AS BetCheck,
 			transdesc,
-			-1 AS BetdaqId,
-			'' AS ExtraInfo,
+			CASE
+				WHEN @Product = 'PP' THEN ISNULL(RefNo2, -1)
+				ELSE -1
+			END AS BetdaqId,
+			CASE
+				WHEN @Product = 'PP' THEN ISNULL(JackpotInfo, '')
+				ELSE ''
+			END AS ExtraInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,

@@ -31,6 +31,8 @@ AS
 		- 20190704@Kos: Support Card Club [Redmine: #115449]
 		- 20191209@Kos: Support Spadegaming [Redmine: #124103]
 		- 20200419@Kos: Support Saba.club [Redmine: #132702]
+		- 20200714@Kos: Support PP Jackpot [Redmine: #137290]
+					- Return additional column OddsSpread MONEY, BetdaqId BIGINT, ExtraInfo VARCHAR(1000)
 
 	Parameters:
 		- @TransType
@@ -133,7 +135,10 @@ BEGIN
 		Ip				NVARCHAR(15),
 		TransDesc		NVARCHAR(1000),
 		BetCheck		VARCHAR(64),
-		MatchCode		VARCHAR(1000)
+		MatchCode		VARCHAR(1000),
+		OddsSpread		MONEY,
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo )
@@ -147,7 +152,10 @@ BEGIN
 			brng.winlostdate,
 			brng.status,
 			brng.statusID,
-			brng.odds,
+			CASE
+				WHEN sbt.ProductID = 32 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				ELSE brng.odds
+			END AS Odds,
 			brng.stake,
 			brng.actual_stake,
 			CASE
@@ -169,10 +177,22 @@ BEGIN
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				ELSE ''
-			END AS MatchCode
+			END AS MatchCode,
+			CASE
+				WHEN sbt.ProductID = 32 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
+			CASE
+				WHEN sbt.ProductID = 32 THEN ISNULL(brng.RefNo2, -1)
+				ELSE -1
+			END AS BetdaqId,
+			CASE
+				WHEN sbt.ProductID = 32 THEN ISNULL(brng.JackpotInfo, '')
+				ELSE ''
+			END AS ExtraInfo
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
-		WHERE brng.custid = @CustId 
+		WHERE brng.custid = @CustId
 			AND brng.RefNo = @RefNo
 			AND brng.statusID IN (SELECT StatusId FROM @tmpStatus)
 	END
@@ -187,7 +207,10 @@ BEGIN
 			brng.winlostdate,
 			brng.status,
 			brng.statusID,
-			brng.odds,
+			CASE
+				WHEN sbt.ProductID = 32 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				ELSE brng.odds
+			END AS Odds,
 			brng.stake,
 			brng.actual_stake,
 			CASE
@@ -209,7 +232,19 @@ BEGIN
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				ELSE ''
-			END AS MatchCode
+			END AS MatchCode,
+			CASE
+				WHEN sbt.ProductID = 32 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
+			CASE
+				WHEN sbt.ProductID = 32 THEN ISNULL(brng.RefNo2, -1)
+				ELSE -1
+			END AS BetdaqId,
+			CASE
+				WHEN sbt.ProductID = 32 THEN ISNULL(brng.JackpotInfo, '')
+				ELSE ''
+			END AS ExtraInfo
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
@@ -225,7 +260,10 @@ BEGIN
 			brng.winlostdate,
 			brng.status,
 			brng.statusID,
-			brng.odds,
+			CASE
+				WHEN sbt.ProductID = 32 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				ELSE brng.odds
+			END AS Odds,
 			brng.stake,
 			brng.actual_stake,
 			CASE
@@ -247,7 +285,19 @@ BEGIN
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				ELSE ''
-			END AS MatchCode
+			END AS MatchCode,
+			CASE
+				WHEN sbt.ProductID = 32 AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
+			CASE
+				WHEN sbt.ProductID = 32 THEN ISNULL(brng.RefNo2, -1)
+				ELSE -1
+			END AS BetdaqId,
+			CASE
+				WHEN sbt.ProductID = 32 THEN ISNULL(brng.JackpotInfo, '')
+				ELSE ''
+			END AS ExtraInfo
 		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
@@ -318,7 +368,10 @@ BEGIN
 		b.TransDesc,
 		b.BetCheck,
 		b.MatchCode,
-		@Currency AS CurrencyId
+		b.OddsSpread,
+		b.BetdaqId,
+		b.ExtraInfo,
+		@Currency AS Currency
 	FROM @tmpBettransRnG AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY b.TransId ASC
