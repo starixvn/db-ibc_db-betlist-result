@@ -108,6 +108,7 @@ AS
 		- 20200526@Kos: Support RNG War [Redmine: #132017]
 		- 20200609@Kos: Support ION [Redmine: #132329]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
+		- 20200730@Kos: Support PP Jackpot [Redmine: #138482]
 */
 
 BEGIN
@@ -397,7 +398,7 @@ BEGIN
 								ELSE 0
 							END,
 				Odds = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG') THEN b.odds
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG') THEN b.odds
 							ELSE 0
 						END,
 				MOdds = CASE
@@ -492,7 +493,7 @@ BEGIN
 								ELSE ''
 							END,
 				OddsSpread = CASE
-								WHEN b.Product IN ('SB', 'OneRNG') THEN ISNULL(b.oddsspread, 0)
+								WHEN b.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
 								ELSE 0
 							END,
 				BetdaqId = -1,

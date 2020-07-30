@@ -101,6 +101,7 @@ AS
 		- 20200514@Kos: Support BBIN [Redmine: #131362]
 		- 20200526@Kos: Support RNG War [Redmine: #132017]
 		- 20200609@Kos: Support ION [Redmine: #132329]
+		- 20200730@Kos: Support PP Jackpot [Redmine: #138482]
 */
 
 BEGIN
@@ -316,7 +317,7 @@ BEGIN
 			SELECT
 				c.TransId AS RefNo,
 				CASE
-					WHEN Product = 'OneRNG' THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+					WHEN Product IN ('OneRNG', 'PP') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 					ELSE 0
 				END AS Odds,
 				SUM(brng.stake) AS Stake,
@@ -342,7 +343,7 @@ BEGIN
 				AVG(brng.adiscount) AS ADiscount,
 				AVG(brng.sdiscount) AS SDiscount,
 				CASE
-					WHEN c.Product IN ('OneRNG') THEN ISNULL(SUM(brng.BetStake), 0)
+					WHEN c.Product IN ('OneRNG', 'PP') THEN ISNULL(SUM(brng.BetStake), 0)
 					ELSE 0
 				END AS OddsSpread
 			FROM @Tickets AS c
@@ -480,7 +481,7 @@ BEGIN
 						END
 			,OddsId = b.oddsid
 			,Odds = CASE 
-						WHEN c.Product IN ('Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG') THEN b.Odds
+						WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG') THEN b.Odds
 						WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.odds
 						WHEN c.Product IN ('Outright') THEN b.odds
 						WHEN c.Product IN ('VR') THEN b.odds
@@ -620,8 +621,7 @@ BEGIN
 							WHEN c.Product IN ('SB', 'VS2') THEN ISNULL(b.transdesc, '')
 							ELSE '' END
 			,OddsSpread = CASE
-							WHEN c.Product IN ('OneRNG') THEN ISNULL(b.oddsspread, 0)
-							WHEN c.Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+							WHEN c.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
 							ELSE 0 END
 			,BetdaqId = -1
 			,ExtraInfo = CASE
@@ -705,7 +705,7 @@ BEGIN
 							WHEN c.Product IN ('OneRNG', 'VB', 'FW', 'PP', 'CC', 'SG') THEN b.transdesc
 							ELSE '' END
 			,OddsSpread = CASE
-							WHEN c.Product IN ('OneRNG') THEN x.OddsSpread
+							WHEN c.Product IN ('OneRNG', 'PP') THEN x.OddsSpread
 							ELSE 0 END
 			,BetdaqId = -1
 			,ExtraInfo = ''
