@@ -33,6 +33,7 @@ AS
 		- 20200419@Kos: Support Saba.club [Redmine: #132702]
 		- 20200714@Kos: Support PP Jackpot [Redmine: #137290]
 					- Return additional column OddsSpread MONEY, BetdaqId BIGINT, ExtraInfo VARCHAR(1000)
+		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
 
 	Parameters:
 		- @TransType
@@ -176,6 +177,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
+				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -231,6 +233,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
+				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE

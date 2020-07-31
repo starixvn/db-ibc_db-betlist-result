@@ -41,6 +41,7 @@ AS
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20200709@Kos: Support PP Jackpot [Redmine: #137290]
+		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
 */
 
 BEGIN
@@ -1375,6 +1376,7 @@ BEGIN
 			0 AS MatchId,
 			CASE
 				WHEN @Product IN ('FW', 'PP', 'CC') THEN Additional
+				WHEN @Product IN ('SBC') THEN ISNULL(SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			'' AS Race,
@@ -1458,6 +1460,7 @@ BEGIN
 			0 AS MatchId,
 			CASE
 				WHEN @Product IN ('FW', 'PP', 'CC') THEN Additional
+				WHEN @Product IN ('SBC') THEN ISNULL(SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			'' AS Race,
