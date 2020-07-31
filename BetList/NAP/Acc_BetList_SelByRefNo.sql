@@ -102,6 +102,7 @@ AS
 		- 20200609@Kos: Support ION [Redmine: #132329]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
+		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
 */
 
 BEGIN
@@ -3283,6 +3284,7 @@ BEGIN
 					b.refno,
 					CASE
 						WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
+						WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
 						ELSE ''
 					END AS MatchCode,
 					'' AS Race,
@@ -3382,6 +3384,7 @@ BEGIN
 					b.refno,
 					CASE
 						WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
+						WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
 						ELSE ''
 					END AS MatchCode,
 					'' AS Race,

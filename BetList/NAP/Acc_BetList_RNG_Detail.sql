@@ -34,6 +34,7 @@ AS
 		- 20200322@Kos: Support Saba.club [Redmine: #130769]
 		- 20200526@Kos: Support RNG War [Redmine: #132017]
 		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
+		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
 
 	Parameters:
 		- @TransType
@@ -201,6 +202,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
+				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -258,6 +260,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
+				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE

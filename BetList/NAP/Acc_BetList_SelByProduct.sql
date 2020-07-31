@@ -54,6 +54,7 @@ AS
 		- 20200525@Kos: Support ION [Redmine: #132329]
 		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
 					- Return additional column BetdaqId BIGINT
+		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
 */
 
 BEGIN
@@ -537,6 +538,7 @@ BEGIN
 						b.refno,
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
+							WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS MatchCode,
 						b.sdiscount,
@@ -957,6 +959,7 @@ BEGIN
 						b.refno,
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
+							WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS MatchCode,
 						b.sdiscount,
