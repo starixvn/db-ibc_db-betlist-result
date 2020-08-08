@@ -35,6 +35,7 @@ AS
 		- 20200526@Kos: Support RNG War [Redmine: #132017]
 		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
 		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
+		- 20200808@Kos: Support PG Soft [Redmine: #137769]
 
 	Parameters:
 		- @TransType
@@ -58,7 +59,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)

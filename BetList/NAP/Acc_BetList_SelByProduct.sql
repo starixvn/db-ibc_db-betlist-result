@@ -55,6 +55,7 @@ AS
 		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
 					- Return additional column BetdaqId BIGINT
 		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
+		- 20200808@Kos: Support PG Soft [Redmine: #137769]
 */
 
 BEGIN
@@ -525,8 +526,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club
-			IF @ProductId IN (22, 24, 32, 34, 36, 42)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -946,8 +947,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club
-			IF @ProductId IN (22, 24, 32, 34, 36, 42)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
