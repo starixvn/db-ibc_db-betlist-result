@@ -70,6 +70,7 @@ AS
 		- 20200609@Kos: Support ION [Redmine: #132329]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 		- 20200730@Kos: Support PP Jackpot [Redmine: #138482]
+		- 20200808@Kos: Support PG Soft [Redmine: #137769]
 
 	Param's Explanation:
 		+ @TransType:
@@ -291,6 +292,7 @@ BEGIN
 							WHEN s.ProductID = 47 THEN 'BBIN'	-- BBIN
 							WHEN s.ProductID = 50 THEN 'RNGW'	-- RNG War
 							WHEN s.ProductID = 52 THEN 'ION'	-- ION
+							WHEN s.ProductID = 55 THEN 'PGS'	-- PG Soft
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
@@ -315,7 +317,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
+									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -441,7 +443,8 @@ BEGIN
 								END,
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS')
+										THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
