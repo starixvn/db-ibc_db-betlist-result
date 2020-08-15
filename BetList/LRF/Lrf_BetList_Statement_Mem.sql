@@ -50,6 +50,7 @@ AS
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20200714@Kos: Support PP Jackpot [Redmine: #137290]
 		- 20200728@Kos: Support SA Gaming [Redmine: #128493]
+		- 20200815@Kos: Support PG Soft [Redmine: #139182]
 */
 
 BEGIN
@@ -350,7 +351,7 @@ BEGIN
 							WHEN @TransType = 2 AND b.statusID IN (101, 102, 103) THEN 1
 							WHEN @TransType = 3 AND b.statusID IN (0, 1) THEN 1
 							WHEN @_Date >= @Yesterday AND @TransType IN (1, 3)
-								AND (s.ProductID IN (21, 22, 24, 32, 34, 36, 39, 42, 45)
+								AND (s.ProductID IN (21, 22, 24, 32, 34, 36, 39, 42, 45, 55)
 									OR (s.ProductID = 6 AND s.SubProduct <> '')) THEN 1 -- don't care status of casino's summary rows if >= yesterday
 							ELSE 0
 						END
@@ -748,6 +749,7 @@ BEGIN
 							WHEN s.ProductID = 42 THEN 'SBC'							-- Saba.club
 							WHEN s.ProductID = 43 THEN 'I4D'							-- Indo 4D
 							WHEN s.ProductID = 45 THEN 'SXG'							-- Sexy Gaming
+							WHEN s.ProductID = 55 THEN 'PGS'							-- PG Soft
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 							WHEN s.ProductID = 3 THEN 'NG'								-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -834,7 +836,7 @@ BEGIN
 				IF @_Date >= @Yesterday
 				BEGIN
 					-- bettransRnG
-					IF EXISTS (SELECT 1 FROM #Data WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC'))
+					IF EXISTS (SELECT 1 FROM #Data WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS'))
 					BEGIN
 						IF @TransType = 1		-- Settled
 						BEGIN
@@ -862,7 +864,7 @@ BEGIN
 								END AS OddsSpread
 							FROM #Data AS c
 								INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-							WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC')
+							WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS')
 								AND brng.statusID NOT IN (0, 1)
 							GROUP BY
 								c.TransId,
@@ -884,7 +886,7 @@ BEGIN
 								0 AS OddsSpread
 							FROM #Data AS c
 								INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-							WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC')
+							WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS')
 								AND brng.statusID IN (0, 1)
 							GROUP BY
 								c.TransId,
@@ -947,7 +949,7 @@ BEGIN
 
 					DELETE b
 					FROM #Data AS b
-					WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG')
+					WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'Allbet', 'SAG', 'SXG')
 						AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 				END
 
@@ -1035,7 +1037,7 @@ BEGIN
 									ELSE b.transid
 								END,
 						SportType = CASE
-										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1074,15 +1076,15 @@ BEGIN
 									ELSE 0
 								END,
 						Stake = CASE
-									WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG') AND x.Stake IS NOT NULL THEN x.Stake
+									WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'Allbet', 'SAG', 'SXG') AND x.Stake IS NOT NULL THEN x.Stake
 									ELSE b.stake
 								END,
 						Actual_Stake = CASE
-										WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
+										WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'Allbet', 'SAG', 'SXG') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
 										ELSE b.actual_stake
 									END,
 						Status = CASE
-									WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG') AND x.Status IS NOT NULL THEN x.Status
+									WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'Allbet', 'SAG', 'SXG') AND x.Status IS NOT NULL THEN x.Status
 									WHEN b.Product = 'SB' AND b.bettype NOT IN (9, 29)
 										AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 									WHEN b.bettype IN (9, 29, 2799) AND b.status = 'running' THEN
@@ -1104,19 +1106,19 @@ BEGIN
 												ELSE 0
 											END,
 						WinLost = CASE
-										WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG') AND x.WinLost IS NOT NULL THEN x.WinLost
+										WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'Allbet', 'SAG', 'SXG') AND x.WinLost IS NOT NULL THEN x.WinLost
 										ELSE b.WinLost
 									END,
 						LicenseeWL = CASE
-										WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG') AND x.LicenseeWL IS NOT NULL THEN x.LicenseeWL
+										WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'Allbet', 'SAG', 'SXG') AND x.LicenseeWL IS NOT NULL THEN x.LicenseeWL
 										ELSE b.LicenseeWL
 									END,
 						PlayerComm = CASE
-										WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG') AND x.PlayerComm IS NOT NULL THEN x.PlayerComm
+										WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'Allbet', 'SAG', 'SXG') AND x.PlayerComm IS NOT NULL THEN x.PlayerComm
 										ELSE b.PlayerComm
 									END,
 						Comm = CASE
-										WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG') AND x.Comm IS NOT NULL THEN x.Comm
+										WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'Allbet', 'SAG', 'SXG') AND x.Comm IS NOT NULL THEN x.Comm
 										ELSE b.Comm
 									END,
 						LiveIndicator = CASE
@@ -1193,7 +1195,8 @@ BEGIN
 									END,
 						ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 						TransDesc = CASE
-										WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
+										WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'FW', 'Lottery', 'PP', 
+											'VRG', 'TG', 'I4D', 'PGS') THEN ISNULL(b.transdesc, '')
 										ELSE ''
 									END,
 						OddsSpread = CASE
@@ -1230,7 +1233,7 @@ BEGIN
 					FROM #PagingData AS b
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 						LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
-						LEFT JOIN @TmpData AS x ON b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'Allbet', 'SAG', 'SXG') AND b.Winlostdate >= @Yesterday AND x.RefNo = b.transid
+						LEFT JOIN @TmpData AS x ON b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'Allbet', 'SAG', 'SXG') AND b.Winlostdate >= @Yesterday AND x.RefNo = b.transid
 						LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
 						LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
@@ -1305,7 +1308,7 @@ BEGIN
 									ELSE b.transid
 								END,
 						SportType = CASE
-										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1422,7 +1425,8 @@ BEGIN
 									END,
 						ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 						TransDesc = CASE
-										WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
+										WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'FW', 'Lottery', 'PP', 
+											'VRG', 'TG', 'I4D', 'PGS') THEN ISNULL(b.transdesc, '')
 										ELSE ''
 									END,
 						OddsSpread = CASE
@@ -1488,7 +1492,7 @@ BEGIN
 									ELSE b.transid
 								END,
 						SportType = CASE
-										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1605,7 +1609,8 @@ BEGIN
 									END,
 						ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 						TransDesc = CASE
-										WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
+										WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'FW', 'Lottery', 'PP', 
+											'VRG', 'TG', 'I4D', 'PGS') THEN ISNULL(b.transdesc, '')
 										ELSE ''
 									END,
 						OddsSpread = CASE
