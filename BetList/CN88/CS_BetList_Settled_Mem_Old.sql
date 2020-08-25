@@ -44,6 +44,7 @@ AS
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20191129@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
+		- 20200825@Kos: Fix timeout issue [Redmine: #138598]
 */
 
 BEGIN
@@ -416,6 +417,7 @@ BEGIN
 			LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueid
 			LEFT JOIN dbo.VSOutright_bk AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
+		WHERE b.winlostdate BETWEEN @FromDate AND @ToDate
 
 		-- Get ticket detail
 		-- Virtual Sports Racing
