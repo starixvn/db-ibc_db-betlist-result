@@ -1,4 +1,5 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Acc_BetList_Exchange]
 	@CustId		INT,
 	@FromDate	DATETIME,
@@ -12,11 +13,12 @@ AS
 /*
 	Created: Kos@20180301
 	Task: Bet list for Exchange
-	DB: DBEXT.bodb02
+	DB: DBAGE.bodb02
 
 	Revisions:
 		- 20180313@Kos: First revision [#Redmine: 91808]
 		- 20180313@Kos: Exclude tickets which don't have ticket detail [#Redmine: 102898]
+		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
 */
 
 BEGIN
@@ -40,6 +42,7 @@ BEGIN
 	DECLARE @Detail AS TABLE (
 		BetId			BIGINT,
 		UserId			VARCHAR(16),
+		CategoryType	SMALLINT,
 		EventTypeName	VARCHAR(50),
 		EventId			INT,
 		EventName		VARCHAR(500),
@@ -52,6 +55,7 @@ BEGIN
 		WinLostDate		DATETIME,
 		Currency		TINYINT,
 		OddsAvg			SMALLMONEY,
+		FancyBetRuns	MONEY,
 		Stake			MONEY,
 		WinLost			MONEY
 	)
@@ -136,6 +140,7 @@ BEGIN
 	SELECT
 		b.betID,
 		b.userId,
+		b.categoryType,
 		b.eventTypeName,
 		b.eventID,
 		b.eventName,
@@ -148,6 +153,7 @@ BEGIN
 		s.WinLostDate,
 		s.Currency,
 		b.matchAvgOdds AS OddsAvg,
+		b.fancyBetRuns,
 		b.matchStake / s.ExVirtualRate AS Stake,
 		b.profitLoss / s.ExVirtualRate AS WinLost
 	FROM bodb_3rdProduct.dbo.Bettrans_Exchange AS b WITH (NOLOCK)
