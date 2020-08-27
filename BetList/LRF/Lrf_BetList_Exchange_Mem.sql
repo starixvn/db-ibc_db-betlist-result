@@ -18,6 +18,7 @@ AS
 		- 20180302@Kos: First revision [#Redmine: 91048]
 		- 20190625@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
+		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
 */
 
 BEGIN
@@ -62,6 +63,7 @@ BEGIN
 	DECLARE @Detail AS TABLE (
 		BetId			BIGINT,
 		UserId			VARCHAR(16),
+		CategoryType	SMALLINT,
 		EventTypeName	VARCHAR(50),
 		EventId			INT,
 		EventName		VARCHAR(500),
@@ -74,6 +76,7 @@ BEGIN
 		WinLostDate		DATETIME,
 		Currency		TINYINT,
 		OddsAvg			SMALLMONEY,
+		FancyBetRuns	MONEY,
 		Stake			MONEY,
 		WinLost			MONEY
 	)
@@ -107,6 +110,7 @@ BEGIN
 	SELECT
 		b.betID,
 		b.userId,
+		b.categoryType,
 		b.eventTypeName,
 		b.eventID,
 		b.eventName,
@@ -119,6 +123,7 @@ BEGIN
 		s.WinLostDate,
 		s.Currency,
 		b.matchAvgOdds AS OddsAvg,
+		b.fancyBetRuns,
 		b.matchStake / s.ExVirtualRate AS Stake,
 		b.profitLoss / s.ExVirtualRate AS WinLost
 	FROM bodb_3rdProduct.dbo.Bettrans_Exchange AS b WITH (NOLOCK)
@@ -188,6 +193,7 @@ BEGIN
 	SELECT
 		b.BetId,
 		b.UserId,
+		b.CategoryType,
 		b.EventTypeName,
 		b.EventId,
 		b.EventName,
@@ -200,6 +206,7 @@ BEGIN
 		b.WinLostDate,
 		b.Currency,
 		b.OddsAvg,
+		b.FancyBetRuns,
 		b.Stake * ISNULL(e.Rate, 1) AS Stake,
 		b.WinLost * ISNULL(e.Rate, 1) AS WinLost
 	FROM @Detail AS b

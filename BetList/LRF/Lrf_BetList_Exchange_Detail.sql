@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20180302@Kos: First revision [#Redmine: 91048]
 		- 20190625@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
+		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
 */
 
 BEGIN
@@ -43,23 +44,29 @@ BEGIN
 
 	DECLARE @Data AS TABLE (
 		TransId			BIGINT,
+		EventType		INT,
+		CategoryType	SMALLINT,
 		BetTaken		DATETIME,
 		WinLostDate		DATETIME,
 		Currency		TINYINT,
 		Stake			MONEY,
 		OddsRequest		SMALLMONEY,
-		OddsMatched		SMALLMONEY
+		OddsMatched		SMALLMONEY,
+		FancyBetRuns	MONEY
 	)
 
 	INSERT INTO @Data
 	SELECT
 		bm.TransID,
+		b.eventType,
+		b.categoryType,
 		bm.betTaken,
 		DATEADD(DAY, 0, DATEDIFF(DAY, 0, s.settledDate)) AS WinLostDate,
 		s.Currency,
 		bm.txStake / s.ExVirtualRate AS Stake,
 		bm.actualOdds AS OddsRequest,
-		bm.txOddsMatched AS OddsMatched
+		bm.txOddsMatched AS OddsMatched,
+		bm.txFancyBetRuns AS FancyBetRuns
 	FROM bodb_3rdProduct.dbo.Bettrans_Exchange AS b WITH (NOLOCK)
 		INNER JOIN bodb_3rdProduct.dbo.BettransM_Exchange AS bm WITH (NOLOCK) ON b.betID = bm.BetID
 		INNER JOIN bodb_3rdProduct.dbo.Sum_winloss_Exchange AS s WITH (NOLOCK)
@@ -110,12 +117,15 @@ BEGIN
 
 	SELECT
 		b.TransId,
+		b.EventType,
+		b.CategoryType,
 		b.BetTaken,
 		b.WinLostDate,
 		b.Currency,
 		b.Stake * ISNULL(e.Rate, 1) AS Stake,
 		b.OddsRequest,
-		b.OddsMatched
+		b.OddsMatched,
+		b.FancyBetRuns
 	FROM @Data AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 END
