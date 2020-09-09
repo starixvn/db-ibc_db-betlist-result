@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[Age_BetList_SelWinLossByDate_Mem_Old]
 	@FromDate				SMALLDATETIME,
 	@ToDate					SMALLDATETIME,
 	@ProductIds				VARCHAR(MAX),
+	@ProductDetails			VARCHAR(MAX)	= '',
 	@ShowProgressiveBonus	BIT				= 0
 AS
 
@@ -110,6 +111,15 @@ AS
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 		- 20200730@Kos: Support PP Jackpot [Redmine: #138482]
 		- 20200808@Kos: Support PG Soft [Redmine: #137769]
+		- 20200907@Kos: Support PP Jackpot [Redmine: #137942]
+
+	Param's Explanation:
+		@ProductDetails:
+			<ROOT>
+				<ProductId="32" Sporttype="248" Bettype="0" />
+				<ProductId="32" Sporttype="248" Bettype="4298" />
+				<ProductId="32" Sporttype="248" Bettype="4297" />
+			</ROOT>
 */
 
 BEGIN
@@ -557,6 +567,63 @@ BEGIN
 	FROM bodb02.dbo.Customer AS c WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.Exchange AS ex WITH (NOLOCK) ON ex.exchangeid = c.currency
 	WHERE c.custid = @CustId
+
+	-- Filter due to product detail
+	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('PP'))
+	BEGIN
+		DECLARE @ProductDetail TABLE (
+			ProductId	TINYINT,
+			SportType	SMALLINT,
+			BetType		SMALLINT
+		)
+
+		IF ISNULL(@ProductDetails, '') <> ''
+		BEGIN
+			DECLARE @DocHandler INT
+
+			BEGIN TRY
+				EXEC sp_xml_preparedocument @DocHandler OUTPUT, @ProductDetails
+
+				INSERT INTO @ProductDetail (ProductId, SportType, BetType)
+				SELECT ProductId, SportType, BetType
+				FROM OPENXML(@DocHandler, '/ROOT/ProductDetail', 1) WITH (ProductId TINYINT, Sporttype SMALLINT, Bettype SMALLINT)
+
+				EXEC sp_xml_removedocument @DocHandler
+			END TRY
+			BEGIN CATCH
+				RETURN
+			END CATCH
+		END
+
+		DECLARE @FullProductDetail TABLE (
+			ProductId	TINYINT,
+			SportType	SMALLINT,
+			BetType		SMALLINT
+		)
+
+		INSERT INTO @FullProductDetail
+		SELECT
+			ProductId,
+			SportType,
+			BetType
+		FROM bodb02.dbo.f_GetProductDetail()
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'PP'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 32 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 32 AND BetType = b.BetType)
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'PP'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 32 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 32 AND BetType = b.BetType)
+	END
 
 	SELECT
 		b.TransId,
