@@ -72,6 +72,7 @@ AS
 		- 20200730@Kos: Support PP Jackpot [Redmine: #138482]
 		- 20200808@Kos: Support PG Soft [Redmine: #137769]
 		- 20200919@Kos: Support Joker [Redmine: #137942]
+		- 20201001@Kos: Support WM Live Casino [Redmine: #131588]
 
 	Param's Explanation:
 		+ @TransType:
@@ -292,6 +293,7 @@ BEGIN
 							WHEN s.ProductID = 46 THEN 'IBCLC'	-- IBCBet Live Casino
 							WHEN s.ProductID = 47 THEN 'BBIN'	-- BBIN
 							WHEN s.ProductID = 50 THEN 'RNGW'	-- RNG War
+							WHEN s.ProductID = 51 THEN 'WM'		-- WM
 							WHEN s.ProductID = 52 THEN 'ION'	-- ION
 							WHEN s.ProductID = 55 THEN 'PGS'	-- PG Soft
 							WHEN s.ProductID = 56 THEN 'JK'		-- Joker
@@ -319,7 +321,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
+									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe

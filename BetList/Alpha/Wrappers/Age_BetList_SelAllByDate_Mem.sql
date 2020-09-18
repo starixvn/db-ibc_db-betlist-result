@@ -104,6 +104,7 @@ AS
 		- 20200730@Kos: Support PP Jackpot [Redmine: #138482]
 		- 20200808@Kos: Support PG Soft [Redmine: #137769]
 		- 20200919@Kos: Support Joker [Redmine: #137942]
+		- 20201001@Kos: Support WM Live Casino [Redmine: #131588]
 */
 
 BEGIN
@@ -259,6 +260,7 @@ BEGIN
 			WHEN s.ProductID = 46					THEN 'IBCLC'		-- IBCBet Live Casino
 			WHEN s.ProductID = 47					THEN 'BBIN'			-- BBIN
 			WHEN s.ProductID = 50					THEN 'RNGW'			-- RNG War
+			WHEN s.ProductID = 51					THEN 'WM'			-- WM
 			WHEN s.ProductID = 52					THEN 'ION'			-- ION
 			WHEN s.ProductID = 55					THEN 'PGS'			-- PG Soft
 			WHEN s.ProductID = 56					THEN 'JK'			-- Joker
@@ -361,7 +363,7 @@ BEGIN
 		END
 
 		-- bettransLC
-		IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION') AND WinLostDate >= @Yesterday)
+		IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM') AND WinLostDate >= @Yesterday)
 		BEGIN
 			-- Running
 			INSERT INTO @temp_bettransX
@@ -389,7 +391,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-			WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION')
+			WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM')
 				AND c.WinLostDate >= @Yesterday
 				AND blc.statusID IN (0, 1)
 			GROUP BY
@@ -426,7 +428,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-			WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION')
+			WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM')
 				AND c.WinLostDate >= @Yesterday
 				AND blc.statusID NOT IN (0, 1)
 			GROUP BY
@@ -443,7 +445,7 @@ BEGIN
 			,CustId = b.custid
 			,Username = b.username
 			,SportType = CASE
-							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
+							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
 							WHEN c.Product = 'Keno' THEN 202
 							WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 							WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -639,7 +641,7 @@ BEGIN
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueid = l.leagueid
 			LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
-		WHERE c.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION')
+		WHERE c.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM')
 			OR c.WinLostDate < @Yesterday
 
 		INSERT INTO #MemBetTicket
@@ -648,7 +650,7 @@ BEGIN
 			,CustId = b.custid
 			,Username = b.username
 			,SportType = CASE
-							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK') THEN b.matchid
+							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM') THEN b.matchid
 							WHEN c.Product = 'AllBet' THEN 211 -- AllBet
 							WHEN c.Product = 'VB' THEN 212 -- Macau Games
 							WHEN c.Product = 'FW' THEN 219 -- Fishing World
@@ -718,7 +720,7 @@ BEGIN
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.TransId
 			INNER JOIN @temp_bettransX AS x ON x.RefNo = c.TransId
-		WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION')
+		WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM')
 			AND c.WinLostDate >= @Yesterday
 
 		-- Virtual Sports Racing
