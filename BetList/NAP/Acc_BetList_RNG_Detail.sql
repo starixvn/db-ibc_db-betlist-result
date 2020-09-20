@@ -36,6 +36,7 @@ AS
 		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
 		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
 		- 20200808@Kos: Support PG Soft [Redmine: #137769]
+		- 20200919@Kos: Support Joker [Redmine: #137942]
 
 	Parameters:
 		- @TransType
@@ -49,7 +50,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix --
-	-- Support RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club
+	-- Support RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -59,7 +60,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55, 56)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
@@ -204,6 +205,7 @@ BEGIN
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -262,6 +264,7 @@ BEGIN
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -318,6 +321,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
+				WHEN sbt.productID IN (56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
