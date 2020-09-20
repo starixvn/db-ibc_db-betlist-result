@@ -56,6 +56,7 @@ AS
 					- Return additional column BetdaqId BIGINT
 		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
 		- 20200808@Kos: Support PG Soft [Redmine: #137769]
+		- 20200919@Kos: Support Joker [Redmine: #137942]
 */
 
 BEGIN
@@ -526,8 +527,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -540,6 +541,7 @@ BEGIN
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
 							WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
+							WHEN s.productID IN (56) THEN ISNULL(b.GameId3rd, '')
 							ELSE ''
 						END AS MatchCode,
 						b.sdiscount,
@@ -947,8 +949,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -961,6 +963,7 @@ BEGIN
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
 							WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
+							WHEN s.productID IN (56) THEN ISNULL(b.GameId3rd, '')
 							ELSE ''
 						END AS MatchCode,
 						b.sdiscount,
