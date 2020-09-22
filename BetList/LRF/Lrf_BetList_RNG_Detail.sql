@@ -35,6 +35,7 @@ AS
 					- Return additional column OddsSpread MONEY, BetdaqId BIGINT, ExtraInfo VARCHAR(1000)
 		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
 		- 20200815@Kos: Support PG Soft [Redmine: #139182]
+		- 20200922@Kos: Support Joker [Redmine: #141408]
 
 	Parameters:
 		- @TransType
@@ -79,7 +80,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 55)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 55, 56)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (StatusId TINYINT)
@@ -179,7 +180,7 @@ BEGIN
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
-				WHEN sbt.productID IN (55) THEN brng.GameId3rd
+				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -236,7 +237,7 @@ BEGIN
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
-				WHEN sbt.productID IN (55) THEN brng.GameId3rd
+				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -290,7 +291,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (55) THEN brng.GameId3rd
+				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
