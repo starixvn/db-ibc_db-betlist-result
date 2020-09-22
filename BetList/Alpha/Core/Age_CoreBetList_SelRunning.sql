@@ -38,6 +38,7 @@ AS
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: #122391]
 		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
+		- 20200922@Kos: Support Myanmar Odds [Redmine: #141825]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -168,7 +169,7 @@ BEGIN
 				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 				, b.betcheck
 				, '' AS TransDesc
-				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, b.OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.ProductID
 				, bt.EventType
@@ -236,7 +237,7 @@ BEGIN
 				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 				, b.betcheck
 				, '' AS TransDesc
-				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, b.OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.ProductID
 				, bt.EventType
@@ -304,7 +305,7 @@ BEGIN
 				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 				, b.BetCheck
 				, '' AS TransDesc
-				, CASE WHEN bt.SubProduct IN('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, b.OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.ProductID
 				, bt.EventType
@@ -365,7 +366,7 @@ BEGIN
 				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 				, b.BetCheck
 				, ''transdesc
-				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, b.OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
@@ -425,7 +426,7 @@ BEGIN
 				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 				, b.BetCheck
 				, ''transdesc
-				, CASE WHEN bt.SubProduct IN ('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, b.OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
@@ -485,7 +486,7 @@ BEGIN
 				, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 				, b.BetCheck
 				, ''transdesc
-				, CASE WHEN bt.SubProduct IN('MO') THEN b.OddsSpread ELSE 0 END AS OddsSpread
+				, b.OddsSpread
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
