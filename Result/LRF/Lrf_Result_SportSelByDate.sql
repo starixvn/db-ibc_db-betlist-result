@@ -204,15 +204,12 @@ BEGIN
 		BEGIN
 			INSERT INTO @Sport
 			SELECT DISTINCT l.sporttype
-			FROM (
-					SELECT DISTINCT EventID
-					FROM dbo.VSOutright14 WITH (NOLOCK)
-					WHERE EventDate = @EventDate
-				) AS o
+			FROM dbo.VSOutright14 AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON r.LeagueID = l.leagueid
 			WHERE l.sporttype IN (181, 182, 183, 184, 185)
 				AND r.EventStatus = 'completed'
+				AND o.EventDate = @EventDate
 		END
 	END
 
