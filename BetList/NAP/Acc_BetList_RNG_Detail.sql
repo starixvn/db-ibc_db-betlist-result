@@ -37,6 +37,7 @@ AS
 		- 20200731@Kos: Support Saba.club Result [Redmine: #137680]
 		- 20200808@Kos: Support PG Soft [Redmine: #137769]
 		- 20200919@Kos: Support Joker [Redmine: #137942]
+		- 20200930@Kos: Support GameId3rd for PG Soft [Redmine: #137769]
 
 	Parameters:
 		- @TransType
@@ -205,7 +206,7 @@ BEGIN
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
-				WHEN sbt.productID IN (56) THEN brng.GameId3rd
+				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -264,7 +265,7 @@ BEGIN
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
-				WHEN sbt.productID IN (56) THEN brng.GameId3rd
+				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -321,7 +322,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
-				WHEN sbt.productID IN (56) THEN brng.GameId3rd
+				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
