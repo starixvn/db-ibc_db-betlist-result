@@ -43,6 +43,7 @@ AS
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20200929@Kos: Support Virtual Greyhounds and Virtual Motosports [Redmine: #136285]
+		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 */
 
 BEGIN
@@ -89,6 +90,7 @@ BEGIN
 						AND ResourceID NOT LIKE '225%'
 						AND ResourceID NOT LIKE '226%'
 						AND ResourceID NOT LIKE '227%'
+						AND ResourceID NOT LIKE '228%'
 						AND ResourceID NOT LIKE '486%'
 						AND ResourceID NOT LIKE '487%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1
@@ -169,6 +171,7 @@ BEGIN
 						AND ResourceID NOT LIKE '225%'
 						AND ResourceID NOT LIKE '226%'
 						AND ResourceID NOT LIKE '227%'
+						AND ResourceID NOT LIKE '228%'
 						AND ResourceID NOT LIKE '486%'
 						AND ResourceID NOT LIKE '487%'
 				) AS br ON m.matchid = br.MatchID AND m.sporttype = 1

@@ -48,7 +48,8 @@ AS
 		- 20191206@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20200107@Kos: Support PH AIO phase 5 [Redmine: #126005]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
-
+		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
+		
 		*******************
 		sample test case:
 			exec Lrf_BetList_SelMatchResult @MatchID=10514601, @RaceNo=default, @BetType=1324, @Betid='801'
@@ -164,7 +165,8 @@ BEGIN
 								OR d.ResourceID LIKE '224%'
 								OR d.ResourceID LIKE '225%'
 								OR d.ResourceID LIKE '226%'
-								OR d.ResourceID LIKE '227%')
+								OR d.ResourceID LIKE '227%'
+								OR d.ResourceID LIKE '228%')
 							AND d.ResourceId LIKE f.ResourceID
 							AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 								OR d.ResourceId IN ('08', '09')
@@ -328,7 +330,8 @@ BEGIN
 								OR d.ResourceID LIKE '224%'
 								OR d.ResourceID LIKE '225%'
 								OR d.ResourceID LIKE '226%'
-								OR d.ResourceID LIKE '227%')
+								OR d.ResourceID LIKE '227%'
+								OR d.ResourceID LIKE '228%')
 							AND d.ResourceId LIKE f.ResourceID
 							AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 								OR d.ResourceId IN ('08', '09')
@@ -492,7 +495,8 @@ BEGIN
 								OR d.ResourceID LIKE '224%'
 								OR d.ResourceID LIKE '225%'
 								OR d.ResourceID LIKE '226%'
-								OR d.ResourceID LIKE '227%')
+								OR d.ResourceID LIKE '227%'
+								OR d.ResourceID LIKE '228%')
 							AND d.ResourceId LIKE f.ResourceID
 							AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 								OR d.ResourceId IN ('08', '09')
