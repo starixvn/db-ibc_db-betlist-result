@@ -48,6 +48,7 @@ AS
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20191220@Kos: Support PH AIO phase 5 [Redmine: #124455]
+		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 */
 
 BEGIN
@@ -155,7 +156,8 @@ BEGIN
 							OR d.ResourceID LIKE '224%'
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
-							OR d.ResourceID LIKE '227%')
+							OR d.ResourceID LIKE '227%'
+							OR d.ResourceID LIKE '228%')
 						AND d.ResourceId LIKE f.ResourceID
 						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
@@ -316,7 +318,8 @@ BEGIN
 							OR d.ResourceID LIKE '224%'
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
-							OR d.ResourceID LIKE '227%')
+							OR d.ResourceID LIKE '227%'
+							OR d.ResourceID LIKE '228%')
 						AND d.ResourceID LIKE f.ResourceID
 						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
@@ -477,7 +480,8 @@ BEGIN
 							OR d.ResourceID LIKE '224%'
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
-							OR d.ResourceID LIKE '227%')
+							OR d.ResourceID LIKE '227%'
+							OR d.ResourceID LIKE '228%')
 						AND d.ResourceId LIKE f.ResourceID
 						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')

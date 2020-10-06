@@ -27,6 +27,7 @@ AS
 		- 20191220@Kos: Support PH AIO phase 5 [Redmine: #124455]
 		- 20200507@Kos: Support E-Sports phase 3 [Redmine: #132386]
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
+		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 */
 
 BEGIN
@@ -234,6 +235,9 @@ BEGIN
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (1, 10, 'Fast Market', 227, '227%')
 
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	VALUES (1, 10, 'Fast Market', 228, '228%')
+	
 	-- 5. Basketball AIO
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
 	VALUES (2, 1, 'Basketball AIO', 604, '604')
