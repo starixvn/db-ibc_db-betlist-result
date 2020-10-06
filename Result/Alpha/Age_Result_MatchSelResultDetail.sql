@@ -28,6 +28,7 @@ AS
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
+		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 */
 
 BEGIN
@@ -122,6 +123,7 @@ BEGIN
 						AND ResourceID NOT LIKE '225%'
 						AND ResourceID NOT LIKE '226%'
 						AND ResourceID NOT LIKE '227%'
+						AND ResourceID NOT LIKE '228%'
 						AND ResourceID NOT LIKE '486%'
 						AND ResourceID NOT LIKE '487%')
 					OR (@SportType = 5
@@ -260,6 +262,7 @@ BEGIN
 						AND ResourceID NOT LIKE '225%'
 						AND ResourceID NOT LIKE '226%'
 						AND ResourceID NOT LIKE '227%'
+						AND ResourceID NOT LIKE '228%'
 						AND ResourceID NOT LIKE '486%'
 						AND ResourceID NOT LIKE '487%')
 					OR (@SportType = 5
