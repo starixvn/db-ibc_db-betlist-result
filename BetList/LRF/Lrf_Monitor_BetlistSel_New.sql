@@ -58,11 +58,12 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200302@Kos: Support 3 new betfrom [Redmine: #129253]
 		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
+		- 20201007@Kos: Support Time Machine Over/Under [Redmine: #136107]
 
 	Parameter's Explanation:
 		- @BetType:
 			+ HDP: 1, 7, 1303, 17, 183, 609
-			+ OU: 3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616
+			+ OU: 3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228
 			+ Others: NOT IN 1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 461, 462, 463, 464
 			+ ALL: <= 19000
 		- @TransId: lastest transid
@@ -321,7 +322,7 @@ BEGIN
 					OR (b.bettype NOT IN (9, 29) AND @LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
 				AND (@BetType = ''
 					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609))
-					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616))
+					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228))
 					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616)))
 		END
 		ELSE IF @SportId = 999
@@ -447,7 +448,7 @@ BEGIN
 					OR (@LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
 				AND (@BetType = ''
 					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609))
-					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616))
+					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228))
 					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616)))
 		END
 
@@ -615,8 +616,6 @@ BEGIN
 	ORDER BY b.TransDate DESC
 END
 GO
-
-
 
 
 GRANT EXECUTE ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [bodbLicenseeNet]
