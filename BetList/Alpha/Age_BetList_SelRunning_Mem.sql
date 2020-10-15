@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunning_Mem]
 	@CustId		INT			= NULL,
@@ -12,7 +12,7 @@ AS
 /*
 	Created:
 	Task: Bet List
-	DB: DBAGE.bodb02
+	DB: DBBOF.bodb02
 	Original DBAGE.bodb_Age.Age_BetList_SelRunningByDate_Mem
 	Revisions:
 		- 20080707@Viet: Remove Teamname, Leaguename, Sportname, TypeName

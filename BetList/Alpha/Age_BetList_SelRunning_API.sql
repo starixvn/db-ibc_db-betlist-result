@@ -1,4 +1,6 @@
-﻿ALTER PROCEDURE [dbo].[Age_BetList_SelRunning_API]
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+
+ALTER PROCEDURE [dbo].[Age_BetList_SelRunning_API]
 	@CustId		INT			= NULL,
 	@Username	VARCHAR(50)	= NULL,
 	@Language	VARCHAR(2)	= 'E'
@@ -7,7 +9,7 @@ AS
 /*
 	Created:
 	Task: Agent Web Service, function: GetAgentBetListRunning
-	DB: DBAGE.bodb02
+	DB: DBBOF.bodb02
 	Original: Age_BetList_SelRunningAll_API
 	Revisions:
 		- 20100107@Hanh: Get Odds Type, remove ComStatus column

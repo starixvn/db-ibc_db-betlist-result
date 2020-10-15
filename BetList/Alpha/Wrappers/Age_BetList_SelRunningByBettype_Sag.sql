@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunningByBettype_SAg]
 	@CustId		INT,
@@ -8,7 +8,7 @@ AS
 /*
 	Created:
 	Task: Betlist
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original: BetsSelBetList_SAg
 	Revisions:
 		- 20080104@Vinh: include mix parlay

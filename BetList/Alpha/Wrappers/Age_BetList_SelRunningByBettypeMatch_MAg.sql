@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunningByBettypeMatch_MAg]
 	@MatchId		INT,
@@ -10,7 +10,7 @@ AS
 /*
 	Created:
 	Task: Betlist
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original: BetsSelBetListMatchWinLoss_MAg
 	Revisions:
 		- 20080105: Add typenamee2, sportname

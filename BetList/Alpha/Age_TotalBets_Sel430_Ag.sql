@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_TotalBets_Sel430_Ag]
 	@CustId	INT
@@ -7,7 +7,7 @@ AS
 /*
 	Created: 20110915@TOM
 	Task: Retrieve total bet of 1St Correct Score/Correct Score. (BetType: 4,30)
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original: Age_BetList_SelRunningByBettype_Ag
 
 	Revisions:

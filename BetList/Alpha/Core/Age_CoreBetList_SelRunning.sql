@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_CoreBetList_SelRunning]
 	@CustId				INT
@@ -12,7 +12,7 @@ AS
 /*
 	Created: Bobby
 	Task: Aphla site - refactor betlist core 
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Original:
 
 	Revisions:
