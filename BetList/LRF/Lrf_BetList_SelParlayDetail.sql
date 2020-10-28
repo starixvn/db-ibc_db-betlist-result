@@ -31,6 +31,7 @@ AS
 		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112733]
 		- 20191011@Kos: Move from DBEXT.bodb02 to DBACC.bodb02 [Redmine: #117888]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20201028@Kos: Return transdate [Redmine: #144388]
 */
 
 BEGIN
@@ -73,6 +74,7 @@ BEGIN
 		IsNeutral			BIT,
 		Status				NVARCHAR(10),
 		SettlementStatus	TINYINT,
+		TransDate			DATETIME,
 		TransDesc			NVARCHAR(1000))
 
 	DECLARE @RefNo		BIGINT,
@@ -147,6 +149,7 @@ BEGIN
 				ELSE b.status
 			END AS status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+			b.transdate,
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -194,6 +197,7 @@ BEGIN
 				ELSE b.status
 			END AS status,
 			0 AS SettlementStatus,
+			b.transdate,
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM dbo.bettransm14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -241,6 +245,7 @@ BEGIN
 				ELSE b.status
 			END AS status,
 			0 AS SettlementStatus,
+			b.transdate,
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -251,10 +256,4 @@ BEGIN
 	SELECT DISTINCT * FROM @tmpParlay
 	ORDER BY TransId DESC
 END
-GO
-
-
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_SelParlayDetail] TO [bodbLicenseeNet]
 GO
