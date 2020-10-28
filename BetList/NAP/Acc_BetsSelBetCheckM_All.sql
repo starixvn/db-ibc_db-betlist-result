@@ -35,6 +35,7 @@ AS
 		- 20190521@Kos: Support CN88 [Redmine: #112225]
 					- Add new param @IsCN88 BIT
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20201028@Kos: Return transdate [Redmine: #144388]
 */
 
 BEGIN
@@ -65,6 +66,7 @@ BEGIN
 		BetTeam				NVARCHAR(10),
 		Status				NVARCHAR(10),
 		SettlementStatus	TINYINT,
+		TransDate			DATETIME,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		LiveIndicator		BIT,
@@ -138,6 +140,7 @@ BEGIN
 				ELSE b.status
 			END AS status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+			b.transdate,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -185,6 +188,7 @@ BEGIN
 				ELSE b.status
 			END AS status,
 			0 AS SettlementStatus,
+			b.transdate,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -232,6 +236,7 @@ BEGIN
 				ELSE b.status
 			END AS status,
 			0 AS SettlementStatus,
+			b.transdate,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -256,9 +261,4 @@ BEGIN
 	SELECT DISTINCT * FROM @BetListMP
 	ORDER BY TransId DESC
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Acc_BetsSelBetCheckM_All] TO [bodbAdminNet]
 GO

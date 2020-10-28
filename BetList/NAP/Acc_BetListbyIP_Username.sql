@@ -1,7 +1,7 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetListbyIP_Username]
-	@FromDate		DATETIME,
+	@FromDate		SMALLDATETIME,
 	@Ip				VARCHAR(15),
 	@UserId			INT			= NULL,
 	@MoveBetsDay	SMALLDATETIME,
@@ -49,6 +49,7 @@ AS
 		- 20191218@Kos: Support Virtual Games [Redmine: #124759]
 		- 20200323@Kos: Support Indo 4D [Redmine: #130857]
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
+		- 20201028@Kos: Change data type of @FromDate [Redmine: #144388]
 */
 
  BEGIN

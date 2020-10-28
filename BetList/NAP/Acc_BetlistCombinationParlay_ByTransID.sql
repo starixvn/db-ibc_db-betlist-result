@@ -33,6 +33,7 @@ AS
 		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112286]
 		- 20191114@Kos: Show (N) for neutral match [Redmine: #123772]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20201028@Kos: Return transdate [Redmine: #144388]
 */
 
 BEGIN
@@ -135,6 +136,7 @@ BEGIN
 	DECLARE @parlay_base AS TABLE (
 		TransId				BIGINT,
 		RefNo				BIGINT,
+		TransDate			DATETIME,
 		WinLostDate			SMALLDATETIME,
 		BetType				INT,
 		HomeId				INT,
@@ -191,6 +193,7 @@ BEGIN
 	INSERT INTO @parlay_base (
 		TransId,
 		RefNo,
+		TransDate,
 		WinLostDate,
 		BetType,
 		HomeId,
@@ -217,6 +220,7 @@ BEGIN
 	SELECT
 		bm.transid,
 		bm.refno,
+		bm.transdate,
 		bm.winlostdate,
 		bm.bettype,
 		m.homeid,
@@ -257,6 +261,7 @@ BEGIN
 	SELECT
 		bm.transid,
 		bm.refno,
+		bm.transdate,
 		bm.winlostdate,
 		bm.bettype,
 		m.homeid,
@@ -296,6 +301,7 @@ BEGIN
 	SELECT
 		bm.transid,
 		bm.refno,
+		bm.transdate,
 		bm.winlostdate,
 		bm.bettype,
 		m.homeid,
@@ -712,6 +718,7 @@ BEGIN
 	SELECT DISTINCT
 		TransId,
 		RefNo,
+		TransDate,
 		WinLostDate,
 		BetType,
 		SetStake AS Stake,
@@ -762,10 +769,4 @@ BEGIN
 
 	SELECT DISTINCT * FROM @tmpMatch
 END
-
-
-
-
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetlistCombinationParlay_ByTransID] TO [bodbAdminNet]
 GO
