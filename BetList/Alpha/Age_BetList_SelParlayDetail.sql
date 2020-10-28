@@ -39,6 +39,7 @@ AS
 		- 20190426@Kos: Show Reject status on Parlay sub ticket [Redmine: #112286]
 		- 20190926@Kos: Hotfix - duplicate data during Balance Up [Redmine: #120962]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20201028@Kos: Return transdate [Redmine: #144388]
 */
 
 BEGIN
@@ -74,6 +75,7 @@ BEGIN
 		BetTeam				NVARCHAR(50),
 		Status				NVARCHAR(10),
 		SettlementStatus	TINYINT,
+		TransDate			DATETIME,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		LiveIndicator		BIT,
@@ -151,6 +153,7 @@ BEGIN
 				ELSE b.status
 			END AS Status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+			b.transdate,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -197,6 +200,7 @@ BEGIN
 				ELSE b.status
 			END AS status,
 			0 AS SettlementStatus,
+			b.transdate,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -243,6 +247,7 @@ BEGIN
 				ELSE b.status
 			END AS status,
 			0 AS SettlementStatus,
+			b.transdate,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -259,13 +264,4 @@ BEGIN
 	SELECT DISTINCT * FROM @tmpParlay
 	ORDER BY TransId DESC
 END
-GO
-
-
-
-
-
-GRANT EXECUTE ON [dbo].[Age_BetList_SelParlayDetail] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelParlayDetail] TO [bodbDownlineNetView]
 GO
