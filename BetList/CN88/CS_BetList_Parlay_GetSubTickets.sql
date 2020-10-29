@@ -17,6 +17,7 @@ AS
 		- 20190926@Kos: Hotfix - duplicate data during Balance Up [Redmine: #120962]
 		- 20190920@Kos: Support Move Super, add new param @HeadlineId [Redmine: #118962]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20201028@Kos: Return transdate [Redmine: #144388]
 */
 
 BEGIN
@@ -52,6 +53,7 @@ BEGIN
 		BetTeam				NVARCHAR(50),
 		Status				NVARCHAR(10),
 		SettlementStatus	TINYINT,
+		TransDate			DATETIME,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		LiveIndicator		BIT,
@@ -113,7 +115,7 @@ BEGIN
 		SELECT DISTINCT
 			FromDate,
 			ToDate
-		FROM bodb02.dbo.Acc_GroupExtraPTSetting WITH (NOLOCK)
+		FROM dbo.Acc_GroupExtraPTSetting WITH (NOLOCK)
 		WHERE UplineId = @HeadlineId AND SuperId = @SuperId
 
 		IF NOT EXISTS (SELECT 1 FROM @tblWinlostDate WHERE @WinLostDate BETWEEN FromDate AND ToDate)
@@ -155,6 +157,7 @@ BEGIN
 				ELSE b.status
 			END AS Status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+			b.transdate,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -200,6 +203,7 @@ BEGIN
 				ELSE b.status
 			END AS Status,
 			0 AS SettlementStatus,
+			b.transdate,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -245,6 +249,7 @@ BEGIN
 				ELSE b.status
 			END AS Status,
 			0 AS SettlementStatus,
+			b.transdate,
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
@@ -261,12 +266,4 @@ BEGIN
 	SELECT DISTINCT * FROM @tmpParlay
 	ORDER BY TransId DESC
 END
-GO
-
-
-
-
-GRANT EXECUTE ON [dbo].[CS_BetList_Parlay_GetSubTickets] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[CS_BetList_Parlay_GetSubTickets] TO [bodbDownlineNetView]
 GO
