@@ -27,6 +27,7 @@ AS
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200616@Kos: Support SA Gaming [Redmine: #128493]
 		- 20200815@Kos: Support PG Soft [Redmine: #139182]
+		- 20201113@Kos: Fix bug status Saba.club [Redmine: #144985]
 */
 
 BEGIN
@@ -642,7 +643,7 @@ BEGIN
 									ELSE b.actual_stake
 								END,
 				Status = CASE
-							WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'PGS', 'Allbet', 'AG', 'SAG', 'SXG') AND x.RefNo IS NOT NULL THEN 'Running'
+							WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'PGS', 'Allbet', 'AG', 'SAG', 'SXG') AND x.RefNo IS NOT NULL THEN 'Running'
 							WHEN b.Product = 'SB'
 								AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 							WHEN b.Product = 'Parlay' AND b.status = 'running' THEN
