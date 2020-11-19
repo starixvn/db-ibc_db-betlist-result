@@ -143,7 +143,8 @@ AS
 		- 20200728@Kos: Support SA Gaming [Redmine: #128493]
 		- 20201023@Kos: Exclude Arcadia Gaming Bonus ticket [Redmine: #143648]
 		- 20201109@Kos: Support PG Soft [Redmine: #139182]
-		- 20200922@Kos: Support Joker [Redmine: #141408]
+		- 20201123@Kos: Support Joker [Redmine: #141408]
+		- 20201207@Kos: Exclude Saba.club Free Bet ticket [Redmine: #142369]
 */
 
 BEGIN
@@ -966,6 +967,10 @@ BEGIN
 				AND b.Winlostdate >= @Yesterday
 				AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 
+			-- Exclude Saba.club Freebet tickets
+			DELETE FROM #Data
+			WHERE Product = 'SBC' AND MatchId = 150
+
 			DECLARE @Username VARCHAR(50)
 
 			SELECT @Currency = currency,
@@ -1710,9 +1715,4 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_SelWinLossByDate_Mem] TO [bodbLicenseeNet] AS [dbo]
 GO

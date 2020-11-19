@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@FromDate		DATETIME	= '',
 	@ToDate			DATETIME	= '',
 	@Username		VARCHAR(30)	= NULL, -- for API
+	@ExcludeFreeBet	BIT			= 0,	-- Exclude free tickets
 	@BaseCurrency	VARCHAR(10),
 	@PageSize		INT			= 1000,
 	@PageIndex		INT			= 1,
@@ -126,6 +127,9 @@ AS
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200616@Kos: Support SA Gaming [Redmine: #128493]
 		- 20200815@Kos: Support PG Soft [Redmine: #139182]
+		- 20201123@Kos: Support Joker [Redmine: #141408]
+		- 20201207@Kos: Exclude Saba.club Free Bet ticket [Redmine: #142369]
+					- Add new input param @ExcludeFreeBet BIT
 */
 
 BEGIN
@@ -1120,6 +1124,13 @@ BEGIN
 			AND sbt.ProductID = 15
 	END
 
+	IF @ExcludeFreeBet = 1
+	BEGIN
+		-- Exclude Saba.club Free Bet
+		DELETE FROM #BetListSelRunningByDateMem
+		WHERE SportType = 150
+	END
+
 	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 	IF EXISTS (SELECT 1 FROM #BetListSelRunningByDateMem WHERE RefCode <> 0)
 	BEGIN
@@ -1286,10 +1297,4 @@ BEGIN
 
 	DROP TABLE #BetListSelRunningByDateMem
 END
-GO
-
-
-
-GO
-GRANT EXECUTE ON [dbo].[Lrf_BetList_SelRunningByDate_Mem] TO [bodbLicenseeNet]
 GO

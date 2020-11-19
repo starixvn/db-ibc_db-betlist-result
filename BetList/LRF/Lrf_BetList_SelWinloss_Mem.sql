@@ -132,6 +132,7 @@ AS
 		- 20201023@Kos: Exclude Arcadia Gaming Bonus ticket [Redmine: #143648]
 		- 20201109@Kos: Support PG Soft [Redmine: #139182]
 		- 20201123@Kos: Support Joker [Redmine: #141408]
+		- 20201207@Kos: Exclude Saba.club Free Bet ticket [Redmine: #142369]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -3408,6 +3409,10 @@ BEGIN
 	DELETE FROM @BetListByDateMem
 	WHERE @drawfilter = 2 AND status = 'DRAW' AND ABS(modds) <> 0.25
 
+	-- Exclude Saba.club Free Bet
+	DELETE FROM @BetListByDateMem
+	WHERE SportType = 150
+
 	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 	IF EXISTS (SELECT 1 FROM @BetListByDateMem WHERE RefCode <> 0)
 	BEGIN
@@ -3668,9 +3673,4 @@ BEGIN
 	SELECT DISTINCT * FROM @BettransDetail 
 	ORDER BY RefNo ASC, Bettype ASC
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_SelWinloss_Mem] TO [bodbLicenseeNet]
 GO
