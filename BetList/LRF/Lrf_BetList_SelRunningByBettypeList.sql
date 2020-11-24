@@ -36,6 +36,7 @@ AS
 		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 120309]
 		- 20191226@Kos: Support Bet Builder [Redmine: #108298]
+		- 20201123@Kos: Support God Of Fortune [Redmine: #145832]
 */
 
 BEGIN
@@ -156,7 +157,7 @@ BEGIN
 		'' AS ShowTime,
 		ISNULL(b.betcheck, '') AS BetCheck,
 		-1 AS BetdaqId,
-		'' AS ExtraInfo,
+		ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 		0 AS OriginalStake,
 		0 AS OriginalBetType,
 		0 AS WalletType,
@@ -369,8 +370,4 @@ BEGIN
 	DROP TABLE #Data
 	DROP TABLE #ExchangeRate
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_SelRunningByBettypeList] TO [bodbLicenseeNet]
 GO
