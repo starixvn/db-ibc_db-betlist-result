@@ -107,6 +107,7 @@ AS
 		- 20200919@Kos: Support Joker [Redmine: #137942]
 		- 20200930@Kos: Support GameId3rd for PG Soft [Redmine: #137769]
 		- 20201001@Kos: Support WM Live Casino [Redmine: #131588]
+		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 */
 
 BEGIN
@@ -630,7 +631,10 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					CASE
+						WHEN b.bettype = 29 THEN ISNULL(b.ExtraInfo, '')
+						ELSE ''
+					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
 				FROM dbo.bettrans AS b WITH (NOLOCK)
@@ -2002,7 +2006,10 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					CASE
+						WHEN b.bettype = 29 THEN ISNULL(b.ExtraInfo, '')
+						ELSE ''
+					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -2704,7 +2711,10 @@ BEGIN
 					0 AS bettrans14,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					CASE
+						WHEN b.bettype = 29 THEN ISNULL(b.ExtraInfo, '')
+						ELSE ''
+					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
@@ -4531,8 +4541,4 @@ BEGIN
 
 	SELECT * FROM @DetailData
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelByRefNo] TO [bodbAdminNet]
 GO

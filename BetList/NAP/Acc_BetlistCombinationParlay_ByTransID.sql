@@ -34,6 +34,7 @@ AS
 		- 20191114@Kos: Show (N) for neutral match [Redmine: #123772]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20201028@Kos: Return transdate [Redmine: #144388]
+		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 */
 
 BEGIN
@@ -128,6 +129,7 @@ BEGIN
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
 		BetCheck		NVARCHAR(50),
+		ExtraInfo		VARCHAR(1000),
 		--for generating combination parlays if not in BetParlayResult
 		N				TINYINT,		-- Number of selection
 		Bitmap			INT				-- Combination bitmap
@@ -378,6 +380,7 @@ BEGIN
 			b.hdp1,
 			b.hdp2,
 			ISNULL(b.betcheck, '') AS BetCheck,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN b.betcheck IS NULL THEN LEN(b.betteam)		-- old Parlay tickets
 				ELSE b.hdp2										-- new Parlay tickets
@@ -445,6 +448,7 @@ BEGIN
 			b.hdp1,
 			b.hdp2,
 			ISNULL(b.betcheck, '') AS BetCheck,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN b.betcheck IS NULL THEN LEN(b.betteam)		-- old Parlay tickets
 				ELSE b.hdp2										-- new Parlay tickets
@@ -504,6 +508,7 @@ BEGIN
 			b.hdp1,
 			b.hdp2,
 			ISNULL(b.betcheck, '') AS BetCheck,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN b.betcheck IS NULL THEN LEN(betteam)	-- old Parlay tickets
 				ELSE b.hdp2									-- new Parlay tickets
@@ -712,7 +717,8 @@ BEGIN
 		Comm,
 		Hdp1,
 		Hdp2,
-		BetCheck
+		BetCheck,
+		ExtraInfo
 	FROM @tmpBettrans
 
 	SELECT DISTINCT
@@ -744,6 +750,19 @@ BEGIN
 		TransDesc
 	FROM @Parlay_Base
 
+	DECLARE
+		@WinLost	MONEY,
+		@Discount	MONEY
+
+	SELECT
+		@WinLost = WinLost,
+		@Discount = CASE
+						WHEN ExtraInfo LIKE '%p1%' THEN
+							ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@d)[1]','MONEY'), 0)
+						ELSE 0
+					END
+	FROM @tmpBettrans
+
 	SELECT
 		WinLostDate,
 		Serial,
@@ -751,7 +770,11 @@ BEGIN
 		Stake,
 		StatusId,
 		CASE
-			WHEN StatusId NOT IN (0, 1) THEN WinLost - Stake
+			WHEN StatusId NOT IN (0, 1) THEN
+				CASE
+					WHEN @Discount > 0 THEN @WinLost
+					ELSE WinLost - Stake
+				END
 			ELSE WinLost
 		END AS WinLost,
 		CASE StatusId

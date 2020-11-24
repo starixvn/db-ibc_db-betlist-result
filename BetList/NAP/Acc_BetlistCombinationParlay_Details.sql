@@ -34,6 +34,7 @@ AS
 					- Move from DBAGE.bodb02 to DBACC.bodb02
 		- 20191104@Kos: Hotfix - Duplicate data in Balance Up time [Redmine: #123093]
 		- 20191114@Kos: Show (N) for neutral match [Redmine: #123772]
+		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 */
 
 BEGIN
@@ -51,12 +52,15 @@ BEGIN
 	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @tmpBettrans AS TABLE (
-		TransId	BIGINT,
-		RefNo	BIGINT,
-		Stake	MONEY,
+		TransId			BIGINT,
+		RefNo			BIGINT,
+		Stake			MONEY,
+		Actual_Stake	MONEY,
+		WinLost			MONEY,
+		ExtraInfo		VARCHAR(1000),
 		--for generating combination parlays if not in BetParlayResult
-		N		TINYINT,	-- Number of selection
-		Bitmap	INT			-- Combination Bitmap
+		N				TINYINT,	-- Number of selection
+		Bitmap			INT			-- Combination Bitmap
 	)
 
 	DECLARE @parlay_base AS TABLE (
@@ -145,6 +149,9 @@ BEGIN
 			transid,
 			refno,
 			stake,
+			actual_stake,
+			winlost,
+			ISNULL(ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN betcheck IS NULL THEN LEN(betteam)		-- old Parlay tickets
 				ELSE hdp2									-- new Parlay tickets
@@ -153,7 +160,7 @@ BEGIN
 				WHEN betcheck IS NULL THEN CONVERT(INT, hdp2)	-- old Parlay tickets
 				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
 			END AS Bitmap
-		FROM bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) 
+		FROM bodb_Archive.dbo.bettrans_bk WITH(NOLOCK) 
 		WHERE custid = @CustId
 			AND refno = @RefNo
 			AND matchid = 29
@@ -187,6 +194,9 @@ BEGIN
 			transid,
 			refno,
 			stake,
+			actual_stake,
+			winlost,
+			ISNULL(ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN betcheck IS NULL THEN LEN(betteam)		-- old Parlay tickets
 				ELSE hdp2									-- new Parlay tickets
@@ -195,7 +205,7 @@ BEGIN
 				WHEN betcheck IS NULL THEN CONVERT(INT, hdp2)	-- old Parlay tickets
 				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
 			END AS Bitmap
-		FROM dbo.bettrans14 AS b WITH(NOLOCK) 
+		FROM dbo.bettrans14 WITH(NOLOCK) 
 		WHERE custid = @CustId
 			AND refno = @RefNo
 			AND matchid = 29
@@ -210,6 +220,9 @@ BEGIN
 			transid,
 			refno,
 			stake,
+			actual_stake,
+			winlost,
+			ISNULL(ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN betcheck IS NULL THEN LEN(betteam)		-- old Parlay tickets
 				ELSE hdp2									-- new Parlay tickets
@@ -218,7 +231,7 @@ BEGIN
 				WHEN betcheck IS NULL THEN CONVERT(INT, hdp2)	-- old Parlay tickets
 				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
 			END AS Bitmap
-		FROM dbo.bettrans AS b WITH(NOLOCK) 
+		FROM dbo.bettrans WITH(NOLOCK) 
 		WHERE custid = @CustId
 			AND refno = @RefNo
 			AND matchid = 29
@@ -342,6 +355,20 @@ BEGIN
 	FROM @tmpResults
 	WHERE StatusId NOT IN (0, 1)
 
+	DECLARE @Actual_Stake	MONEY,
+		@WinLost			MONEY,
+		@Discount			MONEY
+
+	SELECT
+		@Actual_Stake = Actual_Stake,
+		@WinLost = WinLost,
+		@Discount = CASE
+						WHEN ExtraInfo LIKE '%p1%' THEN
+							ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@d)[1]','MONEY'), 0)
+						ELSE 0
+					END
+	FROM @tmpBettrans
+
 	-- Return combo detail
 	SELECT DISTINCT
 		WinLostDate,
@@ -359,7 +386,10 @@ BEGIN
 		END AS status,
 		Modds,
 		Stake,
-		WinLost - Stake AS winlost,
+		CASE
+			WHEN @Discount > 0 THEN @WinLost - @Actual_Stake
+			ELSE WinLost - Stake
+		END AS WinLost,
 		PlayerComm
 	FROM @tmpResults
 	WHERE StatusId NOT IN (0, 1)
@@ -367,13 +397,4 @@ BEGIN
 
 	SELECT DISTINCT * FROM @tmpMatch
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Acc_BetlistCombinationParlay_Details] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetlistCombinationParlay_Details] TO [bodbDownlineNetView]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetlistCombinationParlay_Details] TO [bodbAdminNet]
 GO

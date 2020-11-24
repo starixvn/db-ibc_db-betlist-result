@@ -57,6 +57,7 @@ AS
 					- Add new params @MoveBetsDay and @BalanceUpDay
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 */
 
 BEGIN
@@ -845,7 +846,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Outright') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Outright', 'Parlay') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -1008,7 +1009,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Outright') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Outright', 'Parlay') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -1135,7 +1136,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Outright') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Outright', 'Parlay') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -1218,10 +1219,4 @@ BEGIN
 
 	SELECT DISTINCT * FROM @DetailData
 END
-GO
-
-
-
-
-GRANT EXECUTE ON [dbo].[Acc_BetListByIP_Soccer] TO [bodbAdminNet]
 GO

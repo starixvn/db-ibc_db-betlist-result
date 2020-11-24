@@ -53,6 +53,7 @@ AS
 		- 20200808@Kos: Support PG Soft [Redmine: #137769]
 		- 20200919@Kos: Support Joker [Redmine: #137942]
 		- 20201001@Kos: Support WM Live Casino [Redmine: #131588]
+		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 */
 
 BEGIN
@@ -1341,7 +1342,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -1812,7 +1813,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -2014,7 +2015,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'NPHP') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -2150,8 +2151,4 @@ BEGIN
 
 	SELECT DISTINCT * FROM @DetailData
 END
-GO
-
-
-GRANT	EXECUTE	ON	Acc_BetList_Mem	TO	bodbAdminNet
 GO
