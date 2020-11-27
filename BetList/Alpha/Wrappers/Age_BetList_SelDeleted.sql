@@ -70,6 +70,7 @@ AS
 		- 20200402@Kos: Support Table Games [Redmine: #129433]
 		- 20200410@Kos: Support BBIN [Redmine: #131362]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
+		- 20201127@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 */
 
 BEGIN
@@ -614,7 +615,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40, 47)	-- Only support these products
+			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40, 47, 49)	-- Only support these products
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -791,6 +792,7 @@ BEGIN
 				- Virtual Games			: ProductId = 38
 				- Table Games			: ProductId = 40
 				- BBIN					: ProductId = 47
+				- Leap Gaming (VS3)		: ProductId = 49
 				*/
 				UPDATE b
 				SET
@@ -803,7 +805,7 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId IN (38, 40, 47) THEN b.MatchId
+									WHEN b.ProductId IN (38, 40, 47, 49) THEN b.MatchId
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -823,7 +825,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40) THEN b.Odds
+								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40, 49) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -863,11 +865,14 @@ BEGIN
 								END,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (8, 23, 28, 38, 40) THEN b.transdesc
+									WHEN b.ProductId IN (8, 23, 28, 38, 40, 49) THEN b.transdesc
 									ELSE ''
 								END,
 					OddsSpread = 0,
-					ExtraInfo = ''
+					ExtraInfo = CASE
+									WHEN b.ProductId IN (49) THEN ISNULL(b.ExtraInfo, '')
+									ELSE ''
+								END
 				FROM #PagingData AS b
 				WHERE b.WhTicket = 1
 					AND b.EventType = 0
@@ -990,6 +995,7 @@ BEGIN
 				- Virtual Games			: ProductId = 38
 				- Table Games			: ProductId = 40
 				- BBIN					: ProductId = 47
+				- Leap Gaming (VS3)		: ProductId = 49
 				*/
 				UPDATE b
 				SET
@@ -1002,7 +1008,7 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId IN (38, 40, 47) THEN b.MatchId
+									WHEN b.ProductId IN (38, 40, 47, 49) THEN b.MatchId
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -1022,7 +1028,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40) THEN b.Odds
+								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40, 49) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1062,10 +1068,14 @@ BEGIN
 								END,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (8, 23, 28, 38, 40) THEN b.transdesc
+									WHEN b.ProductId IN (8, 23, 28, 38, 40, 49) THEN b.transdesc
 									ELSE ''
 								END,
-					OddsSpread = 0
+					OddsSpread = 0,
+					ExtraInfo = CASE
+									WHEN b.ProductId IN (49) THEN ISNULL(b.ExtraInfo, '')
+									ELSE ''
+								END
 				FROM #PagingData AS b
 				WHERE b.WhTicket = 2
 					AND b.EventType = 0
@@ -1259,11 +1269,4 @@ BEGIN
 
 	DROP TABLE #PagingData
 END
-
-
-
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelDeleted] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelDeleted] TO [bodbDownlineNetView]
 GO

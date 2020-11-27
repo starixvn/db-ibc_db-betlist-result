@@ -130,6 +130,7 @@ AS
 		- 20200919@Kos: Support Joker [Redmine: #137942]
 		- 20201001@Kos: Support WM Live Casino [Redmine: #131588]
 		- 20201207@Kos: Support GDG [Redmine: #144104]
+		- 20201217@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 */
 
 BEGIN
@@ -788,13 +789,13 @@ BEGIN
 			WHERE b.TableID = 2 -- translog
 				AND b.SubProduct IN ('MG-SuperLive')
 
-			-- Keno, Gold Deluxe, Lottery, Virtual Games (translog)
+			-- Keno, Gold Deluxe, Lottery, Virtual Games, Leap Gaming Virtual Sports 3 (translog)
 			UPDATE b
 			SET SportType = CASE
 								WHEN b.ProductID = 8 THEN 202
 								WHEN b.ProductID = 12 THEN 255
 								WHEN b.ProductID = 28 THEN 220
-								WHEN b.ProductID IN (38, 40) THEN b.SportType
+								WHEN b.ProductID IN (38, 40, 49) THEN b.SportType
 								ELSE 0
 							END
 				,LeagueID = 0
@@ -811,14 +812,18 @@ BEGIN
 				,BetCheck = CASE
 								WHEN b.ProductID IN (12, 38) THEN b.Gameid3rd
 								WHEN b.ProductId = 8 THEN ISNULL(b.custom2, '')
+								WHEN b.ProductId = 49 THEN ISNULL(b.custom1, '')
 								ELSE '' 
 							END
-				,TransDesc = CASE WHEN b.ProductID IN (8, 28, 38, 40) THEN b.transdesc ELSE '' END
+				,TransDesc = CASE
+								WHEN b.ProductID IN (8, 28, 38, 40, 49) THEN b.transdesc
+								ELSE ''
+							END
 				,OddsSpread = 0
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 2 -- translog
-				AND b.ProductID IN (8, 12, 28, 38, 40)
+				AND b.ProductID IN (8, 12, 28, 38, 40, 49)
 		END -- got translog's data
 
 		-- Allbet, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, SA Gaming

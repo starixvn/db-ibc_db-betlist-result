@@ -115,6 +115,7 @@ AS
 		- 20200919@Kos: Support Joker [Redmine: #137942]
 		- 20201001@Kos: Support WM Live Casino [Redmine: #131588]
 		- 20201207@Kos: Support GDG [Redmine: #144104]
+		- 20201217@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -350,6 +351,7 @@ BEGIN
 						WHEN s.ProductID = 45 THEN 'SXG'	-- Sexy Gaming
 						WHEN s.ProductID = 46 THEN 'IBCLC'	-- IBCBet Live Casino
 						WHEN s.ProductID = 47 THEN 'BBIN'	-- BBIN
+						WHEN s.ProductID = 49 THEN 'VS3'	-- Leap Gaming Virtual Sports 3
 						WHEN s.ProductID = 50 THEN 'RNGW'	-- RNG War
 						WHEN s.ProductID = 51 THEN 'WM'		-- WM
 						WHEN s.ProductID = 52 THEN 'ION'	-- ION
@@ -381,7 +383,7 @@ BEGIN
 							ELSE b.transid
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
+								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -416,7 +418,7 @@ BEGIN
 								ELSE 0
 							END,
 				Odds = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG') THEN b.odds
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3') THEN b.odds
 							ELSE 0
 						END,
 				MOdds = CASE
@@ -507,7 +509,7 @@ BEGIN
 							END,
 				ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK')
+								WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3')
 									THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
@@ -517,7 +519,7 @@ BEGIN
 							END,
 				BetdaqId = -1,
 				ExtraInfo = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+								WHEN b.Product IN ('SB', 'VS3') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END
 			FROM @Data AS b

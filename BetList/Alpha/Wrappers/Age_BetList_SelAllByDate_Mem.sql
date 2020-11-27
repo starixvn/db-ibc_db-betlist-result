@@ -106,6 +106,7 @@ AS
 		- 20200919@Kos: Support Joker [Redmine: #137942]
 		- 20201001@Kos: Support WM Live Casino [Redmine: #131588]
 		- 20201207@Kos: Support GDG [Redmine: #144104]
+		- 20201217@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 */
 
 BEGIN
@@ -260,6 +261,7 @@ BEGIN
 			WHEN s.ProductID = 45					THEN 'SXG'			-- Sexy Gaming
 			WHEN s.ProductID = 46					THEN 'IBCLC'		-- IBCBet Live Casino
 			WHEN s.ProductID = 47					THEN 'BBIN'			-- BBIN
+			WHEN s.ProductID = 49					THEN 'VS3'			-- Leap Gaming Virtual Sports 3
 			WHEN s.ProductID = 50					THEN 'RNGW'			-- RNG War
 			WHEN s.ProductID = 51					THEN 'WM'			-- WM
 			WHEN s.ProductID = 52					THEN 'ION'			-- ION
@@ -447,7 +449,7 @@ BEGIN
 			,CustId = b.custid
 			,Username = b.username
 			,SportType = CASE
-							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
+							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
 							WHEN c.Product = 'Keno' THEN 202
 							WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 							WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -489,7 +491,7 @@ BEGIN
 						END
 			,OddsId = b.oddsid
 			,Odds = CASE 
-						WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG') THEN b.Odds
+						WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3') THEN b.Odds
 						WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.odds
 						WHEN c.Product IN ('Outright') THEN b.odds
 						WHEN c.Product IN ('VR') THEN b.odds
@@ -626,14 +628,14 @@ BEGIN
 			,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 			,TransDesc = CASE
 							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK') THEN b.transdesc
-							WHEN c.Product IN ('SB', 'VS2') THEN ISNULL(b.transdesc, '')
+							WHEN c.Product IN ('SB', 'VS2', 'VS3') THEN ISNULL(b.transdesc, '')
 							ELSE '' END
 			,OddsSpread = CASE
 							WHEN c.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
 							ELSE 0 END
 			,BetdaqId = -1
 			,ExtraInfo = CASE
-							WHEN c.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
+							WHEN c.Product IN ('SB', 'VS3') THEN ISNULL(b.ExtraInfo, '')
 							ELSE '' END
 			,Currency = b.currencyname
 		FROM @Tickets AS c
@@ -777,6 +779,7 @@ BEGIN
 			WHEN s.ProductID = 28 THEN 'Lottery'
 			WHEN s.ProductID = 38 THEN 'VRG'		-- Virtual Games
 			WHEN s.ProductID = 40 THEN 'TG'			-- Table Games
+			WHEN s.ProductID = 49 THEN 'VS3'		-- Leap Gaming Virtual Sports 3
 			ELSE 'Unknown'
 		END AS Product
 	FROM dbo.translog AS b WITH (NOLOCK)
@@ -800,7 +803,7 @@ BEGIN
 							WHEN c.Product = 'Keno' THEN 202
 							WHEN c.Product = 'GD' THEN 255						-- Gold Deluxe 
 							WHEN c.Product = 'Lottery' THEN 220					-- Lottery
-							WHEN c.Product IN ('VRG', 'TG') THEN b.productID	-- Virtual Games, Tables Games
+							WHEN c.Product IN ('VRG', 'TG', 'VS3') THEN b.productID	-- Virtual Games, Tables Games
 							WHEN c.Product = 'MG' THEN m.sporttype
 							ELSE 0
 						END
@@ -888,10 +891,11 @@ BEGIN
 			,BetCheck = CASE 
 							WHEN c.Product IN ('GD', 'VRG') THEN b.Gameid3rd
 							WHEN c.Product IN ('Keno') THEN ISNULL(b.custom2, '')
+							WHEN c.Product IN ('VS3') THEN ISNULL(b.custom1, '')
 							ELSE '' END
 			,ComStatus = 0
 			,TransDesc = CASE
-							WHEN c.Product IN ('MG', 'Keno', 'Lottery', 'VRG', 'TG') THEN b.transdesc
+							WHEN c.Product IN ('MG', 'Keno', 'Lottery', 'VRG', 'TG', 'VS3') THEN b.transdesc
 							ELSE '' END
 			,OddsSpread = 0
 			,BetdaqId = -1
