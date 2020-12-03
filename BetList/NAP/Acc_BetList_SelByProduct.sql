@@ -59,6 +59,7 @@ AS
 		- 20200919@Kos: Support Joker [Redmine: #137942]
 		- 20200930@Kos: Support GameId3rd for PG Soft [Redmine: #137769]
 		- 20201001@Kos: Support WM Live Casino [Redmine: #131588]
+		- 20201203@Kos: Support GDG [Redmine: #144104]
 */
 
 BEGIN
@@ -388,8 +389,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, ION, WM
-			IF @ProductId IN (21, 39, 45, 46, 51, 52)
+			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, GDG
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 59)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -524,7 +525,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 59) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
@@ -810,8 +811,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM
-			IF @ProductId IN (21, 39, 45, 46, 51, 52)
+			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 59)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -946,7 +947,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 59) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
