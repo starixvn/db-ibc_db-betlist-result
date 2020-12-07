@@ -32,6 +32,7 @@ AS
 		- 20191011@Kos: Move from DBEXT.bodb02 to DBACC.bodb02 [Redmine: #117888]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20201028@Kos: Return transdate [Redmine: #144388]
+		- 20201207@Kos: Hotfix - Wrong currency code display [Redmine: #146691]
 */
 
 BEGIN
@@ -57,7 +58,7 @@ BEGIN
 		LeagueId			INT,
 		BetType				INT,
 		Stake				MONEY,
-		CurrencyId			INT,
+		Currency			INT,
 		MatchId				INT,
 		EventDate			DATETIME,
 		ShowTime			NVARCHAR(50),
@@ -122,7 +123,7 @@ BEGIN
 			m.leagueid,
 			b.bettype,
 			b.stake,
-			@CurrencyId,
+			@CurrencyId AS Currency,
 			m.matchid,
 			m.GlobalShowTime AS EventDate,
 			CASE
@@ -171,7 +172,7 @@ BEGIN
 			m.leagueid,
 			b.bettype,
 			b.stake,
-			@CurrencyId,
+			@CurrencyId AS Currency,
 			m.matchid,
 			m.GlobalShowTime AS EventDate,
 			CASE
@@ -219,7 +220,7 @@ BEGIN
 			m.leagueid,
 			b.bettype,
 			b.stake,
-			@CurrencyId,
+			@CurrencyId AS Currency,
 			m.matchid,
 			m.GlobalShowTime AS EventDate,
 			CASE

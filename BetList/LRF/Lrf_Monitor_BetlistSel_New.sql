@@ -59,6 +59,7 @@ AS
 		- 20200302@Kos: Support 3 new betfrom [Redmine: #129253]
 		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
 		- 20201007@Kos: Support Time Machine Over/Under [Redmine: #136107]
+		- 20201207@Kos: Hotfix - Wrong currency code display [Redmine: #146691]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -590,7 +591,7 @@ BEGIN
 		b.Status,
 		b.BetTeam,
 		b.OddsType,
-		b.CurrencyId,
+		b.CurrencyId AS Currency,
 		b.SpecialLevel,
 		b.BetCheck,
 		b.TransDesc,
@@ -615,8 +616,4 @@ BEGIN
 		LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
 	ORDER BY b.TransDate DESC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_Monitor_BetlistSel_New] TO [bodbLicenseeNet]
 GO
