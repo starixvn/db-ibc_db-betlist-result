@@ -45,6 +45,7 @@ AS
 		- 20200821@Kos: Support SA Gaming [Redmine: #128493]
 		- 20201023@Kos: Support PG Soft [Redmine: #139182]
 		- 20201123@Kos: Support Joker [Redmine: #141408]
+		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 */
 
 BEGIN
@@ -82,7 +83,7 @@ BEGIN
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56)
-		AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914)
+		AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914, 999)
 		AND BetType NOT BETWEEN 801 AND 899
 
 	-- Get CustId in case of inputting Username

@@ -44,6 +44,7 @@ AS
 		- 20190422@Kos: Enhance performance for searching too many members [Redmine: #112313]
 		- 20190829@Kos: Support PH AIO 4b [Redmine: #118300]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 */
 
 
@@ -101,7 +102,7 @@ BEGIN
 			WHERE (@BetType = 0
 				OR BetType IN (	SELECT @BetType
 								UNION SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType))
-				AND BetType NOT IN (901, 902, 903, 904, 913, 914)
+				AND BetType NOT IN (901, 902, 903, 904, 913, 914, 999)
 				AND BetType NOT BETWEEN 801 AND 899
 		END
 

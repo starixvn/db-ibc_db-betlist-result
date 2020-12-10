@@ -103,6 +103,7 @@ AS
 		- 20200728@Kos: Support SA Gaming [Redmine: #128493]
 		- 20200815@Kos: Support PG Soft [Redmine: #139182]
 		- 20200922@Kos: Support Joker [Redmine: #141408]
+		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 
 	Param's Explanation:
 		+ @TransType:
@@ -242,7 +243,7 @@ BEGIN
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56)
-		AND BetType NOT IN (904, 914)
+		AND BetType NOT IN (904, 914, 999)
 
 	IF @TransType = 4	-- support only for Colossus Bets
 	BEGIN

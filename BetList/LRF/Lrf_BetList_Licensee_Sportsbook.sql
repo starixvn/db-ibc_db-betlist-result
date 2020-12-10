@@ -57,6 +57,7 @@ AS
 		- 20190829@Kos: Support PH AIO 4b [Redmine: #118300]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
+		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 */
 
 BEGIN
@@ -222,9 +223,10 @@ BEGIN
 			INSERT INTO @SportBettype
 			SELECT ProductID, BetType, EventType, SubProduct
 			FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', 'SB', @IsTest)
-			WHERE @BetType = 0
-				OR BetType IN (	SELECT @BetType
-								UNION SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType)
+			WHERE (@BetType = 0
+					OR BetType IN (	SELECT @BetType
+									UNION SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType))
+				AND BetType <> 999
 		END
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)

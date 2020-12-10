@@ -52,6 +52,7 @@ AS
 		- 20200728@Kos: Support SA Gaming [Redmine: #128493]
 		- 20200815@Kos: Support PG Soft [Redmine: #139182]
 		- 20200922@Kos: Support Joker [Redmine: #141408]
+		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 */
 
 BEGIN
@@ -87,7 +88,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductCode, @IsTest)
-	WHERE BetType NOT IN (904, 914)
+	WHERE BetType NOT IN (904, 914, 999)
 		AND BetType NOT BETWEEN 801 AND 806
 
 	CREATE TABLE #Data (

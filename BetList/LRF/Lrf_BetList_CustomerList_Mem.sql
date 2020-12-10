@@ -73,6 +73,7 @@ AS
 		- 20200728@Kos: Support SA Gaming [Redmine: #128493]
 		- 20200815@Kos: Support PG Soft [Redmine: #139182]
 		- 20200922@Kos: Support Joker [Redmine: #141408]
+		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 */
 
 BEGIN
@@ -136,7 +137,7 @@ BEGIN
 		OR (BetType IN (901, 902, 903) AND @ShowBT = 1)			-- BetTrade
 
 	DELETE @SportBettype
-	WHERE BetType IN (904, 914, 801, 802, 803, 804, 805, 806)
+	WHERE BetType IN (904, 914, 801, 802, 803, 804, 805, 806, 999)
 
 	IF @ShowBT = 0
 	BEGIN

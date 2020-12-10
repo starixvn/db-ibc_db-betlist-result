@@ -110,6 +110,7 @@ AS
 		- 20200728@Kos: Support SA Gaming [Redmine: #128493]
 		- 20200815@Kos: Support PG Soft [Redmine: #139182]
 		- 20200922@Kos: Support Joker [Redmine: #141408]
+		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 
 	Param's Explanation:
 		+ @TransType:
@@ -252,7 +253,7 @@ BEGIN
 	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56)
 
 	DELETE @SportBettype
-	WHERE Bettype IN (904, 914)
+	WHERE Bettype IN (904, 914, 999)
 
 	IF @TransType = 3	-- Don't support running RNG Casino old bet type (71)
 	BEGIN

@@ -86,6 +86,7 @@ AS
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 */
 
 BEGIN
@@ -776,7 +777,7 @@ BEGIN
 		DELETE b
 		FROM #Data AS b
 		WHERE NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
-			OR b.BetType = 913
+			OR b.BetType IN (913, 999)
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
 				AND b.Status = 'Void'
 				AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 1)
