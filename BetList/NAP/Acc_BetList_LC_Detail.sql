@@ -31,6 +31,7 @@ AS
 		- 20200914@Kos: Support WM Live Casino [Redmine: #131588]
 		- 20201203@Kos: Support GDG [Redmine: #144104]
 		- 20201218@Kos: Support SiteId for GDG [Redmine: #147084]
+		- 20210112@Kos: Support Big Gaming [Redmine: #142455]
 
 	Parameters:
 		- @TransType
@@ -53,7 +54,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (11, 21, 39, 45, 46, 51, 52, 59)	-- Support AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG only
+	WHERE ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59)	-- Support AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, Big Gaming only
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
 
@@ -124,7 +125,8 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(2000),
 		MatchCode		VARCHAR(50),
-		BetTeam			NVARCHAR(50)
+		BetTeam			NVARCHAR(50),
+		LeagueId		INT
 	)
 
 	-- Get currency name
@@ -252,19 +254,23 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 46, 51, 52, 59) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 59) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID = 59 THEN ISNULL(blc.SiteID, '')
+				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
-			END AS BetTeam
+			END AS BetTeam,
+			CASE
+				WHEN sbt.ProductID = 57 THEN blc.currency
+				ELSE 0
+			END AS LeagueId
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
@@ -370,19 +376,23 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 46, 51, 52, 59) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 59) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID = 59 THEN ISNULL(blc.SiteID, '')
+				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
-			END AS BetTeam
+			END AS BetTeam,
+			CASE
+				WHEN sbt.ProductID = 57 THEN blc.currency
+				ELSE 0
+			END AS LeagueId
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
@@ -487,19 +497,23 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 46, 51, 52, 59) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 59) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID = 59 THEN ISNULL(blc.SiteID, '')
+				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
-			END AS BetTeam
+			END AS BetTeam,
+			CASE
+				WHEN sbt.ProductID = 57 THEN blc.currency
+				ELSE 0
+			END AS LeagueId
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
@@ -521,7 +535,7 @@ BEGIN
 		SELECT ROW_NUMBER() OVER(ORDER BY TransId) AS RowNum, *
 		FROM #Data ) AS t
 	WHERE t.RowNum BETWEEN ((@PageIndex - 1) * @PageSize + 1) AND (@PageSize * @PageIndex)
-	ORDER BY t.TransId
+	ORDER BY t.TransId ASC
 
 	DROP TABLE #Data
 END

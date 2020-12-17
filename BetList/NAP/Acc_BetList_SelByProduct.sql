@@ -61,6 +61,7 @@ AS
 		- 20201001@Kos: Support WM Live Casino [Redmine: #131588]
 		- 20201203@Kos: Support GDG [Redmine: #144104]
 		- 20201218@Kos: Support SiteId for GDG [Redmine: #147084]
+		- 20210112@Kos: Support Big Gaming [Redmine: #142455]
 */
 
 BEGIN
@@ -391,7 +392,7 @@ BEGIN
 			END
 
 			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, GDG
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 59)
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -449,7 +450,7 @@ BEGIN
 						END AS TransDate,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.BetID3rd, '')
-							WHEN s.ProductID = 59 THEN ISNULL(b.SiteID, '')
+							WHEN s.ProductID IN (57, 59) THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS BetTeam,
 						CASE
@@ -468,7 +469,10 @@ BEGIN
 						b.custid,
 						0 AS LiveHomeScore,
 						0 AS LiveAwayScore,
-						0 AS LeagueId,
+						CASE
+							WHEN s.ProductID = 57 THEN b.currency
+							ELSE 0
+						END AS LeagueId,
 						b.productID AS SportType,
 						b.ip,
 						CASE
@@ -527,7 +531,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 59) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
@@ -814,7 +818,7 @@ BEGIN
 			END
 
 			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 59)
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -872,7 +876,7 @@ BEGIN
 						END AS TransDate,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.BetID3rd, '')
-							WHEN s.ProductID = 59 THEN ISNULL(b.SiteID, '')
+							WHEN s.ProductID IN (57, 59) THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS BetTeam,
 						CASE
@@ -891,7 +895,10 @@ BEGIN
 						b.custid,
 						0 AS LiveHomeScore,
 						0 AS LiveAwayScore,
-						0 AS LeagueId,
+						CASE
+							WHEN s.ProductID = 57 THEN b.currency
+							ELSE 0
+						END AS LeagueId,
 						b.productID AS SportType,
 						b.ip,
 						CASE
@@ -950,7 +957,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 59) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
