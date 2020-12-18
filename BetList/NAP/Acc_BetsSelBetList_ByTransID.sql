@@ -142,6 +142,7 @@ AS
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 		- 20201203@Kos: Support GDG [Redmine: #144104]
 		- 20201217@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
+		- 20201218@Kos: Support SiteId for GDG [Redmine: #147084]
 */
 
 BEGIN
@@ -4146,7 +4147,10 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					b.transdate,
-					'' AS betteam,
+					CASE
+						WHEN s.ProductID IN (59) THEN b.SiteID
+						ELSE ''
+					END AS betteam,
 					b.spositiontaking,
 					b.mpositiontaking,
 					b.apositiontaking,
@@ -4234,7 +4238,10 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					b.transdate,
-					'' AS betteam,
+					CASE
+						WHEN s.ProductID IN (59) THEN b.SiteID
+						ELSE ''
+					END AS betteam,
 					b.spositiontaking,
 					b.mpositiontaking,
 					b.apositiontaking,
@@ -4322,7 +4329,10 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					b.transdate,
-					'' AS betteam,
+					CASE
+						WHEN s.ProductID IN (59) THEN b.SiteID
+						ELSE ''
+					END AS betteam,
 					b.spositiontaking,
 					b.mpositiontaking,
 					b.apositiontaking,

@@ -60,6 +60,7 @@ AS
 		- 20200930@Kos: Support GameId3rd for PG Soft [Redmine: #137769]
 		- 20201001@Kos: Support WM Live Casino [Redmine: #131588]
 		- 20201203@Kos: Support GDG [Redmine: #144104]
+		- 20201218@Kos: Support SiteId for GDG [Redmine: #147084]
 */
 
 BEGIN
@@ -448,6 +449,7 @@ BEGIN
 						END AS TransDate,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.BetID3rd, '')
+							WHEN s.ProductID = 59 THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS BetTeam,
 						CASE
@@ -870,6 +872,7 @@ BEGIN
 						END AS TransDate,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.BetID3rd, '')
+							WHEN s.ProductID = 59 THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS BetTeam,
 						CASE

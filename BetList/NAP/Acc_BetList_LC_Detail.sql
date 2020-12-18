@@ -30,6 +30,7 @@ AS
 		- 20200525@Kos: Support ION [Redmine: #132329]
 		- 20200914@Kos: Support WM Live Casino [Redmine: #131588]
 		- 20201203@Kos: Support GDG [Redmine: #144104]
+		- 20201218@Kos: Support SiteId for GDG [Redmine: #147084]
 
 	Parameters:
 		- @TransType
@@ -261,6 +262,7 @@ BEGIN
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
+				WHEN sbt.ProductID = 59 THEN ISNULL(blc.SiteID, '')
 				ELSE ''
 			END AS BetTeam
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
@@ -378,6 +380,7 @@ BEGIN
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
+				WHEN sbt.ProductID = 59 THEN ISNULL(blc.SiteID, '')
 				ELSE ''
 			END AS BetTeam
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
@@ -494,6 +497,7 @@ BEGIN
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
+				WHEN sbt.ProductID = 59 THEN ISNULL(blc.SiteID, '')
 				ELSE ''
 			END AS BetTeam
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
