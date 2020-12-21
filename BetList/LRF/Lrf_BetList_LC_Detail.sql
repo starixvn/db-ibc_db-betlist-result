@@ -25,6 +25,7 @@ AS
 		- 20210112@Kos: Support GDG [Redmine: #147267]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
+		- 20210519@Kos: Support Big Gaming [Redmine: #146773]
 
 	Parameters:
 		- @TransType
@@ -69,7 +70,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (11, 21, 39, 45, 51, 59)
+	WHERE ProductID IN (11, 21, 39, 45, 51, 57, 59)
 
 	DECLARE @tmpStatus TABLE (StatusId TINYINT)
 
@@ -179,17 +180,17 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 51, 59) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 51, 57, 59) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 51, 59) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 51, 57, 59) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID = 59 THEN ISNULL(blc.SiteID, '')
+				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
 			END AS BetTeam
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
@@ -252,17 +253,17 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 51, 59) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 51, 57, 59) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 51, 59) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 51, 57, 59) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID = 59 THEN ISNULL(blc.SiteID, '')
+				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
 			END AS BetTeam
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
@@ -323,17 +324,17 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 51, 59) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 51, 57, 59) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 51, 59) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 51, 57, 59) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID = 59 THEN ISNULL(blc.SiteID, '')
+				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
 			END AS BetTeam
 		FROM DBARC.bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
@@ -412,7 +413,8 @@ BEGIN
 		b.BetCheck,
 		b.MatchCode,
 		b.BetTeam,
-		@Currency AS Currency
+		@Currency AS Currency,
+		@Currency AS LeagueId
 	FROM @tmpBettransLC AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY b.TransId ASC

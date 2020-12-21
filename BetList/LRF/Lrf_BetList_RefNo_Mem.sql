@@ -55,6 +55,7 @@ AS
 		- 20210415@Kos: Support Habanero [Redmine: #150843]
 		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
 		- 20210519@Kos: Wrong betteam length [Redmine: #155464]
+		- 20210520@Kos: Support Big Gaming [Redmine: #146773]
 */
 
 BEGIN
@@ -91,7 +92,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 51, 55, 56, 59, 61, 63)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 63)
 		AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914, 999)
 		AND BetType NOT BETWEEN 801 AND 899
 
@@ -347,6 +348,7 @@ BEGIN
 						WHEN @ProductId = 51 THEN 'WM'			-- WM Live Casino
 						WHEN @ProductId = 55 THEN 'PGS'			-- PG Soft
 						WHEN @ProductId = 56 THEN 'JK'			-- Joker
+						WHEN @ProductId = 57 THEN 'BG'			-- Big Gaming
 						WHEN @ProductId = 59 THEN 'GDG'			-- GDG
 						WHEN @ProductId = 61 THEN 'HB'			-- Habanero
 						WHEN @ProductId = 63 THEN 'SLT'			-- SLT
@@ -484,7 +486,7 @@ BEGIN
 			OddsSpread		MONEY
 		)
 
-		IF @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM') AND @WinLostDate >= @Yesterday
+		IF @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND @WinLostDate >= @Yesterday
 		BEGIN
 			-- bettransRnG
 			IF @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB')
@@ -531,7 +533,7 @@ BEGIN
 			END
 
 			-- bettransLC
-			IF @Product IN ('AllBet', 'SAG', 'SXG', 'GDG', 'WM')
+			IF @Product IN ('AllBet', 'SAG', 'SXG', 'GDG', 'WM', 'BG')
 			BEGIN
 				INSERT INTO @TmpData
 				SELECT
@@ -582,7 +584,7 @@ BEGIN
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
-					'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM') THEN b.matchid
+					'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
@@ -612,7 +614,7 @@ BEGIN
 				ELSE 0
 			END AS Odds,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2') THEN b.modds
 				ELSE 0
 			END AS MOdds,
 			CASE
@@ -621,32 +623,32 @@ BEGIN
 				ELSE 0
 			END AS OddsSpread,
 			CASE
-				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM') AND x.Stake IS NOT NULL THEN x.Stake
+				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND x.Stake IS NOT NULL THEN x.Stake
 				ELSE b.stake
 			END AS Stake,
 			CASE
-				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
+				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
 				ELSE b.actual_stake
 			END AS Actual_Stake,
 			CASE
-				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM') AND x.WinLost IS NOT NULL THEN x.WinLost
+				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND x.WinLost IS NOT NULL THEN x.WinLost
 				ELSE b.winlost - b.actual_stake
 			END AS WinLost,
 			CASE
-				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM') AND x.LicenseeWL IS NOT NULL THEN x.LicenseeWL
+				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND x.LicenseeWL IS NOT NULL THEN x.LicenseeWL
 				WHEN @IsBA = 1 OR @Product = 'CB' THEN 0
 				ELSE - (b.winlost - b.actual_stake)
 			END AS LicenseeWL,
 			CASE
-				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM') AND x.PlayerComm IS NOT NULL THEN x.PlayerComm
+				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND x.PlayerComm IS NOT NULL THEN x.PlayerComm
 				ELSE b.PlayerComm
 			END AS PlayerComm,
 			CASE
-				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM') AND x.Comm IS NOT NULL THEN x.Comm
+				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND x.Comm IS NOT NULL THEN x.Comm
 				ELSE b.Comm
 			END AS Comm,
 			CASE
-				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM') AND x.status IS NOT NULL THEN x.status
+				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND x.status IS NOT NULL THEN x.status
 				WHEN @Product IN ('SB', 'CO')
 					AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				WHEN @Product = 'Parlay' AND b.status = 'running' THEN
@@ -775,7 +777,7 @@ BEGIN
 			2 AS WhTicket
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON @Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
-			LEFT JOIN @TmpData AS x ON @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM') AND @Winlostdate >= @Yesterday
+			LEFT JOIN @TmpData AS x ON @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'PGS', 'JK', 'HB', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND @Winlostdate >= @Yesterday
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 			LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
@@ -835,7 +837,7 @@ BEGIN
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 
-					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM') THEN b.matchid
+					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
@@ -1053,7 +1055,7 @@ BEGIN
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 
-					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM') THEN b.matchid
+					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
@@ -1696,6 +1698,7 @@ BEGIN
 						WHEN @ProductId = 21 THEN 'AllBet'
 						WHEN @ProductId = 45 THEN 'SXG'
 						WHEN @ProductId = 51 THEN 'WM'
+						WHEN @ProductId = 57 THEN 'BG'
 						WHEN @ProductId = 59 THEN 'GDG'
 						ELSE 'Unknown'
 					END
@@ -1715,7 +1718,7 @@ BEGIN
 				productID AS SportType,
 				gameID AS BetType,
 				0 AS BetId,
-				SiteID AS BetTeam,
+				ISNULL(SiteID, '') AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
@@ -1743,7 +1746,7 @@ BEGIN
 				0 AS LiveAwayScore,
 				ip,
 				betfrom,
-				0 AS LeagueId,
+				currency AS LeagueId,
 				0 AS MatchId,
 				GameId3rd AS MatchCode,
 				'' AS Race,
@@ -1780,7 +1783,7 @@ BEGIN
 				productID AS SportType,
 				gameID AS BetType,
 				0 AS BetId,
-				SiteID AS BetTeam,
+				ISNULL(SiteID, '') AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
@@ -1808,7 +1811,7 @@ BEGIN
 				0 AS LiveAwayScore,
 				ip,
 				betfrom,
-				0 AS LeagueId,
+				currency AS LeagueId,
 				0 AS MatchId,
 				GameId3rd AS MatchCode,
 				'' AS Race,
@@ -1845,7 +1848,7 @@ BEGIN
 				productID AS SportType,
 				gameID AS BetType,
 				0 AS BetId,
-				SiteID AS BetTeam,
+				ISNULL(SiteID, '') AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
@@ -1873,7 +1876,7 @@ BEGIN
 				0 AS LiveAwayScore,
 				ip,
 				betfrom,
-				0 AS LeagueId,
+				currency AS LeagueId,
 				0 AS MatchId,
 				GameId3rd AS MatchCode,
 				'' AS Race,
