@@ -108,6 +108,7 @@ AS
 		- 20201207@Kos: Support GDG [Redmine: #144104]
 		- 20201217@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 		- 20201222@Kos: Support Big Gaming [Redmine: #142455]
+		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 
 	Param's Explanation:
 		+ @TransType:
@@ -310,6 +311,7 @@ BEGIN
 					WHEN s.ProductID = 59					THEN 'GDG'			-- GDG
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
+					WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Number Game - Happy 5 Linked Games
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports:: sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'		-- Betradar Virtual Sports
 					WHEN s.EventType = 2 AND s.ProductID = 1 THEN 'Outright'
@@ -513,7 +515,7 @@ BEGIN
 					,CustId = b.custid
 					,Username = b.username
 					,SportType = CASE
-									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG') THEN b.matchid
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG') THEN b.matchid
 									WHEN c.Product = 'Keno' THEN 202
 									WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe
 									WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -722,13 +724,13 @@ BEGIN
 									WHEN c.Product IN ('GD', 'VRG') THEN ISNULL(b.betcheck, '')
 									WHEN c.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 									WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
-									WHEN c.Product IN ('SB') THEN ISNULL(b.betcheck, '')
+									WHEN c.Product IN ('SB', 'H5LG') THEN ISNULL(b.betcheck, '')
 									ELSE '' 
 								END
 					,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 					,TransDesc = CASE
 									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK') THEN b.transdesc
-									WHEN c.Product IN ('SB', 'VS2', 'VS3') THEN ISNULL(b.transdesc, '')
+									WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG') THEN ISNULL(b.transdesc, '')
 									ELSE '' END
 					,OddsSpread = CASE
 									WHEN c.Product IN ('OneRNG', 'PP') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
@@ -800,6 +802,7 @@ BEGIN
 					b.winlostdate,
 					CASE
 						WHEN s.BetType BETWEEN 801 AND 899 THEN 'MG'	-- Metric Gaming
+						WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
 						WHEN s.ProductID = 8 THEN 'Keno'
 						WHEN s.ProductID = 12 THEN 'GD'			-- Gold Deluxe
 						WHEN s.ProductID = 28 THEN 'Lottery'
@@ -814,7 +817,8 @@ BEGIN
 					AND b.winlostdate = @Date
 					AND b.statusID IN (0, 1)
 					AND (s.ProductID IN (8, 12, 28, 38, 40, 49)
-						OR s.Bettype BETWEEN 801 AND 899)
+						OR s.Bettype BETWEEN 801 AND 899
+						OR (s.ProductID = 3 AND s.EventType = 0))
 
 				DELETE FROM @Tickets WHERE Product = 'Unknown'
 
@@ -830,7 +834,7 @@ BEGIN
 										WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 										WHEN c.Product = 'Lottery' THEN 220 -- Lottery
 										WHEN c.Product = 'MG' THEN m.sporttype
-										WHEN c.Product IN ('VRG', 'TG', 'VS3') THEN b.productID
+										WHEN c.Product IN ('VRG', 'TG', 'VS3', 'H5LG') THEN b.productID
 										ELSE 0
 									END
 						,BetType = b.gameID
@@ -916,13 +920,13 @@ BEGIN
 										WHEN c.Product IN ('MG') THEN ISNULL(m.showtime, '')
 										ELSE '' END
 						,BetCheck = CASE 
-										WHEN c.Product IN ('GD', 'VRG') THEN b.Gameid3rd
+										WHEN c.Product IN ('GD', 'VRG', 'H5LG') THEN b.Gameid3rd
 										WHEN c.Product IN ('Keno') THEN ISNULL(b.custom2, '')
 										WHEN c.Product IN ('VS3') THEN ISNULL(b.custom1, '')
 										ELSE '' END
 						,ComStatus = 0
 						,TransDesc = CASE
-										WHEN c.Product IN ('MG', 'Keno', 'Lottery', 'VRG', 'TG', 'VS3') THEN b.transdesc
+										WHEN c.Product IN ('MG', 'Keno', 'Lottery', 'VRG', 'TG', 'VS3', 'H5LG') THEN b.transdesc
 										ELSE '' END
 						,OddsSpread = 0
 						,BetdaqId = -1
@@ -1090,6 +1094,7 @@ BEGIN
 					WHEN s.ProductID = 59					THEN 'GDG'			-- GDG
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
+					WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Number Game - Happy 5 Linked Games
 					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports:: sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'		-- Betradar Virtual Sports
 					WHEN s.EventType = 2 AND s.ProductID = 1 THEN 'Outright'
@@ -1116,7 +1121,7 @@ BEGIN
 					,CustId = b.custid
 					,Username = b.username
 					,SportType = CASE
-									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG') THEN b.matchid
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG') THEN b.matchid
 									WHEN c.Product = 'Keno' THEN 202
 									WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 									WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -1271,11 +1276,11 @@ BEGIN
 									WHEN c.Product IN ('GD', 'VRG') THEN ISNULL(b.betcheck, '')
 									WHEN c.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 									WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
-									WHEN c.Product IN ('SB') THEN ISNULL(b.betcheck, '')
+									WHEN c.Product IN ('SB', 'H5LG') THEN ISNULL(b.betcheck, '')
 									ELSE '' END
 					,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 					,TransDesc = CASE
-									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK') THEN b.transdesc
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'H5LG') THEN b.transdesc
 									WHEN c.Product IN ('SB', 'VS2', 'VS3') THEN ISNULL(b.transdesc, '')
 									ELSE '' END
 					,OddsSpread = CASE

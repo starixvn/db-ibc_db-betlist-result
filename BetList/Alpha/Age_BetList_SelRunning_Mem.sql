@@ -132,6 +132,7 @@ AS
 		- 20201207@Kos: Support GDG [Redmine: #144104]
 		- 20201217@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 		- 20201222@Kos: Support Big Gaming [Redmine: #142455]
+		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 */
 
 BEGIN
@@ -796,8 +797,7 @@ BEGIN
 								WHEN b.ProductID = 8 THEN 202
 								WHEN b.ProductID = 12 THEN 255
 								WHEN b.ProductID = 28 THEN 220
-								WHEN b.ProductID IN (38, 40, 49) THEN b.SportType
-								ELSE 0
+								ELSE b.SportType
 							END
 				,LeagueID = 0
 				,MatchCode = ''
@@ -811,20 +811,21 @@ BEGIN
 				,SettlementStatus = 0
 				,ShowTime = ''
 				,BetCheck = CASE
-								WHEN b.ProductID IN (12, 38) THEN b.Gameid3rd
+								WHEN b.ProductID IN (3, 12, 38) THEN b.Gameid3rd
 								WHEN b.ProductId = 8 THEN ISNULL(b.custom2, '')
 								WHEN b.ProductId = 49 THEN ISNULL(b.custom1, '')
 								ELSE '' 
 							END
 				,TransDesc = CASE
-								WHEN b.ProductID IN (8, 28, 38, 40, 49) THEN b.transdesc
+								WHEN b.ProductID IN (3, 8, 28, 38, 40, 49) THEN b.transdesc
 								ELSE ''
 							END
 				,OddsSpread = 0
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 2 -- translog
-				AND b.ProductID IN (8, 12, 28, 38, 40, 49)
+				AND (b.ProductID IN (8, 12, 28, 38, 40, 49)
+					OR (b.ProductID = 3 AND b.EventType = 0))
 		END -- got translog's data
 
 		-- Allbet, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, SA Gaming

@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20201201@Kos: Created [Redmine: #131371]
+		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 */
 
 BEGIN
@@ -75,6 +76,7 @@ BEGIN
 		SDiscount		SMALLMONEY,
 		Ip				NVARCHAR(15),
 		ComStatus		NVARCHAR(20),
+		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
 		ExtraInfo		VARCHAR(1000),
 		Currency		NVARCHAR(50),
@@ -115,7 +117,8 @@ BEGIN
 			SELECT
 				TransID = b.transid,
 				Product = CASE
-								WHEN s.ProductID = 49 THEN 'VS3'	-- Leap Gaming Virtual Sports 3
+								WHEN s.ProductID = 49 THEN 'VS3'						-- Leap Gaming Virtual Sports 3
+								WHEN s.ProductID = 3 AND s.EventType = 0 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
 								ELSE 'Unknown'
 							END
 			FROM dbo.bettrans AS b WITH (NOLOCK)
@@ -134,6 +137,7 @@ BEGIN
 				TransID = b.transid,
 				Product = CASE
 								WHEN s.ProductID = 49 THEN 'VS3'	-- Leap Gaming Virtual Sports 3
+								WHEN s.ProductID = 3 AND s.EventType = 0 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
 								ELSE 'Unknown'
 							END
 			FROM dbo.bettrans AS b WITH (NOLOCK)
@@ -152,6 +156,7 @@ BEGIN
 				TransID = b.transid,
 				Product = CASE
 								WHEN s.ProductID = 49 THEN 'VS3'	-- Leap Gaming Virtual Sports 3
+								WHEN s.ProductID = 3 AND s.EventType = 0 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
 								ELSE 'Unknown'
 							END
 			FROM dbo.bettrans AS b WITH (NOLOCK)
@@ -170,7 +175,7 @@ BEGIN
 				CustId = b.custid,
 				Username = b.username,
 				SportType = CASE
-								WHEN c.Product IN ('VS3') THEN b.matchid
+								WHEN c.Product IN ('VS3', 'H5LG') THEN b.matchid
 								ELSE 0
 							END,
 				BetType = b.bettype,
@@ -201,8 +206,12 @@ BEGIN
 				SDiscount = b.sdiscount,
 				Ip = b.ip,
 				ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
+				BetCheck = CASE
+								WHEN c.Product IN ('H5LG') THEN ISNULL(b.betcheck, '')
+								ELSE ''
+							END,
 				TransDesc = CASE
-								WHEN c.Product IN ('VS3') THEN ISNULL(b.transdesc, '')
+								WHEN c.Product IN ('VS3', 'H5LG') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				ExtraInfo = CASE
@@ -235,6 +244,7 @@ BEGIN
 				TransID = b.transid,
 				Product = CASE
 								WHEN s.ProductID = 49	THEN 'VS3'	-- Leap Gaming Virtual Sports 3
+								WHEN s.ProductID = 3 AND s.EventType = 0 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
 								ELSE 'Unknown'
 							END
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -252,6 +262,7 @@ BEGIN
 				TransID = b.transid,
 				Product = CASE
 								WHEN s.ProductID = 49	THEN 'VS3'	-- Leap Gaming Virtual Sports 3
+								WHEN s.ProductID = 3 AND s.EventType = 0 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
 								ELSE 'Unknown'
 							END
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -269,6 +280,7 @@ BEGIN
 				TransID = b.transid,
 				Product = CASE
 								WHEN s.ProductID = 49	THEN 'VS3'	-- Leap Gaming Virtual Sports 3
+								WHEN s.ProductID = 3 AND s.EventType = 0 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
 								ELSE 'Unknown'
 							END
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -286,7 +298,7 @@ BEGIN
 				CustId = b.custid,
 				Username = b.username,
 				SportType = CASE
-								WHEN c.Product IN ('VS3') THEN b.matchid
+								WHEN c.Product IN ('VS3', 'H5LG') THEN b.matchid
 								ELSE 0
 							END,
 				BetType = b.bettype,
@@ -317,8 +329,12 @@ BEGIN
 				SDiscount = b.sdiscount,
 				Ip = b.ip,
 				ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
+				BetCheck = CASE
+								WHEN c.Product IN ('H5LG') THEN ISNULL(b.betcheck, '')
+								ELSE ''
+							END,
 				TransDesc = CASE
-								WHEN c.Product IN ('VS3') THEN ISNULL(b.transdesc, '')
+								WHEN c.Product IN ('VS3', 'H5LG') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				ExtraInfo = CASE

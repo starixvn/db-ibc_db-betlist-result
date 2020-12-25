@@ -71,6 +71,7 @@ AS
 		- 20200410@Kos: Support BBIN [Redmine: #131362]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 		- 20201127@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
+		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 */
 
 BEGIN
@@ -784,6 +785,7 @@ BEGIN
 
 				/*
 				- Mix & System Parlay	: ProductId = 1
+				- Number Game			: ProductId = 3
 				- Keno					: ProductId = 8
 				- Gold Deluxe			: ProductId = 12
 				- NG2					: ProductId = 23
@@ -805,7 +807,7 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId IN (38, 40, 47, 49) THEN b.MatchId
+									WHEN b.ProductId IN (3, 38, 40, 47, 49) THEN b.MatchId
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -859,13 +861,13 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 12, 27, 38) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 3, 12, 27, 38) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (8, 23, 28, 38, 40, 49) THEN b.transdesc
+									WHEN b.ProductId IN (3, 8, 23, 28, 38, 40, 49) THEN b.transdesc
 									ELSE ''
 								END,
 					OddsSpread = 0,
@@ -987,6 +989,7 @@ BEGIN
 
 				/*
 				- Mix & System Parlay	: ProductId = 1
+				- Number Game			: ProductId = 3
 				- Keno					: ProductId = 8
 				- Gold Deluxe			: ProductId = 12
 				- NG2					: ProductId = 23
@@ -1008,7 +1011,7 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId IN (38, 40, 47, 49) THEN b.MatchId
+									WHEN b.ProductId IN (3, 38, 40, 47, 49) THEN b.MatchId
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -1062,13 +1065,13 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 12, 27, 38) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 3, 12, 27, 38) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (8, 23, 28, 38, 40, 49) THEN b.transdesc
+									WHEN b.ProductId IN (3, 8, 23, 28, 38, 40, 49) THEN b.transdesc
 									ELSE ''
 								END,
 					OddsSpread = 0,
