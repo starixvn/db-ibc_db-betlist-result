@@ -1,10 +1,4 @@
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[U3_BetList_SelBettype]
 	@CustId			INT,
@@ -20,6 +14,7 @@ AS
 	Task: Get bettype in bettrans table for U3
 	Revisions:
 		- 20170814@Kos: Support Lucky 3 [#Redmine: 75277]
+		- 20201224@Kos: Don't support Live Casino, Bingo, Lucky 3 anymore [Redmine: #146540]
 */
 
 BEGIN
@@ -33,8 +28,7 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
-	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (3, 4, 7, 26)
+	FROM dbo.f_SportBettypeMatrix_Sel (3, 0, 0, 2, '', '', @IsTest)
 
 	DECLARE @BetTypeTable TABLE (bettype INT)
 
@@ -101,10 +95,4 @@ BEGIN
 		INNER JOIN (SELECT DISTINCT bettype FROM @BettypeTable) AS btt ON bt.typeid = btt.bettype
 		INNER JOIN @SportBettype AS mtx ON mtx.bettype = bt.typeid
 END
-
-
-GO
-GRANT	EXECUTE	ON	U3_BetList_SelBettype	TO	bodbAdminNet
-GRANT	VIEW DEFINITION	ON	U3_BetList_SelBettype	TO	vnteam
-GRANT	EXECUTE	ON	U3_BetList_SelBettype	TO	bodbExtAccNet
 GO
