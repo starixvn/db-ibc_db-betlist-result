@@ -38,6 +38,8 @@ AS
 		- 20200808@Kos: Support PG Soft [Redmine: #137769]
 		- 20200919@Kos: Support Joker [Redmine: #137942]
 		- 20200930@Kos: Support GameId3rd for PG Soft [Redmine: #137769]
+		- 20201231@Kos: Support MaxGame [Redmine: #147568]
+					- Return additional column EventDate DATETIME
 
 	Parameters:
 		- @TransType
@@ -61,7 +63,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55, 56)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55, 56, 60)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
@@ -133,6 +135,7 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(50),
 		MatchCode		VARCHAR(1000),
+		EventDate		DATETIME,
 		OddsSpread		MONEY,
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000)
@@ -210,6 +213,10 @@ BEGIN
 				ELSE ''
 			END AS MatchCode,
 			CASE
+				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
+				ELSE ''
+			END AS EventDate,
+			CASE
 				WHEN sbt.ProductID IN (6, 32) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
 			END AS OddsSpread,
@@ -269,6 +276,10 @@ BEGIN
 				ELSE ''
 			END AS MatchCode,
 			CASE
+				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
+				ELSE ''
+			END AS EventDate,
+			CASE
 				WHEN sbt.ProductID IN (6, 32) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
 			END AS OddsSpread,
@@ -326,6 +337,10 @@ BEGIN
 				ELSE ''
 			END AS MatchCode,
 			CASE
+				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
+				ELSE ''
+			END AS EventDate,
+			CASE
 				WHEN sbt.ProductID IN (6, 32) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
 			END AS OddsSpread,
@@ -358,11 +373,4 @@ BEGIN
 	WHERE t.RowNum BETWEEN ((@PageIndex - 1) * @PageSize + 1) AND (@PageSize * @PageIndex)
 	ORDER BY t.TransId ASC
 END
-GO
-
-
-GO
-GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbDownlineNetView
-GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbDownlineNet
-GRANT	EXECUTE	ON	Acc_BetList_RNG_Detail	TO	bodbAdminNet
 GO

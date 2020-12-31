@@ -62,6 +62,8 @@ AS
 		- 20201203@Kos: Support GDG [Redmine: #144104]
 		- 20201218@Kos: Support SiteId for GDG [Redmine: #147084]
 		- 20210112@Kos: Support Big Gaming [Redmine: #142455]
+		- 20210114@Kos: Support MaxGame [Redmine: #147568]
+					- Return additional column EventDate DATETIME
 */
 
 BEGIN
@@ -92,6 +94,7 @@ BEGIN
 		BetId			BIGINT,
 		RefNo			NVARCHAR(50),
 		MatchCode		NVARCHAR(1000),
+		EventDate		DATETIME,
 		SDiscount		SMALLMONEY,
 		ADiscount		SMALLMONEY,
 		Discount		SMALLMONEY,
@@ -209,6 +212,7 @@ BEGIN
 						0 AS BetId,
 						b.translogid AS RefNo,
 						'' AS MatchCode,
+						'' AS EventDate,
 						b.sdiscount,
 						b.adiscount,
 						b.discount,
@@ -276,6 +280,7 @@ BEGIN
 							ISNULL(b.betid, 0) AS BetId,
 							b.refno,
 							'' AS MatchCode,
+							'' AS EventDate,
 							b.sdiscount,
 							b.adiscount,
 							b.discount,
@@ -340,6 +345,7 @@ BEGIN
 							ISNULL(b.betid, 0) AS BetId,
 							b.refno,
 							'' AS MatchCode,
+							'' AS EventDate,
 							b.sdiscount,
 							b.adiscount,
 							b.discount,
@@ -410,6 +416,7 @@ BEGIN
 							ELSE b.refno
 						END AS RefNo,
 						b.GameId3rd AS MatchCode,
+						'' AS EventDate,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.sdiscount, 0)
 							ELSE b.sdiscount
@@ -536,8 +543,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -553,6 +560,10 @@ BEGIN
 							WHEN s.productID IN (55, 56) THEN ISNULL(b.GameId3rd, '')
 							ELSE ''
 						END AS MatchCode,
+						CASE
+							WHEN s.productID IN (60) THEN b.Transdate3rd
+							ELSE ''
+						END AS EventDate,
 						b.sdiscount,
 						b.adiscount,
 						b.discount,
@@ -626,6 +637,7 @@ BEGIN
 						0 AS BetId,
 						bg.refno,
 						'' AS MatchCode,
+						'' AS EventDate,
 						bg.sdiscount,
 						bg.adiscount,
 						bg.discount,
@@ -701,6 +713,7 @@ BEGIN
 						ISNULL(b.betid, 0) AS BetId,
 						b.refno,
 						'' AS MatchCode,
+						'' AS EventDate,
 						b.sdiscount,
 						b.adiscount,
 						b.discount,
@@ -767,6 +780,7 @@ BEGIN
 						ISNULL(b.betid, 0) AS BetId,
 						b.refno,
 						'' AS MatchCode,
+						'' AS EventDate,
 						b.sdiscount,
 						b.adiscount,
 						b.discount,
@@ -836,6 +850,7 @@ BEGIN
 							ELSE b.refno
 						END AS RefNo,
 						b.GameId3rd AS MatchCode,
+						'' AS EventDate,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.sdiscount, 0)
 							ELSE b.sdiscount
@@ -962,8 +977,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -979,6 +994,10 @@ BEGIN
 							WHEN s.productID IN (55, 56) THEN ISNULL(b.GameId3rd, '')
 							ELSE ''
 						END AS MatchCode,
+						CASE
+							WHEN s.productID IN (60) THEN b.Transdate3rd
+							ELSE ''
+						END AS EventDate,
 						b.sdiscount,
 						b.adiscount,
 						b.discount,
@@ -1052,6 +1071,7 @@ BEGIN
 						0 AS BetId,
 						bg.refno,
 						'' AS MatchCode,
+						'' AS EventDate,
 						bg.sdiscount,
 						bg.adiscount,
 						bg.discount,
@@ -1162,8 +1182,4 @@ BEGIN
 
 	SELECT DISTINCT * FROM @DetailData
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelByProduct] TO [bodbAdminNet]
 GO
