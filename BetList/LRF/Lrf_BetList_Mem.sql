@@ -87,6 +87,7 @@ AS
 		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
+		- 20201231@Kos: Support Virtual Games [Redmine: #147843]
 */
 
 BEGIN
@@ -812,11 +813,12 @@ BEGIN
 								WHEN b.TableID IN (2, 3) THEN babk.TransID
 							END,
 				Product = CASE
-							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 							WHEN s.ProductID = 8 THEN 'Keno'
-							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.ProductID = 28 THEN 'Lottery'
+							WHEN s.ProductID = 38 THEN 'VRG'							-- Virtual Games
 							WHEN s.ProductID = 40 THEN 'TG'
+							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
+							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 							WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -1049,7 +1051,7 @@ BEGIN
 								ELSE b.TransId
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D') THEN b.MatchId
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG') THEN b.MatchId
 									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
@@ -1072,7 +1074,7 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D') THEN b.Odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1154,13 +1156,12 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D', 'VRG') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1212,7 +1213,7 @@ BEGIN
 								ELSE b.TransId
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D') THEN b.MatchId
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG') THEN b.MatchId
 									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
@@ -1235,7 +1236,7 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D') THEN b.Odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1314,13 +1315,12 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D', 'VRG') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1372,7 +1372,7 @@ BEGIN
 								ELSE b.TransId
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D') THEN b.MatchId
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG') THEN b.MatchId
 									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
@@ -1395,7 +1395,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D') THEN b.Odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG') THEN b.Odds
 								ELSE 0 END,
 					MOdds = CASE 
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 
@@ -1473,13 +1473,12 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D', 'VRG') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1651,8 +1650,4 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_Mem] TO [bodbLicenseeNet]
 GO
