@@ -77,6 +77,7 @@ AS
 		- 20201217@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 		- 20201222@Kos: Support Big Gaming [Redmine: #142455]
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
+		- 20210114@Razor: Support MaxGame [Redmine: #147568]
 
 	Param's Explanation:
 		+ @TransType:
@@ -304,6 +305,7 @@ BEGIN
 							WHEN s.ProductID = 56 THEN 'JK'		-- Joker
 							WHEN s.ProductID = 57 THEN 'BG'		-- Big Gaming
 							WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
+							WHEN s.ProductID = 60 THEN 'MXG'	-- MAXGAME
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
@@ -329,7 +331,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
+									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
