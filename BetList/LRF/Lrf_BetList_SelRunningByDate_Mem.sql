@@ -130,6 +130,7 @@ AS
 		- 20201123@Kos: Support Joker [Redmine: #141408]
 		- 20201207@Kos: Exclude Saba.club Free Bet ticket [Redmine: #142369]
 					- Add new input param @ExcludeFreeBet BIT
+		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 */
 
 BEGIN
@@ -841,8 +842,8 @@ BEGIN
 			AND b.statusID IN (0, 1)
 	END
 
-	-- Keno, Colossus Bets, Lottery, Virtual Games, Table Games, Indo 4D (translog)
-	IF @ShowKN = 1 OR @ShowCB = 1 OR @ShowLT = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowI4D = 1
+	-- Keno, Colossus Bets, Lottery, Virtual Games, Table Games, Indo 4D, Happy 5 Linked Games (translog)
+	IF @ShowKN = 1 OR @ShowCB = 1 OR @ShowLT = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowI4D = 1 OR @ShowNG = 1
 	BEGIN
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
@@ -850,7 +851,7 @@ BEGIN
 				WHEN sbt.ProductID = 8 THEN 202
 				WHEN sbt.ProductID = 15 THEN 204
 				WHEN sbt.ProductID = 28 THEN 220
-				WHEN sbt.ProductID IN (38, 40, 43) THEN t.productid
+				WHEN sbt.ProductID IN (3, 38, 40, 43) THEN t.productid
 				ELSE 0
 			END AS SportType,
 			@Username AS UserName,
@@ -889,11 +890,11 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID = 15 THEN t.Tranid3rd
 				WHEN sbt.ProductId = 8 THEN ISNULL(t.custom2, '')
-				WHEN sbt.ProductId = 38 THEN ISNULL(t.Gameid3rd, '')
+				WHEN sbt.ProductId IN (3, 38) THEN ISNULL(t.Gameid3rd, '')
 				ELSE '' 
 			END AS BetCheck,
 			CASE
-				WHEN sbt.ProductID IN (8, 28, 38, 40, 43) THEN ISNULL(t.transdesc, '')
+				WHEN sbt.ProductID IN (3, 8, 28, 38, 40, 43) THEN ISNULL(t.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			-1 AS BetdaqId,
@@ -910,7 +911,8 @@ BEGIN
 			t.transdate BETWEEN @FromDate AND @ToDate
 			AND t.custid = @CustID
 			AND t.statusID IN (0, 1)
-			AND sbt.ProductID IN (8, 15, 28, 38, 40, 43)
+			AND sbt.ProductID IN (3, 8, 15, 28, 38, 40, 43)
+			AND sbt.EventType = 0
 	END
 
 	-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker

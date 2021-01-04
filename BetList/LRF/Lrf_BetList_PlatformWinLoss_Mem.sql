@@ -101,6 +101,7 @@ AS
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -660,8 +661,8 @@ BEGIN
 				AND b.matchid IN (9, 29)
 		END
 
-		-- Sportsbook, RNG Casino, Keno, Betradar Virtual Sports, Lottery, Table Games, Indo 4D (EventType = 0)
-		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowVS2 = 1 OR @ShowLT = 1 OR @ShowTG = 1 OR @ShowI4D = 1
+		-- Sportsbook, RNG Casino, Keno, Betradar Virtual Sports, Lottery, Table Games, Indo 4D, Happy 5 Linked Games (EventType = 0)
+		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowVS2 = 1 OR @ShowLT = 1 OR @ShowTG = 1 OR @ShowI4D = 1 OR @ShowNG = 1
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -670,7 +671,7 @@ BEGIN
 					WHEN sbt.ProductID = 6 THEN 251
 					WHEN sbt.ProductID = 8 THEN 202
 					WHEN sbt.ProductID = 28 THEN 220
-					WHEN sbt.ProductID IN (40, 43) THEN b.matchid
+					WHEN sbt.ProductID IN (3, 40, 43) THEN b.matchid
 					ELSE 0
 				END AS Sporttype,
 				CASE
@@ -742,12 +743,12 @@ BEGIN
 				b.currency,
 				'' AS ShowTime,
 				CASE
-					WHEN sbt.ProductID IN (1, 27) THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductID IN (1, 3, 27) THEN ISNULL(b.betcheck, '')
 					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
-					WHEN sbt.ProductID IN (8, 28, 40, 43) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (3, 8, 28, 40, 43) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -764,7 +765,7 @@ BEGIN
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.EventType = 0
-				AND (sbt.ProductID IN (8, 27, 28, 40, 43)
+				AND (sbt.ProductID IN (3, 8, 27, 28, 40, 43)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct = '')
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @TempFromDate AND @tdate
@@ -1004,7 +1005,6 @@ BEGIN
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
 				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
-
 		END
 
 		-- RNG Casino Single Wallet, Macau Games, Fishing World
@@ -1416,8 +1416,8 @@ BEGIN
 				AND b.matchid IN (9, 29)
 		END
 
-		-- Sportsbook, RNG Casino, Keno, Macau Games, Fishing World, Betradar Virtual Sports, Lottery, Table Games, Indo 4D (EventType = 0)
-		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowVS2 = 1 OR @ShowLT = 1 OR @ShowTG = 1 OR @ShowI4D = 1
+		-- Sportsbook, RNG Casino, Keno, Macau Games, Fishing World, Betradar Virtual Sports, Lottery, Table Games, Indo 4D, Happy 5 Linked Games (EventType = 0)
+		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowVS2 = 1 OR @ShowLT = 1 OR @ShowTG = 1 OR @ShowI4D = 1 OR @ShowNG = 1
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -1429,7 +1429,7 @@ BEGIN
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
-					WHEN sbt.ProductID IN (40, 43) THEN b.matchid
+					WHEN sbt.ProductID IN (3, 40, 43) THEN b.matchid
 					ELSE 0
 				END AS Sporttype,
 				CASE
@@ -1504,13 +1504,13 @@ BEGIN
 				b.currency,
 				'' AS ShowTime,
 				CASE
-					WHEN sbt.ProductID IN (1, 27) THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductID IN (1, 3, 27) THEN ISNULL(b.betcheck, '')
 					WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-					WHEN sbt.ProductID IN (8, 22, 24, 28, 40, 43) THEN b.transdesc
+					WHEN sbt.ProductID IN (3, 8, 22, 24, 28, 40, 43) THEN b.transdesc
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -1527,7 +1527,7 @@ BEGIN
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.EventType = 0
-				AND (sbt.ProductID IN (6, 8, 22, 24, 27, 28, 40, 43)
+				AND (sbt.ProductID IN (3, 6, 8, 22, 24, 27, 28, 40, 43)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
@@ -2008,8 +2008,8 @@ BEGIN
 				AND b.matchid IN (9, 29)
 		END
 
-		-- Sportsbook, RNG Casino, Keno, Macau Games, Fishing World, Betradar Virtual Sports, Lottery, Table Games, Indo 4D (EventType = 0)
-		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowVS2 = 1 OR @ShowLT = 1 OR @ShowTG = 1 OR @ShowI4D = 1
+		-- Sportsbook, RNG Casino, Keno, Macau Games, Fishing World, Betradar Virtual Sports, Lottery, Table Games, Indo 4D, Happy 5 Linked Games (EventType = 0)
+		IF @ShowSB = 1 OR @ShowCS = 1 OR @ShowKN = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowVS2 = 1 OR @ShowLT = 1 OR @ShowTG = 1 OR @ShowI4D = 1 OR @ShowNG = 1
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -2021,7 +2021,7 @@ BEGIN
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
-					WHEN sbt.ProductID IN (40, 43) THEN b.matchid
+					WHEN sbt.ProductID IN (3, 40, 43) THEN b.matchid
 					ELSE 0
 				END AS Sporttype,
 				CASE
@@ -2096,13 +2096,13 @@ BEGIN
 				b.currency,
 				'' AS ShowTime,
 				CASE
-					WHEN sbt.ProductID IN (1, 27) THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductID IN (1, 3, 27) THEN ISNULL(b.betcheck, '')
 					WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-					WHEN sbt.ProductID IN (8, 22, 24, 28, 40, 43) THEN b.transdesc
+					WHEN sbt.ProductID IN (3, 8, 22, 24, 28, 40, 43) THEN b.transdesc
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -2119,7 +2119,7 @@ BEGIN
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.EventType = 0
-				AND (sbt.ProductID IN (6, 8, 22, 24, 27, 28, 40, 43)
+				AND (sbt.ProductID IN (3, 6, 8, 22, 24, 27, 28, 40, 43)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId

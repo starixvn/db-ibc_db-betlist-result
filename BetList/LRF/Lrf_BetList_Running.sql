@@ -50,6 +50,7 @@ AS
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20201231@Kos: Support Virtual Games [Redmine: #147843]
+		- 20200108@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 */
 
 BEGIN
@@ -548,6 +549,7 @@ BEGIN
 							WHEN s.ProductID = 40 THEN 'TG'								-- Table Games
 							WHEN s.ProductID = 43 THEN 'I4D'							-- Indo 4D
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
+							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
@@ -734,7 +736,7 @@ BEGIN
 							ELSE b.TransId
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG') THEN b.ProductId
+								WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG', 'H5LG') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('Outright') THEN l.sporttype
 								WHEN b.Product IN ('VR') THEN vr.SportType
@@ -851,11 +853,11 @@ BEGIN
 				BetCheck = CASE
 								WHEN b.Product IN ('SB', 'Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('Keno') THEN ISNULL(b.custom2, '')
-								WHEN b.Product IN ('VRG') THEN ISNULL(b.Gameid3rd, '')
+								WHEN b.Product IN ('VRG', 'H5LG') THEN ISNULL(b.Gameid3rd, '')
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D', 'VRG') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D', 'VRG', 'H5LG') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE

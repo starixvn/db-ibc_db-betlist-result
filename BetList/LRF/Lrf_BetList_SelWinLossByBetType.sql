@@ -55,6 +55,7 @@ AS
 		- 20200502@Kos: Support Table Game Half Won Half Lose [Redmine: #133323]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 */
 
 BEGIN
@@ -964,8 +965,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
-		-- Keno, Lottery, Table Games, Indo 4D
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (8, 28, 40, 43) AND Bettype = @BetType)
+		-- Keno, Lottery, Table Games, Indo 4D, Happy 5 Linked Games
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 8, 28, 40, 43) AND EventType = 0 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -978,7 +979,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 28 THEN 220
-					WHEN sbt.ProductId IN (40, 43) THEN b.matchid
+					WHEN sbt.ProductId IN (3, 40, 43) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.bettype,
@@ -1017,6 +1018,7 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				CASE
+					WHEN sbt.ProductId = 3 THEN ISNULL(b.betcheck, '')
 					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
@@ -1374,8 +1376,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 
-		-- Keno, Lottery, Table Games, Indo 4D
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (8, 28, 40, 43) AND Bettype = @BetType)
+		-- Keno, Lottery, Table Games, Indo 4D, Happy 5 Linked Games
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 8, 28, 40, 43) AND EventType = 0 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1388,7 +1390,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 28 THEN 220
-					WHEN sbt.ProductId IN (40, 43) THEN b.matchid
+					WHEN sbt.ProductId IN (3, 40, 43) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.bettype,
@@ -1427,6 +1429,7 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				CASE
+					WHEN sbt.ProductId = 3 THEN ISNULL(b.betcheck, '')
 					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,

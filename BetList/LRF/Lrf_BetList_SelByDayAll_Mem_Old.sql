@@ -104,12 +104,13 @@ AS
 		- 20200815@Kos: Support PG Soft [Redmine: #139182]
 		- 20200922@Kos: Support Joker [Redmine: #141408]
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
+		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 
 	Param's Explanation:
 		+ @TransType:
 			1: Won/Lose/Draw/Refund ticket
 			2: Void/Reject ticket
-			4: Grand Prize ticket (Microgaming RNG Casino)
+			4: Grand Prize ticket (Colossus Bets)
 */
 
 BEGIN
@@ -607,7 +608,7 @@ BEGIN
 			AND b.bettype = 10
 
 		-- RNG Casino, Keno, AG Casino, AllBet, Macau Games, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming
-		-- NPH Promotion, Virtual Games, SA Gaming, Table Games, Indo 4D, Sexy Gaming, Saba.club, PG Soft, Joker
+		-- NPH Promotion, Virtual Games, SA Gaming, Table Games, Indo 4D, Sexy Gaming, Saba.club, PG Soft, Joker, Happy 5 Linked Games
 		INSERT INTO @Data
 		SELECT
 			CASE
@@ -620,7 +621,7 @@ BEGIN
 				WHEN sbt.ProductID = 24 THEN 219
 				WHEN sbt.ProductID = 28 THEN 220
 				WHEN sbt.ProductID = 32 THEN 248
-				WHEN sbt.ProductID IN (34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56) THEN b.matchid
+				WHEN sbt.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56) THEN b.matchid
 				ELSE 0
 			END AS SportType,
 			0 AS leagueid,
@@ -703,12 +704,12 @@ BEGIN
 			'' AS ShowTime,
 			CASE
 				WHEN sbt.ProductID = 8 THEN ISNULL(b.comstatus, '')
-				WHEN sbt.ProductId = 38 THEN ISNULL(b.betcheck, '')
+				WHEN sbt.ProductId IN (3, 38) THEN ISNULL(b.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-				WHEN sbt.ProductID IN (8, 22, 24, 28, 32, 34, 36, 38, 40, 43, 55, 56) THEN b.transdesc
+				WHEN sbt.ProductID IN (3, 8, 22, 24, 28, 32, 34, 36, 38, 40, 43, 55, 56) THEN b.transdesc
 				ELSE ''
 			END AS transdesc,
 			-1 AS BetdaqId,
@@ -729,7 +730,7 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
-			AND sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56)
+			AND sbt.ProductID IN (3, 6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56)
 			AND sbt.EventType = 0
 
 		-- Colossus Bets

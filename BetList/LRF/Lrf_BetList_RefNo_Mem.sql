@@ -46,6 +46,7 @@ AS
 		- 20201023@Kos: Support PG Soft [Redmine: #139182]
 		- 20201123@Kos: Support Joker [Redmine: #141408]
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
+		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 */
 
 BEGIN
@@ -338,6 +339,7 @@ BEGIN
 						WHEN @ProductId = 55 THEN 'PGS'			-- PG Soft
 						WHEN @ProductId = 56 THEN 'JK'			-- Joker
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
+						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 						WHEN @EventType = 1 AND @ProductId = 1 THEN 'SB'			-- Sportsbook
 						WHEN @EventType = 1 AND @ProductId = 3 THEN 'NG'			-- Number Game
@@ -442,7 +444,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno') THEN ISNULL(b.custom2, '')
 				WHEN @Product IN ('CB') THEN b.Tranid3rd
-				WHEN @Product IN ('VRG') THEN b.Gameid3rd
+				WHEN @Product IN ('VRG', 'H5LG') THEN b.Gameid3rd
 				ELSE ''
 			END AS BetCheck,
 			ISNULL(b.transdesc, '') AS TransDesc,
@@ -567,7 +569,7 @@ BEGIN
 			b.recommend,
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
-				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK') THEN b.matchid
+				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
@@ -722,14 +724,14 @@ BEGIN
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG') THEN ISNULL(b.betcheck, '')
+				WHEN @Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG') THEN ISNULL(b.betcheck, '')
 				WHEN @Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 				WHEN @Product = 'CB' THEN ISNULL(bm.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'FW', 
-					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK') THEN ISNULL(b.transdesc, '')
+					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG') THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -820,7 +822,7 @@ BEGIN
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 
-					'I4D', 'SXG', 'SAG', 'PGS', 'JK') THEN b.matchid
+					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
@@ -941,14 +943,14 @@ BEGIN
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG') THEN ISNULL(b.betcheck, '')
+				WHEN @Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG') THEN ISNULL(b.betcheck, '')
 				WHEN @Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 				WHEN @Product IN ('CB') THEN ISNULL(bm.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'FW', 
-					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK') THEN ISNULL(b.transdesc, '')
+					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG') THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -1038,7 +1040,7 @@ BEGIN
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 
-					'I4D', 'SXG', 'SAG', 'PGS', 'JK') THEN b.matchid
+					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
@@ -1159,14 +1161,14 @@ BEGIN
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG') THEN ISNULL(b.betcheck, '')
+				WHEN @Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG') THEN ISNULL(b.betcheck, '')
 				WHEN @Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 				WHEN @Product = 'CB' THEN ISNULL(bm.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'FW', 
-					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK') THEN ISNULL(b.transdesc, '')
+					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG') THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE

@@ -38,6 +38,7 @@ AS
 					- Add new params @SportType, @BaseCurrency
 		- 20190524@Kos: Support more base currency [#Redmine: 112531]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -114,7 +115,9 @@ BEGIN
 		BetFrom			NVARCHAR(1),
 		LeagueId		INT,
 		MatchId			INT,
-		MatchCode		NVARCHAR(50),
+		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(1000),
+		EventType		TINYINT,
 		WhTicket		TINYINT
 	)
 
@@ -149,7 +152,9 @@ BEGIN
 		BetFrom			NVARCHAR(1),
 		LeagueId		INT,
 		MatchId			INT,
-		MatchCode		NVARCHAR(50),
+		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(1000),
+		EventType		TINYINT,
 		WhTicket		TINYINT
 	)
 
@@ -196,6 +201,9 @@ BEGIN
 			Ip,
 			BetFrom,
 			MatchId,
+			BetCheck,
+			TransDesc,
+			EventType,
 			WhTicket)
 		SELECT
 			b.transid,
@@ -225,6 +233,9 @@ BEGIN
 			b.ip,
 			b.betfrom,
 			b.matchid,
+			b.betcheck,
+			b.transdesc,
+			sbt.EventType,
 			1 AS WhTicket
 		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_recommend)
 			INNER JOIN @TempAg AS t ON t.custid = b.recommend
@@ -270,6 +281,9 @@ BEGIN
 			Ip,
 			BetFrom,
 			MatchId,
+			BetCheck,
+			TransDesc,
+			EventType,
 			WhTicket)
 		SELECT
 			b.transid,
@@ -299,6 +313,9 @@ BEGIN
 			b.ip,
 			b.betfrom,
 			b.matchid,
+			b.betcheck,
+			b.transdesc,
+			sbt.EventType,
 			2 AS WhTicket
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @TempAg AS t ON t.custid = b.recommend
@@ -403,9 +420,10 @@ BEGIN
 			b.RefNo,
 			b.CustId,
 			b.Currency,
-			CASE b.WhTicket
-				WHEN 1 THEN m.sporttype
-				WHEN 2 THEN m14.sporttype
+			CASE
+				WHEN b.EventType = 0 THEN b.MatchId
+				WHEN b.EventType = 1 AND b.WhTicket = 1 THEN m.sporttype
+				WHEN b.EventType = 1 AND b.WhTicket = 2 THEN m14.sporttype
 				ELSE 0
 			END AS SportType,
 			b.BetType,
@@ -429,17 +447,25 @@ BEGIN
 			b.LiveAwayScore,
 			b.Ip,
 			b.BetFrom,
-			CASE b.WhTicket
-				WHEN 1 THEN m.leagueid
-				WHEN 2 THEN m14.leagueid
+			CASE
+				WHEN b.EventType = 1 AND b.WhTicket = 1 THEN m.leagueid
+				WHEN b.EventType = 1 AND b.WhTicket = 2 THEN m14.leagueid
 				ELSE 0
 			END AS LeagueId,
 			b.MatchId,
-			CASE b.WhTicket
-				WHEN 1 THEN m.matchcode
-				WHEN 2 THEN m14.matchcode
-				ELSE 0
-			END AS MatchCode
+			CASE
+				WHEN b.EventType = 1 AND b.WhTicket = 1 THEN m.matchcode
+				WHEN b.EventType = 1 AND b.WhTicket = 2 THEN m14.matchcode
+				ELSE ''
+			END AS MatchCode,
+			CASE
+				WHEN b.EventType = 0 THEN ISNULL(b.betcheck, '')
+				ELSE ''
+			END AS BetCheck,
+			CASE
+				WHEN b.EventType = 0 THEN ISNULL(b.transdesc, '')
+				ELSE ''
+			END AS TransDesc
 		FROM
 			#PagingData AS b
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
@@ -476,9 +502,10 @@ BEGIN
 				b.RefNo,
 				b.CustId,
 				b.Currency,
-				CASE b.WhTicket
-					WHEN 1 THEN m.sporttype
-					WHEN 2 THEN m14.sporttype
+				CASE
+					WHEN b.EventType = 0 THEN b.MatchId
+					WHEN b.EventType = 1 AND b.WhTicket = 1 THEN m.sporttype
+					WHEN b.EventType = 1 AND b.WhTicket = 2 THEN m14.sporttype
 					ELSE 0
 				END AS SportType,
 				b.BetType,
@@ -502,17 +529,25 @@ BEGIN
 				b.LiveAwayScore,
 				b.Ip,
 				b.BetFrom,
-				CASE b.WhTicket
-					WHEN 1 THEN m.leagueid
-					WHEN 2 THEN m14.leagueid
+				CASE
+					WHEN b.EventType = 1 AND b.WhTicket = 1 THEN m.leagueid
+					WHEN b.EventType = 1 AND b.WhTicket = 2 THEN m14.leagueid
 					ELSE 0
 				END AS LeagueId,
 				b.MatchId,
-				CASE b.WhTicket
-					WHEN 1 THEN m.matchcode
-					WHEN 2 THEN m14.matchcode
+				CASE
+					WHEN b.EventType = 1 AND b.WhTicket = 1 THEN m.matchcode
+					WHEN b.EventType = 1 AND b.WhTicket = 2 THEN m14.matchcode
 					ELSE ''''
-				END AS MatchCode
+				END AS MatchCode,
+				CASE
+					WHEN b.EventType = 0 THEN ISNULL(b.betcheck, '''')
+					ELSE ''''
+				END AS BetCheck,
+				CASE
+					WHEN b.EventType = 0 THEN ISNULL(b.transdesc, '''')
+					ELSE ''''
+				END AS TransDesc
 			FROM
 				#Data AS b
 				INNER JOIN #Customer AS c ON c.custid = b.CustId
