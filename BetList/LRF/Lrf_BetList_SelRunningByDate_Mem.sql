@@ -35,6 +35,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowSXG	BIT			= 0,	-- Sexy Gaming
 	@ShowPGS	BIT			= 0,	-- PG Soft
 	@ShowJK		BIT			= 0,	-- Joker
+	@ShowGDG	BIT			= 0,	-- GDG
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -131,6 +132,7 @@ AS
 		- 20201207@Kos: Exclude Saba.club Free Bet ticket [Redmine: #142369]
 					- Add new input param @ExcludeFreeBet BIT
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
+		- 20210112@Kos: Support GDG [Redmine: #147267]
 */
 
 BEGIN
@@ -203,7 +205,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -230,6 +232,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowSXG = 0	THEN 45 END
 		OR ProductID	= CASE WHEN @ShowPGS = 0	THEN 55 END
 		OR ProductID	= CASE WHEN @ShowJK = 0		THEN 56 END
+		OR ProductID	= CASE WHEN @ShowGDG = 0	THEN 59 END
 	-- end filer bettypes by sporttype
 
 	CREATE TABLE #BetListSelRunningByDateMem (
@@ -994,8 +997,8 @@ BEGIN
 			sbt.ProductID
 	END
 
-	-- AG Casino, AllBet, SA Gaming, Sexy Gaming
-	IF (@ShowAGC = 1 OR @ShowAB = 1 OR @ShowSAG = 1 OR @ShowSXG = 1)
+	-- AG Casino, AllBet, SA Gaming, Sexy Gaming, GDG
+	IF (@ShowAGC = 1 OR @ShowAB = 1 OR @ShowSAG = 1 OR @ShowSXG = 1 OR @ShowGDG = 1)
 		AND EXISTS (SELECT 1 FROM dbo.bettransLC WITH (NOLOCK) WHERE custid = @CustId AND statusID IN (0, 1))
 	BEGIN
 		-- Yesterday and today running ticket
@@ -1004,8 +1007,7 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID = 11 THEN 250
 				WHEN sbt.ProductID = 21 THEN 211
-				WHEN sbt.ProductID IN (39, 45) THEN b.matchid
-				ELSE 0
+				ELSE b.matchid
 			END AS Sporttype,
 			@Username AS UserName,
 			b.bettype,
@@ -1054,7 +1056,7 @@ BEGIN
 			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.winlostdate BETWEEN @Yesterday AND @Today		-- yesterday and today
 			AND blc.custid = @CustId
-			AND sbt.ProductID IN (11, 21, 39, 45)
+			AND sbt.ProductID IN (11, 21, 39, 45, 59)
 			AND sbt.EventType = 0
 			AND blc.statusID IN (0, 1)
 		GROUP BY

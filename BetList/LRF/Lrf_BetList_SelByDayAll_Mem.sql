@@ -112,6 +112,7 @@ AS
 		- 20200922@Kos: Support Joker [Redmine: #141408]
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
+		- 20210112@Kos: Support GDG [Redmine: #147267]
 
 	Param's Explanation:
 		+ @TransType:
@@ -251,7 +252,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56, 59)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914, 999)
@@ -680,7 +681,7 @@ BEGIN
 			AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
 		-- Keno, AG Casino, AllBet, Macau Games, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming, NPH Promotion
-		-- Virtual Games, SA Gaming, Table Games, Indo 4D, Sexy Gaming, Saba.club, PG Soft, Joker, Happy 5 Linked Games
+		-- Virtual Games, SA Gaming, Table Games, Indo 4D, Sexy Gaming, Saba.club, PG Soft, Joker, Happy 5 Linked Games, GDG
 		IF @TransType = 1 OR @TransType = 2
 		BEGIN
 			INSERT INTO @Data
@@ -693,7 +694,7 @@ BEGIN
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
 					WHEN sbt.ProductID = 32 THEN 248
-					WHEN sbt.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56) THEN b.matchid
+					WHEN sbt.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56, 59) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -773,7 +774,7 @@ BEGIN
 			WHERE
 				b.custid = @CustId
 				AND b.winlostdate = @FromDate 
-				AND sbt.ProductID IN (3, 8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56)
+				AND sbt.ProductID IN (3, 8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 55, 56, 59)
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 				AND @TransType <> 4
@@ -2031,7 +2032,7 @@ BEGIN
 								WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
 		END
 
-		-- AG Casino, AllBet, SA Gaming, Sexy Gaming
+		-- AG Casino, AllBet, SA Gaming, Sexy Gaming, GDG
 		IF @TransType = 1
 		BEGIN
 			IF @FromDate < @yesterday	-- not yesterday and today settled ticket
@@ -2041,8 +2042,7 @@ BEGIN
 					CASE
 						WHEN sbt.ProductID = 11 THEN 250
 						WHEN sbt.ProductID = 21 THEN 211
-						WHEN sbt.ProductID IN (39, 45) THEN b.matchid
-						ELSE 0
+						ELSE b.matchid
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -2101,7 +2101,7 @@ BEGIN
 				WHERE
 					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
-					AND sbt.ProductID IN (11, 21, 39, 45)
+					AND sbt.ProductID IN (11, 21, 39, 45, 59)
 					AND sbt.EventType = 0
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 			END
@@ -2112,8 +2112,7 @@ BEGIN
 					CASE
 						WHEN sbt.ProductID = 11 THEN 250
 						WHEN sbt.ProductID = 21 THEN 211
-						WHEN sbt.ProductID IN (39, 45) THEN b.matchid
-						ELSE 0
+						ELSE b.matchid
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -2177,7 +2176,7 @@ BEGIN
 				WHERE
 					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
-					AND sbt.ProductID IN (11, 21, 39, 45)
+					AND sbt.ProductID IN (11, 21, 39, 45, 59)
 					AND sbt.EventType = 0
 					AND blc.statusID NOT IN (0, 1)
 				GROUP BY
@@ -2203,8 +2202,7 @@ BEGIN
 					CASE
 						WHEN sbt.ProductID = 11 THEN 250
 						WHEN sbt.ProductID = 21 THEN 211
-						WHEN sbt.ProductID IN (39, 45) THEN b.matchid
-						ELSE 0
+						ELSE b.matchid
 					END AS Sporttype,
 					0 AS leagueid,
 					0 AS homeID,
@@ -2264,7 +2262,7 @@ BEGIN
 				WHERE
 					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
-					AND sbt.ProductID IN (11, 21, 39, 45)
+					AND sbt.ProductID IN (11, 21, 39, 45, 59)
 					AND sbt.EventType = 0
 					AND blc.statusID IN (0, 1)
 				GROUP BY
