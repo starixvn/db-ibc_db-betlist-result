@@ -106,6 +106,7 @@ AS
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210112@Kos: Support GDG [Redmine: #147267]
+		- 20210118@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
 
 	Param's Explanation:
 		+ @TransType:
@@ -663,7 +664,7 @@ BEGIN
 			END AS Oddstype,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-				WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 43) THEN b.Odds
+				WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 42, 43) THEN b.Odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -723,7 +724,7 @@ BEGIN
 			0 AS WalletType,
 			0 AS RefCode,
 			CASE
-				WHEN sbt.ProductID = 32 THEN ISNULL(b.oddsspread, 0)
+				WHEN sbt.ProductID IN (32, 42) THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
@@ -1059,8 +1060,4 @@ BEGIN
 	SELECT * FROM @BettransDetail
 	ORDER BY RefNo ASC, BetType ASC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_SelByDayAll_Mem_Old] TO [bodbLicenseeNet]
 GO

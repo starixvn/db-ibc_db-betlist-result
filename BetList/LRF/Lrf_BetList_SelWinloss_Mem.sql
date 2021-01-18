@@ -136,6 +136,7 @@ AS
 		- 20201207@Kos: Exclude Saba.club Free Bet ticket [Redmine: #142369]
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210112@Kos: Support GDG [Redmine: #147267]
+		- 20210118@Kos: Exclude Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -279,7 +280,8 @@ BEGIN
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59)
-		AND Bettype NOT IN (904, 914, 4299, 4300, 4297, 4298, 3007, 1906)
+		AND Bettype NOT IN (904, 914)
+		AND BetType NOT IN (SELECT BetType FROM dbo.Lrf_f_SelExcludedBetType())
 
 	IF @ShowBT = 0
 	BEGIN
@@ -3679,7 +3681,7 @@ BEGIN
 		END
 	END
 
-	SELECT DISTINCT * FROM @BettransDetail 
+	SELECT DISTINCT * FROM @BettransDetail
 	ORDER BY RefNo ASC, Bettype ASC
 END
 GO

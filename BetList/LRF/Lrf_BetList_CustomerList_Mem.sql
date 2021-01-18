@@ -77,6 +77,7 @@ AS
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210112@Kos: Support GDG [Redmine: #147267]
+		- 20210118@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
 */
 
 BEGIN
@@ -894,7 +895,7 @@ BEGIN
 				0 AS MOdds,
 				0 AS OddsType,
 				CASE
-					WHEN sbt.ProductID = 32 THEN b.odds
+					WHEN sbt.ProductID IN (32, 42) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				b.stake,
@@ -935,7 +936,7 @@ BEGIN
 				0 AS WalletType,
 				0 AS RefCode,
 				CASE
-					WHEN sbt.ProductID = 32 THEN ISNULL(b.oddsspread, 0)
+					WHEN sbt.ProductID IN (32, 42) THEN ISNULL(b.oddsspread, 0)
 					ELSE 0
 				END AS OddsSpread
 			FROM
@@ -969,7 +970,7 @@ BEGIN
 					0 AS MOdds,
 					0 AS OddsType,
 					CASE
-						WHEN sbt.ProductID = 32
+						WHEN sbt.ProductID IN (32, 42)
 							THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 						ELSE 0
 					END AS Odds,
@@ -1015,7 +1016,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					CASE
-						WHEN sbt.ProductID = 32 THEN ISNULL(SUM(brng.BetStake), 0)
+						WHEN sbt.ProductID IN (32, 42) THEN ISNULL(SUM(brng.BetStake), 0)
 						ELSE 0
 					END AS OddsSpread
 				FROM
@@ -1873,7 +1874,7 @@ BEGIN
 				0 AS MOdds,
 				0 AS Oddstype,
 				CASE
-					WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 43) THEN b.odds
+					WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 42, 43) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				b.stake,
@@ -1926,7 +1927,7 @@ BEGIN
 				0 AS WalletType,
 				0 AS RefCode,
 				CASE
-					WHEN sbt.ProductID = 32 THEN ISNULL(b.oddsspread, 0)
+					WHEN sbt.ProductID IN (32, 42) THEN ISNULL(b.oddsspread, 0)
 					ELSE 0
 				END AS OddsSpread
 			FROM
@@ -2629,7 +2630,7 @@ BEGIN
 				END AS Oddstype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-					WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 43) THEN b.odds
+					WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 42, 43) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				b.stake,
@@ -2688,7 +2689,7 @@ BEGIN
 				0 AS WalletType,
 				0 AS RefCode,
 				CASE
-					WHEN sbt.ProductID = 32 THEN ISNULL(b.oddsspread, 0)
+					WHEN sbt.ProductID IN (32, 42) THEN ISNULL(b.oddsspread, 0)
 					ELSE 0
 				END AS OddsSpread
 			FROM

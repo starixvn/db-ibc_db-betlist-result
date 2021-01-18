@@ -14,6 +14,7 @@ AS
 
 	Revisions:
 		- 20200714@Kos: Support PP Jackpot [Redmine: #137290]
+		- 20210118@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
 */
 
 BEGIN
@@ -50,7 +51,8 @@ BEGIN
 
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
-	FROM dbo.f_SportBettypeMatrix_Sel (32, 0, 0, 2, '', '', @IsTest)
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+	WHERE ProductID IN (32, 42)
 
 	-- Create temp table
 	DECLARE @Data TABLE (

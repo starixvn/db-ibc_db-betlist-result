@@ -34,14 +34,14 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByDate_Mem]
 	@ShowCC				BIT				= 0,	-- Card Club
 	@ShowSG				BIT				= 0,	-- Spadegaming
 	@ShowVRG			BIT				= 0,	-- Virtual Games
-	@ShowSAG			BIT				= 0,		-- SA Gaming
+	@ShowSAG			BIT				= 0,	-- SA Gaming
 	@ShowTG				BIT				= 0,	-- Table Games
 	@ShowSBC			BIT				= 0,	-- Saba.club
 	@ShowI4D			BIT				= 0,	-- Indo 4D
 	@ShowSXG			BIT				= 0,	-- Sexy Gaming
 	@ShowPGS			BIT				= 0,	-- PG Soft
 	@ShowJK				BIT				= 0,	-- Joker
-	@ShowGDG			BIT				= 0		-- GDG
+	@ShowGDG			BIT				= 0	-- GDG
 AS
 
 /*
@@ -148,6 +148,7 @@ AS
 		- 20201207@Kos: Exclude Saba.club Free Bet ticket [Redmine: #142369]
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210112@Kos: Support GDG [Redmine: #147267]
+		- 20210118@Kos: Exclude Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
 */
 
 BEGIN
@@ -209,8 +210,9 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowGDG = 1	THEN 59 END
 
 	DELETE @SportBettype
-	WHERE BetType IN (71, 73, 904, 914, 4299, 4300, 4297, 4298, 3007, 1906)
+	WHERE BetType IN (71, 73, 904, 914)
 		OR BetType BETWEEN 801 AND 899
+		OR BetType IN (SELECT BetType FROM dbo.Lrf_f_SelExcludedBetType())
 
 	IF @ShowBT = 0
 	BEGIN
