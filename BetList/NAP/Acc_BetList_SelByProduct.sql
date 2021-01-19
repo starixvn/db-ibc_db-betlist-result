@@ -64,6 +64,7 @@ AS
 		- 20210112@Kos: Support Big Gaming [Redmine: #142455]
 		- 20210114@Kos: Support MaxGame [Redmine: #147568]
 					- Return additional column EventDate DATETIME
+		- 20210119@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #147709]
 */
 
 BEGIN
@@ -572,7 +573,7 @@ BEGIN
 						0 AS Hdp1,
 						0 AS Hdp2,
 						CASE
-							WHEN s.ProductID = 32 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+							WHEN s.ProductID IN (32, 42) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -606,15 +607,15 @@ BEGIN
 						b.TranId3rd AS BetCheck,
 						b.transdesc,
 						CASE
-							WHEN s.ProductID = 32 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							WHEN s.ProductID IN (32, 42) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 							ELSE 0
 						END AS OddsSpread,
 						CASE
-							WHEN s.ProductID = 32 THEN ISNULL(b.JackpotInfo, '')
+							WHEN s.ProductID IN (32, 42) THEN ISNULL(b.JackpotInfo, '')
 							ELSE ''
 						END AS ExtraInfo,
 						CASE
-							WHEN s.ProductID = 32 THEN ISNULL(b.RefNo2, -1)
+							WHEN s.ProductID IN (32, 42) THEN ISNULL(b.RefNo2, -1)
 							ELSE -1
 						END AS BetdaqId
 					FROM dbo.bettransRnG AS b WITH (NOLOCK)
@@ -1006,7 +1007,7 @@ BEGIN
 						0 AS Hdp1,
 						0 AS Hdp2,
 						CASE
-							WHEN s.ProductID = 32 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+							WHEN s.ProductID IN (32, 42) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -1040,15 +1041,15 @@ BEGIN
 						b.TranId3rd AS BetCheck,
 						b.transdesc,
 						CASE
-							WHEN s.ProductID = 32 AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							WHEN s.ProductID IN (32, 42) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 							ELSE 0
 						END AS OddsSpread,
 						CASE
-							WHEN s.ProductID = 32 THEN ISNULL(b.JackpotInfo, '')
+							WHEN s.ProductID IN (32, 42) THEN ISNULL(b.JackpotInfo, '')
 							ELSE ''
 						END AS ExtraInfo,
 						CASE
-							WHEN s.ProductID = 32 THEN ISNULL(b.RefNo2, -1)
+							WHEN s.ProductID IN (32, 42) THEN ISNULL(b.RefNo2, -1)
 							ELSE -1
 						END AS BetdaqId
 					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)

@@ -14,13 +14,14 @@ AS
 	Revisions:
 		- 20180207@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
+		- 20210119@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #147709]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix
-	-- Support RNG Casino Single Wallet, PP
+	-- Support RNG Casino Single Wallet, PP, Saba.club
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -30,7 +31,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE (ProductID = 32)
+	WHERE (ProductID IN (32, 42))
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	-- Create temp table
@@ -100,15 +101,9 @@ BEGIN
 			(b.acomm - b.comm) AS acomm,
 			(b.scomm - b.acomm) AS scomm,
 			b.ip,
-			CASE
-				WHEN sbt.productID IN (6, 32) THEN b.TranId3rd
-				ELSE ''
-			END AS BetCheck,
+			b.TranId3rd AS BetCheck,
 			b.transdesc,
-			CASE
-				WHEN sbt.ProductID IN (6, 32) THEN ISNULL(b.RefNo2, -1)
-				ELSE -1
-			END AS BetdaqId
+			ISNULL(b.RefNo2, -1) AS BetdaqId
 		FROM dbo.bettransRnG AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
 		WHERE b.custid = @CustId AND b.transid = @TransId
@@ -146,15 +141,9 @@ BEGIN
 			(b.acomm - b.comm) AS acomm,
 			(b.scomm - b.acomm) AS scomm,
 			b.ip,
-			CASE
-				WHEN sbt.productID IN (6, 32) THEN b.TranId3rd
-				ELSE ''
-			END AS BetCheck,
+			b.TranId3rd AS BetCheck,
 			b.transdesc,
-			CASE
-				WHEN sbt.ProductID IN (6, 32) THEN ISNULL(b.RefNo2, -1)
-				ELSE -1
-			END AS BetdaqId
+			ISNULL(b.RefNo2, -1) AS BetdaqId
 		FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
 		WHERE b.custid = @CustId AND b.transid = @TransId
@@ -192,15 +181,9 @@ BEGIN
 			(b.acomm - b.comm) AS acomm,
 			(b.scomm - b.acomm) AS scomm,
 			b.ip,
-			CASE
-				WHEN sbt.productID IN (6, 32) THEN b.TranId3rd
-				ELSE ''
-			END AS BetCheck,
+			b.TranId3rd AS BetCheck,
 			b.transdesc,
-			CASE
-				WHEN sbt.ProductID IN (6, 32) THEN ISNULL(b.RefNo2, -1)
-				ELSE -1
-			END AS BetdaqId
+			ISNULL(b.RefNo2, -1) AS BetdaqId
 		FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
 		WHERE b.custid = @CustId AND b.transid = @TransId
