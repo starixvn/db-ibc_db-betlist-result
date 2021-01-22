@@ -102,6 +102,7 @@ AS
 		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
+		- 20210122@Kos: Support betfrom '7' [Redmine: #149108]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -124,7 +125,7 @@ AS
 			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
 			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
 			- 14 - E-Sports App: 3 (E-Sports App), 6 (eGamer App)
-			- 88 - Others: v (Licensee Odds Feed)
+			- 88 - Others: v (Licensee Odds Feed), 7 (3rd Party Portal Service)
 
 	Sample call:
 		DECLARE @p17 INT
@@ -321,7 +322,8 @@ BEGIN
 	IF @PlatformType IN (0, 88)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'v'
+		SELECT 'v' UNION ALL
+		SELECT '7'
 	END
 
 	DECLARE @Data AS TABLE (
@@ -2624,10 +2626,4 @@ BEGIN
 	SELECT DISTINCT * FROM @BettransDetail
 	ORDER BY RefNo ASC, Bettype ASC
 END
-GO
-
-
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_PlatformWinLoss_Mem] TO [bodbLicenseeNet]
 GO

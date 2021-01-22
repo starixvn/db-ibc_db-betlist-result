@@ -55,7 +55,7 @@ AS
 			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
 			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
 			- 14 - E-Sports App: 3 (E-Sports App), 6 (eGamer App)
-			- 88 - Others: v (Licensee Odds Feed)
+			- 88 - Others: v (Licensee Odds Feed), 7 (3rd Party Portal Service)
 		- @LiveIndicator:
 			- 0 : Non-live
 			- 1 : Live
@@ -89,6 +89,7 @@ AS
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 		- 20201231@Kos: Support Virtual Games [Redmine: #147843]
 		- 20210108@Kos: Support Happy 5 Linked Games [Redmine: #147446]
+		- 20210122@Kos: Support betfrom '7' [Redmine: #149108]
 */
 
 BEGIN
@@ -345,7 +346,7 @@ BEGIN
 		END
 		ELSE IF @Platform = 88
 		BEGIN
-			SET @BetFromList = 'v'
+			SET @BetFromList = 'v,7'
 		END
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)

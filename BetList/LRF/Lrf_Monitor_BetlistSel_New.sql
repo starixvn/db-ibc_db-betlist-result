@@ -60,6 +60,7 @@ AS
 		- 20200619@Kos: Support 3 new eGamer betfrom [Redmine: #136107]
 		- 20201007@Kos: Support Time Machine Over/Under [Redmine: #136107]
 		- 20201207@Kos: Hotfix - Wrong currency code display [Redmine: #146691]
+		- 20210122@Kos: Support betfrom '7' [Redmine: #149108]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -88,7 +89,7 @@ AS
 			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
 			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
 			- 14 - E-Sports App: 3 (E-Sports App), 6 (eGamer App)
-			- 88 - Others: v (Licensee Odds Feed)
+			- 88 - Others: v (Licensee Odds Feed), 7 (3rd Party Portal Service)
 
 	Excecute sample :
 		[Lrf_Monitor_BetlistSel_New]
@@ -236,7 +237,7 @@ BEGIN
 		END
 		ELSE IF @BetFrom = 88
 		BEGIN
-			SET @BetFromList = 'v'
+			SET @BetFromList = 'v,7'
 		END
 
 		-- Check if @TransId and @TransId + 1 is combo ticket then reset @TransId
