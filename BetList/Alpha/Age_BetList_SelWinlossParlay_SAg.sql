@@ -1,4 +1,5 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossParlay_SAg]
 	@CustId			INT				= NULL,
 	@FromDate		SMALLDATETIME,
@@ -37,7 +38,7 @@ AS
 					- Change RefNo column data type from NVARCHAR(30) to BIGINT
 					- Don't return betstatus, matchcode, homeid, awayid, leagueid, matchid, sporttype anymore
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
-							
+		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
 */
 
 BEGIN
@@ -81,7 +82,8 @@ BEGIN
 		BetId			BIGINT,
 		ComStatus		NVARCHAR(20),
 		BetCheck		NVARCHAR(50),
-		TransDesc		NVARCHAR(1000)
+		TransDesc		NVARCHAR(1000),
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	DECLARE @TempFromDate DATETIME,
@@ -136,7 +138,8 @@ BEGIN
 			b.betid,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			ISNULL(b.transdesc, '') AS TransDesc
+			ISNULL(b.transdesc, '') AS TransDesc,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE
 			b.srecommend = @CustId
@@ -195,7 +198,8 @@ BEGIN
 			b.betid,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			ISNULL(b.transdesc, '') AS TransDesc
+			ISNULL(b.transdesc, '') AS TransDesc,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		WHERE
 			b.srecommend = @CustId
@@ -209,13 +213,4 @@ BEGIN
 	ORDER BY Status,
 		Transid
 END
-
-
-
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossParlay_SAg] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossParlay_SAg] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelWinlossParlay_SAg] TO [vnteam]
 GO

@@ -110,6 +110,7 @@ AS
 		- 20201222@Kos: Support Big Gaming [Redmine: #142455]
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210114@Razor: Support MaxGame [Redmine: #147568]
+		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -740,7 +741,7 @@ BEGIN
 									ELSE 0 END
 					,BetdaqId = -1
 					,ExtraInfo = CASE
-									WHEN c.Product IN ('SB', 'VS3') THEN ISNULL(b.ExtraInfo, '')
+									WHEN c.Product IN ('SB', 'VS3', 'Parlay') THEN ISNULL(b.ExtraInfo, '')
 									ELSE '' END
 					,Currency = b.currencyname
 				FROM @Tickets AS c
@@ -1291,7 +1292,7 @@ BEGIN
 									ELSE 0 END
 					,BetdaqId = -1
 					,ExtraInfo = CASE
-									WHEN c.Product IN ('SB', 'VS3') THEN ISNULL(b.ExtraInfo, '')
+									WHEN c.Product IN ('SB', 'VS3', 'Parlay') THEN ISNULL(b.ExtraInfo, '')
 									ELSE '' END	
 					,Currency = b.currencyname
 				FROM @Tickets AS c

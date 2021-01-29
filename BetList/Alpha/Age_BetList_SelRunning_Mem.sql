@@ -134,6 +134,7 @@ AS
 		- 20201222@Kos: Support Big Gaming [Redmine: #142455]
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210114@Razor: Support MaxGame [Redmine: #147568]
+		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
 */
 
 BEGIN
@@ -630,7 +631,7 @@ BEGIN
 				,ShowTime = ''
 				,TransDesc = ''
 				,OddsSpread = 0
-				,ExtraInfo = ''
+				,ExtraInfo = ISNULL(b.ExtraInfo, '')
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.bettype IN (9, 29)
 				AND b.matchid IN (9, 29)

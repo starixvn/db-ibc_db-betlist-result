@@ -72,6 +72,7 @@ AS
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 		- 20201127@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
+		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
 */
 
 BEGIN
@@ -872,7 +873,7 @@ BEGIN
 								END,
 					OddsSpread = 0,
 					ExtraInfo = CASE
-									WHEN b.ProductId IN (49) THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.ProductId IN (1, 49) THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END
 				FROM #PagingData AS b
@@ -1076,7 +1077,7 @@ BEGIN
 								END,
 					OddsSpread = 0,
 					ExtraInfo = CASE
-									WHEN b.ProductId IN (49) THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.ProductId IN (1, 49) THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END
 				FROM #PagingData AS b
