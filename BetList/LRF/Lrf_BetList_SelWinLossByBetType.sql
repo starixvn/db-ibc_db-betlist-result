@@ -56,6 +56,7 @@ AS
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
+		- 20210129@Kos: Hotfix - God Of Fortune [Redmine: #149607]
 */
 
 BEGIN
@@ -1485,7 +1486,7 @@ BEGIN
 		b.TransDate,
 		b.WinLostDate,
 		b.Stake * ISNULL(e.Rate, 1) AS Stake,
-		b.Actual_Stake,
+		b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
 		b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
 		b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
 		b.Comm * ISNULL(e.Rate, 1) AS Comm,
