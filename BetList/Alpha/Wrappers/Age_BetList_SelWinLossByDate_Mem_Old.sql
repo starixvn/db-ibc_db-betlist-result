@@ -120,6 +120,7 @@ AS
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210114@Razor: Support MaxGame [Redmine: #147568]
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
+		- 20210202@Kos: Support Saba Promotion [Redmine: #149952]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -335,7 +336,6 @@ BEGIN
 		UPDATE b
 		SET
 			Product = CASE
-						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.ProductID = 6 THEN 'OneRNG'	-- RNG Casino
 						WHEN s.ProductID = 8 THEN 'Keno'
 						WHEN s.ProductID = 12 THEN 'GD'		-- Gold Deluxe
@@ -343,11 +343,11 @@ BEGIN
 						WHEN s.ProductID = 22 THEN 'VB'		-- Macau Games
 						WHEN s.ProductID = 23 THEN 'NG2'
 						WHEN s.ProductID = 24 THEN 'FW'		-- Fishing World
-						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.ProductID = 28 THEN 'Lottery'
 						WHEN s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
 						WHEN s.ProductID = 34 THEN 'CC'		-- Card Club
 						WHEN s.ProductID = 36 THEN 'SG'		-- Spadegaming
+						WHEN s.ProductID = 37 THEN 'SPR'	-- Saba Promotion
 						WHEN s.ProductID = 38 THEN 'VRG'	-- Virtual Games
 						WHEN s.ProductID = 39 THEN 'SAG'	-- SA Gaming
 						WHEN s.ProductID = 40 THEN 'TG'		-- Table Games
@@ -364,6 +364,8 @@ BEGIN
 						WHEN s.ProductID = 57 THEN 'BG'		-- Big Gaming
 						WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
 						WHEN s.ProductID = 60 THEN 'MXG'	-- MaxGame
+						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
+						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 						WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
@@ -390,7 +392,8 @@ BEGIN
 							ELSE b.transid
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG') THEN b.matchid		-- ONERnG, Card Club, Spadegaming
+								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
+									'MXG', 'SPR') THEN b.matchid
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -526,7 +529,7 @@ BEGIN
 							END,
 				BetdaqId = -1,
 				ExtraInfo = CASE
-								WHEN b.Product IN ('SB', 'VS3', 'Parlay') THEN ISNULL(b.ExtraInfo, '')
+								WHEN b.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END
 			FROM @Data AS b

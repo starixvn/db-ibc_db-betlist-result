@@ -121,6 +121,7 @@ AS
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210114@Razor: Support MaxGame [Redmine: #147568]
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
+		- 20210202@Kos: Support Saba Promotion [Redmine: #149952]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -291,6 +292,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
 							WHEN s.ProductID = 34						THEN 'CC'	-- Card Club
 							WHEN s.ProductID = 36						THEN 'SG'	-- Spadegaming
+							WHEN s.ProductID = 37						THEN 'SPR'	-- Saba Promotion
 							WHEN s.ProductID = 38						THEN 'VRG'	-- Virtual Games
 							WHEN s.ProductID = 39						THEN 'SAG'	-- SA Gaming
 							WHEN s.ProductID = 40						THEN 'TG'	-- Table Games
@@ -306,7 +308,7 @@ BEGIN
 							WHEN s.ProductID = 56						THEN 'JK'	-- Joker
 							WHEN s.ProductID = 57						THEN 'BG'	-- Big Gaming
 							WHEN s.ProductID = 59						THEN 'GDG'	-- GDG
-							WHEN s.ProductID = 60                       THEN 'MXG'	-- MaxGame
+							WHEN s.ProductID = 60						THEN 'MXG'	-- MaxGame
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
@@ -418,7 +420,8 @@ BEGIN
 				,CustId = b.custid
 				,Username = b.username
 				,SportType = CASE
-								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG') THEN b.matchid	-- ONERnG, Card Club, Spadegaming
+								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
+									'MXG', 'SPR') THEN b.matchid
 								WHEN c.Product = 'Keno' THEN 202
 								WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe
 								WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -626,7 +629,7 @@ BEGIN
 								ELSE 0 END
 				,BetdaqId = -1
 				,ExtraInfo = CASE
-								WHEN c.Product IN ('SB', 'VS3', 'Parlay') THEN ISNULL(b.ExtraInfo, '')
+								WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 								ELSE '' END
 				,Currency = b.currencyname
 				,Product = c.Product
@@ -704,6 +707,7 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
 							WHEN s.ProductID = 34					THEN 'CC'		-- Card Club
 							WHEN s.ProductID = 36					THEN 'SG'		-- Spadegaming
+							WHEN s.ProductID = 37					THEN 'SPR'		-- Saba Promotion
 							WHEN s.ProductID = 38					THEN 'VRG'		-- Virtual Games
 							WHEN s.ProductID = 39					THEN 'SAG'		-- SA Gaming
 							WHEN s.ProductID = 40					THEN 'TG'		-- Table Games
@@ -719,7 +723,7 @@ BEGIN
 							WHEN s.ProductID = 56					THEN 'JK'		-- Joker
 							WHEN s.ProductID = 57					THEN 'BG'		-- Big Gaming
 							WHEN s.ProductID = 59					THEN 'GDG'		-- GDG
-							WHEN s.ProductID = 60                   THEN 'MXG'	    -- MaxGame
+							WHEN s.ProductID = 60					THEN 'MXG'		-- MaxGame
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
@@ -742,7 +746,8 @@ BEGIN
 				,CustId = b.custid
 				,Username = b.username
 				,SportType = CASE
-								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG') THEN b.matchid
+								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
+									'MXG', 'SPR') THEN b.matchid
 								WHEN c.Product = 'Keno' THEN 202
 								WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 								WHEN c.Product = 'AllBet' THEN 211 -- AllBet
@@ -909,7 +914,7 @@ BEGIN
 								ELSE 0 END
 				,BetdaqId = -1
 				,ExtraInfo = CASE
-								WHEN c.Product IN ('SB', 'VS3', 'Parlay') THEN ISNULL(b.ExtraInfo, '')
+								WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 								ELSE '' END
 				,Currency = b.currencyname
 				,Product = c.Product
@@ -1022,11 +1027,4 @@ BEGIN
 
 	DROP TABLE #MemBetTicket
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinLossByDate_Mem] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinLossByDate_Mem] TO [bodbDownlineNetView] AS [dbo]
 GO
