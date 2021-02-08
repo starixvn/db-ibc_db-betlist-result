@@ -12,6 +12,7 @@ AS
 	DB: DBOST.bodb_ost
 	Revision:
 		- 20200109@Kos: Created [Redmine: #121898]
+		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
 */
 
 BEGIN
@@ -70,14 +71,8 @@ BEGIN
 		AND b.statusID IN (0,1)
 		AND b.transid > @TransId
 		AND b.bettype NOT BETWEEN 801 AND 806
-		AND b.bettype NOT IN (1, 3, 7, 8)
+		AND b.bettype NOT IN (1, 3, 7, 8, 9604)
 		AND EXISTS (SELECT TOP 1 1 FROM __bettypeList AS s WHERE b.bettype = s.BetType)
 	ORDER BY b.transid DESC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Ost_LastBets_Other] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Ost_LastBets_Other] TO [bodbDownlineNetView]
 GO

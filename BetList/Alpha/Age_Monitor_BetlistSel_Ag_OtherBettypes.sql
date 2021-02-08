@@ -1,4 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes]
 	@CustId			INT,
@@ -9,7 +9,7 @@ AS
 /*
 	Created: Johnson@20110628
 	Task: Last Bets (exclude handicap and over/under bettypes)
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Revision:
 		- 20111122@Sophia: Add Checktime and SecAcceptFlag to show status waiting or running
 		- 20120827@Jamie: Add actual_stake for System Parlay Bet list
@@ -27,6 +27,7 @@ AS
 		- 20190107@Kos: Support Parlay Changes [#Redmine: 105585]
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
+		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
 
 	Parameter's Explanation:
 		- @CustId: agent ID
@@ -92,14 +93,8 @@ BEGIN
 		AND b.statusID IN (0,1)
 		AND b.transid > @TransId
 		AND b.bettype NOT BETWEEN 801 AND 806
-		AND b.bettype NOT IN (1, 3, 7, 8, 301, 302, 303, 304)
+		AND b.bettype NOT IN (1, 3, 7, 8, 301, 302, 303, 304, 9604)
 		AND EXISTS (SELECT TOP 1 1 FROM __bettypeList AS s WHERE b.bettype = s.BetType)
 	ORDER BY b.transid DESC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_OtherBettypes] TO [bodbDownlineNetView]
 GO

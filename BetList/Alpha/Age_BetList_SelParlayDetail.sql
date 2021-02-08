@@ -40,6 +40,7 @@ AS
 		- 20190926@Kos: Hotfix - duplicate data during Balance Up [Redmine: #120962]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20201028@Kos: Return transdate [Redmine: #144388]
+		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
 */
 
 BEGIN
@@ -132,10 +133,17 @@ BEGIN
 			b.bettype,
 			b.stake,
 			@CurrencyName AS Currency,
-			b.matchid,
-			m.GlobalShowTime AS EventDate,
+			CASE
+				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.matchid
+				ELSE m.matchid
+			END AS MatchId,
+			CASE
+				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.GlobalShowTime
+				ELSE m.GlobalShowTime
+			END AS EventDate,
 			CASE
 				WHEN sbt.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.showtime
 				ELSE m.showtime
 			END AS ShowTime,
 			m.homeid,
@@ -164,6 +172,10 @@ BEGIN
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN dbo.match AS pm WITH (NOLOCK)
+				ON pm.matchid = m.ParentID
+				AND m.sporttype = 50
+				AND m.ChildMatchType = 200
 		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
@@ -180,10 +192,17 @@ BEGIN
 			b.bettype,
 			b.stake,
 			@CurrencyName AS Currency,
-			b.matchid,
-			m.GlobalShowTime AS EventDate,
+			CASE
+				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pm14.matchid, pm.matchid)
+				ELSE m.matchid
+			END AS MatchId,
+			CASE
+				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pm14.GlobalShowTime, pm.GlobalShowTime)
+				ELSE m.GlobalShowTime
+			END AS EventDate,
 			CASE
 				WHEN sbt.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pm14.showtime, pm.showtime)
 				ELSE m.showtime
 			END AS ShowTime,
 			m.homeid,
@@ -211,6 +230,14 @@ BEGIN
 		FROM dbo.bettransm14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN dbo.match14 AS pm14 WITH (NOLOCK)
+				ON pm14.matchid = m.ParentID
+				AND m.sporttype = 50
+				AND m.ChildMatchType = 200
+			LEFT JOIN dbo.match AS pm WITH (NOLOCK)
+				ON pm.matchid = m.ParentID
+				AND m.sporttype = 50
+				AND m.ChildMatchType = 200
 		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
@@ -227,10 +254,17 @@ BEGIN
 			b.bettype,
 			b.stake,
 			@CurrencyName AS Currency,
-			b.matchid,
-			m.GlobalShowTime AS EventDate,
+			CASE
+				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pmbk.matchid, ISNULL(pm14.matchid, pm.matchid))
+				ELSE m.matchid
+			END AS MatchId,
+			CASE
+				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pmbk.GlobalShowTime, ISNULL(pm14.GlobalShowTime, pm.GlobalShowTime))
+				ELSE m.GlobalShowTime
+			END AS EventDate,
 			CASE
 				WHEN sbt.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pmbk.showtime, ISNULL(pm14.showtime, pm.showtime))
 				ELSE m.showtime
 			END AS ShowTime,
 			m.homeid,
@@ -258,6 +292,18 @@ BEGIN
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN DBARC.bodb_Archive.dbo.match_bk AS pmbk WITH (NOLOCK)
+				ON pmbk.matchid = m.ParentID
+				AND m.sporttype = 50
+				AND m.ChildMatchType = 200
+			LEFT JOIN dbo.match14 AS pm14 WITH (NOLOCK)
+				ON pm14.matchid = m.ParentID
+				AND m.sporttype = 50
+				AND m.ChildMatchType = 200
+			LEFT JOIN dbo.match AS pm WITH (NOLOCK)
+				ON pm.matchid = m.ParentID
+				AND m.sporttype = 50
+				AND m.ChildMatchType = 200
 		WHERE b.refno = @RefNo AND b.custID = @CustId
 	END
 

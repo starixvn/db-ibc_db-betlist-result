@@ -5,6 +5,9 @@ ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossByBettypeMatch]
 	@CustId			INT			= NULL,
 	@Username		VARCHAR(50)	= NULL,
 	@RoleId			TINYINT,
+	@FromDate		SMALLDATETIME,
+	@ToDate			SMALLDATETIME,
+	@MoveBetsDay	SMALLDATETIME,
 	@BetType		SMALLINT,
 	@LiveIndicator	BIT			= 0
 AS
@@ -21,6 +24,8 @@ AS
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20200214@Kos: Fix performance issue with f_GroupBettype func [Redmine: #128448]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
+					- Add new input params @FromDate SMALLDATETIME, @ToDate SMALLDATETIME, @MoveBetsDay SMALLDATETIME
 */
 
 BEGIN
@@ -51,19 +56,55 @@ BEGIN
 			OR EXISTS (SELECT 1 FROM @GroupBetType AS f WHERE f.GroupTypeId = @BetType AND f.BetType = s.BetType))
 
 	DECLARE @IsBet14	BIT = 0,
-		@EventDate		DATETIME
+		@EventDate		DATETIME,
+		@SportType		SMALLINT,
+		@ChildMatchType TINYINT,
+		@ParentId		INT
 
-	SELECT @EventDate = eventdate
+	SELECT
+		@EventDate = eventdate,
+		@SportType = sporttype,
+		@ParentId = ParentID
 	FROM dbo.match WITH (NOLOCK)
-	WHERE matchid = @MatchId
+	WHERE matchid = @MatchId AND eventdate > @MoveBetsDay
 
 	IF @EventDate IS NULL
 	BEGIN
 		SET @IsBet14 = 1
 
-		SELECT @EventDate = eventdate
+		SELECT
+			@EventDate = eventdate,
+			@SportType = sporttype,
+			@ParentId = ParentID
 		FROM dbo.match14 WITH (NOLOCK)
 		WHERE matchid = @MatchId
+	END
+
+	DECLARE @Match TABLE(MatchId INT, EventDate DATETIME)
+
+	IF @SportType = 50 AND @ParentId IS NULL	-- Cricket, parent match
+	BEGIN
+		INSERT INTO @Match
+		SELECT DISTINCT
+			MatchId,
+			EventDate
+		FROM dbo.match WITH (NOLOCK)
+		WHERE ParentID = @MatchId
+			AND sporttype = @SportType
+			AND eventdate BETWEEN @FromDate AND @ToDate
+			AND ChildMatchType = 200
+		UNION
+		SELECT DISTINCT
+			MatchId,
+			EventDate
+		FROM dbo.match14 WITH (NOLOCK)
+		WHERE ParentID = @MatchId
+			AND sporttype = @SportType
+			AND eventdate BETWEEN @FromDate AND @ToDate
+			AND ChildMatchType = 200
+
+		INSERT INTO @Match
+		SELECT @MatchId, @EventDate
 	END
 
 	IF @CustId IS NULL
@@ -73,77 +114,212 @@ BEGIN
 		WHERE username = @Username
 	END
 
+	DECLARE @Data TABLE (
+		TransId				BIGINT,
+		RefNo				BIGINT,
+		CustId				INT,
+		Username			NVARCHAR(50),
+		SportType			SMALLINT,
+		BetType				SMALLINT,
+		BetId				BIGINT,
+		BetTeam				NVARCHAR(20),
+		Hdp1				SMALLMONEY,
+		Hdp2				SMALLMONEY,
+		OddsType			TINYINT,
+		OddsId				INT,
+		Odds				MONEY,
+		MOdds				MONEY,
+		Stake				MONEY,
+		Actual_Stake		MONEY,
+		Status				NVARCHAR(10),
+		SettlementStatus	TINYINT,
+		TransDate			DATETIME,
+		WinLostDate			SMALLDATETIME,
+		WinLost				MONEY,
+		AWinLost			MONEY,
+		MWinLost			MONEY,
+		SWinLost			MONEY,
+		PlayerComm			MONEY,
+		Comm				MONEY,
+		AComm				MONEY,
+		SComm				MONEY,
+		APositionTaking		SMALLMONEY,
+		MPositionTaking		SMALLMONEY,
+		SPositionTaking		SMALLMONEY,
+		TPositionTaking		SMALLMONEY,
+		ADiscount			SMALLMONEY,
+		MDiscount			SMALLMONEY,
+		SDiscount			SMALLMONEY,
+		LiveIndicator		BIT,
+		LiveHomeScore		SMALLINT,
+		LiveAwayScore		SMALLINT,
+		FinalHomeScore		SMALLINT,
+		FinalAwayScore		SMALLINT,
+		HtHomeScore			SMALLINT,
+		HtAwayScore			SMALLINT,
+		Ip					NVARCHAR(15),
+		LeagueId			INT,
+		MatchId				INT,
+		MatchCode			NVARCHAR(50),
+		EventDate			DATETIME,
+		HomeId				INT,
+		AwayId				INT,
+		BetStatus			NVARCHAR(50),
+		IsNeutral			BIT,
+		ShowTime			NVARCHAR(50),
+		BetCheck			NVARCHAR(50),
+		ComStatus			NVARCHAR(20),
+		TransDesc			NVARCHAR(1000),
+		OddsSpread			MONEY,
+		Currency			NVARCHAR(50),
+		ExtraInfo			VARCHAR(1000)
+	);
+
 	DECLARE @Tickets TABLE (
 		TransId	BIGINT,
 		Product	VARCHAR(30)
 	)
 
-	IF @IsBet14 = 0		-- bettrans range
+	DECLARE @FDate	SMALLDATETIME,
+		@TDate		SMALLDATETIME
+
+	-- bettrans range
+	IF @IsBet14 = 0
+		OR (@SportType = 50
+			AND @ParentId IS NULL
+			AND @ToDate > @MoveBetsDay)		-- Cricket main match
 	BEGIN
-		IF @RoleId = 2		-- Agent
+		IF @SportType = 50 AND @ParentId IS NULL	-- Cricket main match
 		BEGIN
-			INSERT INTO @Tickets (
-				TransId,
-				Product)
-			SELECT
-				b.transid,
-				CASE
-					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
-					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					ELSE 'Unknown'
-				END AS Product
-			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
-			WHERE b.recommend = @CustId
-				AND b.winlostdate = @EventDate
-				AND b.matchid = @MatchId
-				AND b.statusID NOT IN (0, 1)
-		END
+			SET @FDate = CASE
+							WHEN @FromDate <= @MoveBetsDay THEN DATEADD(DAY, 1, @MoveBetsDay)
+							ELSE @FromDate
+						END
 
-		IF @RoleId = 3		-- Master
-		BEGIN
-			INSERT INTO @Tickets (
-				TransId,
-				Product)
-			SELECT
-				b.transid,
-				CASE
-					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
-					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					ELSE 'Unknown'
-				END AS Product
-			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_MRecommend)
-				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
-			WHERE b.mrecommend = @CustId
-				AND b.winlostdate = @EventDate
-				AND b.matchid = @MatchId
-				AND b.statusID NOT IN (0, 1)
-		END
+			IF @RoleId = 2		-- Agent
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						ELSE 'Unknown'
+					END AS Product
+				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+					INNER JOIN @Match AS m ON m.matchid = b.matchid
+				WHERE b.recommend = @CustId
+					AND b.winlostdate BETWEEN @FDate AND @ToDate
+					AND b.statusID NOT IN (0, 1)
+			END
 
-		IF @RoleId = 4		-- Super
+			IF @RoleId = 3		-- Master
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						ELSE 'Unknown'
+					END AS Product
+				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_MRecommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+					INNER JOIN @Match AS m ON m.matchid = b.matchid
+				WHERE b.mrecommend = @CustId
+					AND b.winlostdate BETWEEN @FDate AND @ToDate
+					AND b.statusID NOT IN (0, 1)
+			END
+
+			IF @RoleId = 4		-- Super
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						ELSE 'Unknown'
+					END AS Product
+				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_SRecommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+					INNER JOIN @Match AS m ON m.matchid = b.matchid
+				WHERE b.srecommend = @CustId
+					AND b.winlostdate BETWEEN @FDate AND @ToDate
+					AND b.statusID NOT IN (0, 1)
+			END
+		END
+		ELSE	-- Others
 		BEGIN
-			INSERT INTO @Tickets (
-				TransId,
-				Product)
-			SELECT
-				b.transid,
-				CASE
-					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
-					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					ELSE 'Unknown'
-				END AS Product
-			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_SRecommend)
-				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
-			WHERE b.srecommend = @CustId
-				AND b.winlostdate = @EventDate
-				AND b.matchid = @MatchId
-				AND b.statusID NOT IN (0, 1)
+			IF @RoleId = 2		-- Agent
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
+						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
+						ELSE 'Unknown'
+					END AS Product
+				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+				WHERE b.recommend = @CustId
+					AND b.winlostdate = @EventDate
+					AND b.matchid = @MatchId
+					AND b.statusID NOT IN (0, 1)
+			END
+
+			IF @RoleId = 3		-- Master
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
+						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
+						ELSE 'Unknown'
+					END AS Product
+				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_MRecommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+				WHERE b.mrecommend = @CustId
+					AND b.winlostdate = @EventDate
+					AND b.matchid = @MatchId
+					AND b.statusID NOT IN (0, 1)
+			END
+
+			IF @RoleId = 4		-- Super
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
+						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
+						ELSE 'Unknown'
+					END AS Product
+				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_SRecommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+				WHERE b.srecommend = @CustId
+					AND b.winlostdate = @EventDate
+					AND b.matchid = @MatchId
+					AND b.statusID NOT IN (0, 1)
+			END
 		END
 
 		IF @LiveIndicator IS NOT NULL
@@ -155,6 +331,65 @@ BEGIN
 			WHERE c.Product = 'NG' AND b.liveindicator <> @LiveIndicator
 		END
 
+		INSERT INTO @Data (
+			TransId,
+			RefNo,
+			CustId,
+			Username,
+			SportType,
+			BetType,
+			BetId,
+			BetTeam,
+			Hdp1,
+			Hdp2,
+			OddsType,
+			OddsId,
+			Odds,
+			MOdds,
+			Stake,
+			Actual_Stake,
+			Status,
+			SettlementStatus,
+			TransDate,
+			WinLostDate,
+			WinLost,
+			AWinLost,
+			MWinLost,
+			SWinLost,
+			PlayerComm,
+			Comm,
+			AComm,
+			SComm,
+			APositionTaking,
+			MPositionTaking,
+			SPositionTaking,
+			TPositionTaking,
+			ADiscount,
+			MDiscount,
+			SDiscount,
+			LiveIndicator,
+			LiveHomeScore,
+			LiveAwayScore,
+			FinalHomeScore,
+			FinalAwayScore,
+			HtHomeScore,
+			HtAwayScore,
+			Ip,
+			LeagueId,
+			MatchId,
+			MatchCode,
+			EventDate,
+			HomeId,
+			AwayId,
+			BetStatus,
+			IsNeutral,
+			ShowTime,
+			BetCheck,
+			ComStatus,
+			TransDesc,
+			OddsSpread,
+			Currency,
+			ExtraInfo )
 		SELECT
 			b.transid,
 			b.refno,
@@ -287,72 +522,144 @@ BEGIN
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 		ORDER BY c.TransId DESC
 	END
-	ELSE	-- bettrans14 range
+
+	-- bettrans14 range
+	IF @IsBet14 = 1
+		OR (@SportType = 50
+			AND @ParentId IS NULL
+			AND @ToDate <= @MoveBetsDay)		-- Cricket main match
 	BEGIN
-		IF @RoleId = 2		-- Agent
+		IF @SportType = 50 AND @ParentId IS NULL	-- Cricket main match
 		BEGIN
-			INSERT INTO @Tickets (
-				TransId,
-				Product)
-			SELECT
-				b.transid,
-				CASE
-					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
-					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					ELSE 'Unknown'
-				END
-			FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
-				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
-			WHERE b.recommend = @CustId
-				AND b.winlostdate = @EventDate
-				AND b.matchid = @MatchId
-				AND b.statusID NOT IN (0, 1)
-		END
+			SET @TDate = CASE
+							WHEN @ToDate >= @MoveBetsDay THEN @MoveBetsDay
+							ELSE @ToDate
+						END
 
-		IF @RoleId = 3		-- Master
-		BEGIN
-			INSERT INTO @Tickets (
-				TransId,
-				Product)
-			SELECT
-				b.transid,
-				CASE
-					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
-					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					ELSE 'Unknown'
-				END
-			FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_MRecommend)
-				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
-			WHERE b.mrecommend = @CustId
-				AND b.winlostdate = @EventDate
-				AND b.matchid = @MatchId
-				AND b.statusID NOT IN (0, 1)
-		END
+			IF @RoleId = 2		-- Agent
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						ELSE 'Unknown'
+					END
+				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+					INNER JOIN @Match AS m ON m.matchid = b.matchid
+				WHERE b.recommend = @CustId
+					AND b.winlostdate BETWEEN @FromDate AND @TDate
+					AND b.statusID NOT IN (0, 1)
+			END
 
-		IF @RoleId = 4		-- Super
+			IF @RoleId = 3		-- Master
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						ELSE 'Unknown'
+					END
+				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_MRecommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+					INNER JOIN @Match AS m ON m.matchid = b.matchid
+				WHERE b.mrecommend = @CustId
+					AND b.winlostdate BETWEEN @FromDate AND @TDate
+					AND b.statusID NOT IN (0, 1)
+			END
+
+			IF @RoleId = 4		-- Super
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						ELSE 'Unknown'
+					END
+				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_SRecommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+					INNER JOIN @Match AS m ON m.matchid = b.matchid
+				WHERE b.srecommend = @CustId
+					AND b.winlostdate BETWEEN @FromDate AND @TDate
+					AND b.statusID NOT IN (0, 1)
+			END
+		END
+		ELSE
 		BEGIN
-			INSERT INTO @Tickets (
-				TransId,
-				Product)
-			SELECT
-				b.transid,
-				CASE
-					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
-					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
-					ELSE 'Unknown'
-				END
-			FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_SRecommend)
-				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
-			WHERE b.srecommend = @CustId
-				AND b.winlostdate = @EventDate
-				AND b.matchid = @MatchId
-				AND b.statusID NOT IN (0, 1)
+			IF @RoleId = 2		-- Agent
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
+						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
+						ELSE 'Unknown'
+					END
+				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+				WHERE b.recommend = @CustId
+					AND b.winlostdate = @EventDate
+					AND b.matchid = @MatchId
+					AND b.statusID NOT IN (0, 1)
+			END
+
+			IF @RoleId = 3		-- Master
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
+						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
+						ELSE 'Unknown'
+					END
+				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_MRecommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+				WHERE b.mrecommend = @CustId
+					AND b.winlostdate = @EventDate
+					AND b.matchid = @MatchId
+					AND b.statusID NOT IN (0, 1)
+			END
+
+			IF @RoleId = 4		-- Super
+			BEGIN
+				INSERT INTO @Tickets (
+					TransId,
+					Product)
+				SELECT
+					b.transid,
+					CASE
+						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
+						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'		-- Virtual Sports:: sportsbook
+						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
+						ELSE 'Unknown'
+					END
+				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_SRecommend)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
+				WHERE b.srecommend = @CustId
+					AND b.winlostdate = @EventDate
+					AND b.matchid = @MatchId
+					AND b.statusID NOT IN (0, 1)
+			END
 		END
 
 		IF @LiveIndicator IS NOT NULL
@@ -364,6 +671,65 @@ BEGIN
 			WHERE c.Product = 'NG' AND b.liveindicator <> @LiveIndicator
 		END
 
+		INSERT INTO @Data (
+			TransId,
+			RefNo,
+			CustId,
+			Username,
+			SportType,
+			BetType,
+			BetId,
+			BetTeam,
+			Hdp1,
+			Hdp2,
+			OddsType,
+			OddsId,
+			Odds,
+			MOdds,
+			Stake,
+			Actual_Stake,
+			Status,
+			SettlementStatus,
+			TransDate,
+			WinLostDate,
+			WinLost,
+			AWinLost,
+			MWinLost,
+			SWinLost,
+			PlayerComm,
+			Comm,
+			AComm,
+			SComm,
+			APositionTaking,
+			MPositionTaking,
+			SPositionTaking,
+			TPositionTaking,
+			ADiscount,
+			MDiscount,
+			SDiscount,
+			LiveIndicator,
+			LiveHomeScore,
+			LiveAwayScore,
+			FinalHomeScore,
+			FinalAwayScore,
+			HtHomeScore,
+			HtAwayScore,
+			Ip,
+			LeagueId,
+			MatchId,
+			MatchCode,
+			EventDate,
+			HomeId,
+			AwayId,
+			BetStatus,
+			IsNeutral,
+			ShowTime,
+			BetCheck,
+			ComStatus,
+			TransDesc,
+			OddsSpread,
+			Currency,
+			ExtraInfo )
 		SELECT
 			b.transid,
 			b.refno,
@@ -510,12 +876,7 @@ BEGIN
 		TransDesc		VARCHAR(300)
 	)
 
+	SELECT * FROM @Data
 	SELECT * FROM @BettransDetail
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossByBettypeMatch] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossByBettypeMatch] TO [bodbDownlineNetView]
 GO

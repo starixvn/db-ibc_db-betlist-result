@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_Monitor_BetlistSel_Ag_AllBettypes]
 	@CustId			INT,
@@ -9,7 +9,7 @@ AS
 /*
 	Created: Johnson@20110628
 	Task: Last Bets
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Revision:
 		- 20111122@Sophia: Add Checktime and SecAcceptFlag to show status waiting or running
 		- 20120827@Jamie: Add actual_stake for System Parlay Bet list
@@ -96,10 +96,4 @@ BEGIN
 		AND EXISTS (SELECT TOP 1 1 FROM __bettypeList AS s WHERE b.bettype = s.Bettype)
 	ORDER BY b.transid DESC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_AllBettypes] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_AllBettypes] TO [bodbDownlineNetView] AS [dbo]
 GO

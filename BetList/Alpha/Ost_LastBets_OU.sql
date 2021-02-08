@@ -12,6 +12,7 @@ AS
 	DB: DBOST.bodb_ost
 	Revision:
 		- 20200109@Kos: Created [Redmine: #121898]
+		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
 */
 
 BEGIN
@@ -45,13 +46,7 @@ BEGIN
 	WHERE b.recommend = @CustId
 		AND b.statusID IN (0, 1)
 		AND b.transid > @TransId
-		AND b.bettype IN (3, 8)
+		AND b.bettype IN (3, 8, 9604)
 	ORDER BY b.transid DESC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Ost_LastBets_OU] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Ost_LastBets_OU] TO [bodbDownlineNetView]
 GO

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_Monitor_BetlistSel_Ag_OU]
 	@CustId			INT,
@@ -8,8 +8,8 @@ AS
 
 /*
 	Created: Johnson@20110628
-	Task: Last Bets (over/under bettypes)
-	DB: DB042.bodb02
+	Task: Last Bets (Over/Under bettypes)
+	DB: DBBOF.bodb02
 	Revision:
 		- 20111122@Sophia: Add Checktime and SecAcceptFlag to show status waiting or running
 		- 20150826@Kos: Add column OddsSpread to support Myanmar Odds
@@ -18,10 +18,11 @@ AS
 		- 20181218@Kos: Support E-Sports phase 2b [#Redmine: 106456]
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
-	
+		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
+
 	Parameter's Explanation:
 		- @CustId : agent's ID
-		- @TransId: lastest transid
+		- @TransId: latest transid
 		- @LimitRowCount: max record return
 */
 
@@ -57,13 +58,7 @@ BEGIN
 	WHERE b.recommend = @CustId
 		AND b.statusID IN (0, 1)
 		AND b.transid > @TransId
-		AND b.bettype IN (3, 8, 302, 304)
+		AND b.bettype IN (3, 8, 302, 304, 9604)
 	ORDER BY b.transid DESC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_OU] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_OU] TO [bodbDownlineNetView]
 GO

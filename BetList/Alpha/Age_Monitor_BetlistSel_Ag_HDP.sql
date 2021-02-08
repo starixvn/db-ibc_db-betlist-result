@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_Monitor_BetlistSel_Ag_HDP]
 	@CustId			INT,
@@ -9,7 +9,7 @@ AS
 /*
 	Created: Johnson@20110628
 	Task: Last Bets (handicap bettypes)
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Revision:
 		- 20111122@Sophia: Add Checktime and SecAcceptFlag to show status waiting or running
 		- 20150826@Kos: Add column OddsSpread to support Myanmar Odds
@@ -60,10 +60,4 @@ BEGIN
 		AND b.bettype IN (1, 7, 301, 303)
 	ORDER BY b.transid DESC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_HDP] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_Monitor_BetlistSel_Ag_HDP] TO [bodbDownlineNetView]
 GO
