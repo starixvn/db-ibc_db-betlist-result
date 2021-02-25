@@ -38,6 +38,7 @@ AS
 		- 20191014@Kos: Support Badminton AIO phase 2 [Redmine: #120381]
 		- 20191223@Kos: Support PH AIO phase 5 [Redmine: #124455]
 		- 20200507@Kos: Support E-Sports phase 3 [Redmine: #132386]
+		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 */
 
 BEGIN
@@ -83,12 +84,22 @@ BEGIN
 
 	DECLARE @tmpResultDetail AS TABLE (
 		MatchId				INT,
+		BetType				SMALLINT,
 		ResourceId			VARCHAR(20),
 		HomeValue			VARCHAR(20),
 		AwayValue			VARCHAR(20),
-		ResultStatusID		TINYINT,
-		SettlementStatusID	TINYINT,
+		ResultStatusId		TINYINT,
+		SettlementStatusId	TINYINT,
 		OtherInfo			VARCHAR(50)
+	)
+	
+	DECLARE @SubTicket AS TABLE (
+		MatchId			INT,
+		SportType		SMALLINT,
+		ChildMatchType	TINYINT,
+		ParentId		INT,
+		BetType			SMALLINT,
+		BetCheck		NVARCHAR(50)
 	)
 
 	-- Bettrans range
@@ -96,6 +107,72 @@ BEGIN
 				FROM dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo)
+	BEGIN
+		INSERT INTO @SubTicket
+		SELECT
+			bm.matchid,
+			m.sporttype,
+			m.ChildMatchType,
+			m.ParentID,
+			bm.bettype,
+			bm.betcheck
+		FROM dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = bm.bettype
+			INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = bm.matchid
+		WHERE bm.refno = @RefNo
+	END
+
+	-- Bettrans14 range
+	IF EXISTS (	SELECT 1
+				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+				WHERE bm.refno = @RefNo)
+	BEGIN
+		INSERT INTO @SubTicket
+		SELECT
+			bm.matchid,
+			m.sporttype,
+			m.ChildMatchType,
+			m.ParentID,
+			bm.bettype,
+			bm.betcheck
+		FROM dbo.bettransm14 AS bm WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = bm.bettype
+			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = bm.matchid
+		WHERE bm.refno = @RefNo
+			AND NOT EXISTS (SELECT 1 FROM @SubTicket WHERE matchid = bm.matchid )
+	END
+
+	-- Bettrans_bk range
+	IF EXISTS (	SELECT 1
+				FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
+				WHERE bm.refno = @RefNo)
+	BEGIN
+		INSERT INTO @SubTicket
+		SELECT
+			bm.matchid,
+			m.sporttype,
+			m.ChildMatchType,
+			m.ParentID,
+			bm.bettype,
+			bm.betcheck
+		FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = bm.bettype
+			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = bm.matchid
+		WHERE bm.refno = @RefNo
+			AND NOT EXISTS (SELECT 1 FROM @SubTicket WHERE matchid = bm.matchid )
+	END
+
+	-- Switch to use parent match for Cricket child match (ChildMatchType = 200)
+	UPDATE @SubTicket
+	SET MatchId = ParentId
+	WHERE SportType = 50 AND ChildMatchType = 200
+
+	-- Bettrans range
+	IF EXISTS (	SELECT 1
+				FROM @SubTicket AS bm
+					INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = bm.MatchId)
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -112,7 +189,7 @@ BEGIN
 			m.eventdate,
 			m.IsNeutral,
 			m.betstatus,
-			CASE m.Sporttype
+			CASE m.sporttype
 				WHEN 5 THEN
 					CASE ISNULL(d.SettlementStatusID, 0)
 						WHEN 1 THEN 'Refund'
@@ -124,7 +201,7 @@ BEGIN
 			END AS eventstatus,
 			ISNULL(mr.refund, 0) AS IsRefund,
 			ISNULL(mr.calrefund, 0) AS IsCalRefund,
-			m.goalrecord,
+			m.GoalRecord,
 			m.matchcode,
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
@@ -132,14 +209,7 @@ BEGIN
 			bm.bettype,
 			bm.betcheck
 		FROM
-			(
-				SELECT
-					bm.matchid,
-					bm.bettype,
-					bm.betcheck
-				FROM dbo.bettransm AS bm WITH (NOLOCK)
-					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo ) AS bm
+			@SubTicket AS bm
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceID = '00'
@@ -150,6 +220,7 @@ BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.HomeValue,
 				d.AwayValue,
@@ -190,11 +261,12 @@ BEGIN
 								OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
-		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 9)
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (9, 50))
 		BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.HomeValue,
 				d.AwayValue,
@@ -205,11 +277,16 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType = 9		-- Badminton
-				AND (LEN(d.ResourceID) IN (2, 4)
+			WHERE p.SportType IN (9, 50)		-- Badminton, Cricket
+				AND (LEN(d.ResourceID) = 2
+					OR (LEN(d.ResourceID) = 4 AND p.SportType = 9)
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+						AND 1 = CASE
+									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 0
+									WHEN d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) THEN 1
+									ELSE 0
+								END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
@@ -217,6 +294,7 @@ BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.HomeValue,
 				d.AwayValue,
@@ -239,6 +317,7 @@ BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.Custom1 AS HomeValue,
 				d.Custom2 AS AwayValue,
@@ -258,11 +337,9 @@ BEGIN
 		END
 	END
 
-	-- Bettrans14 range
 	IF EXISTS (	SELECT 1
-				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo)
+				FROM @SubTicket AS bm
+					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = bm.MatchId)
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -299,14 +376,7 @@ BEGIN
 			bm.bettype,
 			bm.betcheck
 		FROM
-			(
-				SELECT
-					bm.matchid,
-					bm.bettype,
-					bm.betcheck
-				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo ) AS bm
+			@SubTicket AS bm
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
@@ -316,6 +386,7 @@ BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.HomeValue,
 				d.AwayValue,
@@ -356,11 +427,12 @@ BEGIN
 								OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
-		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 9)
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (9, 50))
 		BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.HomeValue,
 				d.AwayValue,
@@ -371,11 +443,16 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType = 9		-- Badminton
-				AND (LEN(d.ResourceID) IN (2, 4)
+			WHERE p.SportType IN (9, 50)		-- Badminton, Cricket
+				AND (LEN(d.ResourceID) = 2
+					OR (LEN(d.ResourceID) = 4 AND p.SportType = 9)
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+						AND 1 = CASE
+									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 0
+									WHEN d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) THEN 1
+									ELSE 0
+								END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
@@ -383,6 +460,7 @@ BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.HomeValue,
 				d.AwayValue,
@@ -405,6 +483,7 @@ BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.Custom1 AS HomeValue,
 				d.Custom2 AS AwayValue,
@@ -426,9 +505,8 @@ BEGIN
 
 	-- Bettrans_bk range
 	IF EXISTS (	SELECT 1
-				FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
-					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo)
+				FROM @SubTicket AS bm
+					INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = bm.MatchId)
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -468,14 +546,7 @@ BEGIN
 			bm.Bettype,
 			bm.Betcheck
 		FROM
-			(
-				SELECT
-					bm.matchId,
-					bm.bettype,
-					bm.betcheck
-				FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
-					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-				WHERE bm.refno = @RefNo ) bm
+			@SubTicket AS bm
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
@@ -485,6 +556,7 @@ BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.HomeValue,
 				d.AwayValue,
@@ -525,11 +597,12 @@ BEGIN
 								OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
-		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 9)
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (9, 50))
 		BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.HomeValue,
 				d.AwayValue,
@@ -540,11 +613,16 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType = 9		-- Badminton
-				AND (LEN(d.ResourceID) IN (2, 4)
+			WHERE p.SportType IN (9, 50)		-- Badminton, Cricket
+				AND (LEN(d.ResourceID) = 2
+					OR (LEN(d.ResourceID) = 4 AND p.SportType = 9)
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+						AND 1 = CASE
+									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 0
+									WHEN d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) THEN 1
+									ELSE 0
+								END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
@@ -552,6 +630,7 @@ BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.HomeValue,
 				d.AwayValue,
@@ -574,6 +653,7 @@ BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
 				d.MatchId,
+				p.BetType,
 				d.ResourceId,
 				d.Custom1 AS HomeValue,
 				d.Custom2 AS AwayValue,
@@ -605,13 +685,4 @@ BEGIN
 	ORDER BY MatchId ASC,
 		ResourceId ASC
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultParlay] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultParlay] TO [bodbDownlineNetView]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultParlay] TO [bodbAdminNet]
 GO
