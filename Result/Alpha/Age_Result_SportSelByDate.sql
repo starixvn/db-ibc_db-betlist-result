@@ -39,6 +39,7 @@ AS
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
+		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 */
 
 BEGIN
@@ -60,6 +61,7 @@ BEGIN
 					FROM dbo.match AS m WITH (NOLOCK)
 					WHERE m.EventDate = @MatchDate
 						AND m.sporttype NOT IN (201, 162)
+						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 						AND (
 								m.eventstatus NOT IN ('closed', 'running')
 								OR EXISTS (	SELECT 1
@@ -108,7 +110,9 @@ BEGIN
 											FROM dbo.ResultDetailOS AS o WITH (NOLOCK)
 											WHERE o.SettlementStatusID > 0
 												AND m.matchid = o.MatchId
-												AND m.sporttype = 9		-- Badminton
+												AND (m.sporttype = 9		-- Badminton
+													OR (m.sporttype = 50	-- Cricket
+														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											)
 								OR EXISTS (	SELECT 1
@@ -161,6 +165,7 @@ BEGIN
 					FROM dbo.match14 AS m WITH (NOLOCK)
 					WHERE m.EventDate = @MatchDate
 						AND m.sporttype NOT IN (201, 162)
+						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 						AND (
 							m.eventstatus NOT IN ('closed', 'running')
 							OR EXISTS (	SELECT 1
@@ -209,7 +214,9 @@ BEGIN
 											FROM dbo.ResultDetailOS14 AS o WITH (NOLOCK)
 											WHERE o.SettlementStatusID > 0
 												AND m.matchid = o.MatchId
-												AND m.sporttype = 9		-- Badminton
+												AND (m.sporttype = 9		-- Badminton
+													OR (m.sporttype = 50	-- Cricket
+														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											)
 							OR EXISTS (	SELECT 1

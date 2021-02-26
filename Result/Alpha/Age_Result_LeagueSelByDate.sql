@@ -43,6 +43,7 @@ AS
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
+		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 */
 
 BEGIN
@@ -64,10 +65,10 @@ BEGIN
 		FROM dbo.League AS l WITH (NOLOCK)
 			INNER JOIN
 			(
-				SELECT matchid, leagueid, eventdate, eventstatus, sporttype
+				SELECT matchid, leagueid, eventdate, eventstatus, sporttype, ChildMatchType
 				FROM dbo.match WITH (NOLOCK)
 				UNION ALL
-				SELECT matchid, leagueid, eventdate, eventstatus, sporttype
+				SELECT matchid, leagueid, eventdate, eventstatus, sporttype, ChildMatchType
 				FROM dbo.match14 WITH (NOLOCK)
 			) AS m ON m.leagueid = l.leagueid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
@@ -138,11 +139,17 @@ BEGIN
 			LEFT JOIN
 				(	SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
-					WHERE SettlementStatusID > 0 AND @SportType = 9
+					WHERE SettlementStatusID > 0
+						AND (@SportType = 9
+							OR (@SportType = 50
+								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
 					UNION ALL
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
-					WHERE SettlementStatusID > 0 AND @SportType = 9
+					WHERE SettlementStatusID > 0
+						AND (@SportType = 9
+							OR (@SportType = 50
+								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
 				) AS o ON o.MatchID = m.matchid
 		WHERE
 			m.eventdate >= @EventDate
@@ -154,6 +161,7 @@ BEGIN
 				OR (ISNULL(e.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 				OR (ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 			AND m.sporttype NOT IN (201, 162)
+			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 		ORDER BY m.sporttype ASC,
@@ -228,11 +236,4 @@ BEGIN
 			l.leaguename ASC
 	END
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Age_Result_LeagueSelByDate] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_Result_LeagueSelByDate] TO [bodbDownlineNetView] AS [dbo]
 GO

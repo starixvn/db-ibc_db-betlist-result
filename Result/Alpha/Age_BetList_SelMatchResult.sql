@@ -51,6 +51,7 @@ AS
 		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20191223@Kos: Support PH AIO phase 5 [Redmine: #124455]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
+		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 */
 
 BEGIN
@@ -66,11 +67,45 @@ BEGIN
 		OtherInfo			VARCHAR(50))
 
 	DECLARE @ResourceId	VARCHAR(20),
-		@SportType		SMALLINT
+		@SportType		SMALLINT,
+		@ChildMatchType	TINYINT,
+		@ParentId		INT
 
 	-- Get result detail of bet type 221 in case of 225
 	IF @BetType = 225
 		SET @BetType = 221
+
+	-- Get sport type, child match type
+	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)
+	BEGIN
+		SELECT @SportType = sporttype,
+			@ParentId = ParentID,
+			@ChildMatchType = ChildMatchType
+		FROM dbo.match WITH (NOLOCK)
+		WHERE matchid = @MatchId
+	END
+	ELSE IF EXISTS (SELECT 1 FROM dbo.match14 WITH (NOLOCK) WHERE matchid = @MatchId)
+	BEGIN
+		SELECT @SportType = sporttype,
+			@ParentId = ParentID,
+			@ChildMatchType = ChildMatchType
+		FROM dbo.match14 WITH (NOLOCK)
+		WHERE matchid = @MatchId
+	END
+	ELSE
+	BEGIN
+		SELECT @SportType = sporttype,
+			@ParentId = ParentID,
+			@ChildMatchType = ChildMatchType
+		FROM DBARC.bodb_Archive.dbo.match_bk WITH (NOLOCK)
+		WHERE matchid = @MatchId
+	END
+
+	-- Switch to use parent match for Cricket child match (ChildMatchType = 200)
+	SET @MatchId = CASE
+						WHEN @SportType = 50 AND @ChildMatchType = 200 THEN @ParentId
+						ELSE @MatchId
+					END
 
 	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)
 	BEGIN
@@ -113,11 +148,6 @@ BEGIN
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
 		WHERE m.matchid = @MatchId
 
-		-- Get sport type
-		SELECT @SportType = sporttype
-		FROM dbo.match WITH (NOLOCK)
-		WHERE matchid = @MatchId
-
 		SELECT @ResourceId = CASE
 								WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 								WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
@@ -125,7 +155,7 @@ BEGIN
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (9, 43, 193)
+		IF @SportType NOT IN (9, 43, 50, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -166,7 +196,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceID LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType = 9		-- Badminton
+		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -181,7 +211,8 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
-				AND (LEN(d.ResourceId) IN (2, 4)
+				AND (LEN(d.ResourceId) = 2
+					OR (LEN(d.ResourceId) = 4 AND @SportType = 9)
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
@@ -270,11 +301,6 @@ BEGIN
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
 		WHERE m.matchid = @MatchId
 
-		-- Get sport type
-		SELECT @SportType = sporttype
-		FROM dbo.match14 WITH (NOLOCK)
-		WHERE matchid = @MatchId
-
 		SELECT @ResourceId = CASE
 								WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 								WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
@@ -282,7 +308,7 @@ BEGIN
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (9, 43, 193)
+		IF @SportType NOT IN (9, 43, 50, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -323,7 +349,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceID LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType = 9		-- Badminton
+		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -338,7 +364,8 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
-				AND (LEN(d.ResourceId) IN (2, 4)
+				AND (LEN(d.ResourceId) = 2
+					OR (LEN(d.ResourceId) = 4 AND @SportType = 9)
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
@@ -430,11 +457,6 @@ BEGIN
 			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 		WHERE m.matchid = @MatchId
 
-		-- Get sport type
-		SELECT @SportType = Sporttype
-		FROM DBARC.bodb_Archive.dbo.match_bk WITH (NOLOCK)
-		WHERE matchid = @MatchId
-
 		SELECT @ResourceId = CASE
 								WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 								WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
@@ -442,7 +464,7 @@ BEGIN
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (9, 43, 193)
+		IF @SportType NOT IN (9, 43, 50, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -483,7 +505,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType = 9		-- Badminton
+		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -498,7 +520,8 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
-				AND (LEN(d.ResourceId) IN (2, 4)
+				AND (LEN(d.ResourceId) = 2
+					OR (LEN(d.ResourceId) = 4 AND @SportType = 9)
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
@@ -574,14 +597,16 @@ BEGIN
 		AND HomeValue NOT LIKE '%a%'
 		AND HomeValue NOT LIKE '%h%'
 
-	SELECT * FROM @ResultDetail
+	SELECT
+		MatchId,
+		@BetType AS BetType,
+		ResourceId,
+		HomeValue,
+		AwayValue,
+		ResultStatusID,
+		SettlementStatusID,
+		OtherInfo
+	FROM @ResultDetail
 	ORDER BY ResourceId ASC
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResult] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResult] TO [bodbDownlineNetView]
 GO

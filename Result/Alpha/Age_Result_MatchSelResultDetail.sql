@@ -29,6 +29,7 @@ AS
 		- 20191204@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
+		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 */
 
 BEGIN
@@ -134,7 +135,7 @@ BEGIN
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
-		ELSE IF @SportType = 9		-- Badminton
+		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -147,7 +148,11 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailOS WITH (NOLOCK)
 			WHERE MatchID = @MatchId
-				AND (LEN(ResourceID) IN (2, 4) OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) = 2
+					OR (LEN(ResourceID) = 4 AND @SportType = 9)
+					OR (SettlementStatusID > 0
+						AND (@SportType = 9
+							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
@@ -273,7 +278,7 @@ BEGIN
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
-		ELSE IF @SportType = 9		-- Badminton
+		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -286,7 +291,11 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 			WHERE MatchID = @MatchId
-				AND (LEN(ResourceID) IN (2, 4) OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) = 2
+					OR (LEN(ResourceID) = 4 AND @SportType = 9)
+					OR (SettlementStatusID > 0
+						AND (@SportType = 9
+							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
@@ -327,12 +336,4 @@ BEGIN
 
 	SELECT * FROM @Detail
 END
-
-
-
-
-GO 
-GRANT EXECUTE ON [dbo].[Age_Result_MatchSelResultDetail] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_Result_MatchSelResultDetail] TO [bodbDownlineNetView] AS [dbo]
 GO
