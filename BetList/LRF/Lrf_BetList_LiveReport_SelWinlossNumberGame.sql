@@ -39,6 +39,7 @@ AS
 		- 20190524@Kos: Support more base currency [#Redmine: 112531]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -362,6 +363,8 @@ BEGIN
 					WHEN @BaseCurrency = 'GBP' THEN e.GBP
 					WHEN @BaseCurrency = 'THB' THEN e.THB
 					WHEN @BaseCurrency = 'INH' THEN e.INH
+					WHEN @BaseCurrency = 'BDT' THEN e.BDT
+					WHEN @BaseCurrency = 'INR' THEN e.INR
 					ELSE 1
 				END AS Rate
 			FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
@@ -567,8 +570,4 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_LiveReport_SelWinlossNumberGame] TO [bodbLicenseeNet]
 GO

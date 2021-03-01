@@ -53,6 +53,7 @@ AS
 		- 20190715@Kos: Hotfix - Show KickOffTime Incorrectly [#Redmine: 116777]
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -835,6 +836,8 @@ BEGIN
 			WHEN @BaseCurrency = 'GBP' THEN e.GBP
 			WHEN @BaseCurrency = 'THB' THEN e.THB
 			WHEN @BaseCurrency = 'INH' THEN e.INH
+			WHEN @BaseCurrency = 'BDT' THEN e.BDT
+			WHEN @BaseCurrency = 'INR' THEN e.INR
 			ELSE 1
 		END AS Rate
 	FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e

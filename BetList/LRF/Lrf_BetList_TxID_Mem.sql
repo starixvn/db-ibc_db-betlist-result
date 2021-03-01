@@ -16,6 +16,7 @@ AS
 	DB: DBACC.bodb02
 	Revisions:
 		- 20200529@Kos: Created [#Redmine: 80941]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 */
 
 BEGIN
@@ -798,6 +799,8 @@ BEGIN
 				WHEN @BaseCurrency = 'GBP' THEN e.GBP
 				WHEN @BaseCurrency = 'THB' THEN e.THB
 				WHEN @BaseCurrency = 'INH' THEN e.INH
+				WHEN @BaseCurrency = 'BDT' THEN e.BDT
+				WHEN @BaseCurrency = 'INR' THEN e.INR
 				ELSE 1
 			END AS Rate
 		FROM Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e

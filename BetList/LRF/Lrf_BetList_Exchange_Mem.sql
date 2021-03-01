@@ -19,6 +19,7 @@ AS
 		- 20190625@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 */
 
 BEGIN
@@ -164,6 +165,8 @@ BEGIN
 			WHEN @BaseCurrency = 'GBP' THEN e.GBP
 			WHEN @BaseCurrency = 'THB' THEN e.THB
 			WHEN @BaseCurrency = 'INH' THEN e.INH
+			WHEN @BaseCurrency = 'BDT' THEN e.BDT
+			WHEN @BaseCurrency = 'INR' THEN e.INR
 			ELSE 1
 		END AS Rate
 	FROM dbo.Lrf_f_GetSubExchangeDaily(@FDate, @TDate) AS e
@@ -213,8 +216,3 @@ BEGIN
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 END
 GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_Exchange_Mem] TO [bodbLicenseeNet]
-GO
- 

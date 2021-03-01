@@ -133,6 +133,7 @@ AS
 					- Add new input param @ExcludeFreeBet BIT
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210112@Kos: Support GDG [Redmine: #147267]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 */
 
 BEGIN
@@ -1203,6 +1204,8 @@ BEGIN
 					WHEN @BaseCurrency = 'GBP' THEN e.GBP
 					WHEN @BaseCurrency = 'THB' THEN e.THB
 					WHEN @BaseCurrency = 'INH' THEN e.INH
+					WHEN @BaseCurrency = 'BDT' THEN e.BDT
+					WHEN @BaseCurrency = 'INR' THEN e.INR
 					ELSE 1
 				END
 	FROM dbo.Lrf_f_GetExchangeDaily(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)) AS e

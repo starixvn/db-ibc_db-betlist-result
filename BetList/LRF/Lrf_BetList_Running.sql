@@ -51,6 +51,7 @@ AS
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20201231@Kos: Support Virtual Games [Redmine: #147843]
 		- 20200108@Kos: Support Happy 5 Linked Games [Redmine: #147446]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 */
 
 BEGIN
@@ -673,6 +674,8 @@ BEGIN
 					WHEN @BaseCurrency = 'GBP' THEN e.GBP
 					WHEN @BaseCurrency = 'THB' THEN e.THB
 					WHEN @BaseCurrency = 'INH' THEN e.INH
+					WHEN @BaseCurrency = 'BDT' THEN e.BDT
+					WHEN @BaseCurrency = 'INR' THEN e.INR
 					ELSE 1
 				END AS Rate
 			FROM Lrf_f_GetExchangeDaily(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)) AS e

@@ -61,6 +61,7 @@ AS
 		- 20201007@Kos: Support Time Machine Over/Under [Redmine: #136107]
 		- 20201207@Kos: Hotfix - Wrong currency code display [Redmine: #146691]
 		- 20210122@Kos: Support betfrom '7' [Redmine: #149108]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -564,6 +565,8 @@ BEGIN
 					WHEN @BaseCurrency = 'GBP' THEN e.GBP
 					WHEN @BaseCurrency = 'THB' THEN e.THB
 					WHEN @BaseCurrency = 'INH' THEN e.INH
+					WHEN @BaseCurrency = 'BDT' THEN e.BDT
+					WHEN @BaseCurrency = 'INR' THEN e.INR
 					ELSE 1
 				END AS Rate
 			FROM dbo.Lrf_f_GetExchangeDaily(CONVERT(VARCHAR(10), GETDATE(), 111), CONVERT(VARCHAR(10), GETDATE(), 111)) AS e

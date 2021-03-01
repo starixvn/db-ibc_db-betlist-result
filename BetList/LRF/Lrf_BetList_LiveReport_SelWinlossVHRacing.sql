@@ -33,6 +33,7 @@ AS
 					- Change input param @Sort data type from VARCHAR(20) to NVARCHAR(50)
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 */
 
 BEGIN
@@ -236,6 +237,8 @@ BEGIN
 			WHEN @BaseCurrency = 'GBP' THEN e.GBP
 			WHEN @BaseCurrency = 'THB' THEN e.THB
 			WHEN @BaseCurrency = 'INH' THEN e.INH
+			WHEN @BaseCurrency = 'BDT' THEN e.BDT
+			WHEN @BaseCurrency = 'INR' THEN e.INR
 			ELSE 1
 		END AS Rate
 	FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e

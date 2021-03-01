@@ -103,6 +103,7 @@ AS
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210122@Kos: Support betfrom '7' [Redmine: #149108]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -2456,6 +2457,8 @@ BEGIN
 			WHEN @BaseCurrency = 'GBP' THEN e.GBP
 			WHEN @BaseCurrency = 'THB' THEN e.THB
 			WHEN @BaseCurrency = 'INH' THEN e.INH
+			WHEN @BaseCurrency = 'BDT' THEN e.BDT
+			WHEN @BaseCurrency = 'INR' THEN e.INR
 			ELSE 1
 		END AS Rate
 	FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e

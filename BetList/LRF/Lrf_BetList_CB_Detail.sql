@@ -14,6 +14,7 @@ AS
 	Revisions:
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20190528@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 */
 
 BEGIN
@@ -138,9 +139,9 @@ BEGIN
 		FROM dbo.bettransm14 WITH (NOLOCK)
 		WHERE refno = @RefNo
 			AND bettype BETWEEN 18001 AND 18006
-	
-		UNION 
-	
+
+		UNION
+
 		SELECT transid,
 			transdate,
 			bettype,
@@ -175,6 +176,8 @@ BEGIN
 						WHEN @BaseCurrency = 'GBP' THEN e.GBP
 						WHEN @BaseCurrency = 'THB' THEN e.THB
 						WHEN @BaseCurrency = 'INH' THEN e.INH
+						WHEN @BaseCurrency = 'BDT' THEN e.BDT
+						WHEN @BaseCurrency = 'INR' THEN e.INR
 						ELSE 1
 					END
 	FROM dbo.Lrf_f_GetExchangeDaily(@WinLostDate, @WinLostDate) AS e
@@ -195,9 +198,3 @@ BEGIN
 	ORDER BY b.TransId ASC
 END
 GO
-
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_CB_Detail] TO [bodbLicenseeNet] AS [dbo]
-GO
-

@@ -23,6 +23,7 @@ AS
 					- Return addtional column BetTeam NVARCHAR(50)
 		- 20200616@Kos: Support SA Gaming [Redmine: #128493]
 		- 20210112@Kos: Support GDG [Redmine: #147267]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 
 	Parameters:
 		- @TransType
@@ -382,6 +383,8 @@ BEGIN
 				WHEN @BaseCurrency = 'GBP' THEN e.GBP
 				WHEN @BaseCurrency = 'THB' THEN e.THB
 				WHEN @BaseCurrency = 'INH' THEN e.INH
+				WHEN @BaseCurrency = 'BDT' THEN e.BDT
+				WHEN @BaseCurrency = 'INR' THEN e.INR
 				ELSE 1
 			END AS Rate
 		FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
@@ -413,8 +416,4 @@ BEGIN
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY b.TransId ASC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_LC_Detail] TO [bodbLicenseeNet] AS [dbo]
 GO

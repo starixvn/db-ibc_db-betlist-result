@@ -28,6 +28,7 @@ AS
 		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
 				- Add @MoveBetsDay and @BalanceUpDay input params
 		- 20191128@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 */
 
 BEGIN
@@ -550,6 +551,8 @@ BEGIN
 				WHEN @BaseCurrency = 'GBP' THEN e.GBP
 				WHEN @BaseCurrency = 'THB' THEN e.THB
 				WHEN @BaseCurrency = 'INH' THEN e.INH
+				WHEN @BaseCurrency = 'BDT' THEN e.BDT
+				WHEN @BaseCurrency = 'INR' THEN e.INR
 				ELSE 1
 			END AS Rate
 		FROM dbo.Lrf_f_GetExchangeDaily(@WinLostDate, @WinLostDate) AS e
@@ -618,10 +621,4 @@ BEGIN
 		LEFT JOIN @ExchangeRate AS e
 			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.exchangeid = b.Currency
 END
-GO
-
-
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_CashOut_Detail] TO [bodbLicenseeNet] AS [dbo]
 GO

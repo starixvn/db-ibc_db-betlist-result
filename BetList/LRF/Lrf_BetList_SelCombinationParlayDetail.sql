@@ -34,6 +34,7 @@ AS
 					- Don't return column Order, TransId anymore
 		- 20191115@Kos: Show (N) for neutral match [Redmine: #123772]
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
+		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 */
 
 BEGIN
@@ -431,6 +432,8 @@ BEGIN
 				WHEN @BaseCurrency = 'GBP' THEN e.GBP
 				WHEN @BaseCurrency = 'THB' THEN e.THB
 				WHEN @BaseCurrency = 'INH' THEN e.INH
+				WHEN @BaseCurrency = 'BDT' THEN e.BDT
+				WHEN @BaseCurrency = 'INR' THEN e.INR
 				ELSE 1
 			END AS Rate
 		FROM dbo.Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e
@@ -447,6 +450,8 @@ BEGIN
 				WHEN @BaseCurrency = 'GBP' THEN e.GBP
 				WHEN @BaseCurrency = 'THB' THEN e.THB
 				WHEN @BaseCurrency = 'INH' THEN e.INH
+				WHEN @BaseCurrency = 'BDT' THEN e.BDT
+				WHEN @BaseCurrency = 'INR' THEN e.INR
 				ELSE 1
 			END
 		FROM dbo.Lrf_f_GetExchangeDaily(@Today, @Today) AS e
