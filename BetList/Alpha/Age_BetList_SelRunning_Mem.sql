@@ -135,6 +135,7 @@ AS
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210114@Razor: Support MaxGame [Redmine: #147568]
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
+		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 */
 
 BEGIN
@@ -813,20 +814,20 @@ BEGIN
 				,SettlementStatus = 0
 				,ShowTime = ''
 				,BetCheck = CASE
-								WHEN b.ProductID IN (3, 12, 38) THEN b.Gameid3rd
+								WHEN b.ProductID IN (3, 12, 38, 63) THEN b.Gameid3rd
 								WHEN b.ProductId = 8 THEN ISNULL(b.custom2, '')
 								WHEN b.ProductId = 49 THEN ISNULL(b.custom1, '')
 								ELSE '' 
 							END
 				,TransDesc = CASE
-								WHEN b.ProductID IN (3, 8, 28, 38, 40, 49) THEN b.transdesc
+								WHEN b.ProductID IN (3, 8, 28, 38, 40, 49, 63) THEN b.transdesc
 								ELSE ''
 							END
 				,OddsSpread = 0
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 2 -- translog
-				AND (b.ProductID IN (8, 12, 28, 38, 40, 49)
+				AND (b.ProductID IN (8, 12, 28, 38, 40, 49, 63)
 					OR (b.ProductID = 3 AND b.EventType = 0))
 		END -- got translog's data
 

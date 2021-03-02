@@ -73,6 +73,7 @@ AS
 		- 20201127@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
+		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 */
 
 BEGIN
@@ -617,7 +618,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40, 47, 49)	-- Only support these products
+			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40, 47, 49, 63)	-- Only support these products
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -796,6 +797,7 @@ BEGIN
 				- Table Games			: ProductId = 40
 				- BBIN					: ProductId = 47
 				- Leap Gaming (VS3)		: ProductId = 49
+				- Sports Lottery		: ProductId = 63
 				*/
 				UPDATE b
 				SET
@@ -808,7 +810,7 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId IN (3, 38, 40, 47, 49) THEN b.MatchId
+									WHEN b.ProductId IN (3, 38, 40, 47, 49, 63) THEN b.MatchId
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -828,7 +830,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40, 49) THEN b.Odds
+								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -862,13 +864,13 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 3, 12, 27, 38) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 3, 12, 27, 38, 63) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (3, 8, 23, 28, 38, 40, 49) THEN b.transdesc
+									WHEN b.ProductId IN (3, 8, 23, 28, 38, 40, 49, 63) THEN b.transdesc
 									ELSE ''
 								END,
 					OddsSpread = 0,
@@ -1000,6 +1002,7 @@ BEGIN
 				- Table Games			: ProductId = 40
 				- BBIN					: ProductId = 47
 				- Leap Gaming (VS3)		: ProductId = 49
+				- Sports Lottery		: ProductId = 63
 				*/
 				UPDATE b
 				SET
@@ -1012,7 +1015,7 @@ BEGIN
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2681 AND 2699 THEN 218
 									WHEN b.ProductId = 28 THEN 220
-									WHEN b.ProductId IN (3, 38, 40, 47, 49) THEN b.MatchId
+									WHEN b.ProductId IN (3, 38, 40, 47, 49, 63) THEN b.MatchId
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -1032,7 +1035,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40, 49) THEN b.Odds
+								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1066,13 +1069,13 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 3, 12, 27, 38) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 3, 12, 27, 38, 63) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (3, 8, 23, 28, 38, 40, 49) THEN b.transdesc
+									WHEN b.ProductId IN (3, 8, 23, 28, 38, 40, 49, 63) THEN b.transdesc
 									ELSE ''
 								END,
 					OddsSpread = 0,

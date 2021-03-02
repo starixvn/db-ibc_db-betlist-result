@@ -121,6 +121,7 @@ AS
 		- 20210114@Razor: Support MaxGame [Redmine: #147568]
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
 		- 20210202@Kos: Support Saba Promotion [Redmine: #149952]
+		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -364,6 +365,7 @@ BEGIN
 						WHEN s.ProductID = 57 THEN 'BG'		-- Big Gaming
 						WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
 						WHEN s.ProductID = 60 THEN 'MXG'	-- MaxGame
+						WHEN s.ProductID = 63 THEN 'SLT'	-- Sports Lottery
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
@@ -393,7 +395,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
-									'MXG', 'SPR') THEN b.matchid
+									'MXG', 'SPR', 'SLT') THEN b.matchid
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -428,7 +430,7 @@ BEGIN
 								ELSE 0
 							END,
 				Odds = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3') THEN b.odds
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3', 'SLT') THEN b.odds
 							ELSE 0
 						END,
 				MOdds = CASE
@@ -513,13 +515,13 @@ BEGIN
 								ELSE ''
 							END,
 				BetCheck = CASE
-								WHEN b.Product IN ('SB', 'Parlay', 'ParlayVS2', 'GD', 'VRG', 'H5LG') THEN ISNULL(b.betcheck, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'ParlayVS2', 'GD', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 								ELSE ''
 							END,
 				ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG')
+								WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT')
 									THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
