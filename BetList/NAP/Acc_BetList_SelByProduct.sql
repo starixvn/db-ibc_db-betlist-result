@@ -65,6 +65,7 @@ AS
 		- 20210114@Kos: Support MaxGame [Redmine: #147568]
 					- Return additional column EventDate DATETIME
 		- 20210119@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #147709]
+		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 */
 
 BEGIN
@@ -200,8 +201,8 @@ BEGIN
 			ELSE
 				SET @TempFromDate = @FromDate
 
-			-- Gold Deluxe, Virtual Games
-			IF @ProductId IN (12, 38)
+			-- Gold Deluxe, Virtual Games, Sports Lottery
+			IF @ProductId IN (12, 38, 63)
 			BEGIN
 				IF @GameId <> ''
 				BEGIN
@@ -255,7 +256,7 @@ BEGIN
 						b.winlostdate,
 						b.GameID3rd AS BetCheck,
 						CASE
-							WHEN s.ProductID = 38 THEN ISNULL(b.transdesc, '')
+							WHEN s.ProductID IN (38, 63) THEN ISNULL(b.transdesc, '')
 							ELSE ''
 						END AS TransDesc,
 						0 AS OddsSpread,
@@ -335,7 +336,7 @@ BEGIN
 																AND bg.BetID3rd =  @BetId ))
 					END
 				END
-				ELSE IF @ProductId = 38		-- Virtual Games
+				ELSE IF @ProductId IN (38, 63)		-- Virtual Games, Sports Lottery
 				BEGIN
 					IF @GameId <> ''
 					BEGIN
@@ -769,8 +770,8 @@ BEGIN
 				END
 			END
 
-			-- Virtual Games
-			IF @ProductId = 38
+			-- Virtual Games, Sports Lottery
+			IF @ProductId IN (38, 63)
 			BEGIN
 				IF @GameId <> ''
 				BEGIN

@@ -52,6 +52,7 @@ AS
 		- 20201028@Kos: Change data type of @FromDate [Redmine: #144388]
 		- 20201126@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 		- 20201224@Razor: Support Happy 5 Linked Games [Redmine: #146540]
+		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 */
 
  BEGIN
@@ -147,7 +148,7 @@ AS
 		WHERE b.winlostdate = @FromDate
 			AND b.ip = @Ip
 			AND b.statusID IN (0, 1)
-			AND (s.productID IN (8, 12, 15, 28, 38, 40, 43, 49)
+			AND (s.productID IN (8, 12, 15, 28, 38, 40, 43, 49, 63)
 				OR b.gameID BETWEEN 801 AND 899
 				OR (s.productID = 3 AND s.EventType = 0))
 		GROUP BY b.custid
