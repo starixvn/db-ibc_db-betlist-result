@@ -44,6 +44,7 @@ AS
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20200929@Kos: Support Virtual Greyhounds and Virtual Motosports [Redmine: #136285]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
+		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 */
 
 BEGIN
@@ -109,8 +110,31 @@ BEGIN
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
 				) AS o ON o.MatchID = m.matchid AND m.sporttype = 9
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetailOS WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+						AND ResourceID NOT IN ('00')
+						AND ResourceID NOT LIKE '9410%'
+						AND ResourceID NOT LIKE '9411%'
+						AND ResourceID NOT LIKE '9422%'
+						AND ResourceID NOT LIKE '9423%'
+						AND ResourceID NOT LIKE '9428%'
+						AND ResourceID NOT LIKE '9429%'
+						AND ResourceID NOT LIKE '9434%'
+						AND ResourceID NOT LIKE '9435%'
+						AND ResourceID NOT LIKE '9454%'
+						AND ResourceID NOT LIKE '9455%'
+						AND ResourceID NOT LIKE '9460%'
+						AND ResourceID NOT LIKE '9461%'
+						AND ResourceID NOT LIKE '9484%'
+						AND ResourceID NOT LIKE '9485%'
+						AND ResourceID NOT LIKE '9490%'
+						AND ResourceID NOT LIKE '9491%'
+				) AS c ON c.MatchID = m.matchid AND m.sporttype = 50
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
+			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
 				OR (m.eventstatus = 'running'
@@ -119,7 +143,8 @@ BEGIN
 						OR ISNULL(br.MatchID, 0) <> 0		-- BetRadar show running Match but settled least one type
 						OR ISNULL(b.MatchID, 0) <> 0		-- BetRadar Virtual Basketball show running Match but settled least one type
 						OR ISNULL(e.MatchID, 0) <> 0		-- E-Sports show running Match but settled least one type
-						OR ISNULL(o.MatchID, 0) <> 0)))		-- Badminton show running Match but settled least one type
+						OR ISNULL(o.MatchID, 0) <> 0		-- Badminton show running Match but settled least one type
+						OR ISNULL(c.MatchID, 0) <> 0)))		-- Cricket show running Match but settled least one type
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
@@ -190,8 +215,31 @@ BEGIN
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
 				) AS o ON o.MatchID = m.matchid AND m.sporttype = 9
+			LEFT JOIN (
+					SELECT DISTINCT MatchID
+					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
+					WHERE SettlementStatusID > 0
+						AND ResourceID NOT IN ('00')
+						AND ResourceID NOT LIKE '9410%'
+						AND ResourceID NOT LIKE '9411%'
+						AND ResourceID NOT LIKE '9422%'
+						AND ResourceID NOT LIKE '9423%'
+						AND ResourceID NOT LIKE '9428%'
+						AND ResourceID NOT LIKE '9429%'
+						AND ResourceID NOT LIKE '9434%'
+						AND ResourceID NOT LIKE '9435%'
+						AND ResourceID NOT LIKE '9454%'
+						AND ResourceID NOT LIKE '9455%'
+						AND ResourceID NOT LIKE '9460%'
+						AND ResourceID NOT LIKE '9461%'
+						AND ResourceID NOT LIKE '9484%'
+						AND ResourceID NOT LIKE '9485%'
+						AND ResourceID NOT LIKE '9490%'
+						AND ResourceID NOT LIKE '9491%'
+				) AS c ON c.MatchID = m.matchid AND m.sporttype = 50
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
+			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
 				OR (m.eventstatus = 'running'
@@ -200,7 +248,8 @@ BEGIN
 						OR ISNULL(br.MatchID, 0) <> 0		-- BetRadar show running Match but settled least one type
 						OR ISNULL(b.MatchID, 0) <> 0		-- BetRadar Virtual Basketball show running Match but settled least one type
 						OR ISNULL(e.MatchID, 0) <> 0		-- E-Sports show running Match but settled least one type
-						OR ISNULL(o.MatchID, 0) <> 0)))		-- Badminton show running Match but settled least one type
+						OR ISNULL(o.MatchID, 0) <> 0		-- Badminton show running Match but settled least one type
+						OR ISNULL(c.MatchID, 0) <> 0)))		-- Cricket show running Match but settled least one type
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
@@ -226,9 +275,4 @@ BEGIN
 
 	DROP TABLE #LicenseeProduct
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].Lrf_Result_SportSelByDate TO [bodbLicenseeNet]
 GO

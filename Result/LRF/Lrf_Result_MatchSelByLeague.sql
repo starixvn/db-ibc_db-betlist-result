@@ -49,6 +49,7 @@ AS
 		- 20191206@Kos: Show Instant Calculation Result for Corner Bettypes [Redmine: #124682]
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
+		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 */
 
 BEGIN 
@@ -117,12 +118,12 @@ BEGIN
 			INNER JOIN
 				(SELECT sporttype, betstatus,matchid, matchcode, homeid, awayid, leagueid, eventdate, eventstatus,
 					GlobalShowTime, kickofftime, hthomescore, htawayscore, finalhomescore, finalawayscore, showtime,
-					isneutral, goalrecord, homeid2, SettlementStatus
+					isneutral, goalrecord, homeid2, SettlementStatus, ChildMatchType
 				FROM dbo.match WITH (NOLOCK)
 				UNION ALL
 				SELECT sporttype, betstatus,matchid, matchcode, homeid, awayid, leagueid, eventdate, eventstatus,
 					globalshowtime, kickofftime, hthomescore, htawayscore, finalhomescore, finalawayscore, showtime,
-					isneutral, goalrecord, homeid2, 0 AS SettlementStatus
+					isneutral, goalrecord, homeid2, 0 AS SettlementStatus, ChildMatchType
 				FROM dbo.match14 WITH (NOLOCK)
 				) AS m on m.leagueid = l.leagueid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
@@ -191,11 +192,49 @@ BEGIN
 				UNION ALL
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetailOS WITH (NOLOCK)
-				WHERE SettlementStatusID > 0 AND @SportType = 9
+				WHERE SettlementStatusID > 0
+					AND (@SportType = 9
+						OR (@SportType = 50
+							AND ResourceID NOT IN ('00')
+							AND ResourceID NOT LIKE '9410%'
+							AND ResourceID NOT LIKE '9411%'
+							AND ResourceID NOT LIKE '9422%'
+							AND ResourceID NOT LIKE '9423%'
+							AND ResourceID NOT LIKE '9428%'
+							AND ResourceID NOT LIKE '9429%'
+							AND ResourceID NOT LIKE '9434%'
+							AND ResourceID NOT LIKE '9435%'
+							AND ResourceID NOT LIKE '9454%'
+							AND ResourceID NOT LIKE '9455%'
+							AND ResourceID NOT LIKE '9460%'
+							AND ResourceID NOT LIKE '9461%'
+							AND ResourceID NOT LIKE '9484%'
+							AND ResourceID NOT LIKE '9485%'
+							AND ResourceID NOT LIKE '9490%'
+							AND ResourceID NOT LIKE '9491%'))
 				UNION ALL
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetailOS14 WITH (NOLOCK)
-				WHERE SettlementStatusID > 0 AND @SportType = 9
+				WHERE SettlementStatusID > 0
+					AND (@SportType = 9
+						OR (@SportType = 50
+							AND ResourceID NOT IN ('00')
+							AND ResourceID NOT LIKE '9410%'
+							AND ResourceID NOT LIKE '9411%'
+							AND ResourceID NOT LIKE '9422%'
+							AND ResourceID NOT LIKE '9423%'
+							AND ResourceID NOT LIKE '9428%'
+							AND ResourceID NOT LIKE '9429%'
+							AND ResourceID NOT LIKE '9434%'
+							AND ResourceID NOT LIKE '9435%'
+							AND ResourceID NOT LIKE '9454%'
+							AND ResourceID NOT LIKE '9455%'
+							AND ResourceID NOT LIKE '9460%'
+							AND ResourceID NOT LIKE '9461%'
+							AND ResourceID NOT LIKE '9484%'
+							AND ResourceID NOT LIKE '9485%'
+							AND ResourceID NOT LIKE '9490%'
+							AND ResourceID NOT LIKE '9491%'))
 				UNION ALL
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetail3rd WITH (NOLOCK)
@@ -213,6 +252,7 @@ BEGIN
 				OR (mr.IsHTCal = 1 AND m.eventstatus = 'running')
 				OR (ISNULL(R.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 			AND m.sporttype NOT IN (162, 201)
+			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND m.matchcode NOT LIKE '%hedge%'
 			AND m.matchcode NOT LIKE '%betdaq%'
@@ -437,7 +477,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType = 9		-- Badminton
+		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -450,7 +490,28 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailOS WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
-				AND (LEN(ResourceID) IN (2, 4) OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) = 2
+					OR (LEN(ResourceID) = 4 AND @SportType = 9)
+					OR (SettlementStatusID > 0
+						AND (@SportType = 9
+							OR (@SportType = 50
+								AND ResourceID NOT IN ('00')
+								AND ResourceID NOT LIKE '9410%'
+								AND ResourceID NOT LIKE '9411%'
+								AND ResourceID NOT LIKE '9422%'
+								AND ResourceID NOT LIKE '9423%'
+								AND ResourceID NOT LIKE '9428%'
+								AND ResourceID NOT LIKE '9429%'
+								AND ResourceID NOT LIKE '9434%'
+								AND ResourceID NOT LIKE '9435%'
+								AND ResourceID NOT LIKE '9454%'
+								AND ResourceID NOT LIKE '9455%'
+								AND ResourceID NOT LIKE '9460%'
+								AND ResourceID NOT LIKE '9461%'
+								AND ResourceID NOT LIKE '9484%'
+								AND ResourceID NOT LIKE '9485%'
+								AND ResourceID NOT LIKE '9490%'
+								AND ResourceID NOT LIKE '9491%'))))
 		END
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
@@ -527,7 +588,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType = 9		-- Badminton
+		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -540,7 +601,28 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
-				AND (LEN(ResourceID) IN (2, 4) OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) = 2
+					OR (LEN(ResourceID) = 4 AND @SportType = 9)
+					OR (SettlementStatusID > 0
+						AND (@SportType = 9
+							OR (@SportType = 50
+								AND ResourceID NOT IN ('00')
+								AND ResourceID NOT LIKE '9410%'
+								AND ResourceID NOT LIKE '9411%'
+								AND ResourceID NOT LIKE '9422%'
+								AND ResourceID NOT LIKE '9423%'
+								AND ResourceID NOT LIKE '9428%'
+								AND ResourceID NOT LIKE '9429%'
+								AND ResourceID NOT LIKE '9434%'
+								AND ResourceID NOT LIKE '9435%'
+								AND ResourceID NOT LIKE '9454%'
+								AND ResourceID NOT LIKE '9455%'
+								AND ResourceID NOT LIKE '9460%'
+								AND ResourceID NOT LIKE '9461%'
+								AND ResourceID NOT LIKE '9484%'
+								AND ResourceID NOT LIKE '9485%'
+								AND ResourceID NOT LIKE '9490%'
+								AND ResourceID NOT LIKE '9491%'))))
 		END
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
@@ -580,8 +662,4 @@ BEGIN
 
 	DROP TABLE #Match
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelByLeague] TO [bodbLicenseeNet] AS [dbo]
 GO

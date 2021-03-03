@@ -39,6 +39,7 @@ AS
 		- 20200515@Kos: Support PH AIO phase 5.1 [Redmine: #132770]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
+		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 */
 
 BEGIN
@@ -96,10 +97,30 @@ BEGIN
 						LEFT JOIN (
 								SELECT DISTINCT MatchID
 								FROM dbo.ResultDetailOS WITH (NOLOCK)
-								WHERE SettlementStatusID > 0 AND @SportType = 9
+								WHERE SettlementStatusID > 0
+									AND (@SportType = 9
+										OR (@SportType = 50
+											AND ResourceID NOT IN ('00')
+											AND ResourceID NOT LIKE '9410%'
+											AND ResourceID NOT LIKE '9411%'
+											AND ResourceID NOT LIKE '9422%'
+											AND ResourceID NOT LIKE '9423%'
+											AND ResourceID NOT LIKE '9428%'
+											AND ResourceID NOT LIKE '9429%'
+											AND ResourceID NOT LIKE '9434%'
+											AND ResourceID NOT LIKE '9435%'
+											AND ResourceID NOT LIKE '9454%'
+											AND ResourceID NOT LIKE '9455%'
+											AND ResourceID NOT LIKE '9460%'
+											AND ResourceID NOT LIKE '9461%'
+											AND ResourceID NOT LIKE '9484%'
+											AND ResourceID NOT LIKE '9485%'
+											AND ResourceID NOT LIKE '9490%'
+											AND ResourceID NOT LIKE '9491%'))
 							) AS o ON o.MatchID + 1 = m.matchid + 1
 					WHERE m.eventdate = @EventDate
 						AND m.sporttype NOT IN (162, 201)
+						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 						AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 						AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 							OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed') )
@@ -207,10 +228,30 @@ BEGIN
 						LEFT JOIN (
 								SELECT DISTINCT MatchID
 								FROM dbo.ResultDetailOS14 WITH (NOLOCK)
-								WHERE SettlementStatusID > 0 AND @SportType = 9
+								WHERE SettlementStatusID > 0
+									AND (@SportType = 9
+										OR (@SportType = 50
+											AND ResourceID NOT IN ('00')
+											AND ResourceID NOT LIKE '9410%'
+											AND ResourceID NOT LIKE '9411%'
+											AND ResourceID NOT LIKE '9422%'
+											AND ResourceID NOT LIKE '9423%'
+											AND ResourceID NOT LIKE '9428%'
+											AND ResourceID NOT LIKE '9429%'
+											AND ResourceID NOT LIKE '9434%'
+											AND ResourceID NOT LIKE '9435%'
+											AND ResourceID NOT LIKE '9454%'
+											AND ResourceID NOT LIKE '9455%'
+											AND ResourceID NOT LIKE '9460%'
+											AND ResourceID NOT LIKE '9461%'
+											AND ResourceID NOT LIKE '9484%'
+											AND ResourceID NOT LIKE '9485%'
+											AND ResourceID NOT LIKE '9490%'
+											AND ResourceID NOT LIKE '9491%'))
 							) AS o ON o.MatchID + 1 = m.matchid + 1
 					WHERE m.eventdate = @EventDate
 						AND m.sporttype NOT IN (162, 201)
+						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 						AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 						AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 							OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed') )
@@ -266,9 +307,4 @@ BEGIN
 		END
 	END
 END
-GO
-
-
-
-GRANT	EXECUTE	ON	Lrf_Result_LeagueSelByDate	TO	bodbLicenseeNet
 GO
