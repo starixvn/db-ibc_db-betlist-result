@@ -56,6 +56,7 @@ AS
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210112@Kos: Support GDG [Redmine: #147267]
 		- 20210118@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
+		- 20210304@Kos: Hotfix - Wrong data for Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #151158]
 */
 
 BEGIN
@@ -1076,7 +1077,7 @@ BEGIN
 									END,
 						Odds = CASE
 									WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet', 'SBC') AND x.Odds IS NOT NULL THEN x.Odds
-									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'PP') THEN b.odds
+									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'SBC') THEN b.odds
 									ELSE 0
 								END,
 						MOdds = CASE
@@ -1209,7 +1210,7 @@ BEGIN
 									END,
 						OddsSpread = CASE
 										WHEN b.Product IN ('PP', 'SBC') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-										WHEN b.Product IN ('SB', 'CO', 'PP') THEN ISNULL(b.oddsspread, 0)
+										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC') THEN ISNULL(b.oddsspread, 0)
 										ELSE 0
 									END,
 						BetdaqId = CASE
