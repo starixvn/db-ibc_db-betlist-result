@@ -54,6 +54,7 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210316@Kos: Support Cricket AIO [Redmine: #148962]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -185,18 +186,72 @@ BEGIN
 		INSERT INTO @status (StatusID)
 		SELECT 111
 
+	DECLARE @SportType	SMALLINT,
+		@ParentId		INT
+
+	SELECT
+		@SportType = sporttype,
+		@ParentId = ParentID
+	FROM dbo.match WITH (NOLOCK)
+	WHERE matchid = @MatchId AND eventdate > @MoveBetsDay
+
+	IF @SportType IS NULL
+	BEGIN
+		SELECT
+			@SportType = sporttype,
+			@ParentId = ParentID
+		FROM dbo.match14 WITH (NOLOCK)
+		WHERE matchid = @MatchId AND eventdate BETWEEN @BalanceUpDay AND @MoveBetsDay
+	END
+
+	IF @SportType IS NULL
+	BEGIN
+		SELECT
+			@SportType = sporttype,
+			@ParentId = ParentID
+		FROM bodb_Archive.dbo.match_bk WITH (NOLOCK)
+		WHERE matchid = @MatchId AND eventdate < @BalanceUpDay
+	END
+
+	DECLARE @Match TABLE(MatchId INT)
+
+	IF @SportType = 50 AND @ParentId IS NULL	-- Cricket, parent match
+	BEGIN
+		INSERT INTO @Match
+		SELECT DISTINCT MatchId
+		FROM dbo.match WITH (NOLOCK)
+		WHERE ParentID = @MatchId
+			AND sporttype = @SportType
+			AND eventdate BETWEEN @FromDate AND @ToDate
+			AND ChildMatchType = 200
+		UNION
+		SELECT DISTINCT MatchId
+		FROM dbo.match14 WITH (NOLOCK)
+		WHERE ParentID = @MatchId
+			AND sporttype = @SportType
+			AND eventdate BETWEEN @FromDate AND @ToDate
+			AND ChildMatchType = 200
+		UNION
+		SELECT DISTINCT MatchId
+		FROM bodb_Archive.dbo.match_bk WITH (NOLOCK)
+		WHERE ParentID = @MatchId
+			AND sporttype = @SportType
+			AND eventdate BETWEEN @FromDate AND @ToDate
+			AND ChildMatchType = 200
+	END
+
 	DECLARE @TempFromDate SMALLDATETIME
 	DECLARE @TempToDate SMALLDATETIME
 
 	-- bettrans
-	IF @Todate > @MoveBetsDay
+	IF @ToDate > @MoveBetsDay
 	BEGIN
 		IF @FromDate <= @MoveBetsDay
 			SET @TempFromDate = DATEADD(DAY, 1, @MoveBetsDay)
 		ELSE
 			SET @TempFromDate = @FromDate
 
-		IF @ShowBA = 1
+		IF 1 IN (@ShowBA, @ShowSB)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -238,7 +293,10 @@ BEGIN
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				0 AS LicenseeWL,
+				CASE
+					WHEN b.tpositiontaking = 0 THEN 0
+					ELSE -(b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -268,8 +326,14 @@ BEGIN
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
 				END AS OriginalBetType,
-				0 AS WalletType,
-				0 AS RefCode,
+				CASE
+					WHEN b.tpositiontaking = 0 THEN 0
+					ELSE ISNULL(b.WalletType, 0)
+				END AS WalletType,
+				CASE
+					WHEN b.tpositiontaking = 0 THEN 0
+					ELSE ISNULL(b.RefCode, 0)
+				END AS RefCode,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -280,96 +344,14 @@ BEGIN
 				AND b.statusID IN (SELECT StatusID FROM @Status)
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.custid = @CustId
-				AND b.tpositiontaking = 0	-- getBA
-				AND (@MatchId = 0 OR m.matchid = @MatchId)
-		END
-
-		IF @ShowSB = 1
-		BEGIN
-			INSERT INTO #Data
-			SELECT
-				m.sporttype,
-				b.username,
-				b.custid,
-				b.bettype,
-				m.leagueid,
-				b.transid,
-				m.matchcode,
-				m.GlobalShowTime AS EventDate,
-				m.homeid,
-				m.awayid,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				CASE
-					WHEN ( b.bettype IN (1, 2, 3, 7, 12, 8, 20)
-							OR b.bettype BETWEEN 81 AND 88
-							OR b.bettype BETWEEN 90 AND 120 )
-						THEN CASE
-								WHEN b.oddstype = 1 THEN b.odds + 1 --decimal
-								WHEN b.oddstype = 2 THEN b.Odds + 1 --hongkong to decimal
-								WHEN b.oddstype IN (3, 4) THEN --malay and indo to decimal
-									CASE 
-										WHEN b.odds < 0 THEN (1 - CAST(1 AS FLOAT) / CAST(b.odds AS FLOAT))
-										WHEN b.odds >= 0 THEN (1 + b.odds)
-									END
-								WHEN b.oddstype = 5 THEN --american odds to decimal
-									CASE 
-										WHEN (b.odds * 100) < 0 THEN (1 - CAST(1 AS FLOAT) / CAST(b.odds AS FLOAT))
-										WHEN (b.odds * 100) % 2 = 0 THEN 2
-										WHEN (b.odds * 100) > 0 THEN (1 + b.odds)
-									END
-							END
-					ELSE b.odds
-				END odds2,
-				b.status,
-				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.matchid,
-				b.statusID,
-				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
-				b.oddstype,
-				b.betid,
-				b.currency,
-				b.refno,
-				b.betcheck,
-				ISNULL(b.transdesc, '') AS transdesc,
-				ISNULL(b.betdaqid, -1) AS BetdaqId,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-				CASE
-					WHEN b.ExtraInfo LIKE '%p25%' THEN
-						ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-					ELSE 0
-				END AS OriginalStake,
-				CASE
-					WHEN b.stake <> 0 THEN -1
-					ELSE 0
-				END AS OriginalBetType,
-				ISNULL(b.WalletType, 0) AS WalletType,
-				ISNULL(b.RefCode, 0) AS RefCode,
-				ISNULL(b.oddsspread, 0) AS OddsSpread
-			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid)
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
-				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-			WHERE m.leagueid = @LeagueId
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.statusID IN (SELECT StatusID FROM @Status)
-				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND b.custid = @CustId
-				AND b.tpositiontaking <> 0
-				AND (@MatchId = 0 OR m.matchid = @MatchId)
+				AND 1 = CASE
+							WHEN b.tpositiontaking = 0 AND @ShowBA = 1 THEN 1
+							WHEN b.tpositiontaking <> 0 AND @ShowSB = 1 THEN 1
+							ELSE 0
+						END
+				AND (@MatchId = 0
+					OR m.matchid = @MatchId
+					OR m.matchid IN (SELECT MatchId FROM @Match))
 		END
 	END
 
@@ -381,7 +363,7 @@ BEGIN
 		ELSE
 			SET @TempToDate = @ToDate
 
-		IF @ShowBA = 1
+		IF 1 IN (@ShowBA, @ShowSB)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -423,7 +405,10 @@ BEGIN
 				0 AS SettlementStatus,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				0 AS LicenseeWL,
+				CASE
+					WHEN b.tpositiontaking = 0 THEN 0
+					ELSE -(b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -453,8 +438,14 @@ BEGIN
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
 				END AS OriginalBetType,
-				0 AS WalletType,
-				0 AS RefCode,
+				CASE
+					WHEN b.tpositiontaking = 0 THEN 0
+					ELSE ISNULL(b.WalletType, 0)
+				END AS WalletType,
+				CASE
+					WHEN b.tpositiontaking = 0 THEN 0
+					ELSE ISNULL(b.RefCode, 0)
+				END AS RefCode,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -465,96 +456,14 @@ BEGIN
 				AND b.statusID IN (SELECT StatusID FROM @Status)
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.custid = @CustId
-				AND b.tpositiontaking = 0
-				AND (@MatchId = 0 OR m.matchid = @MatchId)
-		END
-
-		IF @ShowSB = 1
-		BEGIN
-			INSERT INTO #Data
-			SELECT
-				m.sporttype,
-				b.username,
-				b.custid,
-				b.bettype,
-				m.leagueid,
-				b.transid,
-				m.matchcode,
-				m.GlobalShowTime AS EventDate,
-				m.homeid,
-				m.awayid,
-				b.hdp1,
-				b.hdp2,
-				b.Odds,
-				CASE
-					WHEN ( b.bettype IN (1, 2, 3, 7, 12, 8, 20)
-							OR b.bettype BETWEEN 81 AND 88
-							OR b.bettype BETWEEN 90 AND 120 )
-						THEN CASE
-								WHEN b.oddstype = 1 THEN b.odds + 1 --decimal
-								WHEN b.oddstype = 2 THEN b.Odds + 1 --hongkong to decimal
-								WHEN b.oddstype IN (3, 4) THEN --malay and indo to decimal
-									CASE 
-										WHEN b.odds < 0 THEN (1 - CAST(1 AS FLOAT) / CAST(b.odds AS FLOAT))
-										WHEN b.odds >= 0 THEN (1 + b.odds)
-									END
-								WHEN b.oddstype = 5 THEN --american odds to decimal
-									CASE 
-										WHEN (b.odds * 100) < 0 THEN (1 - CAST(1 AS FLOAT) / CAST(b.odds AS FLOAT))
-										WHEN (b.odds * 100) % 2 = 0 THEN 2
-										WHEN (b.odds * 100) > 0 THEN (1 + b.odds)
-									END
-							END
-					ELSE b.odds
-				END odds2,
-				b.status,
-				0 AS SettlementStatus,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.matchid,
-				b.statusID,
-				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
-				b.oddstype,
-				b.betid,
-				b.currency,
-				b.refno,
-				b.betcheck,
-				ISNULL(b.transdesc, '') AS transdesc,
-				ISNULL(b.betdaqid, -1) AS BetdaqId,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-				CASE
-					WHEN b.ExtraInfo LIKE '%p25%' THEN
-						ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-					ELSE 0
-				END AS OriginalStake,
-				CASE
-					WHEN b.stake <> 0 THEN -1
-					ELSE 0
-				END AS OriginalBetType,
-				ISNULL(b.WalletType, 0) AS WalletType,
-				ISNULL(b.RefCode, 0) AS RefCode,
-				ISNULL(b.oddsspread, 0) AS OddsSpread
-			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
-				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-			WHERE m.leagueid = @LeagueId
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.statusID IN (SELECT StatusID FROM @Status)
-				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
-				AND b.custid = @CustId
-				AND b.tpositiontaking <> 0
-				AND (@MatchId = 0 OR m.matchid = @MatchId)
+				AND 1 = CASE
+							WHEN b.tpositiontaking = 0 AND @ShowBA = 1 THEN 1
+							WHEN b.tpositiontaking <> 0 AND @ShowSB = 1 THEN 1
+							ELSE 0
+						END
+				AND (@MatchId = 0
+					OR m.matchid = @MatchId
+					OR m.matchid IN (SELECT MatchId FROM @Match))
 		END
 	END
 
@@ -566,7 +475,7 @@ BEGIN
 		ELSE
 			SET @TempToDate = @todate
 
-		IF @ShowBA = 1
+		IF 1 IN (@ShowBA, @ShowSB)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -608,7 +517,10 @@ BEGIN
 				0 AS SettlementStatus,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				0 AS LicenseeWL,
+				CASE
+					WHEN b.tpositiontaking = 0 THEN 0
+					ELSE -(b.winlost - b.actual_stake)
+				END AS LicenseeWL,
 				b.comm,
 				b.playercomm,
 				b.transdate,
@@ -638,8 +550,14 @@ BEGIN
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
 				END AS OriginalBetType,
-				0 AS WalletType,
-				0 AS RefCode,
+				CASE
+					WHEN b.tpositiontaking = 0 THEN 0
+					ELSE ISNULL(b.WalletType, 0)
+				END AS WalletType,
+				CASE
+					WHEN b.tpositiontaking = 0 THEN 0
+					ELSE ISNULL(b.RefCode, 0)
+				END AS RefCode,
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -650,96 +568,14 @@ BEGIN
 				AND b.statusID IN (SELECT StatusID FROM @Status)
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.custid = @CustId
-				AND b.tpositiontaking = 0	-- getBA
-				AND (@MatchId = 0 OR m.matchid = @MatchId)
-		END
-
-		IF @ShowSB = 1
-		BEGIN
-			INSERT INTO #Data
-			SELECT
-				m.sporttype,
-				'' AS Username,
-				b.custid,
-				b.bettype,
-				m.leagueid,
-				b.transid,
-				m.matchcode,
-				m.GlobalShowTime AS EventDate,
-				m.homeid,
-				m.awayid,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				CASE
-					WHEN ( b.bettype IN (1, 2, 3, 7, 12, 8, 20)
-							OR b.bettype BETWEEN 81 AND 88
-							OR b.bettype BETWEEN 90 AND 120 )
-						THEN CASE
-								WHEN b.oddstype = 1 THEN b.odds + 1 --decimal
-								WHEN b.oddstype = 2 THEN b.Odds + 1 --hongkong to decimal
-								WHEN b.oddstype IN (3, 4) THEN --malay and indo to decimal
-									CASE 
-										WHEN b.odds < 0 THEN (1 - CAST(1 AS FLOAT) / CAST(b.odds AS FLOAT))
-										WHEN b.odds >= 0 THEN (1 + b.odds)
-									END
-								WHEN b.oddstype = 5 THEN --american odds to decimal
-									CASE 
-										WHEN (b.odds * 100) < 0 THEN (1 - CAST(1 AS FLOAT) / CAST(b.odds AS FLOAT))
-										WHEN (b.odds * 100) % 2 = 0 THEN 2
-										WHEN (b.odds * 100) > 0 THEN (1 + b.odds)
-									END
-							END
-					ELSE b.odds
-				END odds2,
-				b.status,
-				0 AS SettlementStatus,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				- (b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.matchid,
-				b.statusID,
-				m.betstatus,
-				ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral,
-				b.oddstype,
-				b.betid,
-				b.currency,
-				b.refno,
-				b.betcheck,
-				ISNULL(b.transdesc, '') AS transdesc,
-				ISNULL(b.betdaqid, -1) AS BetdaqId,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-				CASE
-					WHEN b.ExtraInfo LIKE '%p25%' THEN
-						ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-					ELSE 0
-				END AS OriginalStake,
-				CASE
-					WHEN b.stake <> 0 THEN -1
-					ELSE 0
-				END AS OriginalBetType,
-				ISNULL(b.WalletType, 0) AS WalletType,
-				ISNULL(b.RefCode, 0) AS RefCode,
-				ISNULL(b.oddsspread, 0) AS OddsSpread
-			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
-				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
-				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-			WHERE m.leagueid = @LeagueId
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.statusID IN ( SELECT StatusID FROM @Status)
-				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
-				AND b.custid = @CustId
-				AND b.tpositiontaking <> 0
-				AND (@MatchId = 0 OR m.matchid = @MatchId)
+				AND 1 = CASE
+							WHEN b.tpositiontaking = 0 AND @ShowBA = 1 THEN 1
+							WHEN b.tpositiontaking <> 0 AND @ShowSB = 1 THEN 1
+							ELSE 0
+						END
+				AND (@MatchId = 0
+					OR m.matchid = @MatchId
+					OR m.matchid IN (SELECT MatchId FROM @Match))
 		END
 	END
 
@@ -908,9 +744,4 @@ BEGIN
 
 	DROP TABLE #Data
 END
-GO
-
-
-
-GRANT	EXECUTE	ON	Lrf_BetList_WinlostByLeague_Mem	TO	bodbLicenseeNet
 GO

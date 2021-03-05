@@ -59,6 +59,7 @@ AS
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210316@Kos: Support Cricket AIO [Redmine: #148962]
 */
 
 BEGIN
@@ -261,6 +262,46 @@ BEGIN
 
 		SELECT @NumOfMem = COUNT(1) FROM @TempCust
 
+		DECLARE @MatchSportType	SMALLINT,
+			@ParentId			INT
+
+		SELECT
+			@MatchSportType = sporttype,
+			@ParentId = ParentID
+		FROM dbo.match WITH (NOLOCK)
+		WHERE matchid = @MatchId AND eventdate > @MoveBetsDay
+
+		IF @MatchSportType IS NULL
+		BEGIN
+			SELECT
+				@MatchSportType = sporttype,
+				@ParentId = ParentID
+			FROM dbo.match14 WITH (NOLOCK)
+			WHERE matchid = @MatchId
+		END
+
+		DECLARE @Match TABLE(MatchId INT)
+
+		IF @MatchSportType = 50 AND @ParentId IS NULL	-- Cricket, parent match
+		BEGIN
+			INSERT INTO @Match
+			SELECT DISTINCT
+				MatchId
+			FROM dbo.match WITH (NOLOCK)
+			WHERE ParentID = @MatchId
+				AND sporttype = @MatchSportType
+				AND eventdate BETWEEN @FromDate AND @ToDate
+				AND ChildMatchType = 200
+			UNION
+			SELECT DISTINCT
+				MatchId
+			FROM dbo.match14 WITH (NOLOCK)
+			WHERE ParentID = @MatchId
+				AND sporttype = @MatchSportType
+				AND eventdate BETWEEN @FromDate AND @ToDate
+				AND ChildMatchType = 200
+		END
+
 		DECLARE @TempToDate	SMALLDATETIME,
 			@TempFromDate	SMALLDATETIME
 
@@ -371,7 +412,9 @@ BEGIN
 						AND b.bettype NOT BETWEEN 801 AND 899
 						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-						AND (@MatchId = 0 OR b.matchid = @MatchId)
+						AND (@MatchId = 0
+							OR b.matchid = @MatchId
+							OR b.matchid IN (SELECT MatchId FROM @Match))
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
@@ -484,7 +527,9 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0 OR m.sporttype = @SportType)
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
-							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND (@MatchId = 0
+								OR b.matchid = @MatchId
+								OR b.matchid IN (SELECT MatchId FROM @Match))
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
@@ -589,7 +634,9 @@ BEGIN
 							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
 							AND (@SportType = 0 OR l.sporttype = @SportType)
 							AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
-							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND (@MatchId = 0
+								OR b.matchid = @MatchId
+								OR b.matchid IN (SELECT MatchId FROM @Match))
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
@@ -708,7 +755,9 @@ BEGIN
 						AND b.bettype NOT BETWEEN 801 AND 899
 						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-						AND (@MatchId = 0 OR b.matchid = @MatchId)
+						AND (@MatchId = 0
+							OR b.matchid = @MatchId
+							OR b.matchid IN (SELECT MatchId FROM @Match))
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
@@ -821,7 +870,9 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0 OR m.sporttype = @SportType)
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
-							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND (@MatchId = 0
+								OR b.matchid = @MatchId
+								OR b.matchid IN (SELECT MatchId FROM @Match))
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
@@ -926,7 +977,9 @@ BEGIN
 							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
 							AND (@SportType = 0 OR l.sporttype = @SportType)
 							AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
-							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND (@MatchId = 0
+								OR b.matchid = @MatchId
+								OR b.matchid IN (SELECT MatchId FROM @Match))
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
@@ -1047,7 +1100,9 @@ BEGIN
 						AND b.bettype NOT BETWEEN 801 AND 899
 						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-						AND (@MatchId = 0 OR b.matchid = @MatchId)
+						AND (@MatchId = 0
+							OR b.matchid = @MatchId
+							OR b.matchid IN (SELECT MatchId FROM @Match))
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
@@ -1160,7 +1215,9 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0 OR m.sporttype = @SportType)
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
-							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND (@MatchId = 0
+								OR b.matchid = @MatchId
+								OR b.matchid IN (SELECT MatchId FROM @Match))
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
@@ -1265,7 +1322,9 @@ BEGIN
 							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
 							AND (@SportType = 0 OR l.sporttype = @SportType)
 							AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
-							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND (@MatchId = 0
+								OR b.matchid = @MatchId
+								OR b.matchid IN (SELECT MatchId FROM @Match))
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
@@ -1385,7 +1444,9 @@ BEGIN
 						AND b.bettype NOT BETWEEN 801 AND 899
 						AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 							OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-						AND (@MatchId = 0 OR b.matchid = @MatchId)
+						AND (@MatchId = 0
+							OR b.matchid = @MatchId
+							OR b.matchid IN (SELECT MatchId FROM @Match))
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
@@ -1499,7 +1560,9 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0 OR m.sporttype = @SportType)
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
-							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND (@MatchId = 0
+								OR b.matchid = @MatchId
+								OR b.matchid IN (SELECT MatchId FROM @Match))
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
@@ -1605,7 +1668,9 @@ BEGIN
 							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
 							AND (@SportType = 0 OR l.sporttype = @SportType)
 							AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
-							AND (@MatchId = 0 OR b.matchid = @MatchId)
+							AND (@MatchId = 0
+								OR b.matchid = @MatchId
+								OR b.matchid IN (SELECT MatchId FROM @Match))
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE

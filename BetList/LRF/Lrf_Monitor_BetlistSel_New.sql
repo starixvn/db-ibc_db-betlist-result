@@ -63,6 +63,7 @@ AS
 		- 20210122@Kos: Support betfrom '7' [Redmine: #149108]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210309@Kos: Support betfrom '_', '@', '%' [Redmine: #151019]
+		- 20210315@Kos: Support Cricket AIO [Redmine: #148962]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -331,8 +332,8 @@ BEGIN
 					OR (b.bettype NOT IN (9, 29) AND @LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
 				AND (@BetType = ''
 					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609))
-					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228))
-					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616)))
+					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604))
+					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604)))
 		END
 		ELSE IF @SportId = 999
 		BEGIN
@@ -457,8 +458,8 @@ BEGIN
 					OR (@LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
 				AND (@BetType = ''
 					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609))
-					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228))
-					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616)))
+					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604))
+					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604)))
 		END
 
 		IF EXISTS (SELECT TOP(1) 1 FROM @Data)
