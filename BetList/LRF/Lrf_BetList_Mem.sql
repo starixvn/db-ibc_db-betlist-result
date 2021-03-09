@@ -45,16 +45,17 @@ AS
 			- 2 - China: a (dep-Singbet), z (dep2-SingBet)
 			- 3 - Euro: e (Europe), u (dep-Euro)
 			- 4 - WAP: m (dep-wap)
-			- 5 - Smart Site: l (dep-smart)
+			- 5 - Mobile: l (dep-smart), _ (Quick Bet)
 			- 6 - Tablet: r (dep2-tablet)
 			- 7 - New Asia: x (dep2-Asia)
 			- 8 - Mobile App: o (dep-New Mobile APP)
-			- 9 - Mobile China View: c (dep-MCV)
+			- 9 - Mobile Lite Version: c (dep-MCV), @ (Quick Bet)
 			- 10 - Deep Link: t (Licensee-Deeplink)
 			- 11 - Native App: 0 (Native App)
-			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
-			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
+			- 12 - E-Sports Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
+			- 13 - E-Sports Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
 			- 14 - E-Sports App: 3 (E-Sports App), 6 (eGamer App)
+			- 15 - Mobile Euro: % (Mobile Euro)
 			- 88 - Others: v (Licensee Odds Feed), 7 (3rd Party Portal Service)
 		- @LiveIndicator:
 			- 0 : Non-live
@@ -91,6 +92,7 @@ AS
 		- 20210108@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210122@Kos: Support betfrom '7' [Redmine: #149108]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210309@Kos: Support betfrom '_', '@', '%' [Redmine: #151019]
 */
 
 BEGIN
@@ -307,7 +309,7 @@ BEGIN
 		END
 		ELSE IF @Platform = 5
 		BEGIN
-			SET @BetFromList = 'l'
+			SET @BetFromList = 'l,_'
 		END
 		ELSE IF @Platform = 6
 		BEGIN
@@ -323,7 +325,7 @@ BEGIN
 		END
 		ELSE IF @Platform = 9
 		BEGIN
-			SET @BetFromList = 'c'
+			SET @BetFromList = 'c,@'
 		END
 		ELSE IF @Platform = 10
 		BEGIN
@@ -344,6 +346,10 @@ BEGIN
 		ELSE IF @Platform = 14
 		BEGIN
 			SET @BetFromList = '3,6'
+		END
+		ELSE IF @Platform = 15
+		BEGIN
+			SET @BetFromList = '%'
 		END
 		ELSE IF @Platform = 88
 		BEGIN
@@ -461,7 +467,7 @@ BEGIN
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 				AND (@Platform = 0
-					OR ',' + @BetFromList + ',' LIKE '%,' + b.betfrom + ',%')
+					OR ',' + @BetFromList + ',' LIKE '%,[' + b.betfrom + '],%')
 				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 
@@ -601,7 +607,7 @@ BEGIN
 				AND b.winlostdate BETWEEN @TempFromDate AND @TempToDate
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 				AND (@Platform = 0
-					OR ',' + @BetFromList + ',' LIKE '%,' + b.betfrom + ',%')
+					OR ',' + @BetFromList + ',' LIKE '%,[' + b.betfrom + '],%')
 				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 
@@ -736,7 +742,7 @@ BEGIN
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 				AND (@Platform = 0
-					OR ',' + @BetFromList + ',' LIKE '%,' + b.betfrom + ',%')
+					OR ',' + @BetFromList + ',' LIKE '%,[' + b.betfrom + '],%')
 				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 

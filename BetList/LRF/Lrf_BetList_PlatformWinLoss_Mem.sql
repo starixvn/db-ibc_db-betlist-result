@@ -104,6 +104,7 @@ AS
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210122@Kos: Support betfrom '7' [Redmine: #149108]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210309@Kos: Support betfrom '_', '@', '%' [Redmine: #151019]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -116,16 +117,17 @@ AS
 			- 2 - China: a (dep-Singbet), z (dep2-SingBet)
 			- 3 - Euro: e (Europe), u (dep-Euro)
 			- 4 - WAP: m (dep-wap)
-			- 5 - Smart Site: l (dep-smart)
+			- 5 - Mobile: l (dep-smart), _ (Quick Bet)
 			- 6 - Tablet: r (dep2-tablet)
 			- 7 - New Asia: x (dep2-Asia)
 			- 8 - Mobile App: o (dep-New Mobile APP)
-			- 9 - Mobile China View: c (dep-MCV)
+			- 9 - Mobile Lite Version: c (dep-MCV), @ (Quick Bet)
 			- 10 - Deep Link: t (Licensee-Deeplink)
 			- 11 - Native App: 0 (Native App)
-			- 12 - E-Sports Web Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
-			- 13 - E-Sports Web Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
+			- 12 - E-Sports Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
+			- 13 - E-Sports Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
 			- 14 - E-Sports App: 3 (E-Sports App), 6 (eGamer App)
+			- 15 - Mobile Euro: % (Mobile Euro)
 			- 88 - Others: v (Licensee Odds Feed), 7 (3rd Party Portal Service)
 
 	Sample call:
@@ -246,11 +248,12 @@ BEGIN
 		SELECT 'm'
 	END
 
-	-- Smart Site
+	-- Mobile
 	IF @PlatformType IN (0, 5)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'l'
+		SELECT 'l' UNION ALL
+		SELECT '_'
 	END
 
 	-- Tablet
@@ -274,11 +277,12 @@ BEGIN
 		SELECT 'o'
 	END
 
-	-- Mobile China View
+	-- Mobile Lite Version
 	IF @PlatformType IN (0, 9)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'c'
+		SELECT 'c' UNION ALL
+		SELECT '@'
 	END
 
 	-- Deeplink
@@ -295,7 +299,7 @@ BEGIN
 		SELECT '0'
 	END
 
-	-- E-Sports Web Desktop
+	-- E-Sports Desktop
 	IF @PlatformType IN (0, 12)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
@@ -303,7 +307,7 @@ BEGIN
 		SELECT '4'
 	END
 
-	-- E-Sports Web Mobile
+	-- E-Sports Mobile
 	IF @PlatformType IN (0, 13)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
@@ -317,6 +321,13 @@ BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT '3' UNION ALL
 		SELECT '6'
+	END
+
+	-- Mobile Euro
+	IF @PlatformType IN (0, 15)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT '%'
 	END
 
 	-- Others
