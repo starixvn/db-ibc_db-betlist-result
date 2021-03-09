@@ -35,6 +35,7 @@ AS
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20201028@Kos: Return transdate [Redmine: #144388]
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
+		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 */
 
 BEGIN
@@ -246,15 +247,28 @@ BEGIN
 		m.leagueid,
 		m.sporttype,
 		m.IsNeutral,
-		m.matchid,
-		m.matchcode,
-		m.GlobalShowTime AS EventDate,
+		CASE
+			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.matchid
+			ELSE m.matchid
+		END AS MatchId,
+		CASE
+			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.matchcode
+			ELSE m.matchcode
+		END AS MatchCode,
+		CASE
+			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.GlobalShowTime
+			ELSE m.GlobalShowTime
+		END AS EventDate,
 		bm.matchdate,
 		ISNULL(bm.betcheck, '') AS BetCheck,
 		ISNULL(bm.transdesc, '') AS TransDesc,
 		bm.stake
 	FROM dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		LEFT JOIN dbo.match AS pm WITH (NOLOCK)
+			ON pm.matchid = m.ParentID
+			AND m.sporttype = 50
+			AND m.ChildMatchType = 200
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE bm.refno = @RefNo AND bm.custid = @CustId
 
@@ -285,16 +299,33 @@ BEGIN
 		bm.liveindicator,
 		m.leagueid,
 		m.sporttype,
-		m.isNeutral,
-		m.matchid,
-		m.matchcode,
-		m.GlobalShowTime AS EventDate,
+		m.IsNeutral,
+		CASE
+			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pm14.matchid, pm.matchid)
+			ELSE m.matchid
+		END AS MatchId,
+		CASE
+			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pm14.matchcode, pm.matchcode)
+			ELSE m.matchcode
+		END AS MatchCode,
+		CASE
+			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pm14.GlobalShowTime, pm.GlobalShowTime)
+			ELSE m.GlobalShowTime
+		END AS EventDate,
 		bm.matchdate,
 		ISNULL(bm.betcheck, '') AS BetCheck,
 		ISNULL(bm.transdesc, '') AS TransDesc,
 		bm.stake
 	FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		LEFT JOIN dbo.match14 AS pm14 WITH (NOLOCK)
+			ON pm14.matchid = m.ParentID
+			AND m.sporttype = 50
+			AND m.ChildMatchType = 200
+		LEFT JOIN dbo.match AS pm WITH (NOLOCK)
+			ON pm.matchid = m.ParentID
+			AND m.sporttype = 50
+			AND m.ChildMatchType = 200
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE bm.refno = @RefNo
 
@@ -326,15 +357,36 @@ BEGIN
 		m.leagueid,
 		m.sporttype,
 		m.isNeutral,
-		m.matchid,
-		m.matchcode,
-		m.GlobalShowTime AS EventDate,
+		CASE
+			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pmbk.matchid, ISNULL(pm14.matchid, pm.matchid))
+			ELSE m.matchid
+		END AS MatchId,
+		CASE
+			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pmbk.matchcode, ISNULL(pm14.matchcode, pm.matchcode))
+			ELSE m.matchcode
+		END AS MatchCode,
+		CASE
+			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pmbk.GlobalShowTime, ISNULL(pm14.GlobalShowTime, pm.GlobalShowTime))
+			ELSE m.GlobalShowTime
+		END AS EventDate,
 		bm.matchdate,
 		ISNULL(bm.betcheck, '') AS BetCheck,
 		ISNULL(bm.transdesc, '') AS TransDesc,
 		bm.stake
 	FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		LEFT JOIN DBARC.bodb_Archive.dbo.match_bk AS pmbk WITH (NOLOCK)
+			ON pmbk.matchid = m.ParentID
+			AND m.sporttype = 50
+			AND m.ChildMatchType = 200
+		LEFT JOIN dbo.match14 AS pm14 WITH (NOLOCK)
+			ON pm14.matchid = m.ParentID
+			AND m.sporttype = 50
+			AND m.ChildMatchType = 200
+		LEFT JOIN dbo.match AS pm WITH (NOLOCK)
+			ON pm.matchid = m.ParentID
+			AND m.sporttype = 50
+			AND m.ChildMatchType = 200
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE bm.refno = @RefNo
 
@@ -343,7 +395,7 @@ BEGIN
 	FROM @parlay_base
 
 	-- Get bettrans and BetParlayResult data
-	IF @WhTicket = 3	-- bettrans_bk
+	IF EXISTS (SELECT 1 FROM @parlay_base WHERE MatchDate < @BalanceUpDay)		-- bettrans_bk
 	BEGIN
 		INSERT INTO @tmpBettrans
 		SELECT
@@ -411,7 +463,8 @@ BEGIN
 		FROM DBARC.bodb_Archive.dbo.betparlayresult AS b WITH (NOLOCK)
 		WHERE b.refno = @RefNo
 	END
-	ELSE IF @WhTicket = 2		-- bettrans14
+
+	IF EXISTS (SELECT 1 FROM @parlay_base WHERE MatchDate BETWEEN @BalanceUpDay AND @MoveBetDay)		-- bettrans14
 	BEGIN
 		INSERT INTO @tmpBettrans
 		SELECT
@@ -462,7 +515,8 @@ BEGIN
 			AND b.transid = @TransId
 			AND b.bettype = 29
 	END
-	ELSE IF @WhTicket = 1		-- bettrans
+
+	IF EXISTS (SELECT 1 FROM @parlay_base WHERE MatchDate > @MoveBetDay)		-- bettrans
 	BEGIN
 		INSERT INTO @tmpBettrans
 		SELECT
