@@ -32,6 +32,7 @@ AS
 		- 20201203@Kos: Support GDG [Redmine: #144104]
 		- 20201218@Kos: Support SiteId for GDG [Redmine: #147084]
 		- 20210112@Kos: Support Big Gaming [Redmine: #142455]
+		- 20210311@Razor: Support PP Live Casino [Redmine: #134042]
 
 	Parameters:
 		- @TransType
@@ -54,7 +55,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59)	-- Support AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, Big Gaming only
+	WHERE ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59, 65)	-- Support AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, Big Gaming only, PP Live Casino
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
 
@@ -254,12 +255,12 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59, 65) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59, 65) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -376,12 +377,12 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59, 65) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59, 65) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -497,12 +498,12 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59, 65) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59, 65) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -539,10 +540,4 @@ BEGIN
 
 	DROP TABLE #Data
 END
-GO
-
-
-GRANT	EXECUTE	ON	Acc_BetList_LC_Detail	TO	bodbDownlineNetView
-GRANT	EXECUTE	ON	Acc_BetList_LC_Detail	TO	bodbDownlineNet
-GRANT	EXECUTE	ON	Acc_BetList_LC_Detail	TO	bodbAdminNet
 GO

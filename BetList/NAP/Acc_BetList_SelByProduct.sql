@@ -66,6 +66,7 @@ AS
 					- Return additional column EventDate DATETIME
 		- 20210119@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #147709]
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
+		- 20210311@Razor: Support PP Live Casino [Redmine: #134042]
 */
 
 BEGIN
@@ -399,8 +400,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, GDG
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59)
+			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, GDG, PP Live Casino
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59, 65)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -540,7 +541,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
@@ -833,8 +834,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59)
+			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, PP Live Casino
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59, 65)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -857,6 +858,8 @@ BEGIN
 							WHEN s.ProductID = 39 THEN ISNULL(bg.sdiscount, 0)
 							ELSE b.sdiscount
 						END AS SDiscount,
+						
+						
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.adiscount, 0)
 							ELSE b.adiscount
@@ -974,7 +977,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
