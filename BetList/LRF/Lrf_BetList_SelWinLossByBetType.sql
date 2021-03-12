@@ -58,6 +58,7 @@ AS
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210129@Kos: Hotfix - God Of Fortune [Redmine: #149607]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 */
 
 BEGIN
@@ -95,7 +96,7 @@ BEGIN
 	SELECT DISTINCT ProductId, Bettype, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @IsTest)
 	WHERE
-		ProductID IN (1, 3, 5, 8, 27, 28, 40, 43)
+		ProductID IN (1, 3, 5, 8, 27, 28, 40, 43, 63)
 		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 		AND BetType IN (
 			SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
@@ -969,8 +970,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
-		-- Keno, Lottery, Table Games, Indo 4D, Happy 5 Linked Games
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 8, 28, 40, 43) AND EventType = 0 AND Bettype = @BetType)
+		-- Keno, Lottery, Table Games, Indo 4D, Happy 5 Linked Games, Sports Lottery
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 8, 28, 40, 43, 63) AND EventType = 0 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -983,7 +984,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 28 THEN 220
-					WHEN sbt.ProductId IN (3, 40, 43) THEN b.matchid
+					WHEN sbt.ProductId IN (3, 40, 43, 63) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.bettype,
@@ -1022,7 +1023,7 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				CASE
-					WHEN sbt.ProductId = 3 THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductId IN (3, 63) THEN ISNULL(b.betcheck, '')
 					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
@@ -1380,8 +1381,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 
-		-- Keno, Lottery, Table Games, Indo 4D, Happy 5 Linked Games
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 8, 28, 40, 43) AND EventType = 0 AND Bettype = @BetType)
+		-- Keno, Lottery, Table Games, Indo 4D, Happy 5 Linked Games, Sports Lottery
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 8, 28, 40, 43, 63) AND EventType = 0 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1394,7 +1395,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 28 THEN 220
-					WHEN sbt.ProductId IN (3, 40, 43) THEN b.matchid
+					WHEN sbt.ProductId IN (3, 40, 43, 63) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.bettype,
@@ -1433,7 +1434,7 @@ BEGIN
 				b.playercomm,
 				'' AS Race,
 				CASE
-					WHEN sbt.ProductId = 3 THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductId IN (3, 63) THEN ISNULL(b.betcheck, '')
 					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
 					ELSE ''
 				END AS BetCheck,
@@ -1578,10 +1579,4 @@ BEGIN
 	DROP TABLE #Data
 	DROP TABLE #TempData
 END
-GO
-
-
-
-
-GRANT	EXECUTE	ON	Lrf_BetList_SelWinLossByBetType	TO	bodbLicenseeNet
 GO

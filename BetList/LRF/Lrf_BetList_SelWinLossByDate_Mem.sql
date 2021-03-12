@@ -41,7 +41,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByDate_Mem]
 	@ShowSXG			BIT				= 0,	-- Sexy Gaming
 	@ShowPGS			BIT				= 0,	-- PG Soft
 	@ShowJK				BIT				= 0,	-- Joker
-	@ShowGDG			BIT				= 0	-- GDG
+	@ShowGDG			BIT				= 0,	-- GDG
+	@ShowSLT			BIT				= 0		-- Sports Lottery
 AS
 
 /*
@@ -150,6 +151,7 @@ AS
 		- 20210112@Kos: Support GDG [Redmine: #147267]
 		- 20210118@Kos: Exclude Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 */
 
 BEGIN
@@ -209,6 +211,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowPGS = 1	THEN 55 END
 		OR ProductID	= CASE WHEN @ShowJK = 1		THEN 56 END
 		OR ProductID	= CASE WHEN @ShowGDG = 1	THEN 59 END
+		OR ProductID	= CASE WHEN @ShowSLT = 1	THEN 63 END
 
 	DELETE @SportBettype
 	WHERE BetType IN (71, 73, 904, 914)
@@ -802,6 +805,7 @@ BEGIN
 							WHEN s.ProductID = 55 THEN 'PGS'							-- PG Soft
 							WHEN s.ProductID = 56 THEN 'JK'								-- Joker
 							WHEN s.ProductID = 59 THEN 'GDG'							-- GDG
+							WHEN s.ProductID = 63 THEN 'SLT'							-- Sports Lottery
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1087,7 +1091,7 @@ BEGIN
 								ELSE b.TransId
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG') THEN b.MatchId
+									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'FW' THEN 219			-- Fishing World
@@ -1115,7 +1119,7 @@ BEGIN
 							END,
 					Odds = CASE
 								WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2', 'Keno', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D') THEN b.Odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2', 'Keno', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D', 'SLT') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1224,13 +1228,13 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'FW', 'PP', 
-										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG') THEN ISNULL(b.transdesc, '')
+										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1283,7 +1287,7 @@ BEGIN
 								ELSE b.TransId
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG') THEN b.MatchId
+									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'FW' THEN 219			-- Fishing World
@@ -1310,7 +1314,7 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2', 'Keno', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D') THEN b.Odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2', 'Keno', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D', 'SLT') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1387,13 +1391,13 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'FW', 'PP', 
-										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG') THEN ISNULL(b.transdesc, '')
+										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1445,7 +1449,7 @@ BEGIN
 								ELSE b.TransId
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG') THEN b.MatchId
+									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'FW' THEN 219			-- Fishing World
@@ -1472,7 +1476,7 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2', 'Keno', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D') THEN b.Odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2', 'Keno', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D', 'SLT') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1549,13 +1553,13 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'FW', 'PP', 
-										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG') THEN ISNULL(b.transdesc, '')
+										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE

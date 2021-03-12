@@ -37,6 +37,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_CustomerList_Mem]
 	@ShowPGS		BIT	= 0,	-- PG Soft
 	@ShowJK			BIT	= 0,	-- Joker
 	@ShowGDG		BIT	= 0,	-- GDG
+	@ShowSLT		BIT	= 0,	-- Sports Lottery
 	@ShowBT			BIT	= 0,	-- Bet Trade
 	@ShowCO			BIT	= 0,	-- Cash Out
 	@TotalRows		INT		= 0 OUTPUT,
@@ -79,6 +80,7 @@ AS
 		- 20210112@Kos: Support GDG [Redmine: #147267]
 		- 20210118@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 */
 
 BEGIN
@@ -140,6 +142,7 @@ BEGIN
 		OR (ProductID = 55 AND @ShowPGS = 1)					-- PG Soft
 		OR (ProductID = 56 AND @ShowJK = 1)						-- Joker
 		OR (ProductID = 59 AND @ShowGDG = 1)					-- GDG
+		OR (ProductID = 63 AND @ShowSLT = 1)					-- Sports Lottery
 		OR (BetType IN (901, 902, 903) AND @ShowBT = 1)			-- BetTrade
 
 	DELETE @SportBettype
@@ -791,15 +794,15 @@ BEGIN
 				AND sbt.EventType = 3
 		END
 
-		-- Keno, Lottery, Virtual Games, Table Games, Indo 4D, Happy 5 Linked Games
-		IF @ShowKN = 1 OR @ShowLT = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowI4D = 1 OR @ShowNG = 1
+		-- Keno, Lottery, Virtual Games, Table Games, Indo 4D, Happy 5 Linked Games, Sports Lottery
+		IF @ShowKN = 1 OR @ShowLT = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowI4D = 1 OR @ShowNG = 1 OR @ShowSLT = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT
 				CASE
 					WHEN sbt.ProductID = 8 THEN 202
 					WHEN sbt.ProductID = 28 THEN 220
-					WHEN sbt.ProductID IN (3, 38, 40, 43) THEN b.matchid
+					WHEN sbt.ProductID IN (3, 38, 40, 43, 63) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.transid,
@@ -845,11 +848,11 @@ BEGIN
 				'' AS ShowTime,
 				CASE
 					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
-					WHEN sbt.ProductID IN (3, 38) THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductID IN (3, 38, 63) THEN ISNULL(b.betcheck, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
-					WHEN sbt.ProductID IN (3, 8, 28, 38, 40, 43) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (3, 8, 28, 38, 40, 43, 63) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -866,7 +869,7 @@ BEGIN
 				b.winlostdate BETWEEN @TempFromDate AND @ToDate 
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113, 101, 102, 103)
-				AND (sbt.ProductID IN (8, 28, 38, 40, 43)
+				AND (sbt.ProductID IN (8, 28, 38, 40, 43, 63)
 					OR (sbt.ProductID = 3 AND sbt.EventType = 0))
 		END
 
@@ -1848,10 +1851,10 @@ BEGIN
 		END
 
 		-- RNG Casino, Keno, AG Casino, AllBet, Voidbridge, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming, Virtual Games
-		-- SA Gaming, Table Games, Indo 4D, Sexy Gaming, Saba.club, PG Soft, Joker, Happy 5 Linked Games, GDG
+		-- SA Gaming, Table Games, Indo 4D, Sexy Gaming, Saba.club, PG Soft, Joker, Happy 5 Linked Games, GDG, Sports Lottery
 		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1
 			OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowVRG = 1 OR @ShowSAG = 1 OR @ShowTG = 1 OR @ShowI4D = 1 OR @ShowSXG = 1 OR @ShowSBC = 1 OR @ShowPGS = 1
-			OR @ShowJK = 1 OR @ShowNG = 1 OR @ShowGDG = 1
+			OR @ShowJK = 1 OR @ShowNG = 1 OR @ShowGDG = 1 OR @ShowSLT = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1864,7 +1867,7 @@ BEGIN
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
 					WHEN sbt.ProductID = 32 THEN 248
-					WHEN sbt.ProductID IN (3, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59) THEN b.matchid
+					WHEN sbt.ProductID IN (3, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59, 63) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.transid,
@@ -1875,7 +1878,7 @@ BEGIN
 				0 AS MOdds,
 				0 AS Oddstype,
 				CASE
-					WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 42, 43) THEN b.odds
+					WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 42, 43, 63) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				b.stake,
@@ -1913,12 +1916,12 @@ BEGIN
 				'' AS ShowTime,
 				CASE
 					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
-					WHEN sbt.ProductId IN (3, 38) THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductId IN (3, 38, 63) THEN ISNULL(b.betcheck, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-					WHEN sbt.ProductID IN (3, 8, 22, 24, 28, 32, 34, 36, 38, 40, 43, 55, 56) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (3, 8, 22, 24, 28, 32, 34, 36, 38, 40, 43, 55, 56, 63) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -1938,7 +1941,7 @@ BEGIN
 				b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113, 101, 102, 103)
-				AND (sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59)
+				AND (sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59, 63)
 					OR (sbt.ProductID = 3 AND sbt.EventType = 0))
 		END
 
@@ -2590,10 +2593,10 @@ BEGIN
 		END
 
 		-- RNG Casino, Keno, AG Casino, AllBet, Voidbridge, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming, Virtual Games
-		-- SA Gaming, Table Games, Indo 4D, Sexy Gaming, Saba.club, PG Soft, Joker, Happy 5 Linked Games, GDG
+		-- SA Gaming, Table Games, Indo 4D, Sexy Gaming, Saba.club, PG Soft, Joker, Happy 5 Linked Games, GDG, Sports Lottery
 		IF @ShowCS = 1 OR @ShowKN = 1 OR @ShowAGC = 1 OR @ShowAB = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowLT = 1 OR @ShowPP = 1
 			OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowVRG = 1 OR @ShowSAG = 1 OR @ShowTG = 1 OR @ShowI4D = 1 OR @ShowSXG = 1 OR @ShowSBC = 1 OR @ShowPGS = 1
-			OR @ShowJK = 1 OR @ShowNG = 1 OR @ShowGDG = 1
+			OR @ShowJK = 1 OR @ShowNG = 1 OR @ShowGDG = 1 OR @ShowSLT = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -2607,7 +2610,7 @@ BEGIN
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
 					WHEN sbt.ProductID = 32 THEN 248
-					WHEN sbt.ProductID IN (3, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59) THEN b.matchid
+					WHEN sbt.ProductID IN (3, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59, 63) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.transid,
@@ -2631,7 +2634,7 @@ BEGIN
 				END AS Oddstype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-					WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 42, 43) THEN b.odds
+					WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 42, 43, 63) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				b.stake,
@@ -2675,12 +2678,12 @@ BEGIN
 				'' AS ShowTime,
 				CASE
 					WHEN sbt.ProductId = 8 THEN ISNULL(b.comstatus, '')
-					WHEN sbt.ProductId IN (3, 38) THEN ISNULL(b.betcheck, '')
+					WHEN sbt.ProductId IN (3, 38, 63) THEN ISNULL(b.betcheck, '')
 					ELSE ''
 				END AS BetCheck,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct <> '' THEN b.transdesc
-					WHEN sbt.ProductID IN (3, 8, 22, 24, 28, 32, 34, 36, 38, 40, 43, 55, 56) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (3, 8, 22, 24, 28, 32, 34, 36, 38, 40, 43, 55, 56, 63) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -2699,7 +2702,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.custid = @CustId
-				AND (sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59)
+				AND (sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59, 63)
 					OR (sbt.ProductID = 3 AND sbt.EventType = 0))
 				AND b.statusID IN (111, 112, 113, 101, 102, 103)
 		END

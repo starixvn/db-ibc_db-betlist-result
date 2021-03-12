@@ -52,6 +52,7 @@ AS
 		- 20201231@Kos: Support Virtual Games [Redmine: #147843]
 		- 20200108@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 */
 
 BEGIN
@@ -549,6 +550,7 @@ BEGIN
 							WHEN s.ProductID = 38 THEN 'VRG'							-- Virtual Games
 							WHEN s.ProductID = 40 THEN 'TG'								-- Table Games
 							WHEN s.ProductID = 43 THEN 'I4D'							-- Indo 4D
+							WHEN s.ProductID = 63 THEN 'SLT'							-- Sports Lottery
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -739,7 +741,7 @@ BEGIN
 							ELSE b.TransId
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG', 'H5LG') THEN b.ProductId
+								WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG', 'H5LG', 'SLT') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('Outright') THEN l.sporttype
 								WHEN b.Product IN ('VR') THEN vr.SportType
@@ -762,7 +764,7 @@ BEGIN
 							ELSE 0
 						END,
 				Odds = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG') THEN b.Odds
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 'SLT') THEN b.Odds
 							ELSE 0
 						END,
 				MOdds = CASE 
@@ -856,11 +858,11 @@ BEGIN
 				BetCheck = CASE
 								WHEN b.Product IN ('SB', 'Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('Keno') THEN ISNULL(b.custom2, '')
-								WHEN b.Product IN ('VRG', 'H5LG') THEN ISNULL(b.Gameid3rd, '')
+								WHEN b.Product IN ('VRG', 'H5LG', 'SLT') THEN ISNULL(b.Gameid3rd, '')
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D', 'VRG', 'H5LG') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'TG', 'I4D', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
