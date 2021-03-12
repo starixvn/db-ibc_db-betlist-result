@@ -122,6 +122,7 @@ AS
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
 		- 20210202@Kos: Support Saba Promotion [Redmine: #149952]
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
+		- 20210311@Razor: Support PP Live Casino [Redmine: #134042]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -366,6 +367,7 @@ BEGIN
 						WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
 						WHEN s.ProductID = 60 THEN 'MXG'	-- MaxGame
 						WHEN s.ProductID = 63 THEN 'SLT'	-- Sports Lottery
+						WHEN s.ProductID = 65 THEN 'PPL'	-- PP Live Casino
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
@@ -395,7 +397,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
-									'MXG', 'SPR', 'SLT') THEN b.matchid
+									'MXG', 'SPR', 'SLT', 'PPL') THEN b.matchid
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -706,10 +708,4 @@ BEGIN
 	SELECT * FROM @DetailData
 	ORDER BY RefNo DESC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinLossByDate_Mem_Old] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinLossByDate_Mem_Old] TO [bodbDownlineNetView]
 GO
