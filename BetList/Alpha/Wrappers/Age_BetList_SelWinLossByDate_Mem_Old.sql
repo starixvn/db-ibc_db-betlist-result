@@ -123,6 +123,7 @@ AS
 		- 20210202@Kos: Support Saba Promotion [Redmine: #149952]
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 		- 20210311@Razor: Support PP Live Casino [Redmine: #134042]
+		- 20210319@Razor: Support Habanero [Redmine: #145460]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -366,6 +367,7 @@ BEGIN
 						WHEN s.ProductID = 57 THEN 'BG'		-- Big Gaming
 						WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
 						WHEN s.ProductID = 60 THEN 'MXG'	-- MaxGame
+						WHEN s.ProductID = 61 THEN 'HB'		-- Habanero
 						WHEN s.ProductID = 63 THEN 'SLT'	-- Sports Lottery
 						WHEN s.ProductID = 65 THEN 'PPL'	-- PP Live Casino
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
@@ -397,7 +399,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
-									'MXG', 'SPR', 'SLT', 'PPL') THEN b.matchid
+									'MXG', 'SPR', 'SLT', 'PPL', 'HB') THEN b.matchid
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -523,7 +525,7 @@ BEGIN
 							END,
 				ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT')
+								WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB')
 									THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
