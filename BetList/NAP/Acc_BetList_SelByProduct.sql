@@ -67,6 +67,7 @@ AS
 		- 20210119@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #147709]
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 		- 20210311@Razor: Support PP Live Casino [Redmine: #134042]
+		- 20210319@Razor: Support Habanero [Redmine: #145460]
 */
 
 BEGIN
@@ -546,8 +547,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -559,7 +560,7 @@ BEGIN
 						b.refno,
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-							WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
+							WHEN s.productID IN (42, 61) THEN ISNULL(b.SiteID, '')
 							WHEN s.productID IN (55, 56) THEN ISNULL(b.GameId3rd, '')
 							ELSE ''
 						END AS MatchCode,
@@ -584,7 +585,10 @@ BEGIN
 						b.stake,
 						b.actual_stake,
 						b.transdate,
-						'' AS BetTeam,
+						CASE
+							WHEN s.productID = 61 THEN b.GameId3rd
+						ELSE ''
+						END AS BetTeam,
 						b.spositiontaking,
 						b.mpositiontaking,
 						b.apositiontaking,
@@ -982,8 +986,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -995,7 +999,7 @@ BEGIN
 						b.refno,
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-							WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
+							WHEN s.productID IN (42, 61) THEN ISNULL(b.SiteID, '')
 							WHEN s.productID IN (55, 56) THEN ISNULL(b.GameId3rd, '')
 							ELSE ''
 						END AS MatchCode,
@@ -1020,7 +1024,10 @@ BEGIN
 						b.stake,
 						b.actual_stake,
 						b.transdate,
-						'' AS BetTeam,
+						CASE
+							WHEN s.productID = 61 THEN b.GameId3rd
+						ELSE ''
+						END AS BetTeam,
 						b.spositiontaking,
 						b.mpositiontaking,
 						b.apositiontaking,
