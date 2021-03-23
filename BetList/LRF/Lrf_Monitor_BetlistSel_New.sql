@@ -64,6 +64,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210309@Kos: Support betfrom '_', '@', '%' [Redmine: #151019]
 		- 20210315@Kos: Support Cricket AIO [Redmine: #148962]
+		- 20210323@Kos: Support show IP [Redmine: #151085]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -155,6 +156,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		BetTeam			NVARCHAR(10),
 		OddsType		TINYINT,
+		Ip				NVARCHAR(15),
 		CurrencyId		SMALLINT,
 		SpecialLevel	INT,
 		BetCheck		NVARCHAR(100),
@@ -301,6 +303,7 @@ BEGIN
 				END AS status,
 				b.betteam,
 				b.oddstype,
+				b.ip,
 				b.currency AS CurrencyId,
 				0 AS SpecialLevel,
 				ISNULL(b.betcheck, '') AS BetCheck,
@@ -371,6 +374,7 @@ BEGIN
 				END AS status,
 				b.betteam,
 				b.oddstype,
+				b.ip,
 				b.currency AS CurrencyId,
 				0 AS SpecialLevel,
 				ISNULL(b.betcheck, '') AS BetCheck,
@@ -427,6 +431,7 @@ BEGIN
 				END AS status,
 				b.betteam,
 				b.oddstype,
+				b.ip,
 				b.currency AS CurrencyId,
 				0 AS SpecialLevel,
 				ISNULL(b.betcheck, '') AS BetCheck,
@@ -602,6 +607,7 @@ BEGIN
 		b.Status,
 		b.BetTeam,
 		b.OddsType,
+		b.Ip,
 		b.CurrencyId AS Currency,
 		b.SpecialLevel,
 		b.BetCheck,

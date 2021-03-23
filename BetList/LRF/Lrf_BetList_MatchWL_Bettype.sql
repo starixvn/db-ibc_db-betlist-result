@@ -80,6 +80,7 @@ AS
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 					- Add new param @MoveBetsDay SMALLDATETIME
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210323@Kos: Support show IP [Redmine: #151085]
 */
 
 BEGIN
@@ -167,6 +168,7 @@ BEGIN
 		BetStatus			NVARCHAR(50),
 		IsNeutral			BIT,
 		OddsType			INT,
+		Ip					NVARCHAR(15),
 		BetId				BIGINT,
 		Currency			SMALLINT,
 		RefNo				BIGINT,
@@ -226,6 +228,7 @@ BEGIN
 				m.betstatus,
 				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -302,6 +305,7 @@ BEGIN
 				m.betstatus,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -379,6 +383,7 @@ BEGIN
 				m.betstatus,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -454,6 +459,7 @@ BEGIN
 				r.betstatus,
 				ISNULL(0, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -525,6 +531,7 @@ BEGIN
 				m.betstatus,
 				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -603,6 +610,7 @@ BEGIN
 				m.betstatus,
 				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.OddsType,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -680,6 +688,7 @@ BEGIN
 				m.betstatus,
 				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -755,6 +764,7 @@ BEGIN
 				r.betstatus,
 				ISNULL(0, CONVERT(BIT,0)) AS IsNeutral,
 				b.oddstype,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -938,6 +948,7 @@ BEGIN
 		BetStatus			NVARCHAR(50),
 		IsNeutral			BIT,
 		OddsType			INT,
+		Ip					NVARCHAR(15),
 		BetId				BIGINT,
 		Currency			SMALLINT,
 		RefNo				BIGINT,
@@ -1041,6 +1052,7 @@ BEGIN
 		b.BetStatus,
 		b.IsNeutral,
 		b.OddsType,
+		b.Ip,
 		b.BetId,
 		b.Currency,
 		b.RefNo,

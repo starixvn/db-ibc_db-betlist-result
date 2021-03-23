@@ -55,6 +55,7 @@ AS
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210316@Kos: Support Cricket AIO [Redmine: #148962]
+		- 20210323@Kos: Support show IP [Redmine: #151085]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -142,6 +143,7 @@ BEGIN
 		BetStatus			NVARCHAR(50),
 		IsNeutral			BIT,
 		OddsType			INT,
+		Ip					NVARCHAR(15),
 		BetId				BIGINT,
 		Currency			SMALLINT,
 		RefNo				BIGINT,
@@ -310,6 +312,7 @@ BEGIN
 				m.betstatus,
 				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				b.oddstype,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -326,6 +329,7 @@ BEGIN
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
 				END AS OriginalBetType,
+				b.ip,
 				CASE
 					WHEN b.tpositiontaking = 0 THEN 0
 					ELSE ISNULL(b.WalletType, 0)
@@ -422,6 +426,7 @@ BEGIN
 				m.betstatus,
 				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				b.oddstype,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -442,6 +447,7 @@ BEGIN
 					WHEN b.tpositiontaking = 0 THEN 0
 					ELSE ISNULL(b.WalletType, 0)
 				END AS WalletType,
+				b.ip,
 				CASE
 					WHEN b.tpositiontaking = 0 THEN 0
 					ELSE ISNULL(b.RefCode, 0)
@@ -534,6 +540,7 @@ BEGIN
 				m.betstatus,
 				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				b.oddstype,
+				b.ip,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -550,6 +557,7 @@ BEGIN
 					WHEN b.stake <> 0 THEN -1
 					ELSE 0
 				END AS OriginalBetType,
+				b.ip,
 				CASE
 					WHEN b.tpositiontaking = 0 THEN 0
 					ELSE ISNULL(b.WalletType, 0)
@@ -724,6 +732,7 @@ BEGIN
 			b.BetStatus,
 			b.IsNeutral,
 			b.OddsType,
+			b.Ip,
 			b.BetId,
 			b.Currency,
 			b.RefNo,

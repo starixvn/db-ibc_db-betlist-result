@@ -59,6 +59,7 @@ AS
 		- 20210129@Kos: Hotfix - God Of Fortune [Redmine: #149607]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
+		- 20210323@Kos: Support show IP [Redmine: #151085]
 */
 
 BEGIN
@@ -177,6 +178,7 @@ BEGIN
 		LicenseeWL			MONEY,
 		Comm				MONEY,
 		PlayerComm			MONEY,
+		Ip					NVARCHAR(15),
 		Race				VARCHAR(20),
 		BetCheck			NVARCHAR(50),
 		TransDesc			NVARCHAR(1000),
@@ -678,6 +680,7 @@ BEGIN
 				td.LicenseeWL,
 				td.Comm,
 				td.PlayerComm,
+				b.ip,
 				'' AS Race,
 				ISNULL(b.betcheck, '') AS BetCheck,
 				ISNULL(b.transdesc, '') AS TransDesc,
@@ -747,6 +750,7 @@ BEGIN
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
+				b.ip,
 				o.groupmatch AS Race,
 				'' AS BetCheck,
 				'' AS TransDesc,
@@ -813,6 +817,7 @@ BEGIN
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
+				b.ip,
 				'' AS Race,
 				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS TransDesc,
@@ -883,6 +888,7 @@ BEGIN
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
+				b.ip,
 				'' AS Race,
 				'' AS BetCheck,
 				CASE
@@ -949,6 +955,7 @@ BEGIN
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
+				b.ip,
 				CONVERT(VARCHAR(20), b.oddsid) AS Race,
 				'' AS BetCheck,
 				'' AS TransDesc,
@@ -1021,6 +1028,7 @@ BEGIN
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
+				b.ip,
 				'' AS Race,
 				CASE
 					WHEN sbt.ProductId IN (3, 63) THEN ISNULL(b.betcheck, '')
@@ -1089,6 +1097,7 @@ BEGIN
 				td.LicenseeWL,
 				td.Comm,
 				td.PlayerComm,
+				b.ip,
 				'' AS Race,
 				ISNULL(b.betcheck, '') AS BetCheck,
 				ISNULL(b.transdesc, '') AS TransDesc,
@@ -1158,6 +1167,7 @@ BEGIN
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
+				b.ip,
 				o.groupmatch AS Race,
 				'' AS BetCheck,
 				'' AS TransDesc,
@@ -1224,6 +1234,7 @@ BEGIN
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
+				b.ip,
 				'' AS Race,
 				ISNULL(b.betcheck, '') AS BetCheck,
 				'' AS TransDesc,
@@ -1294,6 +1305,7 @@ BEGIN
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
+				b.ip,
 				'' AS Race,
 				'' AS BetCheck,
 				CASE
@@ -1360,6 +1372,7 @@ BEGIN
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
+				b.ip,
 				CONVERT(VARCHAR(20), b.oddsid) AS Race,
 				'' AS BetCheck,
 				'' AS TransDesc,
@@ -1432,6 +1445,7 @@ BEGIN
 				-(b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
 				b.playercomm,
+				b.ip,
 				'' AS Race,
 				CASE
 					WHEN sbt.ProductId IN (3, 63) THEN ISNULL(b.betcheck, '')
@@ -1495,6 +1509,7 @@ BEGIN
 		b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
 		b.Comm * ISNULL(e.Rate, 1) AS Comm,
 		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		b.Ip,
 		b.Race,
 		b.BetCheck,
 		b.TransDesc,
