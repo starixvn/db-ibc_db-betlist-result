@@ -41,22 +41,22 @@ AS
 			- 2: Delay Payout
 		- @Platform:
 			- 0 - All: All
-			- 1 - Asia: d (mobile), g (MG Download only)
-			- 2 - China: a (dep-Singbet), z (dep2-SingBet)
-			- 3 - Euro: e (Europe), u (dep-Euro)
-			- 4 - WAP: m (dep-wap)
-			- 5 - Mobile: l (dep-smart), _ (Quick Bet)
-			- 6 - Tablet: r (dep2-tablet)
-			- 7 - New Asia: x (dep2-Asia)
-			- 8 - Mobile App: o (dep-New Mobile APP)
-			- 9 - Mobile Lite Version: c (dep-MCV), @ (Quick Bet)
-			- 10 - Deep Link: t (Licensee-Deeplink)
-			- 11 - Native App: 0 (Native App)
-			- 12 - E-Sports Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
-			- 13 - E-Sports Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
-			- 14 - E-Sports App: 3 (E-Sports App), 6 (eGamer App)
-			- 15 - Mobile Euro: % (Mobile Euro)
-			- 88 - Others: v (Licensee Odds Feed), 7 (3rd Party Portal Service)
+			- 1 - Desktop New Asia: x (dep2-Asia)
+			- 2 - Desktop China: a (dep-Singbet), z (dep2-SingBet)
+			- 3 - Desktop Others: 9 (3rd Party Portal Service - Desktop)
+			- 4 - Mobile Standard: l (dep-smart), _ (Quick Bet)
+			- 5 - Mobile Euro: % (Mobile Euro)
+			- 6 - Mobile Compact: c (dep-MCV), @ (Quick Bet)
+			- 7 - Mobile Others: 7 (3rd Party Portal Service - Facebook Wall), 8 (3rd Party Portal Service - Statement AD)
+			- 8 - E-Sports Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
+			- 9 - E-Sports Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
+			- 10 - E-Sports APP: 3 (E-Sports App), 6 (eGamer App)
+			- 11 - Mobile APP: o (dep-New Mobile APP)
+			- 12 - Native APP: 0 (Native App)
+			- 13 - Tablet: r (dep2-tablet)
+			- 14 - Deep Link: t (Licensee-Deeplink)
+			- 15 - WAP: m (dep-wap)
+			- 88 - Others: v (Licensee Odds Feed), d (mobile), g (MG Download only), e (Europe), u (dep-Euro)
 		- @LiveIndicator:
 			- 0 : Non-live
 			- 1 : Live
@@ -94,6 +94,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210309@Kos: Support betfrom '_', '@', '%' [Redmine: #151019]
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
+		- 20210325@Kos: Support betfrom '8', '9' [Redmine: #152158]
 */
 
 BEGIN
@@ -294,7 +295,7 @@ BEGIN
 
 		IF @Platform = 1
 		BEGIN
-			SET @BetFromList = 'd,g'
+			SET @BetFromList = 'x'
 		END
 		ELSE IF @Platform = 2
 		BEGIN
@@ -302,59 +303,59 @@ BEGIN
 		END
 		ELSE IF @Platform = 3
 		BEGIN
-			SET @BetFromList = 'e,u'
+			SET @BetFromList = '9'
 		END
 		ELSE IF @Platform = 4
 		BEGIN
-			SET @BetFromList = 'm'
+			SET @BetFromList = 'l,_'
 		END
 		ELSE IF @Platform = 5
 		BEGIN
-			SET @BetFromList = 'l,_'
+			SET @BetFromList = '%'
 		END
 		ELSE IF @Platform = 6
 		BEGIN
-			SET @BetFromList = 'r'
+			SET @BetFromList = 'c,@'
 		END
 		ELSE IF @Platform = 7
 		BEGIN
-			SET @BetFromList = 'x'
+			SET @BetFromList = '7,8'
 		END
 		ELSE IF @Platform = 8
 		BEGIN
-			SET @BetFromList = 'o'
+			SET @BetFromList = '1,4'
 		END
 		ELSE IF @Platform = 9
 		BEGIN
-			SET @BetFromList = 'c,@'
+			SET @BetFromList = '2,5'
 		END
 		ELSE IF @Platform = 10
 		BEGIN
-			SET @BetFromList = 't'
+			SET @BetFromList = '3,6'
 		END
 		ELSE IF @Platform = 11
 		BEGIN
-			SET @BetFromList = '0'
+			SET @BetFromList = 'o'
 		END
 		ELSE IF @Platform = 12
 		BEGIN
-			SET @BetFromList = '1,4'
+			SET @BetFromList = '0'
 		END
 		ELSE IF @Platform = 13
 		BEGIN
-			SET @BetFromList = '2,5'
+			SET @BetFromList = 'r'
 		END
 		ELSE IF @Platform = 14
 		BEGIN
-			SET @BetFromList = '3,6'
+			SET @BetFromList = 't'
 		END
 		ELSE IF @Platform = 15
 		BEGIN
-			SET @BetFromList = '%'
+			SET @BetFromList = 'm'
 		END
 		ELSE IF @Platform = 88
 		BEGIN
-			SET @BetFromList = 'v,7'
+			SET @BetFromList = 'v,d,g,e,u'
 		END
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)

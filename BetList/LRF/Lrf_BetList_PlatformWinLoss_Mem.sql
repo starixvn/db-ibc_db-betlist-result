@@ -107,6 +107,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210309@Kos: Support betfrom '_', '@', '%' [Redmine: #151019]
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
+		- 20210325@Kos: Support betfrom '8', '9' [Redmine: #152158]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -115,22 +116,22 @@ AS
 			- 3: No Draw for Turnover only
 		+ @PlatformType:
 			- 0 - All: All
-			- 1 - Asia: d (mobile), g (MG Download only)
-			- 2 - China: a (dep-Singbet), z (dep2-SingBet)
-			- 3 - Euro: e (Europe), u (dep-Euro)
-			- 4 - WAP: m (dep-wap)
-			- 5 - Mobile: l (dep-smart), _ (Quick Bet)
-			- 6 - Tablet: r (dep2-tablet)
-			- 7 - New Asia: x (dep2-Asia)
-			- 8 - Mobile App: o (dep-New Mobile APP)
-			- 9 - Mobile Lite Version: c (dep-MCV), @ (Quick Bet)
-			- 10 - Deep Link: t (Licensee-Deeplink)
-			- 11 - Native App: 0 (Native App)
-			- 12 - E-Sports Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
-			- 13 - E-Sports Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
-			- 14 - E-Sports App: 3 (E-Sports App), 6 (eGamer App)
-			- 15 - Mobile Euro: % (Mobile Euro)
-			- 88 - Others: v (Licensee Odds Feed), 7 (3rd Party Portal Service)
+			- 1 - Desktop New Asia: x (dep2-Asia)
+			- 2 - Desktop China: a (dep-Singbet), z (dep2-SingBet)
+			- 3 - Desktop Others: 9 (3rd Party Portal Service - Desktop)
+			- 4 - Mobile Standard: l (dep-smart), _ (Quick Bet)
+			- 5 - Mobile Euro: % (Mobile Euro)
+			- 6 - Mobile Compact: c (dep-MCV), @ (Quick Bet)
+			- 7 - Mobile Others: 7 (3rd Party Portal Service - Facebook Wall), 8 (3rd Party Portal Service - Statement AD)
+			- 8 - E-Sports Desktop: 1 (E-Sports Web Desktop), 4 (eGamer Desktop)
+			- 9 - E-Sports Mobile: 2 (E-Sports Web Mobile), 5 (eGamer Mobile)
+			- 10 - E-Sports APP: 3 (E-Sports App), 6 (eGamer App)
+			- 11 - Mobile APP: o (dep-New Mobile APP)
+			- 12 - Native APP: 0 (Native App)
+			- 13 - Tablet: r (dep2-tablet)
+			- 14 - Deep Link: t (Licensee-Deeplink)
+			- 15 - WAP: m (dep-wap)
+			- 88 - Others: v (Licensee Odds Feed), d (mobile), g (MG Download only), e (Europe), u (dep-Euro)
 
 	Sample call:
 		DECLARE @p17 INT
@@ -220,15 +221,14 @@ BEGIN
 		BetFrom	NVARCHAR(1)
 	)
 
-	-- Asia
+	-- Desktop New Asia
 	IF @PlatformType IN (0, 1)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'd' UNION ALL
-		SELECT 'g'
+		SELECT 'x'
 	END
 
-	-- China
+	-- Desktop China
 	IF @PlatformType IN (0, 2)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
@@ -236,74 +236,46 @@ BEGIN
 		SELECT 'z'
 	END
 
-	-- Euro
+	-- Desktop Others
 	IF @PlatformType IN (0, 3)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'e' UNION ALL
-		SELECT 'u'
+		SELECT '9'
 	END
 
-	-- WAP
+	-- Mobile Standard
 	IF @PlatformType IN (0, 4)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'm'
-	END
-
-	-- Mobile
-	IF @PlatformType IN (0, 5)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT 'l' UNION ALL
 		SELECT '_'
 	END
 
-	-- Tablet
+	-- Mobile Euro
+	IF @PlatformType IN (0, 5)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT '%'
+	END
+
+	-- Mobile Compact
 	IF @PlatformType IN (0, 6)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'r'
-	END
-
-	-- New Asia
-	IF @PlatformType IN (0, 7)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'x'
-	END
-
-	-- Mobile App
-	IF @PlatformType IN (0, 8)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'o'
-	END
-
-	-- Mobile Lite Version
-	IF @PlatformType IN (0, 9)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT 'c' UNION ALL
 		SELECT '@'
 	END
 
-	-- Deeplink
-	IF @PlatformType IN (0, 10)
+	-- Mobile Others
+	IF @PlatformType IN (0, 7)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT 't'
-	END
-
-	-- Native App
-	IF @PlatformType IN (0, 11)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT '0'
+		SELECT '7' UNION ALL
+		SELECT '8'
 	END
 
 	-- E-Sports Desktop
-	IF @PlatformType IN (0, 12)
+	IF @PlatformType IN (0, 8)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT '1' UNION ALL
@@ -311,26 +283,54 @@ BEGIN
 	END
 
 	-- E-Sports Mobile
-	IF @PlatformType IN (0, 13)
+	IF @PlatformType IN (0, 9)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT '2' UNION ALL
 		SELECT '5'
 	END
 
-	-- E-Sports App
-	IF @PlatformType IN (0, 14)
+	-- E-Sports APP
+	IF @PlatformType IN (0, 10)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT '3' UNION ALL
 		SELECT '6'
 	END
 
-	-- Mobile Euro
+	-- Mobile APP
+	IF @PlatformType IN (0, 11)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT 'o'
+	END
+
+	-- Native APP
+	IF @PlatformType IN (0, 12)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT '0'
+	END
+
+	-- Tablet
+	IF @PlatformType IN (0, 13)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT 'r'
+	END
+
+	-- Deep Link
+	IF @PlatformType IN (0, 14)
+	BEGIN
+		INSERT INTO @BetFrom (BetFrom)
+		SELECT 't'
+	END
+
+	-- WAP
 	IF @PlatformType IN (0, 15)
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
-		SELECT '%'
+		SELECT 'm'
 	END
 
 	-- Others
@@ -338,7 +338,10 @@ BEGIN
 	BEGIN
 		INSERT INTO @BetFrom (BetFrom)
 		SELECT 'v' UNION ALL
-		SELECT '7'
+		SELECT 'd' UNION ALL
+		SELECT 'g' UNION ALL
+		SELECT 'e' UNION ALL
+		SELECT 'u'
 	END
 
 	DECLARE @Data AS TABLE (
