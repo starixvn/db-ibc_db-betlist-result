@@ -150,6 +150,7 @@ AS
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 		- 20210311@Razor: Support PP Live Casino [Redmine: #134042]
 		- 20210319@Razor: Support Habanero [Redmine: #145460]
+		- 20210406@Kos: Enhance performance [Redmine: #152315]
 */
 
 BEGIN
@@ -312,14 +313,25 @@ BEGIN
 			@WinLostDate = b.winlostdate,
 			@BetType = b.bettype,
 			@RefNo = b.refno
-		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_transid)
 			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
-		WHERE b.custid = @CustId
-			AND ( b.transid = @RefNo
-				OR ( b.refno = @RefNo
-					AND (sp.productid IN (8, 12, 15, 28, 38, 40, 43, 49, 63)
-						OR sp.bettype BETWEEN 801 AND 899
-						OR (sp.productid = 3 AND sp.EventType = 0))))
+		WHERE b.custid = @CustId AND b.transid = @RefNo
+
+		IF @WinLostDate IS NULL
+		BEGIN
+			SELECT TOP(1)
+				@TransId = b.transid,
+				@WinLostDate = b.winlostdate,
+				@BetType = b.bettype,
+				@RefNo = b.refno
+			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+				INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
+			WHERE b.custid = @CustId
+				AND b.refno = @RefNo
+				AND (sp.productid IN (8, 12, 15, 28, 38, 40, 43, 49, 63)
+					OR sp.bettype BETWEEN 801 AND 899
+					OR (sp.productid = 3 AND sp.EventType = 0))
+		END
 	END
 
 	IF @WinLostDate IS NOT NULL
