@@ -50,6 +50,7 @@ AS
 		- 20191220@Kos: Support PH AIO phase 5 [Redmine: #124455]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
+		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 */
 
 BEGIN
@@ -187,7 +188,8 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%'
-							OR d.ResourceID LIKE '228%')
+							OR d.ResourceID LIKE '228%'
+							OR d.ResourceID LIKE '229%')
 						AND d.ResourceId LIKE f.ResourceID
 						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
@@ -345,7 +347,8 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%'
-							OR d.ResourceID LIKE '228%')
+							OR d.ResourceID LIKE '228%'
+							OR d.ResourceID LIKE '229%')
 						AND d.ResourceID LIKE f.ResourceID
 						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
@@ -504,7 +507,8 @@ BEGIN
 							OR d.ResourceID LIKE '225%'
 							OR d.ResourceID LIKE '226%'
 							OR d.ResourceID LIKE '227%'
-							OR d.ResourceID LIKE '228%')
+							OR d.ResourceID LIKE '228%'
+							OR d.ResourceID LIKE '229%')
 						AND d.ResourceId LIKE f.ResourceID
 						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
