@@ -82,7 +82,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 55, 56)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (StatusId TINYINT)
@@ -141,6 +141,7 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetCheck		VARCHAR(64),
 		MatchCode		VARCHAR(1000),
+		BetTeam			NVARCHAR(50),
 		OddsSpread		MONEY,
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000)
@@ -181,10 +182,14 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (42, 61) THEN ISNULL(brng.SiteID, '')
 				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
+			CASE
+				WHEN sbt.productID = 61 THEN brng.GameId3rd
+				ELSE ''
+			END AS BetTeam,
 			CASE
 				WHEN sbt.ProductID IN (32, 42) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
@@ -238,10 +243,14 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (42, 61) THEN ISNULL(brng.SiteID, '')
 				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
+			CASE
+				WHEN sbt.productID = 61 THEN brng.GameId3rd
+				ELSE ''
+			END AS BetTeam,
 			CASE
 				WHEN sbt.ProductID IN (32, 42) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
@@ -293,9 +302,14 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
+				WHEN sbt.productID IN (61) THEN ISNULL(brng.SiteID, '')
 				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
+			CASE
+				WHEN sbt.productID = 61 THEN brng.GameId3rd
+				ELSE ''
+			END AS BetTeam,
 			CASE
 				WHEN sbt.ProductID IN (32, 42) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
@@ -380,6 +394,7 @@ BEGIN
 		b.TransDesc,
 		b.BetCheck,
 		b.MatchCode,
+		b.BetTeam,
 		b.OddsSpread,
 		b.BetdaqId,
 		b.ExtraInfo,
