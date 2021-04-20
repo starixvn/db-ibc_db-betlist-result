@@ -50,6 +50,7 @@ AS
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
+		- 20210420@Kos: Support Time Machine Over/Under [Redmine: #153302]
 
 		*******************
 		sample test case:
@@ -196,7 +197,8 @@ BEGIN
 								OR d.ResourceID LIKE '225%'
 								OR d.ResourceID LIKE '226%'
 								OR d.ResourceID LIKE '227%'
-								OR d.ResourceID LIKE '228%')
+								OR d.ResourceID LIKE '228%'
+								OR d.ResourceID LIKE '229%')
 							AND d.ResourceId LIKE f.ResourceID
 							AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 								OR d.ResourceId IN ('08', '09')
@@ -358,7 +360,8 @@ BEGIN
 								OR d.ResourceID LIKE '225%'
 								OR d.ResourceID LIKE '226%'
 								OR d.ResourceID LIKE '227%'
-								OR d.ResourceID LIKE '228%')
+								OR d.ResourceID LIKE '228%'
+								OR d.ResourceID LIKE '229%')
 							AND d.ResourceId LIKE f.ResourceID
 							AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 								OR d.ResourceId IN ('08', '09')
@@ -520,7 +523,8 @@ BEGIN
 								OR d.ResourceID LIKE '225%'
 								OR d.ResourceID LIKE '226%'
 								OR d.ResourceID LIKE '227%'
-								OR d.ResourceID LIKE '228%')
+								OR d.ResourceID LIKE '228%'
+								OR d.ResourceID LIKE '229%')
 							AND d.ResourceId LIKE f.ResourceID
 							AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 								OR d.ResourceId IN ('08', '09')
