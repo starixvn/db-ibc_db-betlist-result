@@ -66,10 +66,11 @@ AS
 		- 20210315@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210323@Kos: Support show IP [Redmine: #151085]
 		- 20210325@Kos: Support betfrom '8', '9' [Redmine: #152158]
+		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 
 	Parameter's Explanation:
 		- @BetType:
-			+ HDP: 1, 7, 1303, 17, 183, 609
+			+ HDP: 1, 7, 1303, 17, 183, 609, 229
 			+ OU: 3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228
 			+ Others: NOT IN 1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 401, 402, 403, 404, 461, 462, 463, 464
 			+ ALL: <= 19000
@@ -335,7 +336,7 @@ BEGIN
 					OR (b.bettype IN (9, 29) AND b.livehomescore = @LiveIndicator)
 					OR (b.bettype NOT IN (9, 29) AND @LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
 				AND (@BetType = ''
-					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609))
+					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609, 229))
 					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604))
 					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604)))
 		END
@@ -463,7 +464,7 @@ BEGIN
 				AND (@LiveIndicator = 3
 					OR (@LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
 				AND (@BetType = ''
-					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609))
+					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609, 229))
 					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604))
 					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604)))
 		END
