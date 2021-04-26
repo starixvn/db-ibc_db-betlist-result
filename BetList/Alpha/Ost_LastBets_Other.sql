@@ -13,6 +13,7 @@ AS
 	Revision:
 		- 20200109@Kos: Created [Redmine: #121898]
 		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
+		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 */
 
 BEGIN
@@ -64,7 +65,10 @@ BEGIN
 		b.oddstype,
 		ISNULL(b.betcheck, '') AS Betcheck,
 		ISNULL(b.transdesc, '') AS transdesc,
-		0 AS OddsSpread,
+		CASE
+			WHEN b.bettype = 229 THEN b.oddsspread
+			ELSE 0 
+		END AS OddsSpread,
 		ISNULL(b.ExtraInfo, '') AS ExtraInfo
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.recommend = @CustId

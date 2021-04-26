@@ -28,6 +28,7 @@ AS
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
+		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 
 	Parameter's Explanation:
 		- @CustId: agent ID
@@ -86,7 +87,10 @@ BEGIN
 		b.oddstype,
 		ISNULL(b.betcheck, '') AS Betcheck,
 		ISNULL(b.transdesc, '') AS transdesc,
-		0 AS OddsSpread,
+		CASE
+			WHEN b.bettype = 229 THEN b.oddsspread
+			ELSE 0 
+		END AS OddsSpread,
 		ISNULL(b.ExtraInfo, '') AS ExtraInfo
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.recommend = @CustId
