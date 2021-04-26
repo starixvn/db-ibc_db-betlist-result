@@ -40,6 +40,7 @@ AS
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
+		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 */
 
 BEGIN
@@ -101,6 +102,7 @@ BEGIN
 												AND BR.ResourceID NOT LIKE '226%'
 												AND BR.ResourceID NOT LIKE '227%'
 												AND BR.ResourceID NOT LIKE '228%'
+												AND BR.ResourceID NOT LIKE '229%'
 												AND BR.ResourceID NOT LIKE '486%'
 												AND BR.ResourceID NOT LIKE '487%'
 												AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')
@@ -205,6 +207,7 @@ BEGIN
 												AND BR.ResourceID NOT LIKE '226%'
 												AND BR.ResourceID NOT LIKE '227%'
 												AND BR.ResourceID NOT LIKE '228%'
+												AND BR.ResourceID NOT LIKE '229%'
 												AND BR.ResourceID NOT LIKE '486%'
 												AND BR.ResourceID NOT LIKE '487%'
 											AND ( ISNULL(BR.MatchID, 0) <> 0 AND m.eventstatus = 'running')

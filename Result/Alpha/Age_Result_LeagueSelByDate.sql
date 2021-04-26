@@ -44,6 +44,7 @@ AS
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
+		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 */
 
 BEGIN
@@ -96,6 +97,7 @@ BEGIN
 								AND ResourceID NOT LIKE '226%'
 								AND ResourceID NOT LIKE '227%'
 								AND ResourceID NOT LIKE '228%'
+								AND ResourceID NOT LIKE '229%'
 								AND ResourceID NOT LIKE '486%'
 								AND ResourceID NOT LIKE '487%')
 							OR @SportType IN (2, 5) )
@@ -123,6 +125,7 @@ BEGIN
 								AND ResourceID NOT LIKE '226%'
 								AND ResourceID NOT LIKE '227%'
 								AND ResourceID NOT LIKE '228%'
+								AND ResourceID NOT LIKE '229%'
 								AND ResourceID NOT LIKE '486%'
 								AND ResourceID NOT LIKE '487%')
 							OR @SportType IN (2, 5))
