@@ -69,6 +69,7 @@ AS
 		- 20210311@Razor: Support PP Live Casino [Redmine: #134042]
 		- 20210319@Razor: Support Habanero [Redmine: #145460]
 		- 20210402@Razor: Support CG [Redmine: #146020]
+		- 20210429@Razor: Support VGaming [Redmine: #154047]
 */
 
 BEGIN
@@ -548,8 +549,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -561,7 +562,7 @@ BEGIN
 						b.refno,
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-							WHEN s.productID IN (42, 61, 62) THEN ISNULL(b.SiteID, '')
+							WHEN s.productID IN (42, 61, 62, 66) THEN ISNULL(b.SiteID, '')
 							WHEN s.productID IN (55, 56) THEN ISNULL(b.GameId3rd, '')
 							ELSE ''
 						END AS MatchCode,
@@ -577,7 +578,7 @@ BEGIN
 						0 AS Hdp1,
 						0 AS Hdp2,
 						CASE
-							WHEN s.ProductID IN (32, 42) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+							WHEN s.ProductID IN (32, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -614,15 +615,15 @@ BEGIN
 						b.TranId3rd AS BetCheck,
 						b.transdesc,
 						CASE
-							WHEN s.ProductID IN (32, 42) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							WHEN s.ProductID IN (32, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 							ELSE 0
 						END AS OddsSpread,
 						CASE
-							WHEN s.ProductID IN (32, 42) THEN ISNULL(b.JackpotInfo, '')
+							WHEN s.ProductID IN (32, 42, 66) THEN ISNULL(b.JackpotInfo, '')
 							ELSE ''
 						END AS ExtraInfo,
 						CASE
-							WHEN s.ProductID IN (32, 42) THEN ISNULL(b.RefNo2, -1)
+							WHEN s.ProductID IN (32, 42, 66) THEN ISNULL(b.RefNo2, -1)
 							ELSE -1
 						END AS BetdaqId
 					FROM dbo.bettransRnG AS b WITH (NOLOCK)
@@ -987,8 +988,8 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -1000,7 +1001,7 @@ BEGIN
 						b.refno,
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-							WHEN s.productID IN (42, 61, 62) THEN ISNULL(b.SiteID, '')
+							WHEN s.productID IN (42, 61, 62, 66) THEN ISNULL(b.SiteID, '')
 							WHEN s.productID IN (55, 56) THEN ISNULL(b.GameId3rd, '')
 							ELSE ''
 						END AS MatchCode,
@@ -1016,7 +1017,7 @@ BEGIN
 						0 AS Hdp1,
 						0 AS Hdp2,
 						CASE
-							WHEN s.ProductID IN (32, 42) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+							WHEN s.ProductID IN (32, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -1053,15 +1054,15 @@ BEGIN
 						b.TranId3rd AS BetCheck,
 						b.transdesc,
 						CASE
-							WHEN s.ProductID IN (32, 42) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							WHEN s.ProductID IN (32, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 							ELSE 0
 						END AS OddsSpread,
 						CASE
-							WHEN s.ProductID IN (32, 42) THEN ISNULL(b.JackpotInfo, '')
+							WHEN s.ProductID IN (32, 42, 66) THEN ISNULL(b.JackpotInfo, '')
 							ELSE ''
 						END AS ExtraInfo,
 						CASE
-							WHEN s.ProductID IN (32, 42) THEN ISNULL(b.RefNo2, -1)
+							WHEN s.ProductID IN (32, 42, 66) THEN ISNULL(b.RefNo2, -1)
 							ELSE -1
 						END AS BetdaqId
 					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
