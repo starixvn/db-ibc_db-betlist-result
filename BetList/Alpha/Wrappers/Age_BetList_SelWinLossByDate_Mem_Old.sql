@@ -125,6 +125,7 @@ AS
 		- 20210311@Razor: Support PP Live Casino [Redmine: #134042]
 		- 20210319@Razor: Support Habanero [Redmine: #145460]
 		- 20210402@Razor: Support CG [Redmine: #146020]
+		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -372,6 +373,7 @@ BEGIN
 						WHEN s.ProductID = 62 THEN 'CG'		-- CG
 						WHEN s.ProductID = 63 THEN 'SLT'	-- Sports Lottery
 						WHEN s.ProductID = 65 THEN 'PPL'	-- PP Live Casino
+						WHEN s.ProductID = 66 THEN 'VGA'	-- VGaming
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
@@ -401,7 +403,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
-									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG') THEN b.matchid
+									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA') THEN b.matchid
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
