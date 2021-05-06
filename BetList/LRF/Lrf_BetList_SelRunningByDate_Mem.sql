@@ -38,6 +38,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowGDG	BIT			= 0,	-- GDG
 	@ShowSLT	BIT			= 0,	-- Sports Lottery
 	@ShowHB		BIT			= 0,	-- Habanero
+	@ShowWM		BIT			= 0,	-- WM Live Casino
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -138,6 +139,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 		- 20210415@Kos: Support Habanero [Redmine: #150843]
+		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
 */
 
 BEGIN
@@ -210,7 +212,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 55, 56, 59, 61, 63)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 51, 55, 56, 59, 61, 63)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -235,6 +237,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowSBC = 0	THEN 42 END
 		OR ProductID	= CASE WHEN @ShowI4D = 0	THEN 43 END
 		OR ProductID	= CASE WHEN @ShowSXG = 0	THEN 45 END
+		OR ProductID	= CASE WHEN @ShowWM = 0		THEN 51 END
 		OR ProductID	= CASE WHEN @ShowPGS = 0	THEN 55 END
 		OR ProductID	= CASE WHEN @ShowJK = 0		THEN 56 END
 		OR ProductID	= CASE WHEN @ShowGDG = 0	THEN 59 END
@@ -1004,8 +1007,8 @@ BEGIN
 			sbt.ProductID
 	END
 
-	-- AG Casino, AllBet, SA Gaming, Sexy Gaming, GDG
-	IF (@ShowAGC = 1 OR @ShowAB = 1 OR @ShowSAG = 1 OR @ShowSXG = 1 OR @ShowGDG = 1)
+	-- AG Casino, AllBet, SA Gaming, Sexy Gaming, GDG, WM Live Casino
+	IF (@ShowAGC = 1 OR @ShowAB = 1 OR @ShowSAG = 1 OR @ShowSXG = 1 OR @ShowGDG = 1 OR @ShowWM = 1)
 		AND EXISTS (SELECT 1 FROM dbo.bettransLC WITH (NOLOCK) WHERE custid = @CustId AND statusID IN (0, 1))
 	BEGIN
 		-- Yesterday and today running ticket
@@ -1063,7 +1066,7 @@ BEGIN
 			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.winlostdate BETWEEN @Yesterday AND @Today		-- yesterday and today
 			AND blc.custid = @CustId
-			AND sbt.ProductID IN (11, 21, 39, 45, 59)
+			AND sbt.ProductID IN (11, 21, 39, 45, 51, 59)
 			AND sbt.EventType = 0
 			AND blc.statusID IN (0, 1)
 		GROUP BY
