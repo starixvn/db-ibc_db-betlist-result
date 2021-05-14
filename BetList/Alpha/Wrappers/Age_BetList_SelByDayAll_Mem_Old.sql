@@ -86,6 +86,7 @@ AS
 		- 20210402@Razor: Support CG [Redmine: #146020]
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
+		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 
 	Param's Explanation:
 		+ @TransType:
@@ -319,6 +320,7 @@ BEGIN
 							WHEN s.ProductID = 65 THEN 'PPL'	-- PP Live Casino
 							WHEN s.ProductID = 66 THEN 'VGA'	-- VGaming
 							WHEN s.ProductID = 67 THEN 'AP'		-- AdvantPlay
+							WHEN s.ProductID = 68 THEN 'APM'	-- AdvantPlay Mini
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
@@ -347,7 +349,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
-										'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP') THEN b.matchid
+										'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -473,7 +475,7 @@ BEGIN
 								END,
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP')
+									WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM')
 										THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
