@@ -32,8 +32,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_PlatformWinLoss_Mem]
 	@SumComm		MONEY = 0 OUTPUT,
 	@SumPlayerComm	MONEY = 0 OUTPUT,
 
-	@DrawFilter		TINYINT	= 1,
-	@PlatformType	TINYINT	= 1
+	@DrawFilter		TINYINT			= 1,
+	@PlatformType	VARCHAR(100)	= 'All'
 AS
 
 /*
@@ -108,6 +108,7 @@ AS
 		- 20210309@Kos: Support betfrom '_', '@', '%' [Redmine: #151019]
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 		- 20210325@Kos: Support betfrom '8', '9' [Redmine: #152158]
+		- 20210518@Kos: Support multiple selection on Platform filter [Redmine: #153102]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -217,132 +218,11 @@ BEGIN
 		OR ProductID = CASE WHEN @ShowI4D		= 0 THEN 43 END
 		OR ProductID = CASE WHEN @ShowSLT		= 0 THEN 63 END
 
-	DECLARE @BetFrom AS TABLE (
-		BetFrom	NVARCHAR(1)
-	)
+	CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(1))
 
-	-- Desktop New Asia
-	IF @PlatformType IN (0, 1)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'x'
-	END
-
-	-- Desktop China
-	IF @PlatformType IN (0, 2)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'a' UNION ALL
-		SELECT 'z'
-	END
-
-	-- Desktop Others
-	IF @PlatformType IN (0, 3)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT '9'
-	END
-
-	-- Mobile Standard
-	IF @PlatformType IN (0, 4)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'l' UNION ALL
-		SELECT '_'
-	END
-
-	-- Mobile Euro
-	IF @PlatformType IN (0, 5)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT '%'
-	END
-
-	-- Mobile Compact
-	IF @PlatformType IN (0, 6)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'c' UNION ALL
-		SELECT '@'
-	END
-
-	-- Mobile Others
-	IF @PlatformType IN (0, 7)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT '7' UNION ALL
-		SELECT '8'
-	END
-
-	-- E-Sports Desktop
-	IF @PlatformType IN (0, 8)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT '1' UNION ALL
-		SELECT '4'
-	END
-
-	-- E-Sports Mobile
-	IF @PlatformType IN (0, 9)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT '2' UNION ALL
-		SELECT '5'
-	END
-
-	-- E-Sports APP
-	IF @PlatformType IN (0, 10)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT '3' UNION ALL
-		SELECT '6'
-	END
-
-	-- Mobile APP
-	IF @PlatformType IN (0, 11)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'o'
-	END
-
-	-- Native APP
-	IF @PlatformType IN (0, 12)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT '0'
-	END
-
-	-- Tablet
-	IF @PlatformType IN (0, 13)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'r'
-	END
-
-	-- Deep Link
-	IF @PlatformType IN (0, 14)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 't'
-	END
-
-	-- WAP
-	IF @PlatformType IN (0, 15)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'm'
-	END
-
-	-- Others
-	IF @PlatformType IN (0, 88)
-	BEGIN
-		INSERT INTO @BetFrom (BetFrom)
-		SELECT 'v' UNION ALL
-		SELECT 'd' UNION ALL
-		SELECT 'g' UNION ALL
-		SELECT 'e' UNION ALL
-		SELECT 'u'
-	END
+	INSERT INTO #PlatformList (PlatformType, BetFrom)
+	SELECT PlatformType, betfrom
+	FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType)
 
 	DECLARE @Data AS TABLE (
 		SportType			INT,
@@ -496,11 +376,11 @@ BEGIN
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.transid
+			INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 		WHERE
 			b.winlostdate BETWEEN @TempFromDate AND @tdate
 			AND b.custid = @CustId
 			AND b.statusID IN (111, 112, 113)
-			AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 
 		IF @ShowBA = 1
 		BEGIN
@@ -784,6 +664,7 @@ BEGIN
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 0
 				AND (sbt.ProductID IN (3, 8, 27, 28, 40, 43, 63)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct = '')
@@ -791,7 +672,6 @@ BEGIN
 				AND b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 				AND b.transid NOT IN (SELECT TransId FROM @BABetList) -- Exclude BA tickets
 		END
 
@@ -888,13 +768,13 @@ BEGIN
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 1
 				AND (sbt.ProductID IN (3, 5, 27)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 				AND b.transid NOT IN (SELECT Transid FROM @BABetList) -- Exclude BA tickets
 		END
 
@@ -954,11 +834,11 @@ BEGIN
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE b.bettype = 10
 				AND b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 				AND b.transid NOT IN (SELECT Transid FROM @BABetList) -- Exclude BA tickets
 		END
 
@@ -1019,12 +899,12 @@ BEGIN
 				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 3
 				AND sbt.ProductID = 5
 				AND b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 		END
 
 		-- RNG Casino Single Wallet, Macau Games, Fishing World
@@ -1091,13 +971,13 @@ BEGIN
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE (sbt.ProductID IN (22, 24)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 				AND b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.winlostdate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 
 			IF @tdate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)				-- yesterday
 				AND @TempFromDate <= DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)	-- today
@@ -1168,6 +1048,7 @@ BEGIN
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+					INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 				WHERE (sbt.ProductID IN (22, 24)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND b.winlostdate BETWEEN @TempFromDate AND @tdate
@@ -1175,7 +1056,6 @@ BEGIN
 						AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
 					AND b.custid = @CustId
 					AND brng.statusID <> 0
-					AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 				GROUP BY
 					b.transid,
 					ISNULL(b.betid, 0),
@@ -1249,11 +1129,11 @@ BEGIN
 		FROM
 			dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.transid
+			INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 		WHERE
 			b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 			AND b.custid = @CustId
 			AND b.statusID IN (111, 112, 113)
-			AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 
 		IF @ShowBA = 1
 		BEGIN
@@ -1547,13 +1427,13 @@ BEGIN
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 0
 				AND (sbt.ProductID IN (3, 6, 8, 22, 24, 27, 28, 40, 43, 63)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 				AND b.transid NOT IN (SELECT Transid FROM @BABetList) -- Exclude BA tickets
 		END
 
@@ -1647,13 +1527,13 @@ BEGIN
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 1
 				AND (sbt.ProductID IN (3, 5, 27)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 				AND b.transid NOT IN (SELECT Transid FROM @BABetList) -- Exclude BA tickets
 		END
 
@@ -1713,11 +1593,11 @@ BEGIN
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE b.bettype = 10
 				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 				AND b.transid NOT IN (SELECT Transid FROM @BABetList) -- Exclude BA tickets
 		END
 
@@ -1778,13 +1658,12 @@ BEGIN
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 3
 				AND sbt.ProductID = 5
 				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
-
 		END
 	END
 
@@ -1841,12 +1720,12 @@ BEGIN
 			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.transid
+			INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 		WHERE
 			b.winlostdate BETWEEN @fdate AND @TempToDate
 			AND b.custid = @CustId
 			AND b.ruben = 1
 			AND b.status NOT IN ('VOID','REJECT','REFUND')
-			AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 
 		IF @ShowBA = 1
 		BEGIN
@@ -2139,6 +2018,7 @@ BEGIN
 			FROM
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 0
 				AND (sbt.ProductID IN (3, 6, 8, 22, 24, 27, 28, 40, 43, 63)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
@@ -2146,7 +2026,6 @@ BEGIN
 				AND b.custid = @CustId
 				AND b.ruben = 1
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 				AND b.transid NOT IN (SELECT Transid FROM @BABetList) -- Exclude BA tickets
 		END
 
@@ -2240,6 +2119,7 @@ BEGIN
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 1
 				AND (sbt.ProductID IN (3, 5, 27)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
@@ -2247,7 +2127,6 @@ BEGIN
 				AND b.custid = @CustId
 				AND b.ruben = 1
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 				AND b.transid NOT IN (SELECT Transid FROM @BABetList) -- Exclude BA tickets
 		END
 
@@ -2307,12 +2186,12 @@ BEGIN
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN bodb_Archive.dbo.Outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE b.bettype = 10
 				AND b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
 				AND b.ruben = 1
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
 				AND b.transid NOT IN (SELECT Transid FROM @BABetList) -- Exclude BA tickets
 		END
 
@@ -2373,14 +2252,13 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 3
 				AND sbt.ProductID = 5
 				AND b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
 				AND b.ruben = 1
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
-				AND b.betfrom IN (SELECT BetFrom FROM @BetFrom)
-		
 		END
 	END
 
@@ -2646,5 +2524,7 @@ BEGIN
 
 	SELECT DISTINCT * FROM @BettransDetail
 	ORDER BY RefNo ASC, Bettype ASC
+
+	DROP TABLE #PlatformList
 END
 GO

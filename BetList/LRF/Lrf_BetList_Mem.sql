@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Mem]
 	@BalanceUpDay	SMALLDATETIME,
 	@BaseCurrency	VARCHAR(10)		= '',
 	@StatusIdList	VARCHAR(50)		= '',
-	@Platform		TINYINT			= 0,
+	@Platform		VARCHAR(100)	= 'All',
 	@LiveIndicator	VARCHAR(10)		= '0,1,2',
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
@@ -40,7 +40,7 @@ AS
 			- 99: Abnormal Bets
 			- 2: Delay Payout
 		- @Platform:
-			- 0 - All: All
+			- All - All: All
 			- 1 - Desktop New Asia: x (dep2-Asia)
 			- 2 - Desktop China: a (dep-Singbet), z (dep2-SingBet)
 			- 3 - Desktop Others: 9 (3rd Party Portal Service - Desktop)
@@ -95,6 +95,7 @@ AS
 		- 20210309@Kos: Support betfrom '_', '@', '%' [Redmine: #151019]
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 		- 20210325@Kos: Support betfrom '8', '9' [Redmine: #152158]
+		- 20210518@Kos: Support multiple selection on Platform filter [Redmine: #153102]
 */
 
 BEGIN
@@ -291,72 +292,11 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		DECLARE @BetFromList VARCHAR(50)
+		CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(1))
 
-		IF @Platform = 1
-		BEGIN
-			SET @BetFromList = 'x'
-		END
-		ELSE IF @Platform = 2
-		BEGIN
-			SET @BetFromList = 'a,z'
-		END
-		ELSE IF @Platform = 3
-		BEGIN
-			SET @BetFromList = '9'
-		END
-		ELSE IF @Platform = 4
-		BEGIN
-			SET @BetFromList = 'l,_'
-		END
-		ELSE IF @Platform = 5
-		BEGIN
-			SET @BetFromList = '%'
-		END
-		ELSE IF @Platform = 6
-		BEGIN
-			SET @BetFromList = 'c,@'
-		END
-		ELSE IF @Platform = 7
-		BEGIN
-			SET @BetFromList = '7,8'
-		END
-		ELSE IF @Platform = 8
-		BEGIN
-			SET @BetFromList = '1,4'
-		END
-		ELSE IF @Platform = 9
-		BEGIN
-			SET @BetFromList = '2,5'
-		END
-		ELSE IF @Platform = 10
-		BEGIN
-			SET @BetFromList = '3,6'
-		END
-		ELSE IF @Platform = 11
-		BEGIN
-			SET @BetFromList = 'o'
-		END
-		ELSE IF @Platform = 12
-		BEGIN
-			SET @BetFromList = '0'
-		END
-		ELSE IF @Platform = 13
-		BEGIN
-			SET @BetFromList = 'r'
-		END
-		ELSE IF @Platform = 14
-		BEGIN
-			SET @BetFromList = 't'
-		END
-		ELSE IF @Platform = 15
-		BEGIN
-			SET @BetFromList = 'm'
-		END
-		ELSE IF @Platform = 88
-		BEGIN
-			SET @BetFromList = 'v,d,g,e,u'
-		END
+		INSERT INTO #PlatformList (PlatformType, BetFrom)
+		SELECT PlatformType, betfrom
+		FROM dbo.Lrf_f_BetFromType_Sel(@Platform)
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)
 
@@ -465,11 +405,10 @@ BEGIN
 				ISNULL(b.RefCode, 0),
 				1 AS TableID
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid)
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-				AND (@Platform = 0
-					OR ',' + @BetFromList + ',' LIKE '%,[' + b.betfrom + '],%')
 				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 
@@ -605,11 +544,10 @@ BEGIN
 				ISNULL(b.RefCode, 0),
 				2 AS TableID
 			FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_memberStatement14)
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @TempToDate
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-				AND (@Platform = 0
-					OR ',' + @BetFromList + ',' LIKE '%,[' + b.betfrom + '],%')
 				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 
@@ -740,11 +678,10 @@ BEGIN
 				ISNULL(b.RefCode, 0),
 				3 AS TableID
 			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-				AND (@Platform = 0
-					OR ',' + @BetFromList + ',' LIKE '%,[' + b.betfrom + '],%')
 				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 
@@ -1662,6 +1599,7 @@ BEGIN
 
 	SELECT DISTINCT * FROM @Detail
 
+	DROP TABLE #PlatformList
 	DROP TABLE #Data
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate

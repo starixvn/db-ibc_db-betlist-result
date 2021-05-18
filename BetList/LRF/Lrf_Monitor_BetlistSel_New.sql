@@ -13,7 +13,7 @@ ALTER PROCEDURE [dbo].[Lrf_Monitor_BetlistSel_New]
 	@MinStake		MONEY			= 0,
 	@MaxStake		MONEY			= 0,
 	@LiveIndicator	INT				= 0,
-	@BetFrom		TINYINT			= 0,
+	@BetFrom		VARCHAR(100)	= 'All',
 	@BaseCurrency	VARCHAR(10)		='USD',
 	@Debug			BIT				= 0
 AS
@@ -67,6 +67,7 @@ AS
 		- 20210323@Kos: Support show IP [Redmine: #151085]
 		- 20210325@Kos: Support betfrom '8', '9' [Redmine: #152158]
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
+		- 20210518@Kos: Support multiple selection on Platform filter [Redmine: #153102]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -79,8 +80,8 @@ AS
 		- @SportId = 999 -> Parlay and System Parlay
 		- @LiveIndicator (0 : non live, 1 : live , 2 : mix non live & live)
 		- @IncludeBetFrom: 1: show column betfrom, 0: hide
-		- @BetFrom: 
-			- 0 - All: All
+		- @BetFrom:
+			- All - All: All
 			- 1 - Desktop New Asia: x (dep2-Asia)
 			- 2 - Desktop China: a (dep-Singbet), z (dep2-SingBet)
 			- 3 - Desktop Others: 9 (3rd Party Portal Service - Desktop)
@@ -185,72 +186,11 @@ BEGIN
 		IF @MaxStake IS NULL
 			SET @MaxStake = 0
 
-		DECLARE @BetFromList VARCHAR(50)
+		CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(1))
 
-		IF @BetFrom = 1
-		BEGIN
-			SET @BetFromList = 'x'
-		END
-		ELSE IF @BetFrom = 2
-		BEGIN
-			SET @BetFromList = 'a,z'
-		END
-		ELSE IF @BetFrom = 3
-		BEGIN
-			SET @BetFromList = '9'
-		END
-		ELSE IF @BetFrom = 4
-		BEGIN
-			SET @BetFromList = 'l,_'
-		END
-		ELSE IF @BetFrom = 5
-		BEGIN
-			SET @BetFromList = '%'
-		END
-		ELSE IF @BetFrom = 6
-		BEGIN
-			SET @BetFromList = 'c,@'
-		END
-		ELSE IF @BetFrom = 7
-		BEGIN
-			SET @BetFromList = '7,8'
-		END
-		ELSE IF @BetFrom = 8
-		BEGIN
-			SET @BetFromList = '1,4'
-		END
-		ELSE IF @BetFrom = 9
-		BEGIN
-			SET @BetFromList = '2,5'
-		END
-		ELSE IF @BetFrom = 10
-		BEGIN
-			SET @BetFromList = '3,6'
-		END
-		ELSE IF @BetFrom = 11
-		BEGIN
-			SET @BetFromList = 'o'
-		END
-		ELSE IF @BetFrom = 12
-		BEGIN
-			SET @BetFromList = '0'
-		END
-		ELSE IF @BetFrom = 13
-		BEGIN
-			SET @BetFromList = 'r'
-		END
-		ELSE IF @BetFrom = 14
-		BEGIN
-			SET @BetFromList = 't'
-		END
-		ELSE IF @BetFrom = 15
-		BEGIN
-			SET @BetFromList = 'm'
-		END
-		ELSE IF @BetFrom = 88
-		BEGIN
-			SET @BetFromList = 'v,d,g,e,u'
-		END
+		INSERT INTO #PlatformList (PlatformType, BetFrom)
+		SELECT PlatformType, betfrom
+		FROM dbo.Lrf_f_BetFromType_Sel(@BetFrom)
 
 		-- Check if @TransId and @TransId + 1 is combo ticket then reset @TransId
 		DECLARE @RefCode	BIGINT
@@ -326,10 +266,9 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
 				INNER JOIN @TempAg AS a ON b.Recommend = a.CustId AND b.Currency = a.Currency
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE b.statusID IN (0, 1)
 				AND b.transid > @TransId
-				AND (@BetFrom = 0
-					OR ',' + @BetFromList + ',' LIKE '%,[' + b.betfrom + '],%')
 				AND (@Currency = ''
 					OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
 				AND (@LiveIndicator = 3
@@ -397,11 +336,10 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
 				INNER JOIN @TempAg AS a ON b.Recommend = a.CustId AND b.Currency = a.Currency
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE b.statusID IN (0, 1)
 				AND b.transid > @TransId
 				AND b.bettype IN (9, 29)
-				AND (@BetFrom = 0
-					OR ',' + @BetFromList + ',' LIKE '%,[' + b.betfrom + '],%')
 				AND (@Currency = ''
 					OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
 				AND (@LiveIndicator = 3 OR b.livehomescore = @LiveIndicator)
@@ -454,11 +392,10 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
 				INNER JOIN @TempAg AS a ON b.Recommend = a.CustId AND b.Currency = a.Currency
+				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE b.statusID IN (0, 1)
 				AND b.transid > @TransId
 				AND b.bettype NOT IN (9, 29)
-				AND (@BetFrom = 0
-					OR ',' + @BetFromList + ',' LIKE '%,[' + b.betfrom + '],%')
 				AND (@Currency = ''
 					OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
 				AND (@LiveIndicator = 3
@@ -634,5 +571,7 @@ BEGIN
 		) AS b
 		LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
 	ORDER BY b.TransDate DESC
+
+	DROP TABLE #PlatformList
 END
 GO
