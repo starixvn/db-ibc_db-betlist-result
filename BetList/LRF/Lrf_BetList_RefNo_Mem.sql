@@ -54,6 +54,7 @@ AS
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 		- 20210415@Kos: Support Habanero [Redmine: #150843]
 		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
+		- 20210519@Kos: Wrong betteam length [Redmine: #155464]
 */
 
 BEGIN
@@ -122,7 +123,7 @@ BEGIN
 		SportType			SMALLINT,
 		BetType				SMALLINT,
 		BetId				BIGINT,
-		BetTeam				NVARCHAR(20),
+		BetTeam				NVARCHAR(50),
 		Hdp1				SMALLMONEY,
 		Hdp2				SMALLMONEY,
 		OddsType			TINYINT,
