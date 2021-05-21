@@ -7,7 +7,11 @@ ALTER PROCEDURE [dbo].[Age_BetList_SelWinLossByDate_Mem]
 	@MoveBetsDay			SMALLDATETIME,
 	@ProductIds				VARCHAR(MAX),
 	@ProductDetails			VARCHAR(MAX)	= '',
-	@ShowProgressiveBonus	BIT				= 0
+	@ShowProgressiveBonus	BIT				= 0,
+	@IsExportExcel			BIT				= 0,
+	@MaxTotalRow			INT				= 1000000	OUTPUT,
+	@ErrCode				INT				= 0			OUTPUT,
+	@ErrMsg					NVARCHAR(4000)	= ''		OUTPUT
 AS
 
 /*
@@ -129,6 +133,8 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
+		- 20210531@Kos: Prevent high CPU [Redmine: #154749]
+					- Add new params @MaxTotalRow INT, @ErrCode INT, @ErrMsg NVARCHAR(4000), @IsExportExcel BIT
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -151,9 +157,11 @@ BEGIN
 
 	IF @ShowProgressiveBonus = 1 SET @ProductIds += ',6' -- duplicate values is ok
 
-	DECLARE @f_date SMALLDATETIME
-	DECLARE @t_date SMALLDATETIME
-	DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
+	DECLARE @f_date	SMALLDATETIME,
+		@t_date		SMALLDATETIME,
+		@Yesterday	SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0),
+		@TotalRow	INT = 0,
+		@TotalRow14	INT = 0
 
 	-- CHECK for MoveBetsDay
 	IF @MoveBetsDay IS NULL
@@ -425,271 +433,277 @@ BEGIN
 				AND b.Winlostdate >= @Yesterday
 				AND NOT EXISTS (SELECT 1 FROM @temp_bettransX WHERE RefNo = b.TransId)
 
-			INSERT INTO #MemBetTicket
-			SELECT TransId = CASE
-								WHEN c.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-								ELSE b.transid
-							END 
-				,RefNo = b.refno
-				,CustId = b.custid
-				,Username = b.username
-				,SportType = CASE
-								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
-									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM') THEN b.matchid
-								WHEN c.Product = 'Keno' THEN 202
-								WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe
-								WHEN c.Product = 'AllBet' THEN 211 -- AllBet
-								WHEN c.Product = 'VB' THEN 212 -- Macau Games
-								WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2501 AND 2539 THEN 213 -- NG2
-								WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2541 AND 2579 THEN 214 -- NG2
-								WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2581 AND 2619 THEN 215 -- NG2
-								WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2621 AND 2659 THEN 216 -- NG2
-								WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2681 AND 2699 THEN 218 -- NG2
-								WHEN c.Product = 'FW' THEN 219 -- Fishing World
-								WHEN c.Product = 'Lottery' THEN 220 -- Lottery
-								WHEN c.Product = 'PP' THEN 248 -- Pragmatic Casino
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
-								WHEN c.Product IN ('Outright') THEN l.sporttype
-								WHEN c.Product IN ('VR') THEN vr.SportType
-								ELSE 0
-							END -- parlay(s)
-				,BetType = b.bettype
-				,BetId = ISNULL(b.betid, 0)
-				,BetTeam = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2') THEN b.betteam
-								ELSE ''
-							END
-				,Hdp1 = CASE
-							WHEN c.Product IN ('Parlay', 'ParlayVS2', 'NG2') THEN b.hdp1 -- parlay(s), NG2, Pokergames
-							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.hdp1
-							WHEN c.Product IN ('VR') THEN b.hdp1
-							ELSE 0 END
-				,Hdp2 = CASE
-							WHEN c.Product IN ('Parlay', 'ParlayVS2', 'NG2') THEN b.hdp2 --parlay(s), NG2
-							WHEN c.Product IN ('SB', 'VS', 'VS2') THEN b.hdp2
-							WHEN c.Product IN ('VR') THEN b.hdp2
-							ELSE 0 END
-				,OddsType = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Keno') THEN b.oddstype
-								ELSE 0 END
-				,OddsId = b.oddsid
-				,Odds = CASE
-							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
-							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'SLT') THEN b.Odds
-							WHEN c.Product IN ('Outright') THEN b.odds
-							WHEN c.Product IN ('VR') THEN b.odds
-							ELSE 0 END
-				,MOdds = CASE
-							WHEN c.Product IN ('Parlay', 'ParlayVS2')  THEN b.modds 
-							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.modds
-							WHEN c.Product IN ('Outright') THEN b.modds
-							WHEN c.Product IN ('VR') THEN b.modds
-							ELSE 0 END
-				,Stake = CASE
-							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.Stake IS NOT NULL THEN x.Stake
-							ELSE b.stake END
-				,Actual_Stake = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
-								ELSE b.actual_stake END
-				,Status = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.status IS NOT NULL THEN x.status
-								WHEN c.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
-								WHEN c.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
-								ELSE b.status
-							END
-				,SettlementStatus = CASE
-										WHEN c.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
-										ELSE 0
-									END
-				,TransDate = b.transdate
-				,WinLostDate = b.winlostdate
-				,WinLost = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.WinLost IS NOT NULL THEN x.WinLost
-								ELSE b.winlost - b.actual_stake END
-				,AWinLost = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.AWinLost IS NOT NULL THEN x.AWinLost
-								ELSE b.awinLost END
-				,MWinLost = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.MWinLost IS NOT NULL THEN x.MWinLost
-								ELSE b.mwinLost END
-				,SWinLost = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.SWinLost IS NOT NULL THEN x.SWinLost
-								ELSE b.SwinLost END
-				,PlayerComm = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.PlayerComm IS NOT NULL THEN x.PlayerComm
-								ELSE b.playercomm END
-				,Comm = CASE
-							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.Comm IS NOT NULL THEN x.Comm
-							ELSE b.comm - b.playercomm END
-				,AComm = CASE
-							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.AComm IS NOT NULL THEN x.AComm
-							ELSE b.acomm - b.comm END
-				,SComm = CASE
-							WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.SComm IS NOT NULL THEN x.SComm
-							ELSE b.scomm - b.acomm END
-				,APositionTaking = CASE
-										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.APositiontaking IS NOT NULL THEN x.APositiontaking
-										ELSE b.APositiontaking END
-				,MPositionTaking = CASE
-										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.MPositiontaking IS NOT NULL THEN x.MPositiontaking
-										ELSE b.MPositiontaking END
-				,SPositionTaking = CASE
-										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.SPositiontaking IS NOT NULL THEN x.SPositiontaking
-										ELSE b.SPositiontaking END
-				,TPositionTaking = CASE
-										WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.TPositiontaking IS NOT NULL THEN x.TPositiontaking
-										ELSE b.TPositiontaking END
-				,ADiscount = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.discount IS NOT NULL THEN x.discount
-								ELSE b.discount END
-				,MDiscount = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.adiscount IS NOT NULL THEN x.adiscount
-								ELSE b.adiscount END
-				,SDiscount = CASE
-								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.sdiscount IS NOT NULL THEN x.sdiscount
-								ELSE b.sdiscount END	
-				,LiveIndicator = CASE
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay') THEN b.liveindicator
-									ELSE 0 END
-				,LiveHomeScore = CASE 
-									WHEN c.Product IN ('Parlay', 'NG2') THEN b.Livehomescore 
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.livehomescore
-									WHEN c.Product IN ('Outright') THEN b.livehomescore
-									WHEN c.Product IN ('VR') THEN b.livehomescore
-									ELSE 0 END
-				,LiveAwayScore = CASE
-									WHEN c.Product IN ('Parlay') THEN b.Liveawayscore 
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveawayscore
-									WHEN c.Product IN ('Outright') THEN b.liveawayscore
-									WHEN c.Product IN ('VR') THEN b.liveawayscore
-									ELSE 0 END
-				,FinalHomeScore = CASE
-										WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalhomescore
-										ELSE 0 END
-				,FinalAwayScore = CASE
-										WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalawayscore
-										ELSE 0 END
-				,HtHomeScore = CASE
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.hthomescore
-									ELSE 0 END
-				,HtAwayScore = CASE
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.htawayscore
-									ELSE 0 END
-				,Ip = b.ip
-				,LeagueId = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.leagueid
-								WHEN c.Product IN ('Outright') THEN o.leagueid
-								WHEN c.Product IN ('VR') THEN vr.LeagueID
-								ELSE 0 END
-				,MatchId = CASE
-								WHEN c.Product IN ('GD') THEN 255
-								WHEN c.Product IN ('NG2') THEN b.betdaqid
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchid
-								WHEN c.Product IN ('Outright') THEN o.orid
-								WHEN c.Product IN ('VR') THEN b.matchid
-								ELSE 0 END
-				,MatchCode = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchcode
-								WHEN c.Product IN ('Outright') THEN o.matchcode
-								WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vo.RacerNum)
-								ELSE '' END
-				,Race = CASE
-								WHEN c.Product IN ('Outright') THEN o.groupmatch
-								WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
-								ELSE '' END
-				,EventDate = CASE
-								WHEN c.Product = 'SB' THEN m.GlobalShowTime
-								WHEN c.Product IN ('NG', 'VS', 'VS2') THEN m.eventdate
-								WHEN c.Product IN ('Outright') THEN o.eventdate
-								WHEN c.Product IN ('VR') THEN vo.EventDate
-								ELSE b.winlostdate END
-				,HomeId = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.homeid
-								WHEN c.Product IN ('Outright') THEN o.teamid
-								WHEN c.Product IN ('VR') THEN vo.RacerID
-								ELSE 0 END
-				,AwayId = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.awayid
-								ELSE 0 END
-				,BetStatus = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.betstatus
-								ELSE '' END
-				,IsNeutral = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
-								ELSE 0 END
-				,Placing = CASE
-								WHEN c.Product IN ('VR') THEN CONVERT(VARCHAR(5), vo.Placing)
-								ELSE '' END
-				,ShowTime = CASE
-								WHEN c.Product IN ('VS', 'VS2') THEN CONVERT(NVARCHAR(50), m.kickofftime)
-								WHEN c.Product IN ('SB', 'NG') THEN ISNULL(m.showtime, '')
-								WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
-								ELSE '' END
-				,BetCheck = CASE 
-								WHEN c.Product IN ('SB', 'Parlay', 'ParlayVS2', 'GD', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
-								WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
-								ELSE '' END
-				,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
-				,TransDesc = CASE
-								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'SLT', 'HB', 'CG', 'AP', 'APM') THEN b.transdesc
-								WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG') THEN ISNULL(b.transdesc, '')
-								ELSE '' END
-				,OddsSpread = CASE
-								WHEN c.Product IN ('OneRNG', 'PP') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-								WHEN c.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
-								ELSE 0 END
-				,BetdaqId = -1
-				,ExtraInfo = CASE
-								WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
-								ELSE '' END
-				,Currency = b.currencyname
-				,Product = c.Product
-			FROM @Tickets AS c
-				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
-				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
-				LEFT JOIN @temp_bettransX AS x
-					ON c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL')
-					AND c.Winlostdate >= @Yesterday
-					AND x.RefNo = c.transid
-				LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
-				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
-				LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
-				LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
+			SELECT @TotalRow = COUNT(1)
+			FROM @Tickets
 
-			-- virtual sports:: racing
-			INSERT INTO @BettransDetail
-			SELECT RefNo = bm.refno
-				,Odds = bm.odds
-				,Stake = bm.stake
-				,Status = bm.status
-				,APositionTaking = bm.apositiontaking
-				,MPositionTaking = bm.mpositiontaking
-				,SPositionTaking = bm.spositiontaking
-				,BetType = bm.bettype
-				,BetTeam = bm.betteam
-				,TransDesc = ''
-			FROM @Tickets AS c
-				INNER JOIN dbo.bettransm AS bm WITH(NOLOCK) ON c.Product IN ('VR') AND c.refno = bm.refno AND bm.custid = @custid
-			WHERE c.Product IN ('VR') -- virtual sports:: racing
+			IF @TotalRow <= @MaxTotalRow OR @IsExportExcel = 1
+			BEGIN
+				INSERT INTO #MemBetTicket
+				SELECT TransId = CASE
+									WHEN c.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
+									ELSE b.transid
+								END 
+					,RefNo = b.refno
+					,CustId = b.custid
+					,Username = b.username
+					,SportType = CASE
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
+										'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM') THEN b.matchid
+									WHEN c.Product = 'Keno' THEN 202
+									WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe
+									WHEN c.Product = 'AllBet' THEN 211 -- AllBet
+									WHEN c.Product = 'VB' THEN 212 -- Macau Games
+									WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2501 AND 2539 THEN 213 -- NG2
+									WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2541 AND 2579 THEN 214 -- NG2
+									WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2581 AND 2619 THEN 215 -- NG2
+									WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2621 AND 2659 THEN 216 -- NG2
+									WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2681 AND 2699 THEN 218 -- NG2
+									WHEN c.Product = 'FW' THEN 219 -- Fishing World
+									WHEN c.Product = 'Lottery' THEN 220 -- Lottery
+									WHEN c.Product = 'PP' THEN 248 -- Pragmatic Casino
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
+									WHEN c.Product IN ('Outright') THEN l.sporttype
+									WHEN c.Product IN ('VR') THEN vr.SportType
+									ELSE 0
+								END -- parlay(s)
+					,BetType = b.bettype
+					,BetId = ISNULL(b.betid, 0)
+					,BetTeam = CASE
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2') THEN b.betteam
+									ELSE ''
+								END
+					,Hdp1 = CASE
+								WHEN c.Product IN ('Parlay', 'ParlayVS2', 'NG2') THEN b.hdp1 -- parlay(s), NG2, Pokergames
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.hdp1
+								WHEN c.Product IN ('VR') THEN b.hdp1
+								ELSE 0 END
+					,Hdp2 = CASE
+								WHEN c.Product IN ('Parlay', 'ParlayVS2', 'NG2') THEN b.hdp2 --parlay(s), NG2
+								WHEN c.Product IN ('SB', 'VS', 'VS2') THEN b.hdp2
+								WHEN c.Product IN ('VR') THEN b.hdp2
+								ELSE 0 END
+					,OddsType = CASE
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Keno') THEN b.oddstype
+									ELSE 0 END
+					,OddsId = b.oddsid
+					,Odds = CASE
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'SLT') THEN b.Odds
+								WHEN c.Product IN ('Outright') THEN b.odds
+								WHEN c.Product IN ('VR') THEN b.odds
+								ELSE 0 END
+					,MOdds = CASE
+								WHEN c.Product IN ('Parlay', 'ParlayVS2')  THEN b.modds 
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.modds
+								WHEN c.Product IN ('Outright') THEN b.modds
+								WHEN c.Product IN ('VR') THEN b.modds
+								ELSE 0 END
+					,Stake = CASE
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.Stake IS NOT NULL THEN x.Stake
+								ELSE b.stake END
+					,Actual_Stake = CASE
+									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
+									ELSE b.actual_stake END
+					,Status = CASE
+									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.status IS NOT NULL THEN x.status
+									WHEN c.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
+									WHEN c.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
+									ELSE b.status
+								END
+					,SettlementStatus = CASE
+											WHEN c.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
+											ELSE 0
+										END
+					,TransDate = b.transdate
+					,WinLostDate = b.winlostdate
+					,WinLost = CASE
+									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.WinLost IS NOT NULL THEN x.WinLost
+									ELSE b.winlost - b.actual_stake END
+					,AWinLost = CASE
+									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.AWinLost IS NOT NULL THEN x.AWinLost
+									ELSE b.awinLost END
+					,MWinLost = CASE
+									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.MWinLost IS NOT NULL THEN x.MWinLost
+									ELSE b.mwinLost END
+					,SWinLost = CASE
+									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.SWinLost IS NOT NULL THEN x.SWinLost
+									ELSE b.SwinLost END
+					,PlayerComm = CASE
+									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.PlayerComm IS NOT NULL THEN x.PlayerComm
+									ELSE b.playercomm END
+					,Comm = CASE
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.Comm IS NOT NULL THEN x.Comm
+								ELSE b.comm - b.playercomm END
+					,AComm = CASE
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.AComm IS NOT NULL THEN x.AComm
+								ELSE b.acomm - b.comm END
+					,SComm = CASE
+								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.SComm IS NOT NULL THEN x.SComm
+								ELSE b.scomm - b.acomm END
+					,APositionTaking = CASE
+											WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.APositiontaking IS NOT NULL THEN x.APositiontaking
+											ELSE b.APositiontaking END
+					,MPositionTaking = CASE
+											WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.MPositiontaking IS NOT NULL THEN x.MPositiontaking
+											ELSE b.MPositiontaking END
+					,SPositionTaking = CASE
+											WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.SPositiontaking IS NOT NULL THEN x.SPositiontaking
+											ELSE b.SPositiontaking END
+					,TPositionTaking = CASE
+											WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.TPositiontaking IS NOT NULL THEN x.TPositiontaking
+											ELSE b.TPositiontaking END
+					,ADiscount = CASE
+									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.discount IS NOT NULL THEN x.discount
+									ELSE b.discount END
+					,MDiscount = CASE
+									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.adiscount IS NOT NULL THEN x.adiscount
+									ELSE b.adiscount END
+					,SDiscount = CASE
+									WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL') AND x.sdiscount IS NOT NULL THEN x.sdiscount
+									ELSE b.sdiscount END	
+					,LiveIndicator = CASE
+										WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay') THEN b.liveindicator
+										ELSE 0 END
+					,LiveHomeScore = CASE 
+										WHEN c.Product IN ('Parlay', 'NG2') THEN b.Livehomescore 
+										WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.livehomescore
+										WHEN c.Product IN ('Outright') THEN b.livehomescore
+										WHEN c.Product IN ('VR') THEN b.livehomescore
+										ELSE 0 END
+					,LiveAwayScore = CASE
+										WHEN c.Product IN ('Parlay') THEN b.Liveawayscore 
+										WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveawayscore
+										WHEN c.Product IN ('Outright') THEN b.liveawayscore
+										WHEN c.Product IN ('VR') THEN b.liveawayscore
+										ELSE 0 END
+					,FinalHomeScore = CASE
+											WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalhomescore
+											ELSE 0 END
+					,FinalAwayScore = CASE
+											WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalawayscore
+											ELSE 0 END
+					,HtHomeScore = CASE
+										WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.hthomescore
+										ELSE 0 END
+					,HtAwayScore = CASE
+										WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.htawayscore
+										ELSE 0 END
+					,Ip = b.ip
+					,LeagueId = CASE
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.leagueid
+									WHEN c.Product IN ('Outright') THEN o.leagueid
+									WHEN c.Product IN ('VR') THEN vr.LeagueID
+									ELSE 0 END
+					,MatchId = CASE
+									WHEN c.Product IN ('GD') THEN 255
+									WHEN c.Product IN ('NG2') THEN b.betdaqid
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchid
+									WHEN c.Product IN ('Outright') THEN o.orid
+									WHEN c.Product IN ('VR') THEN b.matchid
+									ELSE 0 END
+					,MatchCode = CASE
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchcode
+									WHEN c.Product IN ('Outright') THEN o.matchcode
+									WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vo.RacerNum)
+									ELSE '' END
+					,Race = CASE
+									WHEN c.Product IN ('Outright') THEN o.groupmatch
+									WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
+									ELSE '' END
+					,EventDate = CASE
+									WHEN c.Product = 'SB' THEN m.GlobalShowTime
+									WHEN c.Product IN ('NG', 'VS', 'VS2') THEN m.eventdate
+									WHEN c.Product IN ('Outright') THEN o.eventdate
+									WHEN c.Product IN ('VR') THEN vo.EventDate
+									ELSE b.winlostdate END
+					,HomeId = CASE
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.homeid
+									WHEN c.Product IN ('Outright') THEN o.teamid
+									WHEN c.Product IN ('VR') THEN vo.RacerID
+									ELSE 0 END
+					,AwayId = CASE
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.awayid
+									ELSE 0 END
+					,BetStatus = CASE
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.betstatus
+									ELSE '' END
+					,IsNeutral = CASE
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+									ELSE 0 END
+					,Placing = CASE
+									WHEN c.Product IN ('VR') THEN CONVERT(VARCHAR(5), vo.Placing)
+									ELSE '' END
+					,ShowTime = CASE
+									WHEN c.Product IN ('VS', 'VS2') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN c.Product IN ('SB', 'NG') THEN ISNULL(m.showtime, '')
+									WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
+									ELSE '' END
+					,BetCheck = CASE 
+									WHEN c.Product IN ('SB', 'Parlay', 'ParlayVS2', 'GD', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
+									WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
+									ELSE '' END
+					,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
+					,TransDesc = CASE
+									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'SLT', 'HB', 'CG', 'AP', 'APM') THEN b.transdesc
+									WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG') THEN ISNULL(b.transdesc, '')
+									ELSE '' END
+					,OddsSpread = CASE
+									WHEN c.Product IN ('OneRNG', 'PP') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+									WHEN c.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
+									ELSE 0 END
+					,BetdaqId = -1
+					,ExtraInfo = CASE
+									WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
+									ELSE '' END
+					,Currency = b.currencyname
+					,Product = c.Product
+				FROM @Tickets AS c
+					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
+					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
+					LEFT JOIN @temp_bettransX AS x
+						ON c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL')
+						AND c.Winlostdate >= @Yesterday
+						AND x.RefNo = c.transid
+					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
+					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
+					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
+					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
+
+				-- virtual sports:: racing
+				INSERT INTO @BettransDetail
+				SELECT RefNo = bm.refno
+					,Odds = bm.odds
+					,Stake = bm.stake
+					,Status = bm.status
+					,APositionTaking = bm.apositiontaking
+					,MPositionTaking = bm.mpositiontaking
+					,SPositionTaking = bm.spositiontaking
+					,BetType = bm.bettype
+					,BetTeam = bm.betteam
+					,TransDesc = ''
+				FROM @Tickets AS c
+					INNER JOIN dbo.bettransm AS bm WITH(NOLOCK) ON c.Product IN ('VR') AND c.refno = bm.refno AND bm.custid = @custid
+				WHERE c.Product IN ('VR') -- virtual sports:: racing
 	
-			UNION ALL --Gold Deluxe
-			SELECT RefNo = bg.refno
-				,Odds = bg.odds
-				,Stake = bg.stake
-				,Status = bg.status
-				,APositionTaking = bg.apositiontaking
-				,MPositionTaking = bg.mpositiontaking
-				,SPositionTaking = bg.spositiontaking
-				,BetType = bg.bettype
-				,BetTeam = bg.betteam
-				,TransDesc = bg.transdesc
-			FROM @Tickets AS c
-				INNER JOIN dbo.bettransg AS bg WITH(NOLOCK) ON c.Product IN ('GD') AND c.transid = bg.refno AND bg.custid = @custid
-			WHERE c.Product IN ('GD') --Gold Deluxe
-		END -- end: @@rowcount > 0
+				UNION ALL --Gold Deluxe
+				SELECT RefNo = bg.refno
+					,Odds = bg.odds
+					,Stake = bg.stake
+					,Status = bg.status
+					,APositionTaking = bg.apositiontaking
+					,MPositionTaking = bg.mpositiontaking
+					,SPositionTaking = bg.spositiontaking
+					,BetType = bg.bettype
+					,BetTeam = bg.betteam
+					,TransDesc = bg.transdesc
+				FROM @Tickets AS c
+					INNER JOIN dbo.bettransg AS bg WITH(NOLOCK) ON c.Product IN ('GD') AND c.transid = bg.refno AND bg.custid = @custid
+				WHERE c.Product IN ('GD') --Gold Deluxe
+			END
+		END
 	END
 	
-	IF @FromDate <= @MoveBetsDay --bettrans14
+	IF @FromDate <= @MoveBetsDay	--bettrans14
 	BEGIN
 		SET @f_date = @FromDate
 		SET @t_date = CASE WHEN @ToDate >= @MoveBetsDay THEN @MoveBetsDay ELSE @ToDate END
@@ -754,8 +768,12 @@ BEGIN
 			INNER JOIN dbo.f_SportBettypeMatrixByProduct_Sel(@ProductIds, @IsTest) AS s ON b.bettype = s.bettype
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @f_date AND @t_date
+
+		SELECT @TotalRow14 = COUNT(1)
+		FROM @Tickets
 		
-		IF @@ROWCOUNT > 0
+		IF @TotalRow14 > 0
+			AND (@TotalRow + @TotalRow14 <= @MaxTotalRow OR @IsExportExcel = 1)
 		BEGIN
 			INSERT INTO #MemBetTicket
 			SELECT TransId = CASE WHEN c.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
@@ -1029,12 +1047,34 @@ BEGIN
 							WHERE ProductId = 32 AND BetType = b.BetType)
 	END
 
-	SELECT *
-	FROM #MemBetTicket
-	ORDER BY TransId DESC
+	DECLARE @OriginalMaxTotalRow INT
 
-	-- OUTPUT ticket detail
-	SELECT * 
+	SET @OriginalMaxTotalRow = @MaxTotalRow
+
+	IF @TotalRow + @TotalRow14 > @MaxTotalRow
+	BEGIN
+		IF @IsExportExcel = 0
+			DELETE FROM #MemBetTicket
+
+		SELECT @ErrCode = 100,
+			@ErrMsg = N'Exceed max total row.',
+			@MaxTotalRow = @TotalRow + @TotalRow14
+	END
+
+	IF @IsExportExcel = 0 OR @OriginalMaxTotalRow >= @TotalRow + @TotalRow14
+	BEGIN
+		SELECT *
+		FROM #MemBetTicket
+		ORDER BY TransId DESC
+	END
+	ELSE
+	BEGIN
+		SELECT TOP(@OriginalMaxTotalRow) *
+		FROM #MemBetTicket
+		ORDER BY TransId DESC
+	END
+
+	SELECT *
 	FROM @BettransDetail
 	ORDER BY RefNo DESC
 

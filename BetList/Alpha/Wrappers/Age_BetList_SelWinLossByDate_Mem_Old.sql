@@ -6,7 +6,11 @@ ALTER PROCEDURE [dbo].[Age_BetList_SelWinLossByDate_Mem_Old]
 	@ToDate					SMALLDATETIME,
 	@ProductIds				VARCHAR(MAX),
 	@ProductDetails			VARCHAR(MAX)	= '',
-	@ShowProgressiveBonus	BIT				= 0
+	@ShowProgressiveBonus	BIT				= 0,
+	@IsExportExcel			BIT				= 0,
+	@MaxTotalRow			INT				= 1000000	OUTPUT,
+	@ErrCode				INT				= 0			OUTPUT,
+	@ErrMsg					NVARCHAR(4000)	= ''		OUTPUT
 AS
 
 /*
@@ -128,7 +132,9 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
-		
+		- 20210531@Kos: Prevent high CPU [Redmine: #154749]
+					- Add new params @MaxTotalRow INT, @ErrCode INT, @ErrMsg NVARCHAR(4000), @IsExportExcel BIT
+
 	Param's Explanation:
 		@ProductDetails:
 			<ROOT>
@@ -227,7 +233,8 @@ BEGIN
 	END
 
 	DECLARE @TempFromDate	SMALLDATETIME,
-		@TempToDate			SMALLDATETIME
+		@TempToDate			SMALLDATETIME,
+		@TotalRow			INT				= 0
 
 	SET @TempFromDate = @FromDate
 	SET @TempToDate = @ToDate
@@ -657,63 +664,143 @@ BEGIN
 							WHERE ProductId = 32 AND BetType = b.BetType)
 	END
 
-	SELECT
-		b.TransId,
-		b.RefNo,
-		b.CustId,
-		b.SportType,
-		b.BetType,
-		b.BetId,
-		b.BetTeam,
-		b.Hdp1,
-		b.Hdp2,
-		b.OddsId,
-		b.OddsType,
-		b.Odds,
-		b.MOdds,
-		b.OddsSpread,
-		b.Stake,
-		b.Actual_Stake,
-		b.WinLost,
-		b.AWinLost,
-		b.MWinLost,
-		b.SWinLost,
-		b.PlayerComm,
-		b.Comm,
-		b.AComm,
-		b.SComm,
-		b.APositionTaking,
-		b.MPositionTaking,
-		b.SPositionTaking,
-		b.ADiscount,
-		b.MDiscount,
-		b.SDiscount,
-		b.Status,
-		b.TransDate,
-		b.WinLostDate,
-		b.LiveIndicator,
-		b.LiveHomeScore,
-		b.LiveAwayScore,
-		b.Ip,
-		b.LeagueId,
-		b.MatchId,
-		b.MatchCode,
-		b.Race,
-		b.EventDate,
-		b.HomeId,
-		b.AwayId,
-		b.BetStatus,
-		b.IsNeutral,
-		b.ShowTime,
-		b.BetCheck,
-		b.ComStatus,
-		b.TransDesc,
-		b.BetdaqId,
-		b.ExtraInfo,
-		@CurrencyName AS Currency,
-		@Username AS Username
-	FROM @Data AS b
-	ORDER BY b.TransId DESC
+	SELECT @TotalRow = COUNT(1)
+	FROM @Data
+
+	DECLARE @OriginalMaxTotalRow INT
+
+	SET @OriginalMaxTotalRow = @MaxTotalRow
+
+	IF @TotalRow > @MaxTotalRow
+	BEGIN
+		IF @IsExportExcel = 0
+			DELETE FROM @Data
+
+		SELECT @ErrCode = 100,
+			@ErrMsg = N'Exceed max total row.',
+			@MaxTotalRow = @TotalRow
+	END
+
+	IF @IsExportExcel = 0 OR @OriginalMaxTotalRow >= @TotalRow
+	BEGIN
+		SELECT
+			b.TransId,
+			b.RefNo,
+			b.CustId,
+			b.SportType,
+			b.BetType,
+			b.BetId,
+			b.BetTeam,
+			b.Hdp1,
+			b.Hdp2,
+			b.OddsId,
+			b.OddsType,
+			b.Odds,
+			b.MOdds,
+			b.OddsSpread,
+			b.Stake,
+			b.Actual_Stake,
+			b.WinLost,
+			b.AWinLost,
+			b.MWinLost,
+			b.SWinLost,
+			b.PlayerComm,
+			b.Comm,
+			b.AComm,
+			b.SComm,
+			b.APositionTaking,
+			b.MPositionTaking,
+			b.SPositionTaking,
+			b.ADiscount,
+			b.MDiscount,
+			b.SDiscount,
+			b.Status,
+			b.TransDate,
+			b.WinLostDate,
+			b.LiveIndicator,
+			b.LiveHomeScore,
+			b.LiveAwayScore,
+			b.Ip,
+			b.LeagueId,
+			b.MatchId,
+			b.MatchCode,
+			b.Race,
+			b.EventDate,
+			b.HomeId,
+			b.AwayId,
+			b.BetStatus,
+			b.IsNeutral,
+			b.ShowTime,
+			b.BetCheck,
+			b.ComStatus,
+			b.TransDesc,
+			b.BetdaqId,
+			b.ExtraInfo,
+			@CurrencyName AS Currency,
+			@Username AS Username
+		FROM @Data AS b
+		ORDER BY b.TransId DESC
+	END
+	ELSE
+	BEGIN
+		SELECT TOP(@OriginalMaxTotalRow)
+			b.TransId,
+			b.RefNo,
+			b.CustId,
+			b.SportType,
+			b.BetType,
+			b.BetId,
+			b.BetTeam,
+			b.Hdp1,
+			b.Hdp2,
+			b.OddsId,
+			b.OddsType,
+			b.Odds,
+			b.MOdds,
+			b.OddsSpread,
+			b.Stake,
+			b.Actual_Stake,
+			b.WinLost,
+			b.AWinLost,
+			b.MWinLost,
+			b.SWinLost,
+			b.PlayerComm,
+			b.Comm,
+			b.AComm,
+			b.SComm,
+			b.APositionTaking,
+			b.MPositionTaking,
+			b.SPositionTaking,
+			b.ADiscount,
+			b.MDiscount,
+			b.SDiscount,
+			b.Status,
+			b.TransDate,
+			b.WinLostDate,
+			b.LiveIndicator,
+			b.LiveHomeScore,
+			b.LiveAwayScore,
+			b.Ip,
+			b.LeagueId,
+			b.MatchId,
+			b.MatchCode,
+			b.Race,
+			b.EventDate,
+			b.HomeId,
+			b.AwayId,
+			b.BetStatus,
+			b.IsNeutral,
+			b.ShowTime,
+			b.BetCheck,
+			b.ComStatus,
+			b.TransDesc,
+			b.BetdaqId,
+			b.ExtraInfo,
+			@CurrencyName AS Currency,
+			@Username AS Username
+		FROM @Data AS b
+		ORDER BY b.TransId DESC
+	END
 
 	SELECT * FROM @DetailData
 	ORDER BY RefNo DESC
