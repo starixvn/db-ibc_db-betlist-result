@@ -8,7 +8,10 @@ ALTER PROCEDURE [dbo].[Acc_BetList_Mem]
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@IsCN88			BIT				= 0
+	@IsCN88			BIT				= 0,
+	@MaxTotalRow	INT				= 1000000	OUTPUT,
+	@ErrCode		INT				= 0			OUTPUT,
+	@ErrMsg			NVARCHAR(4000)	= ''		OUTPUT
 AS
 
 /*
@@ -67,6 +70,8 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
+		- 20210525@Kos: Prevent high CPU [Redmine: #154749]
+					- Add new params @MaxTotalRow INT, @ErrCode INT, @ErrMsg NVARCHAR(4000)
 */
 
 BEGIN
@@ -2121,6 +2126,20 @@ BEGIN
 	FROM dbo.Customer AS c WITH (NOLOCK)
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
 	WHERE c.custid = @CustId
+
+	DECLARE @TotalRow	INT	= 0
+
+	SELECT @TotalRow = COUNT(1)
+	FROM @Data
+
+	IF @TotalRow > @MaxTotalRow
+	BEGIN
+		DELETE FROM @Data
+
+		SELECT @ErrCode = 100,
+			@ErrMsg = N'Exceed max total row.',
+			@MaxTotalRow = @TotalRow
+	END
 
 	SELECT
 		b.TransId,
