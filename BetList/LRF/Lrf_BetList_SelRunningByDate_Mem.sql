@@ -40,6 +40,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowHB		BIT			= 0,	-- Habanero
 	@ShowWM		BIT			= 0,	-- WM Live Casino
 	@ShowBGG	BIT			= 0,	-- Big Gaming
+	@ShowVGA	BIT			= 0,	-- Vgaming
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -142,6 +143,7 @@ AS
 		- 20210415@Kos: Support Habanero [Redmine: #150843]
 		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
 		- 20210517@Kos: Support Big Gaming [Redmine: #146773]
+		- 20210524@Kos: Support Vgaming [Redmine: #151583]
 */
 
 BEGIN
@@ -214,7 +216,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 63)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 63, 66)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -246,6 +248,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowGDG = 0	THEN 59 END
 		OR ProductID	= CASE WHEN @ShowHB = 0		THEN 61 END
 		OR ProductID	= CASE WHEN @ShowSLT = 0	THEN 63 END
+		OR ProductID	= CASE WHEN @ShowVGA = 0	THEN 66 END
 	-- end filer bettypes by sporttype
 
 	CREATE TABLE #BetListSelRunningByDateMem (
@@ -931,15 +934,15 @@ BEGIN
 			AND sbt.EventType = 0
 	END
 
-	-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, Habanero
-	IF (@ShowCS = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1 OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowSBC = 1 OR @ShowPGS = 1 OR @ShowJK = 1 OR @ShowHB = 1)
+	-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, Habanero, Vgaming
+	IF (@ShowCS = 1 OR @ShowVB = 1 OR @ShowFW = 1 OR @ShowPP = 1 OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowSBC = 1 OR @ShowPGS = 1 OR @ShowJK = 1 OR @ShowHB = 1 OR @ShowVGA = 1)
 		AND EXISTS (SELECT 1 FROM dbo.bettransRnG WITH (NOLOCK) WHERE custid = @CustId AND statusID IN (0, 1))
 	BEGIN
 		-- Yesterday and today running ticket
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
 			CASE
-				WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 61) THEN b.matchid
+				WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 61, 66) THEN b.matchid
 				WHEN sbt.ProductID = 22 THEN 212
 				WHEN sbt.ProductID = 24 THEN 219
 				WHEN sbt.ProductID = 32 THEN 248
@@ -992,7 +995,7 @@ BEGIN
 			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.winlostdate BETWEEN @Yesterday AND @Today
 			AND brng.custid = @CustId
-			AND (sbt.ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61)
+			AND (sbt.ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 66)
 				OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 			AND sbt.EventType = 0
 			AND brng.statusID IN (0, 1)

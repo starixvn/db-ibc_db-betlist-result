@@ -38,6 +38,7 @@ AS
 		- 20200922@Kos: Support Joker [Redmine: #141408]
 		- 20210118@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210524@Kos: Support Vgaming [Redmine: #151583]
 
 	Parameters:
 		- @TransType
@@ -82,7 +83,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 66)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (StatusId TINYINT)
@@ -159,7 +160,7 @@ BEGIN
 			brng.status,
 			brng.statusID,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				WHEN sbt.ProductID IN (32, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
 				ELSE brng.odds
 			END AS Odds,
 			brng.stake,
@@ -182,7 +183,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42, 61) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (42, 61, 66) THEN ISNULL(brng.SiteID, '')
 				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
@@ -191,15 +192,15 @@ BEGIN
 				ELSE ''
 			END AS BetTeam,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				WHEN sbt.ProductID IN (32, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
 			END AS OddsSpread,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) THEN ISNULL(brng.RefNo2, -1)
+				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) THEN ISNULL(brng.JackpotInfo, '')
+				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
 			END AS ExtraInfo
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
@@ -220,7 +221,7 @@ BEGIN
 			brng.status,
 			brng.statusID,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				WHEN sbt.ProductID IN (32, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
 				ELSE brng.odds
 			END AS Odds,
 			brng.stake,
@@ -243,7 +244,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42, 61) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (42, 61, 66) THEN ISNULL(brng.SiteID, '')
 				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
@@ -252,15 +253,15 @@ BEGIN
 				ELSE ''
 			END AS BetTeam,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				WHEN sbt.ProductID IN (32, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
 			END AS OddsSpread,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) THEN ISNULL(brng.RefNo2, -1)
+				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) THEN ISNULL(brng.JackpotInfo, '')
+				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
 			END AS ExtraInfo
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
@@ -279,7 +280,7 @@ BEGIN
 			brng.status,
 			brng.statusID,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				WHEN sbt.ProductID IN (32, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
 				ELSE brng.odds
 			END AS Odds,
 			brng.stake,
@@ -311,15 +312,15 @@ BEGIN
 				ELSE ''
 			END AS BetTeam,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				WHEN sbt.ProductID IN (32, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
 			END AS OddsSpread,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) THEN ISNULL(brng.RefNo2, -1)
+				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN sbt.ProductID IN (32, 42) THEN ISNULL(brng.JackpotInfo, '')
+				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
 			END AS ExtraInfo
 		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
