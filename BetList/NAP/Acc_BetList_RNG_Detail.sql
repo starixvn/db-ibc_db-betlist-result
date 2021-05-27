@@ -46,6 +46,7 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
+		- 20210527@Razor: VGaming: Missing Return SiteId [Redmine: #155912]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -215,7 +216,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
-				WHEN sbt.productID IN (42, 61, 62, 67, 68) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(brng.SiteID, '')
 				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
