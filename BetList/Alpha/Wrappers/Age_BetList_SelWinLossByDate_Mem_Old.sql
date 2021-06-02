@@ -134,6 +134,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20210531@Kos: Prevent high CPU [Redmine: #154749]
 					- Add new params @MaxTotalRow INT, @ErrCode INT, @ErrMsg NVARCHAR(4000), @IsExportExcel BIT
+		- 20210602@Razor: Support Sexy Gaming Lucky Draw [Redmine: #156237]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -608,7 +609,8 @@ BEGIN
 	WHERE c.custid = @CustId
 
 	-- Filter due to product detail
-	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('PP'))
+	-- Pragmatic, Sexy Gaming
+	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('PP', 'SXG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
@@ -662,6 +664,22 @@ BEGIN
 							WHERE ProductId = 32 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 32 AND BetType = b.BetType)
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'SXG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 45 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 45 AND BetType = b.BetType)
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'SXG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 45 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 45 AND BetType = b.BetType)
 	END
 
 	SELECT @TotalRow = COUNT(1)
