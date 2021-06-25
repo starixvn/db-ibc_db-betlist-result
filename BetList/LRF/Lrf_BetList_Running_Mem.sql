@@ -37,6 +37,7 @@ AS
 		- 20210517@Kos: Support Big Gaming [Redmine: #146773]
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
+		- 20210714@Kos: Support CG [Redmine: #152619]
 */
 
 BEGIN
@@ -119,7 +120,8 @@ BEGIN
 		Gameid3rd			NVARCHAR(50),
 		Tranid3rd			NVARCHAR(64),
 		TableID				TINYINT,
-		Product				VARCHAR(30)
+		Product				VARCHAR(30),
+		RefTable			TINYINT
 	)
 
 	CREATE TABLE #PagingData (
@@ -180,7 +182,8 @@ BEGIN
 		Gameid3rd			NVARCHAR(50),
 		Tranid3rd			NVARCHAR(64),
 		TableID				TINYINT,
-		Product				VARCHAR(30)
+		Product				VARCHAR(30),
+		RefTable			TINYINT
 	)
 
 	DECLARE @TmpData TABLE (
@@ -368,6 +371,7 @@ BEGIN
 						WHEN s.ProductID = 57 THEN 'BG'								-- Big Gaming
 						WHEN s.ProductID = 59 THEN 'GDG'							-- GDG
 						WHEN s.ProductID = 61 THEN 'HB'								-- Habanero
+						WHEN s.ProductID = 62 THEN 'CG'								-- CG
 						WHEN s.ProductID = 63 THEN 'SLT'							-- Sports Lottery
 						WHEN s.ProductID = 66 THEN 'VGA'							-- Vgaming
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
@@ -380,7 +384,8 @@ BEGIN
 						WHEN s.EventType = 2 AND s.ProductID = 1 THEN 'Outright'
 						WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'			-- Virtual Sports Racing
 						ELSE 'Unknown'
-					END
+					END,
+			RefTable = s.RefTable
 		FROM #Data AS b
 			INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest) AS s ON b.bettype = s.bettype
 
@@ -402,7 +407,7 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate >= @Yesterday
 			AND b.statusID IN (0, 1)
-			AND s.ProductID IN (6, 22, 24, 32, 34, 36, 42, 55, 56, 61, 66)
+			AND s.RefTable = 1
 		GROUP BY b.RefNo,
 			b.gameID
 
@@ -419,14 +424,14 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate >= @Yesterday
 			AND b.statusID IN (0, 1)
-			AND s.ProductID IN (11, 21, 39, 45, 51, 57, 59)
+			AND s.RefTable = 2
 		GROUP BY b.RefNo,
 			b.gameID
 
 		-- Delete settled only summary ticket
 		DELETE b
 		FROM #Data AS b
-		WHERE b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'PGS', 'JK', 'HB', 'VGA', 'Allbet', 'AG', 'SAG', 'SXG', 'GDG', 'WM', 'BG')
+		WHERE b.RefTable IN (1, 2)
 			AND b.Winlostdate >= @Yesterday
 			AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 
@@ -435,8 +440,7 @@ BEGIN
 		SET b.IsNew = 0
 		FROM @TmpData AS b
 			INNER JOIN #Data AS d ON d.TransId = b.RefNo AND d.BetType = b.BetType
-		WHERE d.Winlostdate >= @Yesterday
-			AND d.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'PGS', 'JK', 'HB', 'VGA', 'Allbet', 'AG', 'SAG', 'SXG', 'GDG', 'WM', 'BG')
+		WHERE d.Winlostdate >= @Yesterday AND d.RefTable IN (1, 2)
 
 		INSERT INTO #Data (
 			TransId,
@@ -475,7 +479,8 @@ BEGIN
 			WalletType,
 			RefCode,
 			TableID,
-			Product)
+			Product,
+			RefTable)
 		SELECT
 			b.transid,
 			b.refno,
@@ -531,9 +536,11 @@ BEGIN
 				WHEN s.ProductID = 57 THEN 'BG'		-- Big Gaming
 				WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
 				WHEN s.ProductID = 61 THEN 'HB'		-- Habanero
+				WHEN s.ProductID = 62 THEN 'CG'		-- CG
 				WHEN s.ProductID = 66 THEN 'VGA'	-- Vgaming
 				ELSE 'Unknown'
-			END AS Product
+			END AS Product,
+			s.RefTable
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @TmpData AS t ON t.RefNo = b.transid AND t.BetType = b.BetType
 			INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest) AS s ON b.bettype = s.bettype
@@ -626,7 +633,7 @@ BEGIN
 							ELSE b.TransId
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'CB', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 'GDG', 'HB', 'WM', 'BG', 'VGA') THEN b.MatchId
+								WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'CB', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 'GDG', 'HB', 'WM', 'BG', 'VGA', 'CG') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'H5LG', 'SLT') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('Outright') THEN l.sporttype
@@ -658,15 +665,15 @@ BEGIN
 							ELSE 0
 						END,
 				Stake = CASE
-							WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'PGS', 'JK', 'HB', 'VGA', 'Allbet', 'AG', 'SAG', 'SXG', 'GDG', 'WM', 'BG', 'VGA') AND x.Stake IS NOT NULL THEN x.Stake
+							WHEN b.RefTable IN (1, 2) AND x.Stake IS NOT NULL THEN x.Stake
 							ELSE b.stake 
 						END,
 				Actual_Stake = CASE
-									WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'PGS', 'JK', 'HB', 'VGA', 'Allbet', 'AG', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
+									WHEN b.RefTable IN (1, 2) AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
 									ELSE b.actual_stake
 								END,
 				Status = CASE
-							WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'PGS', 'JK', 'HB', 'VGA', 'Allbet', 'AG', 'SAG', 'SXG', 'GDG', 'WM', 'BG') AND x.RefNo IS NOT NULL THEN 'Running'
+							WHEN b.RefTable IN (1, 2) AND x.RefNo IS NOT NULL THEN 'Running'
 							WHEN b.Product = 'SB'
 								AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 							WHEN b.Product = 'Parlay' AND b.status = 'running' THEN
@@ -760,7 +767,7 @@ BEGIN
 							END,
 				TransDesc = CASE
 								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 
-									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB') THEN ISNULL(b.transdesc, '')
+									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
@@ -795,7 +802,7 @@ BEGIN
 			FROM #PagingData AS b
 				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 				LEFT JOIN @TmpData AS x
-					ON b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'SBC', 'PGS', 'JK', 'HB', 'VGA', 'Allbet', 'SAG', 'SXG', 'GDG', 'WM', 'BG')
+					ON b.RefTable IN (1, 2)
 					AND b.Winlostdate >= @Yesterday
 					AND x.RefNo = b.TransId
 				LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
