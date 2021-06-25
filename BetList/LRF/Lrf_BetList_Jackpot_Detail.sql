@@ -16,6 +16,7 @@ AS
 		- 20200714@Kos: Support PP Jackpot [Redmine: #137290]
 		- 20210118@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210720@Kos: Support Vgaming [Redmine: 158106]
 */
 
 BEGIN
@@ -43,7 +44,7 @@ BEGIN
 	END CATCH
 
 	-- Get Sport Bettype Matrix
-	-- Support PP
+	-- Support PP, Saba.club, Vgaming
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -53,7 +54,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (32, 42)
+	WHERE ProductID IN (32, 42, 66)
 
 	-- Create temp table
 	DECLARE @Data TABLE (
