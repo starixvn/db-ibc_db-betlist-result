@@ -51,6 +51,7 @@ AS
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 		- 20210420@Kos: Support Time Machine Over/Under [Redmine: #153302]
+		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
 */
 
 BEGIN 
@@ -196,7 +197,7 @@ BEGIN
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetailOS WITH (NOLOCK)
 				WHERE SettlementStatusID > 0
-					AND (@SportType = 9
+					AND (@SportType IN (9, 45)
 						OR (@SportType = 50
 							AND ResourceID NOT IN ('00')
 							AND ResourceID NOT LIKE '9410%'
@@ -219,7 +220,7 @@ BEGIN
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 				WHERE SettlementStatusID > 0
-					AND (@SportType = 9
+					AND (@SportType IN (9, 45)
 						OR (@SportType = 50
 							AND ResourceID NOT IN ('00')
 							AND ResourceID NOT LIKE '9410%'
@@ -481,7 +482,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Cricket, Beach Volleyball
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -497,7 +498,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType = 9)
 					OR (SettlementStatusID > 0
-						AND (@SportType = 9
+						AND (@SportType IN (9, 45)
 							OR (@SportType = 50
 								AND ResourceID NOT IN ('00')
 								AND ResourceID NOT LIKE '9410%'
@@ -593,7 +594,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Cricket, Beach Volleyball
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -609,7 +610,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType = 9)
 					OR (SettlementStatusID > 0
-						AND (@SportType = 9
+						AND (@SportType IN (9, 45)
 							OR (@SportType = 50
 								AND ResourceID NOT IN ('00')
 								AND ResourceID NOT LIKE '9410%'

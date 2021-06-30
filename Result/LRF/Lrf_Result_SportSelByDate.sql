@@ -46,6 +46,7 @@ AS
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 		- 20210420@Kos: Support Time Machine Over/Under [Redmine: #153302]
+		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
 */
 
 BEGIN
@@ -111,7 +112,7 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-				) AS o ON o.MatchID = m.matchid AND m.sporttype = 9
+				) AS o ON o.MatchID = m.matchid AND m.sporttype IN (9, 45)
 			LEFT JOIN (
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
@@ -217,7 +218,7 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-				) AS o ON o.MatchID = m.matchid AND m.sporttype = 9
+				) AS o ON o.MatchID = m.matchid AND m.sporttype IN (9, 45)
 			LEFT JOIN (
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
