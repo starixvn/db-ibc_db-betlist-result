@@ -49,6 +49,7 @@ AS
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
+		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
 */
 
 BEGIN
@@ -193,14 +194,14 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-						AND (@SportType = 9
+						AND (@SportType IN (9, 45)	-- Badminton, Beach Volleyball
 							OR (@SportType = 50
 								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
 					UNION ALL
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-						AND (@SportType = 9
+						AND (@SportType IN (9, 45)	-- Badminton, Beach Volleyball
 							OR (@SportType = 50
 								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
 					UNION ALL
@@ -463,7 +464,7 @@ BEGIN
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -479,7 +480,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType = 9)
 					OR (SettlementStatusID > 0
-						AND (@SportType = 9
+						AND (@SportType IN (9, 45)
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC
@@ -566,7 +567,7 @@ BEGIN
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -582,7 +583,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType = 9)
 					OR (SettlementStatusID > 0
-						AND (@SportType = 9
+						AND (@SportType IN (9, 45)	--Badminton, Beach Volleyball
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC

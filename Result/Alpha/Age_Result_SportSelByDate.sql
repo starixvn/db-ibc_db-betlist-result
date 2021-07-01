@@ -41,6 +41,7 @@ AS
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
+		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
 */
 
 BEGIN
@@ -112,7 +113,7 @@ BEGIN
 											FROM dbo.ResultDetailOS AS o WITH (NOLOCK)
 											WHERE o.SettlementStatusID > 0
 												AND m.matchid = o.MatchId
-												AND (m.sporttype = 9		-- Badminton
+												AND (m.sporttype IN (9, 45)		-- Badminton, Beach Volleyball
 													OR (m.sporttype = 50	-- Cricket
 														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
@@ -217,7 +218,7 @@ BEGIN
 											FROM dbo.ResultDetailOS14 AS o WITH (NOLOCK)
 											WHERE o.SettlementStatusID > 0
 												AND m.matchid = o.MatchId
-												AND (m.sporttype = 9		-- Badminton
+												AND (m.sporttype IN (9, 45)		-- Badminton, Beach Volleyball
 													OR (m.sporttype = 50	-- Cricket
 														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
