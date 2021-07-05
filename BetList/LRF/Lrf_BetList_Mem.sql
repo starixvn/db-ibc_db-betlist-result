@@ -96,6 +96,7 @@ AS
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 		- 20210325@Kos: Support betfrom '8', '9' [Redmine: #152158]
 		- 20210518@Kos: Support multiple selection on Platform filter [Redmine: #153102]
+		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 */
 
 BEGIN
@@ -1027,7 +1028,8 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 'SLT') THEN b.Odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 
+									'TG', 'I4D', 'VRG', 'SLT', 'H5LG') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1189,7 +1191,8 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 'SLT') THEN b.Odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 
+									'TG', 'I4D', 'VRG', 'SLT', 'H5LG') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1348,7 +1351,8 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 'SLT') THEN b.Odds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 
+									'TG', 'I4D', 'VRG', 'SLT', 'H5LG') THEN b.Odds
 								ELSE 0 END,
 					MOdds = CASE 
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds 

@@ -148,6 +148,7 @@ AS
 		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
 		- 20210517@Kos: Support Big Gaming [Redmine: #146773]
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
+		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -2343,7 +2344,7 @@ BEGIN
 				END AS Oddstype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-					WHEN sbt.ProductID IN (8, 28, 38, 40, 43, 63) THEN b.odds
+					WHEN sbt.ProductID IN (3, 8, 28, 38, 40, 43, 63) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				b.stake,
@@ -3278,7 +3279,7 @@ BEGIN
 				END AS Oddstype,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-					WHEN sbt.ProductID IN (8, 28, 38, 40, 43, 63) THEN b.odds
+					WHEN sbt.ProductID IN (3, 8, 28, 38, 40, 43, 63) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				b.stake,

@@ -113,6 +113,7 @@ AS
 		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
 		- 20210517@Kos: Support Big Gaming [Redmine: #146773]
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
+		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 
 	Param's Explanation:
 		+ @TransType:
@@ -671,7 +672,7 @@ BEGIN
 			END AS Oddstype,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-				WHEN sbt.ProductID IN (8, 28, 32, 38, 40, 42, 43, 63, 66) THEN b.Odds
+				WHEN sbt.ProductID IN (3, 8, 28, 32, 38, 40, 42, 43, 63, 66) THEN b.Odds
 				ELSE 0
 			END AS Odds,
 			CASE

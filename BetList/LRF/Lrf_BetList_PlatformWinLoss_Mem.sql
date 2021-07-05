@@ -109,6 +109,7 @@ AS
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 		- 20210325@Kos: Support betfrom '8', '9' [Redmine: #152158]
 		- 20210518@Kos: Support multiple selection on Platform filter [Redmine: #153102]
+		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -594,7 +595,7 @@ BEGIN
 				END AS Modds,
 				0 AS OddsType,
 				CASE
-					WHEN sbt.ProductID IN (1, 8, 27, 28, 40, 43, 63) THEN b.odds
+					WHEN sbt.ProductID IN (1, 3, 8, 27, 28, 40, 43, 63) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				b.stake,
@@ -1353,7 +1354,7 @@ BEGIN
 				END AS Modds,
 				0 AS OddsType,
 				CASE
-					WHEN sbt.ProductID IN (1, 8, 27, 28, 40, 43, 63) THEN b.odds
+					WHEN sbt.ProductID IN (1, 3, 8, 27, 28, 40, 43, 63) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				b.stake,
@@ -1944,7 +1945,7 @@ BEGIN
 				END AS Modds,
 				0 AS OddsType,
 				CASE
-					WHEN sbt.ProductID IN (1, 8, 27, 28, 40, 43, 63) THEN b.odds
+					WHEN sbt.ProductID IN (1, 3, 8, 27, 28, 40, 43, 63) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				b.stake,

@@ -36,6 +36,7 @@ AS
 		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
 		- 20210517@Kos: Support Big Gaming [Redmine: #146773]
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
+		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 */
 
 BEGIN
@@ -649,7 +650,7 @@ BEGIN
 							ELSE 0
 						END,
 				Odds = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'SLT') THEN b.Odds
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'SLT', 'H5LG') THEN b.Odds
 							ELSE 0
 						END,
 				MOdds = CASE 

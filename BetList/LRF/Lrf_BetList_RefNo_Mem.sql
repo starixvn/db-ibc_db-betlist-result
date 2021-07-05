@@ -57,6 +57,7 @@ AS
 		- 20210519@Kos: Wrong betteam length [Redmine: #155464]
 		- 20210520@Kos: Support Big Gaming [Redmine: #146773]
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
+		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 */
 
 BEGIN
@@ -426,7 +427,7 @@ BEGIN
 			0 AS Hdp2,
 			0 AS OddsType,
 			CASE
-				WHEN @Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'SLT') THEN b.odds
+				WHEN @Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'SLT', 'H5LG') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			0 AS MOdds,
@@ -612,7 +613,8 @@ BEGIN
 			END AS OddsType,
 			CASE
 				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet', 'SBC', 'VGA') AND x.Odds IS NOT NULL THEN x.Odds
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA') THEN b.odds
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 
+					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA', 'H5LG') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -867,7 +869,7 @@ BEGIN
 			END AS OddsType,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 
-					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA') THEN b.odds
+					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA', 'H5LG') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -1086,7 +1088,7 @@ BEGIN
 			END AS OddsType,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 
-					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA') THEN b.odds
+					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA', 'H5LG') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE

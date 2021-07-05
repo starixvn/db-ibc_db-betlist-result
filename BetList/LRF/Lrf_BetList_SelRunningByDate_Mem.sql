@@ -144,6 +144,7 @@ AS
 		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
 		- 20210517@Kos: Support Big Gaming [Redmine: #146773]
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
+		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 */
 
 BEGIN
@@ -887,7 +888,7 @@ BEGIN
 			0 AS hdp1,
 			0 AS hdp2,
 			CASE
-				WHEN sbt.ProductID IN (8, 28, 38, 40, 43, 63) THEN t.odds
+				WHEN sbt.ProductID IN (3, 8, 28, 38, 40, 43, 63) THEN t.odds
 				ELSE 0
 			END AS Odds,
 			0 AS MOdds,
