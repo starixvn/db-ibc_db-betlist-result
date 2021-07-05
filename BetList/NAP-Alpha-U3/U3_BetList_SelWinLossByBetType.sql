@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20201228@Kos: Created [Redmine: #131371]
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 */
 
 BEGIN
@@ -176,7 +177,7 @@ BEGIN
 							END,
 				BetType = b.bettype,
 				BetId = ISNULL(b.betid, 0),
-				Odds = 0,
+				Odds = b.odds,
 				Stake = b.stake,
 				Actual_Stake = b.actual_stake,
 				Status = b.status,
@@ -290,7 +291,7 @@ BEGIN
 							END,
 				BetType = b.bettype,
 				BetId = ISNULL(b.betid, 0),
-				Odds = 0,
+				Odds = b.odds,
 				Stake = b.stake,
 				Actual_Stake = b.actual_stake,
 				Status = b.status,

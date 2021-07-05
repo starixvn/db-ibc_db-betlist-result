@@ -20,6 +20,7 @@ AS
 					- Rename input param @TransId to @RefNo
 					- Don't return column Race, FinalOdds, FinalOdds2, AllowDelete, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, VirtualRate, IsShowOTExRate,
 						SPositionTaking2, MPositionTaking2, APositionTaking2
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 */
 
 BEGIN
@@ -258,7 +259,7 @@ BEGIN
 					'' AS settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					0 AS odds,
+					b.odds AS odds,
 					0 AS OddsType,
 					b.status,
 					'' AS comstatus,
@@ -323,7 +324,7 @@ BEGIN
 					'' AS settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					0 AS odds,
+					b.odds AS odds,
 					0 AS OddsType,
 					b.status,
 					'' AS comstatus,
@@ -454,7 +455,7 @@ BEGIN
 					'' AS settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					0 AS odds,
+					b.odds AS odds,
 					0 AS OddsType,
 					b.status,
 					'' AS comstatus,
@@ -582,7 +583,7 @@ BEGIN
 					'' AS settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					0 AS odds,
+					b.odds AS odds,
 					0 AS OddsType,
 					b.status,
 					'' AS comstatus,

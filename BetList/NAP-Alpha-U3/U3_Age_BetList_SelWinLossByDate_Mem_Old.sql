@@ -19,6 +19,7 @@ AS
 					- Don't support Live Casino, Bingo, Lucky 3 anymore
 					- Remove input param @ShowBI, @ShowLiveCasino, @ShowLK3
 					- Don't return column Race, Placing, OddsSpread
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 */
 
 BEGIN
@@ -214,7 +215,7 @@ BEGIN
 			, 0 AS hdp2
 			, 0 AS oddstype
 			, b.oddsid
-			, 0 AS odds
+			, b.odds AS odds
 			, 0 AS modds
 			, b.stake
 			, b.actual_stake
