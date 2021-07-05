@@ -72,6 +72,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20210525@Kos: Prevent high CPU [Redmine: #154749]
 					- Add new params @MaxTotalRow INT, @ErrCode INT, @ErrMsg NVARCHAR(4000)
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 */
 
 BEGIN
@@ -1260,7 +1261,7 @@ BEGIN
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 
-									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'VS3', 'SBC', 'SLT', 'VGA') THEN b.odds
+									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA') THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1420,7 +1421,7 @@ BEGIN
 								END,
 					Odds = CASE
 								WHEN b.BetType BETWEEN 801 AND 806 THEN b.Odds
-								WHEN b.Product IN ('Keno', 'Lottery', 'GD', 'VRG', 'TG', 'I4D', 'VS3', 'SLT') THEN b.Odds
+								WHEN b.Product IN ('Keno', 'Lottery', 'GD', 'VRG', 'TG', 'I4D', 'VS3', 'H5LG', 'SLT') THEN b.Odds
 								ELSE 0
 							END,
 					OddsId = 0,
@@ -1752,7 +1753,7 @@ BEGIN
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 
-									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'VS3', 'SBC', 'SLT', 'VGA') THEN b.odds
+									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA') THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1956,7 +1957,7 @@ BEGIN
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 
-									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'VS3', 'SBC', 'SLT', 'VGA') THEN b.odds
+									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA') THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE

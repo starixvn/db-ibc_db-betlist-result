@@ -155,6 +155,7 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 */
 
 BEGIN
@@ -727,7 +728,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (8, 12, 28, 38, 40, 43, 49, 63) THEN b.odds
+						WHEN s.ProductID IN (3, 8, 12, 28, 38, 40, 43, 49, 63) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -1101,7 +1102,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (8, 12, 28, 38, 40, 43, 49, 63) THEN b.odds
+						WHEN s.ProductID IN (3, 8, 12, 28, 38, 40, 43, 49, 63) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -2231,7 +2232,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (8, 12, 28, 38, 40, 42, 43, 49, 63, 66) THEN b.odds
+						WHEN s.ProductID IN (3, 8, 12, 28, 38, 40, 42, 43, 49, 63, 66) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -3060,7 +3061,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (8, 12, 28, 38, 40, 42, 43, 49, 63, 66) THEN b.odds
+						WHEN s.ProductID IN (3, 8, 12, 28, 38, 40, 42, 43, 49, 63, 66) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
