@@ -135,6 +135,7 @@ AS
 		- 20210531@Kos: Prevent high CPU [Redmine: #154749]
 					- Add new params @MaxTotalRow INT, @ErrCode INT, @ErrMsg NVARCHAR(4000), @IsExportExcel BIT
 		- 20210602@Razor: Support Sexy Gaming Lucky Draw [Redmine: #156237]
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -450,7 +451,7 @@ BEGIN
 								ELSE 0
 							END,
 				Odds = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3', 'SLT') THEN b.odds
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3', 'H5LG', 'SLT') THEN b.odds
 							ELSE 0
 						END,
 				MOdds = CASE

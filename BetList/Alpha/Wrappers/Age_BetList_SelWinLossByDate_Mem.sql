@@ -136,6 +136,7 @@ AS
 		- 20210531@Kos: Prevent high CPU [Redmine: #154749]
 					- Add new params @MaxTotalRow INT, @ErrCode INT, @ErrMsg NVARCHAR(4000), @IsExportExcel BIT
 		- 20210602@Razor: Support Sexy Gaming Lucky Draw [Redmine: #156237]
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -489,7 +490,7 @@ BEGIN
 					,OddsId = b.oddsid
 					,Odds = CASE
 								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'SLT') THEN b.Odds
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT') THEN b.Odds
 								WHEN c.Product IN ('Outright') THEN b.odds
 								WHEN c.Product IN ('VR') THEN b.odds
 								ELSE 0 END
@@ -821,7 +822,7 @@ BEGIN
 								ELSE 0 END
 				,OddsId = b.oddsid
 				,Odds = CASE 
-							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'SLT') THEN b.Odds
+							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT') THEN b.Odds
 							ELSE 0 END
 				,MOdds = CASE 
 							WHEN c.Product IN ('Parlay', 'ParlayVS2')  THEN b.modds 

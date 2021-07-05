@@ -74,6 +74,7 @@ AS
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 */
 
 BEGIN
@@ -830,7 +831,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
+								WHEN b.ProductId IN (1, 3, 8, 12, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1035,7 +1036,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 8, 12, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
+								WHEN b.ProductId IN (1, 3, 8, 12, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE

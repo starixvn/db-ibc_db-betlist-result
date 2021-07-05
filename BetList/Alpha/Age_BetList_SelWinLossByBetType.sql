@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20201201@Kos: Created [Redmine: #131371]
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 */
 
 BEGIN
@@ -181,7 +182,7 @@ BEGIN
 				BetType = b.bettype,
 				BetId = ISNULL(b.betid, 0),
 				Odds = CASE
-							WHEN c.Product IN ('VS3') THEN b.odds
+							WHEN c.Product IN ('VS3', 'H5LG') THEN b.odds
 							ELSE 0
 						END,
 				Stake = b.stake,
@@ -304,7 +305,7 @@ BEGIN
 				BetType = b.bettype,
 				BetId = ISNULL(b.betid, 0),
 				Odds = CASE
-							WHEN c.Product IN ('VS3') THEN b.odds
+							WHEN c.Product IN ('VS3', 'H5LG') THEN b.odds
 							ELSE 0
 						END,
 				Stake = b.stake,

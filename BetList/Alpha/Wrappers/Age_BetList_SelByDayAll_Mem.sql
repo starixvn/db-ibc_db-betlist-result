@@ -119,6 +119,7 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -574,7 +575,7 @@ BEGIN
 					,OddsId = b.oddsid
 					,Odds = CASE
 								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
-								WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'SLT') THEN b.Odds
+								WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT') THEN b.Odds
 								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3') THEN b.odds
 								WHEN c.Product IN ('Outright') THEN b.odds
 								WHEN c.Product IN ('VR') THEN b.odds
@@ -1189,7 +1190,7 @@ BEGIN
 									ELSE 0 END
 					,OddsId = b.oddsid
 					,Odds = CASE 
-								WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'SLT') THEN b.Odds
+								WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT') THEN b.Odds
 								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3') THEN b.odds
 								WHEN c.Product IN ('Outright') THEN b.odds
 								WHEN c.Product IN ('VR') THEN b.odds

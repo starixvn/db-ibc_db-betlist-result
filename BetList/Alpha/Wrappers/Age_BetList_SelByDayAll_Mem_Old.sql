@@ -87,6 +87,7 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 
 	Param's Explanation:
 		+ @TransType:
@@ -384,7 +385,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3', 'SLT') THEN b.odds
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3', 'H5LG', 'SLT') THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE

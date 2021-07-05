@@ -119,6 +119,7 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
+		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 */
 
 BEGIN
@@ -515,7 +516,7 @@ BEGIN
 						END
 			,OddsId = b.oddsid
 			,Odds = CASE 
-						WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3', 'SLT') THEN b.Odds
+						WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3', 'H5LG', 'SLT') THEN b.Odds
 						WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.odds
 						WHEN c.Product IN ('Outright') THEN b.odds
 						WHEN c.Product IN ('VR') THEN b.odds
