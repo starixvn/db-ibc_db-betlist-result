@@ -110,6 +110,7 @@ AS
 		- 20210325@Kos: Support betfrom '8', '9' [Redmine: #152158]
 		- 20210518@Kos: Support multiple selection on Platform filter [Redmine: #153102]
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
+		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -451,7 +452,7 @@ BEGIN
 				0 AS hdp1,
 				0 AS hdp2,
 				b.Modds,
-				0 AS OddsType,
+				b.OddsType,
 				b.Odds,
 				b.Stake,
 				b.Actual_Stake,
@@ -791,7 +792,7 @@ BEGIN
 				0 AS Hdp1,
 				0 AS Hdp2,
 				b.modds,
-				0 AS OddsType,
+				b.oddstype,
 				b.odds,
 				b.stake,
 				b.actual_stake,
@@ -1204,7 +1205,7 @@ BEGIN
 				0 AS hdp1,
 				0 AS hdp2,
 				b.Modds,
-				0 AS OddsType,
+				b.OddsType,
 				b.Odds,
 				b.Stake,
 				b.Actual_Stake,
@@ -1550,7 +1551,7 @@ BEGIN
 				0 AS Hdp1,
 				0 AS Hdp2,
 				b.modds,
-				0 AS OddsType,
+				b.oddstype,
 				b.odds,
 				b.stake,
 				b.actual_stake,
@@ -1796,7 +1797,7 @@ BEGIN
 				0 AS hdp1,
 				0 AS hdp2,
 				b.Modds,
-				0 AS OddsType,
+				b.OddsType,
 				b.Odds,
 				b.Stake,
 				b.Actual_Stake,
@@ -2143,7 +2144,7 @@ BEGIN
 				0 AS Hdp1,
 				0 AS Hdp2,
 				b.modds,
-				0 AS OddsType,
+				b.oddstype,
 				b.odds,
 				b.stake,
 				b.actual_stake,

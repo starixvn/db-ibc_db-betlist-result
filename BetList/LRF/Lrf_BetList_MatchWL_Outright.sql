@@ -50,6 +50,7 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
 */
 
 BEGIN
@@ -88,6 +89,7 @@ BEGIN
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
 		Odds			MONEY,
+		OddsType		TINYINT,
 		Status			NVARCHAR(50),
 		Stake			MONEY,
 		WinLost			MONEY,
@@ -139,6 +141,7 @@ BEGIN
 				b.hdp1,
 				b.hdp2,
 				b.odds,
+				b.oddstype,
 				b.status,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
@@ -185,6 +188,7 @@ BEGIN
 				b.hdp1,
 				b.hdp2,
 				b.odds,
+				b.oddstype,
 				b.status,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
@@ -239,6 +243,7 @@ BEGIN
 				b.hdp1,
 				b.hdp2,
 				b.odds,
+				b.oddstype,
 				b.status,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
@@ -285,6 +290,7 @@ BEGIN
 				b.hdp1,
 				b.hdp2,
 				b.odds,
+				b.oddstype,
 				b.status,
 				b.stake,
 				(b.winlost - b.actual_stake) AS WinLost,
@@ -385,6 +391,7 @@ BEGIN
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
 		Odds			MONEY,
+		OddsType		TINYINT,
 		Status			NVARCHAR(50),
 		Stake			MONEY,
 		WinLost			MONEY,
@@ -472,6 +479,7 @@ BEGIN
 		b.Hdp1,
 		b.Hdp2,
 		b.Odds,
+		b.OddsType,
 		b.Status,
 		b.Stake * ISNULL(e.Rate, 1) AS Stake,
 		b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
@@ -501,8 +509,4 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_MatchWL_Outright] TO [bodbLicenseeNet]
 GO

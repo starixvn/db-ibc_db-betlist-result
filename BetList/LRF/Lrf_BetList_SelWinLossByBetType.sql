@@ -60,6 +60,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 		- 20210323@Kos: Support show IP [Redmine: #151085]
+		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
 */
 
 BEGIN
@@ -733,7 +734,7 @@ BEGIN
 				0 AS Hdp2,
 				'' AS BetTeam,
 				b.odds,
-				0 AS OddsType,
+				b.oddstype,
 				b.modds,
 				0 AS LiveIndicator,
 				b.livehomescore,
@@ -1150,7 +1151,7 @@ BEGIN
 				0 AS Hdp2,
 				'' AS BetTeam,
 				b.odds,
-				0 AS OddsType,
+				b.oddstype,
 				b.modds,
 				0 AS LiveIndicator,
 				b.livehomescore,

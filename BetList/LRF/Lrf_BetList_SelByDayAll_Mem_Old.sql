@@ -115,6 +115,7 @@ AS
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 		- 20210714@Kos: Support CG [Redmine: #152619]
+		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
 
 	Param's Explanation:
 		+ @TransType:
@@ -572,7 +573,7 @@ BEGIN
 			b.hdp1,
 			b.hdp2,
 			b.modds,
-			0 AS OddsType,
+			b.oddstype,
 			b.odds,
 			'',
 			b.status,

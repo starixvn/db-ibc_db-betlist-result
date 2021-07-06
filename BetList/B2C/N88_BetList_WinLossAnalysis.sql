@@ -27,6 +27,7 @@ AS
 
 	Revisions:
 		- 20210504@Kos: Created [Redmine: #139333]
+		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
 
 */
 
@@ -667,7 +668,7 @@ BEGIN
 							ELSE 0
 						END,
 				OddsType = CASE
-							WHEN b.Product IN ('SB') THEN b.OddsType
+							WHEN b.Product IN ('SB', 'Outright') THEN b.OddsType
 							ELSE 0
 						END,
 				Odds = CASE
@@ -799,7 +800,7 @@ BEGIN
 							ELSE 0
 						END,
 				OddsType = CASE
-							WHEN b.Product IN ('SB') THEN b.OddsType
+							WHEN b.Product IN ('SB', 'Outright') THEN b.OddsType
 							ELSE 0
 						END,
 				Odds = CASE
@@ -928,7 +929,7 @@ BEGIN
 							ELSE 0
 						END,
 				OddsType = CASE
-							WHEN b.Product IN ('SB') THEN b.OddsType
+							WHEN b.Product IN ('SB', 'Outright') THEN b.OddsType
 							ELSE 0
 						END,
 				Odds = CASE

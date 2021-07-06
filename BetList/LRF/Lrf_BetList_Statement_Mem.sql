@@ -65,6 +65,7 @@ AS
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 		- 20210714@Kos: Support CG [Redmine: #152619]
+		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
 */
 
 BEGIN
@@ -1087,7 +1088,7 @@ BEGIN
 									ELSE 0
 								END,
 						OddsType = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.oddstype
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright') THEN b.oddstype
 										ELSE 0
 									END,
 						Odds = CASE
@@ -1362,7 +1363,7 @@ BEGIN
 									ELSE 0
 								END,
 						OddsType = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.oddstype
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright') THEN b.oddstype
 										ELSE 0
 									END,
 						Odds = CASE
@@ -1547,7 +1548,7 @@ BEGIN
 									ELSE 0
 								END,
 						OddsType = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.oddstype
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright') THEN b.oddstype
 										ELSE 0
 									END,
 						Odds = CASE
