@@ -156,6 +156,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
+		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 */
 
 BEGIN
@@ -920,7 +921,7 @@ BEGIN
 					b.odds,
 					0 AS finalodds,
 					0 AS finalodds2,
-					0 AS OddsType,
+					b.oddstype AS OddsType,
 					b.status,
 					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
@@ -2342,7 +2343,7 @@ BEGIN
 					b.odds,
 					0 finalodds,
 					0 finalodds2,
-					0 AS OddsType,
+					b.oddstype AS OddsType,
 					b.status,
 					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,  
@@ -3173,7 +3174,7 @@ BEGIN
 					b.odds,
 					0 finalodds,
 					0 finalodds2,
-					0 AS OddsType,
+					b.oddstype AS OddsType,
 					b.status,
 					0 AS SettlementStatus,
 					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,

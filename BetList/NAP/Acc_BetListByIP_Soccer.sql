@@ -58,6 +58,7 @@ AS
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
+		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 */
 
 BEGIN
@@ -744,7 +745,7 @@ BEGIN
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN b.oddstype
+									WHEN b.Product IN ('SB', 'Outright', 'CO') THEN b.oddstype
 									ELSE 0
 								END,
 					Odds = CASE
@@ -925,7 +926,7 @@ BEGIN
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN b.oddstype
+									WHEN b.Product IN ('SB', 'Outright', 'CO') THEN b.oddstype
 									ELSE 0
 								END,
 					Odds = CASE
@@ -1052,7 +1053,7 @@ BEGIN
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN b.oddstype
+									WHEN b.Product IN ('SB', 'Outright', 'CO') THEN b.oddstype
 									ELSE 0
 								END,
 					Odds = CASE

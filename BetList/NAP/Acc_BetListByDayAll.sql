@@ -161,7 +161,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
-
+		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 	Param's Explanation:
 		+ @TransType:
 			1: Betting Statement
@@ -516,7 +516,7 @@ BEGIN
 				b.modds,
 				0 AS FinalOdds,
 				0 AS FinalOdds2,
-				0 AS oddstype,
+				b.oddstype AS oddstype,
 				'',
 				b.status,
 				0 AS SettlementStatus,
@@ -1426,7 +1426,7 @@ BEGIN
 				b.modds,
 				0 AS FinalOdds,
 				0 AS FinalOdds2,
-				0 AS oddstype,
+				b.oddstype AS oddstype,
 				'',
 				b.status,
 				0 AS SettlementStatus,
