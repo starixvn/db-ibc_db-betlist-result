@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_BetList_SelWinLossAll_API]
 	@custid int,
 	@fromdate smalldatetime,
@@ -29,7 +29,7 @@ Revisions:
 	- 20110512@Johnson: Apply new arrange bettype
 	- 20111201@Jamie: Get two more fields: apositiontaking & discount 
 	- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
-	
+	- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -160,8 +160,11 @@ BEGIN
 				0, --AwayID		
 				0, --Betstatus
 				CONVERT(BIT,0) as IsNeutral,
-				0
-				,b.apositiontaking,
+				CASE 
+					WHEN b.bettype = 10 THEN b.oddstype 
+					ELSE 0
+				END,
+				b.apositiontaking,
 				b.discount 
 			FROM
 				dbo.bettrans AS b with (nolock)		
@@ -346,8 +349,11 @@ BEGIN
 				0, --AwayID		
 				0, --Betstatus
 				CONVERT(BIT,0) as isNeutral,
-				0
-				,b.apositiontaking,
+				CASE 
+					WHEN b.bettype = 10 THEN b.oddstype 
+					ELSE 0
+				END,
+				b.apositiontaking,
 				b.discount 
 			FROM
 				dbo.bettrans14 AS b with (nolock)		
@@ -364,11 +370,3 @@ BEGIN
 	SELECT * FROM  @BetListByDateMem ORDER BY RefNO
 
 END
-
-GO
-GRANT	EXECUTE	ON	Age_BetList_SelWinLossAll_API	TO	bodbDownlineNet
-GO
-GRANT	EXECUTE	ON	Age_BetList_SelWinLossAll_API	TO	bodbDownlineNetView
-GO
-GRANT	VIEW DEFINITION	ON	Age_BetList_SelWinLossAll_API	TO	vnteam
-GO

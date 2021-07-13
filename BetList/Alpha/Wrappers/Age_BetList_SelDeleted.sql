@@ -75,6 +75,7 @@ AS
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
+		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 */
 
 BEGIN
@@ -761,7 +762,6 @@ BEGIN
 					BetTeam = '',
 					Hdp1 = 0,
 					Hdp2 = 0,
-					OddsType = 0,
 					LiveIndicator = 0,
 					LiveHomeScore = 0,
 					LiveAwayScore = 0,
@@ -966,7 +966,6 @@ BEGIN
 					BetTeam = '',
 					Hdp1 = 0,
 					Hdp2 = 0,
-					OddsType = 0,
 					LiveIndicator = 0,
 					LiveHomeScore = 0,
 					LiveAwayScore = 0,

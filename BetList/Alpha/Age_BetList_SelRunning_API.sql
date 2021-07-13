@@ -18,6 +18,7 @@ AS
 		- 20110512@Johnson: Apply new arrange bettype
 		- 20130924@Jamie: Change to bodb_Age / bettrans_running
 		- 20180617@Kos: Change back to use bodb02.bettrans [#Redmine: 97037]
+		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 */
 
 BEGIN
@@ -91,7 +92,7 @@ BEGIN
 		b.livehomescore,
 		b.liveawayscore,
 		b.spositiontaking,
-		0 as OddsType,
+		b.oddstype,
 		s.sportname,
 		m.kickofftime
 	from 
@@ -141,12 +142,3 @@ BEGIN
 		b.statusID = 0  and
 		b.bettype = 9
 END
-
-
-GO
-GRANT  EXECUTE  ON [dbo].[Age_BetList_SelRunning_API]  TO [bodbDownlineNet]
-GO
-GRANT  EXECUTE  ON [dbo].[Age_BetList_SelRunning_API]  TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelRunning_API] TO [vnteam]
-GO

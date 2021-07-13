@@ -142,6 +142,7 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
+		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 */
 
 BEGIN
@@ -593,7 +594,6 @@ BEGIN
 				,LiveHomeScore = 0
 				,LiveAwayScore = 0
 				,IsNeutral = 0
-				,OddsType = 0
 				,ShowTime = ''
 				,BetCheck = ''
 				,TransDesc = ''

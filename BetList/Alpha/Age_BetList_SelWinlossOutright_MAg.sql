@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 USE bodb02
 GO
 
@@ -31,6 +31,7 @@ AS
 		- 20151203@Kos: Change odds, modds data type from SMALLMONEY to MONEY [Redmine: #48660]
 		- 20170605@Kos: Return column CustId for Microsite bet list [#Redmine: 66992]
 					- Prevent data duplication during Move Bet process
+		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 */
 
 BEGIN
@@ -47,6 +48,7 @@ BEGIN
 		AwayId			INT,
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
+		OddsType		TINYINT,
 		Odds			MONEY,
 		Status			NVARCHAR(10),
 		Stake			MONEY,
@@ -97,6 +99,7 @@ BEGIN
 			0 AS AwayId,
 			b.hdp1,
 			b.hdp2,
+			b.oddstype,
 			b.odds,
 			b.status,
 			b.stake,
@@ -152,6 +155,7 @@ BEGIN
 			0 AS AwayId,
 			b.hdp1,
 			b.hdp2,
+			b.oddstype,
 			b.odds,
 			b.status,
 			b.stake,
@@ -191,12 +195,3 @@ BEGIN
 	SELECT * FROM @MAgWinlossOutright
 	ORDER BY Status, Transid
 END
-
-
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossOutright_MAg] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelWinlossOutright_MAg] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelWinlossOutright_MAg] TO [VNTeam]
-GO

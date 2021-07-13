@@ -137,6 +137,7 @@ AS
 					- Add new params @MaxTotalRow INT, @ErrCode INT, @ErrMsg NVARCHAR(4000), @IsExportExcel BIT
 		- 20210602@Razor: Support Sexy Gaming Lucky Draw [Redmine: #156237]
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
+		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -485,7 +486,7 @@ BEGIN
 								WHEN c.Product IN ('VR') THEN b.hdp2
 								ELSE 0 END
 					,OddsType = CASE
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Keno') THEN b.oddstype
+									WHEN c.Product IN ('SB', 'Outright', 'NG', 'VS', 'VS2', 'Keno') THEN b.oddstype
 									ELSE 0 END
 					,OddsId = b.oddsid
 					,Odds = CASE
@@ -818,7 +819,7 @@ BEGIN
 							WHEN c.Product IN ('VR') THEN b.hdp2
 							ELSE 0 END
 				,OddsType = CASE 
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Keno') THEN b.oddstype
+								WHEN c.Product IN ('SB', 'Outright', 'NG', 'VS', 'VS2', 'Keno') THEN b.oddstype
 								ELSE 0 END
 				,OddsId = b.oddsid
 				,Odds = CASE 
