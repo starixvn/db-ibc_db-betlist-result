@@ -34,6 +34,7 @@ AS
 					- Add new param @LiveIndicator
 		- 20191118@Kos: Support BMAIO [Redmine: #124017]
 		- 20210224@Kos: Support Cricket AIO [Redmine: #151011]
+		- 20210713@Kos: Support Beach Volleyball [Redmine: #157736]
 */
 
 BEGIN
@@ -164,7 +165,7 @@ BEGIN
 			WHERE MatchID = @MatchId AND LEN(ResourceID) = 2
 			ORDER BY ResourceID ASC
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
 		BEGIN
 			SELECT
 				MatchID,
@@ -177,7 +178,7 @@ BEGIN
 			FROM dbo.ResultDetailOS WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType = 9))
+					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45)))
 			ORDER BY ResourceID ASC
 		END
 	END
@@ -270,7 +271,7 @@ BEGIN
 			WHERE MatchID = @MatchId AND LEN(ResourceID) = 2
 			ORDER BY ResourceID ASC
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
 		BEGIN
 			SELECT
 				MatchID,
@@ -283,7 +284,7 @@ BEGIN
 			FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType = 9))
+					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45)))
 			ORDER BY ResourceID ASC
 		END
 	END
@@ -393,7 +394,7 @@ BEGIN
 			WHERE MatchID = @MatchId AND LEN(ResourceID) = 2
 			ORDER BY ResourceID ASC
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
 		BEGIN
 			SELECT
 				MatchID,
@@ -406,7 +407,7 @@ BEGIN
 			FROM bodb_Archive.dbo.ResultDetailOS_bk WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType = 9))
+					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45)))
 			ORDER BY ResourceID ASC
 		END
 	END
