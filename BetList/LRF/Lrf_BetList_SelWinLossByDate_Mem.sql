@@ -164,6 +164,7 @@ AS
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 		- 20210714@Kos: Support CG [Redmine: #152619]
 		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
+		- 20210805@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #159739]
 */
 
 BEGIN
@@ -381,7 +382,7 @@ BEGIN
 		LicenseeWL		MONEY,
 		PlayerComm		MONEY,
 		Comm			MONEY,
-		OddsSpread		SMALLMONEY
+		OddsSpread		MONEY
 	)
 
 	CREATE TABLE #ExchangeRate (
