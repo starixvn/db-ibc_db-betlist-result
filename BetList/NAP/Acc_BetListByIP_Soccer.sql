@@ -59,6 +59,7 @@ AS
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
+		- 20210812@Razor: Support Cashout for Basketball [Redmine: #159617]
 */
 
 BEGIN
@@ -593,7 +594,7 @@ BEGIN
 			DELETE b
 			FROM @Data AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.MatchId = m.matchid
-			WHERE m.sporttype <> 1 AND b.Product = 'SB'
+			WHERE m.sporttype <> 1 AND b.Product IN ('SB', 'CO')
 
 			-- Outright
 			DELETE b
@@ -617,7 +618,7 @@ BEGIN
 			DELETE b
 			FROM @Data AS b
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.MatchId = m.matchid
-			WHERE m.sporttype <> 1 AND b.Product = 'SB'
+			WHERE m.sporttype <> 1 AND b.Product IN ('SB', 'CO')
 
 			-- Outright
 			DELETE b
@@ -641,7 +642,7 @@ BEGIN
 			DELETE b
 			FROM @Data AS b
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.MatchId = m.matchid
-			WHERE m.sporttype <> 1 AND b.Product = 'SB'
+			WHERE m.sporttype <> 1 AND b.Product IN ('SB', 'CO')
 
 			-- Outright
 			DELETE b
