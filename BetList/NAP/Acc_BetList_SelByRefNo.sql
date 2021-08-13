@@ -124,6 +124,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
+		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 */
 
 BEGIN
@@ -1707,6 +1708,82 @@ BEGIN
 					AND s.ProductID = 15
 			END
 
+			-- Bitcoin
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 69 AND BetType = @BetType)
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					0 AS BetId,
+					b.refno,
+					'' matchcode,
+					'' AS Race,
+					m.EndTime AS EventDate,
+					0 AS VirtualRate,
+					0 AS IsShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					0 homeid,
+					0 awayid,
+					'' AS SettleTime,
+					b.hdp1,
+					0 hdp2,
+					b.odds,
+					0 AS finalodds,
+					0 AS finalodds2,
+					b.OddsType,
+					b.status,
+					0 AS SettlementStatus,
+					0 AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 AS SPositionTaking2,
+					0 AS MPositionTaking2,
+					0 AS APositionTaking2,
+					0 liveindicator,
+					0 modds,
+					b.custid,
+					0 livehomescore,
+					0 liveawayscore,
+					0 finalhomescore,
+					0 finalawayscore,
+					0 leagueid,
+					m.sporttype,
+					b.ip,
+					b.betfrom,
+					b.matchid,
+					CONVERT(BIT,0) AS IsNeutral,
+					(b.winlost - b.actual_stake) AS winlost,
+					b.playercomm AS Commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					'' AS ShowTime,
+					b.winlostdate,
+					'' betcheck,
+					'' AS TransDesc,
+					0 AS OddsSpread,
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					b.ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
+				FROM dbo.bettrans AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
+					INNER JOIN dbo.match3rd AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.transid = @TransId
+			END
+
 			-- Get related Bonus/Cash tickets
 			IF EXISTS (SELECT 1 FROM @Data WHERE RefCode <> 0)
 			BEGIN
@@ -2417,6 +2494,82 @@ BEGIN
 					AND s.ProductID = 15
 			END
 
+			-- Bitcoin
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 69 AND BetType = @BetType)
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					0 AS BetId,
+					b.refno,
+					'' matchcode,
+					'' AS Race,
+					m.EndTime AS EventDate,
+					0 AS VirtualRate,
+					0 AS IsShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					0 homeid,
+					0 awayid,
+					'' AS SettleTime,
+					b.hdp1,
+					0 hdp2,
+					b.odds,
+					0 AS finalodds,
+					0 AS finalodds2,
+					b.OddsType,
+					b.status,
+					0 AS SettlementStatus,
+					0 AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 AS SPositionTaking2,
+					0 AS MPositionTaking2,
+					0 AS APositionTaking2,
+					0 liveindicator,
+					0 modds,
+					b.custid,
+					0 livehomescore,
+					0 liveawayscore,
+					0 finalhomescore,
+					0 finalawayscore,
+					0 leagueid,
+					m.sporttype,
+					b.ip,
+					b.betfrom,
+					b.matchid,
+					CONVERT(BIT,0) AS IsNeutral,
+					(b.winlost - b.actual_stake) AS winlost,
+					b.playercomm AS Commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					''  AS ShowTime,
+					b.winlostdate,
+					'' betcheck,
+					'' AS TransDesc,
+					0 AS OddsSpread,
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					b.ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
+				FROM dbo.bettrans14 AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
+					INNER JOIN dbo.match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.transid = @TransId
+			END
+
 			-- Get related Bonus/Cash tickets
 			IF EXISTS (SELECT 1 FROM @Data WHERE RefCode <> 0)
 			BEGIN
@@ -3040,6 +3193,82 @@ BEGIN
 					AND (s.ProductID IN (11, 21, 22, 23, 24, 32, 34, 36, 37, 39, 42, 45, 46, 47, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68)
 						OR (s.ProductID = 6 AND s.SubProduct <> '')
 						OR (s.ProductID = 3 AND s.EventType = 0))
+			END
+
+			-- Bitcoin
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 69 AND BetType = @BetType)
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					0 AS BetId,
+					b.refno,
+					'' matchcode,
+					'' AS Race,
+					m.EndTime AS EventDate,
+					0 AS VirtualRate,
+					0 AS IsShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					0 homeid,
+					0 awayid,
+					'' AS SettleTime,
+					b.hdp1,
+					0 hdp2,
+					b.odds,
+					0 AS finalodds,
+					0 AS finalodds2,
+					b.OddsType,
+					b.status,
+					0 AS SettlementStatus,
+					0 AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 AS SPositionTaking2,
+					0 AS MPositionTaking2,
+					0 AS APositionTaking2,
+					0 liveindicator,
+					0 modds,
+					b.custid,
+					0 livehomescore,
+					0 liveawayscore,
+					0 finalhomescore,
+					0 finalawayscore,
+					0 leagueid,
+					m.sporttype,
+					b.ip,
+					b.betfrom,
+					b.matchid,
+					CONVERT(BIT,0) AS IsNeutral,
+					(b.winlost - b.actual_stake) AS winlost,
+					b.playercomm AS Commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					''  AS ShowTime,
+					b.winlostdate,
+					'' betcheck,
+					'' AS TransDesc,
+					0 AS OddsSpread,
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					b.ExtraInfo,
+					0 AS WalletType,
+					0 AS RefCode
+				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
+					INNER JOIN bodb_Archive.dbo.match3rd_bk AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.transid = @TransId
 			END
 
 			-- Get related Bonus/Cash tickets

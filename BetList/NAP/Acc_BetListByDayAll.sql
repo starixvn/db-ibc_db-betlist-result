@@ -162,6 +162,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
+		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 	Param's Explanation:
 		+ @TransType:
 			1: Betting Statement
@@ -865,6 +866,86 @@ BEGIN
 				AND b.winlostdate = @FromDate
 				AND s.ProductID = 15
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+
+			-- Bitcoin
+			INSERT INTO @Data
+			SELECT
+				m.sporttype,
+				0 leagueid,
+				0 homeid,
+				0 awayid,
+				''  matchcode,
+				'' AS race,
+				m.EndTime AS EventDate,
+				0,
+				0,
+				b.sdiscount,
+				b.adiscount,
+				b.discount,
+				'' AS settletime,
+				b.matchid,
+				b.transid,
+				0 betid,
+				b.refno,
+				b.transdate,
+				0.oddsid,
+				b.bettype,
+				b.hdp1,
+				0 hdp2,
+				b.odds,
+				0 modds,
+				0 AS finalodds,
+				0 AS finalodds2,
+				b.oddstype,
+				b.betteam,
+				b.status,
+				0 AS SettlementStatus,
+				m.betstatus,
+				0 AS comstatus,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				b.playercomm,
+				0 livehomescore,
+				0 liveawayscore,
+				0 liveindicator,
+				0 finalhomescore,
+				0 finalawayscore,
+				0 hthomescore,
+				0 htawayscore,
+				b.creator,
+				b.ip,
+				b.Username,
+				0 AS IsNeutral,
+				'' AS ShowTime,
+				0 spositiontaking,
+				0 mpositiontaking,
+				0 apositiontaking,
+				0 spositiontaking2,
+				0 mpositiontaking2,
+				0 apositiontaking2,
+				b.betfrom,
+				0 scomm,
+				0 acomm,
+				0 comm,	
+				b.awinlost,
+				b.mwinlost,
+				b.swinlost,
+				b.winlostdate,
+				'' betcheck,
+				'' AS transdesc,
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				b.ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
+			FROM dbo.bettrans14 AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+				INNER JOIN dbo.match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+			WHERE b.custid = @CustId
+				AND b.winlostdate = @FromDate
+				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
 			-- Get more info for BetTrade tickets
 			IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType IN (901, 902))
@@ -2680,6 +2761,86 @@ BEGIN
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 					AND @TransType <> 4
 			END
+
+			-- Bitcoin
+			INSERT INTO @Data
+			SELECT
+				m.sporttype,
+				0 leagueid,
+				0 homeid,
+				0 awayid,
+				'' matchcode,
+				'' AS race,
+				m.EndTime AS EventDate,
+				0,
+				0,
+				b.sdiscount,
+				b.adiscount,
+				b.discount,
+				'' AS settletime,
+				m.match3rdid,
+				b.transid,
+				0 betid,
+				b.refno,
+				b.transdate,
+				0 oddsid,
+				b.bettype,
+				b.hdp1,
+				0 hdp2,
+				b.odds,
+				0 modds,
+				0 AS finalodds,
+				0 AS finalodds2,
+				b.oddstype,
+				b.betteam,
+				b.status,
+				0 AS SettlementStatus,
+				'' AS betstatus,
+				0 AS comstatus,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				b.playercomm,
+				0 livehomescore,
+				0 liveawayscore,
+				0 liveindicator,
+				0 finalhomescore,
+				0 finalawayscore,
+				0 hthomescore,
+				0 htawayscore,
+				b.creator,
+				b.ip,
+				b.Username,
+				0 AS IsNeutral,
+				'' AS ShowTime,
+				0 spositiontaking,
+				0 mpositiontaking,
+				0 apositiontaking,
+				0 spositiontaking2,
+				0 mpositiontaking2,
+				0 apositiontaking2,
+				b.betfrom,
+				0 scomm,
+				0 acomm,
+				0 comm,
+				b.awinlost,
+				b.mwinlost,
+				b.swinlost,
+				b.winlostdate,
+				'' BetCheck,
+				'' AS transdesc,
+				0 AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				b.ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode
+			FROM dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+				INNER JOIN dbo.match3rd AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+			WHERE b.custid = @CustId
+				AND b.winlostdate = @FromDate
+				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
 			-- Get more info for BetTrade tickets
 			IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType IN (901, 902))
