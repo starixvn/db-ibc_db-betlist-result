@@ -143,6 +143,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
+		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 */
 
 BEGIN
@@ -776,6 +777,16 @@ BEGIN
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 1 -- bettrans
 				AND b.ProductID IN (23, 47)
+
+			-- Bitcoin
+			UPDATE b
+			SET SportType = m.SportType
+				,EventDate = m.EndTime
+			FROM @BetListSelRunningByDateMem AS b
+				INNER JOIN dbo.match3rd AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+			WHERE b.TableID = 1 -- bettrans
+				AND b.ProductID = 69
+
 		END -- got bettrans' data
 
 		IF (@hasData & 2 = 2) -- got translog's data

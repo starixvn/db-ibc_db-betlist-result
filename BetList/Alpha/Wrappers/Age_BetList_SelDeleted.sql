@@ -76,6 +76,7 @@ AS
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
+		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 */
 
 BEGIN
@@ -620,7 +621,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40, 47, 49, 63)	-- Only support these products
+			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40, 47, 49, 63, 69)	-- Only support these products
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -882,7 +883,7 @@ BEGIN
 				FROM #PagingData AS b
 				WHERE b.WhTicket = 1
 					AND b.EventType = 0
-					AND b.ProductId <> 15
+					AND b.ProductId NOT IN (15, 69)
 
 				-- Virtual Sports (EventType = 3)
 				UPDATE b
@@ -912,6 +913,15 @@ BEGIN
 				WHERE b.WhTicket = 1
 					AND b.ProductID = 5
 					AND b.EventType = 3
+
+				-- Bitcoin
+				UPDATE b
+				SET Sporttype = m.SportType,
+					EventDate = m.EndTime
+				FROM #PagingData AS b
+					INNER JOIN dbo.match3rd AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.ProductID = 69
+					AND b.WhTicket = 1
 			END
 
 			-- bettrans14
@@ -1086,7 +1096,7 @@ BEGIN
 				FROM #PagingData AS b
 				WHERE b.WhTicket = 2
 					AND b.EventType = 0
-					AND b.ProductId <> 15
+					AND b.ProductId NOT IN (15, 69)
 
 				-- Virtual Sports (EventType = 3)
 				UPDATE b
@@ -1116,6 +1126,15 @@ BEGIN
 				WHERE b.WhTicket = 2
 					AND b.ProductID = 5
 					AND b.EventType = 3
+
+				-- Bitcoin
+				UPDATE b
+				SET Sporttype = m.SportType,
+					EventDate = m.EndTime
+				FROM #PagingData AS b
+					INNER JOIN dbo.match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.ProductID = 69
+					AND b.WhTicket = 2
 			END
 
 			-- Get sub tickets

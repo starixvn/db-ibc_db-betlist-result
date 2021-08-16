@@ -121,6 +121,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
+		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -330,6 +331,7 @@ BEGIN
 					WHEN s.ProductID = 66					THEN 'VGA'			-- VGaming
 					WHEN s.ProductID = 67					THEN 'AP'			-- AdvantPlay
 					WHEN s.ProductID = 68					THEN 'APM'			-- AdvantPlay Mini
+					WHEN s.ProductID = 69					THEN 'BTC'			-- Bitcoin
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 					WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Number Game - Happy 5 Linked Games
@@ -553,16 +555,17 @@ BEGIN
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN c.Product IN ('Outright') THEN l.sporttype
 									WHEN c.Product IN ('VR') THEN vr.SportType
+									WHEN c.Product IN ('BTC') THEN m3rd.sporttype
 									ELSE 0
 								END -- parlay(s)
 					,BetType = b.bettype
 					,BetId = ISNULL(b.betid, 0)
 					,BetTeam = CASE 
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2') THEN b.betteam
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC') THEN b.betteam
 									ELSE ''	END 
 					,Hdp1 = CASE 
 								WHEN c.Product IN ('Parlay', 'ParlayVS2', 'NG2') THEN b.hdp1 -- parlay(s), NG2
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.hdp1
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'BTC') THEN b.hdp1
 								WHEN c.Product IN ('VR') THEN b.hdp1
 								ELSE 0 END
 					,Hdp2 = CASE 
@@ -576,7 +579,7 @@ BEGIN
 					,OddsId = b.oddsid
 					,Odds = CASE
 								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
-								WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT') THEN b.Odds
+								WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT', 'BTC') THEN b.Odds
 								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3') THEN b.odds
 								WHEN c.Product IN ('Outright') THEN b.odds
 								WHEN c.Product IN ('VR') THEN b.odds
@@ -703,7 +706,7 @@ BEGIN
 									WHEN c.Product IN ('NG2') THEN b.betdaqid
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchid
 									WHEN c.Product IN ('Outright') THEN o.orid
-									WHEN c.Product IN ('VR') THEN b.matchid
+									WHEN c.Product IN ('VR', 'BTC') THEN b.matchid
 									ELSE 0 END
 					,MatchCode = CASE
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchcode
@@ -719,6 +722,7 @@ BEGIN
 									WHEN c.Product IN ('NG', 'VS', 'VS2') THEN m.eventdate
 									WHEN c.Product IN ('Outright') THEN o.eventdate
 									WHEN c.Product IN ('VR') THEN vo.EventDate
+									WHEN c.Product IN ('BTC') THEN m3rd.EndTime
 									ELSE b.winlostdate END
 					,HomeId = CASE
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.homeid
@@ -773,7 +777,8 @@ BEGIN
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
 					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
-
+					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
+					
 				-- Virtual Sports Racing
 				INSERT INTO @BettransDetail
 				SELECT RefNo = bm.refno
@@ -1123,6 +1128,7 @@ BEGIN
 					WHEN s.ProductID = 66					THEN 'VGA'			-- VGaming
 					WHEN s.ProductID = 67					THEN 'AP'			-- AdvantPlay
 					WHEN s.ProductID = 68					THEN 'APM'			-- AdvantPlay Mini
+					WHEN s.ProductID = 69					THEN 'BTC'			-- Bitcoin
 					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 					WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Number Game - Happy 5 Linked Games
@@ -1169,15 +1175,16 @@ BEGIN
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN c.Product IN ('Outright') THEN l.sporttype
 									WHEN c.Product IN ('VR') THEN vr.SportType
+									WHEN c.Product IN ('BTC') THEN m3rd.sporttype
 									ELSE 0 END -- parlay(s)
 					,BetType = b.bettype
 					,BetId = ISNULL(b.betid, 0)
 					,BetTeam = CASE
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2') THEN b.betteam
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC') THEN b.betteam
 									ELSE ''	END 
 					,Hdp1 = CASE
 								WHEN c.Product IN ('Parlay', 'ParlayVS2', 'NG2') THEN b.hdp1 -- parlay(s), NG2
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.hdp1
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'BTC') THEN b.hdp1
 								WHEN c.Product IN ('VR') THEN b.hdp1
 								ELSE 0 END
 					,Hdp2 = CASE
@@ -1191,7 +1198,7 @@ BEGIN
 									ELSE 0 END
 					,OddsId = b.oddsid
 					,Odds = CASE 
-								WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT') THEN b.Odds
+								WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT', 'BTC') THEN b.Odds
 								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3') THEN b.odds
 								WHEN c.Product IN ('Outright') THEN b.odds
 								WHEN c.Product IN ('VR') THEN b.odds
@@ -1265,7 +1272,7 @@ BEGIN
 									WHEN c.Product IN ('NG2') THEN b.betdaqid
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchid
 									WHEN c.Product IN ('Outright') THEN o.orid
-									WHEN c.Product IN ('VR') THEN b.matchid
+									WHEN c.Product IN ('VR', 'BTC') THEN b.matchid
 									ELSE 0 END
 					,MatchCode = CASE
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchcode
@@ -1281,6 +1288,7 @@ BEGIN
 									WHEN c.Product IN ('NG', 'VS', 'VS2') THEN m.eventdate
 									WHEN c.Product IN ('Outright') THEN o.eventdate
 									WHEN c.Product IN ('VR') THEN vo.EventDate
+									WHEN c.Product IN ('BTC') THEN m3rd.EndTime
 									ELSE b.winlostdate END
 					,HomeId = CASE
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'Lucky3', 'VS2') THEN m.homeid
@@ -1328,6 +1336,7 @@ BEGIN
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
 					LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
+					LEFT JOIN dbo.match3rd14 AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 
 				-- Virtual Sports Racing
 				INSERT INTO @BettransDetail
