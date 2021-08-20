@@ -42,6 +42,7 @@ AS
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
+		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 */
 
 BEGIN
@@ -151,6 +152,14 @@ BEGIN
 									)
 						AND l.sporttype IN (181, 182, 183, 185, 184)
 						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
+
+					UNION ALL
+					
+					-- #3. From Match3rd table
+					SELECT m.SportType
+					FROM dbo.Match3rd AS m WITH (NOLOCK)
+					WHERE m.EventDate = @MatchDate
+						AND m.EventStatus IN ('completed')
 			) AS t
 			ON s.SportType = t.sporttype
 		ORDER BY s.SportType ASC,
@@ -256,6 +265,14 @@ BEGIN
 									)
 						AND l.sporttype IN (181, 182, 183, 185, 184)
 						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
+
+					UNION ALL
+
+					-- #3. From Match3rd table
+					SELECT m.SportType
+					FROM dbo.Match3rd14 AS m WITH (NOLOCK)
+					WHERE m.EventDate = @MatchDate
+						AND m.EventStatus IN ('completed')
 			) t
 			ON s.SportType = t.sporttype
 		ORDER BY s.SportType ASC,
