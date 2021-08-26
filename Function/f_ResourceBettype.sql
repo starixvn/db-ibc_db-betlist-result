@@ -30,6 +30,7 @@ AS
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
+		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
 */
 
 BEGIN
@@ -553,7 +554,15 @@ BEGIN
 	SELECT 50, 13, 'Cricket AIO', 9484, '94841%'	UNION ALL
 	SELECT 50, 13, 'Cricket AIO', 9485, '94851%'	UNION ALL
 	SELECT 50, 13, 'Cricket AIO', 9490, '94901%'	UNION ALL
-	SELECT 50, 13, 'Cricket AIO', 9491, '94911%'
-
+	SELECT 50, 13, 'Cricket AIO', 9491, '94911%'	UNION ALL
+	SELECT 50, 13, 'Cricket AIO', 9607, '94841%'	UNION ALL
+	SELECT 50, 13, 'Cricket AIO', 9608, '94851%'	UNION ALL
+	SELECT 50, 13, 'Cricket AIO', 9609, '94841%'	UNION ALL
+	SELECT 50, 13, 'Cricket AIO', 9610, '94851%'	UNION ALL
+	SELECT 50, 13, 'Cricket AIO', 9611, '94842%'	UNION ALL
+	SELECT 50, 13, 'Cricket AIO', 9612, '94852%'	UNION ALL
+	SELECT 50, 13, 'Cricket AIO', 9613, '94901%'	UNION ALL
+	SELECT 50, 13, 'Cricket AIO', 9614, '94911%'
+	
 	RETURN
 END

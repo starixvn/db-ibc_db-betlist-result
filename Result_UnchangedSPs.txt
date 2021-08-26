@@ -1,0 +1,2 @@
+Result/LRF/Lrf_BetList_SelMatchResult.sql
+Result/LRF/Lrf_BetList_SelMatchResultParlay.sql
