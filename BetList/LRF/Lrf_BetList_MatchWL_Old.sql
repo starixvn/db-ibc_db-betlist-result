@@ -26,6 +26,7 @@ AS
 	
 	Revisions:
 		- 20210614@Kos: Support bk range for Match Win Loss report [Redmine: #151151]
+		- 20210830@Kos: Hotfix - Sort in LicenseeWL column [Redmine: #160910]
 
 	Param's Explanation:
 		+ @LiveIndicator:
@@ -466,7 +467,7 @@ BEGIN
 						FROM #Data AS d' +
 						CASE
 							WHEN @Sort LIKE '%e.Rate%' THEN N'
-							LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = b.Currency'
+							LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = d.Currency'
 							ELSE N' '
 						END + N'
 					) AS a
