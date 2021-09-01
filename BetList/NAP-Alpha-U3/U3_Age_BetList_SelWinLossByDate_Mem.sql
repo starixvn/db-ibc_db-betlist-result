@@ -21,6 +21,7 @@ AS
 					- Remove input param @ShowBI, @ShowLiveCasino, @ShowLK3
 					- Don't return column Race, Placing, OddsSpread
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
+		- 20210901@Kos: Fix duplicate ticket during Move Bet [Redmine: #160019]
 */
 
 BEGIN
@@ -47,12 +48,17 @@ BEGIN
 	--Use Local variables to avoid bad params sniffing
 	DECLARE @FDate SMALLDATETIME, @TDate SMALLDATETIME
 
-	SELECT @FDate = @fromdate,
-		@TDate = @todate
+	SELECT @FDate = @FromDate,
+		@TDate = @ToDate
 
 	-- Bettrans
 	IF @ToDate > @MoveBetsDay
 	BEGIN
+		SET @FDate = CASE
+						WHEN @FromDate <= @MoveBetsDay THEN DATEADD(DAY, 1, @MoveBetsDay)
+						ELSE @FromDate
+					END
+
 		INSERT INTO @tempCust (
 			TransID
 			, Refno
@@ -69,9 +75,9 @@ BEGIN
 			, b.bettype
 			, bt.EventType
 			, 1 AS WhTicket
-		FROM bodb02.dbo.bettrans AS b WITH (NOLOCK)
+		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-		WHERE b.winlostdate BETWEEN @FDate AND @TDate
+		WHERE b.winlostdate BETWEEN @FDate AND @ToDate
 			AND b.custid = @CustId
 			AND b.statusID > 1
 	END
@@ -79,6 +85,11 @@ BEGIN
 	-- Bettrans14
 	IF @FromDate <= @MoveBetsDay
 	BEGIN
+		SET @TDate = CASE
+						WHEN @ToDate > @MoveBetsDay THEN @MoveBetsDay
+						ELSE @ToDate
+					END
+
 		INSERT INTO @tempCust (
 			TransID
 			, Refno
@@ -95,9 +106,9 @@ BEGIN
 			, b.bettype
 			, bt.EventType
 			, 2 AS WhTicket
-		FROM bodb02.dbo.bettrans14 AS b WITH (NOLOCK)
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
-		WHERE b.winlostdate BETWEEN @FDate AND @TDate
+		WHERE b.winlostdate BETWEEN @FromDate AND @TDate
 			AND b.custid = @CustId
 	END
 
