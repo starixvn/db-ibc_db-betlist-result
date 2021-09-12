@@ -72,6 +72,7 @@ AS
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
 		- 20220401@Kos: Support TxId for Vgaming [Redmine: #170054]
 		- 20220427@Kos: Support Virtual Games result [Redmine: #170997]
+		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 */
 
 BEGIN
@@ -110,7 +111,7 @@ BEGIN
 		INSERT INTO @SportBettype
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68)
+		WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68, 69)
 			AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914, 999)
 			AND BetType NOT BETWEEN 801 AND 899
 	END
@@ -119,7 +120,7 @@ BEGIN
 		INSERT INTO @SportBettype
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 63, 66)
+		WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 63, 66, 69)
 			AND BetType NOT IN (901, 902, 903, 904, 999)
 			AND BetType NOT BETWEEN 801 AND 899
 	END
@@ -403,6 +404,8 @@ BEGIN
 										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p40/@lt)[1]','VARCHAR(100)'), 0)
 									WHEN b.ExtraInfo LIKE '%p63%'
 										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p63/@lt)[1]','VARCHAR(100)'), 0)
+									WHEN b.ExtraInfo LIKE '%p69%'
+										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
 									ELSE ''
 								END
 			END
@@ -444,6 +447,8 @@ BEGIN
 										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p40/@lt)[1]','VARCHAR(100)'), 0)
 									WHEN b.ExtraInfo LIKE '%p63%'
 										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p63/@lt)[1]','VARCHAR(100)'), 0)
+									WHEN b.ExtraInfo LIKE '%p69%'
+										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
 									ELSE ''
 								END
 			END
@@ -486,6 +491,7 @@ BEGIN
 						WHEN @ProductId = 66 THEN 'VGA'			-- Vgaming
 						WHEN @ProductId = 67 THEN 'AP'			-- AdvantPlay
 						WHEN @ProductId = 68 THEN 'APM'			-- AdvantPlay Mini
+						WHEN @ProductId = 69 THEN 'BTC'			-- Bitcoin
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -719,6 +725,7 @@ BEGIN
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
 					'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
+				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
 				ELSE 0
@@ -726,11 +733,11 @@ BEGIN
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2') THEN b.betteam
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC') THEN b.betteam
 				ELSE ''
 			END AS BetTeam,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2') THEN b.hdp1
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'BTC') THEN b.hdp1
 				ELSE 0
 			END AS Hdp1,
 			CASE
@@ -744,7 +751,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet', 'SBC', 'VGA', 'SG') AND x.Odds IS NOT NULL THEN x.Odds
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 
-					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA', 'H5LG', 'SG', 'VS3') THEN b.odds
+					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA', 'H5LG', 'SG', 'VS3', 'BTC') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -826,8 +833,7 @@ BEGIN
 				ELSE 0
 			END AS LeagueId,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.matchid
-				WHEN @Product IN ('VR') THEN b.matchid
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'VR', 'BTC') THEN b.matchid
 				ELSE 0
 			END AS MatchId,
 			CASE
@@ -843,6 +849,7 @@ BEGIN
 			END AS Race,
 			CASE
 				WHEN @Product IN ('SB', 'CO') THEN m.GlobalShowTime
+				WHEN @Product IN ('BTC') THEN m3rd.EndTime
 				ELSE b.WinLostDate
 			END AS EventDate,
 			CASE
@@ -889,7 +896,7 @@ BEGIN
 			END AS BetdaqId,
 			CASE
 				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'SPR', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 
-					'ParlayVS2', 'VR', 'VS3') THEN ISNULL(b.ExtraInfo, '')
+					'ParlayVS2', 'VR', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -918,6 +925,7 @@ BEGIN
 			LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON @Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 			LEFT JOIN @TmpData AS x ON @RefTable IN (1, 2) AND @Winlostdate >= @Yesterday
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
+			LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 			LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON @Product IN ('VR') AND b.oddsid = vo.Orid
@@ -978,6 +986,7 @@ BEGIN
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 
 					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
+				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
 				ELSE 0
@@ -985,11 +994,11 @@ BEGIN
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2') THEN b.betteam
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC') THEN b.betteam
 				ELSE ''
 			END AS BetTeam,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2') THEN b.hdp1
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'BTC') THEN b.hdp1
 				ELSE 0
 			END AS Hdp1,
 			CASE
@@ -1002,7 +1011,7 @@ BEGIN
 			END AS OddsType,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 
-					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA', 'H5LG', 'SG', 'VS3') THEN b.odds
+					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA', 'H5LG', 'SG', 'VS3', 'BTC') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -1051,8 +1060,7 @@ BEGIN
 				ELSE 0
 			END AS LeagueId,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.matchid
-				WHEN @Product IN ('VR') THEN b.matchid
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'VR', 'BTC') THEN b.matchid
 				ELSE 0
 			END AS MatchId,
 			CASE
@@ -1068,6 +1076,7 @@ BEGIN
 			END AS Race,
 			CASE
 				WHEN @Product IN ('SB', 'CO') THEN m.GlobalShowTime
+				WHEN @Product IN ('BTC') THEN m3rd.EndTime
 				ELSE b.WinLostDate
 			END AS EventDate,
 			CASE
@@ -1114,7 +1123,7 @@ BEGIN
 			END AS BetdaqId,
 			CASE
 				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'SPR', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 
-					'ParlayVS2', 'VR', 'VS3') THEN ISNULL(b.ExtraInfo, '')
+					'ParlayVS2', 'VR', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -1142,6 +1151,7 @@ BEGIN
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON @Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
+			LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 			LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON @Product IN ('VR') AND b.oddsid = vo.Orid
@@ -1202,6 +1212,7 @@ BEGIN
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 
 					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
+				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
 				ELSE 0
@@ -1209,11 +1220,11 @@ BEGIN
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2') THEN b.betteam
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC') THEN b.betteam
 				ELSE ''
 			END AS BetTeam,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2') THEN b.hdp1
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'BTC') THEN b.hdp1
 				ELSE 0
 			END AS Hdp1,
 			CASE
@@ -1226,7 +1237,7 @@ BEGIN
 			END AS OddsType,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 
-					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA', 'H5LG', 'SG', 'VS3') THEN b.odds
+					'OneRNG', 'VRG', 'TG', 'I4D', 'PP', 'SBC', 'SLT', 'VGA', 'H5LG', 'SG', 'VS3', 'BTC') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -1275,8 +1286,7 @@ BEGIN
 				ELSE 0
 			END AS LeagueId,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.matchid
-				WHEN @Product IN ('VR') THEN b.matchid
+				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'VR', 'BTC') THEN b.matchid
 				ELSE 0
 			END AS MatchId,
 			CASE
@@ -1292,6 +1302,7 @@ BEGIN
 			END AS Race,
 			CASE
 				WHEN @Product IN ('SB', 'CO') THEN m.GlobalShowTime
+				WHEN @Product IN ('BTC') THEN m3rd.EndTime
 				ELSE b.WinLostDate
 			END AS EventDate,
 			CASE
@@ -1338,7 +1349,7 @@ BEGIN
 			END AS BetdaqId,
 			CASE
 				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'SPR', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 
-					'ParlayVS2', 'VR', 'VS3') THEN ISNULL(b.ExtraInfo, '')
+					'ParlayVS2', 'VR', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -1366,6 +1377,7 @@ BEGIN
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON @Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 			LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
+			LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN bodb_Archive.dbo.Outright_bk AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 			LEFT JOIN bodb_Archive.dbo.VSOutright_bk AS vo WITH (NOLOCK) ON @Product IN ('VR') AND b.oddsid = vo.Orid

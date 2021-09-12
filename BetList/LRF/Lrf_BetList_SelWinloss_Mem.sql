@@ -42,6 +42,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinloss_Mem]
 	@ShowAP				BIT			= 0,	-- AdvantPlay
 	@ShowAPM			BIT			= 0,	-- AdvantPlay Mini
 	@ShowVS3			BIT			= 0,	-- Virtual Sports 3
+	@ShowBTC			BIT			= 0,	-- Bitcoin
 	@ShowBT				BIT			= 0,	-- Bet Trade
 	@ShowCO				BIT			= 0,	-- Cash Out
 	@BaseCurrency		VARCHAR(10),
@@ -162,6 +163,7 @@ AS
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
+		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -305,7 +307,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68, 69)
 		AND Bettype NOT IN (904, 914)
 		AND BetType NOT IN (SELECT BetType FROM dbo.Lrf_f_SelExcludedBetType())
 
@@ -350,6 +352,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowVGA = 0	THEN 66 END
 		OR ProductID	= CASE WHEN @ShowAP = 0		THEN 67 END
 		OR ProductID	= CASE WHEN @ShowAPM = 0	THEN 68 END
+		OR ProductID	= CASE WHEN @ShowBTC = 0	THEN 69 END
 
 	IF @tdate > @MoveBetsDay
 	BEGIN
@@ -1043,6 +1046,70 @@ BEGIN
 				AND b.custid = @CustId
 				AND sbt.ProductID IN (3, 5, 27)
 				AND sbt.EventType = 1
+				AND b.statusID IN (111, 112, 113)
+		END
+
+		-- Bitcoin
+		IF @ShowBTC = 1
+		BEGIN
+			INSERT INTO @BetListByDateMem
+			SELECT
+				m.sporttype,
+				b.transid,
+				ISNULL(b.betid, 0),
+				b.bettype,
+				b.hdp1,
+				0 AS Hdp2,
+				0 AS MOdds,
+				0 AS OddsType,
+				b.odds,
+				b.stake,
+				b.actual_stake,
+				b.betteam,
+				b.status,
+				0 AS SettlementStatus,
+				b.refno,
+				b.transdate,
+				b.winlostdate,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				0 AS LiveIndicator,
+				0 AS LiveHomeScore,
+				0 AS LiveAwayScore,
+				b.ip,
+				m.League3rdId AS LeagueId,
+				b.matchid,
+				'' AS MatchCode,
+				'' AS Race,
+				m.EndTime AS EventDate,
+				0 AS HomeId,
+				0 AS AwayId,
+				'' AS BetStatus,
+				0 AS IsNeutral,
+				0,
+				0,
+				b.currency,
+				'' AS ShowTime,
+				'' AS betcheck,
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode,
+				0 AS OddsSpread,
+				'' AS SiteId
+			FROM
+				dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
+				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+			WHERE
+				b.winlostdate BETWEEN @TempFromDate AND @tdate
+				AND b.custid = @CustId
+				AND sbt.ProductID IN (69)
 				AND b.statusID IN (111, 112, 113)
 		END
 
@@ -2281,6 +2348,70 @@ BEGIN
 				AND sbt.EventType = 1
 		END
 
+		-- Bitcoin
+		IF @ShowBTC = 1
+		BEGIN
+			INSERT INTO @BetListByDateMem
+			SELECT
+				m.sporttype,
+				b.transid,
+				ISNULL(b.betid, 0),
+				b.bettype,
+				b.hdp1,
+				0 AS Hdp2,
+				0 AS MOdds,
+				0 AS OddsType,
+				b.odds,
+				b.stake,
+				b.actual_stake,
+				b.betteam,
+				b.status,
+				0 AS SettlementStatus,
+				b.refno,
+				b.transdate,
+				b.winlostdate,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				0 AS LiveIndicator,
+				0 AS LiveHomeScore,
+				0 AS LiveAwayScore,
+				b.ip,
+				m.League3rdId AS LeagueId,
+				b.matchid,
+				'' AS MatchCode,
+				'' AS Race,
+				m.EndTime AS EventDate,
+				0 AS HomeId,
+				0 AS AwayId,
+				'' AS BetStatus,
+				0 AS IsNeutral,
+				0,
+				0,
+				b.currency,
+				'' AS ShowTime,
+				'' AS betcheck,
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode,
+				0 AS OddsSpread,
+				'' AS SiteId
+			FROM
+				dbo.bettrans14 AS b WITH (NOLOCK)
+				INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
+				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+			WHERE
+				b.winlostdate BETWEEN @BalanceUpDay AND @tdate
+				AND b.custid = @CustId
+				AND sbt.ProductID IN (69)
+				AND b.statusID IN (111, 112, 113)
+		END
+
 		-- Virtual Sports
 		IF @ShowVS = 1
 		BEGIN
@@ -2646,7 +2777,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.ProductID = 1 AND sbt.EventType = 1
-			
+
 			-- Outright
 			INSERT INTO @BetListByDateMem
 			SELECT
@@ -2704,7 +2835,7 @@ BEGIN
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			WHERE sbt.ProductID = 1 AND sbt.EventType = 2
-			
+
 			-- Mix Parlay + System parlay
 			INSERT INTO @BetListByDateMem
 			SELECT
@@ -2989,7 +3120,7 @@ BEGIN
 				AND b.matchid IN (0, 9, 29, 2799) --should NOT remove 0 IN archive
 				AND b.transid NOT IN (SELECT Transid FROM @TempBetList) --exclude BA tickets
 		END
-	
+
 		-- Bet trade
 		IF @ShowBT = 1
 		BEGIN
@@ -3228,12 +3359,76 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE
-				b.winlostdate BETWEEN @fdate AND @TempToDate 
+				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId 
 				AND sbt.ProductID IN (3, 5, 27)
 				AND sbt.EventType = 1 
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
+		END
+
+		-- Bitcoin
+		IF @ShowBTC = 1
+		BEGIN
+			INSERT INTO @BetListByDateMem
+			SELECT
+				m.sporttype,
+				b.transid,
+				ISNULL(b.betid, 0),
+				b.bettype,
+				b.hdp1,
+				0 AS Hdp2,
+				0 AS MOdds,
+				0 AS OddsType,
+				b.odds,
+				b.stake,
+				b.actual_stake,
+				b.betteam,
+				b.status,
+				0 AS SettlementStatus,
+				b.refno,
+				b.transdate,
+				b.winlostdate,
+				(b.winlost - b.actual_stake) AS WinLost,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				0 AS LiveIndicator,
+				0 AS LiveHomeScore,
+				0 AS LiveAwayScore,
+				b.ip,
+				m.League3rdId AS LeagueId,
+				b.matchid,
+				'' AS MatchCode,
+				'' AS Race,
+				m.EndTime AS EventDate,
+				0 AS HomeId,
+				0 AS AwayId,
+				'' AS BetStatus,
+				0 AS IsNeutral,
+				0,
+				0,
+				b.currency,
+				'' AS ShowTime,
+				'' AS betcheck,
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode,
+				0 AS OddsSpread,
+				'' AS SiteId
+			FROM
+				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+				INNER JOIN bodb_Archive.dbo.Match3rd_bk AS m WITH (NOLOCK) ON b.matchid = m.Match3rdId
+				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+			WHERE
+				b.winlostdate BETWEEN @fdate AND @TempToDate
+				AND b.custid = @CustId
+				AND sbt.ProductID IN (69)
+				AND b.statusID IN (111, 112, 113)
 		END
 
 		-- Virtual Sports (EventType = 3)

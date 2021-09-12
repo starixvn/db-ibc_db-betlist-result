@@ -78,6 +78,7 @@ AS
 		- 20220302@Kos: Support filter by Customer Class [RedmineID: #167824]
 					- Remove input params SportId and LeagueId
 					- Add new input params @SportTypeList VARCHAR(MAX), @LeagueList VARCHAR(MAX), @CustomerClass VARCHAR(200)
+		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -372,8 +373,8 @@ BEGIN
 				OR (b.bettype NOT IN (9, 29) AND @LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
 			AND (@BetType = ''
 				OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609, 229))
-				OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604))
-				OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604)))
+				OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604, 7901))
+				OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604, 7901)))
 
 		-- translog
 		IF @BetType IN ('', 'Others')
@@ -494,8 +495,8 @@ BEGIN
 				LeagueId = m.leagueid,
 				LeagueGroupId = l.LeagueGroupID
 			FROM @Data AS b
-				INNER JOIN dbo.match AS m ON m.matchid = b.MatchId
-				INNER JOIN dbo.League AS l ON l.leagueid = m.leagueid
+				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 			WHERE b.ProductId = 1 AND b.EventType = 1
 
 			UPDATE b
@@ -503,8 +504,8 @@ BEGIN
 				LeagueId = l.leagueid,
 				LeagueGroupId = l.LeagueGroupID
 			FROM @Data AS b
-				INNER JOIN dbo.outright AS o ON o.orid = b.MatchId
-				INNER JOIN dbo.League AS l ON l.leagueid = o.leagueid
+				INNER JOIN dbo.outright AS o WITH (NOLOCK) ON o.orid = b.MatchId
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = o.leagueid
 			WHERE b.ProductId = 1 AND b.EventType = 2
 
 			-- Delete unselected matches

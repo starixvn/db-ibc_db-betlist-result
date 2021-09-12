@@ -44,6 +44,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowCG		BIT			= 0,	-- CG
 	@ShowAP		BIT			= 0,	-- AdvantPlay
 	@ShowAPM	BIT			= 0,	-- AdvantPlay Mini
+	@ShowBTC	BIT			= 0,	-- Bitcoin
 	@ShowVS3	BIT			= 0,	-- Virtual Sports 3
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
@@ -155,6 +156,7 @@ AS
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
+		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 */
 
 BEGIN
@@ -227,7 +229,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68, 69)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -264,7 +266,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowVGA = 0	THEN 66 END
 		OR ProductID	= CASE WHEN @ShowAP = 0		THEN 67 END
 		OR ProductID	= CASE WHEN @ShowAPM = 0	THEN 68 END
-	-- end filer bettypes by sporttype
+		OR ProductID	= CASE WHEN @ShowBTC = 0	THEN 69 END
 
 	CREATE TABLE #BetListSelRunningByDateMem (
 		SportType			INT,
@@ -874,6 +876,60 @@ BEGIN
 			AND sbt.ProductID = 5
 			AND sbt.EventType = 3
 			AND b.statusID IN (0, 1)
+	END
+
+	-- Bitcoin
+	IF @ShowBTC = 1
+	BEGIN
+		INSERT INTO #BetListSelRunningByDateMem
+		SELECT
+			m.SportType,
+			@Username AS UserName,
+			b.bettype,
+			m.League3rdId AS LeagueId,
+			b.refno,
+			b.transid,
+			ISNULL(b.betid, 0),
+			'' AS MatchCode,
+			'' AS Race,
+			m.EndTime AS EventDate,
+			0 AS HomeId,
+			0 AS AwayId,
+			b.hdp1,
+			0 AS Hdp2,
+			b.odds,
+			0 AS MOdds,
+			b.status,
+			0 AS SettlementStatus,
+			b.stake,
+			b.actual_stake,
+			b.transdate,
+			b.betteam,
+			b.discount,
+			0 AS LiveIndicator,
+			0 AS LiveHomeScore,
+			0 AS LiveAwayScore,
+			b.ip,
+			CONVERT(BIT, 0) AS IsNeutral,
+			b.oddstype,
+			'' AS ShowTime,
+			b.matchid,
+			'' AS BetCheck,
+			'' AS TransDesc,
+			-1 AS BetdaqId,
+			b.ExtraInfo,
+			0 AS OriginalStake,
+			0 AS OriginalBetType,
+			0 AS WalletType,
+			0 AS RefCode,
+			0 AS OddsSpread
+		FROM dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON m.Match3rdId = b.matchid
+			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+		WHERE b.transdate BETWEEN @FromDate AND @ToDate
+			AND b.custid = @CustId
+			AND b.statusID IN (0, 1)
+			AND sbt.ProductID IN (69)
 	END
 
 	-- Keno, Colossus Bets, Lottery, Virtual Games, Table Games, Indo 4D, Happy 5 Linked Games, Sports Lottery, Virtual Sports 3 (translog)

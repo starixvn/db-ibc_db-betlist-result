@@ -65,12 +65,13 @@ AS
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
+		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+	DECLARE @TempAg TABLE (CustId INT PRIMARY KEY, Currency INT)
 
 	-- Get AgentList
 	DECLARE @DocHandler INT
@@ -102,7 +103,7 @@ BEGIN
 	SELECT DISTINCT ProductId, Bettype, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @IsTest)
 	WHERE
-		ProductID IN (1, 3, 5, 8, 27, 28, 40, 43, 49, 63)
+		ProductID IN (1, 3, 5, 8, 27, 28, 40, 43, 49, 63, 69)
 		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 		AND BetType IN (
 			SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
@@ -132,7 +133,7 @@ BEGIN
 
 	CREATE TABLE #TempData (
 		RowNum			INT,
-		TransId			BIGINT,
+		TransId			BIGINT PRIMARY KEY,
 		RefNo			BIGINT,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
@@ -564,11 +565,11 @@ BEGIN
 
 	-- Get total values
 	SELECT
-		@TotalRows			= COUNT(b.TransId),
-		@SumWinlost			= SUM(b.WinLost		* ISNULL(e.Rate, 1)),
-		@SumLicenseeWL		= SUM(b.LicenseeWL	* ISNULL(e.Rate, 1)),
-		@SumComm			= SUM(b.Comm		* ISNULL(e.Rate, 1)),
-		@SumPlayerComm		= SUM(b.PlayerComm	* ISNULL(e.Rate, 1))
+		@TotalRows		= COUNT(b.TransId),
+		@SumWinlost		= SUM(b.WinLost		* ISNULL(e.Rate, 1)),
+		@SumLicenseeWL	= SUM(b.LicenseeWL	* ISNULL(e.Rate, 1)),
+		@SumComm		= SUM(b.Comm		* ISNULL(e.Rate, 1)),
+		@SumPlayerComm	= SUM(b.PlayerComm	* ISNULL(e.Rate, 1))
 	FROM #AllData AS b
 		LEFT JOIN #ExchangeRate AS e
 			ON e.ExchangeId = b.Currency
@@ -711,7 +712,7 @@ BEGIN
 			WHERE td.WhTicket = 1
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype IN (SELECT bettype FROM @SportBettype)
-				AND b.statusID NOT IN (0,1,101, 102, 103)
+				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
@@ -918,9 +919,72 @@ BEGIN
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 			WHERE td.WhTicket = 1
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND b.bettype IN (SELECT bettype FROM @SportBettype)
 				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
+		END
+
+		-- Bitcoin
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (69) AND Bettype = @BetType)
+		BEGIN
+			INSERT INTO #Data
+			SELECT
+				td.RowNum,
+				b.transid,
+				b.refno,
+				ISNULL(b.betid, 0) AS BetId,
+				b.custid,
+				b.Username,
+				m.SportType,
+				b.bettype,
+				b.currency,
+				m.League3rdId AS LeagueId,
+				b.matchid,
+				'' AS MatchCode,
+				m.EndTime AS EventDate,
+				CONVERT(BIT,0) AS IsNeutral,
+				0 AS HomeId,
+				0 AS AwayId,
+				b.hdp1,
+				0 AS Hdp2,
+				b.betteam,
+				b.odds,
+				0 AS oddstype,
+				0 AS modds,
+				0 AS liveindicator,
+				0 AS livehomescore,
+				0 AS liveawayscore,
+				'' AS ShowTime,
+				b.status,
+				0 AS SettlementStatus,
+				'' AS betstatus,
+				b.transdate,
+				b.winlostdate,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				-(b.winlost - b.actual_stake) AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				b.ip,
+				'' AS Race,
+				'' AS BetCheck,
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode,
+				0 AS OddsSpread,
+				'' AS SiteId
+			FROM dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON m.Match3rdId = b.matchid
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				INNER JOIN #TempData AS td ON b.transid = td.TransId
+			WHERE td.WhTicket = 1
+				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
+				AND b.bettype IN (SELECT bettype FROM @SportBettype)
+				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 		END
 
 		-- Virtual Sports (EventType = 2)
@@ -1344,6 +1408,69 @@ BEGIN
 				AND b.bettype IN (SELECT bettype FROM @SportBettype)
 				AND b.statusID NOT IN (101, 102, 103)
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
+		END
+
+		-- Bitcoin
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (69) AND Bettype = @BetType)
+		BEGIN
+			INSERT INTO #Data
+			SELECT
+				td.RowNum,
+				b.transid,
+				b.refno,
+				ISNULL(b.betid, 0) AS BetId,
+				b.custid,
+				b.Username,
+				m.SportType,
+				b.bettype,
+				b.currency,
+				m.League3rdId AS LeagueId,
+				b.matchid,
+				'' AS MatchCode,
+				m.EndTime AS EventDate,
+				CONVERT(BIT,0) AS IsNeutral,
+				0 AS HomeId,
+				0 AS AwayId,
+				b.hdp1,
+				0 AS Hdp2,
+				b.betteam,
+				b.odds,
+				0 AS oddstype,
+				0 AS modds,
+				0 AS liveindicator,
+				0 AS livehomescore,
+				0 AS liveawayscore,
+				'' AS ShowTime,
+				b.status,
+				0 AS SettlementStatus,
+				'' AS betstatus,
+				b.transdate,
+				b.winlostdate,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				-(b.winlost - b.actual_stake) AS LicenseeWL,
+				b.comm,
+				b.playercomm,
+				b.ip,
+				'' AS Race,
+				'' AS BetCheck,
+				'' AS TransDesc,
+				-1 AS BetdaqId,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode,
+				0 AS OddsSpread,
+				'' AS SiteId
+			FROM dbo.bettrans14 AS b WITH (NOLOCK)
+				INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON m.Match3rdId = b.matchid
+				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+				INNER JOIN #TempData AS td ON b.transid = td.TransId
+			WHERE td.WhTicket = 2
+				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
+				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 		END
 
 		-- Virtual Sports (EventType = 2)

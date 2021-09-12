@@ -21,6 +21,7 @@ AS
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220401@Kos: Support TxId for Vgaming [Redmine: #170054]
+		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 */
 
 BEGIN
@@ -57,8 +58,9 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 63, 66)
+	WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 63, 66, 69)
 		AND BetType NOT BETWEEN 801 AND 899
+		AND BetType NOT IN (901, 902, 903, 904)
 
 	-- Get CustId in case of inputting Username
 	IF @CustId = 0 AND @Username <> ''
@@ -193,6 +195,8 @@ BEGIN
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p40/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p63%' AND s.ProductID = 63
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p63/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b.ExtraInfo LIKE '%p69%'
+									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
 							END
 		END
 
@@ -231,6 +235,8 @@ BEGIN
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p40/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p63%' AND s.ProductID = 63
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p63/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b.ExtraInfo LIKE '%p69%'
+									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
 							END
 		END
 
@@ -268,6 +274,8 @@ BEGIN
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p40/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p63%' AND s.ProductID = 63
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p63/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b.ExtraInfo LIKE '%p69%'
+									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
 							END
 		END
 
@@ -283,6 +291,7 @@ BEGIN
 						WHEN @ProductId = 28 THEN 'Lottery'
 						WHEN @ProductId = 40 THEN 'TG'								-- Table Games
 						WHEN @ProductId = 63 THEN 'SLT'								-- Sports Lottery
+						WHEN @ProductId = 69 THEN 'BTC'
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -351,17 +360,18 @@ BEGIN
 			b.recommend,
 			CASE
 				WHEN @Product IN ('SB') THEN m.sporttype
+				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				ELSE 0
 			END AS SportType,
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
 			CASE
-				WHEN @Product IN ('SB', 'Parlay') THEN b.betteam
+				WHEN @Product IN ('SB', 'Parlay', 'BTC') THEN b.betteam
 				ELSE ''
 			END AS BetTeam,
 			CASE
-				WHEN @Product IN ('SB', 'Parlay') THEN b.hdp1
+				WHEN @Product IN ('SB', 'Parlay', 'BTC') THEN b.hdp1
 				ELSE 0
 			END AS Hdp1,
 			CASE
@@ -373,7 +383,7 @@ BEGIN
 				ELSE 0
 			END AS OddsType,
 			CASE
-				WHEN @Product IN ('SB', 'Outright', 'Parlay') THEN b.odds
+				WHEN @Product IN ('SB', 'Outright', 'Parlay', 'BTC') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -431,7 +441,7 @@ BEGIN
 				ELSE 0
 			END AS LeagueId,
 			CASE
-				WHEN @Product IN ('SB') THEN m.matchid
+				WHEN @Product IN ('SB', 'BTC') THEN b.matchid
 				ELSE 0
 			END AS MatchId,
 			CASE
@@ -445,6 +455,7 @@ BEGIN
 			END AS Race,
 			CASE
 				WHEN @Product IN ('SB') THEN m.GlobalShowTime
+				WHEN @Product IN ('BTC') THEN m3rd.EndTime
 				ELSE b.WinLostDate
 			END AS EventDate,
 			CASE
@@ -479,7 +490,7 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
+				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -506,6 +517,7 @@ BEGIN
 			2 AS WhTicket
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON @Product IN ('SB') AND b.matchid = m.matchid
+			LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 		WHERE b.transid IN (@TransId, @BonusTransId)
@@ -524,17 +536,18 @@ BEGIN
 			b.recommend,
 			CASE
 				WHEN @Product IN ('SB') THEN m.sporttype
+				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				ELSE 0
 			END AS SportType,
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
 			CASE
-				WHEN @Product IN ('SB', 'Parlay') THEN b.betteam
+				WHEN @Product IN ('SB', 'Parlay', 'BTC') THEN b.betteam
 				ELSE ''
 			END AS BetTeam,
 			CASE
-				WHEN @Product IN ('SB', 'Parlay') THEN b.hdp1
+				WHEN @Product IN ('SB', 'Parlay', 'BTC') THEN b.hdp1
 				ELSE 0
 			END AS Hdp1,
 			CASE
@@ -546,7 +559,7 @@ BEGIN
 				ELSE 0
 			END AS OddsType,
 			CASE
-				WHEN @Product IN ('SB', 'Outright', 'Parlay') THEN b.odds
+				WHEN @Product IN ('SB', 'Outright', 'Parlay', 'BTC') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -587,7 +600,7 @@ BEGIN
 				ELSE 0
 			END AS LeagueId,
 			CASE
-				WHEN @Product IN ('SB') THEN m.matchid
+				WHEN @Product IN ('SB', 'BTC') THEN b.matchid
 				ELSE 0
 			END AS MatchId,
 			CASE
@@ -601,6 +614,7 @@ BEGIN
 			END AS Race,
 			CASE
 				WHEN @Product IN ('SB') THEN m.GlobalShowTime
+				WHEN @Product IN ('BTC') THEN m3rd.EndTime
 				ELSE b.WinLostDate
 			END AS EventDate,
 			CASE
@@ -635,7 +649,7 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
+				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -662,6 +676,7 @@ BEGIN
 			3 AS WhTicket
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON @Product IN ('SB') AND b.matchid = m.matchid
+			LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 		WHERE b.transid IN (@TransId, @BonusTransId)
@@ -680,17 +695,18 @@ BEGIN
 			b.recommend,
 			CASE
 				WHEN @Product IN ('SB') THEN m.sporttype
+				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				ELSE 0
 			END AS SportType,
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
 			CASE
-				WHEN @Product IN ('SB', 'Parlay') THEN b.betteam
+				WHEN @Product IN ('SB', 'Parlay', 'BTC') THEN b.betteam
 				ELSE ''
 			END AS BetTeam,
 			CASE
-				WHEN @Product IN ('SB', 'Parlay') THEN b.hdp1
+				WHEN @Product IN ('SB', 'Parlay', 'BTC') THEN b.hdp1
 				ELSE 0
 			END AS Hdp1,
 			CASE
@@ -702,7 +718,7 @@ BEGIN
 				ELSE 0
 			END AS OddsType,
 			CASE
-				WHEN @Product IN ('SB', 'Outright', 'Parlay') THEN b.odds
+				WHEN @Product IN ('SB', 'Outright', 'Parlay', 'BTC') THEN b.odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -743,7 +759,7 @@ BEGIN
 				ELSE 0
 			END AS LeagueId,
 			CASE
-				WHEN @Product IN ('SB') THEN m.matchid
+				WHEN @Product IN ('SB', 'BTC') THEN b.matchid
 				ELSE 0
 			END AS MatchId,
 			CASE
@@ -757,6 +773,7 @@ BEGIN
 			END AS Race,
 			CASE
 				WHEN @Product IN ('SB') THEN m.GlobalShowTime
+				WHEN @Product IN ('BTC') THEN m3rd.EndTime
 				ELSE b.WinLostDate
 			END AS EventDate,
 			CASE
@@ -791,7 +808,7 @@ BEGIN
 				ELSE -1
 			END AS BetdaqId,
 			CASE
-				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
+				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -818,6 +835,7 @@ BEGIN
 			4 AS WhTicket
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON @Product IN ('SB') AND b.matchid = m.matchid
+			LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN bodb_Archive.dbo.Outright_bk AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
@@ -1181,32 +1199,22 @@ BEGIN
 
 	-- Get exchange rate
 	DECLARE @ExchangeRate AS TABLE (
-		ExchangeDate	SMALLDATETIME,
-		ExchangeId		INT,
-		Rate			FLOAT
+		ExchangeId	INT,
+		FromDate	SMALLDATETIME,
+		ToDate		SMALLDATETIME,
+		Rate		FLOAT
 	)
 
 	IF @BaseCurrency <> ''
 	BEGIN
 		INSERT INTO @ExchangeRate
 		SELECT
-			e.exchangedate,
 			e.ExchangeId,
-			CASE
-				WHEN @BaseCurrency = 'MYR' THEN e.MYR
-				WHEN @BaseCurrency = 'USD' THEN e.USD
-				WHEN @BaseCurrency = 'EUR' THEN e.EUR
-				WHEN @BaseCurrency = 'CNY' THEN e.CNY
-				WHEN @BaseCurrency = 'IDR' THEN e.IDR
-				WHEN @BaseCurrency = 'GBP' THEN e.GBP
-				WHEN @BaseCurrency = 'THB' THEN e.THB
-				WHEN @BaseCurrency = 'INH' THEN e.INH
-				WHEN @BaseCurrency = 'BDT' THEN e.BDT
-				WHEN @BaseCurrency = 'INR' THEN e.INR
-				ELSE 1
-			END AS Rate
-		FROM Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e
-		WHERE EXISTS (SELECT 1 FROM @Data WHERE Currency = e.ExchangeId AND WinLostDate = e.exchangedate)
+			e.FromDate,
+			e.ToDate,
+			e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
+		WHERE EXISTS (SELECT 1 FROM @Data WHERE Currency = e.ExchangeId AND WinLostDate BETWEEN e.FromDate AND e.ToDate)
 	END
 
 	SELECT
@@ -1264,8 +1272,7 @@ BEGIN
 		a.SiteId
 	FROM @Data AS a
 		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = a.CustId
-		LEFT JOIN @ExchangeRate AS e
-			ON e.ExchangeDate = a.WinLostDate AND e.ExchangeId = a.Currency
+		LEFT JOIN @ExchangeRate AS e ON e.ExchangeId = a.Currency AND a.WinLostDate BETWEEN e.FromDate AND e.ToDate
 	ORDER BY a.TransDate ASC
 
 	SELECT DISTINCT * FROM @Detail

@@ -60,6 +60,7 @@ AS
 		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
+		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 */
 
 BEGIN
@@ -593,6 +594,7 @@ BEGIN
 							WHEN s.ProductID = 66 THEN 'VGA'							-- Vgaming
 							WHEN s.ProductID = 67 THEN 'AP'								-- AdvantPlay
 							WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
+							WHEN s.ProductID = 69 THEN 'BTC'							-- Bitcoin
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -754,7 +756,7 @@ BEGIN
 				DELETE b
 				FROM #Data AS b
 				WHERE b.RefTable IN (1, 2)
-					AND b.Winlostdate >= @Yesterday
+					AND b.WinLostDate >= @Yesterday
 					AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 
 				-- Update tickets EXISTS in #Data
@@ -762,7 +764,7 @@ BEGIN
 				SET b.IsNew = 0
 				FROM @TmpData AS b
 					INNER JOIN #Data AS d ON d.TransId = b.RefNo AND d.BetType = b.BetType
-				WHERE d.Winlostdate >= @Yesterday AND d.RefTable IN (1, 2)
+				WHERE d.WinLostDate >= @Yesterday AND d.RefTable IN (1, 2)
 
 				INSERT INTO #Data (
 					TransId,
@@ -986,16 +988,17 @@ BEGIN
 									'GDG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG', 'H5LG', 'SLT', 'VS3') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
+								WHEN b.Product IN ('BTC') THEN m3rd.SportType
 								WHEN b.Product IN ('Outright') THEN l.sporttype
 								WHEN b.Product IN ('VR') THEN vr.SportType
 								ELSE 0
 							END,
 				BetTeam = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2') THEN b.BetTeam
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC') THEN b.BetTeam
 								ELSE ''
 							END,
 				Hdp1 = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2') THEN b.Hdp1
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'BTC') THEN b.Hdp1
 							ELSE 0
 						END,
 				Hdp2 = CASE
@@ -1009,7 +1012,7 @@ BEGIN
 				Odds = CASE
 							WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') AND x.Odds IS NOT NULL THEN x.Odds
 							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 
-								'VRG', 'SLT', 'H5LG', 'VS3') THEN b.Odds
+								'VRG', 'SLT', 'H5LG', 'VS3', 'BTC') THEN b.Odds
 							ELSE 0
 						END,
 				MOdds = CASE 
@@ -1068,8 +1071,7 @@ BEGIN
 								ELSE 0
 							END,
 				MatchId = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.matchid
-								WHEN b.Product IN ('VR') THEN b.matchid
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'BTC') THEN b.matchid
 								ELSE 0
 							END,
 				MatchCode = CASE
@@ -1085,6 +1087,7 @@ BEGIN
 						END,
 				EventDate = CASE
 								WHEN b.Product IN ('SB') THEN m.GlobalShowTime
+								WHEN b.Product IN ('BTC') THEN m3rd.EndTime
 								ELSE b.WinLostDate
 							END,
 				HomeId = CASE
@@ -1132,7 +1135,7 @@ BEGIN
 								ELSE -1
 							END,
 				ExtraInfo = CASE
-								WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'NG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'NG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END,
 				OriginalStake = CASE
@@ -1158,6 +1161,7 @@ BEGIN
 					AND b.Winlostdate >= @Yesterday
 					AND x.RefNo = b.TransId
 				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
+				LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 				LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
 				LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid

@@ -24,6 +24,7 @@ AS
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220313@Kos: Hotfix - Extend range for IP v6 [Redmine: #169856]
 		- 20220314@Kos: Support Virtual Sports 3 [Redmine: #145337]
+		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 */
 
 BEGIN
@@ -74,6 +75,9 @@ BEGIN
 		Currency		SMALLINT,
 		SportType		SMALLINT,
 		BetType			SMALLINT,
+		BetId			BIGINT,
+		BetTeam			NVARCHAR(20),
+		Hdp1			SMALLMONEY,
 		Odds			MONEY,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
@@ -86,6 +90,7 @@ BEGIN
 		WinLostDate		SMALLDATETIME,
 		Ip				VARCHAR(45),
 		BetFrom			NVARCHAR(1),
+		LeagueId		INT,
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
@@ -106,6 +111,9 @@ BEGIN
 		Currency		SMALLINT,
 		SportType		SMALLINT,
 		BetType			SMALLINT,
+		BetId			BIGINT,
+		BetTeam			NVARCHAR(20),
+		Hdp1			SMALLMONEY,
 		Odds			MONEY,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
@@ -118,6 +126,7 @@ BEGIN
 		WinLostDate		SMALLDATETIME,
 		Ip				VARCHAR(45),
 		BetFrom			NVARCHAR(1),
+		LeagueId		INT,
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
@@ -151,6 +160,9 @@ BEGIN
 			Recommend,
 			Currency,
 			BetType,
+			BetId,
+			BetTeam,
+			Hdp1,
 			Odds,
 			Stake,
 			Actual_Stake,
@@ -177,6 +189,9 @@ BEGIN
 			b.recommend,
 			b.currency,
 			b.bettype,
+			b.betid,
+			b.betteam,
+			b.hdp1,
 			b.odds,
 			b.stake,
 			b.actual_stake,
@@ -218,6 +233,9 @@ BEGIN
 			Recommend,
 			Currency,
 			BetType,
+			BetId,
+			BetTeam,
+			Hdp1,
 			Odds,
 			Stake,
 			Actual_Stake,
@@ -244,6 +262,9 @@ BEGIN
 			b.recommend,
 			b.currency,
 			b.bettype,
+			b.betid,
+			b.betteam,
+			b.hdp1,
 			b.odds,
 			b.stake,
 			b.actual_stake,
@@ -286,6 +307,7 @@ BEGIN
 		SET b.Product = CASE
 							WHEN s.ProductID = 49 THEN 'VS3'	-- Virtual Sports 3
 							WHEN s.ProductID = 63 THEN 'SLT'	-- Sports Lottery
+							WHEN s.ProductID = 69 THEN 'BTC'	-- Bitcoin
 							ELSE ''
 						END
 		FROM #Data AS b
@@ -372,8 +394,15 @@ BEGIN
 			b.RefNo,
 			b.CustId,
 			b.Currency,
-			b.MatchId AS SportType,
+			CASE
+				WHEN b.Product IN ('BTC') AND b.WhTicket = 1 THEN m3rd.SportType
+				WHEN b.Product IN ('BTC') AND b.WhTicket = 2 THEN m3rd14.SportType
+				ELSE b.MatchId
+			END AS SportType,
 			b.BetType,
+			b.BetId,
+			b.BetTeam,
+			b.Hdp1,
 			b.Odds,
 			b.Stake * ISNULL(e.Rate, 1) AS Stake,
 			b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
@@ -390,10 +419,23 @@ BEGIN
 			b.TransDesc,
 			b.BetdaqId,
 			b.SiteId,
+			CASE
+				WHEN b.Product IN ('BTC') AND b.WhTicket = 1 THEN m3rd.League3rdId
+				WHEN b.Product IN ('BTC') AND b.WhTicket = 2 THEN m3rd14.League3rdId
+				ELSE 0
+			END AS LeagueId,
+			b.MatchId,
+			CASE
+				WHEN b.Product IN ('BTC') AND b.WhTicket = 1 THEN m3rd.EndTime
+				WHEN b.Product IN ('BTC') AND b.WhTicket = 2 THEN m3rd14.EndTime
+				ELSE ''
+			END AS EventDate,
 			b.ExtraInfo
 		FROM
 			#PagingData AS b
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
+			LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.matchid AND b.WhTicket = 1
+			LEFT JOIN dbo.Match3rd14 AS m3rd14 WITH (NOLOCK) ON m3rd14.Match3rdId = b.matchid AND b.WhTicket = 2
 			LEFT JOIN #ExchangeRate AS e
 				ON e.ExchangeId = b.Currency
 					AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
@@ -433,8 +475,15 @@ BEGIN
 				b.RefNo,
 				b.CustId,
 				b.Currency,
-				b.MatchId AS SportType,
+				CASE
+					WHEN b.Product IN (''BTC'') AND b.WhTicket = 1 THEN m3rd.SportType
+					WHEN b.Product IN (''BTC'') AND b.WhTicket = 2 THEN m3rd14.SportType
+					ELSE b.MatchId
+				END AS SportType,
 				b.BetType,
+				b.BetId,
+				b.BetTeam,
+				b.Hdp1,
 				b.Odds,
 				b.Stake * ISNULL(e.Rate, 1) AS Stake,
 				b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
@@ -451,10 +500,23 @@ BEGIN
 				b.TransDesc,
 				b.BetdaqId,
 				b.SiteId,
+				CASE
+					WHEN b.Product IN (''BTC'') AND b.WhTicket = 1 THEN m3rd.League3rdId
+					WHEN b.Product IN (''BTC'') AND b.WhTicket = 2 THEN m3rd14.League3rdId
+					ELSE 0
+				END AS LeagueId,
+				b.MatchId,
+				CASE
+					WHEN b.Product IN (''BTC'') AND b.WhTicket = 1 THEN m3rd.EndTime
+					WHEN b.Product IN (''BTC'') AND b.WhTicket = 2 THEN m3rd14.EndTime
+					ELSE ''''
+				END AS EventDate,
 				b.ExtraInfo
 			FROM
 				#Data AS b
 				INNER JOIN #Customer AS c ON c.custid = b.CustId
+				LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.matchid AND b.WhTicket = 1
+				LEFT JOIN dbo.Match3rd14 AS m3rd14 WITH (NOLOCK) ON m3rd14.Match3rdId = b.matchid AND b.WhTicket = 2
 				LEFT JOIN #ExchangeRate AS e
 					ON e.ExchangeId = b.Currency
 						AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth

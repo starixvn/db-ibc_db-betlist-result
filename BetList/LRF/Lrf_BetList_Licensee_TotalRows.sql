@@ -49,6 +49,7 @@ AS
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 		- 20220128@Kos: Support search by IP [RedmineID: #166079]
+		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 */
 
 
@@ -161,6 +162,7 @@ BEGIN
 						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (1, 3, 5, 25, 27)
+						LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.ProductID IN (69)
 						LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
@@ -175,6 +177,7 @@ BEGIN
 						AND (@SportType = 0 OR l.sporttype IS NULL OR l.sporttype = @SportType)
 						AND (@SportType = 0 OR vr.sporttype IS NULL OR vr.sporttype = @SportType)
 						AND (@SportType = 0 OR s.ProductId NOT IN (63) OR b.matchid = @SportType)
+						AND (@SportType = 0 OR m3rd.sporttype IS NULL OR m3rd.SportType = @SportType)
 						AND (@MatchId = 0 OR b.matchid = @MatchId)
 						AND (@Ip = '' OR b.ip = @Ip)
 						AND 1 = CASE
@@ -228,6 +231,7 @@ BEGIN
 						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (1, 3, 5, 25, 27)
+						LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.ProductID IN (69)
 						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
@@ -242,6 +246,7 @@ BEGIN
 						AND (@SportType = 0 OR l.sporttype IS NULL OR l.sporttype = @SportType)
 						AND (@SportType = 0 OR vr.sporttype IS NULL OR vr.sporttype = @SportType)
 						AND (@SportType = 0 OR s.ProductId NOT IN (63) OR b.matchid = @SportType)
+						AND (@SportType = 0 OR m3rd.sporttype IS NULL OR m3rd.SportType = @SportType)
 						AND (@MatchId = 0 OR b.matchid = @MatchId)
 						AND (@Ip = '' OR b.ip = @Ip)
 						AND 1 = CASE

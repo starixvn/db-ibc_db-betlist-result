@@ -69,6 +69,7 @@ AS
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220216@Kos: Support search by IP [RedmineID: #166079]
+		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 */
 
 BEGIN
@@ -531,6 +532,7 @@ BEGIN
 							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+							LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
@@ -539,7 +541,8 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0
 								OR (m.sporttype = @SportType AND s.EventType = 1)
-								OR (b.matchid = @SportType AND s.ProductId IN (63)))
+								OR (b.matchid = @SportType AND s.ProductId IN (63))
+								OR (m3rd.SportType = @SportType AND s.EventType = 5))
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
@@ -863,6 +866,7 @@ BEGIN
 							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+							LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
@@ -871,7 +875,8 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0
 								OR (m.sporttype = @SportType AND s.EventType = 1)
-								OR (b.matchid = @SportType AND s.ProductId IN (63)))
+								OR (b.matchid = @SportType AND s.ProductId IN (63))
+								OR (m3rd.SportType = @SportType AND s.EventType = 5))
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
@@ -1197,6 +1202,7 @@ BEGIN
 							INNER JOIN #TempCust AS c ON b.custid = c.CustId
 							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+							LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
@@ -1205,7 +1211,8 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0
 								OR (m.sporttype = @SportType AND s.EventType = 1)
-								OR (b.matchid = @SportType AND s.ProductId IN (63)))
+								OR (b.matchid = @SportType AND s.ProductId IN (63))
+								OR (m3rd.SportType = @SportType AND s.EventType = 5))
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
@@ -1529,6 +1536,7 @@ BEGIN
 						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
 							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+							LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 							CROSS APPLY ( SELECT CustId FROM #TempCust ) AS t
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 							AND t.CustId = b.custid
@@ -1539,7 +1547,8 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0
 								OR (m.sporttype = @SportType AND s.EventType = 1)
-								OR (b.matchid = @SportType AND s.ProductId IN (63)))
+								OR (b.matchid = @SportType AND s.ProductId IN (63))
+								OR (m3rd.SportType = @SportType AND s.EventType = 5))
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
@@ -1675,6 +1684,7 @@ BEGIN
 		UPDATE b
 		SET b.Product = CASE
 							WHEN s.ProductId = 63 THEN 'SLT'						-- Sports Lottery
+							WHEN s.ProductId = 69 THEN 'BTC'						-- Bitcoin
 							WHEN s.EventType = 0 AND s.ProductId = 1 THEN 'Parlay'	-- Sportsbook Parlay
 							WHEN s.EventType = 1 AND s.ProductId = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 2 AND s.ProductId = 1 THEN 'Outright'
@@ -1928,16 +1938,17 @@ BEGIN
 					SportType = CASE
 									WHEN b.Product = 'SLT' THEN b.MatchId
 									WHEN b.Product = 'SB' THEN m.sporttype
+									WHEN b.Product = 'BTC' THEN m3rd.SportType
 									WHEN b.Product = 'Outright' THEN l.sporttype
 									ELSE 0
 								END,
 					BetId = ISNULL(b.BetId, 0),
 					BetTeam = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.BetTeam
+								WHEN b.Product IN ('SB', 'Parlay', 'BTC') THEN b.BetTeam
 								ELSE ''
 							END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp1
+								WHEN b.Product IN ('SB', 'Parlay', 'BTC') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
@@ -1949,7 +1960,7 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN b.Odds
+							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN b.Odds
 							ELSE 0
 						END,
 					MOdds = CASE
@@ -1982,7 +1993,7 @@ BEGIN
 								ELSE 0
 							END,
 					MatchId = CASE
-								WHEN b.Product IN ('SB') THEN b.matchid
+								WHEN b.Product IN ('SB', 'BTC') THEN b.matchid
 								ELSE 0
 							END,
 					MatchCode = CASE
@@ -1996,6 +2007,7 @@ BEGIN
 							END,
 					EventDate = CASE
 									WHEN b.Product IN ('SB') THEN m.GlobalShowTime
+									WHEN b.Product IN ('BTC') THEN m3rd.EndTime
 									ELSE b.WinLostDate
 								END,
 					HomeId = CASE
@@ -2032,7 +2044,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -2058,6 +2070,7 @@ BEGIN
 							END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
+					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND o.leagueid = l.leagueid
 				WHERE b.WhTicket = 1
@@ -2075,16 +2088,17 @@ BEGIN
 					SportType = CASE
 									WHEN b.Product = 'SLT' THEN b.MatchId
 									WHEN b.Product = 'SB' THEN m.sporttype
+									WHEN b.Product = 'BTC' THEN m3rd.SportType
 									WHEN b.Product = 'Outright' THEN l.sporttype
 									ELSE 0
 								END,
 					BetId = ISNULL(b.BetId, 0),
 					BetTeam = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.BetTeam
+								WHEN b.Product IN ('SB', 'Parlay', 'BTC') THEN b.BetTeam
 								ELSE ''
 							END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp1
+								WHEN b.Product IN ('SB', 'Parlay', 'BTC') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
@@ -2096,7 +2110,7 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN b.Odds
+							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN b.Odds
 							ELSE 0
 						END,
 					MOdds = CASE
@@ -2126,7 +2140,7 @@ BEGIN
 								ELSE 0
 							END,
 					MatchId = CASE
-								WHEN b.Product IN ('SB') THEN b.matchid
+								WHEN b.Product IN ('SB', 'BTC') THEN b.matchid
 								ELSE 0
 							END,
 					MatchCode = CASE
@@ -2140,6 +2154,7 @@ BEGIN
 							END,
 					EventDate = CASE
 									WHEN b.Product IN ('SB') THEN m.GlobalShowTime
+									WHEN b.Product IN ('BTC') THEN m3rd.EndTime
 									ELSE b.WinLostDate
 								END,
 					HomeId = CASE
@@ -2176,7 +2191,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -2202,6 +2217,7 @@ BEGIN
 							END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
+					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND o.leagueid = l.leagueid
 				WHERE b.WhTicket = 2
@@ -2281,16 +2297,17 @@ BEGIN
 					SportType = CASE
 									WHEN b.Product = 'SLT' THEN b.MatchId
 									WHEN b.Product = 'SB' THEN m.sporttype
+									WHEN b.Product = 'BTC' THEN m3rd.SportType
 									WHEN b.Product = 'Outright' THEN l.sporttype
 									ELSE 0
 								END,
 					BetId = ISNULL(b.BetId, 0),
 					BetTeam = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.BetTeam
+								WHEN b.Product IN ('SB', 'Parlay', 'BTC') THEN b.BetTeam
 								ELSE ''
 							END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp1
+								WHEN b.Product IN ('SB', 'Parlay', 'BTC') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
@@ -2302,7 +2319,7 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN b.Odds
+							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN b.Odds
 							ELSE 0
 						END,
 					MOdds = CASE
@@ -2335,7 +2352,7 @@ BEGIN
 								ELSE 0
 							END,
 					MatchId = CASE
-								WHEN b.Product IN ('SB') THEN b.matchid
+								WHEN b.Product IN ('SB', 'BTC') THEN b.matchid
 								ELSE 0
 							END,
 					MatchCode = CASE
@@ -2349,6 +2366,7 @@ BEGIN
 							END,
 					EventDate = CASE
 									WHEN b.Product IN ('SB') THEN m.GlobalShowTime
+									WHEN b.Product IN ('BTC') THEN m3rd.EndTime
 									ELSE b.WinLostDate
 								END,
 					HomeId = CASE
@@ -2385,7 +2403,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -2411,6 +2429,7 @@ BEGIN
 							END
 				FROM #Data AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
+					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND o.leagueid = l.leagueid
 				WHERE b.WhTicket = 1
@@ -2428,16 +2447,17 @@ BEGIN
 					SportType = CASE
 									WHEN b.Product = 'SLT' THEN b.MatchId
 									WHEN b.Product = 'SB' THEN m.sporttype
+									WHEN b.Product = 'BTC' THEN m3rd.SportType
 									WHEN b.Product = 'Outright' THEN l.sporttype
 									ELSE 0
 								END,
 					BetId = ISNULL(b.BetId, 0),
 					BetTeam = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.BetTeam
+								WHEN b.Product IN ('SB', 'Parlay', 'BTC') THEN b.BetTeam
 								ELSE ''
 							END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp1
+								WHEN b.Product IN ('SB', 'Parlay', 'BTC') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
@@ -2449,7 +2469,7 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN b.Odds
+							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN b.Odds
 							ELSE 0
 						END,
 					MOdds = CASE
@@ -2479,7 +2499,7 @@ BEGIN
 								ELSE 0
 							END,
 					MatchId = CASE
-								WHEN b.Product IN ('SB') THEN b.matchid
+								WHEN b.Product IN ('SB', 'BTC') THEN b.matchid
 								ELSE 0
 							END,
 					MatchCode = CASE
@@ -2493,6 +2513,7 @@ BEGIN
 							END,
 					EventDate = CASE
 									WHEN b.Product IN ('SB') THEN m.GlobalShowTime
+									WHEN b.Product IN ('BTC') THEN m3rd.EndTime
 									ELSE b.WinLostDate
 								END,
 					HomeId = CASE
@@ -2529,7 +2550,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					OriginalStake = CASE
@@ -2555,6 +2576,7 @@ BEGIN
 							END
 				FROM #Data AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
+					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND o.leagueid = l.leagueid
 				WHERE b.WhTicket = 2
