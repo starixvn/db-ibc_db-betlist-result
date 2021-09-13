@@ -152,6 +152,7 @@ AS
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 		- 20210714@Kos: Support CG [Redmine: #152619]
 		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
+		- 20210913@Kos: Hotfix - Missing CG [Redmine: #161485]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -3349,7 +3350,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
-				AND (sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 63, 66)
+				AND (sbt.ProductID IN (6, 8, 11, 21, 22, 24, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 62, 63, 66)
 					OR (sbt.ProductID = 3 AND sbt.EventType = 0))
 				AND b.ruben = 1
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')
