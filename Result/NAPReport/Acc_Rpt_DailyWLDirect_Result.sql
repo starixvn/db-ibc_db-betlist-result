@@ -2,8 +2,8 @@
 
 ALTER PROCEDURE [dbo].[Acc_Rpt_DailyWLDirect_Result]
 	@MatchId		INT,
-	@BetType		INT,
-	@LiveIndicator	TINYINT = 2,
+	@BetType		INT		= 0,
+	@LiveIndicator	TINYINT	= 2,
 	@TraderName		NVARCHAR(100) OUTPUT
 AS
 
@@ -35,6 +35,7 @@ AS
 		- 20191118@Kos: Support BMAIO [Redmine: #124017]
 		- 20210224@Kos: Support Cricket AIO [Redmine: #151011]
 		- 20210713@Kos: Support Beach Volleyball [Redmine: #157736]
+		- 20210914@Kos: Support view result from League WL report [Redmine: #160196]
 */
 
 BEGIN
@@ -118,15 +119,18 @@ BEGIN
 		WHERE m.matchid = @MatchId
 
 		-- Get trader name
-		SELECT TOP(1) @TraderName = c.username
-		FROM dbo.Dot_Admin_Assignment_Trader AS t WITH (NOLOCK)
-			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON t.TraderID = c.custid
-		WHERE t.matchid = @MatchId
-			AND t.bettype = @BetType
-			AND (@LiveIndicator = 2 OR t.liveindicator = @LiveIndicator)
-		ORDER BY
-			t.UpdatedTime DESC,
-			t.ID DESC
+		IF @BetType <> 0
+		BEGIN
+			SELECT TOP(1) @TraderName = c.username
+			FROM dbo.Dot_Admin_Assignment_Trader AS t WITH (NOLOCK)
+				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON t.TraderID = c.custid
+			WHERE t.matchid = @MatchId
+				AND t.bettype = @BetType
+				AND (@LiveIndicator = 2 OR t.liveindicator = @LiveIndicator)
+			ORDER BY
+				t.UpdatedTime DESC,
+				t.ID DESC
+		END
 
 		-- Get sport type
 		SELECT @SportType = sporttype
@@ -224,15 +228,18 @@ BEGIN
 		WHERE m.matchid = @MatchId
 
 		-- Get trader name
-		SELECT TOP(1) @TraderName = c.username
-		FROM dbo.Dot_Admin_Assignment_Trader AS t WITH (NOLOCK)
-			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON t.TraderID = c.custid
-		WHERE t.matchid = @MatchId
-			AND t.bettype = @BetType
-			AND (@LiveIndicator = 2 OR t.liveindicator = @LiveIndicator)
-		ORDER BY
-			t.UpdatedTime DESC,
-			t.ID DESC
+		IF @BetType <> 0
+		BEGIN
+			SELECT TOP(1) @TraderName = c.username
+			FROM dbo.Dot_Admin_Assignment_Trader AS t WITH (NOLOCK)
+				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON t.TraderID = c.custid
+			WHERE t.matchid = @MatchId
+				AND t.bettype = @BetType
+				AND (@LiveIndicator = 2 OR t.liveindicator = @LiveIndicator)
+			ORDER BY
+				t.UpdatedTime DESC,
+				t.ID DESC
+		END
 
 		-- Get sport type
 		SELECT @SportType = sporttype
@@ -334,27 +341,30 @@ BEGIN
 		FROM bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 		WHERE matchid = @MatchId
 
-		IF @EventDate < @CutOffDate
+		IF @BetType <> 0
 		BEGIN
-			SELECT @TraderName = c.username
-			FROM bodb_Archive.dbo.Dot_Admin_Assignment_Operator_bk AS o WITH (NOLOCK)
-				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
-				INNER JOIN DBDW.bodb_Account.dbo.TradingBettypeMapping AS m WITH (NOLOCK)
-					ON o.OperatorType = m.OperatorType AND o.bettype = m.TradingBetType
-			WHERE o.matchid = @MatchId AND m.TicketBetType = @BetType
-		END
-		ELSE
-		BEGIN
-			-- Get trader name
-			SELECT TOP(1) @TraderName = c.username
-			FROM bodb_Archive.dbo.Dot_Admin_Assignment_Trader_bk AS t WITH (NOLOCK)
-				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON t.TraderID = c.custid
-			WHERE t.matchid = @MatchId
-				AND t.bettype = @BetType
-				AND (@LiveIndicator = 2 OR t.liveindicator = @LiveIndicator)
-			ORDER BY
-				t.UpdatedTime DESC,
-				t.ID DESC
+			IF @EventDate < @CutOffDate
+			BEGIN
+				SELECT @TraderName = c.username
+				FROM bodb_Archive.dbo.Dot_Admin_Assignment_Operator_bk AS o WITH (NOLOCK)
+					INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON o.OperatorID = c.custid
+					INNER JOIN DBDW.bodb_Account.dbo.TradingBettypeMapping AS m WITH (NOLOCK)
+						ON o.OperatorType = m.OperatorType AND o.bettype = m.TradingBetType
+				WHERE o.matchid = @MatchId AND m.TicketBetType = @BetType
+			END
+			ELSE
+			BEGIN
+				-- Get trader name
+				SELECT TOP(1) @TraderName = c.username
+				FROM bodb_Archive.dbo.Dot_Admin_Assignment_Trader_bk AS t WITH (NOLOCK)
+					INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON t.TraderID = c.custid
+				WHERE t.matchid = @MatchId
+					AND t.bettype = @BetType
+					AND (@LiveIndicator = 2 OR t.liveindicator = @LiveIndicator)
+				ORDER BY
+					t.UpdatedTime DESC,
+					t.ID DESC
+			END
 		END
 
 		-- Get sport type
