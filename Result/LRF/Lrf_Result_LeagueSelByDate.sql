@@ -44,6 +44,7 @@ AS
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20211227@Kos: Exclude league and match which IsDeleted = 1 [RedmineID: #163733]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
+		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 */
 
 BEGIN
@@ -53,7 +54,7 @@ BEGIN
 
 	IF @EventDate > @MoveBetsDay
 	BEGIN
-		IF @SportType NOT IN (181, 182, 183, 184, 185, 193)
+		IF @SportType NOT IN (175, 181, 182, 183, 184, 185, 193)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -180,6 +181,21 @@ BEGIN
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
+		ELSE IF @SportType  = 175 --Bitcoin
+		BEGIN
+			SELECT DISTINCT
+				l.LeagueName,
+				l.League3rdId AS LeagueId,
+				m.EventDate,
+				m.SportType
+			FROM dbo.League3rd AS l WITH (NOLOCK)
+				INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON m.League3rdId = l.League3rdId
+			WHERE m.EventDate = @EventDate
+				AND m.EventStatus IN ('completed')
+				AND m.SportType = @SportType
+			ORDER BY m.SportType ASC,
+				l.LeagueName ASC
+		END
 		ELSE IF @SportType = 193
 		BEGIN
 			SELECT DISTINCT
@@ -228,7 +244,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		IF @SportType NOT IN (181, 182, 183, 184, 185, 193)
+		IF @SportType NOT IN (175, 181, 182, 183, 184, 185, 193)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -352,6 +368,21 @@ BEGIN
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
+		END
+		ELSE IF @SportType  = 175 --Bitcoin
+		BEGIN
+			SELECT DISTINCT
+				l.LeagueName,
+				l.League3rdId AS LeagueId,
+				m.EventDate,
+				m.SportType
+			FROM dbo.League3rd AS l WITH (NOLOCK)
+				INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON m.League3rdId = l.League3rdId
+			WHERE m.EventDate = @EventDate
+				AND m.EventStatus IN ('completed')
+				AND m.SportType = @SportType
+			ORDER BY m.SportType ASC,
+				l.LeagueName ASC
 		END
 		ELSE IF @SportType = 193
 		BEGIN

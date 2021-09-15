@@ -49,6 +49,7 @@ AS
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20211227@Kos: Exclude league and match which IsDeleted = 1 [RedmineID: #163733]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
+		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 */
 
 BEGIN
@@ -205,6 +206,17 @@ BEGIN
 			WHERE l.sporttype IN (181, 182, 183, 184, 185)
 				AND r.EventStatus = 'completed'
 		END
+
+		-- Bitcoin
+		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 69)
+		BEGIN
+			INSERT INTO @Sport
+			SELECT DISTINCT SportType
+			FROM dbo.Match3rd WITH (NOLOCK)
+			WHERE SportType IN (175)
+				AND EventDate = @EventDate
+				AND EventStatus = 'completed'
+		END
 	END
 	ELSE
 	BEGIN
@@ -345,6 +357,17 @@ BEGIN
 			WHERE l.sporttype IN (181, 182, 183, 184, 185)
 				AND r.EventStatus = 'completed'
 				AND o.EventDate = @EventDate
+		END
+
+		-- Bitcoin
+		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 69)
+		BEGIN
+			INSERT INTO @Sport
+			SELECT DISTINCT SportType
+			FROM dbo.Match3rd14 WITH (NOLOCK)
+			WHERE SportType IN (175)
+				AND EventDate = @EventDate
+				AND EventStatus = 'completed'
 		END
 	END
 
