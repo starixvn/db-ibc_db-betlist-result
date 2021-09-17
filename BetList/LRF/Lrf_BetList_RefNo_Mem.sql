@@ -2,7 +2,8 @@
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_RefNo_Mem]
 	@AgentList		VARCHAR(MAX),
-	@RefNo			BIGINT,
+	@RefNo			BIGINT			= 0,
+	@TxId			VARCHAR(100)	= '',
 	@CustId			INT				= 0,
 	@Username		VARCHAR(50)		= '',
 	@MoveBetsDay	SMALLDATETIME,
@@ -59,12 +60,14 @@ AS
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 		- 20210714@Kos: Support CG [Redmine: #152619]
+		- 20210917@Kos: Support search by licensee TxId [Redmine: #161706]
+					- Add new input param @TxId VARCHAR(100)
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+	DECLARE @TempAg TABLE (CustId INT PRIMARY KEY, Currency INT)
 
 	-- Get AgentList
 	DECLARE @DocHandler INT
@@ -92,12 +95,24 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
-	SELECT ProductID, BetType, EventType, RefTable
-	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 62, 63, 66)
-		AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914, 999)
-		AND BetType NOT BETWEEN 801 AND 899
+	IF @RefNo <> 0		-- Search by refno
+	BEGIN
+		INSERT INTO @SportBettype
+		SELECT ProductID, BetType, EventType, RefTable
+		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+		WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 62, 63, 66)
+			AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914, 999)
+			AND BetType NOT BETWEEN 801 AND 899
+	END
+	ELSE IF ISNULL(@TxId, '') <> ''		-- Search by licensee TxId
+	BEGIN
+		INSERT INTO @SportBettype
+		SELECT ProductID, BetType, EventType, RefTable
+		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
+		WHERE ProductID IN (1)
+			AND BetType NOT IN (901, 902, 903, 904, 999)
+			AND BetType NOT BETWEEN 801 AND 899
+	END
 
 	-- Get CustId in case of inputting Username
 	IF @CustId = 0 AND @Username <> ''
@@ -200,96 +215,32 @@ BEGIN
 
 	IF @CustId <> -1
 	BEGIN
-		-- Translog range
-		IF @WhTicket = 0
+		IF @RefNo <> 0		-- Search by refno
 		BEGIN
-			SELECT TOP(1)
-				@TransId = b.translogid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = b.recommend,
-				@Currency = b.currency,
-				@BetType = b.gameID,
-				@ProductId = s.ProductID,
-				@EventType = s.EventType,
-				@RefTable = s.RefTable,
-				@WhTicket = 1		-- translog
-			FROM dbo.translog AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON b.gameID = s.bettype
-			WHERE b.translogid = @RefNo
-				AND s.RefTable = 3
-				AND (b.custid = @CustId OR @CustId = 0)
-				AND b.statusID IN (0, 1)
-		END
-
-		-- Bettrans range
-		IF @WhTicket = 0
-		BEGIN
-			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = b.recommend,
-				@Currency = b.currency,
-				@BetType = b.bettype,
-				@RefCode = b.RefCode,
-				@ProductId = s.ProductID,
-				@EventType = s.EventType,
-				@RefTable = s.RefTable,
-				@WhTicket = 2		-- bettrans
-			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-			WHERE (b.transid = @RefNo
-					OR (b.refno = @RefNo AND s.RefTable = 3))
-				AND (b.custid = @CustId OR @CustId = 0)
-				AND b.winlostdate > @MoveBetsDay
-		END
-
-		-- Bettrans14 range
-		IF @WhTicket = 0
-		BEGIN
-			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = b.recommend,
-				@Currency = b.currency,
-				@BetType = b.bettype,
-				@RefCode = b.RefCode,
-				@ProductId = s.ProductID,
-				@EventType = s.EventType,
-				@RefTable = s.RefTable,
-				@WhTicket = 3		-- bettrans14
-			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-			WHERE (b.transid = @RefNo
-					OR (b.refno = @RefNo AND s.RefTable = 3))
-				AND (b.custid = @CustId OR @CustId = 0)
-				AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
-		END
-
-		-- Bettrans_bk range
-		IF @WhTicket = 0
-		BEGIN
-			IF @CustId = 0
+			-- Translog range
+			IF @WhTicket = 0
 			BEGIN
 				SELECT TOP(1)
-					@TransId = b.transid,
+					@TransId = b.translogid,
 					@CustId = b.custid,
 					@WinLostDate = b.winlostdate,
 					@Recommend = b.recommend,
 					@Currency = b.currency,
-					@BetType = b.bettype,
-					@RefCode = b.RefCode,
+					@BetType = b.gameID,
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
 					@RefTable = s.RefTable,
-					@WhTicket = 4		-- bettrans_bk
-				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-				WHERE b.transid = @RefNo
+					@WhTicket = 1		-- translog
+				FROM dbo.translog AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON b.gameID = s.bettype
+				WHERE b.translogid = @RefNo
+					AND s.RefTable = 3
+					AND (b.custid = @CustId OR @CustId = 0)
+					AND b.statusID IN (0, 1)
 			END
-			ELSE
+
+			-- Bettrans range
+			IF @WhTicket = 0
 			BEGIN
 				SELECT TOP(1)
 					@TransId = b.transid,
@@ -302,12 +253,42 @@ BEGIN
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
 					@RefTable = s.RefTable,
-					@WhTicket = 4		-- bettrans_bk
-				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_transid)
+					@WhTicket = 2		-- bettrans
+				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-				WHERE b.custid = @CustId AND b.transid = @RefNo
+				WHERE (b.transid = @RefNo
+						OR (b.refno = @RefNo AND s.RefTable = 3))
+					AND (b.custid = @CustId OR @CustId = 0)
+					AND b.winlostdate > @MoveBetsDay
+			END
 
-				IF @WhTicket = 0
+			-- Bettrans14 range
+			IF @WhTicket = 0
+			BEGIN
+				SELECT TOP(1)
+					@TransId = b.transid,
+					@CustId = b.custid,
+					@WinLostDate = b.winlostdate,
+					@Recommend = b.recommend,
+					@Currency = b.currency,
+					@BetType = b.bettype,
+					@RefCode = b.RefCode,
+					@ProductId = s.ProductID,
+					@EventType = s.EventType,
+					@RefTable = s.RefTable,
+					@WhTicket = 3		-- bettrans14
+				FROM dbo.bettrans14 AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+				WHERE (b.transid = @RefNo
+						OR (b.refno = @RefNo AND s.RefTable = 3))
+					AND (b.custid = @CustId OR @CustId = 0)
+					AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
+			END
+
+			-- Bettrans_bk range
+			IF @WhTicket = 0
+			BEGIN
+				IF @CustId = 0
 				BEGIN
 					SELECT TOP(1)
 						@TransId = b.transid,
@@ -321,19 +302,118 @@ BEGIN
 						@EventType = s.EventType,
 						@RefTable = s.RefTable,
 						@WhTicket = 4		-- bettrans_bk
-					FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+					FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-					WHERE b.custid = @CustId
-						AND b.refno = @RefNo
-						AND s.RefTable = 3
+					WHERE b.transid = @RefNo
+				END
+				ELSE
+				BEGIN
+					SELECT TOP(1)
+						@TransId = b.transid,
+						@CustId = b.custid,
+						@WinLostDate = b.winlostdate,
+						@Recommend = b.recommend,
+						@Currency = b.currency,
+						@BetType = b.bettype,
+						@RefCode = b.RefCode,
+						@ProductId = s.ProductID,
+						@EventType = s.EventType,
+						@RefTable = s.RefTable,
+						@WhTicket = 4		-- bettrans_bk
+					FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_transid)
+						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+					WHERE b.custid = @CustId AND b.transid = @RefNo
+
+					IF @WhTicket = 0
+					BEGIN
+						SELECT TOP(1)
+							@TransId = b.transid,
+							@CustId = b.custid,
+							@WinLostDate = b.winlostdate,
+							@Recommend = b.recommend,
+							@Currency = b.currency,
+							@BetType = b.bettype,
+							@RefCode = b.RefCode,
+							@ProductId = s.ProductID,
+							@EventType = s.EventType,
+							@RefTable = s.RefTable,
+							@WhTicket = 4		-- bettrans_bk
+						FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						WHERE b.custid = @CustId
+							AND b.refno = @RefNo
+							AND s.RefTable = 3
+					END
 				END
 			END
-		END
 
-		IF @WhTicket > 0
-			AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
+			IF @WhTicket > 0
+				AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
+			BEGIN
+				SET @WhTicket = 0
+			END
+		END
+		ELSE IF ISNULL(@TxId, '') <> ''
 		BEGIN
-			SET @WhTicket = 0
+			-- Bettrans range
+			IF @WhTicket = 0
+			BEGIN
+				SELECT TOP(1)
+					@TransId = b.transid,
+					@CustId = b.custid,
+					@WinLostDate = b.winlostdate,
+					@Recommend = b.recommend,
+					@Currency = b.currency,
+					@BetType = b.bettype,
+					@RefCode = b.RefCode,
+					@ProductId = s.ProductID,
+					@EventType = s.EventType,
+					@RefTable = s.RefTable,
+					@WhTicket = 2		-- bettrans
+				FROM dbo.bettrans AS b WITH (NOLOCK)
+					INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
+					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+				WHERE (b.custid = @CustId OR @CustId = 0)
+					AND b.winlostdate > @MoveBetsDay
+					AND @TxId = CASE
+									WHEN b.ExtraInfo LIKE '%p1%'
+										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@lt)[1]','VARCHAR(100)'), 0)
+									ELSE ''
+								END
+			END
+
+			-- Bettrans14 range
+			IF @WhTicket = 0
+			BEGIN
+				SELECT TOP(1)
+					@TransId = b.transid,
+					@CustId = b.custid,
+					@WinLostDate = b.winlostdate,
+					@Recommend = b.recommend,
+					@Currency = b.currency,
+					@BetType = b.bettype,
+					@RefCode = b.RefCode,
+					@ProductId = s.ProductID,
+					@EventType = s.EventType,
+					@RefTable = s.RefTable,
+					@WhTicket = 3		-- bettrans14
+				FROM dbo.bettrans14 AS b WITH (NOLOCK)
+					INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
+					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+				WHERE (b.custid = @CustId OR @CustId = 0)
+					AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
+					AND @TxId = CASE
+									WHEN b.ExtraInfo LIKE '%p1%'
+										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@lt)[1]','VARCHAR(100)'), 0)
+									ELSE ''
+								END
+			END
+
+			IF @WhTicket > 0
+				AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
+			BEGIN
+				SET @WhTicket = 0
+			END
 		END
 	END
 
@@ -1286,9 +1366,10 @@ BEGIN
 
 	-- BettransRnG tables
 	SET @WhTicket = 0
+	SET @ProductId = 0
 	SET @CustId = @OriginalCustId
 
-	IF @CustId <> -1
+	IF @CustId <> -1 AND @RefNo <> 0		-- Search by refno
 	BEGIN
 		-- BettransRnG range
 		IF @WhTicket = 0
@@ -1642,9 +1723,10 @@ BEGIN
 
 	-- BettransLC tables
 	SET @WhTicket = 0
+	SET @ProductId = 0
 	SET @CustId = @OriginalCustId
 
-	IF @CustId <> -1
+	IF @CustId <> -1 AND @RefNo <> 0		-- Search by refno
 	BEGIN
 		-- BettransLC range
 		IF @WhTicket = 0
@@ -1922,9 +2004,10 @@ BEGIN
 
 	-- Bettransg tables
 	SET @WhTicket = 0
+	SET @ProductId = 0
 	SET @CustId = @OriginalCustId
 
-	IF @CustId <> -1
+	IF @CustId <> -1 AND @RefNo <> 0		-- Search by refno
 	BEGIN
 		-- Bettransg range
 		IF @WhTicket = 0
@@ -2216,32 +2299,24 @@ BEGIN
 
 	-- Get exchange rate
 	DECLARE @ExchangeRate AS TABLE (
-		ExchangeDate	SMALLDATETIME,
-		ExchangeId		INT,
-		Rate			FLOAT
+		ExchangeId					INT,
+		FirstExchangeDateByMonth	SMALLDATETIME,
+		LastExchangeDateByMonth		SMALLDATETIME,
+		Rate						FLOAT
 	)
 
 	IF @BaseCurrency <> ''
 	BEGIN
 		INSERT INTO @ExchangeRate
 		SELECT
-			e.exchangedate,
 			e.ExchangeId,
-			CASE
-				WHEN @BaseCurrency = 'MYR' THEN e.MYR
-				WHEN @BaseCurrency = 'USD' THEN e.USD
-				WHEN @BaseCurrency = 'EUR' THEN e.EUR
-				WHEN @BaseCurrency = 'CNY' THEN e.CNY
-				WHEN @BaseCurrency = 'IDR' THEN e.IDR
-				WHEN @BaseCurrency = 'GBP' THEN e.GBP
-				WHEN @BaseCurrency = 'THB' THEN e.THB
-				WHEN @BaseCurrency = 'INH' THEN e.INH
-				WHEN @BaseCurrency = 'BDT' THEN e.BDT
-				WHEN @BaseCurrency = 'INR' THEN e.INR
-				ELSE 1
-			END AS Rate
-		FROM Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e
-		WHERE EXISTS (SELECT 1 FROM @Data WHERE Currency = e.ExchangeId AND WinLostDate = e.exchangedate)
+			e.FromDate,
+			e.ToDate,
+			e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
+		WHERE EXISTS (SELECT 1 FROM @Data
+					WHERE Currency = e.ExchangeId
+						AND WinLostDate BETWEEN e.FromDate AND e.ToDate	)
 	END
 
 	-- Get ticket detail
@@ -2269,7 +2344,9 @@ BEGIN
 		FROM dbo.bettransm AS bm WITH (NOLOCK)
 			INNER JOIN @Data AS b ON bm.refno = b.RefNo AND bm.custid = @CustId
 			INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-			LEFT JOIN @ExchangeRate AS e ON e.ExchangeDate = b.WinLostDate AND e.ExchangeId = b.Currency
+			LEFT JOIN @ExchangeRate AS e
+				ON e.ExchangeId = b.Currency
+				AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 		WHERE b.TransId = @TransId
 			AND sbt.ProductID = 5
 			AND sbt.EventType = 3
@@ -2289,7 +2366,9 @@ BEGIN
 		FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 			INNER JOIN @Data AS b ON bm.refno = b.RefNo AND bm.custid = @CustId
 			INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-			LEFT JOIN @ExchangeRate AS e ON e.ExchangeDate = b.WinLostDate AND e.ExchangeId = b.Currency
+			LEFT JOIN @ExchangeRate AS e
+				ON e.ExchangeId = b.Currency
+				AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 		WHERE b.TransId = @TransId
 			AND sbt.ProductID = 5
 			AND sbt.EventType = 3
@@ -2309,7 +2388,9 @@ BEGIN
 		FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 			INNER JOIN @Data AS b ON bm.refno = b.RefNo AND bm.custid = @CustId
 			INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-			LEFT JOIN @ExchangeRate AS e ON e.ExchangeDate = b.WinLostDate AND e.ExchangeId = b.Currency
+			LEFT JOIN @ExchangeRate AS e
+				ON e.ExchangeId = b.Currency
+				AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 		WHERE b.TransId = @TransId
 			AND sbt.ProductID = 5
 			AND sbt.EventType = 3
@@ -2370,7 +2451,8 @@ BEGIN
 	FROM @Data AS a
 		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = a.CustId
 		LEFT JOIN @ExchangeRate AS e
-			ON e.ExchangeDate = a.WinLostDate AND e.ExchangeId = a.Currency
+			ON e.ExchangeId = a.Currency
+			AND a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY a.TransDate ASC
 
 	SELECT DISTINCT * FROM @Detail
