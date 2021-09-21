@@ -50,6 +50,7 @@ AS
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
+		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
 */
 
 BEGIN
@@ -196,14 +197,14 @@ BEGIN
 					WHERE SettlementStatusID > 0
 						AND (@SportType IN (9, 45)	-- Badminton, Beach Volleyball
 							OR (@SportType = 50
-								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
+								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))
 					UNION ALL
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
 						AND (@SportType IN (9, 45)	-- Badminton, Beach Volleyball
 							OR (@SportType = 50
-								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
+								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))
 					UNION ALL
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailES WITH (NOLOCK)
@@ -481,7 +482,7 @@ BEGIN
 					OR (LEN(ResourceID) = 4 AND @SportType = 9)
 					OR (SettlementStatusID > 0
 						AND (@SportType IN (9, 45)
-							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))))
+							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
@@ -584,7 +585,7 @@ BEGIN
 					OR (LEN(ResourceID) = 4 AND @SportType = 9)
 					OR (SettlementStatusID > 0
 						AND (@SportType IN (9, 45)	--Badminton, Beach Volleyball
-							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))))
+							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END

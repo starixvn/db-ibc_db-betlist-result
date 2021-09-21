@@ -1,1 +1,3 @@
-BetList/LRF/Lrf_BetList_Licensee.sql
+Result\NAP\Acc_BetList_SelMatchResult.sql
+Result\Alpha\Age_BetList_SelMatchResult.sql
+Result\Alpha\Age_BetList_SelMatchResultParlay.sql

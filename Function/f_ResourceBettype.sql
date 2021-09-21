@@ -31,6 +31,7 @@ AS
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
+		- 20210922@Razor: Support Cricket AIO 1.2 - add bettype 9442, 9443 [Redmine: #160409]
 */
 
 BEGIN
@@ -562,7 +563,9 @@ BEGIN
 	SELECT 50, 13, 'Cricket AIO', 9611, '94842%'	UNION ALL
 	SELECT 50, 13, 'Cricket AIO', 9612, '94852%'	UNION ALL
 	SELECT 50, 13, 'Cricket AIO', 9613, '94901%'	UNION ALL
-	SELECT 50, 13, 'Cricket AIO', 9614, '94911%'
+	SELECT 50, 13, 'Cricket AIO', 9614, '94911%'	UNION ALL
+	SELECT 50, 13, 'Cricket AIO', 9442, '9442'		UNION ALL
+	SELECT 50, 13, 'Cricket AIO', 9443, '9443'
 	
 	RETURN
 END

@@ -43,6 +43,7 @@ AS
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
+		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
 */
 
 BEGIN
@@ -116,7 +117,7 @@ BEGIN
 												AND m.matchid = o.MatchId
 												AND (m.sporttype IN (9, 45)		-- Badminton, Beach Volleyball
 													OR (m.sporttype = 50	-- Cricket
-														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
+														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											)
 								OR EXISTS (	SELECT 1
@@ -229,7 +230,7 @@ BEGIN
 												AND m.matchid = o.MatchId
 												AND (m.sporttype IN (9, 45)		-- Badminton, Beach Volleyball
 													OR (m.sporttype = 50	-- Cricket
-														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))
+														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											)
 							OR EXISTS (	SELECT 1
