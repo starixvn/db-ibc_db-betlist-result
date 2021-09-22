@@ -32,6 +32,7 @@ AS
 		- 20201006@Razor: Support Time Machine Over/Under [Redmine: #141998]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 		- 20210420@Kos: Support Time Machine Over/Under [Redmine: #153302]
+		- 20210922@Kos: Support Cricket AIO 1.2 [Redmine: #160452]
 */
 
 BEGIN
@@ -156,7 +157,7 @@ BEGIN
 					OR (LEN(ResourceID) = 4 AND @SportType = 9)
 					OR (SettlementStatusID > 0
 						AND (@SportType = 9
-							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))))
+							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))))
 		END
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
@@ -295,7 +296,7 @@ BEGIN
 					OR (LEN(ResourceID) = 4 AND @SportType = 9)
 					OR (SettlementStatusID > 0
 						AND (@SportType = 9
-							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9446', '9447', '9450', '9449', '9452', '9453')))))
+							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))))
 		END
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
