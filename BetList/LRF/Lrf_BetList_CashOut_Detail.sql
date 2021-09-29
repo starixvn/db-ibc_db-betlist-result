@@ -29,6 +29,7 @@ AS
 				- Add @MoveBetsDay and @BalanceUpDay input params
 		- 20191128@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -119,7 +120,7 @@ BEGIN
 		LiveAwayScore		INT,
 		LeagueId			INT,
 		SportType			SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		MatchId				INT,
 		IsNeutral			BIT,
 		WinLost				MONEY,

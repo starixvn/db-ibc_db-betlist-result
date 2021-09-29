@@ -17,6 +17,7 @@ AS
 		- 20210118@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #148100]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210720@Kos: Support Vgaming [Redmine: 158106]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -74,7 +75,7 @@ BEGIN
 		LicenseeWL		MONEY,
 		Comm			MONEY,
 		PlayerComm		MONEY,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
 		BetdaqId		BIGINT

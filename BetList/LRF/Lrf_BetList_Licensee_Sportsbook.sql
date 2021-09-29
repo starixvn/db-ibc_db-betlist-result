@@ -60,6 +60,7 @@ AS
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210316@Kos: Support Cricket AIO [Redmine: #148962]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -115,7 +116,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(1),
 		LeagueId			INT,
 		MatchId				INT,
@@ -170,7 +171,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(1),
 		LeagueId			INT,
 		MatchId				INT,

@@ -165,6 +165,7 @@ AS
 		- 20210714@Kos: Support CG [Redmine: #152619]
 		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210805@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #159739]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -275,7 +276,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
@@ -335,7 +336,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),

@@ -40,6 +40,7 @@ AS
 		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 		- 20191031@Kos: Show Running status for Marked tickets [Redmine: 120309]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -92,7 +93,7 @@ BEGIN
 		LiveIndicator		INT,
 		Discount			DECIMAL(9,8),
 		LeagueId			INT,
-		Ip					NVARCHAR(30),
+		Ip					VARCHAR(45),
 		IsNeutral			BIT,
 		OddsType			TINYINT,
 		Currency			SMALLINT,

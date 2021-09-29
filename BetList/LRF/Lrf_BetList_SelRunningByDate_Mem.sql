@@ -148,6 +148,7 @@ AS
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 		- 20210714@Kos: Support CG [Redmine: #152619]
 		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -283,7 +284,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(30),
+		Ip					VARCHAR(45),
 		IsNeutral			BIT,
 		OddsType			INT,
 		ShowTime			NVARCHAR(50),
@@ -318,7 +319,7 @@ BEGIN
 		LiveIndicator	BIT,
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
-		Ip				NVARCHAR(50),
+		Ip				VARCHAR(45),
 		OddsType		TINYINT,
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),

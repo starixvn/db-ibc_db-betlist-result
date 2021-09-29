@@ -26,6 +26,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
 		- 20210519@Kos: Support Big Gaming [Redmine: #146773]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 
 	Parameters:
 		- @TransType
@@ -123,7 +124,7 @@ BEGIN
 		WinLost			MONEY,
 		Comm			MONEY,
 		PlayerComm		MONEY,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(2000),
 		MatchCode		VARCHAR(50),

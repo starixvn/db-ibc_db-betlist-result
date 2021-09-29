@@ -25,6 +25,7 @@ AS
 
 	Revisions:
 		- 20200413@Kos: Support God Of Fortune WL report [Redmine: #152900]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -75,7 +76,7 @@ BEGIN
 		TransDate			DATETIME,
 		WinLostDate			SMALLDATETIME,
 		LiveHomeScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetCheck			NVARCHAR(50),
 		ExtraInfo			VARCHAR(1000),
 		TableID				TINYINT
@@ -107,7 +108,7 @@ BEGIN
 		TransDate			DATETIME,
 		WinLostDate			SMALLDATETIME,
 		LiveHomeScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetCheck			NVARCHAR(50),
 		ExtraInfo			VARCHAR(1000),
 		TableID				TINYINT

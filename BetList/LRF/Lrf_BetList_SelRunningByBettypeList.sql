@@ -38,6 +38,7 @@ AS
 		- 20191226@Kos: Support Bet Builder [Redmine: #108298]
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145832]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -94,7 +95,7 @@ BEGIN
 		LiveIndicator		INT,
 		Discount			DECIMAL(9,8),
 		LeagueId			INT,
-		Ip					NVARCHAR(30),
+		Ip					VARCHAR(45),
 		IsNeutral			BIT,
 		OddsType			TINYINT,
 		Currency			SMALLINT,

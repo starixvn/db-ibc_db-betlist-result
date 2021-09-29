@@ -81,6 +81,7 @@ AS
 					- Add new param @MoveBetsDay SMALLDATETIME
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210323@Kos: Support show IP [Redmine: #151085]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -168,7 +169,7 @@ BEGIN
 		BetStatus			NVARCHAR(50),
 		IsNeutral			BIT,
 		OddsType			INT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetId				BIGINT,
 		Currency			SMALLINT,
 		RefNo				BIGINT,
@@ -948,7 +949,7 @@ BEGIN
 		BetStatus			NVARCHAR(50),
 		IsNeutral			BIT,
 		OddsType			INT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetId				BIGINT,
 		Currency			SMALLINT,
 		RefNo				BIGINT,

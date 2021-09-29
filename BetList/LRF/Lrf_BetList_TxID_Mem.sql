@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20200529@Kos: Created [#Redmine: 80941]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -103,7 +104,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(1),
 		LeagueId			INT,
 		MatchId				INT,

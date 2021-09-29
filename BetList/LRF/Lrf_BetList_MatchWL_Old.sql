@@ -23,10 +23,11 @@ AS
 	Created: 20210614@Kos
 	Task: LAP - Bet List of Match Win Loss Report - BK range
 	DB: DBARC.bodb_Archive
-	
+
 	Revisions:
 		- 20210614@Kos: Support bk range for Match Win Loss report [Redmine: #151151]
 		- 20210830@Kos: Hotfix - Sort in LicenseeWL column [Redmine: #160910]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 
 	Param's Explanation:
 		+ @LiveIndicator:
@@ -129,7 +130,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(1),
 		LeagueId			INT,
 		MatchId				INT,
@@ -187,7 +188,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(1),
 		LeagueId			INT,
 		MatchId				INT,

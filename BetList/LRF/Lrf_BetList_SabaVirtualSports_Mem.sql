@@ -27,6 +27,7 @@ AS
 	Revisions:
 		- 20201002@Kos: New SP [RedmineID: #141454]
 		- 20210520@Kos: Support Saba Soccer PinGoal [RedmineID: #155335]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -105,7 +106,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
@@ -160,7 +161,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),

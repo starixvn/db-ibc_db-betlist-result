@@ -40,6 +40,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
 		- 20210624@Kos: Support CG [Redmine: #152619]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 
 	Parameters:
 		- @TransType
@@ -139,7 +140,7 @@ BEGIN
 		LicenseeWL		MONEY,
 		Comm			MONEY,
 		PlayerComm		MONEY,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		TransDesc		NVARCHAR(1000),
 		BetCheck		VARCHAR(64),
 		MatchCode		VARCHAR(1000),

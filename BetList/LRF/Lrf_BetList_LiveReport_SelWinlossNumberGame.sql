@@ -40,6 +40,7 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -112,7 +113,7 @@ BEGIN
 		LiveIndicator	BIT,
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		BetFrom			NVARCHAR(1),
 		LeagueId		INT,
 		MatchId			INT,
@@ -149,7 +150,7 @@ BEGIN
 		LiveIndicator	BIT,
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		BetFrom			NVARCHAR(1),
 		LeagueId		INT,
 		MatchId			INT,

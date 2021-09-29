@@ -61,6 +61,7 @@ AS
 		- 20210311@Kos: Support Sports Lottery [Redmine: #150872]
 		- 20210323@Kos: Support show IP [Redmine: #151085]
 		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -179,7 +180,7 @@ BEGIN
 		LicenseeWL			MONEY,
 		Comm				MONEY,
 		PlayerComm			MONEY,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		Race				VARCHAR(20),
 		BetCheck			NVARCHAR(50),
 		TransDesc			NVARCHAR(1000),

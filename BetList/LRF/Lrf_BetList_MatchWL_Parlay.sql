@@ -50,6 +50,7 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -105,7 +106,7 @@ BEGIN
 		LiveIndicator	BIT,
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
-		Ip				VARCHAR(30),
+		Ip				VARCHAR(45),
 		Currency		SMALLINT,
 		AWinLost		MONEY,
 		BetCheck		NVARCHAR(50),
@@ -408,7 +409,7 @@ BEGIN
 		LiveIndicator	BIT,
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
-		Ip				VARCHAR(30),
+		Ip				VARCHAR(45),
 		Currency		SMALLINT,
 		AWinLost		MONEY,
 		BetCheck		NVARCHAR(50),

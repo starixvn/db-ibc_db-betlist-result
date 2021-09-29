@@ -34,6 +34,7 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -99,7 +100,7 @@ BEGIN
 		LiveAwayScore	SMALLINT,
 		LeagueId		INT,
 		MatchId			INT,
-		Ip				VARCHAR(30),
+		Ip				VARCHAR(45),
 		Currency		SMALLINT,
 		ShowTime		DATETIME
 	)
@@ -283,7 +284,7 @@ BEGIN
 		LiveAwayScore	SMALLINT,
 		LeagueId		INT,
 		MatchId			INT,
-		Ip				VARCHAR(30),
+		Ip				VARCHAR(45),
 		Currency		SMALLINT,
 		ShowTime		DATETIME
 	)

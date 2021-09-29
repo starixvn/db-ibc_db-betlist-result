@@ -68,6 +68,7 @@ AS
 		- 20210325@Kos: Support betfrom '8', '9' [Redmine: #152158]
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 		- 20210518@Kos: Support multiple selection on Platform filter [Redmine: #153102]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -159,7 +160,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		BetTeam			NVARCHAR(10),
 		OddsType		TINYINT,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		CurrencyId		SMALLINT,
 		SpecialLevel	INT,
 		BetCheck		NVARCHAR(100),

@@ -65,6 +65,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210916@Kos: Support Cricket [Redmine: 160452]
 					- Add new input params @FromDate SMALLDATETIME, @ToDate SMALLDATETIME, @MoveBetsDay SMALLDATETIME
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -144,7 +145,7 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		MatchId				INT,
-		Ip					NVARCHAR(30),
+		Ip					VARCHAR(45),
 		BetStatus			NVARCHAR(50),
 		IsNeutral			BIT,
 		OddsType			INT,

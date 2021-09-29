@@ -57,6 +57,7 @@ AS
 		- 20210316@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210323@Kos: Support show IP [Redmine: #151085]
 		- 20210415@Kos: Hotfix - redundant code [Redmine: #153535]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -144,7 +145,7 @@ BEGIN
 		BetStatus			NVARCHAR(50),
 		IsNeutral			BIT,
 		OddsType			INT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetId				BIGINT,
 		Currency			SMALLINT,
 		RefNo				BIGINT,

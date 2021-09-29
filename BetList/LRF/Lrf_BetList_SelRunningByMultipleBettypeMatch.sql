@@ -37,6 +37,7 @@ AS
 		- 20190729@Kos: Support new status Pending [#Redmine: 117729]
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 120309]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 */
 
 BEGIN
@@ -90,7 +91,7 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Discount			DECIMAL(9, 8),
-		Ip					NVARCHAR(20),
+		Ip					VARCHAR(45),
 		IsNeutral			BIT,
 		OddsType			TINYINT,
 		BetId				BIGINT,
