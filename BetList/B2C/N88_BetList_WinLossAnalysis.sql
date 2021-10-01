@@ -28,6 +28,7 @@ AS
 	Revisions:
 		- 20210504@Kos: Created [Redmine: #139333]
 		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
+		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 
 */
 
@@ -133,7 +134,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
@@ -188,7 +189,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
