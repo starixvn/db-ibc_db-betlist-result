@@ -21,6 +21,7 @@ AS
 					- Don't return column Race, FinalOdds, FinalOdds2, AllowDelete, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, VirtualRate, IsShowOTExRate,
 						SPositionTaking2, MPositionTaking2, APositionTaking2
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -61,7 +62,7 @@ BEGIN
 		FinalAwayScore		INT,
 		LeagueId			INT,
 		SportType			SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(1),
 		MatchId				INT,
 		IsNeutral			BIT,

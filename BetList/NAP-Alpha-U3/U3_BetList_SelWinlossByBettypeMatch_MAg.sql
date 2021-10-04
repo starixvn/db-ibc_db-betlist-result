@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 		- 20170810@Kos: Support Lucky 3 [#Redmine: 75277]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -213,7 +214,7 @@ BEGIN
 		, FinalAwayScore	SMALLINT
 		, HtHomeScore		SMALLINT
 		, HtAwayScore		SMALLINT
-		, Ip				NVARCHAR(15)
+		, Ip				VARCHAR(45)
 		, LeagueId			INT
 		, MatchId			INT
 		, MatchCode			NVARCHAR(50)

@@ -22,6 +22,7 @@ AS
 					- Don't return column Race, Placing, OddsSpread
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20210901@Kos: Fix duplicate ticket during Move Bet [Redmine: #160019]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -155,7 +156,7 @@ BEGIN
 		, FinalAwayScore	SMALLINT
 		, HtHomeScore		SMALLINT
 		, HtAwayScore		SMALLINT
-		, Ip				NVARCHAR(15)
+		, Ip				VARCHAR(45)
 		, LeagueId			INT
 		, MatchId			INT
 		, MatchCode			NVARCHAR(50)
