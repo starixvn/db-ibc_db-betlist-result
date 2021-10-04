@@ -72,6 +72,7 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -127,7 +128,7 @@ BEGIN
 		LiveAwayScore	INT,
 		LeagueId		INT,
 		SportType		SMALLINT,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		BetFrom			NVARCHAR (1),
 		MatchId			INT,
 		WinLost			MONEY,

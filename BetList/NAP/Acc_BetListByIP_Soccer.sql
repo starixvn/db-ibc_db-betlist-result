@@ -2,7 +2,7 @@
 
 ALTER PROCEDURE [dbo].[Acc_BetListByIP_Soccer]
 	@CustId			INT,
-	@Ip				VARCHAR(15),
+	@Ip				VARCHAR(45),
 	@FromDate		SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME
@@ -60,6 +60,7 @@ AS
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 		- 20210812@Razor: Support Cashout for Basketball [Redmine: #159617]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -95,7 +96,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(1),
 		LeagueId			INT,
 		MatchId				INT,

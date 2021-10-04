@@ -33,6 +33,7 @@ AS
 		- 20201218@Kos: Support SiteId for GDG [Redmine: #147084]
 		- 20210112@Kos: Support Big Gaming [Redmine: #142455]
 		- 20210311@Razor: Support PP Live Casino [Redmine: #134042]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 
 	Parameters:
 		- @TransType
@@ -122,7 +123,7 @@ BEGIN
 		SComm			MONEY,
 		AComm			MONEY,
 		Comm			MONEY,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(2000),
 		MatchCode		VARCHAR(50),

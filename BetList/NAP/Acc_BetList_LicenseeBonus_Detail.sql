@@ -18,6 +18,7 @@ AS
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
@@ -65,7 +66,7 @@ BEGIN
 		FinalAwayScore		INT,
 		LeagueId			INT,
 		SportType			SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		MatchId				INT,
 		IsNeutral			BIT,
 		WinLost				MONEY,

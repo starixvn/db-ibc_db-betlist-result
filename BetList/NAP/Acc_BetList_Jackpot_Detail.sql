@@ -16,6 +16,7 @@ AS
 		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
 		- 20210119@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #147709]
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -62,7 +63,7 @@ BEGIN
 		Comm			MONEY,
 		AComm			MONEY,
 		SComm			MONEY,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
 		BetdaqId		BIGINT

@@ -15,6 +15,7 @@ AS
 		- 20180927@Kos: Support new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20190506@Kos: Show match KO time for single ticket [#Redmine: 112092]
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 
 	Parameters:
 		- @TransId: TransId of ticket bettype 901
@@ -61,7 +62,7 @@ BEGIN
 		FinalAwayScore		INT,
 		LeagueId			INT,
 		SportType			SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR (1),
 		MatchId				INT,
 		IsNeutral			BIT,

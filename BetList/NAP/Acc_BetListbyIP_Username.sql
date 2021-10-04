@@ -2,7 +2,7 @@
 
 ALTER PROCEDURE [dbo].[Acc_BetListbyIP_Username]
 	@FromDate		SMALLDATETIME,
-	@Ip				VARCHAR(15),
+	@Ip				VARCHAR(45),
 	@UserId			INT			= NULL,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
@@ -53,6 +53,7 @@ AS
 		- 20201126@Kos: Support Leap Gaming Virtual Sports 3 [Redmine: #131371]
 		- 20201224@Razor: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
  BEGIN

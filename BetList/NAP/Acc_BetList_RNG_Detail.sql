@@ -47,6 +47,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20210527@Razor: VGaming: Missing Return SiteId [Redmine: #155912]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -138,7 +139,7 @@ BEGIN
 		SComm			MONEY,
 		AComm			MONEY,
 		Comm			MONEY,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(50),
 		MatchCode		VARCHAR(1000),

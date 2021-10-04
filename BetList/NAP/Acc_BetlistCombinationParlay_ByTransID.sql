@@ -36,6 +36,7 @@ AS
 		- 20201028@Kos: Return transdate [Redmine: #144388]
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -114,7 +115,7 @@ BEGIN
 		Status			VARCHAR(20),
 		ComStatus		NVARCHAR(20),
 		BetTeam			VARCHAR(20),
-		Ip				VARCHAR(40),
+		Ip				VARCHAR(45),
 		SPositionTaking	SMALLMONEY,
 		MPositionTaking	SMALLMONEY,
 		APositionTaking	SMALLMONEY,

@@ -16,7 +16,7 @@ AS
 	Original:
 	Revisions:
 		- 20200410@Kos: Support BBIN [Redmine: #131362]
-
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -105,7 +105,7 @@ BEGIN
 		SComm			MONEY,
 		AComm			MONEY,
 		Comm			MONEY,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		TransDesc		NVARCHAR(2000),
 		BetCheck		NVARCHAR(50),
 		MatchCode		VARCHAR(50),
@@ -290,11 +290,4 @@ BEGIN
 
 	DROP TABLE #Data
 END
-GO
-
-
-
-GRANT	EXECUTE	ON	Acc_BetList_G_Detail	TO	bodbDownlineNetView
-GRANT	EXECUTE	ON	Acc_BetList_G_Detail	TO	bodbDownlineNet
-GRANT	EXECUTE	ON	Acc_BetList_G_Detail	TO	bodbAdminNet
 GO
