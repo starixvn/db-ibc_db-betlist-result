@@ -39,6 +39,7 @@ AS
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: #122391]
 		- 20191127@Kos: Hotfix - Oddsspread data type [Redmine: #124483]
 		- 20200922@Kos: Support Myanmar Odds [Redmine: #141825]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -91,7 +92,7 @@ BEGIN
 		, LiveIndicator		BIT
 		, LiveHomeScore		SMALLINT
 		, LiveAwayScore		SMALLINT
-		, Ip				NVARCHAR(15)
+		, Ip				VARCHAR(45)
 		, IsNeutral			BIT
 		, OddsType			TINYINT
 		, ShowTime			NVARCHAR(50)

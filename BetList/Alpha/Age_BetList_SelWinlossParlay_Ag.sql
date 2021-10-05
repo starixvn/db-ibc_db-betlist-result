@@ -36,6 +36,7 @@ AS
 		- 20160122@Kos: Support PH All In One 1.2 [#Redmine: 50897]
 		- 20180328@Kos: Increase Transdesc length to 1000 [Redmine: #92841]
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -74,7 +75,7 @@ BEGIN
 		liveindicator	BIT,
 		livehomescore	SMALLINT,
 		liveawayscore	SMALLINT,
-		IP				VARCHAR(20),
+		IP				VARCHAR(45),
 		isNeutral		BIT,
 		BetID			BIGINT,
 		comstatus		NVARCHAR(20),

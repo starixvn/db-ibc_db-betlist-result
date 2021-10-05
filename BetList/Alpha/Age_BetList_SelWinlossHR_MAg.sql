@@ -31,6 +31,7 @@ AS
 		- 20161010@Kos: Add product bet type range for sub tickets [Redmine: #65045]
 		- 20180201@Kos: Don't support Racing anymore [Redmine: #86086]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -85,7 +86,7 @@ BEGIN
 		LiveAwayScore	SMALLINT,
 		LeagueId		INT,
 		MatchId			INT,
-		Ip				VARCHAR(20),
+		Ip				VARCHAR(45),
 		BetStatus		VARCHAR(20),
 		IsNeutral		BIT,
 		ComStatus		NVARCHAR(20),

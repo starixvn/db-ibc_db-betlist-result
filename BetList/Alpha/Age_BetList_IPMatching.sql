@@ -2,7 +2,7 @@
 
 ALTER PROCEDURE [dbo].[Age_BetList_IPMatching]
 	@CustId			INT,
-	@Ip				VARCHAR(15),
+	@Ip				VARCHAR(45),
 	@Date			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME
 AS
@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20200116@Kos: Created [Redmine: #124701]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -75,7 +76,7 @@ BEGIN
 		FinalAwayScore		SMALLINT,
 		HtHomeScore			SMALLINT,
 		HtAwayScore			SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),

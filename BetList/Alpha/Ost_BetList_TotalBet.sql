@@ -15,6 +15,7 @@ AS
 	DB: DBOST.bodb_ost
 	Revisions:
 		- 20191025@Kos: Created [Redmine: #114231]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -72,7 +73,7 @@ BEGIN
 		LiveIndicator		BIT,
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		IsNeutral			BIT,
 		OddsType			TINYINT,
 		ShowTime			NVARCHAR(50),

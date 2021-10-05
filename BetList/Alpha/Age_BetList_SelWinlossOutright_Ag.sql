@@ -32,6 +32,7 @@ AS
 		- 20170605@Kos: Return column CustId for Microsite bet list [#Redmine: 66992]
 					- Prevent data duplication during Move Bet process
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -69,7 +70,7 @@ BEGIN
 		LiveAwayScore	SMALLINT,
 		LeagueId		INT,
 		MatchId			INT,
-		Ip				VARCHAR(20),
+		Ip				VARCHAR(45),
 		BetStatus		VARCHAR(20),
 		IsNeutral		BIT,
 		ComStatus		NVARCHAR(20)

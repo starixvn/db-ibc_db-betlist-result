@@ -26,6 +26,7 @@ AS
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
 					- Add new input params @FromDate SMALLDATETIME, @ToDate SMALLDATETIME, @MoveBetsDay SMALLDATETIME
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -157,7 +158,7 @@ BEGIN
 		FinalAwayScore		SMALLINT,
 		HtHomeScore			SMALLINT,
 		HtAwayScore			SMALLINT,
-		Ip					NVARCHAR(15),
+		Ip					VARCHAR(45),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),

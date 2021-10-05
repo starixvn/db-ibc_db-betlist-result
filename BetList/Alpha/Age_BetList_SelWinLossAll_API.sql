@@ -30,6 +30,7 @@ Revisions:
 	- 20111201@Jamie: Get two more fields: apositiontaking & discount 
 	- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 	- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
+	- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -67,7 +68,7 @@ BEGIN
 		Liveindicator bit,
 		Livehomescore smallint,
 		Liveawayscore smallint,
-		IP nvarchar(15),	
+		IP varchar(45),	
 		LeagueID int,
 		MatchID int,
 		MatchCode nvarchar(50),--VinhTrinh Add for Horseracing

@@ -39,6 +39,7 @@ AS
 					- Don't return betstatus, matchcode, homeid, awayid, leagueid, matchid, sporttype anymore
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -77,7 +78,7 @@ BEGIN
 		LiveIndicator	BIT,
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
-		Ip				VARCHAR(20),
+		Ip				VARCHAR(45),
 		IsNeutral		BIT,
 		BetId			BIGINT,
 		ComStatus		NVARCHAR(20),

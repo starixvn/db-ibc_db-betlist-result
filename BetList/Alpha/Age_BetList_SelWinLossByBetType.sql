@@ -18,6 +18,8 @@ AS
 		- 20201201@Kos: Created [Redmine: #131371]
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
+		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+
 */
 
 BEGIN
@@ -75,7 +77,7 @@ BEGIN
 		ADiscount		SMALLMONEY,
 		MDiscount		SMALLMONEY,
 		SDiscount		SMALLMONEY,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		ComStatus		NVARCHAR(20),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
