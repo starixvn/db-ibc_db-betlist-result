@@ -144,6 +144,7 @@ AS
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20210914@Razor: Support Cashout for Basketball [Redmine: #159617]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211004@Razor: Extend Data type of IP v6 - times 2 [Redmine: #90903]
 */
 
 BEGIN
@@ -1260,7 +1261,7 @@ BEGIN
 					LiveIndicator		BIT,
 					LiveHomeScore		SMALLINT,
 					LiveAwayScore		SMALLINT,
-					Ip					NVARCHAR(15),
+					Ip					VARCHAR(45),
 					BetFrom				NVARCHAR(1),
 					LeagueId			INT,
 					MatchId				INT,
