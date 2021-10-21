@@ -23,6 +23,7 @@ AS
 						SPositionTaking2, MPositionTaking2, APositionTaking2
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 */
 
 BEGIN
@@ -136,7 +137,7 @@ BEGIN
 			m.finalawayscore,
 			m.leagueid,
 			m.sporttype,
-			b.ip,
+			dp.ip,
 			b.betfrom,
 			b.matchid,
 			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
@@ -154,6 +155,7 @@ BEGIN
 			'' AS TransDesc
 		FROM
 			dbo.bettrans_bk AS b WITH (NOLOCK)
+			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.winlostdate BETWEEN @FromDate AND @ToDate
@@ -200,7 +202,7 @@ BEGIN
 			0,
 			0 AS leagueid,
 			b.matchid AS sporttype,
-			b.ip,
+			dp.ip,
 			b.betfrom,
 			0 AS matchid,
 			CONVERT(BIT, 0) AS IsNeutral,
@@ -217,6 +219,7 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			ISNULL(b.transdesc, '') AS TransDesc
 		FROM dbo.bettrans_bk AS b WITH (NOLOCK)
+			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.winlostdate BETWEEN @FromDate AND @ToDate
 			AND b.custid = @CustId

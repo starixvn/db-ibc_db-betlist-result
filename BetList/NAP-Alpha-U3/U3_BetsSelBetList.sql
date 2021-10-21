@@ -26,6 +26,7 @@ AS
 						SPositionTaking2, MPositionTaking2, APositionTaking2
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211025@Razor: Extend Data Type of SportType in temp table [Redmine: #90903]
 */
 
 BEGIN
@@ -77,7 +78,7 @@ BEGIN
 		FinalHomeScore	INT,
 		FinalAwayScore	INT,
 		LeagueId		INT,
-		SportType		SMALLINT,
+		SportType		INT,
 		Ip				VARCHAR(45),
 		BetFrom			NVARCHAR (1),
 		MatchId			INT,

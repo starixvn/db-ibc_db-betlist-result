@@ -21,6 +21,7 @@ AS
 					- Don't return column Race, Placing, OddsSpread
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 */
 
 BEGIN
@@ -182,7 +183,7 @@ BEGIN
 			, m.finalawayscore
 			, m.hthomescore
 			, m.htawayscore
-			, b.ip
+			, dp.ip
 			, m.leagueid
 			, m.matchid
 			, m.matchcode
@@ -196,6 +197,7 @@ BEGIN
 			, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 			, '' AS TransDesc
 		FROM dbo.bettrans_bk AS b WITH (NOLOCK)
+			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN @tempCust AS c ON b.transid = c.transid
 			INNER JOIN @custInfo AS ci ON c.custid = ci.custid
@@ -245,7 +247,7 @@ BEGIN
 			, 0 AS finalawayscore
 			, 0 AS hthomescore
 			, 0 AS htawayscore
-			, b.ip
+			, dp.ip
 			, 0 AS leagueid
 			, 0 AS matchid
 			, '' AS matchcode
@@ -259,6 +261,7 @@ BEGIN
 			, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 			, ISNULL(b.transdesc, '') AS TransDesc
 		FROM dbo.bettrans_bk AS b WITH (NOLOCK)
+			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN @tempCust AS c ON b.transid = c.transid
 			INNER JOIN @custInfo AS ci ON c.custid = ci.custid
 		WHERE c.WhTicket = 3 AND c.EventType = 0
