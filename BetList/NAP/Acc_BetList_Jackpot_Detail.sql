@@ -17,6 +17,7 @@ AS
 		- 20210119@Kos: Support Saba.club Jackpot Contribution and Jackpot Prize tickets [Redmine: #147709]
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 */
 
 BEGIN
@@ -182,11 +183,12 @@ BEGIN
 			(b.comm - b.playercomm) AS comm,
 			(b.acomm - b.comm) AS acomm,
 			(b.scomm - b.acomm) AS scomm,
-			b.ip,
+			dp.IP,
 			b.TranId3rd AS BetCheck,
 			b.transdesc,
 			ISNULL(b.RefNo2, -1) AS BetdaqId
 		FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
+			CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
 		WHERE b.custid = @CustId AND b.transid = @TransId
 	END

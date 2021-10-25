@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20200410@Kos: Support BBIN [Redmine: #131362]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -259,7 +260,7 @@ BEGIN
 			bg.scomm - bg.acomm AS SComm,
 			bg.acomm - bg.comm AS AComm,
 			bg.comm - bg.playercomm AS Comm,
-			b.ip,
+			dp.ip,
 			bg.transdesc,
 			ISNULL(bg.BetID3rd, '') AS BetCheck,
 			'' AS MatchCode,
@@ -270,6 +271,7 @@ BEGIN
 				ON b.transid = bg.refno
 				AND b.custid = bg.custid
 				AND sbt.ProductID = 47
+			CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 		WHERE bg.refno = @RefNo
 			AND bg.statusID IN (SELECT statusId FROM @tmpStatus)
 	END

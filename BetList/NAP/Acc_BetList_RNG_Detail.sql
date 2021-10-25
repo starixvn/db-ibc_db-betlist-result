@@ -48,6 +48,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20210527@Razor: VGaming: Missing Return SiteId [Redmine: #155912]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -345,7 +346,7 @@ BEGIN
 			(brng.scomm - brng.acomm) AS scomm,
 			(brng.acomm - brng.comm) AS acomm,
 			(brng.comm - brng.playercomm) AS comm,
-			brng.ip,
+			dp.IP,
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
@@ -375,6 +376,7 @@ BEGIN
 				ELSE ''
 			END AS ExtraInfo
 		FROM bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
+			CROSS APPLY dbo.f_IP_Decompress(brng.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.RefNo = @RefNo
 	END

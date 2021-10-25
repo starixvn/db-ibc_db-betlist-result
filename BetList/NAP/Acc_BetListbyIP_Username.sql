@@ -54,11 +54,15 @@ AS
 		- 20201224@Razor: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 */
 
  BEGIN
 	SET NOCOUNT ON
 
+	DECLARE @CompressedIp VARCHAR(16)
+	DECLARE @DeCompressedIp VARCHAR(45)
+	
 	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
 
@@ -209,6 +213,9 @@ AS
 	END
 	ELSE IF @FromDate < @BalanceUpDay
 	BEGIN
+		SELECT @CompressedIp = Ip FROM dbo.f_IP_Compress(@Ip)
+		SELECT @DeCompressedIp = Ip FROM dbo.f_IP_Decompress(@CompressedIp)
+		
 		INSERT INTO @UserTicket
 		SELECT
 			custid,
@@ -221,7 +228,8 @@ AS
 			0 AS SoccerBet,
 			COUNT(1) AS TotalBet
 		FROM bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
-		WHERE winlostdate = @FromDate AND ip = @Ip
+		CROSS APPLY dbo.f_IP_Decompress(ip) AS dp
+		WHERE winlostdate = @FromDate AND dp.Ip = @DeCompressedIp
 		GROUP BY
 			custid,
 			bettype,

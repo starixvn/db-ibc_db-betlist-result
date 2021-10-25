@@ -19,7 +19,8 @@ AS
 		- 20191029@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
-
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
 		- @RefCode: RefCode of summary ticket
@@ -288,7 +289,7 @@ BEGIN
 			m.finalawayscore,
 			m.leagueid,
 			m.sporttype,
-			b.ip,
+			dp.ip,
 			b.matchid,
 			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			(b.winlost - b.actual_stake) AS WinLost,
@@ -308,6 +309,7 @@ BEGIN
 			0 AS RefCode,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @WinLostDate

@@ -37,6 +37,7 @@ AS
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 */
 
 BEGIN
@@ -417,7 +418,7 @@ BEGIN
 			b.status,
 			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
 			b.betteam,
-			b.ip,
+			dp.ip,
 			b.spositiontaking,
 			b.mpositiontaking,
 			b.apositiontaking,
@@ -443,6 +444,7 @@ BEGIN
 				ELSE CONVERT(INT, b.betcheck)						-- new Parlay tickets
 			END AS Bitmap
 		FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+		CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 		WHERE b.custid = @CustId
 			AND b.transid = @TransId
 			AND b.bettype = 29

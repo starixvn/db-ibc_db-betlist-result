@@ -34,6 +34,7 @@ AS
 		- 20210112@Kos: Support Big Gaming [Redmine: #142455]
 		- 20210311@Razor: Support PP Live Casino [Redmine: #134042]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 
 	Parameters:
 		- @TransType
@@ -496,7 +497,7 @@ BEGIN
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm - bg.playercomm, 0)
 				ELSE blc.comm - blc.playercomm
 			END AS Comm,
-			blc.ip,
+			dp.IP,
 			blc.transdesc,
 			CASE
 				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59, 65) THEN blc.TranId3rd
@@ -517,6 +518,7 @@ BEGIN
 				ELSE 0
 			END AS LeagueId
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
+			CROSS APPLY dbo.f_IP_Decompress(blc.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
 				ON bg.refno = blc.transid

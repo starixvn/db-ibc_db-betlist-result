@@ -145,6 +145,7 @@ AS
 		- 20210914@Razor: Support Cashout for Basketball [Redmine: #159617]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211004@Razor: Extend Data type of IP v6 - times 2 [Redmine: #90903]
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 */
 
 BEGIN
@@ -238,6 +239,9 @@ BEGIN
 	DECLARE @Date DATETIME
 
 	SET @Date = @FromDate
+
+	DECLARE @CompressedIp VARCHAR(16)
+	DECLARE @DeCompressedIp VARCHAR(45)
 
 	-- bettrans range
 	IF @Date > @MoveBetsDay
@@ -545,6 +549,9 @@ BEGIN
 	END
 	ELSE IF @Date < @BalanceUpDay		-- bettrans_bk range
 	BEGIN
+		SELECT @CompressedIp = Ip FROM dbo.f_IP_Compress(@Ip)
+		SELECT @DeCompressedIp = Ip FROM dbo.f_IP_Decompress(@CompressedIp)
+
 		-- bettrans_bk
 		INSERT INTO @Data (
 			TransId,
@@ -625,9 +632,10 @@ BEGIN
 			ISNULL(b.RefCode, 0),
 			3 AS TableID
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+		CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
-			AND b.ip = @Ip
+			AND dp.Ip = @DeCompressedIp
 			
 		-- Get more info for CashOut tickets
 		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)
@@ -1771,8 +1779,10 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					Ip = dp.Ip
 				FROM @Data AS b
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 					LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid

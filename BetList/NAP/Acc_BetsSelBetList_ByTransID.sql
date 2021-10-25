@@ -159,6 +159,7 @@ AS
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 */
 
 BEGIN
@@ -2993,7 +2994,7 @@ BEGIN
 					m.finalawayscore,
 					m.leagueid,
 					m.sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					b.matchid,
 					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
@@ -3033,6 +3034,7 @@ BEGIN
 					END AS RefCode
 				FROM
 					bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType
 					INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				WHERE b.transid = @TransId AND s.EventType = 1
@@ -3160,7 +3162,7 @@ BEGIN
 					0,
 					0 AS leagueid,
 					0 AS sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					0 matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
@@ -3187,6 +3189,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode
 				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+				CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 				WHERE b.transid = @TransId
 					AND b.matchid IN (9, 29, 2799)
 					AND b.bettype IN (9, 29, 2799)
@@ -3261,7 +3264,7 @@ BEGIN
 						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					CASE
 						WHEN s.ProductID = 12 THEN b.matchid
@@ -3301,6 +3304,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode
 				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
 					AND (s.ProductID IN (8, 12, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68)
@@ -3357,7 +3361,7 @@ BEGIN
 					0 finalawayscore,
 					0 leagueid,
 					m.sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					b.matchid,
 					0 IsNeutral,
@@ -3382,6 +3386,7 @@ BEGIN
 					0 AS RefCode
 				FROM
 					DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					INNER JOIN DBARC.bodb_Archive.dbo.Match3rd_bk AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
 				WHERE b.transid = @TransId
@@ -3436,7 +3441,7 @@ BEGIN
 					0,
 					odds.leagueid,
 					l.sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					b.matchid,
 					CONVERT(BIT,0) AS IsNeutral,
@@ -3460,6 +3465,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode
 				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN bodb_archive.dbo.Outright_bk AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 					INNER JOIN dbo.league AS l WITH (NOLOCK) ON odds.leagueid = l.leagueid
 				WHERE b.bettype = 10 AND b.transid = @TransId
@@ -3514,7 +3520,7 @@ BEGIN
 					0 finalawayscore,
 					r.leagueid,
 					r.sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					b.matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
@@ -3543,6 +3549,7 @@ BEGIN
 					0 AS RefCode
 				FROM
 					bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 					INNER JOIN bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
 					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType 
@@ -3613,7 +3620,7 @@ BEGIN
 					0,
 					0 AS leagueid,
 					204 AS sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
@@ -3637,6 +3644,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode
 				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					LEFT JOIN bodb_archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
 				WHERE b.transid = @TransId AND s.ProductID = 15
@@ -3719,7 +3727,7 @@ BEGIN
 						WHEN s.ProductID = 32 THEN 248
 						ELSE 0
 					END AS sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					b.betdaqid AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
@@ -3749,6 +3757,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode
 				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
 					AND (s.ProductID IN (11, 21, 22, 23, 24, 32, 39)
@@ -3807,7 +3816,7 @@ BEGIN
 					m.finalawayscore,
 					m.leagueid,
 					m.sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					b.matchid,
 					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
@@ -3835,6 +3844,7 @@ BEGIN
 					ISNULL(b.RefCode, 0) AS RefCode
 				FROM
 					bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @Data AS b1
 						ON b.custid = b1.CustId
 						AND b.winlostdate = b1.WinLostDate
@@ -4326,7 +4336,7 @@ BEGIN
 					0 AS finalawayscore,
 					0 AS leagueid,
 					b.productID AS Sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
@@ -4359,6 +4369,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode
 				FROM bodb_archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @WinLostDate
@@ -4659,7 +4670,7 @@ BEGIN
 						ELSE 0
 					END AS leagueid,
 					b.productID AS Sporttype,
-					b.ip,
+					dp.ip,
 					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
@@ -4683,6 +4694,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode
 				FROM bodb_archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @WinLostDate
@@ -4997,8 +5009,8 @@ BEGIN
 						ELSE b.matchid
 					END AS Sporttype,
 					CASE
-						WHEN s.ProductID = 39 THEN ISNULL(blc.ip, '')
-						ELSE ISNULL(b2.ip, '')
+						WHEN s.ProductID = 39 THEN ISNULL(dp.ip, '')
+						ELSE ISNULL(dp2.ip, '')
 					END AS Ip,
 					b.betfrom,
 					0 AS matchid,
@@ -5031,7 +5043,9 @@ BEGIN
 				FROM bodb_Archive.dbo.bettransg AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.Bettype
 					LEFT JOIN bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK) ON b.refno = blc.transid AND b.custid = blc.custid
+					CROSS APPLY bodb02.dbo.f_IP_Decompress(blc.Ip) AS dp
 					LEFT JOIN bodb_Archive.dbo.bettrans_bk AS b2 WITH (NOLOCK) ON b2.transid = b.refno AND b2.custid = b.CustId
+					CROSS APPLY bodb02.dbo.f_IP_Decompress(b2.Ip) AS dp2
 				WHERE b.transid = @TransId AND s.ProductID IN (39, 47)
 			END
 		END

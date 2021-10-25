@@ -16,7 +16,8 @@ AS
 		- 20190506@Kos: Show match KO time for single ticket [#Redmine: 112092]
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
-
+		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		
 	Parameters:
 		- @TransId: TransId of ticket bettype 901
 		- @RefNo: RefNo of ticket bettype 901
@@ -256,7 +257,7 @@ BEGIN
 			m.finalawayscore,
 			m.leagueid,
 			m.sporttype,
-			b.ip,
+			dp.IP,
 			b.betfrom,
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
@@ -274,6 +275,7 @@ BEGIN
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN DBARC.bodb_Archive.dbo.bettrans_bk AS b1 WITH (NOLOCK) ON b1.refno = b.transid
 		WHERE b1.transid = @TransId
