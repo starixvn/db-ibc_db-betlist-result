@@ -29,6 +29,7 @@ AS
 		- 20210504@Kos: Created [Redmine: #139333]
 		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 
 */
 
@@ -463,7 +464,7 @@ BEGIN
 			b.liveindicator,
 			b.livehomescore,
 			b.liveawayscore,
-			b.ip,
+			dp.IP,
 			b.matchid,
 			b.betcheck,
 			b.comstatus,
@@ -475,6 +476,7 @@ BEGIN
 			3 AS TableID
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_transid)
 			INNER JOIN #Tickets AS t ON b.transid = t.transid
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.winlostdate < @BalanceUpDay
 	END
 
