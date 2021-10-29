@@ -30,6 +30,7 @@ AS
 		- 20191128@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 */
 
 BEGIN
@@ -322,7 +323,7 @@ BEGIN
 			b.liveawayscore,
 			m.leagueid,
 			m.sporttype,
-			b.ip,
+			dp.IP,
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			(b.winlost - b.actual_stake) AS WinLost,
@@ -345,6 +346,7 @@ BEGIN
 			END AS OriginalBetType
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.transid = @OriginalTransId
 			AND b.recommend IN (SELECT CustId FROM @TempAg)
 			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)

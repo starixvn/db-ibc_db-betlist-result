@@ -67,6 +67,7 @@ AS
 		- 20210714@Kos: Support CG [Redmine: #152619]
 		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 */
 
 BEGIN
@@ -682,7 +683,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				b.betfrom,
 				b.matchid,
 				b.betcheck,
@@ -695,6 +696,7 @@ BEGIN
 				3 AS TableID
 			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @_Date
 				AND 1 = CASE

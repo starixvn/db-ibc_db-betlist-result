@@ -4,7 +4,9 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_RNG_Detail]
 	@AgentList		VARCHAR(MAX),
 	@CustId			INT,
 	@RefNo			BIGINT,
-	@TransType		TINYINT	= 0,
+	@TransType		TINYINT			= 0,
+	@MoveBetsDay	SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME,
 	@BaseCurrency	VARCHAR(10)
 AS
 
@@ -41,6 +43,8 @@ AS
 		- 20210524@Kos: Support Vgaming [Redmine: #151583]
 		- 20210624@Kos: Support CG [Redmine: #152619]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
+					- Add new params @MoveBetsDay SMALLDATETIME and @BalanceUpDay SMALLDATETIME
 
 	Parameters:
 		- @TransType
@@ -150,7 +154,7 @@ BEGIN
 		ExtraInfo		VARCHAR(1000)
 	)
 
-	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo )
+	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate > @MoveBetsDay)
 	BEGIN
 		INSERT INTO @tmpBettransRnG
 		SELECT
@@ -211,7 +215,7 @@ BEGIN
 			AND brng.RefNo = @RefNo
 			AND brng.statusID IN (SELECT StatusId FROM @tmpStatus)
 	END
-	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @RefNo )
+	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay )
 	BEGIN
 		INSERT INTO @tmpBettransRnG
 		SELECT
@@ -300,7 +304,7 @@ BEGIN
 				ELSE brng.comm
 			END AS Comm,
 			brng.playercomm,
-			brng.ip,
+			dp.IP,
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
@@ -327,6 +331,7 @@ BEGIN
 			END AS ExtraInfo
 		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
+			CROSS APPLY dbo.f_IP_Decompress(brng.ip) AS dp
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
 	END
 

@@ -99,6 +99,7 @@ AS
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 		- 20210714@Kos: Support Casino products [Redmine: #157987]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 */
 
 BEGIN
@@ -714,7 +715,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				b.betfrom,
 				b.matchid,
 				b.betcheck,
@@ -727,6 +728,7 @@ BEGIN
 				3 AS TableID
 			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'

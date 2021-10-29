@@ -18,6 +18,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210720@Kos: Support Vgaming [Redmine: 158106]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 */
 
 BEGIN
@@ -167,12 +168,13 @@ BEGIN
 			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.comm AS Comm,
 			b.playercomm AS PlayerComm,
-			b.ip,
+			dp.IP,
 			b.TranId3rd AS BetCheck,
 			b.transdesc,
 			ISNULL(b.RefNo2, -1) AS BetdaqId
 		FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId AND b.transid = @TransId
 	END
 

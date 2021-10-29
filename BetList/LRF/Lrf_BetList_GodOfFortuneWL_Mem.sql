@@ -26,6 +26,7 @@ AS
 	Revisions:
 		- 20200413@Kos: Support God Of Fortune WL report [Redmine: #152900]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 */
 
 BEGIN
@@ -336,11 +337,12 @@ BEGIN
 				b.transdate,
 				b.winlostdate,
 				b.livehomescore,
-				b.ip,
+				dp.IP,
 				b.betcheck,
 				b.ExtraInfo,
 				3 AS TableID
 			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.statusID IN (111, 112, 113)

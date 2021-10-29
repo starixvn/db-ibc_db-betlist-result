@@ -28,6 +28,7 @@ AS
 		- 20201002@Kos: New SP [RedmineID: #141454]
 		- 20210520@Kos: Support Saba Soccer PinGoal [RedmineID: #155335]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -544,7 +545,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				b.matchid,
 				b.betcheck,
 				b.comstatus,
@@ -555,6 +556,7 @@ BEGIN
 				ISNULL(b.RefCode, 0),
 				3 AS TableID
 			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.statusID IN (111, 112, 113)

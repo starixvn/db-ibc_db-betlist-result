@@ -4,7 +4,9 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LC_Detail]
 	@AgentList		VARCHAR(MAX),
 	@CustId			INT,
 	@RefNo			BIGINT,
-	@TransType		TINYINT	= 0,
+	@TransType		TINYINT			= 0,
+	@MoveBetsDay	SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME,
 	@BaseCurrency	VARCHAR(10)
 AS
 
@@ -27,6 +29,8 @@ AS
 		- 20210506@Kos: Support WM Live Casino [Redmine: #140944]
 		- 20210519@Kos: Support Big Gaming [Redmine: #146773]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
+					- Add new params @MoveBetsDay SMALLDATETIME and @BalanceUpDay SMALLDATETIME
 
 	Parameters:
 		- @TransType
@@ -131,7 +135,7 @@ BEGIN
 		BetTeam			NVARCHAR(50)
 	)
 
-	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo )
+	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate > @MoveBetsDay )
 	BEGIN
 		INSERT INTO @tmpBettransLC
 		SELECT
@@ -204,7 +208,7 @@ BEGIN
 			AND blc.RefNo = @RefNo
 			AND blc.statusID IN (SELECT StatusId FROM @tmpStatus)
 	END
-	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @RefNo )
+	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay )
 	BEGIN
 		INSERT INTO @tmpBettransLC
 		SELECT
@@ -322,7 +326,7 @@ BEGIN
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, 0)
 				ELSE blc.playercomm
 			END AS PlayerComm,
-			blc.ip,
+			dp.IP,
 			blc.transdesc,
 			CASE
 				WHEN sbt.productID IN (21, 45, 51, 57, 59) THEN blc.TranId3rd
@@ -344,6 +348,7 @@ BEGIN
 				ON bg.refno = blc.transid
 				AND bg.custid = blc.custid
 				AND sbt.ProductID = 39
+			CROSS APPLY dbo.f_IP_Decompress(blc.ip) AS dp
 		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
 	END
 

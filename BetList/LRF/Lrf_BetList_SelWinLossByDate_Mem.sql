@@ -166,6 +166,7 @@ AS
 		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210805@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #159739]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 */
 
 BEGIN
@@ -738,7 +739,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				b.matchid,
 				b.betcheck,
 				b.comstatus,
@@ -749,6 +750,7 @@ BEGIN
 				ISNULL(b.RefCode, 0),
 				3 AS TableID
 			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.statusID IN (111, 112, 113)

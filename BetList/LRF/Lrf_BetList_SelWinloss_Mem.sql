@@ -154,6 +154,7 @@ AS
 		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210913@Kos: Hotfix - Missing CG [Redmine: #161485]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -2519,7 +2520,7 @@ BEGIN
 			b.liveindicator,
 			b.livehomescore,
 			b.liveawayscore,
-			b.ip,
+			dp.IP,
 			b.currency,
 			b.matchid,
 			b.betcheck,
@@ -2539,6 +2540,7 @@ BEGIN
 		FROM
 			bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS BA WITH (NOLOCK) ON b.transid = BA.transid
+			CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 		WHERE
 			b.winlostdate BETWEEN @fdate AND @TempToDate
 			AND b.custid = @CustId
@@ -2756,7 +2758,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				m.leagueid,
 				m.matchid,
 				m.matchcode,
@@ -2790,6 +2792,7 @@ BEGIN
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN bodb_Archive.dbo.match_BK AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
@@ -2827,7 +2830,7 @@ BEGIN
 				0 AS LiveIndicator,
 				b.LiveHomescore,
 				b.LiveAwayscore,
-				b.ip,
+				dp.IP,
 				m.LeagueID,
 				m.OrId, --MatchID
 				m.MatchCode,
@@ -2855,6 +2858,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.Outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
@@ -2901,7 +2905,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				0, --LeagueID
 				0, --MatchID
 				'',--MatchCode
@@ -2927,6 +2931,7 @@ BEGIN
 			FROM
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
@@ -2971,7 +2976,7 @@ BEGIN
 				b.liveindicator,
 				ob.livehomescore,
 				ob.liveawayscore,
-				b.ip,
+				dp.IP,
 				m.leagueid,
 				m.matchid,
 				m.matchcode,
@@ -2999,6 +3004,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON b.refno = ob.transid
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
@@ -3041,7 +3047,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				m.leagueid,
 				m.matchid,
 				m.matchcode,
@@ -3068,6 +3074,7 @@ BEGIN
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
@@ -3137,7 +3144,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				m.leagueid,
 				m.matchid,
 				m.matchcode,
@@ -3170,6 +3177,7 @@ BEGIN
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid 
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @CustId 
@@ -3208,7 +3216,7 @@ BEGIN
 				b.Liveindicator,
 				b.Livehomescore,
 				b.Liveawayscore,
-				b.ip,
+				dp.IP,
 				r.LeagueID,
 				o.EventID MatchID,
 				CONVERT(VARCHAR(50), o.RacerNum) AS MatchCode,
@@ -3235,6 +3243,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate 
 				AND b.custid = @CustId 
@@ -3311,7 +3320,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				0 AS LeagueID,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.bettype
@@ -3348,6 +3357,7 @@ BEGIN
 			FROM
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype sbt ON b.Bettype = sbt.Bettype
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
@@ -3386,7 +3396,7 @@ BEGIN
 				0 AS LiveIndicator,
 				0 AS LiveHomeScore,
 				0 AS LiveAwayScore,
-				b.ip,
+				dp.IP,
 				0 AS LeagueId,
 				0 AS MatchId,
 				'' AS MatchCode,
@@ -3413,6 +3423,7 @@ BEGIN
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype sbt ON b.bettype = sbt.Bettype
 				LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId

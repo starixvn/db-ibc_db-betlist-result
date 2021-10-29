@@ -112,6 +112,7 @@ AS
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -1670,6 +1671,7 @@ BEGIN
 		END
 	END
 
+	-- bettrans_bk range
 	IF @fdate < @BalanceUpDay
 	BEGIN
 		IF @tdate >= DATEADD(dd, -1, @BalanceUpDay)
@@ -1704,7 +1706,7 @@ BEGIN
 			b.liveindicator,
 			b.livehomescore,
 			b.liveawayscore,
-			b.ip,
+			dp.IP,
 			b.currency,
 			b.matchid,
 			ISNULL(b.betcheck, '') AS BetCheck,
@@ -1724,6 +1726,7 @@ BEGIN
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.transid
 			INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE
 			b.winlostdate BETWEEN @fdate AND @TempToDate
 			AND b.custid = @CustId
@@ -1981,7 +1984,7 @@ BEGIN
 					WHEN sbt.ProductID = 1 THEN b.liveawayscore
 					ELSE 0
 				END AS LiveAwayScore,
-				b.ip,
+				dp.IP,
 				0 AS LeagueId,
 				CASE
 					WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.bettype
@@ -2022,6 +2025,7 @@ BEGIN
 				bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE sbt.EventType = 0
 				AND (sbt.ProductID IN (3, 6, 8, 22, 24, 27, 28, 40, 43, 63)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
@@ -2067,7 +2071,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				m.leagueid,
 				m.matchid,
 				m.matchcode,
@@ -2123,6 +2127,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE sbt.EventType = 1
 				AND (sbt.ProductID IN (3, 5, 27)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
@@ -2162,7 +2167,7 @@ BEGIN
 				0 AS LiveIndicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				m.leagueid,
 				m.orid AS MatchId,
 				m.matchcode,
@@ -2190,6 +2195,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.Outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE b.bettype = 10
 				AND b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId
@@ -2227,7 +2233,7 @@ BEGIN
 				b.liveindicator,
 				b.livehomescore,
 				b.liveawayscore,
-				b.ip,
+				dp.IP,
 				r.LeagueID,
 				o.EventID AS MatchId,
 				CONVERT(VARCHAR(50), o.RacerNum) AS MatchCode,
@@ -2256,6 +2262,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE sbt.EventType = 3
 				AND sbt.ProductID = 5
 				AND b.winlostdate BETWEEN @fdate AND @TempToDate

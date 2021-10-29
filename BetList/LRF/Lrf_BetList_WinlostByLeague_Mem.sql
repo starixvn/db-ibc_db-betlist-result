@@ -58,6 +58,7 @@ AS
 		- 20210323@Kos: Support show IP [Redmine: #151085]
 		- 20210415@Kos: Hotfix - redundant code [Redmine: #153535]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 
 	Param's Explanation: 
 		- @AgentList : Agent List, XML format (<ROOT><Agent AgentId="12345" Currency="3"/></ROOT>)
@@ -540,7 +541,7 @@ BEGIN
 				m.betstatus,
 				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				b.oddstype,
-				b.ip,
+				dp.IP,
 				b.betid,
 				b.currency,
 				b.refno,
@@ -570,6 +571,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @TempAg AS ta ON b.recommend = ta.custid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE m.leagueid = @LeagueId
 				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (SELECT StatusID FROM @Status)

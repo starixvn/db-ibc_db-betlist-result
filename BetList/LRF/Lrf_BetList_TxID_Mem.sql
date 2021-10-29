@@ -18,6 +18,7 @@ AS
 		- 20200529@Kos: Created [#Redmine: 80941]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 */
 
 BEGIN
@@ -673,7 +674,7 @@ BEGIN
 				WHEN @Product IN ('SB', 'Outright') THEN b.liveawayscore
 				ELSE 0
 			END AS LiveAwayScore,
-			b.ip,
+			dp.IP,
 			b.betfrom,
 			CASE
 				WHEN @Product IN ('SB') THEN m.leagueid
@@ -754,6 +755,7 @@ BEGIN
 			LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON @Product IN ('SB') AND b.matchid = m.matchid
 			LEFT JOIN bodb_Archive.dbo.Outright_bk AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.transid IN (@TransId, @BonusTransId)
 	END
 

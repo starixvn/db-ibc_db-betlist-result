@@ -63,6 +63,7 @@ AS
 		- 20210917@Kos: Support search by licensee TxId [Redmine: #161706]
 					- Add new input param @TxId VARCHAR(100)
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 */
 
 BEGIN
@@ -1216,7 +1217,7 @@ BEGIN
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.liveawayscore
 				ELSE 0
 			END AS LiveAwayScore,
-			b.ip,
+			dp.IP,
 			b.betfrom,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.leagueid
@@ -1315,6 +1316,7 @@ BEGIN
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 			LEFT JOIN bodb_Archive.dbo.VSOutright_bk AS vo WITH (NOLOCK) ON @Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON @Product IN ('VR') AND vr.EventID = vo.EventID
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.transid IN (@TransId, @BonusTransId)
 
 		-- Get more info for CashOut tickets
@@ -1636,60 +1638,60 @@ BEGIN
 		BEGIN
 			INSERT INTO @Data
 			SELECT
-				transid,
-				transid AS RefNo,
-				custid,
-				currency,
-				recommend,
-				productID AS SportType,
-				gameID AS BetType,
+				b.transid,
+				b.transid AS RefNo,
+				b.custid,
+				b.currency,
+				b.recommend,
+				b.productID AS SportType,
+				b.gameID AS BetType,
 				0 AS BetId,
 				CASE
-					WHEN @Product IN ('HB', 'CG') THEN GameId3rd
+					WHEN @Product IN ('HB', 'CG') THEN b.GameId3rd
 					ELSE ''
 				END AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
 				CASE
-					WHEN @Product IN ('PP', 'SBC', 'VGA') AND statusID IN (111, 112, 113) THEN ISNULL(ContributionRate, 0)
-					ELSE odds
+					WHEN @Product IN ('PP', 'SBC', 'VGA') AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+					ELSE b.odds
 				END AS Odds,
-					0 AS MOdds,
+				0 AS MOdds,
 				CASE
-					WHEN @Product IN ('PP', 'SBC', 'VGA') AND statusID IN (111, 112, 113) THEN ISNULL(BetStake, 0)
+					WHEN @Product IN ('PP', 'SBC', 'VGA') AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 					ELSE 0
 				END AS OddsSpread,
-				stake,
-				actual_stake,
+				b.stake,
+				b.actual_stake,
 				CASE
-					WHEN statusID IN (0, 1) THEN 0
-					ELSE winlost - actual_stake
+					WHEN b.statusID IN (0, 1) THEN 0
+					ELSE b.winlost - b.actual_stake
 				END AS WinLost,
 				CASE
-					WHEN statusID IN (0, 1) THEN 0
-					ELSE - (winlost - actual_stake)
+					WHEN b.statusID IN (0, 1) THEN 0
+					ELSE - (b.winlost - b.actual_stake)
 				END AS LicenseeWL,
-				playercomm,
+				b.playercomm,
 				CASE
-					WHEN statusID IN (0, 1) THEN 0
-					ELSE comm
+					WHEN b.statusID IN (0, 1) THEN 0
+					ELSE b.comm
 				END AS Comm,
-				status,
+				b.status,
 				0 AS SettlementStatus,
-				transdate,
-				winlostdate,
+				b.transdate,
+				b.winlostdate,
 				0 AS LiveIndicator,
 				0 AS LiveHomeScore,
 				0 AS LiveAwayScore,
-				ip,
-				betfrom,
+				dp.IP,
+				b.betfrom,
 				0 AS LeagueId,
 				0 AS MatchId,
 				CASE
-					WHEN @Product IN ('FW', 'PP', 'CC') THEN Additional
-					WHEN @Product IN ('HB', 'CG') THEN ISNULL(SiteID, '')
-					WHEN @Product IN ('PGS', 'JK') THEN GameId3rd
+					WHEN @Product IN ('FW', 'PP', 'CC') THEN b.Additional
+					WHEN @Product IN ('HB', 'CG') THEN ISNULL(b.SiteID, '')
+					WHEN @Product IN ('PGS', 'JK') THEN b.GameId3rd
 					ELSE ''
 				END AS MatchCode,
 				'' AS Race,
@@ -1700,14 +1702,14 @@ BEGIN
 				0 AS IsNeutral,
 				'' AS Placing,
 				'' AS ShowTime,
-				TranId3rd AS BetCheck,
-				transdesc,
+				b.TranId3rd AS BetCheck,
+				b.transdesc,
 				CASE
-					WHEN @Product IN ('PP', 'SBC', 'VGA') THEN ISNULL(RefNo2, -1)
+					WHEN @Product IN ('PP', 'SBC', 'VGA') THEN ISNULL(b.RefNo2, -1)
 					ELSE -1
 				END AS BetdaqId,
 				CASE
-					WHEN @Product IN ('PP', 'SBC', 'VGA') THEN ISNULL(JackpotInfo, '')
+					WHEN @Product IN ('PP', 'SBC', 'VGA') THEN ISNULL(b.JackpotInfo, '')
 					ELSE ''
 				END AS ExtraInfo,
 				0 AS OriginalStake,
@@ -1715,10 +1717,11 @@ BEGIN
 				0 AS WalletType,
 				0 AS RefCode,
 				7 AS WhTicket
-			FROM bodb_Archive.dbo.bettransRnG_bk WITH (NOLOCK)
-			WHERE transid = @TransId
-				 AND custid = @CustId
-				 AND winlostdate = @WinLostDate
+			FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
+			WHERE b.transid = @TransId
+				 AND b.custid = @CustId
+				 AND b.winlostdate = @WinLostDate
 		END
 	END
 
@@ -1940,45 +1943,45 @@ BEGIN
 		BEGIN
 			INSERT INTO @Data
 			SELECT
-				transid,
-				transid AS RefNo,
-				custid,
-				currency,
-				recommend,
-				productID AS SportType,
-				gameID AS BetType,
+				b.transid,
+				b.transid AS RefNo,
+				b.custid,
+				b.currency,
+				b.recommend,
+				b.productID AS SportType,
+				b.gameID AS BetType,
 				0 AS BetId,
-				ISNULL(SiteID, '') AS BetTeam,
+				ISNULL(b.SiteID, '') AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
-				odds,
+				b.odds,
 				0 AS MOdds,
 				0 AS OddsSpread,
-				stake,
-				actual_stake,
+				b.stake,
+				b.actual_stake,
 				CASE
-					WHEN statusID IN (0, 1) THEN 0
-					ELSE winlost - actual_stake
+					WHEN b.statusID IN (0, 1) THEN 0
+					ELSE b.winlost - b.actual_stake
 				END AS WinLost,
 				CASE
-					WHEN statusID IN (0, 1) THEN 0
-					ELSE - (winlost - actual_stake)
+					WHEN b.statusID IN (0, 1) THEN 0
+					ELSE - (b.winlost - b.actual_stake)
 				END AS LicenseeWL,
-				playercomm,
-				comm,
-				status,
+				b.playercomm,
+				b.comm,
+				b.status,
 				0 AS SettlementStatus,
-				transdate,
-				winlostdate,
+				b.transdate,
+				b.winlostdate,
 				0 AS LiveIndicator,
 				0 AS LiveHomeScore,
 				0 AS LiveAwayScore,
-				ip,
-				betfrom,
-				currency AS LeagueId,
+				dp.IP,
+				b.betfrom,
+				b.currency AS LeagueId,
 				0 AS MatchId,
-				GameId3rd AS MatchCode,
+				b.GameId3rd AS MatchCode,
 				'' AS Race,
 				NULL AS EventDate,
 				0 AS HomeId,
@@ -1987,8 +1990,8 @@ BEGIN
 				0 AS IsNeutral,
 				'' AS Placing,
 				'' AS ShowTime,
-				TranId3rd AS BetCheck,
-				transdesc,
+				b.TranId3rd AS BetCheck,
+				b.transdesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,
 				0 AS OriginalStake,
@@ -1996,10 +1999,11 @@ BEGIN
 				0 AS WalletType,
 				0 AS RefCode,
 				10 AS WhTicket
-			FROM bodb_Archive.dbo.bettransLC_bk WITH (NOLOCK)
-			WHERE transid = @TransId
-				AND custid = @CustId
-				AND winlostdate = @WinLostDate
+			FROM bodb_Archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
+				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
+			WHERE b.transid = @TransId
+				AND b.custid = @CustId
+				AND b.winlostdate = @WinLostDate
 		END
 	END
 
@@ -2257,7 +2261,7 @@ BEGIN
 				0 AS LiveIndicator,
 				0 AS LiveHomeScore,
 				0 AS LiveAwayScore,
-				blc.ip,
+				dp.IP,
 				b.betfrom,
 				0 AS LeagueId,
 				0 AS MatchId,
@@ -2281,6 +2285,7 @@ BEGIN
 				12 AS WhTicket
 			FROM bodb_Archive.dbo.bettransg AS b WITH (NOLOCK)
 				INNER JOIN bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK) ON blc.transid = b.refno AND blc.custid = b.custid
+				CROSS APPLY dbo.f_IP_Decompress(blc.ip) AS dp
 			WHERE b.transid = @TransId
 				AND b.custid = @CustId
 				AND b.winlostdate = @WinLostDate
