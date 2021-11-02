@@ -1,6 +1,4 @@
-USE bodb02
-GO
-
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[U3_BetList_SelWinlossByBettypeMatch_SAg]
 	@MatchId			INT
 	, @CustId			INT			= NULL
@@ -17,7 +15,7 @@ AS
 	Original: Age_BetList_SelWinlossByBettypeMatch_SAg
 	Revisions:
 		- 20170810@Kos: Support Lucky 3 [#Redmine: 75277]
-		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211102@Razor: Extend Data type of IP v6 [Redmine: #90903]
 */
 
 BEGIN
@@ -26,12 +24,12 @@ BEGIN
 	DECLARE @TransStatus	[dbo].[TVP_BetTicketStatus]
 		, @BettypeMatrix	[dbo].[TVP_SportBettypeMatrix]
 
-	-- Gather Ticket status
+	-- Gather Ticket Status
 	INSERT INTO @TransStatus
 	SELECT StatusId
 	FROM dbo.All_f_TransStatus (1) stt
 	WHERE statusid IN (111, 112, 113)
-	
+
 	-- Gather BettypeMatrix
 	DECLARE @IsTest BIT = 0
 
@@ -446,13 +444,4 @@ BEGIN
 
 	RETURN;
 END
-
-
-
-GO
-GRANT EXECUTE ON [dbo].[U3_BetList_SelWinlossByBettypeMatch_SAg] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[U3_BetList_SelWinlossByBettypeMatch_SAg] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[U3_BetList_SelWinlossByBettypeMatch_SAg] TO vnteam
 GO
