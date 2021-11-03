@@ -124,6 +124,7 @@ AS
 		- 20210714@Kos: Support CG [Redmine: #152619]
 		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 
 	Param's Explanation:
 		+ @TransType:
@@ -263,7 +264,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 62, 63, 66)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68)
 
 	DELETE @SportBettype
 	WHERE Bettype IN (904, 914, 999)
@@ -693,7 +694,7 @@ BEGIN
 
 		-- Keno, AG Casino, AllBet, Macau Games, Fishing World, Lottery, Pragmatic Casino, Card Club, Spadegaming, NPH Promotion
 		-- Virtual Games, SA Gaming, Table Games, Indo 4D, Sexy Gaming, Saba.club, PG Soft, Joker, Happy 5 Linked Games, GDG, Sports Lottery
-		-- Habanero, WM Live Casino, Big Gaming, Vgaming, CG
+		-- Habanero, WM Live Casino, Big Gaming, Vgaming, CG, AdvantPlay, AdvantPlay Mini
 		IF @TransType = 1 OR @TransType = 2
 		BEGIN
 			INSERT INTO @Data
@@ -706,7 +707,7 @@ BEGIN
 					WHEN sbt.ProductID = 24 THEN 219
 					WHEN sbt.ProductID = 28 THEN 220
 					WHEN sbt.ProductID = 32 THEN 248
-					WHEN sbt.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 62, 63, 66) THEN b.matchid
+					WHEN sbt.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -764,7 +765,7 @@ BEGIN
 					ELSE ''
 				END AS betcheck,
 				CASE
-					WHEN sbt.ProductID IN (3, 8, 22, 24, 28, 32, 34, 36, 38, 40, 43, 55, 56, 61, 62, 63) THEN b.transdesc
+					WHEN sbt.ProductID IN (3, 8, 22, 24, 28, 32, 34, 36, 38, 40, 43, 55, 56, 61, 62, 63, 67, 68) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				-1 AS BetdaqId,
@@ -786,7 +787,7 @@ BEGIN
 			WHERE
 				b.custid = @CustId
 				AND b.winlostdate = @FromDate 
-				AND sbt.ProductID IN (3, 8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 62, 63, 66)
+				AND sbt.ProductID IN (3, 8, 11, 21, 22, 24, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68)
 				AND sbt.EventType = 0
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 				AND @TransType <> 4
@@ -1565,7 +1566,8 @@ BEGIN
 				AND t.statusID IN (SELECT [statusID] FROM @tmpStatus)
 		END
 
-		-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, Habanero, Vgaming, CG
+		-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, Habanero, 
+		-- Vgaming, CG, AdvantPlay, AdvantPlay Mini
 		IF @TransType = 1
 		BEGIN
 			IF @FromDate < @yesterday	-- not yesterday and today settled ticket
@@ -1573,7 +1575,7 @@ BEGIN
 				INSERT INTO @Data 
 				SELECT
 					CASE
-						WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 61, 62, 66) THEN b.matchid
+						WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 61, 62, 66, 67, 68) THEN b.matchid
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
 						WHEN sbt.ProductID = 32 THEN 248
@@ -1642,7 +1644,7 @@ BEGIN
 				WHERE
 					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
-					AND (sbt.ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 62, 66)
+					AND (sbt.ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 62, 66, 67, 68)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND sbt.EventType = 0
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
@@ -1652,7 +1654,7 @@ BEGIN
 				INSERT INTO @Data 
 				SELECT
 					CASE
-						WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 61, 62, 66) THEN b.matchid
+						WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 61, 62, 66, 67, 68) THEN b.matchid
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
 						WHEN sbt.ProductID = 32 THEN 248
@@ -1727,7 +1729,7 @@ BEGIN
 				WHERE
 					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
-					AND (sbt.ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 62, 66)
+					AND (sbt.ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 62, 66, 67, 68)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND sbt.EventType = 0
 					AND brng.statusID NOT IN (0, 1)
@@ -1753,7 +1755,7 @@ BEGIN
 				INSERT INTO @Data 
 				SELECT
 					CASE
-						WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 61, 62, 66) THEN b.matchid
+						WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 61, 62, 66, 67, 68) THEN b.matchid
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 24 THEN 219
 						WHEN sbt.ProductID = 32 THEN 248
@@ -1817,7 +1819,7 @@ BEGIN
 				WHERE
 					b.custid = @CustId
 					AND b.winlostdate = @FromDate 
-					AND (sbt.ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 62, 66)
+					AND (sbt.ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 62, 66, 67, 68)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND sbt.EventType = 0
 					AND brng.statusID IN (0, 1)

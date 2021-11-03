@@ -39,6 +39,7 @@ AS
 		- 20210705@Kos: Support Happy 5 Linked Games - Soccer 5 [Redmine: #154898]
 		- 20210714@Kos: Support CG [Redmine: #152619]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 */
 
 BEGIN
@@ -375,6 +376,8 @@ BEGIN
 						WHEN s.ProductID = 62 THEN 'CG'								-- CG
 						WHEN s.ProductID = 63 THEN 'SLT'							-- Sports Lottery
 						WHEN s.ProductID = 66 THEN 'VGA'							-- Vgaming
+						WHEN s.ProductID = 67 THEN 'AP'								-- AdvantPlay
+						WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -539,6 +542,8 @@ BEGIN
 				WHEN s.ProductID = 61 THEN 'HB'		-- Habanero
 				WHEN s.ProductID = 62 THEN 'CG'		-- CG
 				WHEN s.ProductID = 66 THEN 'VGA'	-- Vgaming
+				WHEN s.ProductID = 67 THEN 'AP'		-- AdvantPlay
+				WHEN s.ProductID = 68 THEN 'APM'	-- AdvantPlay Mini
 				ELSE 'Unknown'
 			END AS Product,
 			s.RefTable
@@ -634,7 +639,8 @@ BEGIN
 							ELSE b.TransId
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'CB', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 'GDG', 'HB', 'WM', 'BG', 'VGA', 'CG') THEN b.MatchId
+								WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'CB', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
+									'GDG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'H5LG', 'SLT') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('Outright') THEN l.sporttype
@@ -768,7 +774,7 @@ BEGIN
 							END,
 				TransDesc = CASE
 								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 
-									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG') THEN ISNULL(b.transdesc, '')
+									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE

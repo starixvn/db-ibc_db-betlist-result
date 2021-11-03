@@ -45,6 +45,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 					- Add new params @MoveBetsDay SMALLDATETIME and @BalanceUpDay SMALLDATETIME
+		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 
 	Parameters:
 		- @TransType
@@ -89,7 +90,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 62, 66)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 62, 66, 67, 68)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (StatusId TINYINT)
@@ -189,12 +190,12 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42, 61, 62, 66) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(brng.SiteID, '')
 				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (61, 62) THEN brng.GameId3rd
+				WHEN sbt.productID IN (61, 62, 67, 68) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
@@ -250,12 +251,12 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42, 61, 62, 66) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(brng.SiteID, '')
 				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (61, 62) THEN brng.GameId3rd
+				WHEN sbt.productID IN (61, 62, 67, 68) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
@@ -309,12 +310,12 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (61, 62) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (61, 62, 67, 68) THEN ISNULL(brng.SiteID, '')
 				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (61, 62) THEN brng.GameId3rd
+				WHEN sbt.productID IN (61, 62, 67, 68) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
