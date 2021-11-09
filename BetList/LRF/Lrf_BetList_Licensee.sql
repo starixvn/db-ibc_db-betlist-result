@@ -17,7 +17,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee]
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
 	@Sort				NVARCHAR(50)	= N'TransDate ASC',
-	@Product			VARCHAR(10)		= '',
+	@Product			VARCHAR(100)	= '',
 	@TotalRows			INT				= 0 OUTPUT,
 	@SumStake			MONEY			= 0 OUTPUT,
 	@SumWinLost			MONEY			= 0 OUTPUT,
@@ -53,12 +53,13 @@ AS
 		- 20190313@Kos: Change param @LiveIndicator from TINYINT to VARCHAR(10) [Redmine: #108717]
 					- Add new param @Username, @ConvertToBaseCur
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
+		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	IF @Product IN ('SB', 'BA')
+	IF ',' + @Product + ',' LIKE '%,SB,%' OR @Product = 'BA' 
 	BEGIN
 		EXEC Lrf_BetList_Licensee_Sportsbook
 			@AgentList = @AgentList,
@@ -111,8 +112,4 @@ BEGIN
 			@SumPlayerComm = @SumPlayerComm OUTPUT
 	END
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_Licensee] TO [bodbLicenseeNet]
 GO

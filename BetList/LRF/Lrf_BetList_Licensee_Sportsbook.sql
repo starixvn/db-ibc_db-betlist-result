@@ -17,7 +17,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_Sportsbook]
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
 	@Sort				NVARCHAR(50)	= N'Transid ASC',
-	@Product			VARCHAR(10)		= '',
+	@Product			VARCHAR(100)	= '',
 	@TotalRows			INT				= 0 OUTPUT,
 	@SumStake			MONEY			= 0 OUTPUT,
 	@SumWinLost			MONEY			= 0 OUTPUT,
@@ -61,12 +61,15 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210316@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+	CREATE TABLE #TempAg (CustId INT, Currency INT)
+
+	CREATE CLUSTERED INDEX IX_TempAg ON #TempAg (CustId)
 
 	DECLARE @HasError BIT = 0
 
@@ -76,7 +79,7 @@ BEGIN
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
 	
-		INSERT INTO @TempAg (CustId, Currency)
+		INSERT INTO #TempAg (CustId, Currency)
 		SELECT AgentId, Currency
 		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
 
@@ -214,23 +217,37 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
+		DECLARE @ProductList	VARCHAR(10),
+			@ShowSB				BIT				= 0
+
+		IF @Product = 'BA'
+		BEGIN
+			SET @ProductList = 'SB'
+		END
+		ELSE
+		BEGIN
+			SET @ProductList = @Product
+		END
+
+		IF ',' + @Product + ',' LIKE '%,SB,%'
+			SET @ShowSB = 1
+
 		-- Get SportBettypeMatrix
-		DECLARE @SportBettype TABLE (ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+		CREATE TABLE #SportBettype (ProductId TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+
+		CREATE CLUSTERED INDEX IX_BetType ON #SportBettype (BetType)
 
 		DECLARE @IsTest BIT = 0
 
 		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-		IF @Product IN ('SB', 'BA')
-		BEGIN
-			INSERT INTO @SportBettype
-			SELECT ProductID, BetType, EventType, SubProduct
-			FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', 'SB', @IsTest)
-			WHERE (@BetType = 0
-					OR BetType IN (	SELECT @BetType
-									UNION SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType))
-				AND BetType <> 999
-		END
+		INSERT INTO #SportBettype
+		SELECT ProductID, BetType, EventType, SubProduct
+		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
+		WHERE (@BetType = 0
+				OR BetType IN (	SELECT @BetType
+								UNION SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType))
+			AND BetType <> 999
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)
 
@@ -246,14 +263,14 @@ BEGIN
 			SET @StatusIdList = @StatusIdList + ',111,112,113'
 		END
 
-		DECLARE @TempCust TABLE (CustId INT)
+		CREATE TABLE #TempCust (CustId INT PRIMARY KEY)
 
 		IF @Username IS NOT NULL AND @Username <> ''
 		BEGIN
-			INSERT INTO @TempCust
+			INSERT INTO #TempCust
 			SELECT c.custid
 			FROM dbo.Customer AS c WITH (NOLOCK)
-				INNER JOIN @TempAg AS a ON c.recommend = a.CustId
+				INNER JOIN #TempAg AS a ON c.recommend = a.CustId
 			WHERE c.roleid = 1
 				AND (c.username LIKE + '%' + @Username + '%'
 					OR c.username2 LIKE + '%$%' + @Username + '%')
@@ -261,7 +278,7 @@ BEGIN
 
 		DECLARE @NumOfMem	INT = 0
 
-		SELECT @NumOfMem = COUNT(1) FROM @TempCust
+		SELECT @NumOfMem = COUNT(1) FROM #TempCust
 
 		DECLARE @MatchSportType	SMALLINT,
 			@ParentId			INT
@@ -286,16 +303,14 @@ BEGIN
 		IF @MatchSportType = 50 AND @ParentId IS NULL	-- Cricket, parent match
 		BEGIN
 			INSERT INTO @Match
-			SELECT DISTINCT
-				MatchId
+			SELECT DISTINCT MatchId
 			FROM dbo.match WITH (NOLOCK)
 			WHERE ParentID = @MatchId
 				AND sporttype = @MatchSportType
 				AND eventdate BETWEEN @FromDate AND @ToDate
 				AND ChildMatchType = 200
 			UNION
-			SELECT DISTINCT
-				MatchId
+			SELECT DISTINCT MatchId
 			FROM dbo.match14 WITH (NOLOCK)
 			WHERE ParentID = @MatchId
 				AND sporttype = @MatchSportType
@@ -355,7 +370,6 @@ BEGIN
 						ExtraInfo,
 						WalletType,
 						RefCode,
-						Product,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -397,16 +411,10 @@ BEGIN
 						b.ExtraInfo,
 						b.WalletType,
 						ISNULL(b.RefCode, 0),
-						CASE
-							WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-							WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-							WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-							ELSE 'Unknown'
-						END AS Product,
 						1 AS WhTicket
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
@@ -419,7 +427,7 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
 										END
@@ -467,7 +475,6 @@ BEGIN
 							ExtraInfo,
 							WalletType,
 							RefCode,
-							Product,
 							WhTicket)
 						SELECT
 							b.transid,
@@ -509,24 +516,20 @@ BEGIN
 							b.ExtraInfo,
 							b.WalletType,
 							ISNULL(b.RefCode, 0),
-							CASE
-								WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-								WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-								WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-								ELSE 'Unknown'
-							END AS Product,
 							1 AS WhTicket
 						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-							INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 							AND b.bettype NOT BETWEEN 801 AND 899
 							AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-							AND (@SportType = 0 OR m.sporttype = @SportType)
+							AND (@SportType = 0
+								OR (m.sporttype = @SportType AND s.EventType = 1)
+								OR (b.matchid = @SportType AND s.ProductId IN (63)))
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
@@ -534,7 +537,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
 											END
@@ -580,7 +583,6 @@ BEGIN
 							ExtraInfo,
 							WalletType,
 							RefCode,
-							Product,
 							WhTicket)
 						SELECT
 							b.transid,
@@ -622,11 +624,10 @@ BEGIN
 							b.ExtraInfo,
 							b.WalletType,
 							ISNULL(b.RefCode, 0),
-							'Outright' AS Product,
 							1 AS WhTicket
 						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-							INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
 							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -641,7 +642,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
 											END
@@ -698,7 +699,6 @@ BEGIN
 						ExtraInfo,
 						WalletType,
 						RefCode,
-						Product,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -740,16 +740,10 @@ BEGIN
 						b.ExtraInfo,
 						b.WalletType,
 						ISNULL(b.RefCode, 0),
-						CASE
-							WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-							WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-							WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-							ELSE 'Unknown'
-						END AS Product,
 						2 AS WhTicket
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
@@ -762,7 +756,7 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
 										END
@@ -810,7 +804,6 @@ BEGIN
 							ExtraInfo,
 							WalletType,
 							RefCode,
-							Product,
 							WhTicket)
 						SELECT
 							b.transid,
@@ -852,24 +845,20 @@ BEGIN
 							b.ExtraInfo,
 							b.WalletType,
 							ISNULL(b.RefCode, 0),
-							CASE
-								WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-								WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-								WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-								ELSE 'Unknown'
-							END AS Product,
 							2 AS WhTicket
 						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
-							INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 							AND b.bettype NOT BETWEEN 801 AND 899
 							AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-							AND (@SportType = 0 OR m.sporttype = @SportType)
+							AND (@SportType = 0
+								OR (m.sporttype = @SportType AND s.EventType = 1)
+								OR (b.matchid = @SportType AND s.ProductId IN (63)))
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
@@ -877,7 +866,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
 											END
@@ -923,7 +912,6 @@ BEGIN
 							ExtraInfo,
 							WalletType,
 							RefCode,
-							Product,
 							WhTicket)
 						SELECT
 							b.transid,
@@ -965,11 +953,10 @@ BEGIN
 							b.ExtraInfo,
 							b.WalletType,
 							ISNULL(b.RefCode, 0),
-							'Outright' AS Product,
 							2 AS WhTicket
 						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
-							INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
 							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -984,7 +971,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
 											END
@@ -1043,7 +1030,6 @@ BEGIN
 						ExtraInfo,
 						WalletType,
 						RefCode,
-						Product,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -1085,16 +1071,10 @@ BEGIN
 						b.ExtraInfo,
 						b.WalletType,
 						ISNULL(b.RefCode, 0),
-						CASE
-							WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-							WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-							WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-							ELSE 'Unknown'
-						END AS Product,
 						1 AS WhTicket
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
-						INNER JOIN @TempCust AS c ON b.custid = c.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN #TempCust AS c ON b.custid = c.CustId
+						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
@@ -1107,7 +1087,7 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
 										END
@@ -1155,7 +1135,6 @@ BEGIN
 							ExtraInfo,
 							WalletType,
 							RefCode,
-							Product,
 							WhTicket)
 						SELECT
 							b.transid,
@@ -1197,24 +1176,20 @@ BEGIN
 							b.ExtraInfo,
 							b.WalletType,
 							ISNULL(b.RefCode, 0),
-							CASE
-								WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-								WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-								WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-								ELSE 'Unknown'
-							END AS Product,
 							1 AS WhTicket
 						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
-							INNER JOIN @TempCust AS c ON b.custid = c.CustId
-							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+							INNER JOIN #TempCust AS c ON b.custid = c.CustId
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 							AND b.bettype NOT BETWEEN 801 AND 899
 							AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-							AND (@SportType = 0 OR m.sporttype = @SportType)
+							AND (@SportType = 0
+								OR (m.sporttype = @SportType AND s.EventType = 1)
+								OR (b.matchid = @SportType AND s.ProductId IN (63)))
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
@@ -1222,7 +1197,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
 											END
@@ -1268,7 +1243,6 @@ BEGIN
 							ExtraInfo,
 							WalletType,
 							RefCode,
-							Product,
 							WhTicket)
 						SELECT
 							b.transid,
@@ -1310,11 +1284,10 @@ BEGIN
 							b.ExtraInfo,
 							b.WalletType,
 							ISNULL(b.RefCode, 0),
-							'Outright' AS Product,
 							1 AS WhTicket
 						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
-							INNER JOIN @TempCust AS c ON b.custid = c.CustId
-							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							INNER JOIN #TempCust AS c ON b.custid = c.CustId
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
 							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -1329,7 +1302,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
 											END
@@ -1386,7 +1359,6 @@ BEGIN
 						ExtraInfo,
 						WalletType,
 						RefCode,
-						Product,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -1428,16 +1400,10 @@ BEGIN
 						b.ExtraInfo,
 						b.WalletType,
 						ISNULL(b.RefCode, 0),
-						CASE
-							WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-							WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-							WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-							ELSE 'Unknown'
-						END AS Product,
 						2 AS WhTicket
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
+						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+						CROSS APPLY ( SELECT CustId FROM #TempCust ) AS t
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND t.CustId = b.custid
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
@@ -1451,7 +1417,7 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
 										END
@@ -1499,7 +1465,6 @@ BEGIN
 							ExtraInfo,
 							WalletType,
 							RefCode,
-							Product,
 							WhTicket)
 						SELECT
 							b.transid,
@@ -1541,17 +1506,11 @@ BEGIN
 							b.ExtraInfo,
 							b.WalletType,
 							ISNULL(b.RefCode, 0),
-							CASE
-								WHEN s.EventType = 0 AND ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
-								WHEN s.EventType = 1 AND ProductID = 1 THEN 'SB'		-- Sportsbook
-								WHEN s.EventType = 2 AND ProductID = 1 THEN 'Outright'
-								ELSE 'Unknown'
-							END AS Product,
 							2 AS WhTicket
 						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
-							CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+							CROSS APPLY ( SELECT CustId FROM #TempCust ) AS t
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 							AND t.CustId = b.custid
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
@@ -1559,7 +1518,9 @@ BEGIN
 							AND b.bettype NOT BETWEEN 801 AND 899
 							AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-							AND (@SportType = 0 OR m.sporttype = @SportType)
+							AND (@SportType = 0
+								OR (m.sporttype = @SportType AND s.EventType = 1)
+								OR (b.matchid = @SportType AND s.ProductId IN (63)))
 							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
@@ -1567,7 +1528,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
 											END
@@ -1613,7 +1574,6 @@ BEGIN
 							ExtraInfo,
 							WalletType,
 							RefCode,
-							Product,
 							WhTicket)
 						SELECT
 							b.transid,
@@ -1655,13 +1615,12 @@ BEGIN
 							b.ExtraInfo,
 							b.WalletType,
 							ISNULL(b.RefCode, 0),
-							'Outright' AS Product,
 							2 AS WhTicket
 						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
 							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-							CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
+							CROSS APPLY ( SELECT CustId FROM #TempCust ) AS t
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 							AND t.CustId = b.custid
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
@@ -1675,7 +1634,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
 											END
@@ -1686,12 +1645,23 @@ BEGIN
 			END
 		END
 
+		UPDATE b
+		SET b.Product = CASE
+							WHEN s.ProductId = 63 THEN 'SLT'						-- Sports Lottery
+							WHEN s.EventType = 0 AND s.ProductId = 1 THEN 'Parlay'	-- Sportsbook Parlay
+							WHEN s.EventType = 1 AND s.ProductId = 1 THEN 'SB'		-- Sportsbook
+							WHEN s.EventType = 2 AND s.ProductId = 1 THEN 'Outright'
+							ELSE 'Unknown'
+						END
+		FROM #Data AS b
+			INNER JOIN #SportBettype AS s ON s.BetType = b.BetType
+
 		IF @Username IS NULL OR @Username = '' OR @NumOfMem <= 5000
 		BEGIN
 			DELETE b
 			FROM #Data AS b
 			WHERE b.Product = 'Unknown'
-				OR NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
+				OR NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 				OR (b.Product <> 'SB'
 					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 				OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
@@ -1706,8 +1676,8 @@ BEGIN
 			DELETE b
 			FROM #Data AS b
 			WHERE b.Product = 'Unknown'
-				OR NOT EXISTS (SELECT 1 FROM @TempCust WHERE CustId = b.CustId)
-				OR NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
+				OR NOT EXISTS (SELECT 1 FROM #TempCust WHERE CustId = b.CustId)
+				OR NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 				OR (b.Product <> 'SB'
 					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 				OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
@@ -1923,29 +1893,30 @@ BEGIN
 									ELSE b.transid
 								END,
 					SportType = CASE
+									WHEN b.Product = 'SLT' THEN b.MatchId
 									WHEN b.Product = 'SB' THEN m.sporttype
 									WHEN b.Product = 'Outright' THEN l.sporttype
 									ELSE 0
 								END,
 					BetId = ISNULL(b.BetId, 0),
 					BetTeam = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.Betteam
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.BetTeam
 								ELSE ''
 							END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.hdp1
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.hdp2
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-								WHEN b.Product IN ('SB', 'Outright') THEN b.oddstype
+								WHEN b.Product IN ('SB', 'Outright') THEN b.OddsType
 								ELSE 0
 							END,
 					Odds = CASE
-							WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN b.Odds
+							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN b.Odds
 							ELSE 0
 						END,
 					MOdds = CASE
@@ -1978,7 +1949,7 @@ BEGIN
 								ELSE 0
 							END,
 					MatchId = CASE
-								WHEN b.Product IN ('SB') THEN m.matchid
+								WHEN b.Product IN ('SB') THEN b.matchid
 								ELSE 0
 							END,
 					MatchCode = CASE
@@ -2016,15 +1987,15 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN ISNULL(b.betcheck, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'SLT') THEN ISNULL(b.BetCheck, '')
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'SLT') THEN ISNULL(b.TransDesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+									WHEN b.Product IN ('SB') THEN ISNULL(b.BetdaqId, -1)
 									ELSE -1
 								END,
 					ExtraInfo = CASE
@@ -2065,29 +2036,30 @@ BEGIN
 									ELSE b.transid
 								END,
 					SportType = CASE
+									WHEN b.Product = 'SLT' THEN b.MatchId
 									WHEN b.Product = 'SB' THEN m.sporttype
 									WHEN b.Product = 'Outright' THEN l.sporttype
 									ELSE 0
 								END,
 					BetId = ISNULL(b.BetId, 0),
 					BetTeam = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.Betteam
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.BetTeam
 								ELSE ''
 							END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.hdp1
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.hdp2
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-								WHEN b.Product IN ('SB', 'Outright') THEN b.oddstype
+								WHEN b.Product IN ('SB', 'Outright') THEN b.OddsType
 								ELSE 0
 							END,
 					Odds = CASE
-							WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN b.Odds
+							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN b.Odds
 							ELSE 0
 						END,
 					MOdds = CASE
@@ -2117,7 +2089,7 @@ BEGIN
 								ELSE 0
 							END,
 					MatchId = CASE
-								WHEN b.Product IN ('SB') THEN m.matchid
+								WHEN b.Product IN ('SB') THEN b.matchid
 								ELSE 0
 							END,
 					MatchCode = CASE
@@ -2155,15 +2127,15 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN ISNULL(b.betcheck, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'SLT') THEN ISNULL(b.BetCheck, '')
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'SLT') THEN ISNULL(b.TransDesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+									WHEN b.Product IN ('SB') THEN ISNULL(b.BetdaqId, -1)
 									ELSE -1
 								END,
 					ExtraInfo = CASE
@@ -2265,29 +2237,30 @@ BEGIN
 									ELSE b.transid
 								END,
 					SportType = CASE
+									WHEN b.Product = 'SLT' THEN b.MatchId
 									WHEN b.Product = 'SB' THEN m.sporttype
 									WHEN b.Product = 'Outright' THEN l.sporttype
 									ELSE 0
 								END,
 					BetId = ISNULL(b.BetId, 0),
 					BetTeam = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.Betteam
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.BetTeam
 								ELSE ''
 							END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.hdp1
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.hdp2
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-								WHEN b.Product IN ('SB', 'Outright') THEN b.oddstype
+								WHEN b.Product IN ('SB', 'Outright') THEN b.OddsType
 								ELSE 0
 							END,
 					Odds = CASE
-							WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN b.Odds
+							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN b.Odds
 							ELSE 0
 						END,
 					MOdds = CASE
@@ -2320,7 +2293,7 @@ BEGIN
 								ELSE 0
 							END,
 					MatchId = CASE
-								WHEN b.Product IN ('SB') THEN m.matchid
+								WHEN b.Product IN ('SB') THEN b.matchid
 								ELSE 0
 							END,
 					MatchCode = CASE
@@ -2358,15 +2331,15 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN ISNULL(b.betcheck, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'SLT') THEN ISNULL(b.BetCheck, '')
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'SLT') THEN ISNULL(b.TransDesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+									WHEN b.Product IN ('SB') THEN ISNULL(b.BetdaqId, -1)
 									ELSE -1
 								END,
 					ExtraInfo = CASE
@@ -2407,29 +2380,30 @@ BEGIN
 									ELSE b.transid
 								END,
 					SportType = CASE
+									WHEN b.Product = 'SLT' THEN b.MatchId
 									WHEN b.Product = 'SB' THEN m.sporttype
 									WHEN b.Product = 'Outright' THEN l.sporttype
 									ELSE 0
 								END,
 					BetId = ISNULL(b.BetId, 0),
 					BetTeam = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.Betteam
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.BetTeam
 								ELSE ''
 							END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.hdp1
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN b.hdp2
+								WHEN b.Product IN ('SB', 'Parlay') THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-								WHEN b.Product IN ('SB', 'Outright') THEN b.oddstype
+								WHEN b.Product IN ('SB', 'Outright') THEN b.OddsType
 								ELSE 0
 							END,
 					Odds = CASE
-							WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN b.Odds
+							WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT') THEN b.Odds
 							ELSE 0
 						END,
 					MOdds = CASE
@@ -2459,7 +2433,7 @@ BEGIN
 								ELSE 0
 							END,
 					MatchId = CASE
-								WHEN b.Product IN ('SB') THEN m.matchid
+								WHEN b.Product IN ('SB') THEN b.matchid
 								ELSE 0
 							END,
 					MatchCode = CASE
@@ -2497,15 +2471,15 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-								WHEN b.Product IN ('SB', 'Parlay') THEN ISNULL(b.betcheck, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'SLT') THEN ISNULL(b.BetCheck, '')
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB', 'SLT') THEN ISNULL(b.TransDesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE
-									WHEN b.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+									WHEN b.Product IN ('SB') THEN ISNULL(b.BetdaqId, -1)
 									ELSE -1
 								END,
 					ExtraInfo = CASE

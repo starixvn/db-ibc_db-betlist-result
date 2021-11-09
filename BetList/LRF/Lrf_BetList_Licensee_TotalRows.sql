@@ -12,7 +12,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_TotalRows]
 	@MatchId		INT				= 0,
 	@StatusIdList	VARCHAR(50)		= '',
 	@LiveIndicator	VARCHAR(10)		= '0,1,2',
-	@Product		VARCHAR(10)		= '',
+	@Product		VARCHAR(100)	= '',
 	@TotalRows		INT				= 0 OUTPUT
 AS
 
@@ -45,13 +45,16 @@ AS
 		- 20190829@Kos: Support PH AIO 4b [Redmine: #118300]
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
+		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 */
 
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+	CREATE TABLE #TempAg (CustId INT, Currency INT)
+
+	CREATE CLUSTERED INDEX IX_TempAg ON #TempAg (CustId)
 
 	DECLARE @HasError BIT = 0
 
@@ -61,7 +64,7 @@ BEGIN
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
 	
-		INSERT INTO @TempAg (CustId, Currency)
+		INSERT INTO #TempAg (CustId, Currency)
 		SELECT AgentId, Currency
 		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
 
@@ -76,7 +79,7 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		DECLARE @ProductList		VARCHAR(10)
+		DECLARE @ProductList	VARCHAR(10)
 
 		IF @Product = 'BA'
 		BEGIN
@@ -88,7 +91,9 @@ BEGIN
 		END
 
 		-- Get SportBettypeMatrix
-		DECLARE @SportBettype TABLE (ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+		CREATE TABLE #SportBettype (ProductId TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+
+		CREATE CLUSTERED INDEX IX_BetType ON #SportBettype (BetType)
 
 		DECLARE @IsTest BIT = 0
 
@@ -96,7 +101,7 @@ BEGIN
 
 		IF @ProductList <> ''
 		BEGIN
-			INSERT INTO @SportBettype
+			INSERT INTO #SportBettype
 			SELECT ProductID, BetType, EventType, SubProduct
 			FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
 			WHERE (@BetType = 0
@@ -123,8 +128,8 @@ BEGIN
 				BEGIN
 					SELECT @TotalRowsBettrans = COUNT(1)
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
@@ -144,8 +149,8 @@ BEGIN
 				BEGIN
 					SELECT @TotalRowsBettrans = COUNT(1)
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (1, 3, 5, 25, 27)
 						LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid AND s.EventType = 2 AND s.ProductID = 1
@@ -160,6 +165,7 @@ BEGIN
 						AND (@LeagueId = 0 OR o.leagueid IS NULL OR o.leagueid = @LeagueId)
 						AND (@SportType = 0 OR l.sporttype IS NULL OR l.sporttype = @SportType)
 						AND (@SportType = 0 OR vr.sporttype IS NULL OR vr.sporttype = @SportType)
+						AND (@SportType = 0 OR s.ProductId NOT IN (63) OR b.matchid = @SportType)
 						AND (@MatchId = 0 OR b.matchid = @MatchId)
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
@@ -185,8 +191,8 @@ BEGIN
 				BEGIN
 					SELECT @TotalRowsBettrans14 = COUNT(1)
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
@@ -206,8 +212,8 @@ BEGIN
 				BEGIN
 					SELECT @TotalRowsBettrans14 = COUNT(1)
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (1, 3, 5, 25, 27)
 						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid AND s.EventType = 2 AND s.ProductID = 1
@@ -222,6 +228,7 @@ BEGIN
 						AND (@LeagueId = 0 OR o.leagueid IS NULL OR o.leagueid = @LeagueId)
 						AND (@SportType = 0 OR l.sporttype IS NULL OR l.sporttype = @SportType)
 						AND (@SportType = 0 OR vr.sporttype IS NULL OR vr.sporttype = @SportType)
+						AND (@SportType = 0 OR s.ProductId NOT IN (63) OR b.matchid = @SportType)
 						AND (@MatchId = 0 OR b.matchid = @MatchId)
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
@@ -237,12 +244,12 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			DECLARE @TempCust TABLE (CustId INT)
+			CREATE TABLE #TempCust (CustId INT PRIMARY KEY)
 
-			INSERT INTO @TempCust
+			INSERT INTO #TempCust
 			SELECT c.custid
 			FROM dbo.Customer AS c WITH (NOLOCK)
-				INNER JOIN @TempAg AS a ON c.recommend = a.CustId
+				INNER JOIN #TempAg AS a ON c.recommend = a.CustId
 			WHERE c.roleid = 1
 				AND (c.username LIKE + '%' + @Username + '%'
 					OR c.username2 LIKE + '%$%' + @Username + '%')
@@ -257,8 +264,8 @@ BEGIN
 
 				SELECT @TotalRowsBettrans = COUNT(1)
 				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
-					INNER JOIN @TempCust AS c ON b.custid = c.CustId
-					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+					INNER JOIN #TempCust AS c ON b.custid = c.CustId
+					INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 				WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 					AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 					AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
@@ -285,8 +292,8 @@ BEGIN
 
 				SELECT @TotalRowsBettrans14 = COUNT(1)
 				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
-					INNER JOIN @TempCust AS c ON b.custid = c.CustId
-					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+					INNER JOIN #TempCust AS c ON b.custid = c.CustId
+					INNER JOIN #SportBettype AS s ON b.bettype = s.BetType
 				WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 					AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 					AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
@@ -307,11 +314,4 @@ BEGIN
 
 	SELECT @TotalRows = @TotalRowsBettrans + @TotalRowsBettrans14
 END
-GO
-
-
-
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_Licensee_TotalRows] TO [bodbLicenseeNet]
 GO

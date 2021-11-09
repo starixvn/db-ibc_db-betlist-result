@@ -1,0 +1,431 @@
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+
+ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport]
+	@AgentList		VARCHAR(MAX),
+	@ProductList	VARCHAR(200),
+	@SportType		SMALLINT,
+	@FromDate		SMALLDATETIME,
+	@ToDate			SMALLDATETIME,
+	@MoveBetsDay	SMALLDATETIME,
+	@BaseCurrency	VARCHAR(10)		= '',
+	@PageSize		INT				= 1000,
+	@PageIndex		INT				= 1,
+	@Sort			NVARCHAR(50)	= 'TransDate ASC'
+AS
+
+/*
+	Created: 20210913@Kos
+	Task: Live Report - Bet List
+	DB: DBEXT.bodb02
+
+	Revisions:
+		- 20211104@Kos: Support Sports Lottery [RedmineID: #163191]
+*/
+
+BEGIN
+	SET NOCOUNT ON
+
+	CREATE TABLE #TempAg (CustId INT, Currency INT)
+
+	CREATE CLUSTERED INDEX IX_TempAg ON #TempAg (CustId)
+
+	-- Get AgentList
+	DECLARE @DocHandler INT
+
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
+	
+		INSERT INTO #TempAg (CustId, Currency)
+		SELECT AgentId, Currency
+		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SELECT ErrCode = 100,
+			ErrMsg = N'Parameter invalid.'
+
+		RETURN
+	END CATCH
+
+	-- Get Sport Bettype Matrix
+	DECLARE @SportBettype TABLE(ProductID TINYINT, BetType SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+	
+	INSERT INTO @SportBettype
+	SELECT ProductID, BetType, EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (0, @SportType, 0, 2, '', @ProductList, @IsTest)
+
+	DECLARE @TempFromDate DATETIME,
+		@TempToDate DATETIME
+
+	CREATE TABLE #Data (
+		TransId			BIGINT,
+		RefNo			BIGINT,
+		CustId			INT,
+		Recommend		INT,
+		Currency		SMALLINT,
+		SportType		SMALLINT,
+		BetType			SMALLINT,
+		Odds			MONEY,
+		Stake			MONEY,
+		Actual_Stake	MONEY,
+		WinLost			MONEY,
+		LicenseeWL		MONEY,
+		Comm			MONEY,
+		PlayerComm		MONEY,
+		Status			NVARCHAR(10),
+		TransDate		DATETIME,
+		WinLostDate		SMALLDATETIME,
+		Ip				NVARCHAR(15),
+		BetFrom			NVARCHAR(1),
+		MatchId			INT,
+		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(1000),
+		Product			VARCHAR(30),
+		EventType		TINYINT,
+		WhTicket		TINYINT
+	)
+
+	CREATE TABLE #PagingData (
+		RowNum			INT,
+		TransId			BIGINT,
+		RefNo			BIGINT,
+		CustId			INT,
+		Recommend		INT,
+		Currency		SMALLINT,
+		SportType		SMALLINT,
+		BetType			SMALLINT,
+		Odds			MONEY,
+		Stake			MONEY,
+		Actual_Stake	MONEY,
+		WinLost			MONEY,
+		LicenseeWL		MONEY,
+		Comm			MONEY,
+		PlayerComm		MONEY,
+		Status			NVARCHAR(10),
+		TransDate		DATETIME,
+		WinLostDate		SMALLDATETIME,
+		Ip				NVARCHAR(15),
+		BetFrom			NVARCHAR(1),
+		MatchId			INT,
+		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(1000),
+		Product			VARCHAR(30),
+		EventType		TINYINT,
+		WhTicket		TINYINT
+	)
+
+	CREATE TABLE #ExchangeRate (
+		ExchangeId					INT,
+		FirstExchangeDateByMonth	SMALLDATETIME,
+		LastExchangeDateByMonth		SMALLDATETIME,
+		Rate						FLOAT
+	)
+
+	-- bettrans
+	IF @ToDate > @MoveBetsDay
+	BEGIN
+		SET @TempFromDate = CASE
+								WHEN @FromDate <= @MoveBetsDay THEN DATEADD(DAY, 1, @MoveBetsDay)
+								ELSE @FromDate
+							END
+
+		INSERT INTO #Data (
+			TransId,
+			RefNo,
+			CustId,
+			Recommend,
+			Currency,
+			BetType,
+			Odds,
+			Stake,
+			Actual_Stake,
+			WinLost,
+			LicenseeWL,
+			Comm,
+			PlayerComm,
+			Status,
+			TransDate,
+			WinLostDate,
+			Ip,
+			BetFrom,
+			MatchId,
+			BetCheck,
+			TransDesc,
+			EventType,
+			WhTicket)
+		SELECT
+			b.transid,
+			b.refno,
+			b.custid,
+			b.recommend,
+			b.currency,
+			b.bettype,
+			b.odds,
+			b.stake,
+			b.actual_stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			b.comm,
+			b.playercomm,
+			b.status,
+			b.transdate,
+			b.winlostdate,
+			b.ip,
+			b.betfrom,
+			b.matchid,
+			ISNULL(b.betcheck, ''),
+			ISNULL(b.transdesc, ''),
+			sbt.EventType,
+			1 AS WhTicket
+		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_recommend)
+			INNER JOIN #TempAg AS t ON t.custid = b.recommend
+			INNER JOIN @SportBettype AS sbt ON sbt.bettype = b.Bettype
+		WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+			AND b.statusID IN (111, 112, 113)
+	END
+
+	-- bettrans14
+	IF @FromDate <= @MoveBetsDay
+	BEGIN
+		SET @TempToDate = CASE
+							WHEN @ToDate >= @MoveBetsDay THEN @MoveBetsDay
+							ELSE @ToDate
+						END
+
+		INSERT INTO #Data (
+			TransId,
+			RefNo,
+			CustId,
+			Recommend,
+			Currency,
+			BetType,
+			Odds,
+			Stake,
+			Actual_Stake,
+			WinLost,
+			LicenseeWL,
+			Comm,
+			PlayerComm,
+			Status,
+			TransDate,
+			WinLostDate,
+			Ip,
+			BetFrom,
+			MatchId,
+			BetCheck,
+			TransDesc,
+			EventType,
+			WhTicket)
+		SELECT
+			b.transid,
+			b.refno,
+			b.custid,
+			b.recommend,
+			b.currency,
+			b.bettype,
+			b.odds,
+			b.stake,
+			b.actual_stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			b.comm,
+			b.playercomm,
+			b.status,
+			b.transdate,
+			b.winlostdate,
+			b.ip,
+			b.betfrom,
+			b.matchid,
+			ISNULL(b.betcheck, ''),
+			ISNULL(b.transdesc, ''),
+			sbt.EventType,
+			2 AS WhTicket
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN #TempAg AS t ON t.custid = b.recommend
+			INNER JOIN @SportBettype AS sbt ON sbt.bettype = b.Bettype
+		WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+			AND b.statusID IN (111, 112, 113)
+	END
+
+	DELETE b
+	FROM #Data AS b
+	WHERE NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
+
+	DECLARE @TotalRows INT
+
+	SELECT @TotalRows = COUNT(1) FROM #Data
+
+	DECLARE @Sql NVARCHAR(2000)
+
+	IF @TotalRows > 0
+	BEGIN
+		UPDATE b
+		SET b.Product = CASE
+							WHEN s.ProductID = 63 THEN 'SLT'	-- Sports Lottery
+							ELSE ''
+						END
+		FROM #Data AS b
+			INNER JOIN @SportBettype AS s ON s.BetType = b.BetType
+
+		DECLARE @ExFromDate SMALLDATETIME,
+			@ExToDate SMALLDATETIME
+
+		SELECT
+			@ExFromDate = MIN(WinLostDate),
+			@ExToDate = MAX(WinLostDate)
+		FROM #Data
+
+		-- Get exchange rate
+		IF @BaseCurrency <> ''
+		BEGIN
+			INSERT INTO #ExchangeRate
+			SELECT
+				e.ExchangeId,
+				e.FromDate,
+				e.ToDate,
+				e.Rate
+			FROM dbo.Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
+			WHERE EXISTS (SELECT 1 FROM #Data
+						WHERE Currency = e.ExchangeId
+							AND WinLostDate BETWEEN e.FromDate AND e.ToDate	)
+		END
+
+		-- Get sort text
+		IF @BaseCurrency <> ''
+			AND (@Sort LIKE '%Stake%' OR @Sort LIKE '%WinLost%' OR @Sort LIKE '%LicenseeWL%')
+		BEGIN
+			DECLARE @CharIndex TINYINT
+
+			SELECT @CharIndex = CHARINDEX(' ', @Sort, 1)
+
+			SELECT @Sort = SUBSTRING(@Sort, 0, @CharIndex) + ' * ISNULL(e.Rate, 1)' + SUBSTRING(@Sort, @CharIndex, LEN(@Sort))
+		END
+	END
+
+	IF @PageSize < @TotalRows
+	BEGIN
+		DECLARE @RowStart INT,
+			@RowEnd INT
+
+		SELECT @PageIndex = @PageIndex - 1,
+			@RowStart = @PageSize * @PageIndex + 1,
+			@RowEnd = @RowStart + @PageSize - 1
+
+		SET @Sql = 
+			N'SELECT a.*
+			FROM
+				(
+					SELECT
+						ROW_NUMBER() OVER (ORDER BY ' + @Sort + N') AS RowNum,
+						d.*
+					FROM #Data AS d' +
+					CASE
+						WHEN @Sort LIKE '%e.Rate%' THEN N'
+						LEFT JOIN #ExchangeRate AS e
+							ON e.ExchangeId = d.Currency
+								AND d.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth'
+						ELSE N' '
+					END + N'
+				) AS a
+			WHERE a.RowNum BETWEEN @RowStart AND @RowEnd
+			ORDER BY a.RowNum'
+
+		INSERT INTO #PagingData
+		EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
+
+		SELECT
+			c.username,
+			SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS NickName,
+			b.TransId,
+			b.RefNo,
+			b.CustId,
+			b.Currency,
+			b.MatchId AS SportType,
+			b.BetType,
+			b.Odds,
+			b.Stake * ISNULL(e.Rate, 1) AS Stake,
+			b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
+			b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
+			b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
+			b.Comm * ISNULL(e.Rate, 1) AS Comm,
+			b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+			b.Status,
+			b.TransDate,
+			b.WinLostDate,
+			b.Ip,
+			b.BetFrom,
+			b.BetCheck,
+			b.TransDesc
+		FROM
+			#PagingData AS b
+			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
+			LEFT JOIN #ExchangeRate AS e
+				ON e.ExchangeId = b.Currency
+					AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+		ORDER BY b.RowNum ASC
+	END
+	ELSE
+	BEGIN
+		CREATE TABLE #Customer (
+			CustId		INT PRIMARY KEY,
+			Username	VARCHAR(30),
+			Username2	VARCHAR(50))
+
+		INSERT INTO #Customer (
+			CustId,
+			Username,
+			Username2)
+		SELECT
+			custid,
+			username,
+			username2
+		FROM dbo.Customer WITH (NOLOCK)
+		WHERE custid IN (SELECT DISTINCT CustId FROM #Data)
+
+		SET @Sql = 
+			N'SELECT
+				c.username,
+				SUBSTRING(c.username2, CHARINDEX(''$'', c.username2) + 1, LEN(c.username2) - CHARINDEX(''$'', c.username2)) AS NickName,
+				b.TransId,
+				b.RefNo,
+				b.CustId,
+				b.Currency,
+				b.MatchId AS SportType,
+				b.BetType,
+				b.Odds,
+				b.Stake * ISNULL(e.Rate, 1) AS Stake,
+				b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
+				b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
+				b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
+				b.Comm * ISNULL(e.Rate, 1) AS Comm,
+				b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+				b.Status,
+				b.TransDate,
+				b.WinLostDate,
+				b.Ip,
+				b.BetFrom,
+				b.BetCheck,
+				b.TransDesc
+			FROM
+				#Data AS b
+				INNER JOIN #Customer AS c ON c.custid = b.CustId
+				LEFT JOIN #ExchangeRate AS e
+					ON e.ExchangeId = b.Currency
+						AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+			ORDER BY ' + @Sort
+
+		EXEC sp_executesql @Sql
+
+		DROP TABLE #Customer
+	END
+
+	DROP TABLE #Data
+	DROP TABLE #PagingData
+	DROP TABLE #ExchangeRate
+END
+GO
