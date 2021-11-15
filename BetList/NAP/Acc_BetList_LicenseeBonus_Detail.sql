@@ -2,7 +2,9 @@
 
 ALTER PROCEDURE [dbo].[Acc_BetList_LicenseeBonus_Detail]
 	@TransId	BIGINT,
-	@RefCode	BIGINT
+	@RefCode	BIGINT,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME
 AS
 
 /*
@@ -20,6 +22,7 @@ AS
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
 		
 	Parameters:
 		- @TransId: TransId of summary ticket of multiple of Bonus/Cash sub tickets
@@ -98,6 +101,7 @@ BEGIN
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.transid = @TransId
 		AND (b.RefCode = @RefCode OR @TransId = @RefCode)
+		AND b.winlostdate > @MoveBetsDay
 
 	IF @WinLostDate IS NULL
 	BEGIN
@@ -107,6 +111,7 @@ BEGIN
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		WHERE b.transid = @TransId
 			AND (b.RefCode = @RefCode OR @TransId = @RefCode)
+			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 		IF @WinLostDate IS NULL
 		BEGIN

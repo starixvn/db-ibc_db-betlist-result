@@ -3,7 +3,9 @@
 ALTER PROCEDURE [dbo].[Acc_BetList_Jackpot_Detail]
 	@TransId	BIGINT,
 	@CustId		INT,
-	@BetType	SMALLINT
+	@BetType	SMALLINT,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME
 AS
 
 /*
@@ -18,6 +20,7 @@ AS
 		- 20210429@Razor: Support VGaming [Redmine: #154047]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
 */
 
 BEGIN
@@ -74,7 +77,7 @@ BEGIN
 	IF EXISTS ( SELECT TOP(1) 1
 				FROM dbo.bettransRnG AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.BetType
-				WHERE b.transid = @TransId AND b.custid = @CustId )
+				WHERE b.transid = @TransId AND b.custid = @CustId AND b.winlostdate > @MoveBetsDay)
 	BEGIN
 		INSERT INTO @Data
 		SELECT
@@ -114,7 +117,7 @@ BEGIN
 	ELSE IF EXISTS ( SELECT TOP(1) 1
 					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.BetType
-					WHERE b.transid = @TransId AND b.custid = @CustId )
+					WHERE b.transid = @TransId AND b.custid = @CustId AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay)
 	BEGIN
 		INSERT INTO @Data
 		SELECT

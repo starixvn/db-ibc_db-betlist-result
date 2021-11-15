@@ -6,6 +6,8 @@ ALTER PROCEDURE [dbo].[Acc_BetList_RNG_Detail]
 	@TransType	TINYINT	= 0,
 	@PageIndex	INT		= 1,
 	@PageSize	INT		= 1000,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME,
 	@TotalRows	INT		= 0		OUTPUT
 AS
 
@@ -49,6 +51,7 @@ AS
 		- 20210527@Razor: VGaming: Missing Return SiteId [Redmine: #155912]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -160,6 +163,7 @@ BEGIN
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 	WHERE b.transid = @RefNo
+		AND b.winlostdate > @MoveBetsDay
 
 	IF @CurrencyName IS NULL
 	BEGIN
@@ -168,6 +172,7 @@ BEGIN
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 		WHERE b.transid = @RefNo
+			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 		IF @CurrencyName IS NULL
 		BEGIN

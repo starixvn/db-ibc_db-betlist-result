@@ -2,7 +2,9 @@
 
 ALTER PROCEDURE [dbo].[Acc_BetList_BetTrade_Detail]
 	@TransId	BIGINT,
-	@RefNo		BIGINT
+	@RefNo		BIGINT,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME
 AS
 
 /*
@@ -17,7 +19,8 @@ AS
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
-		
+		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
+
 	Parameters:
 		- @TransId: TransId of ticket bettype 901
 		- @RefNo: RefNo of ticket bettype 901
@@ -83,7 +86,7 @@ BEGIN
 	)
 
 	-- Get ticket
-	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @TransId )
+	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @TransId AND winlostdate > @MoveBetsDay)
 	BEGIN
 		INSERT INTO @Data
 		SELECT
@@ -149,7 +152,7 @@ BEGIN
 			AND b1.refno = @RefNo
 			AND b1.bettype = 901
 	END
-	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @TransId )
+	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @TransId AND winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay)
 	BEGIN
 		INSERT INTO @Data
 		SELECT

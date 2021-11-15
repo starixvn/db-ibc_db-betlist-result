@@ -4,7 +4,9 @@ ALTER PROCEDURE [dbo].[Acc_BetList_CashOut_Detail]
 	@TransId			BIGINT,
 	@RefNo				BIGINT,
 	@BetType			SMALLINT,
-	@OriginalTransId	BIGINT		= 0
+	@OriginalTransId	BIGINT		= 0,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME
 AS
 
 /*
@@ -21,6 +23,7 @@ AS
 		- 20191127@Kos: Hotfix - Change oddsspread data type from SMALLMONEY to MONEY [Redmine: #124483]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
 */
 
 BEGIN
@@ -40,13 +43,13 @@ BEGIN
 		END
 		ELSE	-- CashOut bet ticket
 		BEGIN
-			IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @TransId )
+			IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @TransId AND winlostdate > @MoveBetsDay)
 			BEGIN
 				SELECT @OriginalTransId = refno
 				FROM dbo.bettrans WITH (NOLOCK)
 				WHERE transid = @RefNo AND bettype = 911
 			END
-			ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @TransId )
+			ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @TransId AND winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay)
 			BEGIN
 				SELECT @OriginalTransId = refno
 				FROM dbo.bettrans14 WITH (NOLOCK)
@@ -133,7 +136,7 @@ BEGIN
 	)
 
 	-- Get ticket
-	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @OriginalTransId )
+	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @OriginalTransId AND winlostdate > @MoveBetsDay)
 	BEGIN
 		SELECT
 			@CustId = custid,
@@ -206,7 +209,7 @@ BEGIN
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		WHERE b.transid = @OriginalTransId
 	END
-	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @OriginalTransId )
+	ELSE IF EXISTS ( SELECT 1 FROM dbo.bettrans14 WITH (NOLOCK) WHERE transid = @OriginalTransId AND winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay)
 	BEGIN
 		SELECT
 			@CustId = custid,
