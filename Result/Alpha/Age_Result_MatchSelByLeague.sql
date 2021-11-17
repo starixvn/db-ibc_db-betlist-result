@@ -51,6 +51,7 @@ AS
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
+		- 20211117@Razor: Support In-house Replication [Redmine: #164321]
 */
 
 BEGIN
@@ -128,6 +129,7 @@ BEGIN
 					GlobalShowTime, kickofftime, hthomescore, htawayscore, finalhomescore, finalawayscore, showtime,
 					isneutral, goalrecord, homeid2, SettlementStatus, ChildMatchType
 				FROM dbo.match WITH (NOLOCK)
+				WHERE IsDeleted = 0
 				UNION ALL
 				SELECT sporttype, betstatus, matchid, matchcode, homeid, awayid, leagueid, eventdate, eventstatus,
 					GlobalShowTime, kickofftime, hthomescore, htawayscore, finalhomescore, finalawayscore, showtime,
@@ -237,6 +239,7 @@ BEGIN
 			AND (ISNULL(@Site, '') = '789y'
 				OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@Site, '') <> '789y'))
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+			AND l.IsDeleted = 0
 		OPTION (OPTIMIZE FOR (@LeagueId = 0))
 	END
 	ELSE IF @SportType IN (0, 5)
@@ -306,6 +309,7 @@ BEGIN
 							AND m.matchcode NOT LIKE '%betdaq%'
 							AND (ISNULL(@Site, '') = '789y'
 								OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@Site, '') <> '789y'))
+							AND m.IsDeleted = 0
 					) AS m ON m.leagueid = l.leagueid
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK)
@@ -316,6 +320,7 @@ BEGIN
 					OR ( mr.IsPending = 1
 						AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND l.IsDeleted = 0
 			--ORDER BY m.eventdate , m.sporttype , m.leagueid
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
@@ -393,6 +398,7 @@ BEGIN
 					OR ( mr.IsPending = 1
 						AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND l.IsDeleted = 0
 			--ORDER BY m.eventdate , m.sporttype , m.leagueid
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END

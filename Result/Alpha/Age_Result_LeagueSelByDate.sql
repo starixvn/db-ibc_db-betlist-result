@@ -48,6 +48,7 @@ AS
 		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
+		- 20211117@Razor: Support In-house Replication [Redmine: #164321]
 */
 
 BEGIN
@@ -71,6 +72,7 @@ BEGIN
 			(
 				SELECT matchid, leagueid, eventdate, eventstatus, sporttype, ChildMatchType
 				FROM dbo.match WITH (NOLOCK)
+				WHERE IsDeleted = 0
 				UNION ALL
 				SELECT matchid, leagueid, eventdate, eventstatus, sporttype, ChildMatchType
 				FROM dbo.match14 WITH (NOLOCK)
@@ -170,6 +172,7 @@ BEGIN
 			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+			AND l.IsDeleted = 0
 		ORDER BY m.sporttype ASC,
 			l.leaguename ASC
 	END
@@ -189,6 +192,7 @@ BEGIN
 				AND r.EventStatus ='completed'
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 				AND r.SportType = @SportType
+				AND l.IsDeleted = 0
 		END
 		ELSE
 		BEGIN
@@ -204,6 +208,7 @@ BEGIN
 				AND r.EventStatus ='completed'
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 				AND r.SportType = @SportType
+				AND l.IsDeleted = 0
 		END
 	END
 	ELSE IF @SportType = 193
@@ -218,6 +223,7 @@ BEGIN
 			(
 				SELECT matchid, leagueid, eventdate, eventstatus, sporttype
 				FROM dbo.match WITH (NOLOCK)
+				WHERE IsDeleted = 0
 				UNION ALL
 				SELECT matchid, leagueid, eventdate, eventstatus, sporttype
 				FROM dbo.match14 WITH (NOLOCK)
@@ -238,6 +244,7 @@ BEGIN
 				OR (ISNULL(R.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+			AND l.IsDeleted = 0
 		ORDER BY m.sporttype ASC,
 			l.leaguename ASC
 	END

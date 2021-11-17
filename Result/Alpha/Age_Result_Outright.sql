@@ -1,4 +1,4 @@
-﻿
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_Result_Outright]
 	@FromDate DATETIME,
 	@ToDate DATETIME,
@@ -15,35 +15,36 @@ Revisions:
 	- 20101229@Simon: Show All League or only show Live belong to @isShowAll.  
 	- 20110304@Lukas: exclude Greyhound & Harness racing sports (152,153)
 	- 20110628@Jamie: Adding REFUND result for Outright 
+	- 20211117@Razor: Support In-house Replication [Redmine: #164321]
 */
-SET NOCOUNT ON 
+BEGIN
+	SET NOCOUNT ON 
 
-SELECT @isShowAll = CASE @isShowAll WHEN 1 THEN NULL ELSE 0 END
+	SELECT @isShowAll = CASE @isShowAll WHEN 1 THEN NULL ELSE 0 END
 
-SELECT DISTINCT 
+	SELECT DISTINCT 
 		league.sporttype, outright.leagueid, outright.eventdate, outright.teamid, 
 		outright.status
-	FROM         
+	FROM
 		(SELECT leagueid, eventdate, teamid, status
-		 FROM dbo.outright AS o1 with (nolock)
-		 where oddsstatus = 'completed' and [status] IN ('WON','REFUND')
-			and eventdate >= @FromDate and eventdate <= @ToDate
-		 UNION ALL
-		 SELECT leagueid, eventdate, teamid, status
-		 FROM dbo.outright14 AS o14 with (nolock)
-		 where oddsstatus = 'completed' and [status] IN ('WON','REFUND')
-			and eventdate >= @FromDate and eventdate <= @ToDate
+		FROM dbo.outright AS o1 WITH (nolock)
+		WHERE oddsstatus = 'completed' 
+			AND [status] IN ('WON','REFUND')
+			AND eventdate >= @FromDate 
+			AND eventdate <= @ToDate
+			AND IsDeleted = 0
+		UNION ALL
+		SELECT leagueid, eventdate, teamid, status
+		FROM dbo.outright14 AS o14 WITH (nolock)
+		WHERE oddsstatus = 'completed' 
+			AND [status] IN ('WON','REFUND')
+			AND eventdate >= @FromDate 
+			AND eventdate <= @ToDate
 		) AS outright 
-		 INNER JOIN dbo.league with (nolock) on outright.leagueid = league.leagueid
-	WHERE league.sporttype not in (151,152,153)
-		and league.isTest = isnull(@isShowAll, league.isTest)
+		INNER JOIN dbo.league WITH (nolock) ON outright.leagueid = league.leagueid
+	WHERE league.sporttype NOT IN (151,152,153)
+		AND league.isTest = ISNULL(@isShowAll, league.isTest)
+		AND league.IsDeleted = 0
 	ORDER BY outright.leagueid,outright.eventdate, outright.teamid
-	
-	
-GO
-GRANT EXECUTE ON [dbo].[Age_Result_Outright] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_Result_Outright] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_Result_Outright] TO vnteam
+END
 GO
