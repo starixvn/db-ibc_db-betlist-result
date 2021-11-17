@@ -32,6 +32,7 @@ AS
 		- 20170802@Kos: Change Sporttype data type to SMALLINT [Redmine: #73545]
 		- 20170810@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20181105@Kos: Support Happy 5 [#Redmine: 103850]
+		- 20211117@Razor: Support In-house Replication [Redmine: #164321]
 */
 
 BEGIN
@@ -49,6 +50,7 @@ BEGIN
 			(
 				SELECT matchid, leagueid, eventdate, eventstatus, sporttype
 				FROM dbo.match WITH (NOLOCK)
+				WHERE IsDeleted = 0
 				UNION ALL
 				SELECT matchid, leagueid, eventdate, eventstatus, sporttype
 				FROM dbo.match14 WITH (NOLOCK)
@@ -62,16 +64,8 @@ BEGIN
 		AND m.sporttype IN (160, 161, 164)
 		AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 		AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+		AND l.IsDeleted = 0
 	ORDER BY m.sporttype,
 		l.leaguename
 END
-
-
-
-
-
-GO
-GRANT EXECUTE ON [dbo].[U3_Age_Result_LeagueSelByDate] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[U3_Age_Result_LeagueSelByDate] TO [bodbDownlineNetView] AS [dbo]
 GO

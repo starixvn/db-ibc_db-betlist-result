@@ -1,4 +1,6 @@
-﻿ALTER PROCEDURE [dbo].[U3_Result_MatchSelNumberGameByLeague]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+
+ALTER PROCEDURE [dbo].[U3_Result_MatchSelNumberGameByLeague]
 	@FromDate	DATETIME,
 	@LeagueId	INT,
 	@Language	NVARCHAR(2)	= 'E',
@@ -15,6 +17,7 @@ AS
 	Revisions:
 		- 20170525@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20171115@Kos: Add new param SportType to separate Lucky 3 and Number Game match [#Redmine: 86655]
+		- 20211117@Razor: Support In-house Replication [Redmine: #164321]
 */
 
 BEGIN
@@ -62,6 +65,7 @@ BEGIN
 			WHERE eventdate = @FromDate
 				AND sporttype = @SportType
 				AND (@LeagueId = 0 OR leagueid = @LeagueId)
+				AND IsDeleted = 0
 			UNION ALL
 			SELECT
 				betstatus,
@@ -86,6 +90,7 @@ BEGIN
 				Seq,
 				Number
 			FROM dbo.bingoball WITH (NOLOCK)
+			WHERE IsDeleted = 0
 			UNION ALL
 			SELECT
 				Matchid,
@@ -98,13 +103,6 @@ BEGIN
 	WHERE (m.eventstatus NOT IN ('running')
 			OR (m.eventstatus = 'running' AND mr.IsHTCal = 1))
 		AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+		AND l.IsDeleted = 0
 END
-
-
-GO
-GRANT EXECUTE ON [dbo].[U3_Result_MatchSelNumberGameByLeague] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[U3_Result_MatchSelNumberGameByLeague] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[U3_Result_MatchSelNumberGameByLeague] TO [vnteam]
 GO
