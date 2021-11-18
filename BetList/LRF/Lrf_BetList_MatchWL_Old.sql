@@ -29,6 +29,7 @@ AS
 		- 20210830@Kos: Hotfix - Sort in LicenseeWL column [Redmine: #160910]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
+		- 20211118@Kos: Hotfix - Missing linked database [Redmine: #164867]
 
 	Param's Explanation:
 		+ @LiveIndicator:
@@ -332,7 +333,7 @@ BEGIN
 			INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
 			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.TransID
-			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
+			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.winlostdate = @_Date
 			AND b.statusID IN (111, 112, 113)
 			AND (@LiveIndicator = -1 OR b.Liveindicator = @LiveIndicator)
