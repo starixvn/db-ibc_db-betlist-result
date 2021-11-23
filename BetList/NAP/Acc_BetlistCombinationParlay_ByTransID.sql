@@ -38,6 +38,7 @@ AS
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		- 20211123@Razor: Check Abnormal Parlay Ticket [Redmine: #163900]
 */
 
 BEGIN
@@ -59,7 +60,13 @@ BEGIN
 		@Status			NVARCHAR(10),
 		@minMatchdate	DATETIME,
 		@maxMatchdate	DATETIME,
-		@WhTicket		TINYINT		-- 1: bettrans, 2: bettrans14, 3: bettrans_bk
+		@WhTicket		TINYINT,-- 1: bettrans, 2: bettrans14, 3: bettrans_bk
+		@MainTicketIsMarked BIT
+
+	SELECT @MainTicketIsMarked = COUNT(1)
+	FROM dbo.MarkedTransaction WITH (NOLOCK)
+	WHERE transid = @TransId 
+		AND MatchId = 29
 
 	-- Check if @transid in bettrans
 	SELECT
@@ -242,7 +249,10 @@ BEGIN
 			WHEN bm.status = 'LOSE' AND ISNULL(bm.statuswinlost, 0) = 3 THEN 'Half Lose'
 			ELSE bm.status
 		END AS status,
-		ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+		CASE 
+			WHEN bm.status IN ('WON','LOSE','DRAW') AND @MainTicketIsMarked = 1 THEN 255
+			ELSE ISNULL(m.SettlementStatus, 0)
+		END AS SettlementStatus,
 		bm.livehomescore,
 		bm.liveawayscore,
 		bm.liveindicator,

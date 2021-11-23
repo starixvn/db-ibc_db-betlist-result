@@ -78,6 +78,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
+		- 20211130@Razor: Check Abnormal Parlay Ticket [Redmine: #163900]
 */
 
 BEGIN
@@ -876,7 +877,7 @@ BEGIN
 		WHERE Product = 'Unknown'
 			OR Product IS NULL
 			OR BetType IN (903, 904, 913, 914)
-			OR (Product <> 'SB'
+			OR (Product NOT IN ('SB', 'Parlay')
 				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'FW', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM')
 					OR WinLostDate < @Yesterday)
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
