@@ -41,6 +41,7 @@ AS
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20201028@Kos: Return transdate [Redmine: #144388]
 		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
+		- 20211123@Razor: Check Abnormal Parlay Ticket [Redmine: #163900]
 */
 
 BEGIN
@@ -88,7 +89,13 @@ BEGIN
 
 	DECLARE @RefNo		BIGINT,
 		@CurrencyName	NVARCHAR(50),
-		@Status			NVARCHAR(10)
+		@Status			NVARCHAR(10),
+		@MainTicketIsMarked BIT
+
+	SELECT @MainTicketIsMarked = COUNT(1)
+	FROM dbo.MarkedTransaction WITH (NOLOCK)
+	WHERE transid = @TransId 
+		AND MatchId = 29
 
 	SELECT
 		@RefNo = b.refno,
@@ -160,7 +167,10 @@ BEGIN
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
 			END AS Status,
-			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+			CASE 
+				WHEN b.status IN ('WON','LOSE','DRAW') AND @MainTicketIsMarked = 1 THEN 255
+				ELSE ISNULL(m.SettlementStatus, 0)
+			END AS SettlementStatus,
 			b.transdate,
 			b.livehomescore,
 			b.liveawayscore,
