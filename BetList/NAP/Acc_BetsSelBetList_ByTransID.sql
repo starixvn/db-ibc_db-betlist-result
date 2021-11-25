@@ -160,6 +160,7 @@ AS
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
 */
 
 BEGIN
@@ -2350,7 +2351,7 @@ BEGIN
 						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 28 THEN 220
-						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68) THEN b.matchid
+						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					b.ip,
@@ -3261,7 +3262,7 @@ BEGIN
 						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 12 THEN 255
 						WHEN s.ProductID = 28 THEN 220
-						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68) THEN b.matchid
+						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					dp.ip,

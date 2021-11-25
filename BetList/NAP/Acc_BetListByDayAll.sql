@@ -164,6 +164,7 @@ AS
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -675,7 +676,7 @@ BEGIN
 					WHEN s.ProductID = 24 THEN 219
 					WHEN s.ProductID = 28 THEN 220
 					WHEN s.ProductID = 32 THEN 248
-					WHEN s.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68) THEN b.matchid
+					WHEN s.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
