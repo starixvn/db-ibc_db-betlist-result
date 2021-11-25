@@ -66,6 +66,7 @@ AS
 		- 20210916@Kos: Support Cricket [Redmine: 160452]
 					- Add new input params @FromDate SMALLDATETIME, @ToDate SMALLDATETIME, @MoveBetsDay SMALLDATETIME
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211125@Kos: Hotfix - Timeout in bettrans14 range [Redmine: 165188]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -188,7 +189,10 @@ BEGIN
 		WHERE matchid = @MatchId
 	END
 
-	DECLARE @Match TABLE(MatchId INT)
+	DECLARE @Match TABLE (MatchId INT)
+
+	INSERT INTO @Match
+	SELECT @MatchId
 
 	IF @MatchSportType = 50 AND @ParentId IS NULL	-- Cricket, parent match
 	BEGIN
@@ -274,10 +278,8 @@ BEGIN
 				INNER JOIN bodb_licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
-			WHERE
-				(b.matchid = @MatchId
-					OR b.matchid IN (SELECT MatchId FROM @Match))
-				AND sbt.ProductID = 1
+				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
+			WHERE sbt.ProductID = 1
 				AND sbt.EventType <> 0
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
@@ -346,10 +348,8 @@ BEGIN
 				INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
-			WHERE
-				(b.matchid = @MatchId
-					OR b.matchid IN (SELECT MatchId FROM @Match))
-				AND sbt.ProductID = 1
+				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
+			WHERE sbt.ProductID = 1
 				AND sbt.EventType <> 0
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
@@ -418,10 +418,8 @@ BEGIN
 				INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-			WHERE
-				(b.matchid = @MatchId
-					OR b.matchid IN (SELECT MatchId FROM @Match))
-				AND b.statusID IN (111, 112, 113)
+				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
+			WHERE b.statusID IN (111, 112, 113)
 				AND ((@ShowVS = 1 AND sbt.ProductID = 5 AND sbt.EventType = 1)
 					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1))
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
@@ -492,10 +490,8 @@ BEGIN
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-			WHERE
-				(b.matchid = @MatchId
-					OR b.matchid IN (SELECT MatchId FROM @Match))
-				AND b.statusID IN (111, 112, 113)
+				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
+			WHERE b.statusID IN (111, 112, 113)
 				AND b.tpositiontaking = 0
 				AND sbt.ProductID = 1
 				AND sbt.EventType <> 0
@@ -565,10 +561,8 @@ BEGIN
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-			WHERE
-				(b.matchid = @MatchId
-					OR b.matchid IN (SELECT MatchId FROM @Match))
-				AND sbt.ProductID = 1
+				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
+			WHERE sbt.ProductID = 1
 				AND sbt.EventType <> 0
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
@@ -637,10 +631,8 @@ BEGIN
 				INNER JOIN @TempAg AS t ON b.recommend = t.custid
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
-			WHERE
-				(b.matchid = @MatchId
-					OR b.matchid IN (SELECT MatchId FROM @Match))
-				AND b.statusID IN (111, 112, 113)
+				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
+			WHERE b.statusID IN (111, 112, 113)
 				AND ((@ShowVS = 1 AND sbt.ProductID = 5 AND sbt.EventType = 1)
 					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1))
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
