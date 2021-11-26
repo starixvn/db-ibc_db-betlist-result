@@ -101,6 +101,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
+		- 20211126@Kos: Support Parlay Abnormal Bet [Redmine: #163900]
 */
 
 BEGIN
@@ -852,7 +853,7 @@ BEGIN
 				OR (@ShowBA = 0
 					AND Product IN ('SB', 'Parlay', 'Outright')
 					AND BATransId IS NOT NULL)
-				OR (Product <> 'SB'
+				OR (Product NOT IN ('SB', 'Parlay')
 					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 
 			IF EXISTS (SELECT 1 FROM #Data WHERE Product = 'SB' AND Status IN ('Draw', 'Won', 'Lose'))

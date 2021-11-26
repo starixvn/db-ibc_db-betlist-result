@@ -62,6 +62,7 @@ AS
 		- 20210316@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
+		- 20211126@Kos: Support Parlay Abnormal Bet [Redmine: #163900]
 */
 
 BEGIN
@@ -1662,7 +1663,7 @@ BEGIN
 			FROM #Data AS b
 			WHERE b.Product = 'Unknown'
 				OR NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
-				OR (b.Product <> 'SB'
+				OR (b.Product NOT IN ('SB', 'Parlay')
 					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 				OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
 					AND b.Status = 'Void'
@@ -1678,7 +1679,7 @@ BEGIN
 			WHERE b.Product = 'Unknown'
 				OR NOT EXISTS (SELECT 1 FROM #TempCust WHERE CustId = b.CustId)
 				OR NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
-				OR (b.Product <> 'SB'
+				OR (b.Product NOT IN ('SB', 'Parlay')
 					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 				OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
 					AND b.Status = 'Void'

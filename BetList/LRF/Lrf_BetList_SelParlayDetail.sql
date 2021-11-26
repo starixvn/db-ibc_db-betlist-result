@@ -33,6 +33,7 @@ AS
 		- 20200425@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20201028@Kos: Return transdate [Redmine: #144388]
 		- 20201207@Kos: Hotfix - Wrong currency code display [Redmine: #146691]
+		- 20211126@Kos: Support Parlay Abnormal Bet [Redmine: #163900]
 */
 
 BEGIN
@@ -78,9 +79,15 @@ BEGIN
 		TransDate			DATETIME,
 		TransDesc			NVARCHAR(1000))
 
-	DECLARE @RefNo		BIGINT,
-		@CurrencyId		TINYINT,
-		@Status			NVARCHAR(10)
+	DECLARE @RefNo			BIGINT,
+		@CurrencyId			TINYINT,
+		@Status				NVARCHAR(10),
+		@IsMainTicketMarked	BIT				= 0
+
+	IF EXISTS ( SELECT 1 FROM dbo.MarkedTransaction WITH (NOLOCK) WHERE transid = @TransId AND MatchId = 29)
+	BEGIN
+		SET @IsMainTicketMarked = 1
+	END
 
 	SELECT
 		@RefNo = b.refno,
@@ -149,7 +156,10 @@ BEGIN
 				WHEN b.status = 'LOSE' AND ISNULL(b.statuswinlost, 0) = 3 THEN 'Half Lose'
 				ELSE b.status
 			END AS status,
-			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+			CASE
+				WHEN b.status IN ('WON','LOSE','DRAW') AND @IsMainTicketMarked = 1 THEN 255
+				ELSE ISNULL(m.SettlementStatus, 0)
+			END AS SettlementStatus,
 			b.transdate,
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM dbo.bettransm AS b WITH (NOLOCK)
