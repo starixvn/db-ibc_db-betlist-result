@@ -161,6 +161,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
+		- 20211126@Kos: Limit search within 6 months for Casino ticket detail [Redmine: #152315]
 */
 
 BEGIN
@@ -4040,9 +4041,11 @@ BEGIN
 			@TransId = b.transid,
 			@WinLostDate = b.winlostdate,
 			@BetType = b.gameID
-		FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 			INNER JOIN @SportBettype AS sp ON b.gameID = sp.Bettype
-		WHERE b.custid = @CustId AND b.transid = @RefNo
+		WHERE b.custid = @CustId
+			AND b.transid = @RefNo
+			AND b.winlostdate BETWEEN DATEADD(MONTH, -6, GETDATE()) AND @BalanceUpDay
 	END
 
 	IF @WinLostDate IS NOT NULL
@@ -4412,9 +4415,11 @@ BEGIN
 			@TransId = b.transid,
 			@WinLostDate = b.winlostdate,
 			@BetType = b.gameID
-		FROM bodb_archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
+		FROM bodb_archive.dbo.bettransLC_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 			INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
-		WHERE b.custid = @CustId AND b.transid = @RefNo
+		WHERE b.custid = @CustId
+			AND b.transid = @RefNo
+			AND b.winlostdate BETWEEN DATEADD(MONTH, -6, GETDATE()) AND @BalanceUpDay
 	END
 
 	IF @WinLostDate IS NOT NULL
