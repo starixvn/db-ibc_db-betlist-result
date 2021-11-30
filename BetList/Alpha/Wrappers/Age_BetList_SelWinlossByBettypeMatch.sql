@@ -27,6 +27,7 @@ AS
 		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
 					- Add new input params @FromDate SMALLDATETIME, @ToDate SMALLDATETIME, @MoveBetsDay SMALLDATETIME
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 */
 
 BEGIN
@@ -173,7 +174,8 @@ BEGIN
 		TransDesc			NVARCHAR(1000),
 		OddsSpread			MONEY,
 		Currency			NVARCHAR(50),
-		ExtraInfo			VARCHAR(1000)
+		ExtraInfo			VARCHAR(1000),
+		BetdaqId			BIGINT
 	);
 
 	DECLARE @Tickets TABLE (
@@ -390,7 +392,8 @@ BEGIN
 			TransDesc,
 			OddsSpread,
 			Currency,
-			ExtraInfo )
+			ExtraInfo,
+			BetdaqId)
 		SELECT
 			b.transid,
 			b.refno,
@@ -517,7 +520,11 @@ BEGIN
 			CASE
 				WHEN c.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
-			END AS ExtraInfo
+			END AS ExtraInfo,
+			CASE
+				WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+				ELSE -1
+			END
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK, INDEX = PK_bettrans) ON b.transid = c.TransId
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -730,7 +737,8 @@ BEGIN
 			TransDesc,
 			OddsSpread,
 			Currency,
-			ExtraInfo )
+			ExtraInfo,
+			BetdaqId)
 		SELECT
 			b.transid,
 			b.refno,
@@ -857,7 +865,11 @@ BEGIN
 			CASE
 				WHEN c.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
-			END AS ExtraInfo
+			END AS ExtraInfo,
+			CASE
+				WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+				ELSE -1
+			END
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.TransId
 			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid

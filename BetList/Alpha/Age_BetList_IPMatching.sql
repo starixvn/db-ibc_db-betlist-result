@@ -16,6 +16,7 @@ AS
 		- 20200116@Kos: Created [Redmine: #124701]
 		- 20200422@Kos: Support status Delay Payout [Redmine: #132629]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 */
 
 BEGIN
@@ -91,7 +92,8 @@ BEGIN
 		TransDesc			NVARCHAR(1000),
 		OddsSpread			MONEY,
 		ExtraInfo			VARCHAR(1000),
-		Currency			NVARCHAR(50)
+		Currency			NVARCHAR(50),
+		BetdaqId			BIGINT
 	);
 
 	DECLARE @Tickets TABLE (
@@ -299,7 +301,11 @@ BEGIN
 								WHEN c.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END,
-				Currency = b.currencyname
+				Currency = b.currencyname,
+				BetdaqId = CASE
+								WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+								ELSE -1
+							END
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB') AND b.matchid = m.matchid
@@ -387,7 +393,8 @@ BEGIN
 				TransDesc = b.transdesc,
 				OddsSpread = 0,
 				ExtraInfo = '',
-				Currency = b.currencyname
+				Currency = b.currencyname,
+				betdaqid = -1
 			FROM @Tickets AS c
 				INNER JOIN dbo.translog AS b WITH (NOLOCK) ON b.translogid = c.TransId
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
@@ -556,7 +563,11 @@ BEGIN
 								WHEN c.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END,
-				Currency = b.currencyname
+				Currency = b.currencyname,
+				BetdaqId = CASE
+								WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+								ELSE -1
+							END
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 				LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB') AND b.matchid = m.matchid
@@ -574,11 +585,3 @@ BEGIN
 	FROM @BettransDetail
 	ORDER BY RefNo DESC
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Age_BetList_IPMatching] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_IPMatching] TO [bodbDownlineNetView]
-GO

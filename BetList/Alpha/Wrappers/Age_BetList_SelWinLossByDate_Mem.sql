@@ -140,6 +140,7 @@ AS
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -659,7 +660,10 @@ BEGIN
 									WHEN c.Product IN ('OneRNG', 'PP') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
 									WHEN c.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0 END
-					,BetdaqId = -1
+					,BetdaqId = CASE
+									WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+									ELSE -1
+								END
 					,ExtraInfo = CASE
 									WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 									ELSE '' END
@@ -955,7 +959,10 @@ BEGIN
 				,OddsSpread = CASE
 								WHEN c.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
 								ELSE 0 END
-				,BetdaqId = -1
+				,BetdaqId = CASE
+								WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+								ELSE -1
+							END
 				,ExtraInfo = CASE
 								WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 								ELSE '' END

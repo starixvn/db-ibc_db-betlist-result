@@ -78,6 +78,7 @@ AS
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 */
 
 BEGIN
@@ -125,7 +126,8 @@ BEGIN
 		ProductId		TINYINT,
 		EventType		INT,
 		SubProduct		VARCHAR(500),
-		WhTicket		TINYINT
+		WhTicket		TINYINT,
+		BetdaqId		BIGINT
 	);
 
 	CREATE TABLE #PagingData (
@@ -170,7 +172,8 @@ BEGIN
 		ProductId		TINYINT,
 		EventType		INT,
 		SubProduct		VARCHAR(500),
-		WhTicket		TINYINT
+		WhTicket		TINYINT,
+		BetdaqId		BIGINT,
 	);
 
 	DECLARE @BetListDetail TABLE(
@@ -227,7 +230,8 @@ BEGIN
 				TransDesc,
 				OddsSpread,
 				ExtraInfo,
-				WhTicket)
+				WhTicket,
+				BetdaqId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -256,7 +260,8 @@ BEGIN
 				b.transdesc,
 				b.oddsspread,
 				b.ExtraInfo,
-				1 AS WhTicket
+				1 AS WhTicket,
+				b.betdaqid
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.recommend = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -293,7 +298,8 @@ BEGIN
 				TransDesc,
 				OddsSpread,
 				ExtraInfo,
-				WhTicket)
+				WhTicket,
+				BetdaqId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -322,7 +328,8 @@ BEGIN
 				b.transdesc,
 				b.oddsspread,
 				b.ExtraInfo,
-				1 AS WhTicket
+				1 AS WhTicket,
+				b.BetdaqId
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.mrecommend = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -359,7 +366,8 @@ BEGIN
 				TransDesc,
 				OddsSpread,
 				ExtraInfo,
-				WhTicket)
+				WhTicket,
+				BetdaqId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -388,7 +396,8 @@ BEGIN
 				b.transdesc,
 				b.oddsspread,
 				b.ExtraInfo,
-				1 AS WhTicket
+				1 AS WhTicket,
+				b.BetdaqId
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.srecommend = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -434,7 +443,8 @@ BEGIN
 				TransDesc,
 				OddsSpread,
 				ExtraInfo,
-				WhTicket)
+				WhTicket,
+				BetdaqId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -463,7 +473,8 @@ BEGIN
 				b.transdesc,
 				b.oddsspread,
 				b.ExtraInfo,
-				2 AS WhTicket
+				2 AS WhTicket,
+				b.BetdaqId
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.recommend = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -500,7 +511,8 @@ BEGIN
 				TransDesc,
 				OddsSpread,
 				ExtraInfo,
-				WhTicket)
+				WhTicket,
+				BetdaqId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -529,7 +541,8 @@ BEGIN
 				b.transdesc,
 				b.oddsspread,
 				b.ExtraInfo,
-				2 AS WhTicket
+				2 AS WhTicket,
+				b.BetdaqId
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.mrecommend = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -566,7 +579,8 @@ BEGIN
 				TransDesc,
 				OddsSpread,
 				ExtraInfo,
-				WhTicket)
+				WhTicket,
+				BetdaqId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -595,7 +609,8 @@ BEGIN
 				b.transdesc,
 				b.oddsspread,
 				b.ExtraInfo,
-				2 AS WhTicket
+				2 AS WhTicket,
+				b.BetdaqId
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.srecommend = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -668,7 +683,8 @@ BEGIN
 				ProductId,
 				EventType,
 				SubProduct,
-				WhTicket)
+				WhTicket,
+				BetdaqId)
 			SELECT
 				b.TransId,
 				b.RefNo,
@@ -700,7 +716,8 @@ BEGIN
 				b.ProductId,
 				b.EventType,
 				b.SubProduct,
-				b.WhTicket
+				b.WhTicket,
+				b.BetdaqId
 			FROM
 				(
 					SELECT
@@ -752,6 +769,10 @@ BEGIN
 					ExtraInfo = CASE
 									WHEN b.ProductId = 1 THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
+								END,
+					BetdaqId = CASE
+									WHEN b.ProductId IN (1) THEN ISNULL(b.betdaqid, -1)
+									ELSE -1
 								END
 				FROM #PagingData AS b
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -965,6 +986,10 @@ BEGIN
 					ExtraInfo = CASE
 									WHEN b.ProductId = 1 THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
+								END,
+					BetdaqId = CASE
+									WHEN b.ProductId IN (1) THEN ISNULL(b.betdaqid, -1)
+									ELSE -1
 								END
 				FROM #PagingData AS b
 					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -1285,7 +1310,8 @@ BEGIN
 		b.ComStatus,
 		b.TransDesc,
 		b.OddsSpread,
-		b.ExtraInfo
+		b.ExtraInfo,
+		b.BetdaqId
 	FROM #PagingData AS b
 		INNER JOIN dbo.custinfo AS c WITH (NOLOCK) ON b.CustId = c.custid
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid

@@ -124,6 +124,7 @@ AS
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
+		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 */
 
 BEGIN
@@ -664,7 +665,10 @@ BEGIN
 			,OddsSpread = CASE
 							WHEN c.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
 							ELSE 0 END
-			,BetdaqId = -1
+			,BetdaqId = CASE
+							WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+							ELSE -1
+						END
 			,ExtraInfo = CASE
 							WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 							ELSE '' END

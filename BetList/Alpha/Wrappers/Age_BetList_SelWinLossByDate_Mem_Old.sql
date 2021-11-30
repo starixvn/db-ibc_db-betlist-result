@@ -140,6 +140,7 @@ AS
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -557,7 +558,10 @@ BEGIN
 								WHEN b.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
 								ELSE 0
 							END,
-				BetdaqId = -1,
+				BetdaqId = CASE
+								WHEN b.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+								ELSE -1
+							END,
 				ExtraInfo = CASE
 								WHEN b.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
