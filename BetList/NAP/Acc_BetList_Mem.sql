@@ -32,6 +32,7 @@ AS
 			- 2: Delay Payout
 			- 3: Under Settlement
 			- 99: Abnormal Bets
+			- 88: Cash Out
 
 	Revisions:
 		- 20190925@Kos: Create new [Redmine: #120379]
@@ -79,6 +80,7 @@ AS
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
 		- 20211130@Razor: Check Abnormal Parlay Ticket [Redmine: #163900]
+		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 */
 
 BEGIN
@@ -186,7 +188,8 @@ BEGIN
 		Gameid3rd			NVARCHAR(50),
 		Tranid3rd			NVARCHAR(64),
 		TableID				TINYINT,
-		Product				VARCHAR(30)
+		Product				VARCHAR(30),
+		IsCashOut			TINYINT
 	)
 
 	-- Get ticket detail
@@ -247,6 +250,10 @@ BEGIN
 		SET @StatusIdList = @StatusIdList + ',0,111,112,113'
 	END
 
+	IF ',' + @StatusIdList + ',' LIKE '%,88,%'
+	BEGIN
+		SET @StatusIdList = @StatusIdList + ',111,112,113,2,102,103'
+	END
 	DECLARE @TempToDate	SMALLDATETIME,
 		@TempFromDate	SMALLDATETIME
 
@@ -869,7 +876,11 @@ BEGIN
 						WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'			-- Virtual Sports Racing
 						WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games
 						ELSE 'Unknown'
-					END
+					END,
+			IsCashOut = CASE
+							WHEN b.betdaqid = -2 AND s.EventType = 1 AND s.ProductID = 1 AND ',' + @OriginalStatusIdList + ',' LIKE '%,88,%' THEN 1
+							ELSE 0
+						END
 		FROM @Data AS b
 			INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
@@ -883,11 +894,13 @@ BEGIN
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'		-- Abnormal Bets
 				AND Status = 'Void'
-				AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 1)
+				AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 1
+				AND IsCashOut = 0)
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,102,%'	-- Void
 				AND Status = 'Void'
-				AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 0)
-
+				AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 0
+				AND IsCashOut = 0)
+			OR (Status = 'Refund' AND IsCashOut = 0 AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,103,%')
 		IF EXISTS (SELECT 1 FROM @Data WHERE Product = 'SB' AND Status IN ('Waiting', 'Running', 'Draw', 'Won', 'Lose'))
 		BEGIN
 			UPDATE b
@@ -932,10 +945,12 @@ BEGIN
 					AND (ISNULL(SettlementStatus, 0) & 1 = 0		-- isPending flag (bit 1) = 0
 						OR (Stake = 0								-- Cash Out All
 							AND BetdaqId = 0
-							AND ExtraInfo LIKE '%p25%'))
+							AND ExtraInfo LIKE '%p25%')
+						OR IsCashOut = 0)							-- New Cash Out
 					AND ((Status = 'Draw' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,111,%')
 						OR (Status = 'Won' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,112,%')
 						OR (Status = 'Lose' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,113,%'))
+					AND IsCashOut = 0
 			END
 
 			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,2,%'		-- Not include Delay Payout
@@ -949,6 +964,7 @@ BEGIN
 					AND (Stake <> 0									-- Not Cash Out All
 						OR BetdaqId <> 0
 						OR ExtraInfo NOT LIKE '%p25%')
+					AND IsCashOut = 0
 			END
 
 			IF ',' + @OriginalStatusIdList + ',' NOT LIKE '%,3,%'	-- Not include Under Settlement
@@ -959,6 +975,7 @@ BEGIN
 					AND (ISNULL(SecAcceptFlag, 0) = 0 OR ISNULL(CheckTime, CURRENT_TIMESTAMP) <= CURRENT_TIMESTAMP)			-- not Waiting (Second Accept)
 					AND ISNULL(SettlementStatus, 0) & 12 <> 0	-- isUnderSettlement flag (bit 3) = 1 OR isSystemSettlement flag (bit 4) = 1
 					AND ISNULL(SettlementStatus, 0) & 1 = 0		-- isPending flag (bit 1) = 0
+					AND IsCashOut = 0
 			END
 		END
 
@@ -1577,7 +1594,8 @@ BEGIN
 					Gameid3rd			NVARCHAR(50),
 					Tranid3rd			NVARCHAR(64),
 					TableID				TINYINT,
-					Product				VARCHAR(30)
+					Product				VARCHAR(30),
+					ISCashOut			TINYINT
 				)
 
 				INSERT INTO @TmpCasinoData
@@ -1665,7 +1683,8 @@ BEGIN
 					b.Gameid3rd,
 					b.Tranid3rd,
 					b.TableID,
-					b.Product
+					b.Product,
+					0
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
 				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
