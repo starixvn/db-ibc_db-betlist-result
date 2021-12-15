@@ -66,6 +66,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 		- 20211201@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
+		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
 */
 
 BEGIN
@@ -1130,79 +1131,84 @@ BEGIN
 		END
 
 		-- Get yesterday and today settled bettransRnG/bettransLC tickets
-		IF EXISTS (SELECT 1 FROM #Data WHERE RefTable = 1 AND WinLostDate >= @Yesterday)		-- bettransRnG
+		IF ',' + @StatusIdList + ',' LIKE '%,111,%'
+			OR ',' + @StatusIdList + ',' LIKE '%,112,%'
+			OR ',' + @StatusIdList + ',' LIKE '%,113,%'
 		BEGIN
-			INSERT INTO @TmpData
-			SELECT
-				c.TransId AS RefNo,
-				CASE
-					WHEN Product IN ('OneRNG', 'PP', 'SBC', 'VGA') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113)
-						THEN brng.ContributionRate END), 0)
-					ELSE 0
-				END AS Odds,
-				SUM(brng.stake) AS Stake,
-				SUM(brng.actual_stake) AS Actual_Stake,
-				CASE
-					WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
-					WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
-					ELSE 'Draw'
-				END AS Status,
-				SUM(brng.winlost - brng.actual_stake) AS WinLost,
-				- SUM(brng.winlost - brng.actual_stake) AS LicenseeWL,
-				SUM(brng.playercomm) AS Commission,
-				SUM(brng.comm) AS Comm,
-				CASE
-					WHEN c.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') THEN SUM(ISNULL(brng.BetStake, 0))
-					ELSE 0
-				END AS OddsSpread
-			FROM #Data AS c
-				INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-			WHERE c.RefTable = 1
-				AND c.WinLostDate >= @Yesterday
-				AND brng.statusID NOT IN (0, 1)
-			GROUP BY
-				c.TransId,
-				c.Product
+			IF EXISTS (SELECT 1 FROM #Data WHERE RefTable = 1 AND WinLostDate >= @Yesterday)		-- bettransRnG
+			BEGIN
+				INSERT INTO @TmpData
+				SELECT
+					c.TransId AS RefNo,
+					CASE
+						WHEN Product IN ('OneRNG', 'PP', 'SBC', 'VGA') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113)
+							THEN brng.ContributionRate END), 0)
+						ELSE 0
+					END AS Odds,
+					SUM(brng.stake) AS Stake,
+					SUM(brng.actual_stake) AS Actual_Stake,
+					CASE
+						WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
+						WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
+						ELSE 'Draw'
+					END AS Status,
+					SUM(brng.winlost - brng.actual_stake) AS WinLost,
+					- SUM(brng.winlost - brng.actual_stake) AS LicenseeWL,
+					SUM(brng.playercomm) AS Commission,
+					SUM(brng.comm) AS Comm,
+					CASE
+						WHEN c.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') THEN SUM(ISNULL(brng.BetStake, 0))
+						ELSE 0
+					END AS OddsSpread
+				FROM #Data AS c
+					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
+				WHERE c.RefTable = 1
+					AND c.WinLostDate >= @Yesterday
+					AND brng.statusID NOT IN (0, 1)
+				GROUP BY
+					c.TransId,
+					c.Product
+			END
+
+			IF EXISTS (SELECT 1 FROM #Data WHERE RefTable = 2 AND WinLostDate >= @Yesterday)				-- bettransLC
+			BEGIN
+				INSERT INTO @TmpData
+				SELECT
+					c.TransId AS RefNo,
+					0 AS Odds,
+					SUM(blc.stake) AS Stake,
+					SUM(blc.actual_stake) AS Actual_Stake,
+					CASE
+						WHEN SUM(blc.winlost - blc.actual_stake) > 0 THEN 'Won'
+						WHEN SUM(blc.winlost - blc.actual_stake) < 0 THEN 'Lose'
+						ELSE 'Draw'
+					END AS Status,
+					SUM(blc.winlost - blc.actual_stake) AS WinLost,
+					- SUM(blc.winlost - blc.actual_stake) AS LicenseeWL,
+					SUM(blc.playercomm) AS Commission,
+					SUM(blc.comm) AS Comm,
+					0 AS OddsSpread
+				FROM #Data AS c
+					INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
+				WHERE c.RefTable = 2
+					AND c.WinLostDate >= @Yesterday
+					AND blc.statusID NOT IN (0, 1)
+				GROUP BY
+					c.TransId,
+					c.Product
+			END
+
+			DELETE FROM @TmpData
+			WHERE (Status = 'Draw' AND ',' + @StatusIdList + ',' NOT LIKE '%,111,%')
+				OR (Status = 'Won' AND ',' + @StatusIdList + ',' NOT LIKE '%,112,%')
+				OR (Status = 'Lose' AND ',' + @StatusIdList + ',' NOT LIKE '%,113,%')
+
+			DELETE b
+			FROM #Data AS b
+			WHERE b.RefTable IN (1, 2)
+				AND b.Winlostdate >= @Yesterday
+				AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 		END
-
-		IF EXISTS (SELECT 1 FROM #Data WHERE RefTable = 2 AND WinLostDate >= @Yesterday)				-- bettransLC
-		BEGIN
-			INSERT INTO @TmpData
-			SELECT
-				c.TransId AS RefNo,
-				0 AS Odds,
-				SUM(blc.stake) AS Stake,
-				SUM(blc.actual_stake) AS Actual_Stake,
-				CASE
-					WHEN SUM(blc.winlost - blc.actual_stake) > 0 THEN 'Won'
-					WHEN SUM(blc.winlost - blc.actual_stake) < 0 THEN 'Lose'
-					ELSE 'Draw'
-				END AS Status,
-				SUM(blc.winlost - blc.actual_stake) AS WinLost,
-				- SUM(blc.winlost - blc.actual_stake) AS LicenseeWL,
-				SUM(blc.playercomm) AS Commission,
-				SUM(blc.comm) AS Comm,
-				0 AS OddsSpread
-			FROM #Data AS c
-				INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-			WHERE c.RefTable = 2
-				AND c.WinLostDate >= @Yesterday
-				AND blc.statusID NOT IN (0, 1)
-			GROUP BY
-				c.TransId,
-				c.Product
-		END
-
-		DELETE FROM @TmpData
-		WHERE (Status = 'Draw' AND ',' + @StatusIdList + ',' NOT LIKE '%,111,%')
-			OR (Status = 'Won' AND ',' + @StatusIdList + ',' NOT LIKE '%,112,%')
-			OR (Status = 'Lose' AND ',' + @StatusIdList + ',' NOT LIKE '%,113,%')
-
-		DELETE b
-		FROM #Data AS b
-		WHERE b.RefTable IN (1, 2)
-			AND b.Winlostdate >= @Yesterday
-			AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
 		BEGIN

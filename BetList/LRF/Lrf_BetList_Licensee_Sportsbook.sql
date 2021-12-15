@@ -63,6 +63,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 		- 20211126@Kos: Support Parlay Abnormal Bet [Redmine: #163900]
+		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
 */
 
 BEGIN
@@ -1665,6 +1666,9 @@ BEGIN
 				OR NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 				OR (b.Product NOT IN ('SB', 'Parlay')
 					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
+				OR (b.Product = 'Parlay'
+					AND b.Status IN ('Draw', 'Won', 'Lose')
+					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 				OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
 					AND b.Status = 'Void'
 					AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@ab)[1]','TINYINT'), 0) = 1)
@@ -1680,6 +1684,9 @@ BEGIN
 				OR NOT EXISTS (SELECT 1 FROM #TempCust WHERE CustId = b.CustId)
 				OR NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 				OR (b.Product NOT IN ('SB', 'Parlay')
+					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
+				OR (b.Product = 'Parlay'
+					AND b.Status IN ('Draw', 'Won', 'Lose')
 					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 				OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'
 					AND b.Status = 'Void'

@@ -57,6 +57,7 @@ AS
 		- 20210714@Kos: Support Casino products [Redmine: #157987]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
+		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
 */
 
 BEGIN
@@ -655,210 +656,213 @@ BEGIN
 
 			DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
 
-			IF @Username IS NULL OR @Username = '' OR @NumOfMem > 5000		-- Licensee level (not input username of number of searched member > 5000)
+			IF ',' + @StatusFilter + ',' LIKE '%,1,%'	-- Yesterday and today bettransRnG/bettransLC running tickets
 			BEGIN
-				-- bettransRnG
-				INSERT INTO @TmpData
-				SELECT
-					b.RefNo,
-					b.gameID AS BetType,
-					CASE
-						WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
-						ELSE 0
-					END AS Odds,
-					CASE
-						WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(SUM(BetStake), 0)
-						ELSE 0
-					END AS OddsSpread,
-					SUM(b.stake) AS Stake,
-					SUM(b.actual_stake) AS Actual_Stake,
-					1 AS IsNew
-				FROM dbo.bettransRnG AS b WITH (NOLOCK)
-					INNER JOIN @TempAg AS a ON a.CustId = b.recommend
-					INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.gameID = s.bettype
-				WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
-				GROUP BY b.RefNo,
-					b.gameID,
-					s.ProductID
+				IF @Username IS NULL OR @Username = '' OR @NumOfMem > 5000		-- Licensee level (not input username of number of searched member > 5000)
+				BEGIN
+					-- bettransRnG
+					INSERT INTO @TmpData
+					SELECT
+						b.RefNo,
+						b.gameID AS BetType,
+						CASE
+							WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
+							ELSE 0
+						END AS Odds,
+						CASE
+							WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(SUM(BetStake), 0)
+							ELSE 0
+						END AS OddsSpread,
+						SUM(b.stake) AS Stake,
+						SUM(b.actual_stake) AS Actual_Stake,
+						1 AS IsNew
+					FROM dbo.bettransRnG AS b WITH (NOLOCK)
+						INNER JOIN @TempAg AS a ON a.CustId = b.recommend
+						INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.gameID = s.bettype
+					WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
+					GROUP BY b.RefNo,
+						b.gameID,
+						s.ProductID
 
-				-- bettransLC
-				INSERT INTO @TmpData
+					-- bettransLC
+					INSERT INTO @TmpData
+					SELECT
+						b.RefNo,
+						b.gameID AS BetType,
+						0 AS Odds,
+						0 AS OddsSpread,
+						SUM(b.stake) AS Stake,
+						SUM(b.actual_stake) AS Actual_Stake,
+						1 AS IsNew
+					FROM dbo.bettransLC AS b WITH (NOLOCK)
+						INNER JOIN @TempAg AS a ON a.CustId = b.recommend
+						INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.gameID = s.bettype
+					WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
+					GROUP BY b.RefNo,
+						b.gameID
+				END
+				ELSE
+				BEGIN
+					-- bettransRnG
+					INSERT INTO @TmpData
+					SELECT
+						b.RefNo,
+						b.gameID AS BetType,
+						CASE
+							WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
+							ELSE 0
+						END AS Odds,
+						CASE
+							WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(SUM(BetStake), 0)
+							ELSE 0
+						END AS OddsSpread,
+						SUM(b.stake) AS Stake,
+						SUM(b.actual_stake) AS Actual_Stake,
+						1 AS IsNew
+					FROM dbo.bettransRnG AS b WITH (NOLOCK)
+						INNER JOIN @TempCust AS a ON a.CustId = b.custid
+						INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.gameID = s.bettype
+					WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
+					GROUP BY b.RefNo,
+						b.gameID,
+						s.ProductID
+
+					-- bettransLC
+					INSERT INTO @TmpData
+					SELECT
+						b.RefNo,
+						b.gameID AS BetType,
+						0 AS Odds,
+						0 AS OddsSpread,
+						SUM(b.stake) AS Stake,
+						SUM(b.actual_stake) AS Actual_Stake,
+						1 AS IsNew
+					FROM dbo.bettransLC AS b WITH (NOLOCK)
+						INNER JOIN @TempCust AS a ON a.CustId = b.custid
+						INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.gameID = s.bettype
+					WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
+					GROUP BY b.RefNo,
+						b.gameID
+				END
+
+				-- Delete settled only summary ticket
+				DELETE b
+				FROM #Data AS b
+				WHERE b.RefTable IN (1, 2)
+					AND b.Winlostdate >= @Yesterday
+					AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
+
+				-- Update tickets EXISTS in #Data
+				UPDATE b
+				SET b.IsNew = 0
+				FROM @TmpData AS b
+					INNER JOIN #Data AS d ON d.TransId = b.RefNo AND d.BetType = b.BetType
+				WHERE d.Winlostdate >= @Yesterday AND d.RefTable IN (1, 2)
+
+				INSERT INTO #Data (
+					TransId,
+					RefNo,
+					CustId,
+					Currency,
+					Recommend,
+					BetType,
+					BetId,
+					BetTeam,
+					Hdp1,
+					Hdp2,
+					OddsId,
+					OddsType,
+					Odds,
+					MOdds,
+					OddsSpread,
+					Stake,
+					Actual_Stake,
+					Status,
+					SecAcceptFlag,
+					CheckTime,
+					TransDate,
+					WinLostDate,
+					LiveIndicator,
+					LiveHomeScore,
+					LiveAwayScore,
+					Ip,
+					BetFrom,
+					MatchId,
+					BetCheck,
+					ComStatus,
+					TransDesc,
+					BetdaqId,
+					ExtraInfo,
+					WalletType,
+					RefCode,
+					TableID,
+					Product,
+					RefTable)
 				SELECT
-					b.RefNo,
-					b.gameID AS BetType,
-					0 AS Odds,
-					0 AS OddsSpread,
-					SUM(b.stake) AS Stake,
-					SUM(b.actual_stake) AS Actual_Stake,
-					1 AS IsNew
-				FROM dbo.bettransLC AS b WITH (NOLOCK)
-					INNER JOIN @TempAg AS a ON a.CustId = b.recommend
-					INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.gameID = s.bettype
-				WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
-				GROUP BY b.RefNo,
-					b.gameID
+					b.transid,
+					b.refno,
+					b.custid,
+					b.currency,
+					b.recommend,
+					b.bettype,
+					ISNULL(b.betid, 0) AS BetId,
+					b.betteam,
+					b.hdp1,
+					b.hdp2,
+					b.oddsid,
+					b.oddstype,
+					b.odds,
+					b.modds,
+					b.oddsspread,
+					b.stake,
+					b.actual_stake,
+					b.status,
+					b.SecAcceptFlag,
+					b.checktime,
+					b.transdate,
+					b.winlostdate,
+					b.liveindicator,
+					b.livehomescore,
+					b.liveawayscore,
+					b.ip,
+					b.betfrom,
+					b.matchid,
+					b.betcheck,
+					b.comstatus,
+					b.transdesc,
+					b.betdaqid,
+					b.ExtraInfo,
+					b.WalletType,
+					ISNULL(b.RefCode, 0),
+					1 AS TableID,
+					CASE
+						WHEN s.ProductID = 6 THEN 'OneRNG'	-- RNG Casino
+						WHEN s.ProductID = 21 THEN 'AllBet'
+						WHEN s.ProductID = 22 THEN 'VB'		-- Macau Games
+						WHEN s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
+						WHEN s.ProductID = 34 THEN 'CC'		-- Card Club (Arcadia Gaming)
+						WHEN s.ProductID = 36 THEN 'SG'		-- Spadegaming
+						WHEN s.ProductID = 39 THEN 'SAG'	-- SA Gaming
+						WHEN s.ProductID = 42 THEN 'SBC'	-- Saba.club
+						WHEN s.ProductID = 45 THEN 'SXG'	-- Sexy Gaming
+						WHEN s.ProductID = 51 THEN 'WM'		-- WM Live Casino
+						WHEN s.ProductID = 55 THEN 'PGS'	-- PG Soft
+						WHEN s.ProductID = 56 THEN 'JK'		-- Joker
+						WHEN s.ProductID = 57 THEN 'BG'		-- Big Gaming
+						WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
+						WHEN s.ProductID = 61 THEN 'HB'		-- Habanero
+						WHEN s.ProductID = 62 THEN 'CG'		-- CG
+						WHEN s.ProductID = 66 THEN 'VGA'	-- Vgaming
+						WHEN s.ProductID = 67 THEN 'AP'		-- AdvantPlay
+						WHEN s.ProductID = 68 THEN 'APM'	-- AdvantPlay Mini
+						ELSE 'Unknown'
+					END AS Product,
+					s.RefTable
+				FROM dbo.bettrans AS b WITH (NOLOCK)
+					INNER JOIN @TmpData AS t ON t.RefNo = b.transid AND t.BetType = b.BetType
+					INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest) AS s ON b.bettype = s.bettype
+				WHERE t.IsNew = 1
 			END
-			ELSE
-			BEGIN
-				-- bettransRnG
-				INSERT INTO @TmpData
-				SELECT
-					b.RefNo,
-					b.gameID AS BetType,
-					CASE
-						WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
-						ELSE 0
-					END AS Odds,
-					CASE
-						WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(SUM(BetStake), 0)
-						ELSE 0
-					END AS OddsSpread,
-					SUM(b.stake) AS Stake,
-					SUM(b.actual_stake) AS Actual_Stake,
-					1 AS IsNew
-				FROM dbo.bettransRnG AS b WITH (NOLOCK)
-					INNER JOIN @TempCust AS a ON a.CustId = b.custid
-					INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.gameID = s.bettype
-				WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
-				GROUP BY b.RefNo,
-					b.gameID,
-					s.ProductID
-
-				-- bettransLC
-				INSERT INTO @TmpData
-				SELECT
-					b.RefNo,
-					b.gameID AS BetType,
-					0 AS Odds,
-					0 AS OddsSpread,
-					SUM(b.stake) AS Stake,
-					SUM(b.actual_stake) AS Actual_Stake,
-					1 AS IsNew
-				FROM dbo.bettransLC AS b WITH (NOLOCK)
-					INNER JOIN @TempCust AS a ON a.CustId = b.custid
-					INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.gameID = s.bettype
-				WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
-				GROUP BY b.RefNo,
-					b.gameID
-			END
-
-			-- Delete settled only summary ticket
-			DELETE b
-			FROM #Data AS b
-			WHERE b.RefTable IN (1, 2)
-				AND b.Winlostdate >= @Yesterday
-				AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
-
-			-- Update tickets EXISTS in #Data
-			UPDATE b
-			SET b.IsNew = 0
-			FROM @TmpData AS b
-				INNER JOIN #Data AS d ON d.TransId = b.RefNo AND d.BetType = b.BetType
-			WHERE d.Winlostdate >= @Yesterday AND d.RefTable IN (1, 2)
-
-			INSERT INTO #Data (
-				TransId,
-				RefNo,
-				CustId,
-				Currency,
-				Recommend,
-				BetType,
-				BetId,
-				BetTeam,
-				Hdp1,
-				Hdp2,
-				OddsId,
-				OddsType,
-				Odds,
-				MOdds,
-				OddsSpread,
-				Stake,
-				Actual_Stake,
-				Status,
-				SecAcceptFlag,
-				CheckTime,
-				TransDate,
-				WinLostDate,
-				LiveIndicator,
-				LiveHomeScore,
-				LiveAwayScore,
-				Ip,
-				BetFrom,
-				MatchId,
-				BetCheck,
-				ComStatus,
-				TransDesc,
-				BetdaqId,
-				ExtraInfo,
-				WalletType,
-				RefCode,
-				TableID,
-				Product,
-				RefTable)
-			SELECT
-				b.transid,
-				b.refno,
-				b.custid,
-				b.currency,
-				b.recommend,
-				b.bettype,
-				ISNULL(b.betid, 0) AS BetId,
-				b.betteam,
-				b.hdp1,
-				b.hdp2,
-				b.oddsid,
-				b.oddstype,
-				b.odds,
-				b.modds,
-				b.oddsspread,
-				b.stake,
-				b.actual_stake,
-				b.status,
-				b.SecAcceptFlag,
-				b.checktime,
-				b.transdate,
-				b.winlostdate,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.ip,
-				b.betfrom,
-				b.matchid,
-				b.betcheck,
-				b.comstatus,
-				b.transdesc,
-				b.betdaqid,
-				b.ExtraInfo,
-				b.WalletType,
-				ISNULL(b.RefCode, 0),
-				1 AS TableID,
-				CASE
-					WHEN s.ProductID = 6 THEN 'OneRNG'	-- RNG Casino
-					WHEN s.ProductID = 21 THEN 'AllBet'
-					WHEN s.ProductID = 22 THEN 'VB'		-- Macau Games
-					WHEN s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
-					WHEN s.ProductID = 34 THEN 'CC'		-- Card Club (Arcadia Gaming)
-					WHEN s.ProductID = 36 THEN 'SG'		-- Spadegaming
-					WHEN s.ProductID = 39 THEN 'SAG'	-- SA Gaming
-					WHEN s.ProductID = 42 THEN 'SBC'	-- Saba.club
-					WHEN s.ProductID = 45 THEN 'SXG'	-- Sexy Gaming
-					WHEN s.ProductID = 51 THEN 'WM'		-- WM Live Casino
-					WHEN s.ProductID = 55 THEN 'PGS'	-- PG Soft
-					WHEN s.ProductID = 56 THEN 'JK'		-- Joker
-					WHEN s.ProductID = 57 THEN 'BG'		-- Big Gaming
-					WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
-					WHEN s.ProductID = 61 THEN 'HB'		-- Habanero
-					WHEN s.ProductID = 62 THEN 'CG'		-- CG
-					WHEN s.ProductID = 66 THEN 'VGA'	-- Vgaming
-					WHEN s.ProductID = 67 THEN 'AP'		-- AdvantPlay
-					WHEN s.ProductID = 68 THEN 'APM'	-- AdvantPlay Mini
-					ELSE 'Unknown'
-				END AS Product,
-				s.RefTable
-			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN @TmpData AS t ON t.RefNo = b.transid AND t.BetType = b.BetType
-				INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest) AS s ON b.bettype = s.bettype
-			WHERE t.IsNew = 1
 
 			-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 			IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
