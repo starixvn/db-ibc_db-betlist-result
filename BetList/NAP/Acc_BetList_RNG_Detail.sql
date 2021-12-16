@@ -52,6 +52,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -147,11 +148,13 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(50),
 		MatchCode		VARCHAR(1000),
-		BetTeam			NVARCHAR(50),
+		BetTeam			NVARCHAR(100),
 		EventDate		DATETIME,
 		OddsSpread		MONEY,
 		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000)
+		ExtraInfo		VARCHAR(1000),
+		CurrencyId		TINYINT,
+		SiteId			VARCHAR(7)
 	)
 
 	-- Get currency name
@@ -223,12 +226,10 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
-				WHEN sbt.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(brng.SiteID, '')
-				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (61, 62, 67, 68) THEN brng.GameId3rd
+				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
@@ -246,7 +247,9 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (6, 32, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
-			END AS ExtraInfo
+			END AS ExtraInfo,
+			brng.currency,
+			brng.SiteId
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.RefNo = @RefNo
@@ -290,12 +293,10 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
-				WHEN sbt.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(brng.SiteID, '')
-				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (61, 62, 67, 68) THEN brng.GameId3rd
+				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
@@ -313,7 +314,9 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (6, 32, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
-			END AS ExtraInfo
+			END AS ExtraInfo,
+			brng.currency,
+			brng.SiteId
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.RefNo = @RefNo
@@ -356,12 +359,11 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
-				WHEN sbt.productID IN (61, 62, 67, 68) THEN ISNULL(brng.SiteID, '')
 				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (61, 62, 67, 68) THEN brng.GameId3rd
+				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
@@ -379,7 +381,9 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (6, 32, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
-			END AS ExtraInfo
+			END AS ExtraInfo,
+			brng.currency,
+			brng.SiteId
 		FROM bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			CROSS APPLY dbo.f_IP_Decompress(brng.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype

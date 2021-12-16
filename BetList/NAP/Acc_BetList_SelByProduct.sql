@@ -74,6 +74,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 */
 
 BEGIN
@@ -119,7 +120,7 @@ BEGIN
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		TransDate		DATETIME,
-		BetTeam			NVARCHAR(50),
+		BetTeam			NVARCHAR(100),
 		SPositionTaking	SMALLMONEY,
 		MPositionTaking	SMALLMONEY,
 		APositionTaking	SMALLMONEY,
@@ -475,7 +476,6 @@ BEGIN
 						END AS TransDate,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.BetID3rd, '')
-							WHEN s.ProductID IN (57, 59) THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS BetTeam,
 						CASE
@@ -494,10 +494,7 @@ BEGIN
 						b.custid,
 						0 AS LiveHomeScore,
 						0 AS LiveAwayScore,
-						CASE
-							WHEN s.ProductID = 57 THEN b.currency
-							ELSE 0
-						END AS LeagueId,
+						0 AS LeagueId,
 						b.productID AS SportType,
 						b.ip,
 						CASE
@@ -576,8 +573,6 @@ BEGIN
 						b.refno,
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-							WHEN s.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(b.SiteID, '')
-							WHEN s.productID IN (55, 56) THEN ISNULL(b.GameId3rd, '')
 							ELSE ''
 						END AS MatchCode,
 						CASE
@@ -602,7 +597,7 @@ BEGIN
 						b.actual_stake,
 						b.transdate,
 						CASE
-							WHEN s.productID IN (61, 62, 67, 68) THEN b.GameId3rd
+							WHEN s.productID IN (22, 32, 34, 36, 55, 56, 60, 61, 62, 67, 68) THEN b.GameId3rd
 						ELSE ''
 						END AS BetTeam,
 						b.spositiontaking,
@@ -924,7 +919,6 @@ BEGIN
 						END AS TransDate,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.BetID3rd, '')
-							WHEN s.ProductID IN (57, 59) THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS BetTeam,
 						CASE
@@ -943,10 +937,7 @@ BEGIN
 						b.custid,
 						0 AS LiveHomeScore,
 						0 AS LiveAwayScore,
-						CASE
-							WHEN s.ProductID = 57 THEN b.currency
-							ELSE 0
-						END AS LeagueId,
+						0 AS LeagueId,
 						b.productID AS SportType,
 						b.ip,
 						CASE
@@ -1025,8 +1016,6 @@ BEGIN
 						b.refno,
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-							WHEN s.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(b.SiteID, '')
-							WHEN s.productID IN (55, 56) THEN ISNULL(b.GameId3rd, '')
 							ELSE ''
 						END AS MatchCode,
 						CASE
@@ -1051,7 +1040,7 @@ BEGIN
 						b.actual_stake,
 						b.transdate,
 						CASE
-							WHEN s.productID IN (61, 62, 67, 68) THEN b.GameId3rd
+							WHEN s.productID IN (22, 32, 34, 36, 55, 56, 60, 61, 62, 67, 68) THEN b.GameId3rd
 						ELSE ''
 						END AS BetTeam,
 						b.spositiontaking,

@@ -164,6 +164,7 @@ AS
 		- 20211126@Kos: Limit search within 6 months for Casino ticket detail [Redmine: #152315]
 		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
 		- 20220106@Razor: Fix CurrencyId is NULL on SA Gaming [Redmine: #167043]
+		- 20220112@Razor: Support Third Party Result API [Redmine: #165815]
 */
 
 BEGIN
@@ -206,7 +207,7 @@ BEGIN
 		Stake				MONEY,
 		Actual_Stake		MONEY,
 		TransDate			DATETIME,
-		BetTeam				NVARCHAR(50),
+		BetTeam				NVARCHAR(100),
 		SPositionTaking		SMALLMONEY,
 		MPositionTaking		SMALLMONEY,
 		APositionTaking		SMALLMONEY,
@@ -246,7 +247,7 @@ BEGIN
 		WalletType			TINYINT,
 		RefCode				BIGINT,
 		CurrencyId			TINYINT,
-		SiteId				VARCHAR(7)
+		SiteId				VARCHAR(20)
 	)
 
 	DECLARE @TransId	BIGINT,
@@ -819,7 +820,11 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					'' AS SiteId
+					CASE 
+						WHEN s.ProductId = 3 AND s.EventType = 0 THEN CONVERT(VARCHAR(20), b.betdaqid)
+						WHEN s.ProductId = 63 THEN CONVERT(VARCHAR(20), b.betdaqid)
+						ELSE '' 
+					END AS SiteId
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
@@ -1275,7 +1280,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					b.SiteId AS SiteId
+					b.SiteId
 				FROM dbo.translog AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.translogid = @TransId
@@ -2437,7 +2442,11 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					'' AS SiteId
+					CASE 
+						WHEN s.ProductId = 3 AND s.EventType = 0 THEN CONVERT(VARCHAR(20), b.betdaqid)
+						WHEN s.ProductId = 63 THEN CONVERT(VARCHAR(20), b.betdaqid)
+						ELSE '' 
+					END AS SiteId
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
@@ -3366,7 +3375,11 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					'' AS SiteId
+					CASE 
+						WHEN s.ProductId = 3 AND s.EventType = 0 THEN CONVERT(VARCHAR(20), b.betdaqid)
+						WHEN s.ProductId = 63 THEN CONVERT(VARCHAR(20), b.betdaqid)
+						ELSE '' 
+					END AS SiteId
 				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -4142,8 +4155,6 @@ BEGIN
 					b.refno,
 					CASE
 						WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-						WHEN s.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(b.SiteID, '')
-						WHEN s.ProductID IN (55, 56) THEN b.GameId3rd
 						ELSE ''
 					END AS MatchCode,
 					'' AS race,
@@ -4176,7 +4187,7 @@ BEGIN
 					b.actual_stake,
 					b.transdate,
 					CASE
-						WHEN s.productID IN (61, 62, 67, 68) THEN b.GameId3rd
+						WHEN s.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68) THEN b.GameId3rd
 					ELSE ''
 					END AS BetTeam,
 					b.spositiontaking,
@@ -4254,8 +4265,6 @@ BEGIN
 					b.refno,
 					CASE
 						WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-						WHEN s.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(b.SiteID, '')
-						WHEN s.ProductID IN (55, 56) THEN b.GameId3rd
 						ELSE ''
 					END AS MatchCode,
 					'' AS race,
@@ -4288,7 +4297,7 @@ BEGIN
 					b.actual_stake,
 					b.transdate,
 					CASE
-						WHEN s.productID IN (61, 62, 67, 68) THEN b.GameId3rd
+						WHEN s.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68) THEN b.GameId3rd
 					ELSE ''
 					END AS BetTeam,
 					b.spositiontaking,
@@ -4366,8 +4375,6 @@ BEGIN
 					b.refno,
 					CASE
 						WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-						WHEN s.productID IN (61, 62) THEN ISNULL(b.SiteID, '')
-						WHEN s.ProductID IN (55, 56) THEN b.GameId3rd
 						ELSE ''
 					END AS MatchCode,
 					'' AS race,
@@ -4400,7 +4407,7 @@ BEGIN
 					b.actual_stake,
 					b.transdate,
 					CASE
-						WHEN s.productID IN (61, 62, 67, 68) THEN b.GameId3rd
+						WHEN s.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68) THEN b.GameId3rd
 					ELSE ''
 					END AS BetTeam,
 					b.spositiontaking,
@@ -4546,10 +4553,7 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					b.transdate,
-					CASE
-						WHEN s.ProductID IN (57, 59) THEN b.SiteID
-						ELSE ''
-					END AS betteam,
+					'' AS betteam,
 					b.spositiontaking,
 					b.mpositiontaking,
 					b.apositiontaking,
@@ -4563,10 +4567,7 @@ BEGIN
 					0 AS liveawayscore,
 					0 AS finalhomescore,
 					0 AS finalawayscore,
-					CASE
-						WHEN s.ProductID IN (57) THEN b.currency
-						ELSE 0
-					END AS leagueid,
+					0 AS leagueid,
 					b.productID AS Sporttype,
 					b.ip,
 					b.betfrom,
@@ -4642,10 +4643,7 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					b.transdate,
-					CASE
-						WHEN s.ProductID IN (57, 59) THEN b.SiteID
-						ELSE ''
-					END AS betteam,
+					'' AS betteam,
 					b.spositiontaking,
 					b.mpositiontaking,
 					b.apositiontaking,
@@ -4659,10 +4657,7 @@ BEGIN
 					0 AS liveawayscore,
 					0 AS finalhomescore,
 					0 AS finalawayscore,
-					CASE
-						WHEN s.ProductID IN (57) THEN b.currency
-						ELSE 0
-					END AS leagueid,
+					0 AS leagueid,
 					b.productID AS Sporttype,
 					b.ip,
 					b.betfrom,
@@ -4738,10 +4733,7 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					b.transdate,
-					CASE
-						WHEN s.ProductID IN (57, 59) THEN b.SiteID
-						ELSE ''
-					END AS betteam,
+					'' AS betteam,
 					b.spositiontaking,
 					b.mpositiontaking,
 					b.apositiontaking,
@@ -4755,10 +4747,7 @@ BEGIN
 					0 AS liveawayscore,
 					0 AS finalhomescore,
 					0 AS finalawayscore,
-					CASE
-						WHEN s.ProductID IN (57) THEN b.currency
-						ELSE 0
-					END AS leagueid,
+					0 AS leagueid,
 					b.productID AS Sporttype,
 					dp.ip,
 					b.betfrom,

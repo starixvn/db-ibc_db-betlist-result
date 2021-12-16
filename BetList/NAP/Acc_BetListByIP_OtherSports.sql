@@ -147,6 +147,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 - times 2 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 */
 
 BEGIN
@@ -209,7 +210,9 @@ BEGIN
 		Gameid3rd			NVARCHAR(50),
 		Tranid3rd			NVARCHAR(64),
 		TableID				TINYINT,
-		Product				VARCHAR(30)
+		Product				VARCHAR(30),
+		CurrencyId			TINYINT,
+		SiteId				VARCHAR(20)
 	)
 
 	-- Get ticket detail
@@ -286,7 +289,9 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
-			TableID)
+			TableID,
+			CurrencyId,
+			SiteId)
 		SELECT
 			b.transid,
 			b.refno,
@@ -325,7 +330,9 @@ BEGIN
 			b.ExtraInfo,
 			b.WalletType,
 			ISNULL(b.RefCode, 0),
-			1 AS TableID
+			1 AS TableID,
+			b.currency,
+			b.betdaqid
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
@@ -392,7 +399,9 @@ BEGIN
 			Custom3,
 			Gameid3rd,
 			Tranid3rd,
-			TableID
+			TableID,
+			CurrencyId,
+			SiteId
 		)
 		SELECT
 			b.translogid AS TransId,
@@ -418,7 +427,9 @@ BEGIN
 			b.custom3,
 			b.GameId3rd,
 			b.TranId3rd,
-			4 AS TableID
+			4 AS TableID,
+			b.currency,
+			b.SiteId
 		FROM dbo.translog AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
@@ -467,7 +478,9 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
-			TableID)
+			TableID,
+			CurrencyId,
+			SiteId)
 		SELECT
 			b.transid,
 			b.refno,
@@ -506,7 +519,9 @@ BEGIN
 			b.ExtraInfo,
 			b.WalletType,
 			ISNULL(b.RefCode, 0),
-			2 AS TableID
+			2 AS TableID,
+			b.currency,
+			b.betdaqid
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
@@ -592,7 +607,9 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
-			TableID)
+			TableID,
+			CurrencyId,
+			SiteId)
 		SELECT
 			b.transid,
 			b.refno,
@@ -631,7 +648,9 @@ BEGIN
 			b.ExtraInfo,
 			b.WalletType,
 			ISNULL(b.RefCode, 0),
-			3 AS TableID
+			3 AS TableID,
+			b.currency,
+			b.betdaqid
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 		CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId
@@ -1168,7 +1187,15 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					CurrencyId = CASE
+									WHEN b.Product IN ('H5LG', 'SLT') THEN b.CurrencyId
+									ELSE 0
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG', 'SLT') THEN b.SiteId
+								ELSE ''
+							END
 				FROM @Data AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
@@ -1235,7 +1262,15 @@ BEGIN
 								END,
 					OddsSpread = 0,
 					BetdaqId = -1,
-					ExtraInfo = ''
+					ExtraInfo = '',
+					CurrencyId = CASE
+									WHEN b.Product IN ('H5LG', 'SLT') THEN b.CurrencyId
+									ELSE 0
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG', 'SLT') THEN b.SiteId
+								ELSE ''
+							END
 				FROM @Data AS b
 				WHERE TableID = 4
 
@@ -1297,7 +1332,9 @@ BEGIN
 					Gameid3rd			NVARCHAR(50),
 					Tranid3rd			NVARCHAR(64),
 					TableID				TINYINT,
-					Product				VARCHAR(30)
+					Product				VARCHAR(30),
+					CurrencyId			TINYINT,
+					SiteId				VARCHAR(20)
 				)
 
 				INSERT INTO @TmpCasinoData
@@ -1371,7 +1408,9 @@ BEGIN
 					b.Gameid3rd,
 					b.Tranid3rd,
 					b.TableID,
-					b.Product
+					b.Product,
+					b.CurrencyId,
+					b.SiteId
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
 				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 
@@ -1577,7 +1616,15 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					CurrencyId = CASE
+									WHEN b.Product IN ('H5LG', 'SLT') THEN b.CurrencyId
+									ELSE 0
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG', 'SLT') THEN b.SiteId
+								ELSE ''
+							END
 				FROM @Data AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
@@ -1781,7 +1828,15 @@ BEGIN
 									WHEN b.Product IN ('SB') THEN ISNULL(b.RefCode, 0)
 									ELSE 0
 								END,
-					Ip = dp.Ip
+					Ip = dp.Ip,
+					CurrencyId = CASE
+									WHEN b.Product IN ('H5LG', 'SLT') THEN b.CurrencyId
+									ELSE 0
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG', 'SLT') THEN b.SiteId
+								ELSE ''
+							END
 				FROM @Data AS b
 					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -1885,7 +1940,9 @@ BEGIN
 		b.RefCode,
 		@CurrencyName AS Currency,
 		u.username AS Username,
-		c.username AS Creator
+		c.username AS Creator,
+		b.CurrencyId,
+		b.SiteId
 	FROM @Data AS b
 		INNER JOIN dbo.custInfo AS u WITH (NOLOCK) ON u.custid = b.CustId
 		INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.Creator

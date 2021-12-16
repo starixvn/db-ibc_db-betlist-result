@@ -38,6 +38,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -131,7 +132,9 @@ BEGIN
 		BetCheck		NVARCHAR(2000),
 		MatchCode		VARCHAR(50),
 		BetTeam			NVARCHAR(50),
-		LeagueId		INT
+		LeagueId		INT,
+		CurrencyId		TINYINT,
+		SiteId			VARCHAR(7)
 	)
 
 	-- Get currency name
@@ -271,13 +274,11 @@ BEGIN
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
 			END AS BetTeam,
-			CASE
-				WHEN sbt.ProductID = 57 THEN blc.currency
-				ELSE 0
-			END AS LeagueId
+			0 AS LeagueId,
+			blc.currency,
+			blc.SiteId
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
@@ -393,13 +394,11 @@ BEGIN
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
 			END AS BetTeam,
-			CASE
-				WHEN sbt.ProductID = 57 THEN blc.currency
-				ELSE 0
-			END AS LeagueId
+			0 AS LeagueId,
+			blc.Currency,
+			blc.SiteId
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
@@ -514,13 +513,11 @@ BEGIN
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
 			END AS BetTeam,
-			CASE
-				WHEN sbt.ProductID = 57 THEN blc.currency
-				ELSE 0
-			END AS LeagueId
+			0 AS LeagueId,
+			blc.Currency,
+			blc.SiteId
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			CROSS APPLY dbo.f_IP_Decompress(blc.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype

@@ -81,6 +81,7 @@ AS
 		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
 		- 20211130@Razor: Check Abnormal Parlay Ticket [Redmine: #163900]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 */
 
 BEGIN
@@ -189,7 +190,9 @@ BEGIN
 		Tranid3rd			NVARCHAR(64),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
-		IsCashOut			TINYINT
+		IsCashOut			TINYINT,
+		CurrencyId			TINYINT,
+		SiteId				VARCHAR(20)
 	)
 
 	-- Get ticket detail
@@ -320,7 +323,9 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
-			TableID)
+			TableID,
+			CurrencyId,
+			SiteId)
 		SELECT
 			b.transid,
 			b.refno,
@@ -373,7 +378,9 @@ BEGIN
 			b.ExtraInfo,
 			b.WalletType,
 			ISNULL(b.RefCode, 0),
-			1 AS TableID
+			1 AS TableID,
+			b.currency,
+			b.betdaqid
 		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid)
 			INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @CustId
@@ -448,7 +455,9 @@ BEGIN
 			Custom3,
 			Gameid3rd,
 			Tranid3rd,
-			TableID
+			TableID,
+			CurrencyId,
+			SiteId
 		)
 		SELECT
 			b.translogid AS TransId,
@@ -482,7 +491,9 @@ BEGIN
 			b.custom3,
 			b.GameId3rd,
 			b.TranId3rd,
-			4 AS TableID
+			4 AS TableID,
+			b.currency,
+			b.SiteId
 		FROM dbo.translog AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -555,7 +566,9 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
-			TableID)
+			TableID,
+			CurrencyId,
+			SiteId)
 		SELECT
 			b.transid,
 			b.refno,
@@ -608,7 +621,9 @@ BEGIN
 			b.ExtraInfo,
 			b.WalletType,
 			ISNULL(b.RefCode, 0),
-			2 AS TableID
+			2 AS TableID,
+			b.currency,
+			b.betdaqid
 		FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_memberStatement14)
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @TempFromDate AND @TempToDate
@@ -708,7 +723,10 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
-			TableID)
+			TableID,
+			CurrencyId,
+			SiteId
+			)
 		SELECT
 			b.transid,
 			b.refno,
@@ -761,7 +779,9 @@ BEGIN
 			b.ExtraInfo,
 			b.WalletType,
 			ISNULL(b.RefCode, 0),
-			3 AS TableID
+			3 AS TableID,
+			b.currency,
+			b.betdaqid
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -1595,7 +1615,9 @@ BEGIN
 					Tranid3rd			NVARCHAR(64),
 					TableID				TINYINT,
 					Product				VARCHAR(30),
-					ISCashOut			TINYINT
+					ISCashOut			TINYINT,
+					CurrencyId			TINYINT,
+					SiteId				VARCHAR(20)
 				)
 
 				INSERT INTO @TmpCasinoData
@@ -1684,7 +1706,9 @@ BEGIN
 					b.Tranid3rd,
 					b.TableID,
 					b.Product,
-					0
+					0,
+					b.CurrencyId,
+					b.SiteId
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
 				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
@@ -2238,7 +2262,9 @@ BEGIN
 		b.RefCode,
 		@CurrencyName AS Currency,
 		@Username AS Username,
-		@UGroup AS UGroup
+		@UGroup AS UGroup,
+		b.CurrencyId,
+		b.SiteId
 	FROM @Data AS b
 	ORDER BY b.TransId ASC
 
