@@ -46,6 +46,7 @@ AS
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
+		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 */
 
 
@@ -79,9 +80,10 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		DECLARE @ProductList	VARCHAR(10)
+		DECLARE @ProductList	VARCHAR(10),
+			@ShowSB				BIT				= 0
 
-		IF @Product = 'BA'
+		IF @Product IN ('BA', 'CO')
 		BEGIN
 			SET @ProductList = 'SB'
 		END
@@ -89,6 +91,9 @@ BEGIN
 		BEGIN
 			SET @ProductList = @Product
 		END
+
+		IF ',' + @Product + ',' LIKE '%,SB,%'
+			SET @ShowSB = 1
 
 		-- Get SportBettypeMatrix
 		CREATE TABLE #SportBettype (ProductId TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
@@ -138,7 +143,8 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+											WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
+											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
 										END
@@ -170,7 +176,8 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+											WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
+											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
 										END
@@ -201,7 +208,8 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+											WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
+											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
 										END
@@ -233,7 +241,8 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
-											WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+											WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
+											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
 										END
@@ -274,7 +283,8 @@ BEGIN
 					AND 1 = CASE
 								WHEN s.ProductID = 1 THEN
 									CASE
-										WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+										WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
+										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 										WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 										ELSE 0
 									END
@@ -302,7 +312,8 @@ BEGIN
 					AND 1 = CASE
 								WHEN s.ProductID = 1 THEN
 									CASE
-										WHEN @Product = 'SB' AND b.tpositiontaking <> 0 THEN 1
+										WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
+										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 										WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 										ELSE 0
 									END

@@ -64,6 +64,7 @@ AS
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 		- 20211126@Kos: Support Parlay Abnormal Bet [Redmine: #163900]
 		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
+		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 */
 
 BEGIN
@@ -222,7 +223,7 @@ BEGIN
 		DECLARE @ProductList	VARCHAR(10),
 			@ShowSB				BIT				= 0
 
-		IF @Product = 'BA'
+		IF @Product IN ('BA', 'CO')
 		BEGIN
 			SET @ProductList = 'SB'
 		END
@@ -429,6 +430,7 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
+											WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
@@ -539,6 +541,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
+												WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
@@ -644,6 +647,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
+												WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
@@ -758,6 +762,7 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
+											WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
@@ -868,6 +873,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
+												WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
@@ -973,6 +979,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
+												WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
@@ -1089,6 +1096,7 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
+											WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
@@ -1199,6 +1207,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
+												WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
@@ -1304,6 +1313,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
+												WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
@@ -1419,6 +1429,7 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
+											WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 											WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 											ELSE 0
@@ -1530,6 +1541,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
+												WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0
@@ -1636,6 +1648,7 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
+												WHEN @Product = 'CO' AND b.betdaqid = -2 THEN 1
 												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0 THEN 1
 												WHEN @Product = 'BA' AND b.tpositiontaking = 0 THEN 1
 												ELSE 0

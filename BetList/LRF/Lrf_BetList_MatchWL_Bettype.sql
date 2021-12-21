@@ -82,6 +82,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210323@Kos: Support show IP [Redmine: #151085]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 */
 
 BEGIN
@@ -155,6 +156,7 @@ BEGIN
 		Status				NVARCHAR(50),
 		SettlementStatus	TINYINT,
 		Stake				MONEY,
+		Actual_Stake		MONEY,
 		WinLost				MONEY,
 		LicenseeWL			MONEY,
 		Comm				MONEY,
@@ -215,6 +217,7 @@ BEGIN
 				b.status,
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
@@ -253,6 +256,7 @@ BEGIN
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN @TempAg AS ta ON ta.custid = b.recommend
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
 			WHERE
@@ -260,8 +264,6 @@ BEGIN
 				AND (@BetType = 0
 					OR (@BetType <> 0 AND CASE WHEN ISNULL(ss.bettype, 0) = 0 THEN b.bettype ELSE ss.Grouptypeid END = @BetType))
 				AND sbt.ProductID = 1
-				AND b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND b.tpositiontaking = 0
 				AND ((@LiveIndicator = -1)
@@ -292,6 +294,7 @@ BEGIN
 				b.status,
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
@@ -330,6 +333,7 @@ BEGIN
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN @TempAg AS ta ON ta.custid = b.recommend
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
 			WHERE
@@ -337,8 +341,6 @@ BEGIN
 				AND (@BetType = 0
 					OR (@BetType <> 0 AND CASE WHEN ISNULL(ss.bettype,0) = 0 THEN b.bettype ELSE ss.Grouptypeid END = @BetType))
 				AND sbt.ProductID = 1
-				AND b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND b.tpositiontaking <> 0
 				AND ((@LiveIndicator = -1)
@@ -370,6 +372,7 @@ BEGIN
 				b.status,
 				0 AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
@@ -407,6 +410,7 @@ BEGIN
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK) 
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN @TempAg AS ta ON ta.custid = b.recommend
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE
 				b.matchid = @MatchId
@@ -414,8 +418,6 @@ BEGIN
 					OR (@BetType <> 0 AND b.bettype = @BetType))
 				AND sbt.ProductID IN (3, 5, 27)
 				AND sbt.EventType = 1
-				AND b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = -1) 
 					OR (@LiveIndicator = 0 AND b.liveindicator = 0)
@@ -446,6 +448,7 @@ BEGIN
 				b.status,
 				0 AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
@@ -478,6 +481,7 @@ BEGIN
 				dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN @TempAg AS ta ON ta.custid = b.recommend
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE
 				o.EventID = @MatchId
@@ -485,8 +489,6 @@ BEGIN
 					OR (@BetType <> 0 AND b.bettype = @BetType))
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 3
-				AND b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = -1)
 					OR (@LiveIndicator = 0 AND b.Liveindicator = 0)
@@ -518,6 +520,7 @@ BEGIN
 				b.status,
 				0 AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
@@ -556,6 +559,7 @@ BEGIN
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN @TempAg AS ta ON ta.custid = b.recommend
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
 			WHERE
@@ -563,8 +567,6 @@ BEGIN
 				AND (@BetType = 0
 					OR (@BetType <> 0 AND CASE WHEN ISNULL(ss.bettype,0) = 0 THEN b.bettype ELSE ss.Grouptypeid END = @BetType))
 				AND sbt.ProductID = 1
-				AND b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND b.tpositiontaking = 0
 				AND (@_Date IS NULL
@@ -597,6 +599,7 @@ BEGIN
 				b.status,
 				0 AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
@@ -635,6 +638,7 @@ BEGIN
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN @TempAg AS ta ON ta.custid = b.recommend
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 				LEFT JOIN dbo.f_GroupBettype() AS ss ON b.bettype = ss.bettype
 			WHERE
@@ -642,8 +646,6 @@ BEGIN
 				AND (@BetType = 0
 					OR (@BetType <> 0 AND CASE WHEN ISNULL(ss.bettype,0) = 0 THEN b.bettype ELSE ss.Grouptypeid END = @BetType))
 				AND sbt.ProductID = 1
-				AND b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = -1)
@@ -675,6 +677,7 @@ BEGIN
 				b.status,
 				0 AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
@@ -712,6 +715,7 @@ BEGIN
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN @TempAg AS ta ON ta.custid = b.recommend
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE
 				b.matchid = @MatchId
@@ -719,8 +723,6 @@ BEGIN
 					OR (@BetType <> 0 AND b.bettype = @BetType))
 				AND sbt.ProductID IN (3, 5, 27)
 				AND sbt.EventType = 1
-				AND b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = -1)
 					OR (@LiveIndicator = 0 AND b.Liveindicator = 0)
@@ -751,6 +753,7 @@ BEGIN
 				b.status,
 				0 AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
@@ -783,6 +786,7 @@ BEGIN
 				dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN @TempAg AS ta ON ta.custid = b.recommend
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			WHERE
 				o.EventID = @MatchId
@@ -790,8 +794,6 @@ BEGIN
 					OR (@BetType <> 0 AND b.bettype = @BetType))
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 3
-				AND b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 				AND b.statusID IN (111, 112, 113)
 				AND ((@LiveIndicator = -1)
 					OR (@LiveIndicator = 0 AND b.Liveindicator = 0)
@@ -805,13 +807,14 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
 	BEGIN
 		DECLARE @RefCodeTmp TABLE (
-			RefCode		BIGINT,
-			TransId		BIGINT,
-			Stake		MONEY,
-			WinLost		MONEY,
-			LicenseeWL	MONEY,
-			Comm		MONEY,
-			PlayerComm	MONEY
+			RefCode			BIGINT,
+			TransId			BIGINT,
+			Stake			MONEY,
+			Actual_Stake	MONEY,
+			WinLost			MONEY,
+			LicenseeWL		MONEY,
+			Comm			MONEY,
+			PlayerComm		MONEY
 		)
 
 		-- Prepare temp table
@@ -820,6 +823,7 @@ BEGIN
 			RefCode,
 			MIN(TransId) AS TransId,
 			SUM(Stake) AS Stake,
+			SUM(Actual_Stake) AS Actual_Stake,
 			SUM(WinLost) AS WinLost,
 			SUM(LicenseeWL) AS LicenseeWL,
 			SUM(Comm) AS Comm,
@@ -835,6 +839,7 @@ BEGIN
 			UPDATE b
 			SET
 				b.Stake = r.Stake,
+				b.Actual_Stake = r.Actual_Stake,
 				b.WinLost = r.WinLost,
 				b.LicenseeWL = r.LicenseeWL,
 				b.Comm = r.Comm,
@@ -935,6 +940,7 @@ BEGIN
 		Status				NVARCHAR(50),
 		SettlementStatus	TINYINT,
 		Stake				MONEY,
+		Actual_Stake		MONEY,
 		WinLost				MONEY,
 		LicenseeWL			MONEY,
 		Comm				MONEY,
@@ -1039,6 +1045,7 @@ BEGIN
 		b.Status,
 		b.SettlementStatus,
 		b.Stake * ISNULL(e.Rate, 1) AS Stake,
+		b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
 		b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
 		b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
 		b.Comm * ISNULL(e.Rate, 1) AS Comm,

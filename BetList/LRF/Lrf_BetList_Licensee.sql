@@ -54,12 +54,13 @@ AS
 					- Add new param @Username, @ConvertToBaseCur
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
+		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	IF ',' + @Product + ',' LIKE '%,SB,%' OR @Product = 'BA' 
+	IF ',' + @Product + ',' LIKE '%,SB,%' OR @Product IN ('BA', 'CO')
 	BEGIN
 		EXEC Lrf_BetList_Licensee_Sportsbook
 			@AgentList = @AgentList,

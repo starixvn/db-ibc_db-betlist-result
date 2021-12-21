@@ -103,6 +103,7 @@ AS
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20211126@Kos: Support Parlay Abnormal Bet [Redmine: #163900]
 		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
+		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 */
 
 BEGIN
@@ -136,6 +137,11 @@ BEGIN
 	END
 
 	IF @ShowBA = 1
+	BEGIN
+		SET @ProductList = 'SB,' + @ProductList
+	END
+
+	IF ',' + @ProductList + ',' LIKE '%,CO,%'
 	BEGIN
 		SET @ProductList = 'SB,' + @ProductList
 	END
@@ -849,11 +855,23 @@ BEGIN
 				OR BetType IN (901, 902, 903, 904, 914)
 				OR BetType BETWEEN 801 AND 899
 				OR (@ShowSB = 0
+					AND ',' + @ProductList + ',' NOT LIKE '%,CO,%'
 					AND Product IN ('SB', 'Parlay', 'Outright')
-					AND BATransId IS NULL)
+					AND BATransId IS NULL
+					AND BetdaqId = -2)
+				OR (@ShowSB = 0
+					AND Product IN ('SB', 'Parlay', 'Outright')
+					AND BATransId IS NULL
+					AND ISNULL(BetdaqId, 0) <> -2)
+				OR (@ShowBA = 0
+					AND ',' + @ProductList + ',' NOT LIKE '%,CO,%'
+					AND Product IN ('SB', 'Parlay', 'Outright')
+					AND BATransId IS NOT NULL
+					AND BetdaqId = -2)
 				OR (@ShowBA = 0
 					AND Product IN ('SB', 'Parlay', 'Outright')
-					AND BATransId IS NOT NULL)
+					AND BATransId IS NOT NULL
+					AND ISNULL(BetdaqId, 0) <> -2)
 				OR (Product NOT IN ('SB', 'Parlay')
 					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 				OR (Product = 'Parlay'

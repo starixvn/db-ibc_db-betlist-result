@@ -67,6 +67,7 @@ AS
 					- Add new input params @FromDate SMALLDATETIME, @ToDate SMALLDATETIME, @MoveBetsDay SMALLDATETIME
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211125@Kos: Hotfix - Timeout in bettrans14 range [Redmine: 165188]
+		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -135,6 +136,7 @@ BEGIN
 		Status				NVARCHAR(50),
 		SettlementStatus	TINYINT,
 		Stake				MONEY,
+		Actual_Stake		MONEY,
 		WinLost				MONEY,
 		LicenseeWL			MONEY,
 		Comm				MONEY,
@@ -237,6 +239,7 @@ BEGIN
 				b.status,
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
@@ -308,6 +311,7 @@ BEGIN
 				b.status,
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
@@ -379,6 +383,7 @@ BEGIN
 				b.status,
 				0 AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
@@ -450,6 +455,7 @@ BEGIN
 				b.status,
 				0 AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				0 AS LicenseeWL,
 				b.comm,
@@ -521,6 +527,7 @@ BEGIN
 				b.status,
 				0 AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
@@ -592,6 +599,7 @@ BEGIN
 				b.status,
 				0 AS SettlementStatus,
 				b.stake,
+				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.comm,
@@ -645,13 +653,14 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
 	BEGIN
 		DECLARE @RefCodeTmp TABLE (
-			RefCode		BIGINT,
-			TransId		BIGINT,
-			Stake		MONEY,
-			WinLost		MONEY,
-			LicenseeWL	MONEY,
-			Comm		MONEY,
-			PlayerComm	MONEY
+			RefCode			BIGINT,
+			TransId			BIGINT,
+			Stake			MONEY,
+			Actual_Stake	MONEY,
+			WinLost			MONEY,
+			LicenseeWL		MONEY,
+			Comm			MONEY,
+			PlayerComm		MONEY
 		)
 
 		-- Prepare temp table
@@ -660,6 +669,7 @@ BEGIN
 			RefCode,
 			MIN(TransId) AS TransId,
 			SUM(Stake) AS Stake,
+			SUM(Actual_Stake) AS Actual_Stake,
 			SUM(WinLost) AS WinLost,
 			SUM(LicenseeWL) AS LicenseeWL,
 			SUM(Comm) AS Comm,
@@ -675,6 +685,7 @@ BEGIN
 			UPDATE b
 			SET
 				b.Stake = r.Stake,
+				b.Actual_Stake = r.Actual_Stake,
 				b.WinLost = r.WinLost,
 				b.LicenseeWL = r.LicenseeWL,
 				b.Comm = r.Comm,
@@ -758,6 +769,7 @@ BEGIN
 				b.Status,
 				b.SettlementStatus,
 				b.Stake * ISNULL(e.Rate, 1) AS Stake,
+				b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
 				b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
 				b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
 				b.Comm * ISNULL(e.Rate, 1) AS Comm,
