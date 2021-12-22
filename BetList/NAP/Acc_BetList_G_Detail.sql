@@ -21,6 +21,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
+		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -113,7 +114,9 @@ BEGIN
 		TransDesc		NVARCHAR(2000),
 		BetCheck		NVARCHAR(50),
 		MatchCode		VARCHAR(50),
-		BetTeam			NVARCHAR(50)
+		BetTeam			NVARCHAR(50),
+		CurrencyId		TINYINT,
+		SiteId			VARCHAR(7)
 	)
 
 	-- Get currency name
@@ -181,7 +184,9 @@ BEGIN
 			bg.transdesc,
 			ISNULL(bg.BetID3rd, '') AS BetCheck,
 			'' AS MatchCode,
-			ISNULL(bg.betteam, '') AS BetTeam
+			ISNULL(bg.betteam, '') AS BetTeam,
+			b.currency,
+			bg.SiteId
 		FROM dbo.bettransg AS bg WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK)
@@ -225,7 +230,9 @@ BEGIN
 			bg.transdesc,
 			ISNULL(bg.BetID3rd, '') AS BetCheck,
 			'' AS MatchCode,
-			ISNULL(bg.betteam, '') AS BetTeam
+			ISNULL(bg.betteam, '') AS BetTeam,
+			b.currency,
+			bg.SiteId
 		FROM dbo.bettransg14 AS bg WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 			INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK)
@@ -269,7 +276,9 @@ BEGIN
 			bg.transdesc,
 			ISNULL(bg.BetID3rd, '') AS BetCheck,
 			'' AS MatchCode,
-			ISNULL(bg.betteam, '') AS BetTeam
+			ISNULL(bg.betteam, '') AS BetTeam,
+			b.currency,
+			bg.SiteId
 		FROM bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 			INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)

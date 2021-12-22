@@ -73,6 +73,7 @@ AS
 		- 20210513@Razor: Support AdvantPlay [Redmine: #154259]
 		- 20210513@Razor: Support AdvantPlay Mini [Redmine: #155134]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
 */
 
 BEGIN
@@ -144,7 +145,9 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		OddsSpread		SMALLMONEY,
 		ExtraInfo		VARCHAR(1000),
-		BetdaqId		BIGINT
+		BetdaqId		BIGINT,
+		CurrencyId		TINYINT,
+		SiteId			VARCHAR(7)
 	)
 
 	DECLARE @DetailData TABLE (
@@ -268,7 +271,9 @@ BEGIN
 						END AS TransDesc,
 						0 AS OddsSpread,
 						'' AS ExtraInfo,
-						-1 AS BetdaqId
+						-1 AS BetdaqId,
+						b.currency,
+						b.SiteId
 					FROM dbo.translog AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
@@ -330,7 +335,9 @@ BEGIN
 							'' AS TransDesc,
 							0 AS OddsSpread,
 							'' AS ExtraInfo,
-							-1 AS BetdaqId
+							-1 AS BetdaqId,
+							b.currency,
+							'' AS SiteId
 						FROM dbo.bettrans AS b WITH (NOLOCK)
 							INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 						WHERE b.custid = @CustId
@@ -395,7 +402,9 @@ BEGIN
 							ISNULL(b.transdesc, '') AS TransDesc,
 							0 AS OddsSpread,
 							'' AS ExtraInfo,
-							-1 AS BetdaqId
+							-1 AS BetdaqId,
+							b.currency,
+							'' AS SiteId
 						FROM dbo.bettrans AS b WITH (NOLOCK)
 							INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 						WHERE b.custid = @CustId
@@ -536,7 +545,9 @@ BEGIN
 						b.transdesc,
 						0 AS OddsSpread,
 						'' AS ExtraInfo,
-						-1 AS BetdaqId
+						-1 AS BetdaqId,
+						b.currency,
+						b.SiteId
 					FROM dbo.bettransLC AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 						LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
@@ -628,7 +639,9 @@ BEGIN
 						CASE
 							WHEN s.ProductID IN (32, 42, 66) THEN ISNULL(b.RefNo2, -1)
 							ELSE -1
-						END AS BetdaqId
+						END AS BetdaqId,
+						b.currency,
+						b.SiteId
 					FROM dbo.bettransRnG AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
@@ -690,7 +703,9 @@ BEGIN
 						bg.transdesc,
 						0 AS OddsSpread,
 						'' AS ExtraInfo,
-						-1 AS BetdaqId
+						-1 AS BetdaqId,
+						b.currency,
+						bg.SiteId
 					FROM dbo.bettransg AS bg WITH (NOLOCK)
 						INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = bg.refno AND b.custid = bg.custid
@@ -766,7 +781,9 @@ BEGIN
 						'' AS TransDesc,
 						0 AS OddsSpread,
 						'' AS ExtraInfo,
-						-1 AS BetdaqId
+						-1 AS BetdaqId,
+						b.currency,
+						'' AS SiteId
 					FROM dbo.bettrans14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 					WHERE b.custid = @CustId
@@ -833,7 +850,9 @@ BEGIN
 						ISNULL(b.transdesc, '') AS TransDesc,
 						0 AS OddsSpread,
 						'' AS ExtraInfo,
-						-1 AS BetdaqId
+						-1 AS BetdaqId,
+						b.currency,
+						'' AS SiteId
 					FROM dbo.bettrans14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 					WHERE b.custid = @CustId
@@ -975,7 +994,9 @@ BEGIN
 						b.transdesc,
 						0 AS OddsSpread,
 						'' AS ExtraInfo,
-						-1 AS BetdaqId
+						-1 AS BetdaqId,
+						b.currency,
+						b.SiteId
 					FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 						LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
@@ -1067,7 +1088,9 @@ BEGIN
 						CASE
 							WHEN s.ProductID IN (32, 42, 66) THEN ISNULL(b.RefNo2, -1)
 							ELSE -1
-						END AS BetdaqId
+						END AS BetdaqId,
+						b.currency,
+						b.SiteId
 					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
@@ -1129,7 +1152,9 @@ BEGIN
 						bg.transdesc,
 						0 AS OddsSpread,
 						'' AS ExtraInfo,
-						-1 AS BetdaqId
+						-1 AS BetdaqId,
+						b.currency,
+						bg.SiteId
 					FROM dbo.bettransg14 AS bg WITH (NOLOCK)
 						INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 						INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = bg.refno AND b.custid = bg.custid
