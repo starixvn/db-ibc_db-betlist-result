@@ -24,6 +24,7 @@ AS
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 */
 
 BEGIN
@@ -91,7 +92,9 @@ BEGIN
 		ShowTime			NVARCHAR(50),
 		WinLostDate			SMALLDATETIME,
 		BetCheck			NVARCHAR(50),
-		TransDesc			NVARCHAR(1000)
+		TransDesc			NVARCHAR(1000),
+		CurrencyId			TINYINT,
+		SiteId				VARCHAR(20)
 	)
 
 	-- Number Game
@@ -152,7 +155,9 @@ BEGIN
 			m.showtime,
 			b.winlostdate,
 			'' AS BetCheck,
-			'' AS TransDesc
+			'' AS TransDesc,
+			0 AS CurrencyId,
+			'' AS SiteId
 		FROM
 			dbo.bettrans_bk AS b WITH (NOLOCK)
 			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
@@ -217,7 +222,9 @@ BEGIN
 			'' AS showtime,
 			b.winlostdate,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			ISNULL(b.transdesc, '') AS TransDesc
+			ISNULL(b.transdesc, '') AS TransDesc,
+			b.currency,
+			b.betdaqid
 		FROM dbo.bettrans_bk AS b WITH (NOLOCK)
 			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype

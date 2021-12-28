@@ -23,6 +23,7 @@ AS
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20210901@Kos: Fix duplicate ticket during Move Bet [Redmine: #160019]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 */
 
 BEGIN
@@ -169,6 +170,8 @@ BEGIN
 		, BetCheck			NVARCHAR(50)
 		, ComStatus			NVARCHAR(20)
 		, TransDesc			NVARCHAR(1000)
+		, CurrencyId		TINYINT
+		, SiteId			VARCHAR(20)
 	);
 
 	-- bettrans
@@ -234,6 +237,8 @@ BEGIN
 			, '' AS betcheck
 			, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 			, '' AS TransDesc
+			, 0 AS CurrencyId
+			, '' AS SiteId
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN @tempCust AS c ON b.transid = c.transid
@@ -296,6 +301,8 @@ BEGIN
 			, ISNULL(b.betcheck, '') AS betcheck
 			, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 			, ISNULL(b.transdesc, '') AS TransDesc
+			, b.currency
+			, b.betdaqid AS SiteId
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @tempCust AS c ON b.transid = c.transid
 		WHERE c.WhTicket = 1 AND c.EventType = 0
@@ -365,6 +372,8 @@ BEGIN
 			, '' AS BetCheck
 			, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 			, '' AS TransDesc
+			, 0 AS CurrencyId
+			, '' AS SiteId
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN @tempCust AS c ON b.transid = c.transid
@@ -427,6 +436,8 @@ BEGIN
 			, ISNULL(b.betcheck, '') AS betcheck
 			, CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
 			, ISNULL(b.transdesc, '') AS TransDesc
+			, b.currency
+			, b.betdaqid AS SiteId
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @tempCust AS c ON b.transid = c.transid
 		WHERE c.WhTicket = 2 AND c.EventType = 0
