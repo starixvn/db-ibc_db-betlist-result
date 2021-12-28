@@ -47,6 +47,7 @@ AS
 		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 		- 20210420@Kos: Support Time Machine Over/Under [Redmine: #153302]
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
+		- 20211227@Kos: Exclude league and match which IsDeleted = 1 [RedmineID: #163733]
 */
 
 BEGIN
@@ -138,6 +139,7 @@ BEGIN
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
 			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
+			AND m.IsDeleted = 0
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
 				OR (m.eventstatus = 'running'

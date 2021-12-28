@@ -42,6 +42,7 @@ AS
 		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 		- 20210420@Kos: Support Time Machine Over/Under [Redmine: #153302]
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
+		- 20211227@Kos: Exclude league and match which IsDeleted = 1 [RedmineID: #163733]
 */
 
 BEGIN
@@ -125,6 +126,7 @@ BEGIN
 						AND m.sporttype NOT IN (162, 201)
 						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 						AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
+						AND m.IsDeleted = 0
 						AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 							OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed') )
 							OR (m.eventstatus = 'running'
@@ -135,6 +137,7 @@ BEGIN
 				) AS m
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND l.IsDeleted = 0
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
@@ -156,11 +159,13 @@ BEGIN
 							) AS r ON m.matchid + 1 = r.MatchID + 1
 						WHERE m.eventdate = @EventDate
 							AND m.sporttype = 193
+							AND m.IsDeleted = 0
 							AND (m.eventstatus NOT IN ('closed', 'running')
 								OR (ISNULL(r.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 					) o ON l.leagueid = o.leagueid 
 			WHERE l.sporttype = @SportType
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND l.IsDeleted = 0
 		END
 		ELSE IF @SportType IN (181, 182, 184, 183, 185)
 		BEGIN
@@ -179,6 +184,7 @@ BEGIN
 			WHERE r.EventStatus ='completed'
 				AND r.sporttype = @SportType
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND l.IsDeleted = 0
 		END
 	END
 	ELSE
