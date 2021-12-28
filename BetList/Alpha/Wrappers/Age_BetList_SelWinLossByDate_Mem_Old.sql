@@ -141,6 +141,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -207,7 +208,9 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
-		Product			VARCHAR(30)
+		Product			VARCHAR(30),
+		CurrencyId		TINYINT,
+		SiteId			VARCHAR(20)
 	);
 
 	DECLARE @DetailData TABLE (
@@ -288,7 +291,9 @@ BEGIN
 		ComStatus,
 		TransDesc,
 		BetdaqId,
-		ExtraInfo)
+		ExtraInfo,
+		CurrencyId,
+		SiteId)
 	SELECT
 		b.transid,
 		b.refno,
@@ -331,7 +336,9 @@ BEGIN
 		b.comstatus,
 		b.transdesc,
 		b.betdaqid,
-		b.ExtraInfo
+		b.ExtraInfo,
+		b.currency,
+		b.betdaqid
 	FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 	WHERE b.custid = @CustId
 		AND b.winlostdate BETWEEN @TempFromDate AND @TempToDate
@@ -566,7 +573,15 @@ BEGIN
 								WHEN b.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END,
-				Ip = dp.IP
+				Ip = dp.IP,
+				CurrencyId = CASE
+								WHEN b.Product IN ('H5LG', 'SLT') THEN b.CurrencyId
+								ELSE 0
+							END,
+				SiteId = CASE
+							WHEN b.Product IN ('H5LG', 'SLT') THEN b.SiteId
+							ELSE ''
+						END
 			FROM @Data AS b
 				CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 				LEFT JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -770,7 +785,9 @@ BEGIN
 			b.BetdaqId,
 			b.ExtraInfo,
 			@CurrencyName AS Currency,
-			@Username AS Username
+			@Username AS Username,
+			b.CurrencyId,
+			b.SiteId
 		FROM @Data AS b
 		ORDER BY b.TransId DESC
 	END
@@ -830,7 +847,9 @@ BEGIN
 			b.BetdaqId,
 			b.ExtraInfo,
 			@CurrencyName AS Currency,
-			@Username AS Username
+			@Username AS Username,
+			b.CurrencyId,
+			b.SiteId
 		FROM @Data AS b
 		ORDER BY b.TransId DESC
 	END

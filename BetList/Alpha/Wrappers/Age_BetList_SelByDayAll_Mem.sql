@@ -124,6 +124,7 @@ AS
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -229,6 +230,8 @@ BEGIN
 		, BetdaqId			BIGINT
 		, ExtraInfo			VARCHAR(1000)
 		, Currency			NVARCHAR(50)
+		, CurrencyId		TINYINT
+		, SiteId			VARCHAR(20)
 	);
 
 	DECLARE @Tickets TABLE (
@@ -771,6 +774,14 @@ BEGIN
 									WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 									ELSE '' END
 					,Currency = b.currencyname
+					,CurrencyId = CASE
+									WHEN c.Product IN ('H5LG', 'SLT') THEN b.currency
+									ELSE 0
+								END
+					,SiteId = CASE
+								WHEN c.Product IN ('H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
+								ELSE ''
+							END
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -964,6 +975,14 @@ BEGIN
 						,BetdaqId = -1
 						,ExtraInfo = ''
 						,Currency = b.currencyname
+						,CurrencyId = CASE
+											WHEN c.Product IN ('H5LG', 'SLT') THEN b.currency
+											ELSE 0
+										END
+						,SiteId = CASE
+									WHEN c.Product IN ('H5LG', 'SLT') THEN b.SiteId
+									ELSE ''
+								END
 					FROM @Tickets AS c
 						INNER JOIN dbo.translog AS b WITH (NOLOCK) ON b.translogid = c.TransId
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('MG') AND b.eventid = m.matchid
@@ -1337,6 +1356,14 @@ BEGIN
 									WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
 									ELSE '' END	
 					,Currency = b.currencyname
+					,CurrencyId = CASE
+									WHEN c.Product IN ('H5LG', 'SLT') THEN b.currency
+									ELSE 0
+								END
+					,SiteId = CASE
+								WHEN c.Product IN ('H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
+								ELSE ''
+							END
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid

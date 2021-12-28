@@ -19,6 +19,7 @@ AS
 		- 20201224@Kos: Support Happy 5 Linked Games [Redmine: #146540]
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 
 */
 
@@ -83,7 +84,9 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		ExtraInfo		VARCHAR(1000),
 		Currency		NVARCHAR(50),
-		Product			VARCHAR(30)
+		Product			VARCHAR(30),
+		CurrencyId		TINYINT,
+		SiteId			VARCHAR(20)
 	);
 
 	DECLARE @BettransDetail TABLE (
@@ -222,7 +225,15 @@ BEGIN
 								ELSE ''
 							END,
 				Currency = b.currencyname,
-				Product = c.Product
+				Product = c.Product,
+				CurrencyId = CASE
+								WHEN c.Product = 'H5LG' THEN b.currency
+								ELSE 0
+							END,
+				SiteId = CASE
+							WHEN c.Product = 'H5LG' THEN CONVERT(VARCHAR(20), b.betdaqid)
+							ELSE ''
+						END
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 		END
@@ -345,7 +356,15 @@ BEGIN
 								ELSE ''
 							END,
 				Currency = b.currencyname,
-				Product = c.Product
+				Product = c.Product,
+				CurrencyId = CASE
+								WHEN c.Product = 'H5LG' THEN b.currency
+								ELSE 0
+							END,
+				SiteId = CASE
+							WHEN c.Product = 'H5LG' THEN CONVERT(VARCHAR(20), b.betdaqid)
+							ELSE ''
+						END
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 		END

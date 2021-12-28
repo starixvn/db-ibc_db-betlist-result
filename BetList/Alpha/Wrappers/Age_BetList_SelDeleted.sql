@@ -79,6 +79,7 @@ AS
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 */
 
 BEGIN
@@ -127,7 +128,9 @@ BEGIN
 		EventType		INT,
 		SubProduct		VARCHAR(500),
 		WhTicket		TINYINT,
-		BetdaqId		BIGINT
+		BetdaqId		BIGINT,
+		CurrencyId		TINYINT,
+		SiteId			VARCHAR(20)
 	);
 
 	CREATE TABLE #PagingData (
@@ -174,6 +177,8 @@ BEGIN
 		SubProduct		VARCHAR(500),
 		WhTicket		TINYINT,
 		BetdaqId		BIGINT,
+		CurrencyId		TINYINT,
+		SiteId			VARCHAR(20)
 	);
 
 	DECLARE @BetListDetail TABLE(
@@ -231,7 +236,9 @@ BEGIN
 				OddsSpread,
 				ExtraInfo,
 				WhTicket,
-				BetdaqId)
+				BetdaqId,
+				CurrencyId,
+				SiteId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -261,6 +268,8 @@ BEGIN
 				b.oddsspread,
 				b.ExtraInfo,
 				1 AS WhTicket,
+				b.betdaqid,
+				b.currency,
 				b.betdaqid
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.recommend = @CustId
@@ -299,7 +308,9 @@ BEGIN
 				OddsSpread,
 				ExtraInfo,
 				WhTicket,
-				BetdaqId)
+				BetdaqId,
+				CurrencyId,
+				SiteId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -329,7 +340,9 @@ BEGIN
 				b.oddsspread,
 				b.ExtraInfo,
 				1 AS WhTicket,
-				b.BetdaqId
+				b.BetdaqId,
+				b.currency,
+				b.betdaqid
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.mrecommend = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -367,7 +380,9 @@ BEGIN
 				OddsSpread,
 				ExtraInfo,
 				WhTicket,
-				BetdaqId)
+				BetdaqId,
+				CurrencyId,
+				SiteId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -397,7 +412,9 @@ BEGIN
 				b.oddsspread,
 				b.ExtraInfo,
 				1 AS WhTicket,
-				b.BetdaqId
+				b.BetdaqId,
+				b.currency,
+				b.betdaqid
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.srecommend = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -444,7 +461,9 @@ BEGIN
 				OddsSpread,
 				ExtraInfo,
 				WhTicket,
-				BetdaqId)
+				BetdaqId,
+				CurrencyId,
+				SiteId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -474,7 +493,9 @@ BEGIN
 				b.oddsspread,
 				b.ExtraInfo,
 				2 AS WhTicket,
-				b.BetdaqId
+				b.BetdaqId,
+				b.currency,
+				b.betdaqid
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.recommend = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -512,7 +533,9 @@ BEGIN
 				OddsSpread,
 				ExtraInfo,
 				WhTicket,
-				BetdaqId)
+				BetdaqId,
+				CurrencyId,
+				SiteId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -542,7 +565,9 @@ BEGIN
 				b.oddsspread,
 				b.ExtraInfo,
 				2 AS WhTicket,
-				b.BetdaqId
+				b.BetdaqId,
+				b.currency,
+				b.betdaqid
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.mrecommend = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -580,7 +605,9 @@ BEGIN
 				OddsSpread,
 				ExtraInfo,
 				WhTicket,
-				BetdaqId)
+				BetdaqId,
+				CurrencyId,
+				SiteId)
 			SELECT
 				b.transid,
 				b.refno,
@@ -610,7 +637,9 @@ BEGIN
 				b.oddsspread,
 				b.ExtraInfo,
 				2 AS WhTicket,
-				b.BetdaqId
+				b.BetdaqId,
+				b.currency,
+				b.betdaqid
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.srecommend = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -684,7 +713,9 @@ BEGIN
 				EventType,
 				SubProduct,
 				WhTicket,
-				BetdaqId)
+				BetdaqId,
+				CurrencyId,
+				SiteId)
 			SELECT
 				b.TransId,
 				b.RefNo,
@@ -717,7 +748,9 @@ BEGIN
 				b.EventType,
 				b.SubProduct,
 				b.WhTicket,
-				b.BetdaqId
+				b.BetdaqId,
+				b.CurrencyId,
+				b.SiteId
 			FROM
 				(
 					SELECT
@@ -901,7 +934,15 @@ BEGIN
 					ExtraInfo = CASE
 									WHEN b.ProductId IN (1, 49) THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
-								END
+								END,
+					CurrencyId = CASE
+									WHEN b.ProductId IN (3, 63) THEN b.CurrencyId
+									ELSE 0
+								END,
+					SiteId = CASE
+								WHEN b.ProductId IN (3, 63) THEN b.SiteId
+								ELSE ''
+							END
 				FROM #PagingData AS b
 				WHERE b.WhTicket = 1
 					AND b.EventType = 0
@@ -1118,7 +1159,15 @@ BEGIN
 					ExtraInfo = CASE
 									WHEN b.ProductId IN (1, 49) THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
-								END
+								END,
+					CurrencyId = CASE
+									WHEN b.ProductId IN (3, 63) THEN b.CurrencyId
+									ELSE 0
+								END,
+					SiteId = CASE
+								WHEN b.ProductId IN (3, 63) THEN b.SiteId
+								ELSE ''
+							END
 				FROM #PagingData AS b
 				WHERE b.WhTicket = 2
 					AND b.EventType = 0
@@ -1311,7 +1360,9 @@ BEGIN
 		b.TransDesc,
 		b.OddsSpread,
 		b.ExtraInfo,
-		b.BetdaqId
+		b.BetdaqId,
+		b.CurrencyId,
+		b.SiteId
 	FROM #PagingData AS b
 		INNER JOIN dbo.custinfo AS c WITH (NOLOCK) ON b.CustId = c.custid
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid

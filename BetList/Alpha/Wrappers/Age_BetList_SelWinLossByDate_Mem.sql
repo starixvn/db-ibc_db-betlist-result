@@ -141,6 +141,7 @@ AS
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
+		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -239,6 +240,8 @@ BEGIN
 		, ExtraInfo			VARCHAR(1000)
 		, Currency			NVARCHAR(50)
 		, Product			VARCHAR(30)
+		, CurrencyId		TINYINT
+		, SiteId			VARCHAR(20)
 	);
 
 	DECLARE @BettransDetail TABLE (
@@ -669,6 +672,14 @@ BEGIN
 									ELSE '' END
 					,Currency = b.currencyname
 					,Product = c.Product
+					,CurrencyId = CASE
+									WHEN c.Product IN ('H5LG', 'SLT') THEN b.currency
+									ELSE 0
+								END
+					,SiteId = CASE
+								WHEN c.Product IN ('H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
+								ELSE ''
+							END
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -968,6 +979,14 @@ BEGIN
 								ELSE '' END
 				,Currency = b.currencyname
 				,Product = c.Product
+				,CurrencyId = CASE
+								WHEN c.Product IN ('H5LG', 'SLT') THEN b.currency
+								ELSE 0
+							END
+				,SiteId = CASE
+							WHEN c.Product IN ('H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
+							ELSE ''
+						END
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 				LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
