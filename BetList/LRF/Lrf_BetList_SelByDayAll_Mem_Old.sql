@@ -118,6 +118,7 @@ AS
 		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
+		- 20220110@Kos: Hotfix - Decompress IP in bk range [Redmine: 167264]
 
 	Param's Explanation:
 		+ @TransType:
@@ -318,7 +319,7 @@ BEGIN
 			m.finalawayscore,
 			m.hthomescore,
 			m.htawayscore,
-			b.ip,
+			dp.IP,
 			@Username,
 			ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			b.currency,
@@ -364,6 +365,7 @@ BEGIN
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.transid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
@@ -460,7 +462,7 @@ BEGIN
 			0 AS FinalAwayScore,
 			0 AS hthomescore,
 			0 AS htawayscore,
-			b.ip,
+			dp.IP,
 			@Username,
 			CONVERT(BIT, 0) AS IsNeutral,
 			b.currency,
@@ -478,6 +480,7 @@ BEGIN
 			INNER JOIN bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 			INNER JOIN bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
@@ -529,7 +532,7 @@ BEGIN
 			0,
 			0,
 			0,
-			b.ip,
+			dp.IP,
 			@Username,
 			CONVERT(BIT, 0) AS IsNeutral,
 			b.currency,
@@ -547,6 +550,7 @@ BEGIN
 			bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.transid
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.matchid IN (0, 9, 29, 2799) -- Should not remove 0 for Archive
@@ -596,7 +600,7 @@ BEGIN
 			0,
 			0,
 			0,
-			b.ip,
+			dp.IP,
 			@Username,
 			CONVERT(BIT,0) AS IsNeutral,
 			b.currency,
@@ -615,6 +619,7 @@ BEGIN
 			INNER JOIN bodb_archive.dbo.outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.transid
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
@@ -711,7 +716,7 @@ BEGIN
 			0 AS FinalAwayScore,
 			0 AS hthomescore,
 			0 AS htawayscore,
-			b.ip,
+			dp.IP,
 			@Username,
 			CONVERT(BIT, 0) AS IsNeutral,
 			b.currency,
@@ -741,6 +746,7 @@ BEGIN
 			END AS OddsSpread
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
@@ -786,7 +792,7 @@ BEGIN
 			0 AS FinalAwayScore,
 			0 AS HtHomeScore,
 			0 AS HtAwayScore,
-			b.ip,
+			dp.IP,
 			@Username,
 			CONVERT(BIT, 0) AS IsNeutral,
 			b.currency,
@@ -803,6 +809,7 @@ BEGIN
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
 			AND b.statusID IN (SELECT StatusId FROM @TmpStatus)
@@ -849,7 +856,7 @@ BEGIN
 			0 AS FinalAwayScore,
 			0 AS HtHomeScore,
 			0 AS HtAwayScore,
-			b.ip,
+			dp.IP,
 			@Username,
 			CONVERT(BIT, 0) AS IsNeutral,
 			b.currency,
@@ -867,6 +874,7 @@ BEGIN
 			bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE
 			b.custid = @CustId
 			AND b.winlostdate = @TempFromDate
