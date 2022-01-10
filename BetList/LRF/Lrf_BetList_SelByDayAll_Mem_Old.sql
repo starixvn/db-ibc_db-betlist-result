@@ -120,6 +120,7 @@ AS
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20220110@Kos: Hotfix - Decompress IP in bk range [Redmine: 167264]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
+		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 
 	Param's Explanation:
 		+ @TransType:
@@ -473,7 +474,7 @@ BEGIN
 			'' AS betcheck,
 			'' AS transdesc,
 			-1 AS BetdaqId,
-			'' AS ExtraInfo,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,
@@ -738,10 +739,7 @@ BEGIN
 				ELSE ''
 			END AS transdesc,
 			-1 AS BetdaqId,
-			CASE
-				WHEN sbt.ProductID = 37 THEN ISNULL(b.ExtraInfo, '')
-				ELSE ''
-			END AS ExtraInfo,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,

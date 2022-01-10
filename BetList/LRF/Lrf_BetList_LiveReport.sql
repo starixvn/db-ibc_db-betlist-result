@@ -21,6 +21,7 @@ AS
 	Revisions:
 		- 20211104@Kos: Support Sports Lottery [RedmineID: #163191]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
+		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 */
 
 BEGIN
@@ -28,7 +29,7 @@ BEGIN
 
 	CREATE TABLE #TempAg (CustId INT, Currency INT)
 
-	CREATE CLUSTERED INDEX IX_TempAg ON #TempAg (CustId)
+	CREATE CLUSTERED INDEX IX_CustId ON #TempAg (CustId)
 
 	-- Get AgentList
 	DECLARE @DocHandler INT
@@ -88,6 +89,7 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
 		SiteId			VARCHAR(20),
+		ExtraInfo		VARCHAR(1000),
 		Product			VARCHAR(30),
 		EventType		TINYINT,
 		WhTicket		TINYINT
@@ -119,6 +121,7 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
 		SiteId			VARCHAR(20),
+		ExtraInfo		VARCHAR(1000),
 		Product			VARCHAR(30),
 		EventType		TINYINT,
 		WhTicket		TINYINT
@@ -162,6 +165,7 @@ BEGIN
 			BetCheck,
 			TransDesc,
 			BetdaqId,
+			ExtraInfo,
 			EventType,
 			WhTicket)
 		SELECT
@@ -187,6 +191,7 @@ BEGIN
 			ISNULL(b.betcheck, ''),
 			ISNULL(b.transdesc, ''),
 			b.betdaqid,
+			ISNULL(b.ExtraInfo, ''),
 			sbt.EventType,
 			1 AS WhTicket
 		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_recommend)
@@ -227,6 +232,7 @@ BEGIN
 			BetCheck,
 			TransDesc,
 			BetdaqId,
+			ExtraInfo,
 			EventType,
 			WhTicket)
 		SELECT
@@ -252,6 +258,7 @@ BEGIN
 			ISNULL(b.betcheck, ''),
 			ISNULL(b.transdesc, ''),
 			b.betdaqid,
+			ISNULL(b.ExtraInfo, ''),
 			sbt.EventType,
 			2 AS WhTicket
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -379,7 +386,8 @@ BEGIN
 			b.BetCheck,
 			b.TransDesc,
 			b.BetdaqId,
-			b.SiteId
+			b.SiteId,
+			b.ExtraInfo
 		FROM
 			#PagingData AS b
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
@@ -439,7 +447,8 @@ BEGIN
 				b.BetCheck,
 				b.TransDesc,
 				b.BetdaqId,
-				b.SiteId
+				b.SiteId,
+				b.ExtraInfo
 			FROM
 				#Data AS b
 				INNER JOIN #Customer AS c ON c.custid = b.CustId

@@ -35,6 +35,7 @@ AS
 		- 20200623@Kos: Integrate archive process for table VSRaceInfo [Redmine: #136285]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 */
 
 BEGIN
@@ -102,7 +103,8 @@ BEGIN
 		MatchId			INT,
 		Ip				VARCHAR(45),
 		Currency		SMALLINT,
-		ShowTime		DATETIME
+		ShowTime		DATETIME,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	DECLARE @TempFromDate	DATETIME,
@@ -145,7 +147,8 @@ BEGIN
 			o.EventID AS MatchId,
 			b.ip,
 			b.currency,
-			r.EventTime
+			r.EventTime,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @TempAg AS t ON b.recommend = t.CustId
 			INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
@@ -193,7 +196,8 @@ BEGIN
 			o.EventID AS MatchId,
 			b.ip,
 			b.currency,
-			r.EventTime
+			r.EventTime,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @TempAg AS t ON b.recommend = t.CustId
 			INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
@@ -286,7 +290,8 @@ BEGIN
 		MatchId			INT,
 		Ip				VARCHAR(45),
 		Currency		SMALLINT,
-		ShowTime		DATETIME
+		ShowTime		DATETIME,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	-- Exchange rate is different for each day => Stake order may be different from StakeUSD order
@@ -363,7 +368,8 @@ BEGIN
 		b.MatchId,
 		b.Ip,
 		b.Currency,
-		b.ShowTime
+		b.ShowTime,
+		b.ExtraInfo
 	FROM #PagingData AS b
 		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 		LEFT JOIN #ExchangeRate AS e
@@ -423,8 +429,4 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Lrf_BetList_LiveReport_SelWinlossVHRacing] TO [bodbLicenseeNet]
 GO

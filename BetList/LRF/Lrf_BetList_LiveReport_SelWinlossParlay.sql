@@ -48,6 +48,7 @@ AS
 		- 20200525@Kos: Support show licensee transaction ID [Redmine: #134629]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -59,7 +60,9 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+	CREATE TABLE #TempAg (CustId INT, Currency INT)
+
+	CREATE CLUSTERED INDEX IX_CustId ON #TempAg (CustId)
 
 	-- Get AgentList
 	DECLARE @DocHandler INT
@@ -67,7 +70,7 @@ BEGIN
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
 	
-		INSERT INTO @TempAg (CustId, Currency)
+		INSERT INTO #TempAg (CustId, Currency)
 		SELECT AgentId, Currency
 		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
 
@@ -162,10 +165,8 @@ BEGIN
 				ISNULL(b.betcheck, '') AS BetCheck,
 				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
-			WHERE
-				b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
+				INNER JOIN #TempAg AS a ON a.CustId = b.recommend
+			WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @BetType
 				AND b.tpositiontaking = 0
 				AND b.statusID IN (111, 112, 113)
@@ -208,15 +209,10 @@ BEGIN
 				b.ip,
 				b.currency,
 				ISNULL(b.betcheck, '') AS BetCheck,
-				CASE
-					WHEN b.bettype IN (9, 29) THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM dbo.bettrans AS b WITH (NOLOCK)
-			WHERE
-				b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
+				INNER JOIN #TempAg AS a ON a.CustId = b.recommend
+			WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.bettype = @BetType
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
@@ -268,10 +264,8 @@ BEGIN
 				ISNULL(b.betcheck, '') AS BetCheck,
 				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-			WHERE
-				b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
+				INNER JOIN #TempAg AS a ON a.CustId = b.recommend
+			WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.bettype = @BetType
 				AND b.tpositiontaking = 0
 				AND b.statusID IN (111, 112, 113)
@@ -314,15 +308,10 @@ BEGIN
 				b.ip,
 				b.currency,
 				ISNULL(b.betcheck, '') AS BetCheck,
-				CASE
-					WHEN b.bettype IN (9, 29) THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-			WHERE
-				b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
+				INNER JOIN #TempAg AS a ON a.CustId = b.recommend
+			WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 				AND b.bettype = @BetType
 				AND b.tpositiontaking <> 0
 				AND b.statusID IN (111, 112, 113)
@@ -494,6 +483,7 @@ BEGIN
 					END BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY b.RowNum ASC
 
+	DROP TABLE #TempAg
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 END

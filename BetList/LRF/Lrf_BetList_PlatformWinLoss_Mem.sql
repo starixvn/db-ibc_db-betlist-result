@@ -114,6 +114,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
+		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -661,10 +662,7 @@ BEGIN
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
-				CASE
-					WHEN sbt.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -900,7 +898,7 @@ BEGIN
 				'' AS BetCheck,
 				'' AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -1433,10 +1431,7 @@ BEGIN
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
-				CASE
-					WHEN sbt.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -1668,7 +1663,7 @@ BEGIN
 				'' AS BetCheck,
 				'' AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2033,10 +2028,7 @@ BEGIN
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
-				CASE
-					WHEN sbt.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2274,7 +2266,7 @@ BEGIN
 				'' AS BetCheck,
 				'' AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,

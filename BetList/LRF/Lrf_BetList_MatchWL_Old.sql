@@ -31,6 +31,7 @@ AS
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20211118@Kos: Hotfix - Missing linked database [Redmine: #164867]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
+		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 
 	Param's Explanation:
 		+ @LiveIndicator:
@@ -604,7 +605,7 @@ BEGIN
 								ELSE -1
 							END,
 				ExtraInfo = CASE
-								WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END,
 				OriginalStake = CASE

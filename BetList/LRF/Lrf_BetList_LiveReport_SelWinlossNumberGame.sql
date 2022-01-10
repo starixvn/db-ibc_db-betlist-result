@@ -41,6 +41,7 @@ AS
 		- 20201231@Kos: Support Happy 5 Linked Games [Redmine: #147446]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -52,7 +53,9 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+	CREATE TABLE #TempAg (CustId INT, Currency INT)
+
+	CREATE CLUSTERED INDEX IX_CustId ON #TempAg (CustId)
 
 	-- Get AgentList
 	DECLARE @DocHandler INT
@@ -60,7 +63,7 @@ BEGIN
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
 	
-		INSERT INTO @TempAg (CustId, Currency)
+		INSERT INTO #TempAg (CustId, Currency)
 		SELECT AgentId, Currency
 		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
 
@@ -119,6 +122,7 @@ BEGIN
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
+		ExtraInfo		VARCHAR(1000),
 		EventType		TINYINT,
 		WhTicket		TINYINT
 	)
@@ -156,6 +160,7 @@ BEGIN
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
+		ExtraInfo		VARCHAR(1000),
 		EventType		TINYINT,
 		WhTicket		TINYINT
 	)
@@ -205,6 +210,7 @@ BEGIN
 			MatchId,
 			BetCheck,
 			TransDesc,
+			ExtraInfo,
 			EventType,
 			WhTicket)
 		SELECT
@@ -237,10 +243,11 @@ BEGIN
 			b.matchid,
 			b.betcheck,
 			b.transdesc,
+			b.ExtraInfo,
 			sbt.EventType,
 			1 AS WhTicket
 		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_recommend)
-			INNER JOIN @TempAg AS t ON t.custid = b.recommend
+			INNER JOIN #TempAg AS t ON t.custid = b.recommend
 			INNER JOIN @SportBettype AS sbt ON sbt.bettype = b.Bettype
 		WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND b.statusID IN (111, 112, 113)
@@ -285,6 +292,7 @@ BEGIN
 			MatchId,
 			BetCheck,
 			TransDesc,
+			ExtraInfo,
 			EventType,
 			WhTicket)
 		SELECT
@@ -317,10 +325,11 @@ BEGIN
 			b.matchid,
 			b.betcheck,
 			b.transdesc,
+			b.ExtraInfo,
 			sbt.EventType,
 			2 AS WhTicket
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-			INNER JOIN @TempAg AS t ON t.custid = b.recommend
+			INNER JOIN #TempAg AS t ON t.custid = b.recommend
 			INNER JOIN @SportBettype AS sbt ON sbt.bettype = b.Bettype
 		WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 			AND b.statusID IN (111, 112, 113)
@@ -329,7 +338,7 @@ BEGIN
 
 	DELETE b
 	FROM #Data AS b
-	WHERE NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
+	WHERE NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 
 	DECLARE @TotalRows INT
 
@@ -469,7 +478,8 @@ BEGIN
 			CASE
 				WHEN b.EventType = 0 THEN ISNULL(b.transdesc, '')
 				ELSE ''
-			END AS TransDesc
+			END AS TransDesc,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM
 			#PagingData AS b
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
@@ -551,7 +561,8 @@ BEGIN
 				CASE
 					WHEN b.EventType = 0 THEN ISNULL(b.transdesc, '''')
 					ELSE ''''
-				END AS TransDesc
+				END AS TransDesc,
+				ISNULL(b.ExtraInfo, '''') AS ExtraInfo
 			FROM
 				#Data AS b
 				INNER JOIN #Customer AS c ON c.custid = b.CustId
@@ -567,6 +578,7 @@ BEGIN
 		DROP TABLE #Customer
 	END
 
+	DROP TABLE #TempAg
 	DROP TABLE #Data
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate

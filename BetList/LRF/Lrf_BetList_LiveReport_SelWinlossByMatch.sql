@@ -68,6 +68,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211125@Kos: Hotfix - Timeout in bettrans14 range [Redmine: 165188]
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
+		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -79,7 +80,9 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @TempAg TABLE (CustId INT PRIMARY KEY, Currency INT)
+	CREATE TABLE #TempAg (CustId INT, Currency INT)
+
+	CREATE CLUSTERED INDEX IX_CustId ON #TempAg (CustId)
 
 	-- Get AgentList
 	DECLARE @DocHandler INT
@@ -87,7 +90,7 @@ BEGIN
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
 	
-		INSERT INTO @TempAg (CustId, Currency)
+		INSERT INTO #TempAg (CustId, Currency)
 		SELECT AgentId, Currency
 		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
 
@@ -277,7 +280,7 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
+				INNER JOIN #TempAg AS ta ON ta.CustId = b.recommend
 				INNER JOIN bodb_licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
@@ -349,7 +352,7 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
+				INNER JOIN #TempAg AS ta ON ta.CustId = b.recommend
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
@@ -412,7 +415,7 @@ BEGIN
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -420,7 +423,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM
 				dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
+				INNER JOIN #TempAg AS ta ON ta.CustId = b.recommend
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
@@ -493,7 +496,7 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN @TempAg AS t ON b.recommend = t.custid
+				INNER JOIN #TempAg AS t ON b.recommend = t.custid
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
@@ -565,7 +568,7 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK) 
-				INNER JOIN @TempAg AS t ON b.recommend = t.custid
+				INNER JOIN #TempAg AS t ON b.recommend = t.custid
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
@@ -628,7 +631,7 @@ BEGIN
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -636,7 +639,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM
 				dbo.bettrans14 AS b WITH (NOLOCK) 
-				INNER JOIN @TempAg AS t ON b.recommend = t.custid
+				INNER JOIN #TempAg AS t ON b.recommend = t.custid
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON sbt.Bettype = b.bettype
 				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
@@ -809,6 +812,7 @@ BEGIN
 		) A
 	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
 
+	DROP TABLE #TempAg
 	DROP TABLE #Data
 	DROP TABLE #ExchangeRate
 END

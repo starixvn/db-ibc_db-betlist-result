@@ -40,6 +40,7 @@ AS
 		- 20210714@Kos: Support CG [Redmine: #152619]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
+		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 */
 
 BEGIN
@@ -786,7 +787,7 @@ BEGIN
 								ELSE -1
 							END,
 				ExtraInfo = CASE
-								WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'NG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END,
 				OriginalStake = CASE

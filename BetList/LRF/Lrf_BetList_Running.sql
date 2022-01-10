@@ -58,6 +58,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
+		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 */
 
 BEGIN
@@ -65,7 +66,9 @@ BEGIN
 
 	DECLARE @HasError BIT = 0
 
-	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+	CREATE TABLE #TempAg (CustId INT, Currency INT)
+
+	CREATE CLUSTERED INDEX IX_CustId ON #TempAg (CustId)
 
 	-- Get AgentList
 	DECLARE @DocHandler INT
@@ -73,7 +76,7 @@ BEGIN
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
 	
-		INSERT INTO @TempAg (CustId, Currency)
+		INSERT INTO #TempAg (CustId, Currency)
 		SELECT AgentId, Currency
 		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
 
@@ -243,7 +246,7 @@ BEGIN
 			INSERT INTO @TempCust
 			SELECT c.custid
 			FROM dbo.Customer AS c WITH (NOLOCK)
-				INNER JOIN @TempAg AS a ON c.recommend = a.CustId
+				INNER JOIN #TempAg AS a ON c.recommend = a.CustId
 			WHERE c.roleid = 1
 				AND (c.username LIKE + '%' + @Username + '%'
 					OR c.username2 LIKE + '%$%' + @Username + '%')
@@ -331,7 +334,7 @@ BEGIN
 				ISNULL(b.RefCode, 0),
 				1 AS TableID
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_recommend)
-				INNER JOIN @TempAg AS a ON a.CustId = b.recommend
+				INNER JOIN #TempAg AS a ON a.CustId = b.recommend
 			WHERE b.statusID IN (0, 1)
 
 			-- translog
@@ -385,7 +388,7 @@ BEGIN
 				b.TranId3rd,
 				2 AS TableID
 			FROM dbo.translog AS b WITH (NOLOCK, INDEX = IX_betrunning_recommend)
-				INNER JOIN @TempAg AS a ON a.CustId = b.recommend
+				INNER JOIN #TempAg AS a ON a.CustId = b.recommend
 			WHERE b.statusID IN (0, 1)
 		END
 		ELSE		-- Customer level
@@ -528,14 +531,14 @@ BEGIN
 		BEGIN
 			DELETE b
 			FROM #Data AS b
-			WHERE NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
+			WHERE NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 		END
 		ELSE
 		BEGIN
 			DELETE b
 			FROM #Data AS b
 			WHERE NOT EXISTS (SELECT 1 FROM @TempCust WHERE CustId = b.CustId)
-				OR NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
+				OR NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 		END
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -677,7 +680,7 @@ BEGIN
 						SUM(b.actual_stake) AS Actual_Stake,
 						1 AS IsNew
 					FROM dbo.bettransRnG AS b WITH (NOLOCK)
-						INNER JOIN @TempAg AS a ON a.CustId = b.recommend
+						INNER JOIN #TempAg AS a ON a.CustId = b.recommend
 						INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.gameID = s.bettype
 					WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
 					GROUP BY b.RefNo,
@@ -695,7 +698,7 @@ BEGIN
 						SUM(b.actual_stake) AS Actual_Stake,
 						1 AS IsNew
 					FROM dbo.bettransLC AS b WITH (NOLOCK)
-						INNER JOIN @TempAg AS a ON a.CustId = b.recommend
+						INNER JOIN #TempAg AS a ON a.CustId = b.recommend
 						INNER JOIN dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s ON b.gameID = s.bettype
 					WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
 					GROUP BY b.RefNo,
@@ -1125,7 +1128,7 @@ BEGIN
 								ELSE -1
 							END,
 				ExtraInfo = CASE
-								WHEN b.Product IN ('SB', 'Parlay', 'Outright') THEN ISNULL(b.ExtraInfo, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'NG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END,
 				OriginalStake = CASE
@@ -1235,6 +1238,7 @@ BEGIN
 
 	SELECT DISTINCT * FROM @Detail
 
+	DROP TABLE #TempAg
 	DROP TABLE #Data
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate

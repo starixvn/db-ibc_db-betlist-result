@@ -67,6 +67,7 @@ AS
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 		- 20211201@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
+		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 */
 
 BEGIN
@@ -139,6 +140,7 @@ BEGIN
 		ComStatus			NVARCHAR(20),
 		TransDesc			NVARCHAR(1000),
 		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
 		OriginalBetType		SMALLINT,
 		Product				VARCHAR(30),
 		RefTable			TINYINT,
@@ -193,6 +195,7 @@ BEGIN
 		ComStatus			NVARCHAR(20),
 		TransDesc			NVARCHAR(1000),
 		BetdaqId			BIGINT,
+		ExtraInfo			VARCHAR(1000),
 		OriginalBetType		SMALLINT,
 		Product				VARCHAR(30),
 		RefTable			TINYINT,
@@ -316,6 +319,7 @@ BEGIN
 						ComStatus,
 						TransDesc,
 						BetdaqId,
+						ExtraInfo,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -352,6 +356,7 @@ BEGIN
 						b.comstatus,
 						b.transdesc,
 						b.betdaqid,
+						b.ExtraInfo,
 						1 AS WhTicket
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
@@ -399,6 +404,7 @@ BEGIN
 						ComStatus,
 						TransDesc,
 						BetdaqId,
+						ExtraInfo,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -435,6 +441,7 @@ BEGIN
 						b.comstatus,
 						b.transdesc,
 						b.betdaqid,
+						b.ExtraInfo,
 						1 AS WhTicket
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
@@ -491,6 +498,7 @@ BEGIN
 						ComStatus,
 						TransDesc,
 						BetdaqId,
+						ExtraInfo,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -527,6 +535,7 @@ BEGIN
 						b.comstatus,
 						b.transdesc,
 						b.betdaqid,
+						b.ExtraInfo,
 						1 AS WhTicket
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
 						INNER JOIN @TempCust AS c ON b.custid = c.CustId
@@ -574,6 +583,7 @@ BEGIN
 						ComStatus,
 						TransDesc,
 						BetdaqId,
+						ExtraInfo,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -610,6 +620,7 @@ BEGIN
 						b.comstatus,
 						b.transdesc,
 						b.betdaqid,
+						b.ExtraInfo,
 						1 AS WhTicket
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
 						INNER JOIN @TempCust AS c ON b.custid = c.CustId
@@ -713,6 +724,7 @@ BEGIN
 						ComStatus,
 						TransDesc,
 						BetdaqId,
+						ExtraInfo,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -749,6 +761,7 @@ BEGIN
 						b.comstatus,
 						b.transdesc,
 						b.betdaqid,
+						b.ExtraInfo,
 						2 AS WhTicket
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
@@ -795,6 +808,7 @@ BEGIN
 						ComStatus,
 						TransDesc,
 						BetdaqId,
+						ExtraInfo,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -831,6 +845,7 @@ BEGIN
 						b.comstatus,
 						b.transdesc,
 						b.betdaqid,
+						b.ExtraInfo,
 						2 AS WhTicket
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
@@ -886,6 +901,7 @@ BEGIN
 						ComStatus,
 						TransDesc,
 						BetdaqId,
+						ExtraInfo,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -922,6 +938,7 @@ BEGIN
 						b.comstatus,
 						b.transdesc,
 						b.betdaqid,
+						b.ExtraInfo,
 						2 AS WhTicket
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
@@ -969,6 +986,7 @@ BEGIN
 						ComStatus,
 						TransDesc,
 						BetdaqId,
+						ExtraInfo,
 						WhTicket)
 					SELECT
 						b.transid,
@@ -1005,6 +1023,7 @@ BEGIN
 						b.comstatus,
 						b.transdesc,
 						b.betdaqid,
+						b.ExtraInfo,
 						2 AS WhTicket
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
@@ -1469,6 +1488,10 @@ BEGIN
 									WHEN b.Product IN ('CO') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
 								END,
+					ExtraInfo = CASE
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
+									ELSE ''
+								END,
 					OriginalBetType = CASE
 										WHEN b.Product IN ('CO') THEN b.OriginalBetType
 										ELSE 0
@@ -1612,6 +1635,10 @@ BEGIN
 									WHEN b.Product IN ('CO') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
 								END,
+					ExtraInfo = CASE
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
+									ELSE ''
+								END,
 					OriginalBetType = CASE
 										WHEN b.Product IN ('CO') THEN b.OriginalBetType
 										ELSE 0
@@ -1715,6 +1742,7 @@ BEGIN
 				a.BetCheck,
 				a.TransDesc,
 				a.BetdaqId,
+				a.ExtraInfo,
 				a.OriginalBetType
 			FROM
 				#PagingData AS a
@@ -1853,6 +1881,10 @@ BEGIN
 					BetdaqId = CASE
 									WHEN b.Product IN ('CO') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
+								END,
+					ExtraInfo = CASE
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
+									ELSE ''
 								END,
 					OriginalBetType = CASE
 										WHEN b.Product IN ('CO') THEN b.OriginalBetType
@@ -1996,6 +2028,10 @@ BEGIN
 									WHEN b.Product IN ('CO') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
 								END,
+					ExtraInfo = CASE
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR') THEN ISNULL(b.ExtraInfo, '')
+									ELSE ''
+								END,
 					OriginalBetType = CASE
 										WHEN b.Product IN ('CO') THEN b.OriginalBetType
 										ELSE 0
@@ -2115,6 +2151,7 @@ BEGIN
 					a.BetCheck,
 					a.TransDesc,
 					a.BetdaqId,
+					a.ExtraInfo,
 					a.OriginalBetType
 				FROM
 					#Data AS a

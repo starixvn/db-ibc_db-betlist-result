@@ -152,6 +152,7 @@ AS
 		- 20210715@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
+		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 */
 
 BEGIN
@@ -797,7 +798,7 @@ BEGIN
 				ELSE ''
 			END AS TransDesc,
 			-1 AS BetdaqId,
-			'' AS ExtraInfo,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,
@@ -853,7 +854,7 @@ BEGIN
 			'' AS BetCheck,
 			'' AS TransDesc,
 			-1 AS BetdaqId,
-			'' AS ExtraInfo,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,

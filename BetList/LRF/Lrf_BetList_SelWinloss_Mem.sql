@@ -159,6 +159,7 @@ AS
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
+		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -1023,7 +1024,7 @@ BEGIN
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -1088,7 +1089,7 @@ BEGIN
 				'' AS betcheck,
 				'' AS transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -1173,7 +1174,7 @@ BEGIN
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2258,7 +2259,7 @@ BEGIN
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2323,7 +2324,7 @@ BEGIN
 				'' AS betcheck,
 				'' AS transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2439,7 +2440,7 @@ BEGIN
 					ELSE ''
 				END AS transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -3211,7 +3212,7 @@ BEGIN
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -3278,7 +3279,7 @@ BEGIN
 				'' AS betcheck,
 				'' AS transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -3395,7 +3396,7 @@ BEGIN
 					ELSE ''
 				END AS transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
