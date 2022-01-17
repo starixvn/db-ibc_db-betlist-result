@@ -170,6 +170,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 */
 
 BEGIN
@@ -303,6 +304,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		RefTable			TINYINT
@@ -363,6 +365,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		RefTable			TINYINT
@@ -1304,7 +1307,11 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN @TmpData AS x
@@ -1470,7 +1477,11 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
@@ -1632,7 +1643,11 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #PagingData AS b
 					LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
@@ -1760,7 +1775,8 @@ BEGIN
 		a.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
 		a.OriginalBetType,
 		a.WalletType,
-		a.RefCode
+		a.RefCode,
+		a.SiteId
 	FROM
 		#PagingData AS a
 		LEFT JOIN #ExchangeRate AS e ON a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth

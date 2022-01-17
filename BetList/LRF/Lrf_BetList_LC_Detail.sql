@@ -31,6 +31,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 					- Add new params @MoveBetsDay SMALLDATETIME and @BalanceUpDay SMALLDATETIME
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 
 	Parameters:
 		- @TransType
@@ -132,7 +133,8 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(2000),
 		MatchCode		VARCHAR(50),
-		BetTeam			NVARCHAR(50)
+		BetTeam			NVARCHAR(100),
+		SiteId			VARCHAR(7)
 	)
 
 	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate > @MoveBetsDay )
@@ -195,9 +197,9 @@ BEGIN
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
-			END AS BetTeam
+			END AS BetTeam,
+			blc.SiteId
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
@@ -268,9 +270,9 @@ BEGIN
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
-			END AS BetTeam
+			END AS BetTeam,
+			blc.SiteId
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
@@ -339,9 +341,9 @@ BEGIN
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
-				WHEN sbt.ProductID IN (57, 59) THEN ISNULL(blc.SiteID, '')
 				ELSE ''
-			END AS BetTeam
+			END AS BetTeam,
+			blc.SiteId
 		FROM DBARC.bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN DBARC.bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
@@ -420,7 +422,8 @@ BEGIN
 		b.MatchCode,
 		b.BetTeam,
 		@Currency AS Currency,
-		@Currency AS LeagueId
+		@Currency AS LeagueId,
+		b.SiteId
 	FROM @tmpBettransLC AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY b.TransId ASC

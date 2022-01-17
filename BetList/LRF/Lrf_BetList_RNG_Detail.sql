@@ -46,6 +46,7 @@ AS
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 					- Add new params @MoveBetsDay SMALLDATETIME and @BalanceUpDay SMALLDATETIME
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 
 	Parameters:
 		- @TransType
@@ -149,10 +150,11 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetCheck		VARCHAR(64),
 		MatchCode		VARCHAR(1000),
-		BetTeam			NVARCHAR(50),
+		BetTeam			NVARCHAR(100),
 		OddsSpread		MONEY,
 		BetdaqId		BIGINT,
-		ExtraInfo		VARCHAR(1000)
+		ExtraInfo		VARCHAR(1000),
+		SiteId			VARCHAR(7)
 	)
 
 	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate > @MoveBetsDay)
@@ -190,12 +192,10 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(brng.SiteID, '')
-				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (61, 62, 67, 68) THEN brng.GameId3rd
+				WHEN sbt.productID IN (6, 22, 24, 32, 34, 36, 55, 56, 61, 62, 66, 67, 68) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
@@ -209,7 +209,8 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
-			END AS ExtraInfo
+			END AS ExtraInfo,
+			ISNULL(brng.SiteID, '')
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId
@@ -251,12 +252,10 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42, 61, 62, 66, 67, 68) THEN ISNULL(brng.SiteID, '')
-				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (61, 62, 67, 68) THEN brng.GameId3rd
+				WHEN sbt.productID IN (6, 22, 24, 32, 34, 36, 55, 56, 61, 62, 66, 67, 68) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
@@ -270,7 +269,8 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
-			END AS ExtraInfo
+			END AS ExtraInfo,
+			ISNULL(brng.SiteID, '')
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
@@ -310,12 +310,10 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (61, 62, 67, 68) THEN ISNULL(brng.SiteID, '')
-				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (61, 62, 67, 68) THEN brng.GameId3rd
+				WHEN sbt.productID IN (6, 22, 24, 32, 34, 36, 55, 56, 61, 62, 66, 67, 68) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
@@ -329,7 +327,8 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
-			END AS ExtraInfo
+			END AS ExtraInfo,
+			ISNULL(brng.SiteID, '')
 		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 			CROSS APPLY dbo.f_IP_Decompress(brng.ip) AS dp
@@ -407,7 +406,8 @@ BEGIN
 		b.OddsSpread,
 		b.BetdaqId,
 		b.ExtraInfo,
-		@Currency AS Currency
+		@Currency AS Currency,
+		b.SiteId
 	FROM @tmpBettransRnG AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY b.TransId ASC

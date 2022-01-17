@@ -119,6 +119,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20220110@Kos: Hotfix - Decompress IP in bk range [Redmine: 167264]
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 
 	Param's Explanation:
 		+ @TransType:
@@ -244,7 +245,8 @@ BEGIN
 		OriginalBetType	SMALLINT,
 		WalletType		TINYINT,
 		RefCode			BIGINT,
-		OddsSpread		MONEY
+		OddsSpread		MONEY,
+		SiteId			VARCHAR(20)
 	)
 
 	-- Get SportBetTypeMatrix
@@ -360,7 +362,8 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID = 1 THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
-			END AS OddsSpread
+			END AS OddsSpread,
+			'' AS SiteId
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.transid
@@ -475,7 +478,8 @@ BEGIN
 			0 AS OriginalBetType,
 			0 AS WalletType,
 			0 AS RefCode,
-			0 AS OddsSpread
+			0 AS OddsSpread,
+			'' AS SiteId
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN bodb_Archive.dbo.VSOutright_bk AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 			INNER JOIN bodb_Archive.dbo.VSRaceInfo_bk AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -545,7 +549,8 @@ BEGIN
 			0 AS OriginalBetType,
 			0 AS WalletType,
 			0 AS RefCode,
-			0 AS OddsSpread
+			0 AS OddsSpread,
+			'' AS SiteId
 		FROM
 			bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.transid
@@ -613,7 +618,8 @@ BEGIN
 			0 AS OriginalBetType,
 			0 AS WalletType,
 			0 AS RefCode,
-			0 AS OddsSpread
+			0 AS OddsSpread,
+			'' AS SiteId
 		FROM
 			bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN bodb_archive.dbo.outright_bk AS m WITH (NOLOCK) ON b.matchid = m.orid
@@ -743,7 +749,8 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
-			END AS OddsSpread
+			END AS OddsSpread,
+			CONVERT(VARCHAR(20), b.betdaqid) AS SiteId
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
@@ -805,7 +812,8 @@ BEGIN
 			0 AS OriginalBetType,
 			0 AS WalletType,
 			0 AS RefCode,
-			0 AS OddsSpread
+			0 AS OddsSpread,
+			'' AS SiteId
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX=IX_custid)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
 			LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.refno = bm.refno AND bm.bettype = 18001
@@ -869,7 +877,8 @@ BEGIN
 			0 AS OriginalBetType,
 			0 AS WalletType,
 			0 AS RefCode,
-			0 AS OddsSpread
+			0 AS OddsSpread,
+			'' AS SiteId
 		FROM
 			bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.bettype
@@ -1032,7 +1041,8 @@ BEGIN
 		a.OriginalBetType,
 		a.WalletType,
 		a.RefCode,
-		a.OddsSpread
+		a.OddsSpread,
+		a.SiteId
 	FROM
 	(
 		SELECT

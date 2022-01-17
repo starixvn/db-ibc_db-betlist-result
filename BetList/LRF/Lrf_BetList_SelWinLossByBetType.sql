@@ -62,6 +62,7 @@ AS
 		- 20210323@Kos: Support show IP [Redmine: #151085]
 		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 */
 
 BEGIN
@@ -190,7 +191,8 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
-		OddsSpread			MONEY
+		OddsSpread			MONEY,
+		SiteId				VARCHAR(20)
 	)
 
 	CREATE TABLE #ExchangeRate (
@@ -699,7 +701,8 @@ BEGIN
 				END AS OriginalBetType,
 				td.WalletType,
 				td.RefCode,
-				ISNULL(b.oddsspread, 0) AS OddsSpread
+				ISNULL(b.oddsspread, 0) AS OddsSpread,
+				'' AS SiteId
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
@@ -762,7 +765,8 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				'' AS SiteId
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
@@ -829,7 +833,8 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				'' AS SiteId
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 			WHERE td.WhTicket = 1
@@ -903,7 +908,8 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				'' AS SiteId
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -967,7 +973,8 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				'' AS SiteId
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -1044,7 +1051,8 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				CONVERT(VARCHAR(20), b.betdaqid) AS SiteId
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -1116,7 +1124,8 @@ BEGIN
 				END AS OriginalBetType,
 				td.WalletType,
 				td.RefCode,
-				ISNULL(b.oddsspread, 0) AS OddsSpread
+				ISNULL(b.oddsspread, 0) AS OddsSpread,
+				'' AS SiteId
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
@@ -1179,7 +1188,8 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				'' AS SiteId
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
@@ -1246,7 +1256,8 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				'' AS SiteId
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 			WHERE td.WhTicket = 2
@@ -1320,7 +1331,8 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				'' AS SiteId
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -1384,7 +1396,8 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				'' AS SiteId
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.orid
 				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -1461,7 +1474,8 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
-				0 AS OddsSpread
+				0 AS OddsSpread,
+				CONVERT(VARCHAR(20), b.betdaqid) AS SiteId
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN #TempData AS td ON b.transid = td.TransId
 				INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
@@ -1521,7 +1535,8 @@ BEGIN
 		b.OriginalBetType,
 		b.WalletType,
 		b.RefCode,
-		b.OddsSpread
+		b.OddsSpread,
+		b.SiteId
 	FROM #Data AS b
 		INNER JOIN dbo.Customer AS c (NOLOCK) ON b.custid = c.custid
 		LEFT JOIN #ExchangeRate AS e

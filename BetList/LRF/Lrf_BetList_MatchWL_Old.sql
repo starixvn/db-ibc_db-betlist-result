@@ -30,6 +30,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20211118@Kos: Hotfix - Missing linked database [Redmine: #164867]
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 
 	Param's Explanation:
 		+ @LiveIndicator:
@@ -43,7 +44,9 @@ BEGIN
 
 	DECLARE @HasError BIT = 0
 
-	DECLARE @TempAg TABLE (CustId INT, Currency INT)
+	CREATE TABLE #TempAg (CustId INT, Currency INT)
+
+	CREATE CLUSTERED INDEX IX_CustId ON #TempAg (CustId)
 
 	-- Get AgentList
 	DECLARE @DocHandler INT
@@ -51,7 +54,7 @@ BEGIN
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
 	
-		INSERT INTO @TempAg (CustId, Currency)
+		INSERT INTO #TempAg (CustId, Currency)
 		SELECT AgentId, Currency
 		FROM OPENXML(@DocHandler, '/ROOT/Agent', 1) WITH (AgentId INT, Currency INT) AS Data
 
@@ -154,6 +157,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		Product				VARCHAR(30)
 	)
 
@@ -212,6 +216,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		Product				VARCHAR(30)
 	)
 
@@ -330,7 +335,7 @@ BEGIN
 						END,
 			ba.TransID
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = CIX_winlostdate)
-			INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
+			INNER JOIN #TempAg AS ta ON ta.CustId = b.recommend
 			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.TransID
 			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.ip) AS dp
@@ -619,6 +624,10 @@ BEGIN
 				RefCode = CASE
 								WHEN b.Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
 								ELSE 0
+							END,
+				SiteId = CASE
+								WHEN b.Product IN ('H5LG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
 							END
 			FROM #PagingData AS b
 				LEFT JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -701,6 +710,7 @@ BEGIN
 		a.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
 		a.OriginalBetType,
 		a.WalletType,
+		a.SiteId,
 		a.RefCode
 	FROM
 		#PagingData AS a
@@ -710,6 +720,7 @@ BEGIN
 
 	SELECT DISTINCT * FROM @Detail
 
+	DROP TABLE #TempAg
 	DROP TABLE #Data
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate

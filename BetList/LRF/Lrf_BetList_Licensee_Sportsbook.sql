@@ -65,6 +65,7 @@ AS
 		- 20211126@Kos: Support Parlay Abnormal Bet [Redmine: #163900]
 		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 */
 
 BEGIN
@@ -142,6 +143,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		Product				VARCHAR(30),
 		WhTicket			TINYINT
 	)
@@ -197,6 +199,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		Product				VARCHAR(30),
 		WhTicket			TINYINT
 	)
@@ -2039,7 +2042,11 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product = 'SB' THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
@@ -2179,7 +2186,11 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product = 'SB' THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
@@ -2237,7 +2248,8 @@ BEGIN
 				a.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
 				a.OriginalBetType,
 				a.WalletType,
-				a.RefCode
+				a.RefCode,
+				a.SiteId
 			FROM
 				#PagingData AS a
 				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = a.CustId
@@ -2383,7 +2395,11 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product = 'SB' THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #Data AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
@@ -2523,7 +2539,11 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product = 'SB' THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #Data AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
@@ -2597,7 +2617,8 @@ BEGIN
 					a.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
 					a.OriginalBetType,
 					a.WalletType,
-					a.RefCode
+					a.RefCode,
+					a.SiteId
 				FROM
 					#Data AS a
 					INNER JOIN #Customer AS c ON c.custid = a.CustId

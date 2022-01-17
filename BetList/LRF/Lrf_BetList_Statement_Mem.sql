@@ -69,6 +69,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 */
 
 BEGIN
@@ -160,6 +161,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		ProductId			INT,
 		EventId				INT,
 		Custom1				NVARCHAR(50),
@@ -226,6 +228,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		ProductId			INT,
 		EventId				INT,
 		Custom1				NVARCHAR(50),
@@ -432,6 +435,7 @@ BEGIN
 					Ip,
 					BetFrom,
 					TransDesc,
+					SiteId,
 					ProductId,
 					EventId,
 					Custom1,
@@ -458,6 +462,7 @@ BEGIN
 					b.ip,
 					b.betfrom,
 					b.transdesc,
+					b.SiteId,
 					b.productID,
 					b.eventID,
 					b.custom1,
@@ -1262,7 +1267,11 @@ BEGIN
 						RefCode = CASE
 										WHEN b.Product IN ('SB') THEN ISNULL(b.RefCode, 0)
 										ELSE 0
-									END
+									END,
+						SiteId = CASE
+									WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+									ELSE ''
+								END
 					FROM #PagingData AS b
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 						LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
@@ -1496,7 +1505,11 @@ BEGIN
 						RefCode = CASE
 										WHEN b.Product IN ('SB') THEN ISNULL(b.RefCode, 0)
 										ELSE 0
-									END
+									END,
+						SiteId = CASE
+									WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+									ELSE ''
+								END
 					FROM #PagingData AS b
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 						LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
@@ -1682,7 +1695,11 @@ BEGIN
 						RefCode = CASE
 										WHEN b.Product IN ('SB') THEN ISNULL(b.RefCode, 0)
 										ELSE 0
-									END
+									END,
+						SiteId = CASE
+									WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+									ELSE ''
+								END
 					FROM #PagingData AS b
 						LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 						LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
@@ -1767,7 +1784,8 @@ BEGIN
 		b.OriginalStake * ISNULL(@Rate, 1) AS OriginalStake,
 		b.OriginalBetType,
 		b.WalletType,
-		b.RefCode
+		b.RefCode,
+		b.SiteId
 	FROM #PagingData AS b
 	ORDER BY b.RowNum ASC
 

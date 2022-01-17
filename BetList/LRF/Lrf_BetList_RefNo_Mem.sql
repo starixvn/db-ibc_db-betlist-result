@@ -65,6 +65,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 */
 
 BEGIN
@@ -145,7 +146,7 @@ BEGIN
 		SportType			SMALLINT,
 		BetType				SMALLINT,
 		BetId				BIGINT,
-		BetTeam				NVARCHAR(50),
+		BetTeam				NVARCHAR(100),
 		Hdp1				SMALLMONEY,
 		Hdp2				SMALLMONEY,
 		OddsType			TINYINT,
@@ -186,6 +187,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		WhTicket			TINYINT
 	)
 	
@@ -565,6 +567,7 @@ BEGIN
 			0 AS OriginalBetType,
 			0 AS WalletType,
 			0 AS RefCode,
+			ISNULL(b.SiteId, '') AS SiteId,
 			1 AS WhTicket
 		FROM dbo.translog AS b WITH (NOLOCK)
 		WHERE b.translogid = @TransId
@@ -872,6 +875,10 @@ BEGIN
 				WHEN @Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
 				ELSE 0
 			END AS RefCode,
+			CASE
+				WHEN @Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+				ELSE ''
+			END AS SiteId,
 			2 AS WhTicket
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON @Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
@@ -1092,6 +1099,10 @@ BEGIN
 				WHEN @Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
 				ELSE 0
 			END AS RefCode,
+			CASE
+				WHEN @Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+				ELSE ''
+			END AS SiteId,
 			3 AS WhTicket
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON @Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
@@ -1311,6 +1322,10 @@ BEGIN
 				WHEN @Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
 				ELSE 0
 			END AS RefCode,
+			CASE
+				WHEN @Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+				ELSE ''
+			END AS SiteId,
 			4 AS WhTicket
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON @Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
@@ -1475,10 +1490,7 @@ BEGIN
 				productID AS SportType,
 				gameID AS BetType,
 				0 AS BetId,
-				CASE
-					WHEN @Product IN ('HB', 'CG', 'AP', 'APM') THEN GameId3rd
-					ELSE ''
-				END AS BetTeam,
+				ISNULL(GameId3rd, '') AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
@@ -1519,8 +1531,6 @@ BEGIN
 				0 AS MatchId,
 				CASE
 					WHEN @Product IN ('FW', 'PP', 'CC') THEN Additional
-					WHEN @Product IN ('SBC', 'HB', 'VGA', 'CG', 'AP', 'APM') THEN ISNULL(SiteID, '')
-					WHEN @Product IN ('PGS', 'JK') THEN GameId3rd
 					ELSE ''
 				END AS MatchCode,
 				'' AS Race,
@@ -1545,6 +1555,7 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
+				ISNULL(SiteID, '') AS SiteId,
 				5 AS WhTicket
 			FROM dbo.bettransRnG WITH (NOLOCK)
 			WHERE transid = @TransId
@@ -1563,10 +1574,7 @@ BEGIN
 				productID AS SportType,
 				gameID AS BetType,
 				0 AS BetId,
-				CASE
-					WHEN @Product IN ('HB', 'CG', 'AP', 'APM') THEN GameId3rd
-					ELSE ''
-				END AS BetTeam,
+				ISNULL(GameId3rd, '') AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
@@ -1607,8 +1615,6 @@ BEGIN
 				0 AS MatchId,
 				CASE
 					WHEN @Product IN ('FW', 'PP', 'CC') THEN Additional
-					WHEN @Product IN ('SBC', 'HB', 'VGA', 'CG', 'AP', 'APM') THEN ISNULL(SiteID, '')
-					WHEN @Product IN ('PGS', 'JK') THEN GameId3rd
 					ELSE ''
 				END AS MatchCode,
 				'' AS Race,
@@ -1633,6 +1639,7 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
+				ISNULL(SiteID, '') AS SiteId,
 				6 AS WhTicket
 			FROM dbo.bettransRnG14 WITH (NOLOCK)
 			WHERE transid = @TransId
@@ -1651,10 +1658,7 @@ BEGIN
 				b.productID AS SportType,
 				b.gameID AS BetType,
 				0 AS BetId,
-				CASE
-					WHEN @Product IN ('HB', 'CG', 'AP', 'APM') THEN b.GameId3rd
-					ELSE ''
-				END AS BetTeam,
+				ISNULL(GameId3rd, '') AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
@@ -1695,8 +1699,6 @@ BEGIN
 				0 AS MatchId,
 				CASE
 					WHEN @Product IN ('FW', 'PP', 'CC') THEN b.Additional
-					WHEN @Product IN ('HB', 'CG', 'AP', 'APM') THEN ISNULL(b.SiteID, '')
-					WHEN @Product IN ('PGS', 'JK') THEN b.GameId3rd
 					ELSE ''
 				END AS MatchCode,
 				'' AS Race,
@@ -1721,6 +1723,7 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
+				ISNULL(SiteID, '') AS SiteId,
 				7 AS WhTicket
 			FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
 				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
@@ -1826,7 +1829,7 @@ BEGIN
 				productID AS SportType,
 				gameID AS BetType,
 				0 AS BetId,
-				ISNULL(SiteID, '') AS BetTeam,
+				'' AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
@@ -1873,6 +1876,7 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
+				SiteID,
 				8 AS WhTicket
 			FROM dbo.bettransLC WITH (NOLOCK)
 			WHERE transid = @TransId
@@ -1891,7 +1895,7 @@ BEGIN
 				productID AS SportType,
 				gameID AS BetType,
 				0 AS BetId,
-				ISNULL(SiteID, '') AS BetTeam,
+				'' AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
@@ -1938,6 +1942,7 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
+				SiteID,
 				9 AS WhTicket
 			FROM dbo.bettransLC14 WITH (NOLOCK)
 			WHERE transid = @TransId
@@ -1956,7 +1961,7 @@ BEGIN
 				b.productID AS SportType,
 				b.gameID AS BetType,
 				0 AS BetId,
-				ISNULL(b.SiteID, '') AS BetTeam,
+				'' AS BetTeam,
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
@@ -2003,6 +2008,7 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
+				b.SiteID,
 				10 AS WhTicket
 			FROM bodb_Archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
 				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
@@ -2155,6 +2161,7 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
+				blc.SiteID,
 				11 AS WhTicket
 			FROM dbo.bettransg AS b WITH (NOLOCK)
 				INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.transid = b.refno AND blc.custid = b.custid
@@ -2221,6 +2228,7 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
+				blc.SiteID,
 				12 AS WhTicket
 			FROM dbo.bettransg14 AS b WITH (NOLOCK)
 				INNER JOIN dbo.bettransLC14 AS blc WITH (NOLOCK) ON blc.transid = b.refno AND blc.custid = b.custid
@@ -2287,6 +2295,7 @@ BEGIN
 				0 AS OriginalBetType,
 				0 AS WalletType,
 				0 AS RefCode,
+				blc.SiteID,
 				12 AS WhTicket
 			FROM bodb_Archive.dbo.bettransg AS b WITH (NOLOCK)
 				INNER JOIN bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK) ON blc.transid = b.refno AND blc.custid = b.custid
@@ -2458,7 +2467,8 @@ BEGIN
 		a.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
 		a.OriginalBetType,
 		a.WalletType,
-		a.RefCode
+		a.RefCode,
+		a.SiteId
 	FROM @Data AS a
 		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = a.CustId
 		LEFT JOIN @ExchangeRate AS e

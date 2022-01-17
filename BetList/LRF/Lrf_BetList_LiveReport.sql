@@ -20,6 +20,7 @@ AS
 
 	Revisions:
 		- 20211104@Kos: Support Sports Lottery [RedmineID: #163191]
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 */
 
 BEGIN
@@ -85,6 +86,8 @@ BEGIN
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
+		BetdaqId		BIGINT,
+		SiteId			VARCHAR(20),
 		Product			VARCHAR(30),
 		EventType		TINYINT,
 		WhTicket		TINYINT
@@ -114,6 +117,8 @@ BEGIN
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
+		BetdaqId		BIGINT,
+		SiteId			VARCHAR(20),
 		Product			VARCHAR(30),
 		EventType		TINYINT,
 		WhTicket		TINYINT
@@ -156,6 +161,7 @@ BEGIN
 			MatchId,
 			BetCheck,
 			TransDesc,
+			BetdaqId,
 			EventType,
 			WhTicket)
 		SELECT
@@ -180,6 +186,7 @@ BEGIN
 			b.matchid,
 			ISNULL(b.betcheck, ''),
 			ISNULL(b.transdesc, ''),
+			b.betdaqid,
 			sbt.EventType,
 			1 AS WhTicket
 		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_recommend)
@@ -219,6 +226,7 @@ BEGIN
 			MatchId,
 			BetCheck,
 			TransDesc,
+			BetdaqId,
 			EventType,
 			WhTicket)
 		SELECT
@@ -243,6 +251,7 @@ BEGIN
 			b.matchid,
 			ISNULL(b.betcheck, ''),
 			ISNULL(b.transdesc, ''),
+			b.betdaqid,
 			sbt.EventType,
 			2 AS WhTicket
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -338,6 +347,14 @@ BEGIN
 		INSERT INTO #PagingData
 		EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
+		UPDATE b
+		SET
+			SiteId = CASE
+						WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+						ELSE ''
+					END
+		FROM #PagingData AS b
+
 		SELECT
 			c.username,
 			SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS NickName,
@@ -360,7 +377,9 @@ BEGIN
 			b.Ip,
 			b.BetFrom,
 			b.BetCheck,
-			b.TransDesc
+			b.TransDesc,
+			b.BetdaqId,
+			b.SiteId
 		FROM
 			#PagingData AS b
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
@@ -387,6 +406,14 @@ BEGIN
 		FROM dbo.Customer WITH (NOLOCK)
 		WHERE custid IN (SELECT DISTINCT CustId FROM #Data)
 
+		UPDATE b
+		SET
+			SiteId = CASE
+						WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+						ELSE ''
+					END
+		FROM #Data AS b
+
 		SET @Sql = 
 			N'SELECT
 				c.username,
@@ -410,7 +437,9 @@ BEGIN
 				b.Ip,
 				b.BetFrom,
 				b.BetCheck,
-				b.TransDesc
+				b.TransDesc,
+				b.BetdaqId,
+				b.SiteId
 			FROM
 				#Data AS b
 				INNER JOIN #Customer AS c ON c.custid = b.CustId

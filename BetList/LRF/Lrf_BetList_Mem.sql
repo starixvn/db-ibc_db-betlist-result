@@ -104,6 +104,7 @@ AS
 		- 20211126@Kos: Support Parlay Abnormal Bet [Redmine: #163900]
 		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
+		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 */
 
 BEGIN
@@ -245,6 +246,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		RefTable			TINYINT
@@ -306,6 +308,7 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
+		SiteId				VARCHAR(20),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		RefTable			TINYINT
@@ -1349,7 +1352,11 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #PagingData AS b
 					LEFT JOIN @TmpData AS x
 						ON b.RefTable IN (1, 2)
@@ -1521,7 +1528,11 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -1689,7 +1700,11 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
 									ELSE 0
-								END
+								END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #PagingData AS b
 					LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 					LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -1818,7 +1833,8 @@ BEGIN
 		a.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
 		a.OriginalBetType,
 		a.WalletType,
-		a.RefCode
+		a.RefCode,
+		a.SiteId
 	FROM
 		#PagingData AS a
 		LEFT JOIN #ExchangeRate AS e ON a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
