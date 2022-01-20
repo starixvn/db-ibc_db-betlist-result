@@ -1,2 +1,2 @@
-Result/LRF/Lrf_BetList_SelMatchResult.sql
-Result/LRF/Lrf_BetList_SelMatchResultParlay.sql
+Result\Alpha\Age_BetList_SelMatchResult.sql
+Result\Alpha\Age_BetList_SelMatchResultParlay.sql

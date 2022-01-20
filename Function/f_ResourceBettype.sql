@@ -32,6 +32,7 @@ AS
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
 		- 20210922@Razor: Support Cricket AIO 1.2 - add bettype 9442, 9443 [Redmine: #160409]
+		- 20220120@Razor: Support E-Sports phase 4 [Redmine: #166326]
 */
 
 BEGIN
@@ -356,6 +357,62 @@ BEGIN
 	SELECT 43, 1, 'E-Sports', 9074, '9074%'	UNION ALL
 	SELECT 43, 1, 'E-Sports', 9075, '9075%'	UNION ALL
 	SELECT 43, 1, 'E-Sports', 9087, '9087%'
+	-- 7.1 E-Sports 4.0
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	SELECT 43, 1, 'E-Sports', 9089, '9089%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9090, '9090%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9091, '9091%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9092, '9091%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9095, '9091%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9096, '9091%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9093, '9093%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9094, '9093%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9097, '9093%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9098, '9093%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9099, '9002%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9100, '9002%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9101, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9102, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9103, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9104, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9105, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9106, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9107, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9108, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9109, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9110, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9111, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9112, '9101%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9113, '9113%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9114, '9114%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9115, '9115%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9116, '9115%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9117, '9115%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9118, '9115%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9119, '9115%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9120, '9115%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9121, '9121%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9122, '9122%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9123, '9123%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9124, '9124%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9125, '9125%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9126, '9126%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9127, '9127%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9128, '9128%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9129, '9129%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9130, '9130%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9131, '9131%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9132, '9132%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9133, '9133%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9134, '9134%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9135, '9135%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9136, '9136%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9137, '9137%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9138, '9138%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9139, '9139%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9140, '9140%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9141, '9141%'	UNION ALL
+	SELECT 43, 1, 'E-Sports', 9142, '9142%'
 
 	-- 8. PH All In One phase 4b & Next Goal
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
