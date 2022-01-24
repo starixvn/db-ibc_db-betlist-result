@@ -142,6 +142,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20220124@Razor: Support SG Jackpot [Redmine: #166683]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -369,7 +370,7 @@ BEGIN
 				INSERT INTO @temp_bettransX
 				SELECT RefNo = c.transid
 					,Odds = CASE
-								WHEN Product IN ('OneRNG', 'PP') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+								WHEN Product IN ('OneRNG', 'PP', 'SG') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 								ELSE 0 END
 					,Stake = SUM(brng.stake)
 					,actual_stake = SUM(brng.actual_stake)
@@ -393,7 +394,7 @@ BEGIN
 					,discount = AVG(brng.discount)
 					,adiscount = AVG(brng.adiscount)
 					,sdiscount = AVG(brng.sdiscount)
-					,OddsSpread = CASE WHEN c.Product IN ('OneRNG', 'PP') THEN ISNULL(SUM(brng.BetStake), 0) ELSE 0 END
+					,OddsSpread = CASE WHEN c.Product IN ('OneRNG', 'PP', 'SG') THEN ISNULL(SUM(brng.BetStake), 0) ELSE 0 END
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.transid
 				WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM')
@@ -499,7 +500,7 @@ BEGIN
 					,OddsId = b.oddsid
 					,Odds = CASE
 								WHEN c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT', 'BTC') THEN b.Odds
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Parlay', 'OneRNG', 'PP', 'SG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT', 'BTC') THEN b.Odds
 								WHEN c.Product IN ('Outright') THEN b.odds
 								WHEN c.Product IN ('VR') THEN b.odds
 								ELSE 0 END
@@ -660,8 +661,8 @@ BEGIN
 									WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG') THEN ISNULL(b.transdesc, '')
 									ELSE '' END
 					,OddsSpread = CASE
-									WHEN c.Product IN ('OneRNG', 'PP') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-									WHEN c.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
+									WHEN c.Product IN ('OneRNG', 'PP', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+									WHEN c.Product IN ('SB', 'OneRNG', 'PP', 'SG') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0 END
 					,BetdaqId = CASE
 									WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
@@ -846,7 +847,7 @@ BEGIN
 								ELSE 0 END
 				,OddsId = b.oddsid
 				,Odds = CASE 
-							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT', 'BTC') THEN b.Odds
+							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'SG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT', 'BTC') THEN b.Odds
 							ELSE 0 END
 				,MOdds = CASE 
 							WHEN c.Product IN ('Parlay', 'ParlayVS2')  THEN b.modds 
@@ -968,7 +969,7 @@ BEGIN
 								WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG') THEN ISNULL(b.transdesc, '')
 								ELSE '' END
 				,OddsSpread = CASE
-								WHEN c.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
+								WHEN c.Product IN ('SB', 'OneRNG', 'PP', 'SG') THEN ISNULL(b.oddsspread, 0)
 								ELSE 0 END
 				,BetdaqId = CASE
 								WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
@@ -1031,7 +1032,7 @@ BEGIN
 
 	-- Filter due to product detail
 	-- Pragmatic, Sexy Gaming
-	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('PP', 'SXG'))
+	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('PP', 'SG', 'SXG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
@@ -1101,6 +1102,22 @@ BEGIN
 							WHERE ProductId = 45 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 45 AND BetType = b.BetType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'SG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 36 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 36 AND BetType = b.BetType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'SG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 36 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 36 AND BetType = b.BetType)
 	END
 
 	DECLARE @OriginalMaxTotalRow INT

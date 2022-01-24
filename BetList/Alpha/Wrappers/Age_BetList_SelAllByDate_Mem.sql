@@ -126,6 +126,7 @@ AS
 		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20220124@Razor: Support SG Jackpot [Redmine: #166683]
 */
 
 BEGIN
@@ -360,7 +361,7 @@ BEGIN
 			SELECT
 				c.TransId AS RefNo,
 				CASE
-					WHEN Product IN ('OneRNG', 'PP') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+					WHEN Product IN ('OneRNG', 'PP', 'SG') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 					ELSE 0
 				END AS Odds,
 				SUM(brng.stake) AS Stake,
@@ -386,7 +387,7 @@ BEGIN
 				AVG(brng.adiscount) AS ADiscount,
 				AVG(brng.sdiscount) AS SDiscount,
 				CASE
-					WHEN c.Product IN ('OneRNG', 'PP') THEN ISNULL(SUM(brng.BetStake), 0)
+					WHEN c.Product IN ('OneRNG', 'PP', 'SG') THEN ISNULL(SUM(brng.BetStake), 0)
 					ELSE 0
 				END AS OddsSpread
 			FROM @Tickets AS c
@@ -526,7 +527,7 @@ BEGIN
 						END
 			,OddsId = b.oddsid
 			,Odds = CASE 
-						WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3', 'H5LG', 'SLT', 'BTC') THEN b.Odds
+						WHEN c.Product IN ('Parlay', 'OneRNG', 'PP', 'SG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3', 'H5LG', 'SLT', 'BTC') THEN b.Odds
 						WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.odds
 						WHEN c.Product IN ('Outright') THEN b.odds
 						WHEN c.Product IN ('VR') THEN b.odds
@@ -666,7 +667,7 @@ BEGIN
 							WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG') THEN ISNULL(b.transdesc, '')
 							ELSE '' END
 			,OddsSpread = CASE
-							WHEN c.Product IN ('SB', 'OneRNG', 'PP') THEN ISNULL(b.oddsspread, 0)
+							WHEN c.Product IN ('SB', 'OneRNG', 'PP', 'SG') THEN ISNULL(b.oddsspread, 0)
 							ELSE 0 END
 			,BetdaqId = CASE
 							WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
@@ -763,7 +764,7 @@ BEGIN
 							WHEN c.Product IN ('OneRNG', 'VB', 'FW', 'PP', 'CC', 'SG', 'PGS', 'JK', 'HB', 'CG', 'AP', 'APM') THEN b.transdesc
 							ELSE '' END
 			,OddsSpread = CASE
-							WHEN c.Product IN ('OneRNG', 'PP') THEN x.OddsSpread
+							WHEN c.Product IN ('OneRNG', 'PP', 'SG') THEN x.OddsSpread
 							ELSE 0 END
 			,BetdaqId = -1
 			,ExtraInfo = ''
