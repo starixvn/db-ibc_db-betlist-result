@@ -121,6 +121,7 @@ AS
 		- 20220110@Kos: Hotfix - Decompress IP in bk range [Redmine: 167264]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
+		- 20220217@Kos: Support SG Jackpot [Redmine: #167035]
 
 	Param's Explanation:
 		+ @TransType:
@@ -688,7 +689,7 @@ BEGIN
 			END AS Oddstype,
 			CASE
 				WHEN sbt.ProductID = 6 AND sbt.SubProduct = '' THEN b.Odds
-				WHEN sbt.ProductID IN (3, 8, 28, 32, 38, 40, 42, 43, 63, 66) THEN b.Odds
+				WHEN sbt.ProductID IN (3, 8, 28, 32, 36, 38, 40, 42, 43, 63, 66) THEN b.Odds
 				ELSE 0
 			END AS Odds,
 			CASE
@@ -745,7 +746,7 @@ BEGIN
 			0 AS WalletType,
 			0 AS RefCode,
 			CASE
-				WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(b.oddsspread, 0)
+				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			CONVERT(VARCHAR(20), b.betdaqid) AS SiteId

@@ -127,6 +127,7 @@ AS
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
+		- 20220217@Kos: Support SG Jackpot [Redmine: #167035]
 
 	Param's Explanation:
 		+ @TransType:
@@ -737,7 +738,7 @@ BEGIN
 				0 AS modds,
 				0 AS Oddstype,
 				CASE
-					WHEN sbt.ProductID IN (3, 8, 28, 32, 38, 40, 42, 43, 63, 66) THEN b.odds
+					WHEN sbt.ProductID IN (3, 8, 28, 32, 36, 38, 40, 42, 43, 63, 66) THEN b.odds
 					ELSE 0
 				END AS Odds,
 				'' AS betteam,
@@ -783,7 +784,7 @@ BEGIN
 				0 AS WalletType,
 				0 AS RefCode,
 				CASE
-					WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(b.oddsspread, 0)
+					WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.oddsspread, 0)
 					ELSE 0
 				END AS OddsSpread,
 				CONVERT(VARCHAR(20), b.betdaqid) AS SiteId
@@ -1612,7 +1613,7 @@ BEGIN
 					0 AS modds,
 					0 AS Oddstype,
 					CASE
-						WHEN sbt.ProductID IN (32, 42, 66) THEN b.odds
+						WHEN sbt.ProductID IN (32, 36, 42, 66) THEN b.odds
 						ELSE 0
 					END AS Odds,
 					'' AS betteam,
@@ -1647,7 +1648,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					CASE
-						WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(b.oddsspread, 0)
+						WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.oddsspread, 0)
 						ELSE 0
 					END AS OddsSpread,
 				'' AS SiteId
@@ -1692,7 +1693,7 @@ BEGIN
 					0 AS modds,
 					0 AS Oddstype,
 					CASE
-						WHEN sbt.ProductID IN (32, 42, 66)
+						WHEN sbt.ProductID IN (32, 36, 42, 66)
 							THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 						ELSE 0
 					END AS Odds,
@@ -1732,7 +1733,7 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					CASE
-						WHEN sbt.ProductID IN (32, 42, 66) THEN ISNULL(SUM(brng.BetStake), 0)
+						WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(SUM(brng.BetStake), 0)
 						ELSE 0
 					END AS OddsSpread,
 					'' AS SiteId

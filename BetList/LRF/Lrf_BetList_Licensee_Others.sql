@@ -70,6 +70,7 @@ AS
 		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220128@Kos: Support search by IP [RedmineID: #166079]
+		- 20220221@Kos: Support SG Jackpot [Redmine: #167035]
 */
 
 BEGIN
@@ -1168,7 +1169,7 @@ BEGIN
 				SELECT
 					c.TransId AS RefNo,
 					CASE
-						WHEN Product IN ('OneRNG', 'PP', 'SBC', 'VGA') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113)
+						WHEN Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113)
 							THEN brng.ContributionRate END), 0)
 						ELSE 0
 					END AS Odds,
@@ -1184,7 +1185,7 @@ BEGIN
 					SUM(brng.playercomm) AS Commission,
 					SUM(brng.comm) AS Comm,
 					CASE
-						WHEN c.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') THEN SUM(ISNULL(brng.BetStake, 0))
+						WHEN c.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN SUM(ISNULL(brng.BetStake, 0))
 						ELSE 0
 					END AS OddsSpread
 				FROM #Data AS c
@@ -1375,9 +1376,9 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') AND x.Odds IS NOT NULL THEN x.Odds
+								WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.Odds IS NOT NULL THEN x.Odds
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 
-									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA') THEN b.Odds
+									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1385,8 +1386,8 @@ BEGIN
 								ELSE 0
 							END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-									WHEN b.Product IN ('CO', 'OneRNG', 'PP', 'SBC', 'VGA') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+									WHEN b.Product IN ('CO', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					Stake = CASE
@@ -1550,7 +1551,7 @@ BEGIN
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 
-									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA') THEN b.Odds
+									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
@@ -1558,7 +1559,7 @@ BEGIN
 								ELSE 0
 							END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('CO', 'OneRNG', 'PP', 'SBC', 'VGA') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('CO', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					Status = CASE
@@ -1795,17 +1796,17 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') AND x.Odds IS NOT NULL THEN x.Odds
+								WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.Odds IS NOT NULL THEN x.Odds
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 
-									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA') THEN b.Odds
+									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN b.Odds
 								ELSE 0 END,
 					MOdds = CASE 
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-									WHEN b.Product IN ('CO', 'OneRNG', 'PP', 'SBC', 'VGA') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+									WHEN b.Product IN ('CO', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					Status = CASE
@@ -1944,14 +1945,14 @@ BEGIN
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 
-									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA') THEN b.Odds
+									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN b.Odds
 								ELSE 0 END,
 					MOdds = CASE 
 								WHEN b.Product IN ('CO', 'NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
 								ELSE 0
 							END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('CO', 'OneRNG', 'PP', 'SBC', 'VGA') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('CO', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					Status = CASE

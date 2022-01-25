@@ -19,6 +19,7 @@ AS
 		- 20210720@Kos: Support Vgaming [Redmine: 158106]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
+		- 20220125@Kos: Support SG Jackpot [Redmine: #167035]
 */
 
 BEGIN
@@ -56,7 +57,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (32, 42, 66)
+	WHERE ProductID IN (32, 36, 42, 66)
 
 	-- Create temp table
 	DECLARE @Data TABLE (
