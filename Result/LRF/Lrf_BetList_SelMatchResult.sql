@@ -52,6 +52,7 @@ AS
 		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 		- 20210420@Kos: Support Time Machine Over/Under [Redmine: #153302]
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
+		- 20220225@Kos: Support E-Sports phase 4 [Redmine: #167094]
 
 		*******************
 		sample test case:
@@ -251,7 +252,21 @@ BEGIN
 					AND (LEN(d.ResourceId) = 2
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceId LIKE f.ResourceID
-							AND d.ResourceId LIKE '%' + @ResourceId))
+							AND d.ResourceId LIKE '%' + @ResourceId + CASE
+																		WHEN @BetType = 9101 THEN '01'
+																		WHEN @BetType = 9102 THEN '02'
+																		WHEN @BetType = 9103 THEN '03'
+																		WHEN @BetType = 9104 THEN '04'
+																		WHEN @BetType = 9105 THEN '05'
+																		WHEN @BetType = 9106 THEN '06'
+																		WHEN @BetType = 9107 THEN '07'
+																		WHEN @BetType = 9108 THEN '08'
+																		WHEN @BetType = 9109 THEN '09'
+																		WHEN @BetType = 9110 THEN '10'
+																		WHEN @BetType = 9111 THEN '15'
+																		WHEN @BetType = 9112 THEN '20'
+																		ELSE ''
+																	END))
 			END
 			ELSE
 			BEGIN
@@ -414,7 +429,21 @@ BEGIN
 					AND (LEN(d.ResourceId) = 2
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceId LIKE f.ResourceID
-							AND d.ResourceId LIKE '%' + @ResourceId))
+							AND d.ResourceId LIKE '%' + @ResourceId + CASE
+																		WHEN @BetType = 9101 THEN '01'
+																		WHEN @BetType = 9102 THEN '02'
+																		WHEN @BetType = 9103 THEN '03'
+																		WHEN @BetType = 9104 THEN '04'
+																		WHEN @BetType = 9105 THEN '05'
+																		WHEN @BetType = 9106 THEN '06'
+																		WHEN @BetType = 9107 THEN '07'
+																		WHEN @BetType = 9108 THEN '08'
+																		WHEN @BetType = 9109 THEN '09'
+																		WHEN @BetType = 9110 THEN '10'
+																		WHEN @BetType = 9111 THEN '15'
+																		WHEN @BetType = 9112 THEN '20'
+																		ELSE ''
+																	END))
 			END
 			ELSE
 			BEGIN
@@ -577,7 +606,21 @@ BEGIN
 					AND (LEN(d.ResourceId) = 2
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceId LIKE f.ResourceID
-							AND d.ResourceId LIKE '%' + @ResourceId))
+							AND d.ResourceId LIKE '%' + @ResourceId + CASE
+																		WHEN @BetType = 9101 THEN '01'
+																		WHEN @BetType = 9102 THEN '02'
+																		WHEN @BetType = 9103 THEN '03'
+																		WHEN @BetType = 9104 THEN '04'
+																		WHEN @BetType = 9105 THEN '05'
+																		WHEN @BetType = 9106 THEN '06'
+																		WHEN @BetType = 9107 THEN '07'
+																		WHEN @BetType = 9108 THEN '08'
+																		WHEN @BetType = 9109 THEN '09'
+																		WHEN @BetType = 9110 THEN '10'
+																		WHEN @BetType = 9111 THEN '15'
+																		WHEN @BetType = 9112 THEN '20'
+																		ELSE ''
+																	END))
 			END
 			ELSE
 			BEGIN

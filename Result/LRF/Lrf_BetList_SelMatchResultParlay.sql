@@ -303,7 +303,21 @@ BEGIN
 				AND (LEN(d.ResourceID) = 2
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1) + CASE
+																								WHEN p.BetType = 9101 THEN '01'
+																								WHEN p.BetType = 9102 THEN '02'
+																								WHEN p.BetType = 9103 THEN '03'
+																								WHEN p.BetType = 9104 THEN '04'
+																								WHEN p.BetType = 9105 THEN '05'
+																								WHEN p.BetType = 9106 THEN '06'
+																								WHEN p.BetType = 9107 THEN '07'
+																								WHEN p.BetType = 9108 THEN '08'
+																								WHEN p.BetType = 9109 THEN '09'
+																								WHEN p.BetType = 9110 THEN '10'
+																								WHEN p.BetType = 9111 THEN '15'
+																								WHEN p.BetType = 9112 THEN '20'
+																								ELSE ''
+																							END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
@@ -469,7 +483,21 @@ BEGIN
 				AND (LEN(d.ResourceID) = 2
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1) + CASE
+																								WHEN p.BetType = 9101 THEN '01'
+																								WHEN p.BetType = 9102 THEN '02'
+																								WHEN p.BetType = 9103 THEN '03'
+																								WHEN p.BetType = 9104 THEN '04'
+																								WHEN p.BetType = 9105 THEN '05'
+																								WHEN p.BetType = 9106 THEN '06'
+																								WHEN p.BetType = 9107 THEN '07'
+																								WHEN p.BetType = 9108 THEN '08'
+																								WHEN p.BetType = 9109 THEN '09'
+																								WHEN p.BetType = 9110 THEN '10'
+																								WHEN p.BetType = 9111 THEN '15'
+																								WHEN p.BetType = 9112 THEN '20'
+																								ELSE ''
+																							END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
@@ -635,7 +663,21 @@ BEGIN
 				AND (LEN(d.ResourceID) = 2
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1) + CASE
+																								WHEN p.BetType = 9101 THEN '01'
+																								WHEN p.BetType = 9102 THEN '02'
+																								WHEN p.BetType = 9103 THEN '03'
+																								WHEN p.BetType = 9104 THEN '04'
+																								WHEN p.BetType = 9105 THEN '05'
+																								WHEN p.BetType = 9106 THEN '06'
+																								WHEN p.BetType = 9107 THEN '07'
+																								WHEN p.BetType = 9108 THEN '08'
+																								WHEN p.BetType = 9109 THEN '09'
+																								WHEN p.BetType = 9110 THEN '10'
+																								WHEN p.BetType = 9111 THEN '15'
+																								WHEN p.BetType = 9112 THEN '20'
+																								ELSE ''
+																							END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
