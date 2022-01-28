@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_Sportsbook]
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
 	@MoveBetsDay		SMALLDATETIME,
+	@Product			VARCHAR(100)	= '',
 	@SportType			TINYINT			= 0,
 	@BetType			SMALLINT		= 0,
 	@LeagueId			INT				= 0,
@@ -14,10 +15,10 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_Sportsbook]
 	@ConvertToBaseCur	BIT				= 0,	-- Convert to base currency or not
 	@StatusIdList		VARCHAR(50)		= '',
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
+	@Ip					VARCHAR(45)		= '',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
 	@Sort				NVARCHAR(50)	= N'Transid ASC',
-	@Product			VARCHAR(100)	= '',
 	@TotalRows			INT				= 0 OUTPUT,
 	@SumStake			MONEY			= 0 OUTPUT,
 	@SumWinLost			MONEY			= 0 OUTPUT,
@@ -67,6 +68,7 @@ AS
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
+		- 20220216@Kos: Support search by IP [RedmineID: #166079]
 */
 
 BEGIN
@@ -1662,6 +1664,12 @@ BEGIN
 					END
 				END
 			END
+		END
+
+		IF ISNULL(@Ip, '') <> ''
+		BEGIN
+			DELETE #Data
+			WHERE Ip <> @Ip
 		END
 
 		UPDATE b

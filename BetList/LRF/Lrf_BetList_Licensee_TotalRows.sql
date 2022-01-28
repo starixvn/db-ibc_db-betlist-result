@@ -6,13 +6,14 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_TotalRows]
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
+	@Product		VARCHAR(100)	= '',
 	@SportType		TINYINT			= 0,
 	@BetType		SMALLINT		= 0,
 	@LeagueId		INT				= 0,
 	@MatchId		INT				= 0,
 	@StatusIdList	VARCHAR(50)		= '',
 	@LiveIndicator	VARCHAR(10)		= '0,1,2',
-	@Product		VARCHAR(100)	= '',
+	@Ip				VARCHAR(45)		= '',
 	@TotalRows		INT				= 0 OUTPUT
 AS
 
@@ -47,6 +48,7 @@ AS
 		- 20201210@Kos: Exclude bettype 999 Odds Spread Adjustment [Redmine: #142532]
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
+		- 20220128@Kos: Support search by IP [RedmineID: #166079]
 */
 
 
@@ -140,6 +142,7 @@ BEGIN
 						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 							OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 						AND (@MatchId = 0 OR b.matchid = @MatchId)
+						AND (@Ip = '' OR b.ip = @Ip)
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
@@ -173,6 +176,7 @@ BEGIN
 						AND (@SportType = 0 OR vr.sporttype IS NULL OR vr.sporttype = @SportType)
 						AND (@SportType = 0 OR s.ProductId NOT IN (63) OR b.matchid = @SportType)
 						AND (@MatchId = 0 OR b.matchid = @MatchId)
+						AND (@Ip = '' OR b.ip = @Ip)
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
@@ -205,6 +209,7 @@ BEGIN
 						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 							OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 						AND (@MatchId = 0 OR b.matchid = @MatchId)
+						AND (@Ip = '' OR b.ip = @Ip)
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
@@ -238,6 +243,7 @@ BEGIN
 						AND (@SportType = 0 OR vr.sporttype IS NULL OR vr.sporttype = @SportType)
 						AND (@SportType = 0 OR s.ProductId NOT IN (63) OR b.matchid = @SportType)
 						AND (@MatchId = 0 OR b.matchid = @MatchId)
+						AND (@Ip = '' OR b.ip = @Ip)
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
@@ -280,6 +286,7 @@ BEGIN
 					AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 						OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 					AND (@MatchId = 0 OR b.matchid = @MatchId)
+					AND (@Ip = '' OR b.ip = @Ip)
 					AND 1 = CASE
 								WHEN s.ProductID = 1 THEN
 									CASE
@@ -309,6 +316,7 @@ BEGIN
 					AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 						OR (b.bettype NOT IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 					AND (@MatchId = 0 OR b.matchid = @MatchId)
+					AND (@Ip = '' OR b.ip = @Ip)
 					AND 1 = CASE
 								WHEN s.ProductID = 1 THEN
 									CASE

@@ -6,16 +6,17 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_Others]
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
 	@MoveBetsDay		SMALLDATETIME,
+	@Product			VARCHAR(10)		= '',
 	@SportType			TINYINT			= 0,
 	@BetType			SMALLINT		= 0,
 	@BaseCurrency		VARCHAR(10),
 	@ConvertToBaseCur	BIT				= 0,	-- Convert to base currency or not
 	@StatusIdList		VARCHAR(50)		= '',
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
+	@Ip					VARCHAR(45)		= '',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
 	@Sort				NVARCHAR(50)	= N'Transid ASC',
-	@Product			VARCHAR(10)		= '',
 	@TotalRows			INT				= 0 OUTPUT,
 	@SumStake			MONEY			= 0 OUTPUT,
 	@SumWinLost			MONEY			= 0 OUTPUT,
@@ -68,6 +69,7 @@ AS
 		- 20211201@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20211215@Kos: Hotfix - Show Casino tickets when choosing Delayed Payout [Redmine: #166109]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
+		- 20220128@Kos: Support search by IP [RedmineID: #166079]
 */
 
 BEGIN
@@ -1078,6 +1080,12 @@ BEGIN
 						AND cb.winlostdate = b.WinLostDate
 				WHERE b.BetType = 912 AND b.WhTicket = 2
 			END
+		END
+		
+		IF ISNULL(@Ip, '') <> ''
+		BEGIN
+			DELETE #Data
+			WHERE Ip <> @Ip
 		END
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)

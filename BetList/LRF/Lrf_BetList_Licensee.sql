@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee]
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
 	@MoveBetsDay		SMALLDATETIME,
+	@Product			VARCHAR(100)	= '',
 	@SportType			TINYINT			= 0,
 	@BetType			SMALLINT		= 0,
 	@LeagueId			INT				= 0,
@@ -14,10 +15,10 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee]
 	@ConvertToBaseCur	BIT				= 0,	-- Convert to base currency or not
 	@StatusIdList		VARCHAR(50)		= '',
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
+	@Ip					VARCHAR(45)		= '',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
 	@Sort				NVARCHAR(50)	= N'TransDate ASC',
-	@Product			VARCHAR(100)	= '',
 	@TotalRows			INT				= 0 OUTPUT,
 	@SumStake			MONEY			= 0 OUTPUT,
 	@SumWinLost			MONEY			= 0 OUTPUT,
@@ -55,6 +56,7 @@ AS
 		- 20200207@Kos: Support sort by trans time [Redmine: #126886]
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
+		- 20220128@Kos: Support search by IP [RedmineID: #166079]
 */
 
 BEGIN
@@ -68,6 +70,7 @@ BEGIN
 			@FromDate = @FromDate,
 			@ToDate = @ToDate,
 			@MoveBetsDay = @MoveBetsDay,
+			@Product = @Product,
 			@SportType = @SportType,
 			@BetType = @BetType,
 			@LeagueId = @LeagueId,
@@ -76,10 +79,10 @@ BEGIN
 			@ConvertToBaseCur = @ConvertToBaseCur,
 			@StatusIdList = @StatusIdList,
 			@LiveIndicator = @LiveIndicator,
+			@Ip = @Ip,
 			@PageSize = @PageSize,
 			@PageIndex = @PageIndex,
 			@Sort = @Sort,
-			@Product = @Product,
 			@TotalRows = @TotalRows OUTPUT,
 			@SumStake = @SumStake OUTPUT,
 			@SumWinLost = @SumWinLost OUTPUT,
@@ -95,16 +98,17 @@ BEGIN
 			@FromDate = @FromDate,
 			@ToDate = @ToDate,
 			@MoveBetsDay = @MoveBetsDay,
+			@Product = @Product,
 			@SportType = @SportType,
 			@BetType = @BetType,
 			@BaseCurrency = @BaseCurrency,
 			@ConvertToBaseCur = @ConvertToBaseCur,
 			@StatusIdList = @StatusIdList,
 			@LiveIndicator = @LiveIndicator,
+			@Ip = @Ip,
 			@PageSize = @PageSize,
 			@PageIndex = @PageIndex,
 			@Sort = @Sort,
-			@Product = @Product,
 			@TotalRows = @TotalRows OUTPUT,
 			@SumStake = @SumStake OUTPUT,
 			@SumWinLost = @SumWinLost OUTPUT,
