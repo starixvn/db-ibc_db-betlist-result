@@ -75,6 +75,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
 */
 
 BEGIN
@@ -402,7 +403,10 @@ BEGIN
 							b.betcheck,
 							ISNULL(b.transdesc, '') AS TransDesc,
 							0 AS OddsSpread,
-							'' AS ExtraInfo,
+							CASE
+								WHEN s.ProductID IN (63) THEN ISNULL(b.ExtraInfo, '')
+								ELSE '' 
+							END AS ExtraInfo,
 							-1 AS BetdaqId,
 							b.currency,
 							'' AS SiteId
@@ -844,7 +848,10 @@ BEGIN
 						b.betcheck,
 						ISNULL(b.transdesc, '') AS TransDesc,
 						0 AS OddsSpread,
-						'' AS ExtraInfo,
+						CASE
+							WHEN s.ProductID IN (63) THEN ISNULL(b.ExtraInfo, '')
+							ELSE '' 
+						END AS ExtraInfo,
 						-1 AS BetdaqId,
 						b.currency,
 						'' AS SiteId

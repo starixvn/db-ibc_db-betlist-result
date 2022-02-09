@@ -148,6 +148,7 @@ AS
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
 */
 
 BEGIN
@@ -1177,7 +1178,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Outright', 'Parlay', 'NPHP', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Outright', 'Parlay', 'NPHP', 'VS3', 'VR', 'NG', 'Keno', 'Lottery', 'VS', 'VS2', 'ParlayVS2', 'TG', 'H5LG', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -1262,7 +1263,10 @@ BEGIN
 								END,
 					OddsSpread = 0,
 					BetdaqId = -1,
-					ExtraInfo = '',
+					ExtraInfo = CASE
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b.ExtraInfo, '')
+									ELSE ''
+								END,
 					CurrencyId = CASE
 									WHEN b.Product IN ('H5LG', 'SLT') THEN b.CurrencyId
 									ELSE 0
@@ -1606,7 +1610,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Outright', 'Parlay', 'NPHP', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Outright', 'Parlay', 'NPHP', 'VS3', 'VR', 'NG', 'Keno', 'Lottery', 'VS', 'VS2', 'ParlayVS2', 'TG', 'H5LG', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -1817,7 +1821,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Outright', 'Parlay', 'NPHP', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Outright', 'Parlay', 'NPHP', 'VS3', 'VR', 'NG', 'Keno', 'Lottery', 'VS', 'VS2', 'ParlayVS2', 'TG', 'H5LG', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE

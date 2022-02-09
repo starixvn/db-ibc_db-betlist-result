@@ -82,6 +82,7 @@ AS
 		- 20211130@Razor: Check Abnormal Parlay Ticket [Redmine: #163900]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
 */
 
 BEGIN
@@ -1423,7 +1424,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'NPHP', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'NPHP', 'VS3', 'VR', 'NG', 'Keno', 'Lottery', 'VS', 'VS2', 'ParlayVS2', 'TG', 'H5LG', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -1537,7 +1538,10 @@ BEGIN
 								END,
 					OddsSpread = 0,
 					BetdaqId = -1,
-					ExtraInfo = ''
+					ExtraInfo = CASE
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b.ExtraInfo, '')
+									ELSE ''
+								END
 				FROM @Data AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.BetType BETWEEN 801 AND 806 AND b.eventid = m.matchid
 				WHERE TableID = 4
@@ -1909,7 +1913,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'NPHP', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'NPHP', 'VS3', 'Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE
@@ -2115,7 +2119,7 @@ BEGIN
 									ELSE -1
 								END,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'NPHP', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('SB', 'Parlay', 'NPHP', 'VS3', 'Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					WalletType = CASE

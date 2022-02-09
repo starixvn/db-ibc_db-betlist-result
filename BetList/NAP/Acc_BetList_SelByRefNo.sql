@@ -131,6 +131,7 @@ AS
 		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
 		- 20220106@Razor: Fix CurrencyId is NULL on SA Gaming [Redmine: #167043]
 		- 20220112@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
 */
 
 BEGIN
@@ -413,7 +414,7 @@ BEGIN
 						ELSE -1
 					END AS BetdaqId,
 					CASE
-						WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
+						WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					CASE
@@ -861,7 +862,7 @@ BEGIN
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					CASE
-						WHEN s.ProductID IN (37, 49) THEN ISNULL(b.ExtraInfo, '')
+						WHEN s.ProductID IN (3, 8, 28, 37, 40, 49, 63) THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					0 AS WalletType,
@@ -947,7 +948,7 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					b.ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
@@ -1992,7 +1993,7 @@ BEGIN
 						ELSE -1
 					END AS BetdaqId,
 					CASE
-						WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
+						WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					CASE
@@ -2309,7 +2310,10 @@ BEGIN
 					 0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					CASE
+						WHEN ProductID IN (5) THEN ISNULL(b.ExtraInfo, '')
+						ELSE ''
+					END AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
@@ -2457,7 +2461,7 @@ BEGIN
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					CASE
-						WHEN s.ProductID IN (37, 49) THEN ISNULL(b.ExtraInfo, '')
+						WHEN s.ProductID IN (3, 8, 28, 37, 40, 49, 63) THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					0 AS WalletType,
@@ -2795,7 +2799,7 @@ BEGIN
 						ELSE -1
 					END AS BetdaqId,
 					CASE
-						WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
+						WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					CASE
@@ -3116,7 +3120,7 @@ BEGIN
 					 0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					b.ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
@@ -3258,7 +3262,7 @@ BEGIN
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					CASE
-						WHEN s.ProductID = 37 THEN ISNULL(b.ExtraInfo, '')
+						WHEN s.ProductID IN (3, 37, 63) THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					0 AS WalletType,

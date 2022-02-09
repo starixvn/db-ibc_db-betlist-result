@@ -166,6 +166,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -389,7 +390,7 @@ BEGIN
 					ELSE -1
 				END AS BetdaqId,
 				CASE
-					WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
+					WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
 					ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -651,7 +652,10 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				CASE
+					WHEN s.ProductID IN (5) THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode,
 				0 AS CurrencyId,
@@ -787,7 +791,7 @@ BEGIN
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
 				CASE
-					WHEN s.ProductID IN (37, 49) THEN ISNULL(b.ExtraInfo, '')
+					WHEN s.ProductID IN (3, 8, 37, 40, 49, 63) THEN ISNULL(b.ExtraInfo, '')
 					ELSE ''
 				END AS ExtraInfo,
 				0 AS WalletType,
@@ -1303,7 +1307,7 @@ BEGIN
 					ELSE -1
 				END AS BetdaqId,
 				CASE
-					WHEN s.ProductID = 1 THEN ISNULL(b.ExtraInfo, '')
+					WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
 					ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -1667,7 +1671,10 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				CASE
+					WHEN s.ProductID IN (5) THEN ISNULL(b.ExtraInfo, '')
+					ELSE ''
+				END AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode,
 				0 AS CurrencyId,
@@ -1997,7 +2004,7 @@ BEGIN
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					CASE
-						WHEN s.ProductID IN (37, 49) THEN ISNULL(b.ExtraInfo, '')
+						WHEN s.ProductID IN (3, 8, 40, 37, 49, 63) THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					0 AS WalletType,
