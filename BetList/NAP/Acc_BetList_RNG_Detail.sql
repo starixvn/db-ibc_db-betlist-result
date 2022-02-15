@@ -53,6 +53,7 @@ AS
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20220215@Razor: VGaming, Sabaclub return SiteId on MatchCode property
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -226,6 +227,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
+				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -293,6 +295,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
+				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -359,7 +362,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
-				WHEN sbt.productID IN (55, 56) THEN brng.GameId3rd
+				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE

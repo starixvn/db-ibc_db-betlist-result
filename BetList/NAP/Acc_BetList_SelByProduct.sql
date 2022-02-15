@@ -76,6 +76,7 @@ AS
 		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
+		- 20220215@Razor: VGaming, Sabaclub return SiteId on MatchCode property
 */
 
 BEGIN
@@ -577,6 +578,7 @@ BEGIN
 						b.refno,
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
+							WHEN s.productID IN (42, 66) THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS MatchCode,
 						CASE
@@ -1023,6 +1025,7 @@ BEGIN
 						b.refno,
 						CASE
 							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
+							WHEN s.productID IN (42, 66) THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS MatchCode,
 						CASE

@@ -166,6 +166,7 @@ AS
 		- 20220106@Razor: Fix CurrencyId is NULL on SA Gaming [Redmine: #167043]
 		- 20220112@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
+		- 20220215@Razor: VGaming, Sabaclub return SiteId on MatchCode property
 */
 
 BEGIN
@@ -4156,6 +4157,7 @@ BEGIN
 					b.refno,
 					CASE
 						WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
+						WHEN s.productID IN (42, 66) THEN ISNULL(b.SiteID, '')
 						ELSE ''
 					END AS MatchCode,
 					'' AS race,
@@ -4266,6 +4268,7 @@ BEGIN
 					b.refno,
 					CASE
 						WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
+						WHEN s.productID IN (42, 66) THEN ISNULL(b.SiteID, '')
 						ELSE ''
 					END AS MatchCode,
 					'' AS race,
@@ -4376,6 +4379,7 @@ BEGIN
 					b.refno,
 					CASE
 						WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
+						WHEN s.productID IN (42, 66) THEN ISNULL(b.SiteID, '')
 						ELSE ''
 					END AS MatchCode,
 					'' AS race,
