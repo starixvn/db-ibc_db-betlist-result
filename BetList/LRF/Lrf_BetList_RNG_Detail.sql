@@ -47,6 +47,7 @@ AS
 					- Add new params @MoveBetsDay SMALLDATETIME and @BalanceUpDay SMALLDATETIME
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
+		- 20220215@Kos: Hotfix - Vgaming result [Redmine: #168552]
 
 	Parameters:
 		- @TransType
@@ -192,6 +193,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
+				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -252,6 +254,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
+				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -310,6 +313,7 @@ BEGIN
 			brng.TranId3rd AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
+				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE

@@ -66,6 +66,7 @@ AS
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
+		- 20220215@Kos: Hotfix - Vgaming result [Redmine: #168552]
 */
 
 BEGIN
@@ -1531,6 +1532,7 @@ BEGIN
 				0 AS MatchId,
 				CASE
 					WHEN @Product IN ('FW', 'PP', 'CC') THEN Additional
+					WHEN @Product IN ('SBC', 'VGA') THEN ISNULL(SiteID, '')
 					ELSE ''
 				END AS MatchCode,
 				'' AS Race,
@@ -1615,6 +1617,7 @@ BEGIN
 				0 AS MatchId,
 				CASE
 					WHEN @Product IN ('FW', 'PP', 'CC') THEN Additional
+					WHEN @Product IN ('SBC', 'VGA') THEN ISNULL(SiteID, '')
 					ELSE ''
 				END AS MatchCode,
 				'' AS Race,
@@ -1699,6 +1702,7 @@ BEGIN
 				0 AS MatchId,
 				CASE
 					WHEN @Product IN ('FW', 'PP', 'CC') THEN b.Additional
+					WHEN @Product IN ('SBC', 'VGA') THEN ISNULL(SiteID, '')
 					ELSE ''
 				END AS MatchCode,
 				'' AS Race,
