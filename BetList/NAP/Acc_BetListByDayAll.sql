@@ -167,6 +167,7 @@ AS
 		- 20211125@Razor: Rename RNG War to Funky Games [Redmine: #132024]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
+		- 20220215@Razor: Support SG Jackpot [Redmine: #166683]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -726,7 +727,7 @@ BEGIN
 					ELSE 0
 				END AS hdp2,
 				CASE 
-					WHEN s.ProductID IN (3, 6, 8, 12, 23, 28, 32, 38, 40, 42, 43, 49, 63, 66) THEN b.Odds
+					WHEN s.ProductID IN (3, 6, 8, 12, 23, 28, 32, 36, 38, 40, 42, 43, 49, 63, 66) THEN b.Odds
 					ELSE 0 
 				END AS Odds,
 				0 AS modds,
@@ -785,7 +786,7 @@ BEGIN
 					ELSE ''
 				END AS transdesc,
 				CASE
-					WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(b.oddsspread, 0)
+					WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(b.oddsspread, 0)
 					ELSE 0
 				END AS OddsSpread,
 				0 AS OriginalBetType,
@@ -2061,7 +2062,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (6, 32, 42, 66) THEN b.odds
+						WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN b.odds
 						ELSE 0
 					END AS Odds,
 					0 AS modds,
@@ -2109,7 +2110,7 @@ BEGIN
 						ELSE ''
 					END AS transdesc,
 					CASE
-						WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(b.oddsspread, 0)
+						WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(b.oddsspread, 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,
@@ -2161,7 +2162,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (6, 32, 42, 66)
+						WHEN s.ProductID IN (6, 32, 36, 42, 66)
 							THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 						ELSE 0
 					END AS Odds,
@@ -2214,7 +2215,7 @@ BEGIN
 						ELSE ''
 					END AS transdesc,
 					CASE
-						WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(SUM(brng.BetStake), 0)
+						WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(SUM(brng.BetStake), 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,

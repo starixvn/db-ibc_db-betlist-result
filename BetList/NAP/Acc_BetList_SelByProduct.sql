@@ -77,6 +77,7 @@ AS
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
 		- 20220215@Razor: VGaming, Sabaclub return SiteId on MatchCode property
+		- 20220215@Razor: Support SG Jackpot [Redmine: #166683]
 */
 
 BEGIN
@@ -593,7 +594,7 @@ BEGIN
 						0 AS Hdp1,
 						0 AS Hdp2,
 						CASE
-							WHEN s.ProductID IN (32, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+							WHEN s.ProductID IN (32, 36, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -630,15 +631,15 @@ BEGIN
 						b.TranId3rd AS BetCheck,
 						b.transdesc,
 						CASE
-							WHEN s.ProductID IN (32, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							WHEN s.ProductID IN (32, 36, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 							ELSE 0
 						END AS OddsSpread,
 						CASE
-							WHEN s.ProductID IN (32, 42, 66) THEN ISNULL(b.JackpotInfo, '')
+							WHEN s.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.JackpotInfo, '')
 							ELSE ''
 						END AS ExtraInfo,
 						CASE
-							WHEN s.ProductID IN (32, 42, 66) THEN ISNULL(b.RefNo2, -1)
+							WHEN s.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.RefNo2, -1)
 							ELSE -1
 						END AS BetdaqId,
 						b.currency,
@@ -1040,7 +1041,7 @@ BEGIN
 						0 AS Hdp1,
 						0 AS Hdp2,
 						CASE
-							WHEN s.ProductID IN (32, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+							WHEN s.ProductID IN (32, 36, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -1077,15 +1078,15 @@ BEGIN
 						b.TranId3rd AS BetCheck,
 						b.transdesc,
 						CASE
-							WHEN s.ProductID IN (32, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							WHEN s.ProductID IN (32, 36, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 							ELSE 0
 						END AS OddsSpread,
 						CASE
-							WHEN s.ProductID IN (32, 42, 66) THEN ISNULL(b.JackpotInfo, '')
+							WHEN s.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.JackpotInfo, '')
 							ELSE ''
 						END AS ExtraInfo,
 						CASE
-							WHEN s.ProductID IN (32, 42, 66) THEN ISNULL(b.RefNo2, -1)
+							WHEN s.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.RefNo2, -1)
 							ELSE -1
 						END AS BetdaqId,
 						b.currency,

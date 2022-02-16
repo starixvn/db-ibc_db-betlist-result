@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_Jackpot_Detail]
 	@TransId	BIGINT,
@@ -21,13 +21,14 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
+		- 20220124@Razor: Support SG Jackpot [Redmine: #166683]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix
-	-- Support RNG Casino Single Wallet, PP, Saba.club, VGaming
+	-- Support RNG Casino Single Wallet, PP, SG, Saba.club, VGaming
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -37,7 +38,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE (ProductID IN (32, 42, 66))
+	WHERE (ProductID IN (32, 36, 42, 66))
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	-- Create temp table
