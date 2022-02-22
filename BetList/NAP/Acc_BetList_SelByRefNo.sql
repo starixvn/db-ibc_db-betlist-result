@@ -2378,7 +2378,7 @@ BEGIN
 						ELSE 0
 					END AS hdp2,
 					CASE
-						WHEN s.ProductID IN (3, 6, 8, 12, 23, 28, 32, 38, 40, 42, 43, 49, 63, 66) THEN b.odds
+						WHEN s.ProductID IN (3, 6, 8, 12, 23, 28, 32, 36, 38, 40, 42, 43, 49, 63, 66) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -3186,7 +3186,7 @@ BEGIN
 						ELSE 0
 					END AS hdp2,
 					CASE
-						WHEN s.ProductId IN (3, 6, 23, 32, 42, 63, 66) THEN b.odds
+						WHEN s.ProductId IN (3, 6, 23, 32, 36, 42, 63, 66) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
