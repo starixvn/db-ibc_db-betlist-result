@@ -143,6 +143,7 @@ AS
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20220124@Razor: Support SG Jackpot [Redmine: #166683]
+		- 20220222@Razor: Support Allbet Promotion [Redmine: #166981]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -1031,8 +1032,8 @@ BEGIN
 	END -- end: bettrans14
 
 	-- Filter due to product detail
-	-- Pragmatic, Sexy Gaming
-	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('PP', 'SG', 'SXG'))
+	-- AllBet, Pragmatic, Spadegaming, Sexy Gaming
+	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('AllBet', 'PP', 'SG', 'SXG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
@@ -1070,6 +1071,22 @@ BEGIN
 			SportType,
 			BetType
 		FROM dbo.f_GetProductDetail()
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'Allbet'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 21 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 21 AND BetType = b.BetType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'Allbet'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 21 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 21 AND BetType = b.BetType)
 
 		DELETE b
 		FROM #MemBetTicket AS b
