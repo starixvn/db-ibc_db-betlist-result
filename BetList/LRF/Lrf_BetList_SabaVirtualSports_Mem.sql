@@ -29,6 +29,7 @@ AS
 		- 20210520@Kos: Support Saba Soccer PinGoal [RedmineID: #155335]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
+		- 20220222@Kos: Support Saba Basketball PinGoal [RedmineID: #167859]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -636,11 +637,13 @@ BEGIN
 				AND (@SportType = 0
 					OR sporttype = CASE
 									WHEN @SportType = -1 THEN 1
+									WHEN @SportType = -2 THEN 2
 									ELSE @SportType
 								END)
 				AND ((@SportType IN (0, 1) AND sporttype = 1 AND LeagueGroupID IN (42, 74, 108))
 					OR (@SportType IN (0, -1) AND sporttype = 1 AND LeagueGroupID IN (113))
-					OR (sporttype = 2 AND LeagueGroupID IN (42))
+					OR (@SportType IN (0, 2) AND sporttype = 2 AND LeagueGroupID IN (42))
+					OR (@SportType IN (0, -2) AND sporttype = 2 AND LeagueGroupID IN (122))
 					OR (sporttype = 50 AND LeagueGroupID IN (42)))
 
 			DELETE b
