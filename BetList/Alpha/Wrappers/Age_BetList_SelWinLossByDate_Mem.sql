@@ -146,13 +146,16 @@ AS
 		- 20220222@Razor: Support Allbet Promotion [Redmine: #166981]
 		- 20220317@Razor: Support FGG [Redmine: #165683]
 		- 20220422@Razor: Support Virtual games result [Redmine: #170997]
+		- 20220511@Razor: Separate Saba Sports and Sportsbook [Redmine: #161777]
 		
 	Param's Explanation:
 		@ProductDetails:
 			<ROOT>
-				<ProductId="32" Sporttype="248" Bettype="0" />
-				<ProductId="32" Sporttype="248" Bettype="4298" />
-				<ProductId="32" Sporttype="248" Bettype="4297" />
+				<ProductId="32" Sporttype="248" Bettype="0" LeagueGroupID = "0" TicketType = "0"/>
+				<ProductId="32" Sporttype="248" Bettype="4298" LeagueGroupID = "0" TicketType = "0"/>
+				<ProductId="32" Sporttype="248" Bettype="4297" LeagueGroupID = "0" TicketType = "0"/>
+				<ProductId="1" Sporttype = "1" Bettype = "0" LeagueGroupID = "42" TicketType = "0"/>
+				<ProductId="1" Sporttype = "1" Bettype = "0" LeagueGroupID = "74" TicketType = "0"/>
 			</ROOT>
 */
 
@@ -181,6 +184,11 @@ BEGIN
 		FROM dbo.bettrans14 WITH (NOLOCK)
 	END
 
+	DECLARE @SeparateSabaSport_Cutoff DATE
+	SELECT @SeparateSabaSport_Cutoff = CutoffDate
+	FROM dbo.f_GetCutoffDate()
+	WHERE TypeName = 'SabaSport'
+	
 	CREATE TABLE #MemBetTicket (
 		TransId				BIGINT
 		, RefNo				BIGINT
@@ -246,6 +254,8 @@ BEGIN
 		, Product			VARCHAR(30)
 		, CurrencyId		TINYINT
 		, SiteId			VARCHAR(20)
+		, LeagueGroupID		SMALLINT
+		, TicketType		TINYINT
 	);
 
 	DECLARE @BettransDetail TABLE (
@@ -685,6 +695,18 @@ BEGIN
 								WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
 								ELSE ''
 							END
+					,LeagueGroupID = CASE 
+										WHEN ( 
+												(le.LeagueGroupID IN (42,74,108,113) AND m.sporttype = 1 ) 
+												OR (le.LeagueGroupID IN (122, 42) AND m.sporttype = 2 )
+												OR (le.LeagueGroupID = 42 AND m.sporttype = 50)
+											) AND b.betdaqid <> -2 AND b.winlostdate >= @SeparateSabaSport_Cutoff THEN le.LeagueGroupID
+										ELSE 0 
+									END
+					,TicketType = CASE
+									WHEN b.betdaqid = -2 THEN 1
+									ELSE 0
+								END
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -694,6 +716,7 @@ BEGIN
 						AND x.RefNo = c.transid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
+					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON c.Product IN ('SB') AND m.leagueID = le.leagueID
 					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
@@ -993,11 +1016,24 @@ BEGIN
 							WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
 							ELSE ''
 						END
+				,LeagueGroupID = CASE 
+									WHEN ( 
+											(le.LeagueGroupID IN (42,74,108,113) AND m.sporttype = 1 ) 
+											OR (le.LeagueGroupID IN (122, 42) AND m.sporttype = 2 )
+											OR (le.LeagueGroupID = 42 AND m.sporttype = 50)
+										) AND b.betdaqid <> -2 AND b.winlostdate >= @SeparateSabaSport_Cutoff THEN le.LeagueGroupID
+									ELSE 0 
+								END
+				,TicketType = CASE
+								WHEN b.betdaqid = -2 THEN 1
+								ELSE 0
+							END
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 				LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 				LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
+				LEFT JOIN dbo.League AS le WITH (NOLOCK) ON c.Product IN ('SB') AND m.leagueID = le.leagueID
 				LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 				LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 				LEFT JOIN dbo.match3rd14 AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
@@ -1036,25 +1072,24 @@ BEGIN
 	END -- end: bettrans14
 
 	-- Filter due to product detail
-	-- AllBet, Pragmatic, Spadegaming, Sexy Gaming
-	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('AllBet', 'PP', 'SG', 'SXG'))
+	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming
+	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
 			SportType	SMALLINT,
-			BetType		SMALLINT
+			BetType		SMALLINT,
+			LeagueGroupID	SMALLINT,
+			TicketType		TINYINT
 		)
-
 		IF ISNULL(@ProductDetails, '') <> ''
 		BEGIN
 			DECLARE @DocHandler INT
-
 			BEGIN TRY
 				EXEC sp_xml_preparedocument @DocHandler OUTPUT, @ProductDetails
-
-				INSERT INTO @ProductDetail (ProductId, SportType, BetType)
-				SELECT ProductId, SportType, BetType
-				FROM OPENXML(@DocHandler, '/ROOT/ProductDetail', 1) WITH (ProductId TINYINT, Sporttype SMALLINT, Bettype SMALLINT)
+				INSERT INTO @ProductDetail (ProductId, SportType, BetType, LeagueGroupID, TicketType)
+				SELECT ProductId, SportType, BetType, LeagueGroupID, TicketType
+				FROM OPENXML(@DocHandler, '/ROOT/ProductDetail', 1) WITH (ProductId TINYINT, Sporttype SMALLINT, Bettype SMALLINT, LeagueGroupID SMALLINT, TicketType SMALLINT)
 
 				EXEC sp_xml_removedocument @DocHandler
 			END TRY
@@ -1066,15 +1101,35 @@ BEGIN
 		DECLARE @FullProductDetail TABLE (
 			ProductId	TINYINT,
 			SportType	SMALLINT,
-			BetType		SMALLINT
+			BetType		SMALLINT,
+			LeagueGroupID	SMALLINT,
+			TicketType		TINYINT
 		)
 
 		INSERT INTO @FullProductDetail
 		SELECT
 			ProductId,
 			SportType,
-			BetType
+			BetType,
+			LeagueGroupID,
+			TicketType
 		FROM dbo.f_GetProductDetail()
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product IN ('SB', 'Parlay', 'Outright')
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product IN ('SB', 'Parlay', 'Outright')
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 1 AND SportType = 0 AND LeagueGroupID = 0 AND TicketType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
 
 		DELETE b
 		FROM #MemBetTicket AS b

@@ -146,6 +146,7 @@ AS
 		- 20220222@Razor: Support Allbet Promotion [Redmine: #166981]
 		- 20220317@Razor: Support FGG [Redmine: #165683]
 		- 20220422@Razor: Support Virtual games result [Redmine: #170997]
+		- 20220511@Razor: Separate Saba Sports and Sportsbook [Redmine: #161777]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -214,7 +215,9 @@ BEGIN
 		ExtraInfo		VARCHAR(1000),
 		Product			VARCHAR(30),
 		CurrencyId		TINYINT,
-		SiteId			VARCHAR(20)
+		SiteId			VARCHAR(20),
+		LeagueGroupID		SMALLINT,
+		TicketType		TINYINT
 	);
 
 	DECLARE @DetailData TABLE (
@@ -237,6 +240,11 @@ BEGIN
 	SELECT @Srecommend = srecommend
 	FROM bodb02.dbo.custInfo WITH (NOLOCK)
 	WHERE custid = @CustId
+
+	DECLARE @SeparateSabaSport_Cutoff DATE
+	SELECT @SeparateSabaSport_Cutoff = CutoffDate
+	FROM dbo.f_GetCutoffDate()
+	WHERE TypeName = 'SabaSport'
 
 	IF EXISTS ( SELECT 1 FROM bodb02.dbo.f_SpecialSuper() WHERE Srecommend = @Srecommend )
 	BEGIN
@@ -586,12 +594,25 @@ BEGIN
 				SiteId = CASE
 							WHEN b.Product IN ('VRG', 'H5LG', 'SLT') THEN b.SiteId
 							ELSE ''
-						END
+						END,
+				LeagueGroupID = CASE 
+									WHEN ( 
+											(le.LeagueGroupID IN (42,74,108,113) AND m.sporttype = 1 ) 
+											OR (le.LeagueGroupID IN (122, 42) AND m.sporttype = 2 )
+											OR (le.LeagueGroupID = 42 AND m.sporttype = 50)
+										) AND b.betdaqid <> -2 AND b.winlostdate >= @SeparateSabaSport_Cutoff THEN le.LeagueGroupID
+									ELSE 0 
+								END,
+				TicketType = CASE
+								WHEN b.betdaqid = -2 THEN 1
+								ELSE 0
+							END
 			FROM @Data AS b
 				CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 				LEFT JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 				LEFT JOIN dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
+				LEFT JOIN bodb02.dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND m.leagueID = le.leagueID
 				LEFT JOIN dbo.VSOutright_bk AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 				LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 				LEFT JOIN dbo.match3rd_bk AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
@@ -644,25 +665,27 @@ BEGIN
 	WHERE c.custid = @CustId
 
 	-- Filter due to product detail
-	-- Allbet, Pragmatic, Spadegaming, Sexy Gaming
-	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'PP', 'SG', 'SXG'))
+	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming
+	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
 			SportType	SMALLINT,
-			BetType		SMALLINT
+			BetType		SMALLINT,
+			LeagueGroupID	SMALLINT,
+			TicketType		TINYINT
 		)
 
+		DECLARE @__ProductDetails XML;
+		
 		IF ISNULL(@ProductDetails, '') <> ''
 		BEGIN
 			DECLARE @DocHandler INT
-
 			BEGIN TRY
 				EXEC sp_xml_preparedocument @DocHandler OUTPUT, @ProductDetails
-
-				INSERT INTO @ProductDetail (ProductId, SportType, BetType)
-				SELECT ProductId, SportType, BetType
-				FROM OPENXML(@DocHandler, '/ROOT/ProductDetail', 1) WITH (ProductId TINYINT, Sporttype SMALLINT, Bettype SMALLINT)
+				INSERT INTO @ProductDetail (ProductId, SportType, BetType, LeagueGroupID, TicketType)
+				SELECT ProductId, SportType, BetType, LeagueGroupID, TicketType
+				FROM OPENXML(@DocHandler, '/ROOT/ProductDetail', 1) WITH (ProductId TINYINT, Sporttype SMALLINT, Bettype SMALLINT, LeagueGroupID SMALLINT, TicketType SMALLINT)
 
 				EXEC sp_xml_removedocument @DocHandler
 			END TRY
@@ -674,15 +697,35 @@ BEGIN
 		DECLARE @FullProductDetail TABLE (
 			ProductId	TINYINT,
 			SportType	SMALLINT,
-			BetType		SMALLINT
+			BetType		SMALLINT,
+			LeagueGroupID	SMALLINT,
+			TicketType		TINYINT
 		)
 
 		INSERT INTO @FullProductDetail
 		SELECT
 			ProductId,
 			SportType,
-			BetType
-		FROM bodb02.dbo.f_GetProductDetail()
+			BetType,
+			LeagueGroupID,
+			TicketType
+		FROM dbo.f_GetProductDetail()
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product IN ('SB', 'Parlay', 'Outright')
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product IN ('SB', 'Parlay', 'Outright')
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 1 AND SportType = 0 AND LeagueGroupID = 0 AND TicketType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
 
 		DELETE b
 		FROM @Data AS b
