@@ -38,6 +38,7 @@ AS
 		- 20201028@Kos: Return transdate [Redmine: #144388]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20211123@Razor: Check Abnormal Parlay Ticket [Redmine: #163900]
+		- 20220225@Razor: Hide Saba word in league name for China View licensee [Redmine: #169101]
 */
 
 BEGIN
@@ -80,13 +81,15 @@ BEGIN
 		EventDate			DATETIME,
 		ShowTime			NVARCHAR(50),
 		BetCheck			NVARCHAR(50),
-		TransDesc			NVARCHAR(1000)
+		TransDesc			NVARCHAR(1000),
+		LeagueGroupId		SMALLINT
 	)
 
 	-- Get currency name
 	DECLARE @CurrencyName	NVARCHAR(50),
 		@Status				NVARCHAR(10),
-		@MainTicketIsMarked BIT
+		@MainTicketIsMarked BIT,
+		@IsChinaView 		BIT
 
 	SELECT @MainTicketIsMarked = COUNT(1)
 	FROM dbo.MarkedTransaction WITH (NOLOCK)
@@ -95,27 +98,36 @@ BEGIN
 
 	SELECT
 		@CurrencyName = ex.currency,
-		@Status = b.status
+		@Status = b.status,
+		@IsChinaView = s.IsChinaView
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+		LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON c.CustId = b.CustId
+		LEFT JOIN dbo.Site AS s WITH (NOLOCK) ON s.Site = c.Site
 	WHERE b.transid = @TransId AND b.custid = @CustId
 
 	IF @CurrencyName IS NULL
 	BEGIN
 		SELECT
 			@CurrencyName = ex.currency,
-			@Status = b.status
+			@Status = b.status,
+			@IsChinaView = s.IsChinaView
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+			LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON c.CustId = b.CustId
+			LEFT JOIN dbo.Site AS s WITH (NOLOCK) ON s.Site = c.Site
 		WHERE b.transid = @TransId AND b.custid = @CustId
 
 		IF @CurrencyName IS NULL
 		BEGIN
 			SELECT
 				@CurrencyName = ex.currency,
-				@Status = b.status
+				@Status = b.status,
+				@IsChinaView = s.IsChinaView
 			FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+				LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON c.CustId = b.CustId
+				LEFT JOIN dbo.Site AS s WITH (NOLOCK) ON s.Site = c.Site
 			WHERE b.transid = @TransId AND b.custid = @CustId
 		END
 	END
@@ -176,7 +188,8 @@ BEGIN
 				ELSE m.showtime
 			END AS ShowTime,
 			b.betcheck,
-			b.transdesc
+			b.transdesc,
+			l.LeagueGroupId
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -184,6 +197,7 @@ BEGIN
 				ON pm.matchid = m.ParentID
 				AND m.sporttype = 50
 				AND m.ChildMatchType = 200
+			LEFT JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
@@ -238,7 +252,8 @@ BEGIN
 				ELSE m.showtime
 			END AS ShowTime,
 			b.betcheck,
-			b.transdesc
+			b.transdesc,
+			l.LeagueGroupId
 		FROM dbo.bettransm14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -250,6 +265,7 @@ BEGIN
 				ON pm.matchid = m.ParentID
 				AND m.sporttype = 50
 				AND m.ChildMatchType = 200
+			LEFT JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
@@ -304,7 +320,8 @@ BEGIN
 				ELSE m.showtime
 			END AS ShowTime,
 			b.betcheck,
-			b.transdesc
+			b.transdesc,
+			l.LeagueGroupId
 		FROM DBARC.bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -320,10 +337,13 @@ BEGIN
 				ON pm.matchid = m.ParentID
 				AND m.sporttype = 50
 				AND m.ChildMatchType = 200
+			LEFT JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
-	SELECT DISTINCT * FROM @BetListMP
+	SELECT DISTINCT *, 
+			@IsChinaView AS IsChinaView 
+	FROM @BetListMP
 	ORDER BY TransId DESC
 END
 GO
