@@ -44,6 +44,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowCG		BIT			= 0,	-- CG
 	@ShowAP		BIT			= 0,	-- AdvantPlay
 	@ShowAPM	BIT			= 0,	-- AdvantPlay Mini
+	@ShowVS3	BIT			= 0,	-- Virtual Sports 3
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -153,6 +154,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211102@Kos: Support AdvantPlay and AdvantPlay Mini [Redmine: #158186]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
+		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
 */
 
 BEGIN
@@ -225,7 +227,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 15, 21, 22, 24, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -250,6 +252,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowSBC = 0	THEN 42 END
 		OR ProductID	= CASE WHEN @ShowI4D = 0	THEN 43 END
 		OR ProductID	= CASE WHEN @ShowSXG = 0	THEN 45 END
+		OR ProductID	= CASE WHEN @ShowVS3 = 0	THEN 49 END
 		OR ProductID	= CASE WHEN @ShowWM = 0		THEN 51 END
 		OR ProductID	= CASE WHEN @ShowPGS = 0	THEN 55 END
 		OR ProductID	= CASE WHEN @ShowJK = 0		THEN 56 END
@@ -873,8 +876,8 @@ BEGIN
 			AND b.statusID IN (0, 1)
 	END
 
-	-- Keno, Colossus Bets, Lottery, Virtual Games, Table Games, Indo 4D, Happy 5 Linked Games, Sports Lottery (translog)
-	IF @ShowKN = 1 OR @ShowCB = 1 OR @ShowLT = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowI4D = 1 OR @ShowNG = 1 OR @ShowSLT = 1
+	-- Keno, Colossus Bets, Lottery, Virtual Games, Table Games, Indo 4D, Happy 5 Linked Games, Sports Lottery, Virtual Sports 3 (translog)
+	IF @ShowKN = 1 OR @ShowCB = 1 OR @ShowLT = 1 OR @ShowVRG = 1 OR @ShowTG = 1 OR @ShowI4D = 1 OR @ShowNG = 1 OR @ShowSLT = 1 OR @ShowVS3 = 1
 	BEGIN
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
@@ -882,7 +885,7 @@ BEGIN
 				WHEN sbt.ProductID = 8 THEN 202
 				WHEN sbt.ProductID = 15 THEN 204
 				WHEN sbt.ProductID = 28 THEN 220
-				WHEN sbt.ProductID IN (3, 38, 40, 43, 63) THEN t.productid
+				WHEN sbt.ProductID IN (3, 38, 40, 43, 49, 63) THEN t.productid
 				ELSE 0
 			END AS SportType,
 			@Username AS UserName,
@@ -898,10 +901,7 @@ BEGIN
 			0 AS AwayId,
 			0 AS hdp1,
 			0 AS hdp2,
-			CASE
-				WHEN sbt.ProductID IN (3, 8, 28, 38, 40, 43, 63) THEN t.odds
-				ELSE 0
-			END AS Odds,
+			t.odds,
 			0 AS MOdds,
 			t.status,
 			0 AS SettlementStatus,
@@ -922,10 +922,11 @@ BEGIN
 				WHEN sbt.ProductID = 15 THEN t.Tranid3rd
 				WHEN sbt.ProductId = 8 THEN ISNULL(t.custom2, '')
 				WHEN sbt.ProductId IN (3, 38, 63) THEN ISNULL(t.Gameid3rd, '')
+				WHEN sbt.ProductID IN (49) THEN ISNULL(t.custom1, '')
 				ELSE '' 
 			END AS BetCheck,
 			CASE
-				WHEN sbt.ProductID IN (3, 8, 28, 38, 40, 43, 63) THEN ISNULL(t.transdesc, '')
+				WHEN sbt.ProductID IN (3, 8, 28, 38, 40, 43, 49, 63) THEN ISNULL(t.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			-1 AS BetdaqId,
@@ -942,7 +943,7 @@ BEGIN
 			t.transdate BETWEEN @FromDate AND @ToDate
 			AND t.custid = @CustID
 			AND t.statusID IN (0, 1)
-			AND sbt.ProductID IN (3, 8, 15, 28, 38, 40, 43, 63)
+			AND sbt.ProductID IN (3, 8, 15, 28, 38, 40, 43, 49, 63)
 			AND sbt.EventType = 0
 	END
 

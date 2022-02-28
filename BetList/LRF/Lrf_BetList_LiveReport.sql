@@ -23,6 +23,7 @@ AS
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220313@Kos: Hotfix - Extend range for IP v6 [Redmine: #169856]
+		- 20220314@Kos: Support Virtual Sports 3 [Redmine: #145337]
 */
 
 BEGIN
@@ -283,6 +284,7 @@ BEGIN
 	BEGIN
 		UPDATE b
 		SET b.Product = CASE
+							WHEN s.ProductID = 49 THEN 'VS3'	-- Virtual Sports 3
 							WHEN s.ProductID = 63 THEN 'SLT'	-- Sports Lottery
 							ELSE ''
 						END

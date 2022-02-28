@@ -64,6 +64,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
+		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
 */
 
 BEGIN
@@ -101,7 +102,7 @@ BEGIN
 	SELECT DISTINCT ProductId, Bettype, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @IsTest)
 	WHERE
-		ProductID IN (1, 3, 5, 8, 27, 28, 40, 43, 63)
+		ProductID IN (1, 3, 5, 8, 27, 28, 40, 43, 49, 63)
 		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 		AND BetType IN (
 			SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
@@ -987,8 +988,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
-		-- Keno, Lottery, Table Games, Indo 4D, Happy 5 Linked Games, Sports Lottery
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 8, 28, 40, 43, 63) AND EventType = 0 AND Bettype = @BetType)
+		-- Keno, Lottery, Table Games, Indo 4D, Happy 5 Linked Games, Sports Lottery, Virtual Sports 3
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 8, 28, 40, 43, 49, 63) AND EventType = 0 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1001,7 +1002,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 28 THEN 220
-					WHEN sbt.ProductId IN (3, 40, 43, 63) THEN b.matchid
+					WHEN sbt.ProductId IN (3, 40, 43, 49, 63) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.bettype,
@@ -1410,8 +1411,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 
-		-- Keno, Lottery, Table Games, Indo 4D, Happy 5 Linked Games, Sports Lottery
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 8, 28, 40, 43, 63) AND EventType = 0 AND Bettype = @BetType)
+		-- Keno, Lottery, Table Games, Indo 4D, Happy 5 Linked Games, Sports Lottery, Virtual Sports 3
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 8, 28, 40, 43, 49, 63) AND EventType = 0 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1424,7 +1425,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductId = 8 THEN 202
 					WHEN sbt.ProductId = 28 THEN 220
-					WHEN sbt.ProductId IN (3, 40, 43, 63) THEN b.matchid
+					WHEN sbt.ProductId IN (3, 40, 43, 49, 63) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.bettype,
