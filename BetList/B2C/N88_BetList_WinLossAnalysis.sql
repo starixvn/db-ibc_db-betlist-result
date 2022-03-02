@@ -30,17 +30,12 @@ AS
 		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
+		- 20220301@Kos: Support archive process [Redmine: 167823]
 
 */
 
 BEGIN
 	SET NOCOUNT ON
-
-	DECLARE @FDate DATETIME,
-		@TDate DATETIME
-
-	SELECT @FDate = DATEADD(DAY, -1, @FromDate),
-		@TDate = DATEADD(DAY, 1, @ToDate)
 
 	-- Data on GMT + 0 --> convert timezone
 	DECLARE @FromDateTimeGMT0	DATETIME,
@@ -49,6 +44,15 @@ BEGIN
 	SELECT @FromDateTimeGMT0	= DATEADD(HOUR, -@TimeZone, CONVERT(DATETIME, @FromDate)),
 		@ToDateTimeGMT0			= DATEADD(HOUR, -@TimeZone, CONVERT(DATETIME, @ToDate))
 
+	DECLARE @FDate	DATETIME = @FromDateTimeGMT0,
+		@TDate		DATETIME = @ToDateTimeGMT0
+
+	DECLARE @ArchiveDate DATETIME
+
+	SELECT  @ArchiveDate = SValue
+	FROM DBN88.bodb_N88.dbo.SystemSettings WITH (NOLOCK)
+	WHERE SName = 'ArchiveData_Date'
+
 	DECLARE @CustIdTmp VARCHAR(45)
 
 	SET @CustIdTmp = CAST(@CustId AS VARCHAR(45))
@@ -56,40 +60,94 @@ BEGIN
 	-- 1. Get raw data
 	CREATE TABLE #Tickets (TransId BIGINT)
 
-	IF @FilterBy = 1	-- By winlostdate
+	-- TpBetRecord
+	IF @TDate >= @ArchiveDate
 	BEGIN
-		INSERT INTO #Tickets (TransId)
-		SELECT CASE
-					WHEN ISNUMERIC(r.TransId) = 1 THEN CAST(r.TransId AS BIGINT)
-					ELSE 0
-				END AS TransId
-		FROM DBN88.bodb_N88.dbo.TpBetRecord r WITH (NOLOCK)
-		WHERE r.SettledTime >= @FromDateTimeGMT0
-			AND r.SettledTime < DATEADD(DAY, 1, @ToDateTimeGMT0)
-			AND r.CustId = @CustIdTmp
-			AND r.GameType = @ProductId
-			AND 1 = CASE
-						WHEN @ExcludeDrawTicket = 1 AND r.TicketStatus IN (1, 2, 6) THEN 1
-						WHEN @ExcludeDrawTicket = 0 AND r.TicketStatus IN (1, 2, 4, 6) THEN 1
+		SELECT @FDate = CASE
+							WHEN @FromDateTimeGMT0 > @ArchiveDate THEN @FromDateTimeGMT0
+							ELSE @ArchiveDate
+						END,
+			@TDate = @ToDateTimeGMT0
+
+		IF @FilterBy = 1	-- By winlostdate
+		BEGIN
+			INSERT INTO #Tickets (TransId)
+			SELECT CASE
+						WHEN ISNUMERIC(r.TransId) = 1 THEN CAST(r.TransId AS BIGINT)
 						ELSE 0
-					END
+					END AS TransId
+			FROM DBN88.bodb_N88.dbo.TpBetRecord AS r WITH (NOLOCK)
+			WHERE r.SettledTime BETWEEN @FDate AND @TDate
+				AND r.CustId = @CustIdTmp
+				AND r.GameType = @ProductId
+				AND 1 = CASE
+							WHEN @ExcludeDrawTicket = 1 AND r.TicketStatus IN (1, 2, 6) THEN 1
+							WHEN @ExcludeDrawTicket = 0 AND r.TicketStatus IN (1, 2, 4, 6) THEN 1
+							ELSE 0
+						END
+		END
+		ELSE		-- By transdate
+		BEGIN
+			INSERT INTO #Tickets (TransId)
+			SELECT CASE
+						WHEN ISNUMERIC(r.TransId) = 1 THEN CAST(r.TransId AS BIGINT)
+						ELSE 0
+					END AS TransId
+			FROM DBN88.bodb_N88.dbo.TpBetRecord AS r WITH (NOLOCK)
+			WHERE r.TransTime BETWEEN @FDate AND @TDate
+				AND r.CustId = @CustIdTmp
+				AND r.GameType = @ProductId
+				AND 1 = CASE
+							WHEN @ExcludeDrawTicket = 1 AND r.TicketStatus IN (1, 2, 6) THEN 1
+							WHEN @ExcludeDrawTicket = 0 AND r.TicketStatus IN (1, 2, 4, 6) THEN 1
+							ELSE 0
+						END
+		END
 	END
-	ELSE		-- By transdate
+
+	-- TpBetRecord_bk
+	IF @FDate < @ArchiveDate
 	BEGIN
-		INSERT INTO #Tickets (TransId)
-		SELECT CASE
-					WHEN ISNUMERIC(r.TransId) = 1 THEN CAST(r.TransId AS BIGINT)
-					ELSE 0
-				END AS TransId
-		FROM DBN88.bodb_N88.dbo.TpBetRecord r WITH (NOLOCK)
-		WHERE r.TransTime >= @FromDateTimeGMT0 AND r.TransTime < DATEADD(DAY, 1, @ToDateTimeGMT0)
-			AND r.CustId = @CustIdTmp
-			AND r.GameType = @ProductId
-			AND 1 = CASE
-						WHEN @ExcludeDrawTicket = 1 AND r.TicketStatus IN (1, 2, 6) THEN 1
-						WHEN @ExcludeDrawTicket = 0 AND r.TicketStatus IN (1, 2, 4, 6) THEN 1
-						ELSE 0
+		SELECT @FDate = @FromDateTimeGMT0,
+			@TDate = CASE
+						WHEN @ToDateTimeGMT0 < @ArchiveDate THEN @ToDateTimeGMT0
+						ELSE DATEADD(HOUR, 1, @ArchiveDate)
 					END
+
+		IF @FilterBy = 1	-- By winlostdate
+		BEGIN
+			INSERT INTO #Tickets (TransId)
+			SELECT CASE
+						WHEN ISNUMERIC(r.TransId) = 1 THEN CAST(r.TransId AS BIGINT)
+						ELSE 0
+					END AS TransId
+			FROM DBN88.bodb_N88_Archive.dbo.TpBetRecord_bk AS r WITH (NOLOCK)
+			WHERE r.SettledTime BETWEEN @FDate AND @TDate
+				AND r.CustId = @CustIdTmp
+				AND r.GameType = @ProductId
+				AND 1 = CASE
+							WHEN @ExcludeDrawTicket = 1 AND r.TicketStatus IN (1, 2, 6) THEN 1
+							WHEN @ExcludeDrawTicket = 0 AND r.TicketStatus IN (1, 2, 4, 6) THEN 1
+							ELSE 0
+						END
+		END
+		ELSE		-- By transdate
+		BEGIN
+			INSERT INTO #Tickets (TransId)
+			SELECT CASE
+						WHEN ISNUMERIC(r.TransId) = 1 THEN CAST(r.TransId AS BIGINT)
+						ELSE 0
+					END AS TransId
+			FROM DBN88.bodb_N88_Archive.dbo.TpBetRecord_bk AS r WITH (NOLOCK)
+			WHERE r.TransTime BETWEEN @FDate AND @TDate
+				AND r.CustId = @CustIdTmp
+				AND r.GameType = @ProductId
+				AND 1 = CASE
+							WHEN @ExcludeDrawTicket = 1 AND r.TicketStatus IN (1, 2, 6) THEN 1
+							WHEN @ExcludeDrawTicket = 0 AND r.TicketStatus IN (1, 2, 4, 6) THEN 1
+							ELSE 0
+						END
+		END
 	END
 
 	-- Get Sport Bettype Matrix
