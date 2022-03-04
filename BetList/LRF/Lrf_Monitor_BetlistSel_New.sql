@@ -9,13 +9,14 @@ ALTER PROCEDURE [dbo].[Lrf_Monitor_BetlistSel_New]
 	@TransId		BIGINT			= 0,
 	@TransLogId		BIGINT			= 0,
 	@LimitRowCount	INT				= 10,
-	@SportId		INT				= 0,
-	@LeagueId		INT				= 0,
+	@SportTypeList	VARCHAR(MAX)	= 'All',
+	@LeagueList		VARCHAR(MAX)	= 'All',
 	@MatchId		INT				= 0,
 	@MinStake		MONEY			= 0,
 	@MaxStake		MONEY			= 0,
 	@LiveIndicator	INT				= 0,
 	@BetFrom		VARCHAR(100)	= 'All',
+	@CustomerClass	VARCHAR(200)	= 'All',
 	@BaseCurrency	VARCHAR(10)		='USD',
 	@Debug			BIT				= 0
 AS
@@ -74,6 +75,9 @@ AS
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 					- Add new input param @ProductList VARCHAR(100), @TransLogId BIGINT
 					- Return additional column SportType SMALLINT
+		- 20220302@Kos: Support filter by Customer Class [RedmineID: #167824]
+					- Remove input params SportId and LeagueId
+					- Add new input params @SportTypeList VARCHAR(MAX), @LeagueList VARCHAR(MAX), @CustomerClass VARCHAR(200)
 
 	Parameter's Explanation:
 		- @BetType:
@@ -83,7 +87,23 @@ AS
 			+ ALL: <= 19000
 		- @TransId: latest transid
 		- @LimitRowCount: max record return (10,20,30)
-		- @SportId = 999 -> Parlay and System Parlay
+		- @SportTypeList: 
+			+ All: all sport types
+			+ XML format
+				<ROOT>
+					<Sport SportType="1" LeagueGroupIds="0"/>
+					<Sport SportType="1" LeagueGroupIds="42,74"/>
+					<Sport SportType="5" LeagueGroupIds="0"/>
+					<Sport SportType="999" LeagueGroupIds="0"/>
+				</ROOT>
+				+ Parlay: <Sport SportType="999" LeagueGroupIds="0"/>
+				+ Sports Lottery: <Sport SportType="169" LeagueGroupIds="0"/>
+				+ Saba Soccer: <Sport SportType="1" LeagueGroupIds="42,74"/>
+				+ Saba Soccer PinGoal: <Sport SportType="1" LeagueGroupIds="113"/>
+				+ Saba Basketball: <Sport SportType="2" LeagueGroupIds="42"/>
+				+ Saba Basketball PinGoal: <Sport SportType="2" LeagueGroupIds="122"/>
+				+ Saba Cricket: <Sport SportType="50" LeagueGroupIds="42"/>
+				+ Saba Futsal: <Sport SportType="1" LeagueGroupIds="108"/>
 		- @LiveIndicator (0 : non live, 1 : live , 2 : mix non live & live)
 		- @IncludeBetFrom: 1: show column betfrom, 0: hide
 		- @BetFrom:
@@ -105,6 +125,8 @@ AS
 			- 15 - WAP: m (dep-wap)
 			- 88 - Others: v (Licensee Odds Feed), d (mobile), g (MG Download only), e (Europe), u (dep-Euro)
 		- @ProductList: SB and all products grouped under SB (SB,SL,...)
+		- @LeagueList: list of league seperated by commas (All: all leagues)
+		- @CustomerClass: list of customer class seperated by commas (All: all customer classes)
 
 	Excecute sample :
 		[Lrf_Monitor_BetlistSel_New]
@@ -126,13 +148,12 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @HasError BIT = 0
+	DECLARE @DocHandler INT
 
+	-- Get AgentList
 	CREATE TABLE #TempAg (CustId INT, Currency INT)
 
 	CREATE CLUSTERED INDEX IX_TempAg ON #TempAg (CustId)
-
-	-- Get AgentList
-	DECLARE @DocHandler INT
 
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AgentList
@@ -147,12 +168,44 @@ BEGIN
 		SET @HasError = 1
 	END CATCH
 
+	-- Get sport type list
+	CREATE TABLE #TempSportType (SportType SMALLINT, LeagueGroupIdList VARCHAR(200))
+
+	CREATE CLUSTERED INDEX IX_SportType ON #TempSportType (SportType)
+
+	IF @SportTypeList <> 'All'
+	BEGIN TRY
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @SportTypeList
+	
+		INSERT INTO #TempSportType (SportType, LeagueGroupIdList)
+		SELECT SportType, LeagueGroupIds
+		FROM OPENXML(@DocHandler, '/ROOT/Sport', 1) WITH (SportType SMALLINT, LeagueGroupIds VARCHAR(200)) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END TRY
+	BEGIN CATCH
+		SET @HasError = 1
+	END CATCH
+
+	-- Get full sport type list
+	DECLARE @FullSportType TABLE (SportType SMALLINT, LeagueGroupIdList VARCHAR(200))
+
+	INSERT INTO @FullSportType
+	SELECT 1, '42,74'		-- Saba Soccer
+	UNION SELECT 1, '113'	-- Saba Soccer PinGoal
+	UNION SELECT 2, '42'	-- Saba Basketball
+	UNION SELECT 2, '122'	-- Saba Basketball PinGoal
+	UNION SELECT 50, '42'	-- Saba Cricket
+	UNION SELECT 1, '108'	-- Saba Futsal
+
 	DECLARE @Data TABLE (
 		CustId			INT,
+		CustomerClass	SMALLINT,
 		MatchId			INT,
+		LeagueId		INT,
+		LeagueGroupId	SMALLINT,
 		SportType		SMALLINT,
 		BetType			SMALLINT,
-		ProductId		TINYINT,
 		TransId			BIGINT,
 		RefNo			BIGINT,
 		TransDate		DATETIME,
@@ -180,7 +233,9 @@ BEGIN
 		OriginalBetType	SMALLINT,
 		WalletType		TINYINT,
 		RefCode			BIGINT,
-		OddsSpread		MONEY
+		OddsSpread		MONEY,
+		ProductId		TINYINT,
+		EventType		TINYINT
 	)
 
 	DECLARE @ExchangeRate TABLE (
@@ -218,340 +273,294 @@ BEGIN
 			END
 		END
 
-		IF @SportId = 0
+		-- bettrans
+		INSERT INTO @Data (
+			CustId,
+			MatchId,
+			SportType,
+			BetType,
+			TransId,
+			RefNo,
+			TransDate,
+			BetId,
+			LiveHomeScore,
+			LiveAwayScore,
+			LiveIndicator,
+			Hdp1,
+			Hdp2,
+			Odds,
+			Actual_Stake,
+			Stake,
+			BetFrom,
+			Status,
+			BetTeam,
+			OddsType,
+			Ip,
+			CurrencyId,
+			SpecialLevel,
+			BetCheck,
+			TransDesc,
+			BetdaqId,
+			ExtraInfo,
+			OriginalStake,
+			OriginalBetType,
+			WalletType,
+			RefCode,
+			OddsSpread)
+		SELECT
+			b.custid,
+			b.matchid,
+			0 AS SportType,
+			b.bettype,
+			b.transid,
+			b.refno,
+			b.transdate,
+			b.betid,
+			b.livehomescore,
+			b.liveawayscore,
+			b.liveindicator,
+			b.hdp1,
+			b.hdp2,
+			b.odds,
+			b.actual_stake,
+			b.stake,
+			b.betfrom,
+			CASE
+				WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
+					CASE
+						WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
+									WHERE bm.custid = b.custid
+										AND bm.refno = b.refno
+										AND (bm.status = 'waiting'
+											OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
+							THEN 'Waiting'
+						ELSE b.status
+					END
+				ELSE b.status
+			END AS status,
+			b.betteam,
+			b.oddstype,
+			b.ip,
+			b.currency AS CurrencyId,
+			0 AS SpecialLevel,
+			ISNULL(b.betcheck, '') AS BetCheck,
+			ISNULL(b.transdesc, '') AS TransDesc,
+			ISNULL(b.betdaqid, -1) AS BetdaqId,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			CASE
+				WHEN b.ExtraInfo LIKE '%p25%' THEN
+					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
+				ELSE 0
+			END AS OriginalStake,
+			CASE
+				WHEN b.stake <> 0 THEN -1
+				ELSE 0
+			END AS OriginalBetType,
+			ISNULL(b.WalletType, 0) AS WalletType,
+			ISNULL(b.RefCode, 0) AS RefCode,
+			ISNULL(b.oddsspread, 0) AS OddsSpread
+		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
+			INNER JOIN #TempAg AS a ON b.Recommend = a.CustId
+			INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+		WHERE b.statusID IN (0, 1)
+			AND b.transid > @TransId
+			AND (@Currency = ''
+				OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
+			AND (@LiveIndicator = 3
+				OR (b.bettype IN (9, 29) AND b.livehomescore = @LiveIndicator)
+				OR (b.bettype NOT IN (9, 29) AND @LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
+			AND (@BetType = ''
+				OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609, 229))
+				OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604))
+				OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604)))
+
+		-- translog
+		IF @BetType IN ('', 'Others')
 		BEGIN
-			-- bettrans
-			INSERT INTO @Data
+			INSERT INTO @Data (
+				CustId,
+				MatchId,
+				SportType,
+				BetType,
+				TransId,
+				RefNo,
+				TransDate,
+				BetId,
+				LiveHomeScore,
+				LiveAwayScore,
+				LiveIndicator,
+				Hdp1,
+				Hdp2,
+				Odds,
+				Actual_Stake,
+				Stake,
+				BetFrom,
+				Status,
+				BetTeam,
+				OddsType,
+				Ip,
+				CurrencyId,
+				SpecialLevel,
+				BetCheck,
+				TransDesc,
+				BetdaqId,
+				ExtraInfo,
+				OriginalStake,
+				OriginalBetType,
+				WalletType,
+				RefCode,
+				OddsSpread)
 			SELECT
 				b.custid,
-				b.matchid,
-				0 AS SportType,
-				b.bettype,
-				0 AS ProductId,
-				b.transid,
-				b.refno,
+				0 AS MatchId,
+				b.productID AS SportType,
+				b.gameID AS BetType,
+				b.translogid AS TransId,
+				b.translogid AS RefNo,
 				b.transdate,
-				b.betid,
-				b.livehomescore,
-				b.liveawayscore,
-				b.liveindicator,
-				b.hdp1,
-				b.hdp2,
+				0 AS BetId,
+				0 AS LiveHomeScore,
+				0 AS LiveAwayScore,
+				0 AS LiveIndicator,
+				0 AS Hdp1,
+				0 AS Hdp2,
 				b.odds,
 				b.actual_stake,
 				b.stake,
 				b.betfrom,
-				CASE
-					WHEN b.bettype NOT IN (9, 29) AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-					WHEN b.bettype IN (9, 29) AND b.status = 'running' THEN
-						CASE
-							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
-										WHERE bm.custid = b.custid
-											AND bm.refno = b.refno
-											AND (bm.status = 'waiting'
-												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
-								THEN 'Waiting'
-							ELSE b.status
-						END
-					ELSE b.status
-				END AS status,
-				b.betteam,
-				b.oddstype,
+				b.status,
+				'' AS BetTeam,
+				0 AS OddsType,
 				b.ip,
 				b.currency AS CurrencyId,
 				0 AS SpecialLevel,
-				ISNULL(b.betcheck, '') AS BetCheck,
+				ISNULL(b.GameId3rd, '') AS BetCheck,
 				ISNULL(b.transdesc, '') AS TransDesc,
-				ISNULL(b.betdaqid, -1) AS BetdaqId,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-				CASE
-					WHEN b.ExtraInfo LIKE '%p25%' THEN
-						ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-					ELSE 0
-				END AS OriginalStake,
-				CASE
-					WHEN b.stake <> 0 THEN -1
-					ELSE 0
-				END AS OriginalBetType,
-				ISNULL(b.WalletType, 0) AS WalletType,
-				ISNULL(b.RefCode, 0) AS RefCode,
-				ISNULL(b.oddsspread, 0) AS OddsSpread
-			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
+				-1 AS BetdaqId,
+				'' AS ExtraInfo,
+				0 AS OriginalStake,
+				0 AS OriginalBetType,
+				0 AS WalletType,
+				0 AS RefCode,
+				0 AS OddsSpread
+			FROM dbo.translog AS b WITH (NOLOCK)
 				INNER JOIN #TempAg AS a ON b.Recommend = a.CustId
 				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE b.statusID IN (0, 1)
-				AND b.transid > @TransId
+				AND b.translogid > @TransLogId
 				AND (@Currency = ''
 					OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
 				AND (@LiveIndicator = 3
-					OR (b.bettype IN (9, 29) AND b.livehomescore = @LiveIndicator)
-					OR (b.bettype NOT IN (9, 29) AND @LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
-				AND (@BetType = ''
-					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609, 229))
-					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604))
-					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604)))
-
-			-- translog
-			IF @BetType IN ('', 'Others')
-			BEGIN
-				INSERT INTO @Data
-				SELECT
-					b.custid,
-					0 AS MatchId,
-					b.productID AS SportType,
-					b.gameID AS BetType,
-					0 AS ProductId,
-					b.translogid AS TransId,
-					b.translogid AS RefNo,
-					b.transdate,
-					0 AS BetId,
-					0 AS LiveHomeScore,
-					0 AS LiveAwayScore,
-					0 AS LiveIndicator,
-					0 AS Hdp1,
-					0 AS Hdp2,
-					b.odds,
-					b.actual_stake,
-					b.stake,
-					b.betfrom,
-					b.status,
-					'' AS BetTeam,
-					0 AS OddsType,
-					b.ip,
-					b.currency AS CurrencyId,
-					0 AS SpecialLevel,
-					ISNULL(b.GameId3rd, '') AS BetCheck,
-					ISNULL(b.transdesc, '') AS TransDesc,
-					-1 AS BetdaqId,
-					'' AS ExtraInfo,
-					0 AS OriginalStake,
-					0 AS OriginalBetType,
-					0 AS WalletType,
-					0 AS RefCode,
-					0 AS OddsSpread
-				FROM dbo.translog AS b WITH (NOLOCK)
-					INNER JOIN #TempAg AS a ON b.Recommend = a.CustId
-					INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
-				WHERE b.statusID IN (0, 1)
-					AND b.translogid > @TransLogId
-					AND (@Currency = ''
-						OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
-					AND (@LiveIndicator = 3
-						OR (@LiveIndicator IN (0, 1) AND b.LiveIndicator = @LiveIndicator))
-			END
-		END
-		ELSE IF @SportId = 999
-		BEGIN
-			INSERT INTO @Data
-			SELECT
-				b.custid,
-				b.matchid,
-				0 AS SportType,
-				b.bettype,
-				0 AS ProductId,
-				b.transid,
-				b.refno,
-				b.transdate,
-				b.betid,
-				b.livehomescore,
-				b.liveawayscore,
-				b.liveindicator,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.actual_stake,
-				b.stake,
-				b.betfrom,
-				CASE
-					WHEN b.status = 'running' THEN
-						CASE
-							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
-										WHERE bm.custid = b.custid
-											AND bm.refno = b.refno
-											AND (bm.status = 'waiting'
-												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
-								THEN 'Waiting'
-							ELSE b.status
-						END
-					ELSE b.status
-				END AS status,
-				b.betteam,
-				b.oddstype,
-				b.ip,
-				b.currency AS CurrencyId,
-				0 AS SpecialLevel,
-				ISNULL(b.betcheck, '') AS BetCheck,
-				ISNULL(b.transdesc, '') AS TransDesc,
-				ISNULL(b.betdaqid, -1) AS BetdaqId,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-				CASE
-					WHEN b.ExtraInfo LIKE '%p25%' THEN
-						ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-					ELSE 0
-				END AS OriginalStake,
-				CASE
-					WHEN b.stake <> 0 THEN -1
-					ELSE 0
-				END AS OriginalBetType,
-				ISNULL(b.WalletType, 0) AS WalletType,
-				ISNULL(b.RefCode, 0) AS RefCode,
-				ISNULL(b.oddsspread, 0) AS OddsSpread
-			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
-				INNER JOIN #TempAg AS a ON b.Recommend = a.CustId
-				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
-			WHERE b.statusID IN (0, 1)
-				AND b.transid > @TransId
-				AND b.bettype IN (9, 29)
-				AND (@Currency = ''
-					OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
-				AND (@LiveIndicator = 3 OR b.livehomescore = @LiveIndicator)
-		END
-		ELSE IF @SportId > 0 AND @SportId < 999
-		BEGIN
-			INSERT INTO @Data
-			SELECT
-				b.custid,
-				b.matchid,
-				0 AS SportType,
-				b.bettype,
-				0 AS ProductId,
-				b.transid,
-				b.refno,
-				b.transdate,
-				b.betid,
-				b.livehomescore,
-				b.liveawayscore,
-				b.liveindicator,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.actual_stake,
-				b.stake,
-				b.betfrom,
-				CASE
-					WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-					ELSE b.status
-				END AS status,
-				b.betteam,
-				b.oddstype,
-				b.ip,
-				b.currency AS CurrencyId,
-				0 AS SpecialLevel,
-				ISNULL(b.betcheck, '') AS BetCheck,
-				ISNULL(b.transdesc, '') AS TransDesc,
-				ISNULL(b.betdaqid, -1) AS BetdaqId,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-				CASE
-					WHEN b.ExtraInfo LIKE '%p25%' THEN
-						ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-					ELSE 0
-				END AS OriginalStake,
-				CASE
-					WHEN b.stake <> 0 THEN -1
-					ELSE 0
-				END AS OriginalBetType,
-				ISNULL(b.WalletType, 0) AS WalletType,
-				ISNULL(b.RefCode, 0) AS RefCode,
-				ISNULL(b.oddsspread, 0) AS OddsSpread
-			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
-				INNER JOIN #TempAg AS a ON b.Recommend = a.CustId
-				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
-			WHERE b.statusID IN (0, 1)
-				AND b.transid > @TransId
-				AND b.bettype NOT IN (9, 29)
-				AND (@Currency = ''
-					OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
-				AND (@LiveIndicator = 3
-					OR (@LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
-				AND (@BetType = ''
-					OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609, 229))
-					OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604))
-					OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604)))
-
-			-- translog
-			IF @BetType IN ('', 'Others')
-			BEGIN
-				INSERT INTO @Data
-				SELECT
-					b.custid,
-					0 AS MatchId,
-					b.productID AS SportType,
-					b.gameID AS BetType,
-					0 AS ProductId,
-					b.translogid AS TransId,
-					b.translogid AS RefNo,
-					b.transdate,
-					0 AS BetId,
-					0 AS LiveHomeScore,
-					0 AS LiveAwayScore,
-					0 AS LiveIndicator,
-					0 AS Hdp1,
-					0 AS Hdp2,
-					b.odds,
-					b.actual_stake,
-					b.stake,
-					b.betfrom,
-					b.status,
-					'' AS BetTeam,
-					0 AS OddsType,
-					b.ip,
-					b.currency AS CurrencyId,
-					0 AS SpecialLevel,
-					ISNULL(b.GameId3rd, '') AS BetCheck,
-					ISNULL(b.transdesc, '') AS TransDesc,
-					-1 AS BetdaqId,
-					'' AS ExtraInfo,
-					0 AS OriginalStake,
-					0 AS OriginalBetType,
-					0 AS WalletType,
-					0 AS RefCode,
-					0 AS OddsSpread
-				FROM dbo.translog AS b WITH (NOLOCK)
-					INNER JOIN #TempAg AS a ON b.Recommend = a.CustId
-					INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
-				WHERE b.statusID IN (0, 1)
-					AND b.translogid > @TransLogId
-					AND (@Currency = ''
-						OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
-					AND (@LiveIndicator = 3
-						OR (@LiveIndicator IN (0, 1) AND b.LiveIndicator = @LiveIndicator))
-			END
+					OR (@LiveIndicator IN (0, 1) AND b.LiveIndicator = @LiveIndicator))
 		END
 
 		IF EXISTS (SELECT TOP(1) 1 FROM @Data)
 		BEGIN
-			IF @SportId >= 0 AND @SportId < 999
+			-- Get sport/bettype matrix
+			DECLARE @SportBettype TABLE(ProductID TINYINT, BetType SMALLINT, EventType TINYINT, RefTable TINYINT)
+
+			DECLARE @IsTest BIT = 0
+
+			SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+			INSERT INTO @SportBettype
+			SELECT DISTINCT
+				ma.ProductID,
+				ma.BetType,
+				ma.EventType,
+				ma.RefTable
+			FROM dbo.SportBettypeMatrix AS ma WITH (NOLOCK)
+				INNER JOIN dbo.Products AS p WITH (NOLOCK) ON p.ProductID = ma.ProductID
+				LEFT JOIN #TempSportType AS ts
+					ON (ts.SportType = ma.SportType AND ma.BetType NOT IN (9, 29))
+					OR (ts.SportType = 999 AND ma.BetType IN (9, 29))
+			WHERE (@SportTypeList = 'All' OR ts.SportType IS NOT NULL)
+				AND ',' + @ProductList + ',' LIKE '%,' + p.ProductPrefix + ',%'
+				AND (ma.IsTest = 0 OR ma.IsTest = @IsTest)
+
+			-- Delete unselected products
+			UPDATE b
+			SET ProductId = s.ProductID,
+				EventType = s.EventType
+			FROM @Data AS b
+				INNER JOIN @SportBettype AS s ON b.bettype = s.BetType
+
+			DELETE @Data WHERE ProductId IS NULL
+
+			-- Get event info
+			UPDATE b
+			SET SportType = m.sporttype,
+				LeagueId = m.leagueid,
+				LeagueGroupId = l.LeagueGroupID
+			FROM @Data AS b
+				INNER JOIN dbo.match AS m ON m.matchid = b.MatchId
+				INNER JOIN dbo.League AS l ON l.leagueid = m.leagueid
+			WHERE b.ProductId = 1 AND b.EventType = 1
+
+			UPDATE b
+			SET SportType = l.sporttype,
+				LeagueId = l.leagueid,
+				LeagueGroupId = l.LeagueGroupID
+			FROM @Data AS b
+				INNER JOIN dbo.outright AS o ON o.orid = b.MatchId
+				INNER JOIN dbo.League AS l ON l.leagueid = o.leagueid
+			WHERE b.ProductId = 1 AND b.EventType = 2
+
+			-- Delete unselected matches
+			IF @MatchId <> 0
 			BEGIN
-				DECLARE @IsTest BIT
-
-				SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
-
-				UPDATE b
-				SET ProductId = s.ProductID
-				FROM @Data AS b
-					INNER JOIN dbo.f_SportBettypeMatrix_Sel(0, @SportId, 0, 2, '', @ProductList, @IsTest) AS s ON b.bettype = s.BetType
-
-				DELETE @Data WHERE ProductId = 0
+				DELETE FROM @Data
+				WHERE ProductId = 1
+					AND EventType = 1
+					AND MatchId <> @MatchId
 			END
 
-			IF @SportId > 0 AND @SportId < 999
-				AND @SportId <> 169
+			-- Delete unselected leagues
+			IF @LeagueList <> 'All'
 			BEGIN
+				DELETE FROM @Data
+				WHERE ProductId = 1
+					AND EventType IN (1, 2)
+					AND ',' + @LeagueList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(11), LeagueId) + ',%'
+			END
+
+			-- Delete unselected sport types
+			IF @SportTypeList <> 'All'
+			BEGIN
+				-- Normal sport types
 				DELETE b
 				FROM @Data AS b
-				WHERE NOT EXISTS (SELECT TOP(1) 1 FROM dbo.match AS m WITH (NOLOCK)
-								WHERE m.matchid = b.matchid
-									AND m.sporttype = @SportId
-									AND m.eventstatus = 'running'
-									AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
-									AND (@MatchId = 0 OR m.matchid = @MatchId))
-					AND NOT EXISTS (SELECT TOP(1) 1 FROM (SELECT orid, leagueid FROM dbo.outright WITH (NOLOCK) WHERE oddsstatus = 'running') AS o
-								CROSS APPLY (SELECT l.leagueid FROM dbo.League AS l WITH (NOLOCK) WHERE o.leagueid = l.leagueid AND l.sporttype = @SportId) AS l2
-								WHERE o.orid = b.matchid
-									AND (@LeagueId = 0 OR o.leagueid = @LeagueId)
-									AND (@MatchId = 0 OR o.orid = @MatchId))
+				WHERE b.ProductId = 1
+					AND b.EventType IN (1, 2)
+					AND NOT EXISTS (SELECT 1 FROM @FullSportType WHERE SportType = b.SportType)
+					AND NOT EXISTS (SELECT 1 FROM #TempSportType WHERE SportType = b.SportType)
+
+				-- Special league group
+				DELETE b
+				FROM @Data AS b
+				WHERE b.ProductId = 1
+					AND b.EventType IN (1, 2)
+					AND EXISTS (SELECT 1 FROM @FullSportType
+								WHERE SportType = b.SportType
+									AND ',' + LeagueGroupIdList + ',' LIKE '%,' + CONVERT(VARCHAR(6), b.LeagueGroupId) + ',%')
+					AND NOT EXISTS (SELECT 1 FROM #TempSportType
+									WHERE SportType = b.SportType
+										AND ',' + LeagueGroupIdList + ',' LIKE '%,' + CONVERT(VARCHAR(11), b.LeagueGroupId) + ',%')
+
+				-- Normal league group
+				DELETE b
+				FROM @Data AS b
+				WHERE b.ProductId = 1
+					AND b.EventType IN (1, 2)
+					AND NOT EXISTS (SELECT 1 FROM @FullSportType
+									WHERE SportType = b.SportType
+										AND ',' + LeagueGroupIdList + ',' LIKE '%,' + CONVERT(VARCHAR(6), b.LeagueGroupId) + ',%')
+					AND NOT EXISTS (SELECT 1 FROM #TempSportType
+									WHERE SportType = b.SportType AND LeagueGroupIdList = '0')
 			END
 
+			-- Delete unselected special level
 			UPDATE b
 			SET b.SpecialLevel = ISNULL(d.SpecialLevel, 0)
 			FROM @Data AS b
@@ -561,6 +570,18 @@ BEGIN
 			BEGIN
 				DELETE @Data
 				WHERE ',' + @SpecialLevel + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), SpecialLevel) + ',%'
+			END
+
+			-- Delete unselected customer class
+			UPDATE b
+			SET b.CustomerClass = ISNULL(c.CustomerClass, 0)
+			FROM @Data AS b
+				INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.custid
+
+			IF @CustomerClass <> 'All'
+			BEGIN
+				DELETE @Data
+				WHERE ',' + @CustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%'
 			END
 		END
 
@@ -641,6 +662,7 @@ BEGIN
 		c.username,
 		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
 		b.CustId,
+		b.CustomerClass,
 		b.MatchId,
 		b.SportType,
 		b.BetType,
