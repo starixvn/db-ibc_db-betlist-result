@@ -18,6 +18,7 @@ AS
 		- 20170525@Kos: Support Lucky 3 [#Redmine: 75277]
 		- 20171115@Kos: Add new param SportType to separate Lucky 3 and Number Game match [#Redmine: 86655]
 		- 20211117@Razor: Support In-house Replication [Redmine: #164321]
+		- 20220308@Razor: Hide closed match Number game[#Redmine: 169595]
 */
 
 BEGIN
@@ -100,7 +101,7 @@ BEGIN
 			) AS b ON b.Matchid = m.matchid
 		LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 		INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
-	WHERE (m.eventstatus NOT IN ('running')
+	WHERE (m.eventstatus NOT IN ('running', 'closed')
 			OR (m.eventstatus = 'running' AND mr.IsHTCal = 1))
 		AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 		AND l.IsDeleted = 0
