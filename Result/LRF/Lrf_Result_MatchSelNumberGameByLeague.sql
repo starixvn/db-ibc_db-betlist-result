@@ -20,6 +20,7 @@ AS
 		- 20170531@Kos: Prevent data duplication during Move Bet process [Redmine: #77065]
 		- 20181207@Kos: Add new param SportType to separate Happy 5 and Number Game match [Redmine: #103698]
 					- Remove param @Langkey, @ToDate
+		- 20220308@Kos: Hide closed Number Game match [Redmine: #169595]
 */
 
 BEGIN
@@ -93,12 +94,8 @@ BEGIN
 		LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid  
 		INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 	WHERE
-		(m.eventstatus NOT IN ('internal', 'running')
+		(m.eventstatus NOT IN ('internal', 'running', 'closed')
 			OR (m.eventstatus = 'running' AND mr.IsHTCal = 1))
 		AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 END
-
-
-GO
-GRANT EXECUTE ON [dbo].[Lrf_Result_MatchSelNumberGameByLeague] TO [bodbLicenseeNet]
 GO
