@@ -41,6 +41,7 @@ AS
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
 		- 20220120@Razor: Support E-Sports phase 4 [Redmine: #166326]
+		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 */
 
 BEGIN
@@ -81,7 +82,8 @@ BEGIN
 		Calculate			BIT,
 		SettlementStatus	TINYINT,
 		BetType				SMALLINT,
-		BetCheck			VARCHAR(50)
+		BetCheck			VARCHAR(50),
+		Transdesc			NVARCHAR(1000)
 	)
 
 	DECLARE @tmpResultDetail AS TABLE (
@@ -92,7 +94,7 @@ BEGIN
 		AwayValue			VARCHAR(20),
 		ResultStatusId		TINYINT,
 		SettlementStatusId	TINYINT,
-		OtherInfo			VARCHAR(50)
+		OtherInfo			VARCHAR(2000)
 	)
 	
 	DECLARE @SubTicket AS TABLE (
@@ -101,7 +103,8 @@ BEGIN
 		ChildMatchType	TINYINT,
 		ParentId		INT,
 		BetType			SMALLINT,
-		BetCheck		NVARCHAR(50)
+		BetCheck		NVARCHAR(50),
+		Transdesc		NVARCHAR(1000)
 	)
 
 	-- Bettrans range
@@ -117,7 +120,8 @@ BEGIN
 			m.ChildMatchType,
 			m.ParentID,
 			bm.bettype,
-			bm.betcheck
+			bm.betcheck,
+			bm.Transdesc
 		FROM dbo.bettransm AS bm WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = bm.bettype
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = bm.matchid
@@ -137,7 +141,8 @@ BEGIN
 			m.ChildMatchType,
 			m.ParentID,
 			bm.bettype,
-			bm.betcheck
+			bm.betcheck,
+			bm.Transdesc
 		FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = bm.bettype
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = bm.matchid
@@ -158,7 +163,8 @@ BEGIN
 			m.ChildMatchType,
 			m.ParentID,
 			bm.bettype,
-			bm.betcheck
+			bm.betcheck,
+			bm.Transdesc
 		FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = bm.bettype
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = bm.matchid
@@ -209,7 +215,8 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			bm.bettype,
-			bm.betcheck
+			bm.betcheck,
+			bm.Transdesc
 		FROM
 			@SubTicket AS bm
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
@@ -270,7 +277,11 @@ BEGIN
 				d.MatchId,
 				p.BetType,
 				d.ResourceId,
-				d.HomeValue,
+				CASE
+					WHEN p.Bettype IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN p.Transdesc
+					WHEN p.Bettype IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN p.Transdesc
+					ELSE d.HomeValue
+				END AS HomeValue,
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
@@ -390,7 +401,8 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
 			bm.bettype,
-			bm.betcheck
+			bm.betcheck,
+			bm.Transdesc
 		FROM
 			@SubTicket AS bm
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
@@ -450,7 +462,11 @@ BEGIN
 				d.MatchId,
 				p.BetType,
 				d.ResourceId,
-				d.HomeValue,
+				CASE
+					WHEN p.Bettype IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN p.Transdesc
+					WHEN p.Bettype IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN p.Transdesc
+					ELSE d.HomeValue
+				END AS HomeValue,
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
@@ -574,7 +590,8 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
 			bm.Bettype,
-			bm.Betcheck
+			bm.Betcheck,
+			bm.Transdesc
 		FROM
 			@SubTicket AS bm
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
@@ -634,7 +651,11 @@ BEGIN
 				d.MatchId,
 				p.BetType,
 				d.ResourceId,
-				d.HomeValue,
+				CASE
+					WHEN p.Bettype IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN p.Transdesc
+					WHEN p.Bettype IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN p.Transdesc
+					ELSE d.HomeValue
+				END AS HomeValue,
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
@@ -725,7 +746,8 @@ BEGIN
 
 	-----> Order [LeagueID, Bettype] to group choices in Set x game y together in the same LeagueId.
 
-	SELECT DISTINCT * FROM @tmpResultDetail
+	SELECT DISTINCT *
+	FROM @tmpResultDetail
 	ORDER BY MatchId ASC,
 		ResourceId ASC
 END

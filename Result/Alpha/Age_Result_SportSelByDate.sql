@@ -44,6 +44,8 @@ AS
 		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
+		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
+		- 20220310@Razor: Support In-house Replication [Redmine: #164321]
 */
 
 BEGIN
@@ -65,6 +67,7 @@ BEGIN
 					FROM dbo.match AS m WITH (NOLOCK)
 					WHERE m.EventDate = @MatchDate
 						AND m.sporttype NOT IN (201, 162)
+						AND m.IsDeleted = 0
 						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 						AND (
 								m.eventstatus NOT IN ('closed', 'running')
@@ -117,7 +120,7 @@ BEGIN
 												AND m.matchid = o.MatchId
 												AND (m.sporttype IN (9, 45)		-- Badminton, Beach Volleyball
 													OR (m.sporttype = 50	-- Cricket
-														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))
+														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											)
 								OR EXISTS (	SELECT 1
@@ -152,7 +155,8 @@ BEGIN
 										AND r.LeagueID = l.leagueid
 									)
 						AND l.sporttype IN (181, 182, 183, 185, 184)
-						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
+						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
+						AND l.IsDeleted = 0
 
 					UNION ALL
 					
@@ -230,7 +234,7 @@ BEGIN
 												AND m.matchid = o.MatchId
 												AND (m.sporttype IN (9, 45)		-- Badminton, Beach Volleyball
 													OR (m.sporttype = 50	-- Cricket
-														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))
+														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 											)
 							OR EXISTS (	SELECT 1
@@ -266,6 +270,7 @@ BEGIN
 									)
 						AND l.sporttype IN (181, 182, 183, 185, 184)
 						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
+						AND l.IsDeleted = 0
 
 					UNION ALL
 

@@ -3,7 +3,8 @@
 ALTER PROCEDURE [dbo].[Age_BetList_SelMatchResult]
 	@MatchId	INT,
 	@BetType	SMALLINT	= NULL,
-	@BetId		BIGINT		= NULL
+	@BetId		BIGINT		= NULL,
+	@Transdesc	NVARCHAR(1000)	= NULL
 AS
 
 /*
@@ -55,6 +56,7 @@ AS
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
 		- 20220120@Razor: Support E-Sports phase 4 [Redmine: #166326]
+		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 */
 
 BEGIN
@@ -67,7 +69,7 @@ BEGIN
 		AwayValue			VARCHAR(50),
 		ResultStatusID		TINYINT,
 		SettlementStatusID	TINYINT,
-		OtherInfo			VARCHAR(50))
+		OtherInfo			VARCHAR(2000))
 
 	DECLARE @ResourceId	VARCHAR(20),
 		@SportType		SMALLINT,
@@ -206,7 +208,11 @@ BEGIN
 			SELECT
 				d.MatchId,
 				d.ResourceId,
-				d.HomeValue,
+				CASE
+					WHEN @Bettype IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN @Transdesc
+					WHEN @Bettype IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN @Transdesc
+					ELSE d.HomeValue
+				END AS HomeValue,
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
@@ -374,7 +380,11 @@ BEGIN
 			SELECT
 				d.MatchId,
 				d.ResourceId,
-				d.HomeValue,
+				CASE
+					WHEN @Bettype IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN @Transdesc
+					WHEN @Bettype IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN @Transdesc
+					ELSE d.HomeValue
+				END AS HomeValue,
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
@@ -545,7 +555,11 @@ BEGIN
 			SELECT
 				d.MatchId,
 				d.ResourceId,
-				d.HomeValue,
+				CASE
+					WHEN @Bettype IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN @Transdesc
+					WHEN @Bettype IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN @Transdesc
+					ELSE d.HomeValue
+				END AS HomeValue,
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
