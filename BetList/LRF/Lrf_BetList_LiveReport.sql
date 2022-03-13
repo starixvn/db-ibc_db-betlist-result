@@ -22,6 +22,7 @@ AS
 		- 20211104@Kos: Support Sports Lottery [RedmineID: #163191]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
+		- 20220313@Kos: Hotfix - Extend range for IP v6 [Redmine: #169856]
 */
 
 BEGIN
@@ -82,7 +83,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		TransDate		DATETIME,
 		WinLostDate		SMALLDATETIME,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		BetFrom			NVARCHAR(1),
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
@@ -114,7 +115,7 @@ BEGIN
 		Status			NVARCHAR(10),
 		TransDate		DATETIME,
 		WinLostDate		SMALLDATETIME,
-		Ip				NVARCHAR(15),
+		Ip				VARCHAR(45),
 		BetFrom			NVARCHAR(1),
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
