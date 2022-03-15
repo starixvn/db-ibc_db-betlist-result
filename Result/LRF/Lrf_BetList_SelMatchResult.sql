@@ -2,9 +2,10 @@
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResult]
 	@MatchId	INT,
-	@RaceNo		VARCHAR(50)	= NULL,
-	@BetType	SMALLINT	= NULL,
-	@BetId		BIGINT		= NULL
+	@RaceNo		VARCHAR(50)		= NULL,
+	@BetType	SMALLINT		= NULL,
+	@BetId		BIGINT			= NULL,
+	@TransDesc	NVARCHAR(1000)	= NULL
 AS
 
 /*
@@ -53,6 +54,7 @@ AS
 		- 20210420@Kos: Support Time Machine Over/Under [Redmine: #153302]
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20220225@Kos: Support E-Sports phase 4 [Redmine: #167094]
+		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 
 		*******************
 		sample test case:
@@ -218,7 +220,11 @@ BEGIN
 				SELECT
 					d.MatchId,
 					d.ResourceId,
-					d.HomeValue,
+					CASE
+						WHEN @BetType IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN @TransDesc
+						WHEN @BetType IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN @TransDesc
+						ELSE d.HomeValue
+					END AS HomeValue,
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
@@ -395,7 +401,11 @@ BEGIN
 				SELECT
 					d.MatchId,
 					d.ResourceId,
-					d.HomeValue,
+					CASE
+						WHEN @BetType IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN @TransDesc
+						WHEN @BetType IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN @TransDesc
+						ELSE d.HomeValue
+					END AS HomeValue,
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
@@ -572,7 +582,11 @@ BEGIN
 				SELECT
 					d.MatchId,
 					d.ResourceId,
-					d.HomeValue,
+					CASE
+						WHEN @BetType IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN @TransDesc
+						WHEN @BetType IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN @TransDesc
+						ELSE d.HomeValue
+					END AS HomeValue,
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,

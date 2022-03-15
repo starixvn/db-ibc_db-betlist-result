@@ -48,6 +48,7 @@ AS
 		- 20210420@Kos: Support Time Machine Over/Under [Redmine: #153302]
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20211227@Kos: Exclude league and match which IsDeleted = 1 [RedmineID: #163733]
+		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 */
 
 BEGIN
@@ -118,7 +119,7 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-						AND ResourceID NOT IN ('00')
+						AND ResourceID NOT IN ('00', '9442', '9443')
 						AND ResourceID NOT LIKE '9410%'
 						AND ResourceID NOT LIKE '9411%'
 						AND ResourceID NOT LIKE '9422%'
@@ -135,6 +136,44 @@ BEGIN
 						AND ResourceID NOT LIKE '9485%'
 						AND ResourceID NOT LIKE '9490%'
 						AND ResourceID NOT LIKE '9491%'
+						AND ResourceID NOT LIKE '9410%'		-- phase 2
+						AND ResourceID NOT LIKE '9411%'
+						AND ResourceID NOT LIKE '9428%'
+						AND ResourceID NOT LIKE '9429%'
+						AND ResourceID NOT LIKE '9708%'
+						AND ResourceID NOT LIKE '9709%'
+						AND ResourceID NOT LIKE '9454%'
+						AND ResourceID NOT LIKE '9455%'
+						AND ResourceID NOT LIKE '9460%'
+						AND ResourceID NOT LIKE '9461%'
+						AND ResourceID NOT LIKE '9484%'
+						AND ResourceID NOT LIKE '9485%'
+						AND ResourceID NOT LIKE '9680%'
+						AND ResourceID NOT LIKE '9690%'
+						AND ResourceID NOT LIKE '9662%'
+						AND ResourceID NOT LIKE '9663%'
+						AND ResourceID NOT LIKE '9676%'
+						AND ResourceID NOT LIKE '9686%'
+						AND ResourceID NOT LIKE '9668%'
+						AND ResourceID NOT LIKE '9671%'
+						AND ResourceID NOT LIKE '9650%'
+						AND ResourceID NOT LIKE '9651%'
+						AND ResourceID NOT LIKE '9672%'
+						AND ResourceID NOT LIKE '9675%'
+						AND ResourceID NOT LIKE '9656%'
+						AND ResourceID NOT LIKE '9657%'
+						AND ResourceID NOT LIKE '9636%'
+						AND ResourceID NOT LIKE '9637%'
+						AND ResourceID NOT LIKE '9616%'
+						AND ResourceID NOT LIKE '9617%'
+						AND ResourceID NOT LIKE '9624%'
+						AND ResourceID NOT LIKE '9625%'
+						AND ResourceID NOT LIKE '9630%'
+						AND ResourceID NOT LIKE '9631%'
+						AND ResourceID NOT LIKE '9730%'
+						AND ResourceID NOT LIKE '9731%'
+						AND ResourceID NOT LIKE '9736%'
+						AND ResourceID NOT LIKE '9737%'
 				) AS c ON c.MatchID = m.matchid AND m.sporttype = 50
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
@@ -225,7 +264,7 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-						AND ResourceID NOT IN ('00')
+						AND ResourceID NOT IN ('00', '9442', '9443')
 						AND ResourceID NOT LIKE '9410%'
 						AND ResourceID NOT LIKE '9411%'
 						AND ResourceID NOT LIKE '9422%'
@@ -242,6 +281,44 @@ BEGIN
 						AND ResourceID NOT LIKE '9485%'
 						AND ResourceID NOT LIKE '9490%'
 						AND ResourceID NOT LIKE '9491%'
+						AND ResourceID NOT LIKE '9410%'		-- phase 2
+						AND ResourceID NOT LIKE '9411%'
+						AND ResourceID NOT LIKE '9428%'
+						AND ResourceID NOT LIKE '9429%'
+						AND ResourceID NOT LIKE '9708%'
+						AND ResourceID NOT LIKE '9709%'
+						AND ResourceID NOT LIKE '9454%'
+						AND ResourceID NOT LIKE '9455%'
+						AND ResourceID NOT LIKE '9460%'
+						AND ResourceID NOT LIKE '9461%'
+						AND ResourceID NOT LIKE '9484%'
+						AND ResourceID NOT LIKE '9485%'
+						AND ResourceID NOT LIKE '9680%'
+						AND ResourceID NOT LIKE '9690%'
+						AND ResourceID NOT LIKE '9662%'
+						AND ResourceID NOT LIKE '9663%'
+						AND ResourceID NOT LIKE '9676%'
+						AND ResourceID NOT LIKE '9686%'
+						AND ResourceID NOT LIKE '9668%'
+						AND ResourceID NOT LIKE '9671%'
+						AND ResourceID NOT LIKE '9650%'
+						AND ResourceID NOT LIKE '9651%'
+						AND ResourceID NOT LIKE '9672%'
+						AND ResourceID NOT LIKE '9675%'
+						AND ResourceID NOT LIKE '9656%'
+						AND ResourceID NOT LIKE '9657%'
+						AND ResourceID NOT LIKE '9636%'
+						AND ResourceID NOT LIKE '9637%'
+						AND ResourceID NOT LIKE '9616%'
+						AND ResourceID NOT LIKE '9617%'
+						AND ResourceID NOT LIKE '9624%'
+						AND ResourceID NOT LIKE '9625%'
+						AND ResourceID NOT LIKE '9630%'
+						AND ResourceID NOT LIKE '9631%'
+						AND ResourceID NOT LIKE '9730%'
+						AND ResourceID NOT LIKE '9731%'
+						AND ResourceID NOT LIKE '9736%'
+						AND ResourceID NOT LIKE '9737%'
 				) AS c ON c.MatchID = m.matchid AND m.sporttype = 50
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162

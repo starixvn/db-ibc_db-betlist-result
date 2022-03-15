@@ -34,6 +34,7 @@ AS
 		- 20200507@Kos: Support E-Sports phase 3 [Redmine: #132386]
 		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
+		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 */
 
 BEGIN
@@ -74,7 +75,8 @@ BEGIN
 		Calculate			BIT,
 		SettlementStatus	TINYINT,
 		BetType				SMALLINT,
-		BetCheck			VARCHAR(50)
+		BetCheck			VARCHAR(50),
+		TransDesc			NVARCHAR(1000)
 	)
 
 	DECLARE @tmpResultDetail TABLE (
@@ -94,7 +96,8 @@ BEGIN
 		ChildMatchType	TINYINT,
 		ParentId		INT,
 		BetType			SMALLINT,
-		BetCheck		NVARCHAR(50)
+		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(1000)
 	)
 
 	-- Bettrans range
@@ -110,7 +113,8 @@ BEGIN
 			m.ChildMatchType,
 			m.ParentID,
 			bm.bettype,
-			bm.betcheck
+			bm.betcheck,
+			bm.transdesc
 		FROM dbo.bettransm AS bm WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = bm.bettype
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = bm.matchid
@@ -130,7 +134,8 @@ BEGIN
 			m.ChildMatchType,
 			m.ParentID,
 			bm.bettype,
-			bm.betcheck
+			bm.betcheck,
+			bm.transdesc
 		FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = bm.bettype
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = bm.matchid
@@ -151,7 +156,8 @@ BEGIN
 			m.ChildMatchType,
 			m.ParentID,
 			bm.bettype,
-			bm.betcheck
+			bm.betcheck,
+			bm.transdesc
 		FROM bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON sbt.Bettype = bm.bettype
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = bm.matchid
@@ -204,8 +210,9 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
-			bm.bettype,
-			bm.betcheck
+			bm.BetType,
+			bm.BetCheck,
+			bm.TransDesc
 		FROM
 			@SubTicket AS bm
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
@@ -266,7 +273,11 @@ BEGIN
 				d.MatchId,
 				p.BetType,
 				d.ResourceId,
-				d.HomeValue,
+				CASE
+					WHEN p.BetType IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN p.TransDesc
+					WHEN p.BetType IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN p.TransDesc
+					ELSE d.HomeValue
+				END AS HomeValue,
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
@@ -385,8 +396,9 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
-			bm.bettype,
-			bm.betcheck
+			bm.BetType,
+			bm.BetCheck,
+			bm.TransDesc
 		FROM
 			@SubTicket AS bm
 			INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON bm.matchid = m.matchid
@@ -446,7 +458,11 @@ BEGIN
 				d.MatchId,
 				p.BetType,
 				d.ResourceId,
-				d.HomeValue,
+				CASE
+					WHEN p.BetType IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN p.TransDesc
+					WHEN p.BetType IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN p.TransDesc
+					ELSE d.HomeValue
+				END AS HomeValue,
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
@@ -565,8 +581,9 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
-			bm.Bettype,
-			bm.Betcheck
+			bm.BetType,
+			bm.BetCheck,
+			bm.TransDesc
 		FROM
 			@SubTicket AS bm
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
@@ -626,7 +643,11 @@ BEGIN
 				d.MatchId,
 				p.BetType,
 				d.ResourceId,
-				d.HomeValue,
+				CASE
+					WHEN p.BetType IN (9662, 9664, 9666) AND d.ResourceId LIKE '9662%' THEN p.TransDesc
+					WHEN p.BetType IN (9663, 9665, 9667) AND d.ResourceId LIKE '9663%' THEN p.TransDesc
+					ELSE d.HomeValue
+				END AS HomeValue,
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
