@@ -144,6 +144,7 @@ AS
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20220124@Razor: Support SG Jackpot [Redmine: #166683]
 		- 20220222@Razor: Support Allbet Promotion [Redmine: #166981]
+		- 20220317@Razor: Support FGG [Redmine: #165683]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -402,6 +403,7 @@ BEGIN
 						WHEN s.ProductID = 67 THEN 'AP'		-- AdvantPlay
 						WHEN s.ProductID = 68 THEN 'APM'	-- AdvantPlay Mini
 						WHEN s.ProductID = 69 THEN 'BTC'	-- Bitcoin
+						WHEN s.ProductID = 70 THEN 'FGGL'	-- FGG
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
@@ -431,7 +433,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
-									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM') THEN b.matchid
+									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL') THEN b.matchid
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
