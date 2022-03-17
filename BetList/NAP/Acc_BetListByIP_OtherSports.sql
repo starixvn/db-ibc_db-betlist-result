@@ -150,6 +150,7 @@ AS
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
 		- 20220215@Razor: Support SG Jackpot [Redmine: #166683]
+		- 20220317@Razor: Support FGG [Redmine: #165683]
 */
 
 BEGIN
@@ -756,6 +757,7 @@ BEGIN
 						WHEN s.ProductID = 67 THEN 'AP'								-- AdvantPlay
 						WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
 						WHEN s.ProductID = 69 THEN 'BTC'							-- Bitcoin
+						WHEN s.ProductID = 70 THEN 'FGGL'							-- FGG
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -963,7 +965,7 @@ BEGIN
 				END
 
 				-- bettransLC
-				IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL'))
+				IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL'))
 				BEGIN
 					-- Running
 					INSERT INTO @TmpData
@@ -978,7 +980,7 @@ BEGIN
 						0 AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL')
+					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
 						AND blc.statusID IN (0, 1)
 					GROUP BY
 						c.TransId,
@@ -1001,7 +1003,7 @@ BEGIN
 						0 AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL')
+					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
 						AND blc.statusID NOT IN (0, 1)
 					GROUP BY
 						c.TransId,
@@ -1011,7 +1013,7 @@ BEGIN
 				DELETE b
 				FROM @Data AS b
 				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 'IBCLC', 
-						'ION', 'WM', 'GDG', 'BG', 'PPL', 'HB', 'VGA')
+						'ION', 'WM', 'GDG', 'BG', 'PPL', 'HB', 'VGA', 'FGGL')
 					AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 			END
 
@@ -1026,7 +1028,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN', 'ION', 
-										'PGS', 'JK', 'RNGW', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM') THEN b.matchid
+										'PGS', 'JK', 'RNGW', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1208,7 +1210,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'VGA')
+							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'VGA', 'FGGL')
 						OR b.WinLostDate < @Yesterday)
 
 				-- translog
@@ -1350,7 +1352,7 @@ BEGIN
 					b.Creator,
 					b.Currency,
 					CASE
-						WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'GDG', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM') THEN b.matchid
+						WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'GDG', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL') THEN b.matchid
 						WHEN b.Product = 'AllBet' THEN 211 -- AllBet
 						WHEN b.Product = 'VB' THEN 212 -- Macau Games
 						WHEN b.Product = 'FW' THEN 219 -- Fishing World
@@ -1419,12 +1421,12 @@ BEGIN
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
 				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 
-						'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL')
+						'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
 					AND b.WinLostDate >= @Yesterday
 
 				DELETE FROM @Data
 				WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 
-						'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL')
+						'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
 					AND WinLostDate >= @Yesterday
 
 				INSERT INTO @Data
@@ -1474,7 +1476,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 
-										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM') THEN b.matchid
+										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1684,7 +1686,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 
-										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM') THEN b.matchid
+										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe

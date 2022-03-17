@@ -39,6 +39,7 @@ AS
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20220317@Razor: Support FGG [Redmine: #165683]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -60,7 +61,8 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59, 65)	-- Support AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, Big Gaming only, PP Live Casino
+	WHERE ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59, 65, 70)	
+	-- Support AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, Big Gaming only, PP Live Casino, FGG
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
 
@@ -134,7 +136,8 @@ BEGIN
 		BetTeam			NVARCHAR(50),
 		LeagueId		INT,
 		CurrencyId		TINYINT,
-		SiteId			VARCHAR(7)
+		SiteId			VARCHAR(7),
+		EventDate		DATETIME
 	)
 
 	-- Get currency name
@@ -264,12 +267,12 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59, 65) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59, 65, 70) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59, 65) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59, 65, 70) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -278,7 +281,11 @@ BEGIN
 			END AS BetTeam,
 			0 AS LeagueId,
 			blc.currency,
-			blc.SiteId
+			blc.SiteId,
+			CASE
+				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
+				ELSE ''
+			END AS EventDate
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
@@ -384,12 +391,12 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59, 65) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59, 65, 70) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59, 65) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59, 65, 70) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -398,7 +405,11 @@ BEGIN
 			END AS BetTeam,
 			0 AS LeagueId,
 			blc.Currency,
-			blc.SiteId
+			blc.SiteId,
+			CASE
+				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
+				ELSE ''
+			END AS EventDate
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
@@ -503,12 +514,12 @@ BEGIN
 			dp.IP,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59, 65) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 59, 65, 70) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59, 65) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 59, 65, 70) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -517,7 +528,11 @@ BEGIN
 			END AS BetTeam,
 			0 AS LeagueId,
 			blc.Currency,
-			blc.SiteId
+			blc.SiteId,
+			CASE
+				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
+				ELSE ''
+			END AS EventDate
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			CROSS APPLY dbo.f_IP_Decompress(blc.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
