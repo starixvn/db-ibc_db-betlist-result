@@ -79,6 +79,7 @@ AS
 		- 20220215@Razor: VGaming, Sabaclub return SiteId on MatchCode property
 		- 20220215@Razor: Support SG Jackpot [Redmine: #166683]
 		- 20220317@Razor: Support FGG [Redmine: #165683]
+		- 20220324@Razor: Support TxId for VGaming [Redmine: #170054]
 */
 
 BEGIN
@@ -582,8 +583,8 @@ BEGIN
 						0 AS BetId,
 						b.refno,
 						CASE
-							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-							WHEN s.productID IN (42, 66) THEN ISNULL(b.SiteID, '')
+							WHEN s.productID IN (24, 32, 34, 36, 66) THEN b.Additional
+							WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS MatchCode,
 						CASE
@@ -1032,8 +1033,8 @@ BEGIN
 						0 AS BetId,
 						b.refno,
 						CASE
-							WHEN s.productID IN (24, 32, 34, 36) THEN b.Additional
-							WHEN s.productID IN (42, 66) THEN ISNULL(b.SiteID, '')
+							WHEN s.productID IN (24, 32, 34, 36, 66) THEN b.Additional
+							WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
 							ELSE ''
 						END AS MatchCode,
 						CASE

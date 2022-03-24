@@ -55,6 +55,7 @@ AS
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20220215@Razor: VGaming, Sabaclub return SiteId on MatchCode property
 		- 20220215@Razor: Support SG Jackpot [Redmine: #166683]
+		- 20220324@Razor: Support TxId for VGaming [Redmine: #170054]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -227,8 +228,8 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
-				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (24, 32, 34, 36, 66) THEN brng.Additional
+				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -295,8 +296,8 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
-				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (24, 32, 34, 36, 66) THEN brng.Additional
+				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -362,8 +363,8 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34, 36) THEN brng.Additional
-				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (24, 32, 34, 36, 66) THEN brng.Additional
+				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
