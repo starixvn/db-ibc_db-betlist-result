@@ -53,6 +53,7 @@ AS
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
 		- 20211117@Razor: Support In-house Replication [Redmine: #164321]
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
+		- 20220310@Razor: Support Cricket AIO 2 - Increase length OtherInfo column [Redmine: #166334]
 */
 
 BEGIN
@@ -422,7 +423,7 @@ BEGIN
 		AwayValue			VARCHAR(50),
 		ResultStatusId		TINYINT,
 		SettlementStatusId	TINYINT,
-		OtherInfo			VARCHAR(50)
+		OtherInfo			VARCHAR(2000)
 	)
 
 	IF @EventDate > @MoveBetsDay
