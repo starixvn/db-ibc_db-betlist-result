@@ -54,6 +54,7 @@ AS
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20211227@Kos: Exclude league and match which IsDeleted = 1 [RedmineID: #163733]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
+		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
 */
 
 BEGIN 
@@ -517,7 +518,7 @@ BEGIN
 		AwayValue			VARCHAR(50),
 		ResultStatusId		TINYINT,
 		SettlementStatusId	TINYINT,
-		OtherInfo			VARCHAR(50)
+		OtherInfo			VARCHAR(2000)
 	)
 
 	IF @EventDate > @MoveBetsDay

@@ -34,6 +34,7 @@ AS
 		- 20210420@Kos: Support Time Machine Over/Under [Redmine: #153302]
 		- 20210922@Kos: Support Cricket AIO 1.2 [Redmine: #160452]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
+		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
 */
 
 BEGIN
@@ -48,7 +49,7 @@ BEGIN
 		AwayValue			VARCHAR(50),
 		ResultStatusId		TINYINT,
 		SettlementStatusId	TINYINT,
-		OtherInfo			VARCHAR(50)
+		OtherInfo			VARCHAR(2000)
 	)
 
 	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)

@@ -35,6 +35,7 @@ AS
 		- 20210223@Kos: Support Cricket AIO [Redmine: #150386]
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
+		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
 */
 
 BEGIN
@@ -87,7 +88,7 @@ BEGIN
 		AwayValue			VARCHAR(20),
 		ResultStatusId		TINYINT,
 		SettlementStatusId	TINYINT,
-		OtherInfo			VARCHAR(50)
+		OtherInfo			VARCHAR(2000)
 	)
 
 	DECLARE @SubTicket AS TABLE (
