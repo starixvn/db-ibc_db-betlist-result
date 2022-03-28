@@ -36,6 +36,7 @@ AS
 		- 20210630@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
+		- 20220328@Kos: Fix length issue [Redmine: #168034]
 */
 
 BEGIN
@@ -292,7 +293,10 @@ BEGIN
 					OR (LEN(d.ResourceID) = 4 AND p.SportType = 9)
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+						AND d.ResourceID LIKE '%' + CASE
+														WHEN LEN(ISNULL(p.BetCheck, '')) > 1 THEN RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+														ELSE ''
+													END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
@@ -477,7 +481,10 @@ BEGIN
 					OR (LEN(d.ResourceID) = 4 AND p.SportType = 9)
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+						AND d.ResourceID LIKE '%' + CASE
+														WHEN LEN(ISNULL(p.BetCheck, '')) > 1 THEN RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+														ELSE ''
+													END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
@@ -662,7 +669,10 @@ BEGIN
 					OR (LEN(d.ResourceID) = 4 AND p.SportType = 9)
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)))
+						AND d.ResourceID LIKE '%' + CASE
+														WHEN LEN(ISNULL(p.BetCheck, '')) > 1 THEN RIGHT(p.BetCheck, LEN(p.BetCheck) - 1)
+														ELSE ''
+													END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
