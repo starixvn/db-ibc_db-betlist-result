@@ -61,6 +61,7 @@ AS
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
+		- 20220526@Kos: Support FGG [Redmine: #167897]
 */
 
 BEGIN
@@ -595,6 +596,7 @@ BEGIN
 							WHEN s.ProductID = 67 THEN 'AP'								-- AdvantPlay
 							WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
 							WHEN s.ProductID = 69 THEN 'BTC'							-- Bitcoin
+							WHEN s.ProductID = 70 THEN 'FGGL'							-- FGG
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -862,6 +864,7 @@ BEGIN
 						WHEN s.ProductID = 66 THEN 'VGA'	-- Vgaming
 						WHEN s.ProductID = 67 THEN 'AP'		-- AdvantPlay
 						WHEN s.ProductID = 68 THEN 'APM'	-- AdvantPlay Mini
+						WHEN s.ProductID = 70 THEN 'FGGL'	-- FGG
 						ELSE 'Unknown'
 					END AS Product,
 					s.RefTable
@@ -985,7 +988,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('VB', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'CB', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
-									'GDG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM') THEN b.MatchId
+									'GDG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG', 'H5LG', 'SLT', 'VS3') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('BTC') THEN m3rd.SportType
