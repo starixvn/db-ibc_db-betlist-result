@@ -1,2 +1,1 @@
-BetList/LRF/Lrf_BetList_SelWinloss_Mem.sql
-BetList/LRF/Lrf_BetList_SelWinLossByDate_Mem.sql
+BetList/LRF/Lrf_BetList_Licensee.sql

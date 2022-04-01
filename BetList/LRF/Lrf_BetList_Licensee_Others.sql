@@ -72,6 +72,7 @@ AS
 		- 20220128@Kos: Support search by IP [RedmineID: #166079]
 		- 20220221@Kos: Support SG Jackpot [Redmine: #167035]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
+		- 20220414@Kos: Fix issue search Void status [Redmine: #170054]
 */
 
 BEGIN
@@ -1232,13 +1233,13 @@ BEGIN
 			WHERE (Status = 'Draw' AND ',' + @StatusIdList + ',' NOT LIKE '%,111,%')
 				OR (Status = 'Won' AND ',' + @StatusIdList + ',' NOT LIKE '%,112,%')
 				OR (Status = 'Lose' AND ',' + @StatusIdList + ',' NOT LIKE '%,113,%')
-
-			DELETE b
-			FROM #Data AS b
-			WHERE b.RefTable IN (1, 2)
-				AND b.Winlostdate >= @Yesterday
-				AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 		END
+
+		DELETE b
+		FROM #Data AS b
+		WHERE b.RefTable IN (1, 2)
+			AND b.Winlostdate >= @Yesterday
+			AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
 		BEGIN

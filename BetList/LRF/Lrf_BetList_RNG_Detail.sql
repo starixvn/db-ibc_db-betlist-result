@@ -49,6 +49,7 @@ AS
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Hotfix - Vgaming result [Redmine: #168552]
 		- 20220217@Kos: Support SG Jackpot [Redmine: #167035]
+		- 20220401@Kos: Support TxId for Vgaming [Redmine: #170054]
 
 	Parameters:
 		- @TransType
@@ -193,8 +194,8 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (24, 32, 34, 66) THEN brng.Additional
+				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -254,8 +255,8 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (24, 32, 34, 66) THEN brng.Additional
+				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -313,8 +314,8 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34) THEN brng.Additional
-				WHEN sbt.productID IN (42, 66) THEN ISNULL(brng.SiteID, '')
+				WHEN sbt.productID IN (24, 32, 34, 66) THEN brng.Additional
+				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
 			CASE
