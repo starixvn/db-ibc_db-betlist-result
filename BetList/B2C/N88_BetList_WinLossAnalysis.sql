@@ -42,7 +42,7 @@ BEGIN
 		@ToDateTimeGMT0			DATETIME
 
 	SELECT @FromDateTimeGMT0	= DATEADD(HOUR, -@TimeZone, CONVERT(DATETIME, @FromDate)),
-		@ToDateTimeGMT0			= DATEADD(HOUR, -@TimeZone, CONVERT(DATETIME, @ToDate))
+		@ToDateTimeGMT0			= DATEADD(HOUR, -@TimeZone, CONVERT(DATETIME, DATEADD(DAY, 1, @ToDate)))
 
 	DECLARE @FDate	DATETIME = @FromDateTimeGMT0,
 		@TDate		DATETIME = @ToDateTimeGMT0
@@ -61,7 +61,7 @@ BEGIN
 	CREATE TABLE #Tickets (TransId BIGINT)
 
 	-- TpBetRecord
-	IF @TDate >= @ArchiveDate
+	IF @ToDateTimeGMT0 >= @ArchiveDate
 	BEGIN
 		SELECT @FDate = CASE
 							WHEN @FromDateTimeGMT0 > @ArchiveDate THEN @FromDateTimeGMT0
@@ -77,7 +77,7 @@ BEGIN
 						ELSE 0
 					END AS TransId
 			FROM DBN88.bodb_N88.dbo.TpBetRecord AS r WITH (NOLOCK)
-			WHERE r.SettledTime BETWEEN @FDate AND @TDate
+			WHERE r.SettledTime >= @FDate AND r.SettledTime < @TDate
 				AND r.CustId = @CustIdTmp
 				AND r.GameType = @ProductId
 				AND 1 = CASE
@@ -94,7 +94,7 @@ BEGIN
 						ELSE 0
 					END AS TransId
 			FROM DBN88.bodb_N88.dbo.TpBetRecord AS r WITH (NOLOCK)
-			WHERE r.TransTime BETWEEN @FDate AND @TDate
+			WHERE r.TransTime >= @FDate AND r.TransTime < @TDate
 				AND r.CustId = @CustIdTmp
 				AND r.GameType = @ProductId
 				AND 1 = CASE
@@ -106,12 +106,12 @@ BEGIN
 	END
 
 	-- TpBetRecord_bk
-	IF @FDate < @ArchiveDate
+	IF @FromDateTimeGMT0 < @ArchiveDate
 	BEGIN
 		SELECT @FDate = @FromDateTimeGMT0,
 			@TDate = CASE
 						WHEN @ToDateTimeGMT0 < @ArchiveDate THEN @ToDateTimeGMT0
-						ELSE DATEADD(HOUR, 1, @ArchiveDate)
+						ELSE @ArchiveDate
 					END
 
 		IF @FilterBy = 1	-- By winlostdate
@@ -122,7 +122,7 @@ BEGIN
 						ELSE 0
 					END AS TransId
 			FROM DBN88.bodb_N88_Archive.dbo.TpBetRecord_bk AS r WITH (NOLOCK)
-			WHERE r.SettledTime BETWEEN @FDate AND @TDate
+			WHERE r.SettledTime >= @FDate AND r.SettledTime < @TDate
 				AND r.CustId = @CustIdTmp
 				AND r.GameType = @ProductId
 				AND 1 = CASE
@@ -139,7 +139,7 @@ BEGIN
 						ELSE 0
 					END AS TransId
 			FROM DBN88.bodb_N88_Archive.dbo.TpBetRecord_bk AS r WITH (NOLOCK)
-			WHERE r.TransTime BETWEEN @FDate AND @TDate
+			WHERE r.TransTime >= @FDate AND r.TransTime < @TDate
 				AND r.CustId = @CustIdTmp
 				AND r.GameType = @ProductId
 				AND 1 = CASE
