@@ -127,6 +127,7 @@ AS
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20220124@Razor: Support SG Jackpot [Redmine: #166683]
 		- 20220317@Razor: Support FGG [Redmine: #165683]
+		- 20220422@Razor: Support Virtual games result [Redmine: #170997]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -782,7 +783,7 @@ BEGIN
 									ELSE 0
 								END
 					,SiteId = CASE
-								WHEN c.Product IN ('H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
+								WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
 								ELSE ''
 							END
 				FROM @Tickets AS c
@@ -983,7 +984,7 @@ BEGIN
 											ELSE 0
 										END
 						,SiteId = CASE
-									WHEN c.Product IN ('H5LG', 'SLT') THEN b.SiteId
+									WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN b.SiteId
 									ELSE ''
 								END
 					FROM @Tickets AS c
@@ -1365,7 +1366,7 @@ BEGIN
 									ELSE 0
 								END
 					,SiteId = CASE
-								WHEN c.Product IN ('H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
+								WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
 								ELSE ''
 							END
 				FROM @Tickets AS c
