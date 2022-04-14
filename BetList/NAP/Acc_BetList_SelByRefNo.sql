@@ -137,6 +137,7 @@ AS
 		- 20220225@Razor: Hide Saba word in league name for China View licensee [Redmine: #169101]
 		- 20220317@Razor: Support FGG [Redmine: #165683]
 		- 20220324@Razor: Support TxId for VGaming [Redmine: #170054]
+		- 20220422@Razor: Support Virtual games result [Redmine: #170997]
 */
 
 BEGIN
@@ -881,7 +882,7 @@ BEGIN
 					b.currency,
 					CASE 
 						WHEN s.ProductId = 3 AND s.EventType = 0 THEN CONVERT(VARCHAR(20), b.betdaqid)
-						WHEN s.ProductId = 63 THEN CONVERT(VARCHAR(20), b.betdaqid)
+						WHEN s.ProductId IN (38, 63) THEN CONVERT(VARCHAR(20), b.betdaqid)
 						ELSE '' 
 					END AS SiteId,
 					0 AS LeagueGroupID
@@ -2497,7 +2498,7 @@ BEGIN
 					b.currency,
 					CASE 
 						WHEN s.ProductId = 3 AND s.EventType = 0 THEN CONVERT(VARCHAR(20), b.betdaqid)
-						WHEN s.ProductId = 63 THEN CONVERT(VARCHAR(20), b.betdaqid)
+						WHEN s.ProductId IN (38, 63) THEN CONVERT(VARCHAR(20), b.betdaqid)
 						ELSE '' 
 					END AS SiteId,
 					0 AS LeagueGroupID

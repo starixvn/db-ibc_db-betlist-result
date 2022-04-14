@@ -80,6 +80,7 @@ AS
 		- 20220215@Razor: Support SG Jackpot [Redmine: #166683]
 		- 20220317@Razor: Support FGG [Redmine: #165683]
 		- 20220324@Razor: Support TxId for VGaming [Redmine: #170054]
+		- 20220422@Razor: Support Virtual games result [Redmine: #170997]
 */
 
 BEGIN
@@ -413,7 +414,7 @@ BEGIN
 							END AS ExtraInfo,
 							-1 AS BetdaqId,
 							b.currency,
-							'' AS SiteId
+							b.betdaqid AS SiteId
 						FROM dbo.bettrans AS b WITH (NOLOCK)
 							INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 						WHERE b.custid = @CustId
@@ -862,7 +863,7 @@ BEGIN
 						END AS ExtraInfo,
 						-1 AS BetdaqId,
 						b.currency,
-						'' AS SiteId
+						b.betdaqid AS SiteId
 					FROM dbo.bettrans14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 					WHERE b.custid = @CustId

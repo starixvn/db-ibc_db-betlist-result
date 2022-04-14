@@ -169,6 +169,7 @@ AS
 		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
 		- 20220215@Razor: Support SG Jackpot [Redmine: #166683]
 		- 20220317@Razor: Support FGG [Redmine: #165683]
+		- 20220422@Razor: Support Virtual games result [Redmine: #170997]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -803,7 +804,7 @@ BEGIN
 					ELSE 0
 				END AS CurrencyId,
 				CASE
-					WHEN s.ProductID IN (3, 63) THEN CONVERT(VARCHAR(20), b.betdaqid)
+					WHEN s.ProductID IN (3, 38, 63) THEN CONVERT(VARCHAR(20), b.betdaqid)
 					ELSE ''
 				END AS SiteId
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
@@ -1898,7 +1899,7 @@ BEGIN
 						ELSE 0
 					END AS CurrencyId,
 					CASE
-						WHEN s.ProductId IN (3, 63) THEN b.SiteId
+						WHEN s.ProductId IN (3, 38, 63) THEN b.SiteId
 						ELSE ''
 					END AS SiteId
 				FROM dbo.translog AS b WITH (NOLOCK)
@@ -2016,7 +2017,7 @@ BEGIN
 						ELSE 0
 					END AS CurrencyId,
 					CASE
-						WHEN s.ProductId IN (3, 63) THEN CONVERT(VARCHAR(20), b.betdaqid)
+						WHEN s.ProductId IN (3, 38, 63) THEN CONVERT(VARCHAR(20), b.betdaqid)
 						ELSE ''
 					END AS SiteId
 				FROM dbo.bettrans AS b WITH (NOLOCK)
