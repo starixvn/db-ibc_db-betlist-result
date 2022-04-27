@@ -174,6 +174,7 @@ AS
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
+		- 20220427@Kos: Support Virtual Games result [Redmine: #170997]
 */
 
 BEGIN
@@ -1317,7 +1318,7 @@ BEGIN
 									ELSE 0
 								END,
 					SiteId = CASE
-								WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								WHEN b.Product IN ('H5LG', 'SLT', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
 								ELSE ''
 							END
 				FROM #PagingData AS b
@@ -1490,7 +1491,7 @@ BEGIN
 									ELSE 0
 								END,
 					SiteId = CASE
-								WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								WHEN b.Product IN ('H5LG', 'SLT', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
 								ELSE ''
 							END
 				FROM #PagingData AS b
@@ -1659,7 +1660,7 @@ BEGIN
 									ELSE 0
 								END,
 					SiteId = CASE
-								WHEN b.Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								WHEN b.Product IN ('H5LG', 'SLT', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
 								ELSE ''
 							END
 				FROM #PagingData AS b

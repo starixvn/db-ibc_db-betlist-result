@@ -73,6 +73,7 @@ AS
 		- 20220221@Kos: Support SG Jackpot [Redmine: #167035]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
 		- 20220414@Kos: Fix issue search Void status [Redmine: #170054]
+		- 20220427@Kos: Support Virtual Games result [Redmine: #170997]
 */
 
 BEGIN
@@ -147,6 +148,7 @@ BEGIN
 		BetdaqId			BIGINT,
 		ExtraInfo			VARCHAR(1000),
 		OriginalBetType		SMALLINT,
+		SiteId				VARCHAR(20),
 		Product				VARCHAR(30),
 		RefTable			TINYINT,
 		WhTicket			TINYINT
@@ -202,6 +204,7 @@ BEGIN
 		BetdaqId			BIGINT,
 		ExtraInfo			VARCHAR(1000),
 		OriginalBetType		SMALLINT,
+		SiteId				VARCHAR(20),
 		Product				VARCHAR(30),
 		RefTable			TINYINT,
 		WhTicket			TINYINT
@@ -1507,7 +1510,11 @@ BEGIN
 					OriginalBetType = CASE
 										WHEN b.Product IN ('CO') THEN b.OriginalBetType
 										ELSE 0
-									END
+									END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #PagingData AS b
 					LEFT JOIN @TmpData AS x
 						ON b.RefTable IN (1, 2)
@@ -1654,7 +1661,11 @@ BEGIN
 					OriginalBetType = CASE
 										WHEN b.Product IN ('CO') THEN b.OriginalBetType
 										ELSE 0
-									END
+									END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -1755,7 +1766,8 @@ BEGIN
 				a.TransDesc,
 				a.BetdaqId,
 				a.ExtraInfo,
-				a.OriginalBetType
+				a.OriginalBetType,
+				a.SiteId
 			FROM
 				#PagingData AS a
 				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = a.CustId
@@ -1901,7 +1913,11 @@ BEGIN
 					OriginalBetType = CASE
 										WHEN b.Product IN ('CO') THEN b.OriginalBetType
 										ELSE 0
-									END
+									END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #Data AS b
 					LEFT JOIN @TmpData AS x
 						ON b.RefTable IN (1, 2)
@@ -2047,7 +2063,11 @@ BEGIN
 					OriginalBetType = CASE
 										WHEN b.Product IN ('CO') THEN b.OriginalBetType
 										ELSE 0
-									END
+									END,
+					SiteId = CASE
+								WHEN b.Product IN ('H5LG', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								ELSE ''
+							END
 				FROM #Data AS b
 					LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
@@ -2164,7 +2184,8 @@ BEGIN
 					a.TransDesc,
 					a.BetdaqId,
 					a.ExtraInfo,
-					a.OriginalBetType
+					a.OriginalBetType,
+					a.SiteId
 				FROM
 					#Data AS a
 					INNER JOIN #Customer AS c ON c.custid = a.CustId

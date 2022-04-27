@@ -71,6 +71,7 @@ AS
 		- 20220217@Kos: Support SG Jackpot [Redmine: #167035]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
 		- 20220401@Kos: Support TxId for Vgaming [Redmine: #170054]
+		- 20220427@Kos: Support Virtual Games result [Redmine: #170997]
 */
 
 BEGIN
@@ -909,7 +910,7 @@ BEGIN
 				ELSE 0
 			END AS RefCode,
 			CASE
-				WHEN @Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+				WHEN @Product IN ('H5LG', 'SLT', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
 				ELSE ''
 			END AS SiteId,
 			2 AS WhTicket
@@ -1134,7 +1135,7 @@ BEGIN
 				ELSE 0
 			END AS RefCode,
 			CASE
-				WHEN @Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+				WHEN @Product IN ('H5LG', 'SLT', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
 				ELSE ''
 			END AS SiteId,
 			3 AS WhTicket
@@ -1358,7 +1359,7 @@ BEGIN
 				ELSE 0
 			END AS RefCode,
 			CASE
-				WHEN @Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+				WHEN @Product IN ('H5LG', 'SLT', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
 				ELSE ''
 			END AS SiteId,
 			4 AS WhTicket
