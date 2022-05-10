@@ -46,6 +46,7 @@ AS
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 		- 20220310@Razor: Support In-house Replication [Redmine: #164321]
+		- 20220510@Razor: Remove In-house Replication [Redmine: #171699]
 */
 
 BEGIN
@@ -67,7 +68,6 @@ BEGIN
 					FROM dbo.match AS m WITH (NOLOCK)
 					WHERE m.EventDate = @MatchDate
 						AND m.sporttype NOT IN (201, 162)
-						AND m.IsDeleted = 0
 						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 						AND (
 								m.eventstatus NOT IN ('closed', 'running')
@@ -156,7 +156,6 @@ BEGIN
 									)
 						AND l.sporttype IN (181, 182, 183, 185, 184)
 						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
-						AND l.IsDeleted = 0
 
 					UNION ALL
 					
@@ -269,8 +268,7 @@ BEGIN
 										AND r.LeagueID = l.leagueid
 									)
 						AND l.sporttype IN (181, 182, 183, 185, 184)
-						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END 
-						AND l.IsDeleted = 0
+						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
 
 					UNION ALL
 

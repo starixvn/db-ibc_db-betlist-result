@@ -16,10 +16,11 @@ Revisions:
 	- 20110304@Lukas: exclude Greyhound & Harness racing sports (152,153)
 	- 20110628@Jamie: Adding REFUND result for Outright 
 	- 20211117@Razor: Support In-house Replication [Redmine: #164321]
+	- 20220510@Razor: Remove In-house Replication [Redmine: #171699]
 */
 BEGIN
 	SET NOCOUNT ON 
-
+
 	SELECT @isShowAll = CASE @isShowAll WHEN 1 THEN NULL ELSE 0 END
 
 	SELECT DISTINCT 
@@ -32,7 +33,6 @@ BEGIN
 			AND [status] IN ('WON','REFUND')
 			AND eventdate >= @FromDate 
 			AND eventdate <= @ToDate
-			AND IsDeleted = 0
 		UNION ALL
 		SELECT leagueid, eventdate, teamid, status
 		FROM dbo.outright14 AS o14 WITH (nolock)
@@ -44,7 +44,6 @@ BEGIN
 		INNER JOIN dbo.league WITH (nolock) ON outright.leagueid = league.leagueid
 	WHERE league.sporttype NOT IN (151,152,153)
 		AND league.isTest = ISNULL(@isShowAll, league.isTest)
-		AND league.IsDeleted = 0
 	ORDER BY outright.leagueid,outright.eventdate, outright.teamid
 END
 GO
