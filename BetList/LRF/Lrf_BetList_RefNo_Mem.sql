@@ -74,6 +74,7 @@ AS
 		- 20220427@Kos: Support Virtual Games result [Redmine: #170997]
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220512@Kos: Support FGG [Redmine: #167897]
+		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
 */
 
 BEGIN
@@ -112,7 +113,7 @@ BEGIN
 		INSERT INTO @SportBettype
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 61, 62, 63, 66, 67, 68, 69, 70)
+		WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 60, 61, 62, 63, 66, 67, 68, 69, 70)
 			AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914, 999)
 			AND BetType NOT BETWEEN 801 AND 899
 	END
@@ -486,6 +487,7 @@ BEGIN
 						WHEN @ProductId = 56 THEN 'JK'			-- Joker
 						WHEN @ProductId = 57 THEN 'BG'			-- Big Gaming
 						WHEN @ProductId = 59 THEN 'GDG'			-- GDG
+						WHEN @ProductId = 60 THEN 'MXG'			-- MaxGame
 						WHEN @ProductId = 61 THEN 'HB'			-- Habanero
 						WHEN @ProductId = 62 THEN 'CG'			-- CG
 						WHEN @ProductId = 63 THEN 'SLT'			-- SLT
@@ -725,7 +727,7 @@ BEGIN
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
-					'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL') THEN b.matchid
+					'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -986,7 +988,7 @@ BEGIN
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 
-					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL') THEN b.matchid
+					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -1212,7 +1214,7 @@ BEGIN
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 
-					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL') THEN b.matchid
+					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -1568,6 +1570,7 @@ BEGIN
 						WHEN @ProductId = 42 THEN 'SBC'			-- Saba.club
 						WHEN @ProductId = 55 THEN 'PGS'			-- PG Soft
 						WHEN @ProductId = 56 THEN 'JK'			-- Joker
+						WHEN @ProductId = 60 THEN 'MXG'			-- MaxGame
 						WHEN @ProductId = 61 THEN 'HB'			-- Habanero
 						WHEN @ProductId = 62 THEN 'CG'			-- CG
 						WHEN @ProductId = 66 THEN 'VGA'			-- Vgaming
@@ -1636,7 +1639,7 @@ BEGIN
 					ELSE ''
 				END AS MatchCode,
 				'' AS Race,
-				NULL AS EventDate,
+				TransDate3rd AS EventDate,
 				0 AS HomeId,
 				0 AS AwayId,
 				'' AS BetStatus,
@@ -1721,7 +1724,7 @@ BEGIN
 					ELSE ''
 				END AS MatchCode,
 				'' AS Race,
-				NULL AS EventDate,
+				TransDate3rd AS EventDate,
 				0 AS HomeId,
 				0 AS AwayId,
 				'' AS BetStatus,
@@ -1806,7 +1809,7 @@ BEGIN
 					ELSE ''
 				END AS MatchCode,
 				'' AS Race,
-				NULL AS EventDate,
+				TransDate3rd AS EventDate,
 				0 AS HomeId,
 				0 AS AwayId,
 				'' AS BetStatus,

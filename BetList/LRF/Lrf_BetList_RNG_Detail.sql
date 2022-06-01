@@ -50,6 +50,7 @@ AS
 		- 20220215@Kos: Hotfix - Vgaming result [Redmine: #168552]
 		- 20220217@Kos: Support SG Jackpot [Redmine: #167035]
 		- 20220401@Kos: Support TxId for Vgaming [Redmine: #170054]
+		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
 
 	Parameters:
 		- @TransType
@@ -90,12 +91,10 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	-- Support Microgaming RNG Casino, RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 55, 56, 61, 62, 66, 67, 68)
-		OR (ProductID = 6 AND SubProduct <> '')
+	WHERE RefTable = 1 AND ProductID NOT IN (17, 50)
 
 	DECLARE @tmpStatus TABLE (StatusId TINYINT)
 
@@ -157,7 +156,8 @@ BEGIN
 		OddsSpread		MONEY,
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
-		SiteId			VARCHAR(7)
+		SiteId			VARCHAR(7),
+		EventDate		DATETIME
 	)
 
 	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate > @MoveBetsDay)
@@ -198,10 +198,7 @@ BEGIN
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
-			CASE
-				WHEN sbt.productID IN (6, 22, 24, 32, 34, 36, 55, 56, 61, 62, 66, 67, 68) THEN brng.GameId3rd
-				ELSE ''
-			END AS BetTeam,
+			brng.GameId3rd AS BetTeam,
 			CASE
 				WHEN sbt.ProductID IN (32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
@@ -214,7 +211,11 @@ BEGIN
 				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
-			ISNULL(brng.SiteID, '')
+			ISNULL(brng.SiteID, '') AS SiteId,
+			CASE
+				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
+				ELSE ''
+			END AS EventDate
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId
@@ -259,10 +260,7 @@ BEGIN
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
-			CASE
-				WHEN sbt.productID IN (6, 22, 24, 32, 34, 36, 55, 56, 61, 62, 66, 67, 68) THEN brng.GameId3rd
-				ELSE ''
-			END AS BetTeam,
+			brng.GameId3rd AS BetTeam,
 			CASE
 				WHEN sbt.ProductID IN (32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
@@ -275,7 +273,11 @@ BEGIN
 				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
-			ISNULL(brng.SiteID, '')
+			ISNULL(brng.SiteID, '') AS SiteId,
+			CASE
+				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
+				ELSE ''
+			END AS EventDate
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
@@ -318,10 +320,7 @@ BEGIN
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
-			CASE
-				WHEN sbt.productID IN (6, 22, 24, 32, 34, 36, 55, 56, 61, 62, 66, 67, 68) THEN brng.GameId3rd
-				ELSE ''
-			END AS BetTeam,
+			brng.GameId3rd AS BetTeam,
 			CASE
 				WHEN sbt.ProductID IN (32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
@@ -334,7 +333,11 @@ BEGIN
 				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
-			ISNULL(brng.SiteID, '')
+			ISNULL(brng.SiteID, '') AS SiteId,
+			CASE
+				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
+				ELSE ''
+			END AS EventDate
 		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 			CROSS APPLY dbo.f_IP_Decompress(brng.ip) AS dp
@@ -369,24 +372,12 @@ BEGIN
 	BEGIN
 		INSERT INTO @ExchangeRate
 		SELECT
-			e.FirstExchangeDateByMonth,
-			e.LastExchangeDateByMonth,
-			CASE
-				WHEN @BaseCurrency = 'MYR' THEN e.MYR
-				WHEN @BaseCurrency = 'USD' THEN e.USD
-				WHEN @BaseCurrency = 'EUR' THEN e.EUR
-				WHEN @BaseCurrency = 'CNY' THEN e.CNY
-				WHEN @BaseCurrency = 'IDR' THEN e.IDR
-				WHEN @BaseCurrency = 'GBP' THEN e.GBP
-				WHEN @BaseCurrency = 'THB' THEN e.THB
-				WHEN @BaseCurrency = 'INH' THEN e.INH
-				WHEN @BaseCurrency = 'BDT' THEN e.BDT
-				WHEN @BaseCurrency = 'INR' THEN e.INR
-				ELSE 1
-			END AS Rate
-		FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
+			e.FromDate,
+			e.ToDate,
+			e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
 		WHERE e.ExchangeId = @Currency
-			AND EXISTS (SELECT 1 FROM @tmpBettransRnG WHERE WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
+			AND EXISTS (SELECT 1 FROM @tmpBettransRnG WHERE WinLostDate BETWEEN e.FromDate AND e.ToDate)
 	END
 
 	SELECT
@@ -413,7 +404,8 @@ BEGIN
 		b.BetdaqId,
 		b.ExtraInfo,
 		@Currency AS Currency,
-		b.SiteId
+		b.SiteId,
+		b.EventDate
 	FROM @tmpBettransRnG AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY b.TransId ASC

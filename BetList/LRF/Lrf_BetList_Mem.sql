@@ -111,6 +111,7 @@ AS
 		- 20220427@Kos: Support Virtual Games result [Redmine: #170997]
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220512@Kos: Support FGG [Redmine: #167897]
+		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
 */
 
 BEGIN
@@ -835,6 +836,7 @@ BEGIN
 							WHEN s.ProductID = 56 THEN 'JK'								-- Joker
 							WHEN s.ProductID = 57 THEN 'BG'								-- Big Gaming
 							WHEN s.ProductID = 59 THEN 'GDG'							-- GDG
+							WHEN s.ProductID = 60 THEN 'MXG'							-- MaxGame
 							WHEN s.ProductID = 61 THEN 'HB'								-- Habanero
 							WHEN s.ProductID = 62 THEN 'CG'								-- CG
 							WHEN s.ProductID = 63 THEN 'SLT'							-- Sports Lottery
@@ -1077,6 +1079,51 @@ BEGIN
 					AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 			END
 
+			UPDATE b
+			SET
+				Odds = CASE
+							WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.Odds IS NOT NULL THEN x.Odds
+							ELSE b.Odds
+						END,
+				OddsSpread = CASE
+								WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+								ELSE b.oddsspread
+							END,
+				Stake = CASE
+							WHEN b.RefTable IN (1, 2) AND x.Stake IS NOT NULL THEN x.Stake
+							ELSE b.stake
+						END,
+				Actual_Stake = CASE
+								WHEN b.RefTable IN (1, 2) AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
+								ELSE b.actual_stake
+							END,
+				Status = CASE
+							WHEN b.RefTable IN (1, 2) AND x.Status IS NOT NULL THEN x.Status
+							ELSE b.status
+						END,
+				WinLost = CASE
+								WHEN b.RefTable IN (1, 2) AND x.WinLost IS NOT NULL THEN x.WinLost
+								ELSE b.WinLost
+							END,
+				LicenseeWL = CASE
+								WHEN b.RefTable IN (1, 2) AND x.LicenseeWL IS NOT NULL THEN x.LicenseeWL
+								ELSE b.LicenseeWL
+							END,
+				PlayerComm = CASE
+								WHEN b.RefTable IN (1, 2) AND x.PlayerComm IS NOT NULL THEN x.PlayerComm
+								ELSE b.PlayerComm
+							END,
+				Comm = CASE
+							WHEN b.RefTable IN (1, 2) AND x.Comm IS NOT NULL THEN x.Comm
+							ELSE b.Comm
+						END
+			FROM #Data AS b
+				LEFT JOIN @TmpData AS x
+					ON b.RefTable IN (1, 2)
+					AND b.Winlostdate >= @Yesterday
+					AND x.RefNo = b.transid
+			WHERE b.TableID = 1
+
 			SELECT @Currency = currency,
 				@Username = username,
 				@Nickname = SUBSTRING(username2, CHARINDEX('$', username2) + 1, LEN(username2) - CHARINDEX('$', username2))
@@ -1185,7 +1232,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
-										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL') THEN b.MatchId
+										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
@@ -1213,7 +1260,6 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-								WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.Odds IS NOT NULL THEN x.Odds
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 
 									'TG', 'I4D', 'VRG', 'SLT', 'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'VS3', 'BTC') THEN b.Odds
 								ELSE 0
@@ -1223,20 +1269,10 @@ BEGIN
 								ELSE 0
 							END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
 									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
-					Stake = CASE
-								WHEN b.RefTable IN (1, 2) AND x.Stake IS NOT NULL THEN x.Stake
-								ELSE b.stake
-							END,
-					Actual_Stake = CASE
-									WHEN b.RefTable IN (1, 2) AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
-									ELSE b.actual_stake
-								END,
 					Status = CASE
-								WHEN b.RefTable IN (1, 2) AND x.Status IS NOT NULL THEN x.Status
 								WHEN b.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 								WHEN b.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 								ELSE b.status
@@ -1245,22 +1281,6 @@ BEGIN
 										WHEN b.Product = 'SB' THEN ISNULL(m.SettlementStatus, 0)
 										ELSE 0
 									END,
-					WinLost = CASE
-									WHEN b.RefTable IN (1, 2) AND x.WinLost IS NOT NULL THEN x.WinLost
-									ELSE b.WinLost
-								END,
-					LicenseeWL = CASE
-									WHEN b.RefTable IN (1, 2) AND x.LicenseeWL IS NOT NULL THEN x.LicenseeWL
-									ELSE b.LicenseeWL
-								END,
-					PlayerComm = CASE
-									WHEN b.RefTable IN (1, 2) AND x.PlayerComm IS NOT NULL THEN x.PlayerComm
-									ELSE b.PlayerComm
-								END,
-					Comm = CASE
-									WHEN b.RefTable IN (1, 2) AND x.Comm IS NOT NULL THEN x.Comm
-									ELSE b.Comm
-								END,
 					LiveIndicator = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
 										ELSE 0
@@ -1369,10 +1389,6 @@ BEGIN
 								ELSE ''
 							END
 				FROM #PagingData AS b
-					LEFT JOIN @TmpData AS x
-						ON b.RefTable IN (1, 2)
-						AND b.Winlostdate >= @Yesterday
-						AND x.RefNo = b.transid
 					LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
@@ -1394,7 +1410,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 
-										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL') THEN b.MatchId
+										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
@@ -1569,7 +1585,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
-										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL') THEN b.MatchId
+										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino

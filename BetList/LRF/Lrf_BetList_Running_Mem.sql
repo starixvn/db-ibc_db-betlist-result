@@ -44,6 +44,7 @@ AS
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 		- 20220526@Kos: Support FGG [Redmine: #167897]
+		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
 */
 
 BEGIN
@@ -377,6 +378,7 @@ BEGIN
 						WHEN s.ProductID = 56 THEN 'JK'								-- Joker
 						WHEN s.ProductID = 57 THEN 'BG'								-- Big Gaming
 						WHEN s.ProductID = 59 THEN 'GDG'							-- GDG
+						WHEN s.ProductID = 60 THEN 'MXG'							-- MaxGame
 						WHEN s.ProductID = 61 THEN 'HB'								-- Habanero
 						WHEN s.ProductID = 62 THEN 'CG'								-- CG
 						WHEN s.ProductID = 63 THEN 'SLT'							-- Sports Lottery
@@ -546,6 +548,7 @@ BEGIN
 				WHEN s.ProductID = 56 THEN 'JK'		-- Joker
 				WHEN s.ProductID = 57 THEN 'BG'		-- Big Gaming
 				WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
+				WHEN s.ProductID = 60 THEN 'MXG'	-- MaxGame
 				WHEN s.ProductID = 61 THEN 'HB'		-- Habanero
 				WHEN s.ProductID = 62 THEN 'CG'		-- CG
 				WHEN s.ProductID = 66 THEN 'VGA'	-- Vgaming
@@ -648,7 +651,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'CB', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
-									'GDG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL') THEN b.MatchId
+									'GDG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'H5LG', 'SLT', 'VS3') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('BTC') THEN m3rd.SportType

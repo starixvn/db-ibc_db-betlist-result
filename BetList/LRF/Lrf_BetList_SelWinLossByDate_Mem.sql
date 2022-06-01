@@ -52,7 +52,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinLossByDate_Mem]
 	@ShowAPM			BIT				= 0,	-- AdvantPlay Mini
 	@ShowVS3			BIT				= 0,	-- Virtual Sports 3
 	@ShowBTC			BIT				= 0,	-- BTC
-	@ShowFGGL			BIT				= 0		-- FGG
+	@ShowFGGL			BIT				= 0,	-- FGG
+	@ShowMXG			BIT				= 0		-- MaxGame
 AS
 
 /*
@@ -179,6 +180,7 @@ AS
 		- 20220427@Kos: Support Virtual Games result [Redmine: #170997]
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220512@Kos: Support FGG [Redmine: #167897]
+		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
 */
 
 BEGIN
@@ -241,6 +243,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowJK = 1		THEN 56 END
 		OR ProductID	= CASE WHEN @ShowBGG = 1	THEN 57 END
 		OR ProductID	= CASE WHEN @ShowGDG = 1	THEN 59 END
+		OR ProductID	= CASE WHEN @ShowMXG = 1	THEN 60 END
 		OR ProductID	= CASE WHEN @ShowHB = 1		THEN 61 END
 		OR ProductID	= CASE WHEN @ShowCG = 1		THEN 62 END
 		OR ProductID	= CASE WHEN @ShowSLT = 1	THEN 63 END
@@ -849,6 +852,7 @@ BEGIN
 							WHEN s.ProductID = 56 THEN 'JK'								-- Joker
 							WHEN s.ProductID = 57 THEN 'BG'								-- Big Gaming
 							WHEN s.ProductID = 59 THEN 'GDG'							-- GDG
+							WHEN s.ProductID = 60 THEN 'MXG'							-- MaxGame
 							WHEN s.ProductID = 61 THEN 'HB'								-- Habanero
 							WHEN s.ProductID = 62 THEN 'CG'								-- CG
 							WHEN s.ProductID = 63 THEN 'SLT'							-- Sports Lottery
@@ -1147,7 +1151,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 
-										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL') THEN b.MatchId
+										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'FW' THEN 219			-- Fishing World
@@ -1355,7 +1359,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 
-										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL') THEN b.MatchId
+										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'FW' THEN 219			-- Fishing World
@@ -1526,7 +1530,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 
-										'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL') THEN b.MatchId
+										'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'FW' THEN 219			-- Fishing World
