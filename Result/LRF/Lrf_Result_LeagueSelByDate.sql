@@ -45,6 +45,7 @@ AS
 		- 20211227@Kos: Exclude league and match which IsDeleted = 1 [RedmineID: #163733]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
+		- 20220607@Kos: Hotfix - Virtual Basketball [Redmine: #173815]
 */
 
 BEGIN
@@ -59,7 +60,7 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
-				@EventDate,
+				@EventDate AS EventDate,
 				m.sporttype
 			FROM (
 					SELECT DISTINCT m.leagueid,
@@ -201,8 +202,8 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
-				@EventDate,
-				@SportType
+				@EventDate AS EventDate,
+				@SportType AS SportType
 			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN (
 						SELECT DISTINCT leagueid
@@ -227,8 +228,8 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
-				@EventDate,
-				@SportType
+				@EventDate AS EventDate,
+				@SportType AS SportType
 			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
 				INNER JOIN (
@@ -249,7 +250,7 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
-				@EventDate,
+				@EventDate AS EventDate,
 				m.sporttype
 			FROM (
 					SELECT DISTINCT m.leagueid,
@@ -389,8 +390,8 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
-				@EventDate,
-				@SportType
+				@EventDate AS EventDate,
+				@SportType AS SportType
 			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN (
 						SELECT DISTINCT leagueid
@@ -413,8 +414,8 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
-				@EventDate,
-				@SportType
+				@EventDate AS EventDate,
+				@SportType AS SportType
 			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON r.EventID = o.EventID
