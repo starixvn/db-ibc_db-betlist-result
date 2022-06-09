@@ -46,6 +46,7 @@ AS
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 		- 20220607@Kos: Hotfix - Virtual Basketball [Redmine: #173815]
+		- 20220609@Kos: Remove IsDeleted for League and Team [Redmine: #171991]
 */
 
 BEGIN
@@ -178,7 +179,6 @@ BEGIN
 				) AS m
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
-				AND l.IsDeleted = 0
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
@@ -221,7 +221,6 @@ BEGIN
 					) o ON l.leagueid = o.leagueid 
 			WHERE l.sporttype = @SportType
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-				AND l.IsDeleted = 0
 		END
 		ELSE IF @SportType IN (181, 182, 184, 183, 185)
 		BEGIN
@@ -240,7 +239,6 @@ BEGIN
 			WHERE r.EventStatus ='completed'
 				AND r.sporttype = @SportType
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-				AND l.IsDeleted = 0
 		END
 	END
 	ELSE

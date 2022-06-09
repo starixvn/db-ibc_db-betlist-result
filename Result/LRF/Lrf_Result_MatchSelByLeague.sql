@@ -55,6 +55,7 @@ AS
 		- 20211227@Kos: Exclude league and match which IsDeleted = 1 [RedmineID: #163733]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
+		- 20220609@Kos: Remove IsDeleted for League and Team [Redmine: #171991]
 */
 
 BEGIN 
@@ -342,7 +343,6 @@ BEGIN
 			AND m.matchcode NOT LIKE '%betdaq%'
 			AND m.matchcode NOT LIKE '%(LR)%'
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-			AND l.IsDeleted = 0
 		OPTION (OPTIMIZE FOR (@LeagueId = 0))
 	END
 	ELSE IF @SportType IN (0, 5)
@@ -421,7 +421,6 @@ BEGIN
 				AND ( m.eventstatus NOT IN ('internal', 'closed')
 					OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-				AND l.IsDeleted = 0
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
 	ELSE 
@@ -496,7 +495,6 @@ BEGIN
 				AND ( m.eventstatus NOT IN ('internal', 'closed')
 					OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-				AND l.IsDeleted = 0
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
 	END

@@ -18,6 +18,7 @@ AS
 		- 20110524@Henry: fix Show All/is not show test
 		- 20110630@Jamie: Add REFUND Result cho Outright
 		- 20211227@Kos: Exclude league and outright which IsDeleted = 1 [RedmineID: #163733]
+		- 20220609@Kos: Remove IsDeleted for League and Team [Redmine: #171991]
 */
 
 BEGIN
@@ -48,7 +49,6 @@ BEGIN
 		INNER JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 	WHERE l.sporttype NOT IN (151, 152, 153)
 		AND l.isTest = ISNULL(@IsShowAll, l.isTest)
-		AND l.IsDeleted = 0
 	ORDER BY o.leagueid,
 		o.eventdate,
 		o.teamid
