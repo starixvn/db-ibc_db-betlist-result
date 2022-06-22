@@ -55,6 +55,7 @@ AS
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 		- 20220310@Razor: Support Cricket AIO 2 - Increase length OtherInfo column [Redmine: #166334]
 		- 20220510@Razor: Remove In-house Replication [Redmine: #171699]
+		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 */
 
 BEGIN
@@ -503,7 +504,7 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailES WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
-				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) IN (2 , 3) OR SettlementStatusID > 0)
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
@@ -606,7 +607,7 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailES14 WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
-				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) IN (2, 3) OR SettlementStatusID > 0)
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END

@@ -42,6 +42,7 @@ AS
 		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
 		- 20220120@Razor: Support E-Sports phase 4 [Redmine: #166326]
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
+		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 */
 
 BEGIN
@@ -319,24 +320,28 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE p.SportType = 43		-- E-Sports
-				AND (LEN(d.ResourceID) = 2
+				AND (d.ResourceID = '00'
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1) + CASE
-																								WHEN p.BetType = 9101 THEN '01'
-																								WHEN p.BetType = 9102 THEN '02'
-																								WHEN p.BetType = 9103 THEN '03'
-																								WHEN p.BetType = 9104 THEN '04'
-																								WHEN p.BetType = 9105 THEN '05'
-																								WHEN p.BetType = 9106 THEN '06'
-																								WHEN p.BetType = 9107 THEN '07'
-																								WHEN p.BetType = 9108 THEN '08'
-																								WHEN p.BetType = 9109 THEN '09'
-																								WHEN p.BetType = 9110 THEN '10'
-																								WHEN p.BetType = 9111 THEN '15'
-																								WHEN p.BetType = 9112 THEN '20'
-																								ELSE ''
-																							END))
+						AND d.ResourceID LIKE '%' + CASE	
+														WHEN p.BetCheck LIKE '80%' AND p.BetType = 9001 THEN 'M' + RIGHT(p.BetCheck, 1)
+														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1) 
+													END 
+													+ CASE
+															WHEN p.BetType = 9101 THEN '01'
+															WHEN p.BetType = 9102 THEN '02'
+															WHEN p.BetType = 9103 THEN '03'
+															WHEN p.BetType = 9104 THEN '04'
+															WHEN p.BetType = 9105 THEN '05'
+															WHEN p.BetType = 9106 THEN '06'
+															WHEN p.BetType = 9107 THEN '07'
+															WHEN p.BetType = 9108 THEN '08'
+															WHEN p.BetType = 9109 THEN '09'
+															WHEN p.BetType = 9110 THEN '10'
+															WHEN p.BetType = 9111 THEN '15'
+															WHEN p.BetType = 9112 THEN '20'
+															ELSE ''
+													END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
@@ -504,24 +509,28 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE p.SportType = 43		-- E-Sports
-				AND (LEN(d.ResourceID) = 2
+				AND (d.ResourceID = '00'
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1) + CASE
-																								WHEN p.BetType = 9101 THEN '01'
-																								WHEN p.BetType = 9102 THEN '02'
-																								WHEN p.BetType = 9103 THEN '03'
-																								WHEN p.BetType = 9104 THEN '04'
-																								WHEN p.BetType = 9105 THEN '05'
-																								WHEN p.BetType = 9106 THEN '06'
-																								WHEN p.BetType = 9107 THEN '07'
-																								WHEN p.BetType = 9108 THEN '08'
-																								WHEN p.BetType = 9109 THEN '09'
-																								WHEN p.BetType = 9110 THEN '10'
-																								WHEN p.BetType = 9111 THEN '15'
-																								WHEN p.BetType = 9112 THEN '20'
-																								ELSE ''
-																							END))
+						AND d.ResourceID LIKE '%' + CASE	
+														WHEN p.BetCheck LIKE '80%' AND p.BetType = 9001 THEN 'M' + RIGHT(p.BetCheck, 1)
+														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1) 
+													END 
+													+ CASE
+															WHEN p.BetType = 9101 THEN '01'
+															WHEN p.BetType = 9102 THEN '02'
+															WHEN p.BetType = 9103 THEN '03'
+															WHEN p.BetType = 9104 THEN '04'
+															WHEN p.BetType = 9105 THEN '05'
+															WHEN p.BetType = 9106 THEN '06'
+															WHEN p.BetType = 9107 THEN '07'
+															WHEN p.BetType = 9108 THEN '08'
+															WHEN p.BetType = 9109 THEN '09'
+															WHEN p.BetType = 9110 THEN '10'
+															WHEN p.BetType = 9111 THEN '15'
+															WHEN p.BetType = 9112 THEN '20'
+															ELSE ''
+													END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
@@ -693,24 +702,28 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.Bettype AND d.ResourceId LIKE f.ResourceID
 			WHERE p.SportType = 43		-- E-Sports
-				AND (LEN(d.ResourceID) = 2
+				AND (d.ResourceID = '00'
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
-						AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(p.BetCheck) - 1) + CASE
-																								WHEN p.BetType = 9101 THEN '01'
-																								WHEN p.BetType = 9102 THEN '02'
-																								WHEN p.BetType = 9103 THEN '03'
-																								WHEN p.BetType = 9104 THEN '04'
-																								WHEN p.BetType = 9105 THEN '05'
-																								WHEN p.BetType = 9106 THEN '06'
-																								WHEN p.BetType = 9107 THEN '07'
-																								WHEN p.BetType = 9108 THEN '08'
-																								WHEN p.BetType = 9109 THEN '09'
-																								WHEN p.BetType = 9110 THEN '10'
-																								WHEN p.BetType = 9111 THEN '15'
-																								WHEN p.BetType = 9112 THEN '20'
-																								ELSE ''
-																							END))
+						AND d.ResourceID LIKE '%' + CASE	
+														WHEN p.BetCheck LIKE '80%' AND p.BetType = 9001 THEN 'M' + RIGHT(p.BetCheck, 1)
+														ELSE RIGHT(p.BetCheck, LEN(p.BetCheck) - 1) 
+													END 
+													+ CASE
+															WHEN p.BetType = 9101 THEN '01'
+															WHEN p.BetType = 9102 THEN '02'
+															WHEN p.BetType = 9103 THEN '03'
+															WHEN p.BetType = 9104 THEN '04'
+															WHEN p.BetType = 9105 THEN '05'
+															WHEN p.BetType = 9106 THEN '06'
+															WHEN p.BetType = 9107 THEN '07'
+															WHEN p.BetType = 9108 THEN '08'
+															WHEN p.BetType = 9109 THEN '09'
+															WHEN p.BetType = 9110 THEN '10'
+															WHEN p.BetType = 9111 THEN '15'
+															WHEN p.BetType = 9112 THEN '20'
+															ELSE ''
+													END))
 		END
 
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)

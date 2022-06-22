@@ -33,6 +33,7 @@ AS
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
+		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 */
 
 BEGIN
@@ -173,7 +174,7 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailES WITH (NOLOCK)
 			WHERE MatchID = @MatchId
-				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) IN (2, 3) OR SettlementStatusID > 0)
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
@@ -317,7 +318,7 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailES14 WITH (NOLOCK)
 			WHERE MatchID = @MatchId
-				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) IN (2, 3) OR SettlementStatusID > 0)
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
