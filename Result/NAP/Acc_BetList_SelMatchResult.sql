@@ -55,6 +55,7 @@ AS
 		- 20210630@Razor: Support Beach Volleyball [Redmine: #156540]
 		- 20220120@Razor: Support E-Sports phase 4 [Redmine: #166326]
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
+		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 */
 
 BEGIN
@@ -154,6 +155,7 @@ BEGIN
 		SELECT @ResourceId = CASE
 								WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 								WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
+								WHEN @BetType = 9001 AND @BetId LIKE '80%' THEN 'M' + RIGHT(CONVERT(VARCHAR(20), @BetId), 1)
 								ELSE RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 							END
 
@@ -245,7 +247,7 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
-				AND (LEN(d.ResourceId) = 2
+				AND (d.ResourceId = '00'
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId + CASE
@@ -422,7 +424,7 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
-				AND (LEN(d.ResourceId) = 2
+				AND (d.ResourceId = '00'
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId + CASE
@@ -600,7 +602,7 @@ BEGIN
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
-				AND (LEN(d.ResourceId) = 2
+				AND (d.ResourceId = '00'
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId + CASE
