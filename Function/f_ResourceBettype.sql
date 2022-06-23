@@ -33,7 +33,8 @@ AS
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
 		- 20210922@Razor: Support Cricket AIO 1.2 - add bettype 9442, 9443 [Redmine: #160409]
 		- 20220120@Razor: Support E-Sports phase 4 [Redmine: #166326]
-		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
+		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]		
+		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 */
 
 BEGIN
@@ -272,6 +273,7 @@ BEGIN
 
 	-- 7. E-Sports 2.0
 	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	SELECT 43, 1, 'E-Sports', 9001, 'M%'	UNION ALL
 	SELECT 43, 1, 'E-Sports', 9002, '9002%'	UNION ALL
 	SELECT 43, 1, 'E-Sports', 9003, '9002%'	UNION ALL
 	SELECT 43, 1, 'E-Sports', 9004, '9002%'	UNION ALL

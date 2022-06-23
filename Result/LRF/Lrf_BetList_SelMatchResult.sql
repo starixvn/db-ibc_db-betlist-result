@@ -56,6 +56,7 @@ AS
 		- 20220225@Kos: Support E-Sports phase 4 [Redmine: #167094]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
+		- 20220623@Kos: Support more map for E-Sports [Redmine: #174251]
 
 		*******************
 		sample test case:
@@ -169,6 +170,7 @@ BEGIN
 			SELECT @ResourceId = CASE
 									WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 									WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
+									WHEN @BetType = 9001 AND @BetId LIKE '80%' THEN 'M' + RIGHT(CONVERT(VARCHAR(20), @BetId), 1)
 									ELSE RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 								END
 
@@ -256,7 +258,7 @@ BEGIN
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 				WHERE d.MatchId = @MatchId
-					AND (LEN(d.ResourceId) = 2
+					AND (d.ResourceId = '00'
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceId LIKE f.ResourceID
 							AND d.ResourceId LIKE '%' + @ResourceId + CASE
@@ -350,6 +352,7 @@ BEGIN
 			SELECT @ResourceId = CASE
 									WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 									WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
+									WHEN @BetType = 9001 AND @BetId LIKE '80%' THEN 'M' + RIGHT(CONVERT(VARCHAR(20), @BetId), 1)
 									ELSE RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 								END
 
@@ -437,7 +440,7 @@ BEGIN
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 				WHERE d.MatchId = @MatchId
-					AND (LEN(d.ResourceId) = 2
+					AND (d.ResourceId = '00'
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceId LIKE f.ResourceID
 							AND d.ResourceId LIKE '%' + @ResourceId + CASE
@@ -531,6 +534,7 @@ BEGIN
 			SELECT @ResourceId = CASE
 									WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 									WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
+									WHEN @BetType = 9001 AND @BetId LIKE '80%' THEN 'M' + RIGHT(CONVERT(VARCHAR(20), @BetId), 1)
 									ELSE RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 								END
 
@@ -618,7 +622,7 @@ BEGIN
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
 				WHERE d.MatchId = @MatchId
-					AND (LEN(d.ResourceId) = 2
+					AND (d.ResourceId = '00'
 						OR (d.SettlementStatusID > 0
 							AND d.ResourceId LIKE f.ResourceID
 							AND d.ResourceId LIKE '%' + @ResourceId + CASE

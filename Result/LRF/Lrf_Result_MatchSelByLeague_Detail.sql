@@ -35,6 +35,7 @@ AS
 		- 20210922@Kos: Support Cricket AIO 1.2 [Redmine: #160452]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
+		- 20220623@Kos: Support more map for E-Sports [Redmine: #174251]
 */
 
 BEGIN
@@ -175,7 +176,7 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailES WITH (NOLOCK)
 			WHERE MatchID = @MatchId
-				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) IN (2, 3) OR SettlementStatusID > 0)
 		END
 		ELSE IF @SportType = 193
 		BEGIN
@@ -315,7 +316,7 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailES14 WITH (NOLOCK)
 			WHERE MatchID = @MatchId
-				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) IN (2, 3) OR SettlementStatusID > 0)
 		END
 		ELSE IF @SportType = 193
 		BEGIN

@@ -56,6 +56,7 @@ AS
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
 		- 20220609@Kos: Remove IsDeleted for League and Team [Redmine: #171991]
+		- 20220623@Kos: Support more map for E-Sports [Redmine: #174251]
 */
 
 BEGIN 
@@ -613,7 +614,7 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailES WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
-				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) IN (2, 3) OR SettlementStatusID > 0)
 		END
 		ELSE IF @SportType = 193
 		BEGIN
@@ -725,7 +726,7 @@ BEGIN
 				OtherInfo
 			FROM dbo.ResultDetailES14 WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
-				AND (LEN(ResourceID) = 2 OR SettlementStatusID > 0)
+				AND (LEN(ResourceID) IN (2, 3) OR SettlementStatusID > 0)
 		END
 		ELSE IF @SportType = 193
 		BEGIN
