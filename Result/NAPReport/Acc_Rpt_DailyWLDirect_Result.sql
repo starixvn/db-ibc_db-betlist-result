@@ -36,6 +36,7 @@ AS
 		- 20210224@Kos: Support Cricket AIO [Redmine: #151011]
 		- 20210713@Kos: Support Beach Volleyball [Redmine: #157736]
 		- 20210914@Kos: Support view result from League WL report [Redmine: #160196]
+		- 20220630@Kos: Don't show map result for E-Sports [Redmine: #174251]
 */
 
 BEGIN
@@ -166,7 +167,7 @@ BEGIN
 				SettlementStatusID,
 				OtherInfo
 			FROM dbo.ResultDetailES WITH (NOLOCK)
-			WHERE MatchID = @MatchId AND LEN(ResourceID) = 2
+			WHERE MatchID = @MatchId AND ResourceID = '00'
 			ORDER BY ResourceID ASC
 		END
 		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
@@ -275,7 +276,7 @@ BEGIN
 				SettlementStatusID,
 				OtherInfo
 			FROM dbo.ResultDetailES14 WITH (NOLOCK)
-			WHERE MatchID = @MatchId AND LEN(ResourceID) = 2
+			WHERE MatchID = @MatchId AND ResourceID = '00'
 			ORDER BY ResourceID ASC
 		END
 		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
@@ -401,7 +402,7 @@ BEGIN
 				SettlementStatusID,
 				OtherInfo
 			FROM bodb_Archive.dbo.ResultDetailES_bk WITH (NOLOCK)
-			WHERE MatchID = @MatchId AND LEN(ResourceID) = 2
+			WHERE MatchID = @MatchId AND ResourceID = '00'
 			ORDER BY ResourceID ASC
 		END
 		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
