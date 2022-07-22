@@ -43,6 +43,7 @@ AS
 		- 20220120@Razor: Support E-Sports phase 4 [Redmine: #166326]
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
+		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 */
 
 BEGIN
@@ -271,7 +272,7 @@ BEGIN
 								OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
-		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (9, 45, 50))
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 9, 45, 50))
 		BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
@@ -291,14 +292,17 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
+			WHERE p.SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
 				AND (LEN(d.ResourceID) = 2
 					OR (LEN(d.ResourceID) = 4 AND p.SportType IN (9, 45))
+					OR (p.SportType = 6 AND d.ResourceId LIKE '010%')
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
 						AND 1 = CASE
 									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 0
 									WHEN d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) THEN 1
+									WHEN p.BetType IN (3903, 3904, 3905) 
+										AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) + '15' THEN 1
 									ELSE 0
 								END))
 		END
@@ -460,7 +464,7 @@ BEGIN
 								OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
-		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (9, 45, 50))
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 9, 45, 50))
 		BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
@@ -480,14 +484,17 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
+			WHERE p.SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
 				AND (LEN(d.ResourceID) = 2
 					OR (LEN(d.ResourceID) = 4 AND p.SportType IN (9, 45))
+					OR (p.SportType = 6 AND d.ResourceId LIKE '010%')
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
 						AND 1 = CASE
 									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 0
 									WHEN d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) THEN 1
+									WHEN p.BetType IN (3903, 3904, 3905) 
+										AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) + '15' THEN 1
 									ELSE 0
 								END))
 		END
@@ -653,7 +660,7 @@ BEGIN
 								OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
-		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (9, 45, 50))
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 9, 45, 50))
 		BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
@@ -673,14 +680,17 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
+			WHERE p.SportType IN (6, 9, 45, 50)		--Volleyball, Badminton, Beach Volleyball, Cricket
 				AND (LEN(d.ResourceID) = 2
 					OR (LEN(d.ResourceID) = 4 AND p.SportType IN (9, 45))
+					OR (p.SportType = 6 AND d.ResourceId LIKE '010%')
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
 						AND 1 = CASE
 									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 0
 									WHEN d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) THEN 1
+									WHEN p.BetType IN (3903, 3904, 3905) 
+										AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) + '15' THEN 1
 									ELSE 0
 								END))
 		END

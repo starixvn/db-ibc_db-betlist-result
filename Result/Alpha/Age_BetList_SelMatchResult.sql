@@ -58,6 +58,7 @@ AS
 		- 20220120@Razor: Support E-Sports phase 4 [Redmine: #166326]
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
+		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 */
 
 BEGIN
@@ -158,11 +159,12 @@ BEGIN
 								WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 								WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
 								WHEN @BetType = 9001 AND @BetId LIKE '80%' THEN 'M' + RIGHT(CONVERT(VARCHAR(20), @BetId), 1)
+								WHEN @BetType IN (3903, 3904, 3905) AND @BetId LIKE '80%' THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 1) + '15'
 								ELSE RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (9, 43, 45, 50, 193)
+		IF @SportType NOT IN (6, 9, 43, 45, 50, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -204,7 +206,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceID LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -225,6 +227,7 @@ BEGIN
 			WHERE d.MatchId = @MatchId
 				AND (LEN(d.ResourceId) = 2
 					OR (LEN(d.ResourceId) = 4 AND @SportType IN (9, 45))	--Badminton, Beach Volleyball
+					OR (@SportType = 6 AND d.ResourceId LIKE '010%')
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
@@ -330,11 +333,13 @@ BEGIN
 		SELECT @ResourceId = CASE
 								WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 								WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
+								WHEN @BetType = 9001 AND @BetId LIKE '80%' THEN 'M' + RIGHT(CONVERT(VARCHAR(20), @BetId), 1)
+								WHEN @BetType IN (3903, 3904, 3905) AND @BetId LIKE '80%' THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 1) + '15'
 								ELSE RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (9, 43, 45, 50, 193)
+		IF @SportType NOT IN (6, 9, 43, 45, 50, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -376,7 +381,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceID LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -397,6 +402,7 @@ BEGIN
 			WHERE d.MatchId = @MatchId
 				AND (LEN(d.ResourceId) = 2
 					OR (LEN(d.ResourceId) = 4 AND @SportType IN (9, 45))	--Badminton, Beach Volleyball
+					OR (@SportType = 6 AND d.ResourceId LIKE '010%')
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
@@ -505,11 +511,13 @@ BEGIN
 		SELECT @ResourceId = CASE
 								WHEN @SportType = 5 THEN LEFT(REPLACE(CONVERT(VARCHAR(20), @BetId), '8', ''), 2)
 								WHEN @BetType = 395 THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 2)
+								WHEN @BetType = 9001 AND @BetId LIKE '80%' THEN 'M' + RIGHT(CONVERT(VARCHAR(20), @BetId), 1)
+								WHEN @BetType IN (3903, 3904, 3905) AND @BetId LIKE '80%' THEN RIGHT(CONVERT(VARCHAR(20), @BetId), 1) + '15'
 								ELSE RIGHT(CONVERT(VARCHAR(20), @BetId), LEN(CONVERT(VARCHAR(20), @BetId)) - 1)
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (9, 43, 45, 50, 193)
+		IF @SportType NOT IN (6, 9, 43, 45, 50, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -551,7 +559,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -572,6 +580,7 @@ BEGIN
 			WHERE d.MatchId = @MatchId
 				AND (LEN(d.ResourceId) = 2
 					OR (LEN(d.ResourceId) = 4 AND @SportType IN (9, 45))	--Badminton, Beach Volleyball
+					OR (@SportType = 6 AND d.ResourceId LIKE '010%')
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))

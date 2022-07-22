@@ -47,6 +47,7 @@ AS
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 		- 20220310@Razor: Support In-house Replication [Redmine: #164321]
 		- 20220510@Razor: Remove In-house Replication [Redmine: #171699]
+		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 */
 
 BEGIN
@@ -118,7 +119,7 @@ BEGIN
 											FROM dbo.ResultDetailOS AS o WITH (NOLOCK)
 											WHERE o.SettlementStatusID > 0
 												AND m.matchid = o.MatchId
-												AND (m.sporttype IN (9, 45)		-- Badminton, Beach Volleyball
+												AND (m.sporttype IN (6, 9, 45)		-- Volleyball, Badminton, Beach Volleyball
 													OR (m.sporttype = 50	-- Cricket
 														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
@@ -231,7 +232,7 @@ BEGIN
 											FROM dbo.ResultDetailOS14 AS o WITH (NOLOCK)
 											WHERE o.SettlementStatusID > 0
 												AND m.matchid = o.MatchId
-												AND (m.sporttype IN (9, 45)		-- Badminton, Beach Volleyball
+												AND (m.sporttype IN (6, 9, 45)		-- Volleyball, Badminton, Beach Volleyball
 													OR (m.sporttype = 50	-- Cricket
 														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')

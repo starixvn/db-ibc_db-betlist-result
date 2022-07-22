@@ -34,6 +34,7 @@ AS
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
+		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 */
 
 BEGIN
@@ -140,7 +141,7 @@ BEGIN
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (6, 9, 50)		-- Volleyball, Badminton, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -154,9 +155,9 @@ BEGIN
 			FROM dbo.ResultDetailOS WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType = 9)
+					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType = 9
+						AND (@SportType IN (6, 9)
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC
@@ -284,7 +285,7 @@ BEGIN
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (6, 9, 50)		-- Volleyball, Badminton, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -298,9 +299,9 @@ BEGIN
 			FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType = 9)
+					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType = 9
+						AND (@SportType IN (6, 9)
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC
