@@ -47,6 +47,7 @@ AS
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 		- 20220607@Kos: Hotfix - Virtual Basketball [Redmine: #173815]
 		- 20220609@Kos: Remove IsDeleted for League and Team [Redmine: #171991]
+		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 */
 
 BEGIN
@@ -106,7 +107,7 @@ BEGIN
 								SELECT DISTINCT MatchID
 								FROM dbo.ResultDetailOS WITH (NOLOCK)
 								WHERE SettlementStatusID > 0
-									AND (@SportType IN (9, 45)
+									AND (@SportType IN (6, 9, 45)
 										OR (@SportType = 50
 											AND ResourceID NOT IN ('00', '9442', '9443')
 											AND ResourceID NOT LIKE '9410%'
@@ -293,7 +294,7 @@ BEGIN
 								SELECT DISTINCT MatchID
 								FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 								WHERE SettlementStatusID > 0
-									AND (@SportType IN (9, 45)
+									AND (@SportType IN (6, 9, 45)
 										OR (@SportType = 50
 											AND ResourceID NOT IN ('00', '9442', '9443')
 											AND ResourceID NOT LIKE '9410%'

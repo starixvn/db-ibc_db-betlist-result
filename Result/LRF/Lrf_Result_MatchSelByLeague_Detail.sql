@@ -36,6 +36,7 @@ AS
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
 		- 20220623@Kos: Support more map for E-Sports [Redmine: #174251]
+		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 */
 
 BEGIN
@@ -143,7 +144,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (6, 9, 50)		-- Volleyball, Badminton, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -157,9 +158,9 @@ BEGIN
 			FROM dbo.ResultDetailOS WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType = 9)
+					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType = 9
+						AND (@SportType IN (6, 9)
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', 
 								'94511', '96151')))))
 		END
@@ -283,7 +284,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (9, 50)		-- Badminton, Cricket
+		ELSE IF @SportType IN (6, 9, 50)		-- Volleyball, Badminton, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -297,9 +298,9 @@ BEGIN
 			FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType = 9)
+					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType = 9
+						AND (@SportType IN (6, 9)
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', 
 								'94511', '96151')))))
 		END

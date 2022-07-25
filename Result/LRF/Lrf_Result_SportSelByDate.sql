@@ -50,6 +50,7 @@ AS
 		- 20211227@Kos: Exclude league and match which IsDeleted = 1 [RedmineID: #163733]
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
+		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 */
 
 BEGIN
@@ -115,7 +116,7 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-				) AS o ON o.MatchID = m.matchid AND m.sporttype IN (9, 45)
+				) AS o ON o.MatchID = m.matchid AND m.sporttype IN (6, 9, 45)
 			LEFT JOIN (
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
@@ -271,7 +272,7 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-				) AS o ON o.MatchID = m.matchid AND m.sporttype IN (9, 45)
+				) AS o ON o.MatchID = m.matchid AND m.sporttype IN (6, 9, 45)
 			LEFT JOIN (
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)

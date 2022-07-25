@@ -35,6 +35,7 @@ AS
 		- 20220120@Razor: Support E-Sports phase 4 [Redmine: #166326]
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]		
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
+		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 */
 
 BEGIN
@@ -771,5 +772,18 @@ BEGIN
 	SELECT 50, 13, 'Cricket AIO', 9737, '97371%'	UNION ALL
 	SELECT 50, 13, 'Cricket AIO', 9739, '97371%'	UNION ALL
 	SELECT 50, 13, 'Cricket AIO', 9697, '97372%'
+
+	-- 13. Volleyball AIO
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	SELECT 6, 14, 'Volleyball AIO', 3901, '3901'	UNION ALL
+	SELECT 6, 14, 'Volleyball AIO', 3914, '3914'	UNION ALL
+	SELECT 6, 14, 'Volleyball AIO', 3903, '3903%'	UNION ALL
+	SELECT 6, 14, 'Volleyball AIO', 3904, '3903%'	UNION ALL
+	SELECT 6, 14, 'Volleyball AIO', 3905, '3903%'	UNION ALL
+	SELECT 6, 14, 'Volleyball AIO', 3912, '3903%'	UNION ALL
+	SELECT 6, 14, 'Volleyball AIO', 3909, '3909%'	UNION ALL
+	SELECT 6, 14, 'Volleyball AIO', 3915, '3915%'	UNION ALL
+	SELECT 6, 14, 'Volleyball AIO', 3916, '3915%'
+
 	RETURN
 END

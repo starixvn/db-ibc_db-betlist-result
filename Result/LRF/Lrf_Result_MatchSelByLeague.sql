@@ -57,6 +57,7 @@ AS
 		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
 		- 20220609@Kos: Remove IsDeleted for League and Team [Redmine: #171991]
 		- 20220623@Kos: Support more map for E-Sports [Redmine: #174251]
+		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 */
 
 BEGIN 
@@ -203,7 +204,7 @@ BEGIN
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetailOS WITH (NOLOCK)
 				WHERE SettlementStatusID > 0
-					AND (@SportType IN (9, 45)
+					AND (@SportType IN (6, 9, 45)
 						OR (@SportType = 50
 							AND ResourceID NOT IN ('00', '9442', '9443')
 							AND ResourceID NOT LIKE '9410%'
@@ -264,7 +265,7 @@ BEGIN
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 				WHERE SettlementStatusID > 0
-					AND (@SportType IN (9, 45)
+					AND (@SportType IN (6, 9, 45)
 						OR (@SportType = 50
 							AND ResourceID NOT IN ('00', '9442', '9443')
 							AND ResourceID NOT LIKE '9410%'
@@ -565,7 +566,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Cricket, Beach Volleyball
+		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Cricket, Beach Volleyball
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -579,9 +580,9 @@ BEGIN
 			FROM dbo.ResultDetailOS WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType = 9)
+					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (9, 45)
+						AND (@SportType IN (6, 9, 45)
 							OR (@SportType = 50
 								AND ResourceID NOT IN ('00')
 								AND ResourceID NOT LIKE '9410%'
@@ -677,7 +678,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Cricket, Beach Volleyball
+		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Cricket, Beach Volleyball
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -691,9 +692,9 @@ BEGIN
 			FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 			WHERE MatchID IN (SELECT MatchId FROM #Match)
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType = 9)
+					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (9, 45)
+						AND (@SportType IN (6, 9, 45)
 							OR (@SportType = 50
 								AND ResourceID NOT IN ('00')
 								AND ResourceID NOT LIKE '9410%'
