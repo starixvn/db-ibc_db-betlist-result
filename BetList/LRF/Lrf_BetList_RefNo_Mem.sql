@@ -1,14 +1,15 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_RefNo_Mem]
-	@AgentList		VARCHAR(MAX),
-	@RefNo			BIGINT			= 0,
-	@TxId			VARCHAR(100)	= '',
-	@CustId			INT				= 0,
-	@Username		VARCHAR(50)		= '',
-	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10)		= ''
+	@AgentList			VARCHAR(MAX),
+	@RefNo				BIGINT			= 0,
+	@TxId				VARCHAR(100)	= '',
+	@CustId				INT				= 0,
+	@Username			VARCHAR(50)		= '',
+	@ExcludeBettrans	BIT				= 0,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay		SMALLDATETIME,
+	@BaseCurrency		VARCHAR(10)		= ''
 AS
 
 /*
@@ -75,6 +76,8 @@ AS
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220512@Kos: Support FGG [Redmine: #167897]
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
+		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
+					- Add new input param @ExcludeBettrans BIT
 */
 
 BEGIN
@@ -231,49 +234,52 @@ BEGIN
 	BEGIN
 		IF @RefNo <> 0		-- Search by refno
 		BEGIN
-			-- Translog range
-			IF @WhTicket = 0
+			IF @ExcludeBettrans = 0
 			BEGIN
-				SELECT TOP(1)
-					@TransId = b.translogid,
-					@CustId = b.custid,
-					@WinLostDate = b.winlostdate,
-					@Recommend = b.recommend,
-					@Currency = b.currency,
-					@BetType = b.gameID,
-					@ProductId = s.ProductID,
-					@EventType = s.EventType,
-					@RefTable = s.RefTable,
-					@WhTicket = 1		-- translog
-				FROM dbo.translog AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON b.gameID = s.bettype
-				WHERE b.translogid = @RefNo
-					AND s.RefTable = 3
-					AND (b.custid = @CustId OR @CustId = 0)
-					AND b.statusID IN (0, 1)
-			END
+				-- Translog range
+				IF @WhTicket = 0
+				BEGIN
+					SELECT TOP(1)
+						@TransId = b.translogid,
+						@CustId = b.custid,
+						@WinLostDate = b.winlostdate,
+						@Recommend = b.recommend,
+						@Currency = b.currency,
+						@BetType = b.gameID,
+						@ProductId = s.ProductID,
+						@EventType = s.EventType,
+						@RefTable = s.RefTable,
+						@WhTicket = 1		-- translog
+					FROM dbo.translog AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS s ON b.gameID = s.bettype
+					WHERE b.translogid = @RefNo
+						AND s.RefTable = 3
+						AND (b.custid = @CustId OR @CustId = 0)
+						AND b.statusID IN (0, 1)
+				END
 
-			-- Bettrans range
-			IF @WhTicket = 0
-			BEGIN
-				SELECT TOP(1)
-					@TransId = b.transid,
-					@CustId = b.custid,
-					@WinLostDate = b.winlostdate,
-					@Recommend = b.recommend,
-					@Currency = b.currency,
-					@BetType = b.bettype,
-					@RefCode = b.RefCode,
-					@ProductId = s.ProductID,
-					@EventType = s.EventType,
-					@RefTable = s.RefTable,
-					@WhTicket = 2		-- bettrans
-				FROM dbo.bettrans AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-				WHERE (b.transid = @RefNo
-						OR (b.refno = @RefNo AND s.RefTable = 3))
-					AND (b.custid = @CustId OR @CustId = 0)
-					AND b.winlostdate > @MoveBetsDay
+				-- Bettrans range
+				IF @WhTicket = 0
+				BEGIN
+					SELECT TOP(1)
+						@TransId = b.transid,
+						@CustId = b.custid,
+						@WinLostDate = b.winlostdate,
+						@Recommend = b.recommend,
+						@Currency = b.currency,
+						@BetType = b.bettype,
+						@RefCode = b.RefCode,
+						@ProductId = s.ProductID,
+						@EventType = s.EventType,
+						@RefTable = s.RefTable,
+						@WhTicket = 2		-- bettrans
+					FROM dbo.bettrans AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+					WHERE (b.transid = @RefNo
+							OR (b.refno = @RefNo AND s.RefTable = 3))
+						AND (b.custid = @CustId OR @CustId = 0)
+						AND b.winlostdate > @MoveBetsDay
+				END
 			END
 
 			-- Bettrans14 range
@@ -369,47 +375,50 @@ BEGIN
 		END
 		ELSE IF ISNULL(@TxId, '') <> '' AND @CustId <> 0
 		BEGIN
-			-- Bettrans range
-			IF @WhTicket = 0
+			IF @ExcludeBettrans = 0
 			BEGIN
-				SELECT TOP(1)
-					@TransId = b.transid,
-					@CustId = b.custid,
-					@WinLostDate = b.winlostdate,
-					@Recommend = b.recommend,
-					@Currency = b.currency,
-					@BetType = b.bettype,
-					@RefCode = b.RefCode,
-					@ProductId = s.ProductID,
-					@EventType = s.EventType,
-					@RefTable = s.RefTable,
-					@WhTicket = 2		-- bettrans
-				FROM dbo.bettrans AS b WITH (NOLOCK)
-					INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
-					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-				WHERE b.custid = @CustId
-					AND b.winlostdate > @MoveBetsDay
-					AND @TxId = CASE
-									WHEN b.ExtraInfo LIKE '%p1%'
-										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@lt)[1]','VARCHAR(100)'), 0)
-									WHEN b.ExtraInfo LIKE '%p3%'
-										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p3/@lt)[1]','VARCHAR(100)'), 0)
-									WHEN b.ExtraInfo LIKE '%p5%'
-										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p5/@lt)[1]','VARCHAR(100)'), 0)
-									WHEN b.ExtraInfo LIKE '%p8%'
-										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p8/@lt)[1]','VARCHAR(100)'), 0)
-									WHEN b.ExtraInfo LIKE '%p27%'
-										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p27/@lt)[1]','VARCHAR(100)'), 0)
-									WHEN b.ExtraInfo LIKE '%p28%'
-										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p28/@lt)[1]','VARCHAR(100)'), 0)
-									WHEN b.ExtraInfo LIKE '%p40%'
-										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p40/@lt)[1]','VARCHAR(100)'), 0)
-									WHEN b.ExtraInfo LIKE '%p63%'
-										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p63/@lt)[1]','VARCHAR(100)'), 0)
-									WHEN b.ExtraInfo LIKE '%p69%'
-										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
-									ELSE ''
-								END
+				-- Bettrans range
+				IF @WhTicket = 0
+				BEGIN
+					SELECT TOP(1)
+						@TransId = b.transid,
+						@CustId = b.custid,
+						@WinLostDate = b.winlostdate,
+						@Recommend = b.recommend,
+						@Currency = b.currency,
+						@BetType = b.bettype,
+						@RefCode = b.RefCode,
+						@ProductId = s.ProductID,
+						@EventType = s.EventType,
+						@RefTable = s.RefTable,
+						@WhTicket = 2		-- bettrans
+					FROM dbo.bettrans AS b WITH (NOLOCK)
+						INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
+						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+					WHERE b.custid = @CustId
+						AND b.winlostdate > @MoveBetsDay
+						AND @TxId = CASE
+										WHEN b.ExtraInfo LIKE '%p1%'
+											THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@lt)[1]','VARCHAR(100)'), 0)
+										WHEN b.ExtraInfo LIKE '%p3%'
+											THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p3/@lt)[1]','VARCHAR(100)'), 0)
+										WHEN b.ExtraInfo LIKE '%p5%'
+											THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p5/@lt)[1]','VARCHAR(100)'), 0)
+										WHEN b.ExtraInfo LIKE '%p8%'
+											THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p8/@lt)[1]','VARCHAR(100)'), 0)
+										WHEN b.ExtraInfo LIKE '%p27%'
+											THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p27/@lt)[1]','VARCHAR(100)'), 0)
+										WHEN b.ExtraInfo LIKE '%p28%'
+											THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p28/@lt)[1]','VARCHAR(100)'), 0)
+										WHEN b.ExtraInfo LIKE '%p40%'
+											THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p40/@lt)[1]','VARCHAR(100)'), 0)
+										WHEN b.ExtraInfo LIKE '%p63%'
+											THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p63/@lt)[1]','VARCHAR(100)'), 0)
+										WHEN b.ExtraInfo LIKE '%p69%'
+											THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
+										ELSE ''
+									END
+				END
 			END
 
 			-- Bettrans14 range
@@ -1447,7 +1456,7 @@ BEGIN
 		IF @RefNo <> 0		-- Search by refno
 		BEGIN
 			-- BettransRnG range
-			IF @WhTicket = 0
+			IF @WhTicket = 0 AND @ExcludeBettrans = 0
 			BEGIN
 				SELECT TOP(1)
 					@TransId = b.transid,
@@ -1513,7 +1522,7 @@ BEGIN
 		ELSE IF ISNULL(@TxId, '') <> '' AND @CustId <> 0
 		BEGIN
 			-- BettransRnG range
-			IF @WhTicket = 0
+			IF @WhTicket = 0 AND @ExcludeBettrans = 0
 			BEGIN
 				SELECT TOP(1)
 					@TransId = b.transid,
@@ -1848,7 +1857,7 @@ BEGIN
 	IF @CustId <> -1 AND @RefNo <> 0		-- Search by refno
 	BEGIN
 		-- BettransLC range
-		IF @WhTicket = 0
+		IF @WhTicket = 0 AND @ExcludeBettrans = 0
 		BEGIN
 			SELECT TOP(1)
 				@TransId = b.transid,
@@ -2134,7 +2143,7 @@ BEGIN
 	IF @CustId <> -1 AND @RefNo <> 0		-- Search by refno
 	BEGIN
 		-- Bettransg range
-		IF @WhTicket = 0
+		IF @WhTicket = 0 AND @ExcludeBettrans = 0
 		BEGIN
 			SELECT TOP(1)
 				@TransId = b.transid,

@@ -1,20 +1,21 @@
-/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_RNG_Detail]
-	@AgentList		VARCHAR(MAX),
-	@CustId			INT,
-	@RefNo			BIGINT,
-	@TransType		TINYINT			= 0,
-	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10)
+	@AgentList			VARCHAR(MAX),
+	@CustId				INT,
+	@RefNo				BIGINT,
+	@TransType			TINYINT		= 0,
+	@ExcludeBettrans	BIT			= 0,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay		SMALLDATETIME,
+	@BaseCurrency		VARCHAR(10)
 AS
 
 /*
 	Created: Kos@20150921
 	Task: Get ticket detail from table bettransRnG (Microgaming RNG Game)
-	DB: DBEXT.bodb02
-	Original:
+	DB: DBACC.bodb02
+
 	Revisions:
 		- 20150924@Kos: Add column BetCheck to return TranId3rd for showing ticket result
 		- 20151029@Kos: Change SportType of Microgaming RNG Casino
@@ -51,6 +52,9 @@ AS
 		- 20220217@Kos: Support SG Jackpot [Redmine: #167035]
 		- 20220401@Kos: Support TxId for Vgaming [Redmine: #170054]
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
+		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
+					- Add new input param @ExcludeBettrans BIT
+					- Move from DBEXT to DBACC
 
 	Parameters:
 		- @TransType
@@ -160,7 +164,8 @@ BEGIN
 		EventDate		DATETIME
 	)
 
-	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate > @MoveBetsDay)
+	IF @ExcludeBettrans = 0
+		AND EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate > @MoveBetsDay)
 	BEGIN
 		INSERT INTO @tmpBettransRnG
 		SELECT
@@ -282,7 +287,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo
 	END
-	ELSE IF EXISTS ( SELECT 1 FROM DBARC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK) WHERE transid = @RefNo )
+	ELSE IF EXISTS ( SELECT 1 FROM bodb_Archive.dbo.bettrans_bk WITH (NOLOCK) WHERE transid = @RefNo )
 	BEGIN
 		INSERT INTO @tmpBettransRnG
 		SELECT
@@ -338,7 +343,7 @@ BEGIN
 				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
 				ELSE ''
 			END AS EventDate
-		FROM DBARC.bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 			CROSS APPLY dbo.f_IP_Decompress(brng.ip) AS dp
 		WHERE brng.custid = @CustId AND brng.RefNo = @RefNo

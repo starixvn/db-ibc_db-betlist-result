@@ -1,20 +1,21 @@
-/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_LC_Detail]
-	@AgentList		VARCHAR(MAX),
-	@CustId			INT,
-	@RefNo			BIGINT,
-	@TransType		TINYINT			= 0,
-	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10)
+	@AgentList			VARCHAR(MAX),
+	@CustId				INT,
+	@RefNo				BIGINT,
+	@TransType			TINYINT		= 0,
+	@ExcludeBettrans	BIT			= 0,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay		SMALLDATETIME,
+	@BaseCurrency		VARCHAR(10)
 AS
 
 /*
 	Created: Kos@20150923
 	Task : Get ticket detail from table betransLC (AG Casino)
-	DB: DBEXT.bodb02
-	Original:
+	DB: DBACC.bodb02
+
 	Revisions:
 		- 20160530@Kos: Add ORDER BY statement to correct ticket order [Redmine: #58448]
 		- 20160727@Kos: Include Void/Rejected detail tickets view drilldown WON/LOSE/DRAW summary tickets
@@ -33,6 +34,9 @@ AS
 					- Add new params @MoveBetsDay SMALLDATETIME and @BalanceUpDay SMALLDATETIME
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220330@Kos: Support FGG [Redmine: #167897]
+		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
+					- Add new input param @ExcludeBettrans BIT
+					- Move from DBEXT to DBACC
 
 	Parameters:
 		- @TransType
@@ -139,7 +143,8 @@ BEGIN
 		EventDate		DATETIME
 	)
 
-	IF EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate > @MoveBetsDay )
+	IF @ExcludeBettrans = 0
+		AND EXISTS ( SELECT 1 FROM dbo.bettrans WITH (NOLOCK) WHERE transid = @RefNo AND winlostdate > @MoveBetsDay )
 	BEGIN
 		INSERT INTO @tmpBettransLC
 		SELECT
@@ -291,7 +296,7 @@ BEGIN
 				AND sbt.ProductID = 39
 		WHERE blc.custid = @CustId AND blc.RefNo = @RefNo
 	END
-	ELSE IF EXISTS ( SELECT 1 FROM DBARC.bodb_Archive.dbo.bettrans_bk WITH (NOLOCK) WHERE transid = @RefNo )
+	ELSE IF EXISTS ( SELECT 1 FROM bodb_Archive.dbo.bettrans_bk WITH (NOLOCK) WHERE transid = @RefNo )
 	BEGIN
 		INSERT INTO @tmpBettransLC
 		SELECT
@@ -358,9 +363,9 @@ BEGIN
 				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
 				ELSE ''
 			END AS EventDate
-		FROM DBARC.bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
-			LEFT JOIN DBARC.bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
+			LEFT JOIN bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
 				ON bg.refno = blc.transid
 				AND bg.custid = blc.custid
 				AND sbt.ProductID = 39

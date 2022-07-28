@@ -1,8 +1,11 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelParlayDetail]
-	@TransId	BIGINT,
-	@CustId		INT
+	@TransId			BIGINT,
+	@CustId				INT,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay		SMALLDATETIME,
+	@ExcludeBettrans	BIT	= 0
 AS
 
 /*
@@ -34,6 +37,8 @@ AS
 		- 20201028@Kos: Return transdate [Redmine: #144388]
 		- 20201207@Kos: Hotfix - Wrong currency code display [Redmine: #146691]
 		- 20211126@Kos: Support Parlay Abnormal Bet [Redmine: #163900]
+		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
+					- Add new input param @MoveBetsDay SMALLDATETIME, @BalanceUpDay SMALLDATETIME, @ExcludeBettrans BIT
 */
 
 BEGIN
@@ -116,10 +121,11 @@ BEGIN
 		END
 	END
 
-	IF EXISTS (	SELECT 1
-				FROM dbo.bettransm AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-				WHERE b.refno = @RefNo AND b.custid = @CustId )
+	IF @ExcludeBettrans = 0
+		AND EXISTS ( SELECT 1
+					FROM dbo.bettransm AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
+					WHERE b.refno = @RefNo AND b.custid = @CustId )
 	BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
@@ -165,7 +171,9 @@ BEGIN
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		WHERE b.refno = @RefNo AND b.custid = @CustId
+		WHERE b.refno = @RefNo
+			AND b.custid = @CustId
+			AND (b.winlostdate > @MoveBetsDay OR b.winlostdate IS NULL)
 	END
 
 	IF EXISTS (	SELECT 1
@@ -213,7 +221,9 @@ BEGIN
 		FROM dbo.bettransm14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		WHERE b.refno = @RefNo AND b.custid = @CustId
+		WHERE b.refno = @RefNo
+			AND b.custid = @CustId
+			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 	END
 
 	IF EXISTS (	SELECT 1
@@ -261,7 +271,9 @@ BEGIN
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		WHERE b.refno = @RefNo AND b.custid = @CustId
+		WHERE b.refno = @RefNo
+			AND b.custid = @CustId
+			AND b.winlostdate < @BalanceUpDay
 	END
 
 	SELECT DISTINCT * FROM @tmpParlay

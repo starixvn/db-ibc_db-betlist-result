@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_TxID_Mem]
 	@TxId			VARCHAR(100),
 	@CustId			INT				= 0,
 	@Username		VARCHAR(50)		= '',
+	@ExcludeBettrans	BIT				= 0,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
 	@BaseCurrency	VARCHAR(10)		= ''
@@ -22,6 +23,8 @@ AS
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220401@Kos: Support TxId for Vgaming [Redmine: #170054]
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
+		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
+					- Add new input param @ExcludeBettrans BIT
 */
 
 BEGIN
@@ -161,7 +164,7 @@ BEGIN
 	IF @CustId NOT IN (-1, 0)
 	BEGIN
 		-- Bettrans range
-		IF @WhTicket = 0
+		IF @ExcludeBettrans = 0
 		BEGIN
 			SELECT TOP(1)
 				@TransId = b.transid,
@@ -855,7 +858,7 @@ BEGIN
 	IF @CustId NOT IN (-1, 0)
 	BEGIN
 		-- BettransRnG range
-		IF @WhTicket = 0
+		IF @WhTicket = 0 AND @ExcludeBettrans = 0
 		BEGIN
 			SELECT TOP(1)
 				@TransId = b.transid,
