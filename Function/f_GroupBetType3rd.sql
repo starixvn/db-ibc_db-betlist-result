@@ -1,6 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="1" isNested="1"></info>*/
-USE [bodb02]
-GO
+/*<info serverAlias="DBAGE-bodb02,DBEXT-bodb02,DBACC-bodb02,DBSIG-bodb02" selecters="bodbAdminNet" isFunction="1" isNested="1"></info>*/
 
 ALTER FUNCTION [dbo].[f_GroupBetType3rd] ()
 RETURNS TABLE
@@ -9,10 +7,11 @@ RETURN
 /*
 	Created: 20180308@Kos
 	Task: Get grouped bettype for 3rd products
-	DB: DBAGE.bodb02, DBEXT.bodb02, DBACC.bodb02
+	DB: DBAGE.bodb02, DBEXT.bodb02, DBACC.bodb02, DBSIG-bodb02
 
 	Revisions:
 		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
+		- 20220729@Kos: Scale out DBTRANS [Redmine: #175253]
 */
 
 	-- Grouped bettype for Betradar Virtual Basketball
@@ -34,13 +33,4 @@ RETURN
 	SELECT 2706, 2706		-- 1H Handicap
 	UNION ALL
 	SELECT 2806, 2706
-GO
-
-
-
-GRANT SELECT ON [dbo].[f_GroupBetType3rd] TO [bodbDownlineNet]
-GO
-GRANT SELECT ON [dbo].[f_GroupBetType3rd] TO [bodbDownlineNetView]
-GO
-GRANT SELECT ON [dbo].[f_GroupBetType3rd] TO [bodbAdminNet]
 GO

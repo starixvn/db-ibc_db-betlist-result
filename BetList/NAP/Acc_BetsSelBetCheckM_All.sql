@@ -1,10 +1,13 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetCheckM_All]
-	@TransId	BIGINT,
-	@RefNo		BIGINT,
-	@CustId		INT,
-	@IsCN88		BIT = 0
+	@TransId			BIGINT,
+	@RefNo				BIGINT,
+	@CustId				INT,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay		SMALLDATETIME,
+	@IsCN88				BIT = 0,
+	@ExcludeBettrans	BIT	= 0
 AS
 
 /*
@@ -39,6 +42,8 @@ AS
 		- 20210223@Kos: Support Cricket AIO [Redmine: #148962]
 		- 20211123@Razor: Check Abnormal Parlay Ticket [Redmine: #163900]
 		- 20220225@Razor: Hide Saba word in league name for China View licensee [Redmine: #169101]
+		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
+					- Add new input param @MoveBetsDay SMALLDATETIME, @BalanceUpDay SMALLDATETIME, @ExcludeBettrans BIT
 */
 
 BEGIN
@@ -133,7 +138,8 @@ BEGIN
 	END
 
 	-- Get parlay selection detail
-	IF EXISTS(	SELECT 1
+	IF @ExcludeBettrans = 0
+		AND EXISTS(	SELECT 1
 				FROM dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo AND bm.custid = @CustId)
@@ -198,7 +204,9 @@ BEGIN
 				AND m.sporttype = 50
 				AND m.ChildMatchType = 200
 			LEFT JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
-		WHERE b.refno = @RefNo AND b.custid = @CustId
+		WHERE b.refno = @RefNo
+			AND b.custid = @CustId
+			AND (b.winlostdate IS NULL OR b.winlostdate > @MoveBetsDay)
 	END
 
 	IF EXISTS(	SELECT 1
@@ -266,7 +274,9 @@ BEGIN
 				AND m.sporttype = 50
 				AND m.ChildMatchType = 200
 			LEFT JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
-		WHERE b.refno = @RefNo AND b.custid = @CustId
+		WHERE b.refno = @RefNo
+			AND b.custid = @CustId
+			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 	END
 
 	IF EXISTS(	SELECT 1
@@ -338,11 +348,13 @@ BEGIN
 				AND m.sporttype = 50
 				AND m.ChildMatchType = 200
 			LEFT JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
-		WHERE b.refno = @RefNo AND b.custid = @CustId
+		WHERE b.refno = @RefNo
+			AND b.custid = @CustId
+			AND b.winlostdate < @BalanceUpDay
 	END
 
 	SELECT DISTINCT *, 
-			@IsChinaView AS IsChinaView 
+		@IsChinaView AS IsChinaView 
 	FROM @BetListMP
 	ORDER BY TransId DESC
 END

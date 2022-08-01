@@ -1,18 +1,18 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_Jackpot_Detail]
-	@TransId	BIGINT,
-	@CustId		INT,
-	@BetType	SMALLINT,
+	@TransId			BIGINT,
+	@CustId				INT,
+	@BetType			SMALLINT,
+	@ExcludeBettrans	BIT				= 0,
 	@MoveBetsDay		SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME
+	@BalanceUpDay		SMALLDATETIME
 AS
 
 /*
 	Created: Kos@20151012
 	Task: Get Jackpot Won ticket detail
 	DB: DBACC.bodb02
-	Original:
 	Revisions:
 		- 20180207@Kos: Support ONERnG Jackpot [#Redmine: 88652]
 		- 20200709@Kos: Support PP Jackpot [Redmine: #137284]
@@ -22,6 +22,8 @@ AS
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
 		- 20220124@Razor: Support SG Jackpot [Redmine: #166683]
+		- 20220808@Kos: Scale out DBTRANS [Redmine: #175253]
+					- Add new input param @ExcludeBettrans BIT
 */
 
 BEGIN
@@ -75,7 +77,8 @@ BEGIN
 	)
 
 	-- Get ticket
-	IF EXISTS ( SELECT TOP(1) 1
+	IF @ExcludeBettrans = 0
+		AND EXISTS ( SELECT TOP(1) 1
 				FROM dbo.bettransRnG AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.BetType
 				WHERE b.transid = @TransId AND b.custid = @CustId AND b.winlostdate > @MoveBetsDay)

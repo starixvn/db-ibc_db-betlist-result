@@ -14,6 +14,7 @@ AS
 	Original:
 	Revisions:
 		- 20220329@Razor: Init [Redmine: #169007]
+		- 20220808@Razor: Scale out DBTRANS [Redmine: #175253]
 */
 
 BEGIN
@@ -26,6 +27,7 @@ BEGIN
 		FROM dbo.CashOutSelling WITH (NOLOCK)
 		WHERE transid = @TransId AND Custid = @Custid
 	END
+	ELSE
 	BEGIN
 		SELECT TransId,
 				CashoutExtraInfo

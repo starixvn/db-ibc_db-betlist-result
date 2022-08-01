@@ -1,17 +1,18 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_Mem]
-	@CustId			INT,
-	@BetType		INT				= 0,
-	@StatusIdList	VARCHAR(100)	= '',
-	@FromDate		SMALLDATETIME,
-	@ToDate			SMALLDATETIME,
-	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME,
-	@IsCN88			BIT				= 0,
-	@MaxTotalRow	INT				= 1000000	OUTPUT,
-	@ErrCode		INT				= 0			OUTPUT,
-	@ErrMsg			NVARCHAR(4000)	= ''		OUTPUT
+	@CustId				INT,
+	@BetType			INT				= 0,
+	@StatusIdList		VARCHAR(100)	= '',
+	@FromDate			SMALLDATETIME,
+	@ToDate				SMALLDATETIME,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay		SMALLDATETIME,
+	@IsCN88				BIT				= 0,
+	@ExcludeBettrans	BIT				= 0,
+	@MaxTotalRow		INT				= 1000000	OUTPUT,
+	@ErrCode			INT				= 0			OUTPUT,
+	@ErrMsg				NVARCHAR(4000)	= ''		OUTPUT
 AS
 
 /*
@@ -85,6 +86,8 @@ AS
 		- 20220209@Razor: Support TxId for 3rd products [Redmine: #167320]
 		- 20220215@Razor: Support SG Jackpot [Redmine: #166683]
 		- 20220317@Razor: Support FGG [Redmine: #165683]
+		- 20220729@Kos: Scale out DBTRANS [Redmine: #175253]
+					- Add new input param @ExcludeBettrans BIT
 */
 
 BEGIN
@@ -266,7 +269,7 @@ BEGIN
 	DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
 
 	-- bettrans range
-	IF @ToDate > @MoveBetsDay
+	IF @ToDate > @MoveBetsDay AND @ExcludeBettrans = 0
 	BEGIN
 		IF @FromDate <= @MoveBetsDay
 			SET @TempFromDate = DATEADD(DAY, 1, @MoveBetsDay)
@@ -1079,187 +1082,190 @@ BEGIN
 			SET WalletType = 0
 			WHERE WalletType = 2 AND RefCode = 0
 
-			-- Get yesterday and today running and settled bettransRnG/bettransLC tickets
-			IF EXISTS ( SELECT 1 FROM @Data
-						WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM') AND WinLostDate >= @Yesterday)	-- bettransRnG
+			IF @ExcludeBettrans = 0
 			BEGIN
-				-- Running
-				IF ',' + @OriginalStatusIdList + ',' LIKE '%,0,%'
+				-- Get yesterday and today running and settled bettransRnG/bettransLC tickets
+				IF EXISTS ( SELECT 1 FROM @Data
+							WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM') AND WinLostDate >= @Yesterday)	-- bettransRnG
 				BEGIN
-					INSERT INTO @TmpData
-					SELECT
-						c.TransId AS RefNo,
-						0 AS Odds,
-						SUM(brng.stake) AS Stake,
-						SUM(brng.actual_stake) AS Actual_Stake,
-						'Running' AS Status,
-						0 AS WinLost,
-						0 AS AWinLost,
-						0 AS MWinLost,
-						0 AS SWinLost,
-						0 AS Commission,
-						0 AS Comm,
-						0 AS AComm,
-						0 AS SComm,
-						AVG(brng.apositiontaking) AS apositiontaking,
-						AVG(brng.mpositiontaking) AS mpositiontaking,
-						AVG(brng.spositiontaking) AS spositiontaking,
-						AVG(brng.playerdiscount) AS playerdiscount,
-						AVG(brng.discount) AS discount,
-						AVG(brng.adiscount) AS adiscount,
-						AVG(brng.sdiscount) AS sdiscount,
-						0 AS OddsSpread
-					FROM @Data AS c
-						INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-					WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM')
-						AND c.WinLostDate >= @Yesterday
-						AND brng.statusID IN (0, 1)
-					GROUP BY
-						c.TransId,
-						c.Product
+					-- Running
+					IF ',' + @OriginalStatusIdList + ',' LIKE '%,0,%'
+					BEGIN
+						INSERT INTO @TmpData
+						SELECT
+							c.TransId AS RefNo,
+							0 AS Odds,
+							SUM(brng.stake) AS Stake,
+							SUM(brng.actual_stake) AS Actual_Stake,
+							'Running' AS Status,
+							0 AS WinLost,
+							0 AS AWinLost,
+							0 AS MWinLost,
+							0 AS SWinLost,
+							0 AS Commission,
+							0 AS Comm,
+							0 AS AComm,
+							0 AS SComm,
+							AVG(brng.apositiontaking) AS apositiontaking,
+							AVG(brng.mpositiontaking) AS mpositiontaking,
+							AVG(brng.spositiontaking) AS spositiontaking,
+							AVG(brng.playerdiscount) AS playerdiscount,
+							AVG(brng.discount) AS discount,
+							AVG(brng.adiscount) AS adiscount,
+							AVG(brng.sdiscount) AS sdiscount,
+							0 AS OddsSpread
+						FROM @Data AS c
+							INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
+						WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM')
+							AND c.WinLostDate >= @Yesterday
+							AND brng.statusID IN (0, 1)
+						GROUP BY
+							c.TransId,
+							c.Product
+					END
+
+					-- Settled
+					IF ',' + @OriginalStatusIdList + ',' LIKE '%,111,%'
+						OR ',' + @OriginalStatusIdList + ',' LIKE '%,112,%'
+						OR ',' + @OriginalStatusIdList + ',' LIKE '%,113,%'
+					BEGIN
+						INSERT INTO @TmpData
+						SELECT
+							c.TransId AS RefNo,
+							CASE
+								WHEN Product IN ('OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+								ELSE 0
+							END AS Odds,
+							SUM(brng.stake) AS Stake,
+							SUM(brng.actual_stake) AS Actual_Stake,
+							CASE
+								WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
+								WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
+								ELSE 'Draw'
+							END AS Status,
+							SUM(brng.winlost - brng.actual_stake) AS WinLost,
+							SUM(brng.awinlost) AS AWinLost,
+							SUM(brng.mwinlost) AS MWinLost,
+							SUM(brng.swinlost) AS SWinLost,
+							SUM(brng.playercomm) AS Commission,
+							SUM(brng.comm - brng.playercomm) AS Comm,
+							SUM(brng.acomm - brng.comm) AS AComm,
+							SUM(brng.scomm - brng.acomm) AS SComm,
+							AVG(brng.apositiontaking) AS apositiontaking,
+							AVG(brng.mpositiontaking) AS mpositiontaking,
+							AVG(brng.spositiontaking) AS spositiontaking,
+							AVG(brng.playerdiscount) AS playerdiscount,
+							AVG(brng.discount) AS discount,
+							AVG(brng.adiscount) AS adiscount,
+							AVG(brng.sdiscount) AS sdiscount,
+							CASE
+								WHEN c.Product IN ('OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN ISNULL(SUM(brng.BetStake), 0)
+								ELSE 0
+							END AS OddsSpread
+						FROM @Data AS c
+							INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
+						WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM')
+							AND c.WinLostDate >= @Yesterday
+							AND brng.statusID NOT IN (0, 1)
+						GROUP BY
+							c.TransId,
+							c.Product
+					END
 				END
 
-				-- Settled
-				IF ',' + @OriginalStatusIdList + ',' LIKE '%,111,%'
-					OR ',' + @OriginalStatusIdList + ',' LIKE '%,112,%'
-					OR ',' + @OriginalStatusIdList + ',' LIKE '%,113,%'
+				IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL') AND WinLostDate >= @Yesterday)		-- bettransLC
 				BEGIN
-					INSERT INTO @TmpData
-					SELECT
-						c.TransId AS RefNo,
-						CASE
-							WHEN Product IN ('OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
-							ELSE 0
-						END AS Odds,
-						SUM(brng.stake) AS Stake,
-						SUM(brng.actual_stake) AS Actual_Stake,
-						CASE
-							WHEN SUM(brng.winlost - brng.actual_stake) > 0 THEN 'Won'
-							WHEN SUM(brng.winlost - brng.actual_stake) < 0 THEN 'Lose'
-							ELSE 'Draw'
-						END AS Status,
-						SUM(brng.winlost - brng.actual_stake) AS WinLost,
-						SUM(brng.awinlost) AS AWinLost,
-						SUM(brng.mwinlost) AS MWinLost,
-						SUM(brng.swinlost) AS SWinLost,
-						SUM(brng.playercomm) AS Commission,
-						SUM(brng.comm - brng.playercomm) AS Comm,
-						SUM(brng.acomm - brng.comm) AS AComm,
-						SUM(brng.scomm - brng.acomm) AS SComm,
-						AVG(brng.apositiontaking) AS apositiontaking,
-						AVG(brng.mpositiontaking) AS mpositiontaking,
-						AVG(brng.spositiontaking) AS spositiontaking,
-						AVG(brng.playerdiscount) AS playerdiscount,
-						AVG(brng.discount) AS discount,
-						AVG(brng.adiscount) AS adiscount,
-						AVG(brng.sdiscount) AS sdiscount,
-						CASE
-							WHEN c.Product IN ('OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN ISNULL(SUM(brng.BetStake), 0)
-							ELSE 0
-						END AS OddsSpread
-					FROM @Data AS c
-						INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-					WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM')
-						AND c.WinLostDate >= @Yesterday
-						AND brng.statusID NOT IN (0, 1)
-					GROUP BY
-						c.TransId,
-						c.Product
+					-- Running
+					IF ',' + @OriginalStatusIdList + ',' LIKE '%,0,%'
+					BEGIN
+						INSERT INTO @TmpData
+						SELECT
+							c.TransId AS RefNo,
+							0 AS Odds,
+							SUM(blc.stake) AS Stake,
+							SUM(blc.actual_stake) AS Actual_Stake,
+							'Running' AS Status,
+							0 AS WinLost,
+							0 AS AWinLost,
+							0 AS MWinLost,
+							0 AS SWinLost,
+							0 AS Commission,
+							0 AS Comm,
+							0 AS AComm,
+							0 AS SComm,
+							AVG(blc.apositiontaking) AS apositiontaking,
+							AVG(blc.mpositiontaking) AS mpositiontaking,
+							AVG(blc.spositiontaking) AS spositiontaking,
+							AVG(blc.playerdiscount) AS playerdiscount,
+							AVG(blc.discount) AS discount,
+							AVG(blc.adiscount) AS adiscount,
+							AVG(blc.sdiscount) AS sdiscount,
+							0 AS OddsSpread
+						FROM @Data AS c
+							INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
+						WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
+							AND c.WinLostDate >= @Yesterday
+							AND blc.statusID IN (0, 1)
+						GROUP BY
+							c.TransId,
+							c.Product
+					END
+
+					-- Settled
+					IF ',' + @OriginalStatusIdList + ',' LIKE '%,111,%'
+						OR ',' + @OriginalStatusIdList + ',' LIKE '%,112,%'
+						OR ',' + @OriginalStatusIdList + ',' LIKE '%,113,%'
+					BEGIN
+						INSERT INTO @TmpData
+						SELECT
+							c.TransId AS RefNo,
+							0 AS Odds,
+							SUM(blc.stake) AS Stake,
+							SUM(blc.actual_stake) AS Actual_Stake,
+							CASE
+								WHEN SUM(blc.winlost - blc.actual_stake) > 0 THEN 'Won'
+								WHEN SUM(blc.winlost - blc.actual_stake) < 0 THEN 'Lose'
+								ELSE 'Draw'
+							END AS Status,
+							SUM(blc.winlost - blc.actual_stake) AS WinLost,
+							SUM(blc.awinlost) AS AWinLost,
+							SUM(blc.mwinlost) AS MWinLost,
+							SUM(blc.swinlost) AS SWinLost,
+							SUM(blc.playercomm) AS Commission,
+							SUM(blc.comm - blc.playercomm) AS Comm,
+							SUM(blc.acomm - blc.comm) AS AComm,
+							SUM(blc.scomm - blc.acomm) AS SComm,
+							AVG(blc.apositiontaking) AS apositiontaking,
+							AVG(blc.mpositiontaking) AS mpositiontaking,
+							AVG(blc.spositiontaking) AS spositiontaking,
+							AVG(blc.playerdiscount) AS playerdiscount,
+							AVG(blc.discount) AS discount,
+							AVG(blc.adiscount) AS adiscount,
+							AVG(blc.sdiscount) AS sdiscount,
+							0 AS OddsSpread
+						FROM @Data AS c
+							INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
+						WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
+							AND c.WinLostDate >= @Yesterday
+							AND blc.statusID NOT IN (0, 1)
+						GROUP BY
+							c.TransId,
+							c.Product
+					END
 				END
+
+				DELETE FROM @TmpData
+				WHERE (Status = 'Draw' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,111,%')
+					OR (Status = 'Won' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,112,%')
+					OR (Status = 'Lose' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,113,%')
+
+				DELETE b
+				FROM @Data AS b
+				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 
+						'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'VGA', 'FGGL')
+					AND b.Winlostdate >= @Yesterday
+					AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 			END
-
-			IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL') AND WinLostDate >= @Yesterday)		-- bettransLC
-			BEGIN
-				-- Running
-				IF ',' + @OriginalStatusIdList + ',' LIKE '%,0,%'
-				BEGIN
-					INSERT INTO @TmpData
-					SELECT
-						c.TransId AS RefNo,
-						0 AS Odds,
-						SUM(blc.stake) AS Stake,
-						SUM(blc.actual_stake) AS Actual_Stake,
-						'Running' AS Status,
-						0 AS WinLost,
-						0 AS AWinLost,
-						0 AS MWinLost,
-						0 AS SWinLost,
-						0 AS Commission,
-						0 AS Comm,
-						0 AS AComm,
-						0 AS SComm,
-						AVG(blc.apositiontaking) AS apositiontaking,
-						AVG(blc.mpositiontaking) AS mpositiontaking,
-						AVG(blc.spositiontaking) AS spositiontaking,
-						AVG(blc.playerdiscount) AS playerdiscount,
-						AVG(blc.discount) AS discount,
-						AVG(blc.adiscount) AS adiscount,
-						AVG(blc.sdiscount) AS sdiscount,
-						0 AS OddsSpread
-					FROM @Data AS c
-						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
-						AND c.WinLostDate >= @Yesterday
-						AND blc.statusID IN (0, 1)
-					GROUP BY
-						c.TransId,
-						c.Product
-				END
-
-				-- Settled
-				IF ',' + @OriginalStatusIdList + ',' LIKE '%,111,%'
-					OR ',' + @OriginalStatusIdList + ',' LIKE '%,112,%'
-					OR ',' + @OriginalStatusIdList + ',' LIKE '%,113,%'
-				BEGIN
-					INSERT INTO @TmpData
-					SELECT
-						c.TransId AS RefNo,
-						0 AS Odds,
-						SUM(blc.stake) AS Stake,
-						SUM(blc.actual_stake) AS Actual_Stake,
-						CASE
-							WHEN SUM(blc.winlost - blc.actual_stake) > 0 THEN 'Won'
-							WHEN SUM(blc.winlost - blc.actual_stake) < 0 THEN 'Lose'
-							ELSE 'Draw'
-						END AS Status,
-						SUM(blc.winlost - blc.actual_stake) AS WinLost,
-						SUM(blc.awinlost) AS AWinLost,
-						SUM(blc.mwinlost) AS MWinLost,
-						SUM(blc.swinlost) AS SWinLost,
-						SUM(blc.playercomm) AS Commission,
-						SUM(blc.comm - blc.playercomm) AS Comm,
-						SUM(blc.acomm - blc.comm) AS AComm,
-						SUM(blc.scomm - blc.acomm) AS SComm,
-						AVG(blc.apositiontaking) AS apositiontaking,
-						AVG(blc.mpositiontaking) AS mpositiontaking,
-						AVG(blc.spositiontaking) AS spositiontaking,
-						AVG(blc.playerdiscount) AS playerdiscount,
-						AVG(blc.discount) AS discount,
-						AVG(blc.adiscount) AS adiscount,
-						AVG(blc.sdiscount) AS sdiscount,
-						0 AS OddsSpread
-					FROM @Data AS c
-						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
-						AND c.WinLostDate >= @Yesterday
-						AND blc.statusID NOT IN (0, 1)
-					GROUP BY
-						c.TransId,
-						c.Product
-				END
-			END
-
-			DELETE FROM @TmpData
-			WHERE (Status = 'Draw' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,111,%')
-				OR (Status = 'Won' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,112,%')
-				OR (Status = 'Lose' AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,113,%')
-
-			DELETE b
-			FROM @Data AS b
-			WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 
-					'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'VGA', 'FGGL')
-				AND b.Winlostdate >= @Yesterday
-				AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 
 			-- bettrans range
 			IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE TableID IN (1, 4))

@@ -1,11 +1,12 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_SelBettype]
-	@CustId			INT,
-	@FromDate		SMALLDATETIME,
-	@ToDate			SMALLDATETIME,
-	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME
+	@CustId				INT,
+	@FromDate			SMALLDATETIME,
+	@ToDate				SMALLDATETIME,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay		SMALLDATETIME,
+	@ExcludeBettrans	BIT			= 0
 AS
 
 /*
@@ -27,6 +28,8 @@ AS
 		- 20180308@Kos: Support Betradar Virtual Basketball [Redmine: #90616]
 		- 20190829@Kos: Don't support inactive products anymore [Redmine: #119100]
 		- 20191007@Kos: Move to DBACC [Redmine: #120379]
+		- 20220808@Kos: Scale out DBTRANS [Redmine: #175253]
+					- Add new input param @ExcludeBettrans BIT
 */
 
 BEGIN
@@ -38,7 +41,7 @@ BEGIN
 	DECLARE @TempToDate SMALLDATETIME
 
 	-- bettrans range
-	IF @ToDate > @MoveBetsDay
+	IF @ToDate > @MoveBetsDay AND @ExcludeBettrans = 0
 	BEGIN
 		IF @FromDate <= @MoveBetsDay
 			SET @TempFromDate = DATEADD(DAY, 1, @MoveBetsDay)
@@ -125,8 +128,4 @@ BEGIN
 	FROM dbo.bettype AS bt WITH (NOLOCK)
 		INNER JOIN (SELECT DISTINCT BetType FROM @BetTypeTable) btt ON bt.typeid = btt.BetType
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Acc_BetList_SelBettype] TO [bodbAdminNet]
 GO

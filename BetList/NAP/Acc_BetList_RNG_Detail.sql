@@ -1,21 +1,22 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_RNG_Detail]
-	@RefNo		BIGINT,
-	@CustId		INT,
-	@TransType	TINYINT	= 0,
-	@PageIndex	INT		= 1,
-	@PageSize	INT		= 1000,
+	@RefNo				BIGINT,
+	@CustId				INT,
+	@TransType			TINYINT			= 0,
+	@ExcludeBettrans	BIT			= 0,
 	@MoveBetsDay		SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME,
-	@TotalRows	INT		= 0		OUTPUT
+	@BalanceUpDay		SMALLDATETIME,
+	@PageIndex			INT				= 1,
+	@PageSize			INT				= 1000,
+	@TotalRows			INT				= 0		OUTPUT
 AS
 
 /*
 	Created: Kos@20151012
 	Task: Get ticket detail from table betransRnG (Microgaming RNG Game)
 	DB: DBACC.bodb02
-	Original:
+
 	Revisions:
 		- 20151030@Kos: Change ProductId/SportType of Microgaming RNG Casino
 		- 20151229@Kos: Support RNG Casino Single Wallet and use SportBettypeMatrix [Redmine: #48958]
@@ -56,6 +57,9 @@ AS
 		- 20220215@Razor: VGaming, Sabaclub return SiteId on MatchCode property
 		- 20220215@Razor: Support SG Jackpot [Redmine: #166683]
 		- 20220324@Razor: Support TxId for VGaming [Redmine: #170054]
+		- 20220808@Kos: Scale out DBTRANS [Redmine: #175253]
+					- Add new input param @ExcludeBettrans BIT
+
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -164,12 +168,15 @@ BEGIN
 	DECLARE @CurrencyName	NVARCHAR(50),
 		@WhTicket			TINYINT
 
-	SELECT @CurrencyName = ex.currency,
-		@WhTicket = 1
-	FROM dbo.bettrans AS b WITH (NOLOCK)
-		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
-	WHERE b.transid = @RefNo
-		AND b.winlostdate > @MoveBetsDay
+	IF @ExcludeBettrans = 0
+	BEGIN
+		SELECT @CurrencyName = ex.currency,
+			@WhTicket = 1
+		FROM dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+		WHERE b.transid = @RefNo
+			AND b.winlostdate > @MoveBetsDay
+	END
 
 	IF @CurrencyName IS NULL
 	BEGIN

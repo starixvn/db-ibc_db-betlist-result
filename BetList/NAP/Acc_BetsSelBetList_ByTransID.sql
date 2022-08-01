@@ -1,11 +1,12 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_ByTransID]
-	@CustId			INT,
-	@RefNo			BIGINT,
-	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME,
-	@IsCN88			BIT = 0
+	@CustId				INT,
+	@RefNo				BIGINT,
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay		SMALLDATETIME,
+	@IsCN88				BIT				= 0,
+	@ExcludeBettrans	BIT				= 0
 AS
 
 /*
@@ -171,6 +172,8 @@ AS
 		- 20220317@Razor: Support FGG [Redmine: #165683]
 		- 20220324@Razor: Support TxId for VGaming [Redmine: #170054]
 		- 20220422@Razor: Support Virtual games result [Redmine: #170997]
+		- 20220729@Kos: Scale out DBTRANS [Redmine: #175253]
+					- Add new input param @ExcludeBettrans BIT
 */
 
 BEGIN
@@ -273,40 +276,43 @@ BEGIN
 	WHERE BetType NOT IN (903, 904, 913, 914, 999)
 		AND ProductID NOT IN (2, 4, 7, 9, 13, 17, 19, 26, 30, 31, 33)
 
-	-- FROM translog
-	SELECT TOP(1)
-		@TransId = b.translogid,
-		@WinLostDate = b.winlostdate,
-		@BetType = b.gameID,
-		@RefNo = b.translogid
-	FROM dbo.translog AS b WITH (NOLOCK)
-		INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
-	WHERE b.custid = @CustId
-		AND b.translogid = @RefNo
-		AND b.statusID IN (0, 1)
-		AND ( sp.productid IN (8, 12, 15, 28, 38, 40, 43, 49, 63)
-			OR sp.bettype BETWEEN 801 AND 899
-			OR (sp.ProductId = 3 AND sp.EventType = 0))
-
-	-- FROM bettrans
-	IF @WinLostDate IS NULL
+	IF @ExcludeBettrans = 0
 	BEGIN
+		-- FROM translog
 		SELECT TOP(1)
-			@TransId = b.transid,
+			@TransId = b.translogid,
 			@WinLostDate = b.winlostdate,
-			@BetType = b.bettype,
-			@RefNo = b.refno
-		FROM dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
+			@BetType = b.gameID,
+			@RefNo = b.translogid
+		FROM dbo.translog AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
 		WHERE b.custid = @CustId
-			AND ( b.transid = @RefNo
-				OR ( b.refno = @RefNo
-					AND (sp.productid IN (8, 12, 15, 28, 38, 40, 43, 49, 63)
-						OR sp.bettype BETWEEN 801 AND 899
-						OR (sp.productid = 3 AND sp.EventType = 0))))
-			--exclude metric gaming running ticket
-			AND (b.bettype NOT BETWEEN 801 AND 806
-				OR (b.bettype BETWEEN 801 AND 806 AND b.statusID NOT IN (0, 1)))
+			AND b.translogid = @RefNo
+			AND b.statusID IN (0, 1)
+			AND ( sp.productid IN (8, 12, 15, 28, 38, 40, 43, 49, 63)
+				OR sp.bettype BETWEEN 801 AND 899
+				OR (sp.ProductId = 3 AND sp.EventType = 0))
+
+		-- FROM bettrans
+		IF @WinLostDate IS NULL
+		BEGIN
+			SELECT TOP(1)
+				@TransId = b.transid,
+				@WinLostDate = b.winlostdate,
+				@BetType = b.bettype,
+				@RefNo = b.refno
+			FROM dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
+			WHERE b.custid = @CustId
+				AND ( b.transid = @RefNo
+					OR ( b.refno = @RefNo
+						AND (sp.productid IN (8, 12, 15, 28, 38, 40, 43, 49, 63)
+							OR sp.bettype BETWEEN 801 AND 899
+							OR (sp.productid = 3 AND sp.EventType = 0))))
+				--exclude metric gaming running ticket
+				AND (b.bettype NOT BETWEEN 801 AND 806
+					OR (b.bettype BETWEEN 801 AND 806 AND b.statusID NOT IN (0, 1)))
+		END
 	END
 
 	-- FROM bettrans14
@@ -4107,13 +4113,16 @@ BEGIN
 	SET @WinLostDate = NULL
 
 	-- bettransRnG
-	SELECT TOP(1)
-		@TransId = b.transid,
-		@WinLostDate = b.winlostdate,
-		@BetType = b.gameID
-	FROM dbo.bettransRnG AS b WITH (NOLOCK)
-		INNER JOIN @SportBettype AS sp ON b.gameID = sp.Bettype
-	WHERE b.custid = @CustId AND b.transid = @RefNo
+	IF @ExcludeBettrans = 0
+	BEGIN
+		SELECT TOP(1)
+			@TransId = b.transid,
+			@WinLostDate = b.winlostdate,
+			@BetType = b.gameID
+		FROM dbo.bettransRnG AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sp ON b.gameID = sp.Bettype
+		WHERE b.custid = @CustId AND b.transid = @RefNo
+	END
 
 	-- bettransRnG14
 	IF @WinLostDate IS NULL
@@ -4484,13 +4493,16 @@ BEGIN
 	SET @WinLostDate = NULL
 
 	-- bettransLC
-	SELECT TOP(1)
-		@TransId = b.transid,
-		@WinLostDate = b.winlostdate,
-		@BetType = b.gameID
-	FROM dbo.bettransLC AS b WITH (NOLOCK)
-		INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
-	WHERE b.custid = @CustId AND b.transid = @RefNo
+	IF @ExcludeBettrans = 0
+	BEGIN
+		SELECT TOP(1)
+			@TransId = b.transid,
+			@WinLostDate = b.winlostdate,
+			@BetType = b.gameID
+		FROM dbo.bettransLC AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sp ON b.gameID = sp.bettype
+		WHERE b.custid = @CustId AND b.transid = @RefNo
+	END
 
 	-- bettransLC14
 	IF @WinLostDate IS NULL
@@ -4807,13 +4819,16 @@ BEGIN
 	SET @WinLostDate = NULL
 
 	-- bettransg
-	SELECT TOP(1)
-		@TransId = b.transid,
-		@WinLostDate = b.winlostdate,
-		@BetType = b.bettype
-	FROM dbo.bettransg AS b WITH (NOLOCK)
-		INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
-	WHERE b.custid = @CustId AND b.transid = @RefNo
+	IF @ExcludeBettrans = 0
+	BEGIN
+		SELECT TOP(1)
+			@TransId = b.transid,
+			@WinLostDate = b.winlostdate,
+			@BetType = b.bettype
+		FROM dbo.bettransg AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
+		WHERE b.custid = @CustId AND b.transid = @RefNo
+	END
 
 	-- bettransg14
 	IF @WinLostDate IS NULL
