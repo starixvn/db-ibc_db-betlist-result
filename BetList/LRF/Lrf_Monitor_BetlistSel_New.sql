@@ -79,6 +79,7 @@ AS
 					- Remove input params SportId and LeagueId
 					- Add new input params @SportTypeList VARCHAR(MAX), @LeagueList VARCHAR(MAX), @CustomerClass VARCHAR(200)
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
+		- 20220811@Kos: Support Customer Class Is NULL [RedmineID: #176156]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -582,7 +583,11 @@ BEGIN
 			IF @CustomerClass <> 'All'
 			BEGIN
 				DELETE @Data
-				WHERE ',' + @CustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%'
+				WHERE 1 <> CASE
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+								ELSE 0
+							END
 			END
 		END
 
