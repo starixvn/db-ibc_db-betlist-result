@@ -16,7 +16,7 @@ ALTER PROCEDURE [dbo].[Lrf_Monitor_BetlistSel_New]
 	@MaxStake		MONEY			= 0,
 	@LiveIndicator	INT				= 0,
 	@BetFrom		VARCHAR(100)	= 'All',
-	@CustomerClass	VARCHAR(200)	= 'All',
+	@CustomerClass	VARCHAR(MAX)	= 'All',
 	@BaseCurrency	VARCHAR(10)		='USD',
 	@Debug			BIT				= 0
 AS
@@ -80,6 +80,7 @@ AS
 					- Add new input params @SportTypeList VARCHAR(MAX), @LeagueList VARCHAR(MAX), @CustomerClass VARCHAR(200)
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220811@Kos: Support Customer Class Is NULL [RedmineID: #176156]
+		- 20220825@Kos: Hotfix - Extend length for Customer Class [RedmineID: #177077]
 
 	Parameter's Explanation:
 		- @BetType:
