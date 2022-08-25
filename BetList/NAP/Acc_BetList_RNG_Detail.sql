@@ -59,6 +59,7 @@ AS
 		- 20220324@Razor: Support TxId for VGaming [Redmine: #170054]
 		- 20220808@Kos: Scale out DBTRANS [Redmine: #175253]
 					- Add new input param @ExcludeBettrans BIT
+		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
 
 	Parameters:
 		- @TransType
@@ -83,7 +84,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)

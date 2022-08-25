@@ -88,6 +88,8 @@ AS
 		- 20220317@Razor: Support FGG [Redmine: #165683]
 		- 20220729@Kos: Scale out DBTRANS [Redmine: #175253]
 					- Add new input param @ExcludeBettrans BIT
+		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
+
 */
 
 BEGIN
@@ -392,7 +394,7 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND (',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-				OR (s.ProductID IN (6, 21, 22, 24, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 65, 66, 67, 68, 69, 70)
+				OR (s.ProductID IN (6, 21, 22, 24, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 65, 66, 67, 68, 69, 70, 72)
 					AND b.winlostdate >= @Yesterday))		-- Don't care status of yesterday and today summary casino rows
 
 		-- Get more info for CashOut tickets
@@ -895,6 +897,7 @@ BEGIN
 						WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
 						WHEN s.ProductID = 69 THEN 'BTC'							-- Bitcoin
 						WHEN s.ProductID = 70 THEN 'FGGL'							-- FGG
+						WHEN s.ProductID = 72 THEN 'SEA'							-- SEAL Entertainment
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -916,7 +919,7 @@ BEGIN
 			OR Product IS NULL
 			OR BetType IN (903, 904, 913, 914)
 			OR (Product NOT IN ('SB', 'Parlay')
-				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'FW', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL')
+				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'FW', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA')
 					OR WinLostDate < @Yesterday)
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'		-- Abnormal Bets
@@ -1086,7 +1089,7 @@ BEGIN
 			BEGIN
 				-- Get yesterday and today running and settled bettransRnG/bettransLC tickets
 				IF EXISTS ( SELECT 1 FROM @Data
-							WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM') AND WinLostDate >= @Yesterday)	-- bettransRnG
+						WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA') AND WinLostDate >= @Yesterday)	-- bettransRnG
 				BEGIN
 					-- Running
 					IF ',' + @OriginalStatusIdList + ',' LIKE '%,0,%'
@@ -1116,7 +1119,7 @@ BEGIN
 							0 AS OddsSpread
 						FROM @Data AS c
 							INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-						WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM')
+					WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA')
 							AND c.WinLostDate >= @Yesterday
 							AND brng.statusID IN (0, 1)
 						GROUP BY
@@ -1164,7 +1167,7 @@ BEGIN
 							END AS OddsSpread
 						FROM @Data AS c
 							INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-						WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM')
+					WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA')
 							AND c.WinLostDate >= @Yesterday
 							AND brng.statusID NOT IN (0, 1)
 						GROUP BY
@@ -1261,7 +1264,7 @@ BEGIN
 
 				DELETE b
 				FROM @Data AS b
-				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 
+			WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'Allbet', 'SAG', 'SXG', 
 						'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'VGA', 'FGGL')
 					AND b.Winlostdate >= @Yesterday
 					AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
@@ -1278,7 +1281,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN', 'ION', 'PGS', 
-										'JK', 'RNGW', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL') THEN b.matchid
+										'JK', 'RNGW', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1421,7 +1424,7 @@ BEGIN
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 
-										'PP', 'TG', 'VRG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM') THEN ISNULL(b.transdesc, '')
+										'PP', 'TG', 'VRG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1453,7 +1456,7 @@ BEGIN
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
-					AND (b.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 
+					AND (b.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'Allbet', 'SAG', 'SXG', 
 							'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
 						OR b.WinLostDate < @Yesterday)
 
@@ -1641,7 +1644,7 @@ BEGIN
 					b.Creator,
 					b.Currency,
 					CASE
-						WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'RNGW', 'WM', 'GDG', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL') THEN b.matchid
+						WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'RNGW', 'WM', 'GDG', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA') THEN b.matchid
 						WHEN b.Product = 'AllBet' THEN 211 -- AllBet
 						WHEN b.Product = 'VB' THEN 212 -- Macau Games
 						WHEN b.Product = 'FW' THEN 219 -- Fishing World
@@ -1702,7 +1705,7 @@ BEGIN
 					'' AS BetCheck,
 					CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 					CASE
-						WHEN b.Product IN ('OneRNG', 'VB', 'FW', 'PP', 'CC', 'SG', 'PGS', 'JK', 'HB', 'CG', 'AP', 'APM') THEN b.transdesc
+						WHEN b.Product IN ('OneRNG', 'VB', 'FW', 'PP', 'CC', 'SG', 'PGS', 'JK', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN b.transdesc
 						ELSE ''
 					END AS TransDesc,
 					-1 AS BetdaqId,
@@ -1724,12 +1727,12 @@ BEGIN
 					b.SiteId
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
-				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
+				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
 						'PGS', 'JK', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
 					AND b.WinLostDate >= @Yesterday
 
 				DELETE FROM @Data
-				WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
+				WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
 						'PGS', 'JK', 'WM', 'GDG', 'BG', 'PPL', 'FGGL')
 					AND WinLostDate >= @Yesterday
 
@@ -1782,7 +1785,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN', 'ION', 'PGS', 
-										'JK', 'RNGW', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL') THEN b.matchid
+										'JK', 'RNGW', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1910,7 +1913,7 @@ BEGIN
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 
-										'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM') THEN ISNULL(b.transdesc, '')
+										'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1989,7 +1992,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN', 'ION', 
-										'PGS', 'JK', 'RNGW', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL') THEN b.matchid
+										'PGS', 'JK', 'RNGW', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -2116,7 +2119,7 @@ BEGIN
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 
-										'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM') THEN ISNULL(b.transdesc, '')
+										'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE

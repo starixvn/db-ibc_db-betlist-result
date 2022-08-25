@@ -81,6 +81,7 @@ AS
 		- 20220317@Razor: Support FGG [Redmine: #165683]
 		- 20220324@Razor: Support TxId for VGaming [Redmine: #170054]
 		- 20220422@Razor: Support Virtual games result [Redmine: #170997]
+		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
 */
 
 BEGIN
@@ -573,7 +574,8 @@ BEGIN
 			END
 
 			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68)
+			-- SEAL Entertainment
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -1023,7 +1025,8 @@ BEGIN
 			END
 
 			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68)
+			-- SEAL Entertainment
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
