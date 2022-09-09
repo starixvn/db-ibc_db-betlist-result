@@ -60,6 +60,8 @@ AS
 		- 20220808@Kos: Scale out DBTRANS [Redmine: #175253]
 					- Add new input param @ExcludeBettrans BIT
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
+		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
+
 
 	Parameters:
 		- @TransType
@@ -84,7 +86,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
@@ -241,7 +243,7 @@ BEGIN
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68) THEN brng.GameId3rd
+				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
@@ -309,7 +311,7 @@ BEGIN
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68) THEN brng.GameId3rd
+				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
@@ -376,7 +378,7 @@ BEGIN
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68) THEN brng.GameId3rd
+				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE

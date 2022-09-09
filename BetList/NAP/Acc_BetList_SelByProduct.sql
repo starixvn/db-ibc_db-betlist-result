@@ -82,6 +82,7 @@ AS
 		- 20220324@Razor: Support TxId for VGaming [Redmine: #170054]
 		- 20220422@Razor: Support Virtual games result [Redmine: #170997]
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
+		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 */
 
 BEGIN
@@ -573,9 +574,9 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini
-			-- SEAL Entertainment
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
+			-- SEAL Entertainment, MG RNGCasino
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -612,7 +613,7 @@ BEGIN
 						b.actual_stake,
 						b.transdate,
 						CASE
-							WHEN s.productID IN (22, 32, 34, 36, 55, 56, 60, 61, 62, 67, 68) THEN b.GameId3rd
+							WHEN s.productID IN (22, 32, 34, 36, 55, 56, 60, 61, 62, 67, 68, 73) THEN b.GameId3rd
 						ELSE ''
 						END AS BetTeam,
 						b.spositiontaking,
@@ -1024,9 +1025,9 @@ BEGIN
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini
-			-- SEAL Entertainment
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72)
+			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
+			-- SEAL Entertainment, MG RNGCasino
+			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -1063,7 +1064,7 @@ BEGIN
 						b.actual_stake,
 						b.transdate,
 						CASE
-							WHEN s.productID IN (22, 32, 34, 36, 55, 56, 60, 61, 62, 67, 68) THEN b.GameId3rd
+							WHEN s.productID IN (22, 32, 34, 36, 55, 56, 60, 61, 62, 67, 68, 73) THEN b.GameId3rd
 						ELSE ''
 						END AS BetTeam,
 						b.spositiontaking,

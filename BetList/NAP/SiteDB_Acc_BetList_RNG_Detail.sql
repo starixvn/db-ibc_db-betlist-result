@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
+		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 
 	Parameters:
 		- @TransType
@@ -31,7 +32,7 @@ BEGIN
 
 	-- Get Sport Bettype Matrix --
 	-- Support RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, CG, AdvantPlay
-	-- AdvantPlay Mini, SEAL
+	-- AdvantPlay Mini, SEAL, MG RNGCasino
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -41,7 +42,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72)
+	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
@@ -176,7 +177,7 @@ BEGIN
 				ELSE ''
 			END AS MatchCode,
 			CASE
-				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68) THEN brng.GameId3rd
+				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN brng.GameId3rd
 				ELSE ''
 			END AS BetTeam,
 			CASE
