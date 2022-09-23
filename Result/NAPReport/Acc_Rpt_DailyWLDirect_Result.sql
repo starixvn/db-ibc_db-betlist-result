@@ -37,6 +37,7 @@ AS
 		- 20210713@Kos: Support Beach Volleyball [Redmine: #157736]
 		- 20210914@Kos: Support view result from League WL report [Redmine: #160196]
 		- 20220630@Kos: Don't show map result for E-Sports [Redmine: #174251]
+		- 20220923@Razor: Support VolleyballAIO [Redmine: #175205]
 */
 
 BEGIN
@@ -170,7 +171,7 @@ BEGIN
 			WHERE MatchID = @MatchId AND ResourceID = '00'
 			ORDER BY ResourceID ASC
 		END
-		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
 		BEGIN
 			SELECT
 				MatchID,
@@ -183,7 +184,8 @@ BEGIN
 			FROM dbo.ResultDetailOS WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45)))
+					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45))
+					OR (@SportType = 6 AND ResourceId LIKE '010%'))
 			ORDER BY ResourceID ASC
 		END
 	END
@@ -279,7 +281,7 @@ BEGIN
 			WHERE MatchID = @MatchId AND ResourceID = '00'
 			ORDER BY ResourceID ASC
 		END
-		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
 		BEGIN
 			SELECT
 				MatchID,
@@ -292,7 +294,8 @@ BEGIN
 			FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45)))
+					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45))
+					OR (@SportType = 6 AND ResourceId LIKE '010%'))
 			ORDER BY ResourceID ASC
 		END
 	END
@@ -405,7 +408,7 @@ BEGIN
 			WHERE MatchID = @MatchId AND ResourceID = '00'
 			ORDER BY ResourceID ASC
 		END
-		ELSE IF @SportType IN (9, 45, 50)		-- Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
 		BEGIN
 			SELECT
 				MatchID,
@@ -418,7 +421,8 @@ BEGIN
 			FROM bodb_Archive.dbo.ResultDetailOS_bk WITH (NOLOCK)
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
-					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45)))
+					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45))
+					OR (@SportType = 6 AND ResourceId LIKE '010%'))
 			ORDER BY ResourceID ASC
 		END
 	END
