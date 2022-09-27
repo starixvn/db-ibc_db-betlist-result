@@ -18,6 +18,7 @@ AS
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 		- 20221117@Razor: Support Player Tips [Redmine: 180590]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
+		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 
 	Param's Explanation:
 		+ @TransType:
@@ -132,7 +133,6 @@ BEGIN
 		SPositionTaking2	SMALLMONEY,
 		MPositionTaking2	SMALLMONEY,
 		APositionTaking2	SMALLMONEY,
-		BetFrom				NVARCHAR(1),
 		SComm				MONEY,
 		AComm				MONEY,
 		Comm				MONEY,
@@ -224,7 +224,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -322,7 +321,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -407,7 +405,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -490,7 +487,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -619,7 +615,6 @@ BEGIN
 				0 AS spositiontaking2,-- unuse in this report
 				0 AS mpositiontaking2,-- unuse in this report
 				0 AS apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 AS scomm, -- unuse in this report
 				0 AS acomm, -- unuse in this report
 				0 AS comm,	-- unuse in this report
@@ -735,7 +730,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -818,7 +812,6 @@ BEGIN
 				0 spositiontaking2,
 				0 mpositiontaking2,
 				0 apositiontaking2,
-				b.betfrom,
 				0 scomm,
 				0 acomm,
 				0 comm,	
@@ -913,7 +906,6 @@ BEGIN
 				0 AS spositiontaking2,-- unuse in this report
 				0 AS mpositiontaking2,-- unuse in this report
 				0 AS apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 AS scomm, -- unuse in this report
 				0 AS acomm, -- unuse in this report
 				0 AS comm,	-- unuse in this report
@@ -999,7 +991,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -1104,7 +1095,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -1204,7 +1194,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -1304,7 +1293,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -1389,7 +1377,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -1472,7 +1459,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
@@ -1580,7 +1566,6 @@ BEGIN
 				0 AS spositiontaking2,-- unuse in this report
 				0 AS mpositiontaking2,-- unuse in this report
 				0 AS apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 AS scomm, -- unuse in this report
 				0 AS acomm, -- unuse in this report
 				0 AS comm,	-- unuse in this report
@@ -1680,7 +1665,6 @@ BEGIN
 					0 AS spositiontaking2,-- unuse in this report
 					0 AS mpositiontaking2,-- unuse in this report
 					0 AS apositiontaking2,-- unuse in this report
-					b.betfrom,
 					0 AS scomm, -- unuse in this report
 					0 AS acomm, -- unuse in this report
 					0 AS comm,	-- unuse in this report
@@ -1798,7 +1782,6 @@ BEGIN
 					0 AS spositiontaking2,-- unuse in this report
 					0 AS mpositiontaking2,-- unuse in this report
 					0 AS apositiontaking2,-- unuse in this report
-					b.betfrom,
 					0 AS scomm, -- unuse in this report
 					0 AS acomm, -- unuse in this report
 					0 AS comm,	-- unuse in this report
@@ -1924,7 +1907,6 @@ BEGIN
 					0 AS spositiontaking2,-- unuse in this report
 					0 AS mpositiontaking2,-- unuse in this report
 					0 AS apositiontaking2,-- unuse in this report
-					b.betfrom,
 					0 AS scomm, -- unuse in this report
 					0 AS acomm, -- unuse in this report
 					0 AS comm,	-- unuse in this report
@@ -2029,7 +2011,6 @@ BEGIN
 					0 AS spositiontaking2,-- unuse in this report
 					0 AS mpositiontaking2,-- unuse in this report
 					0 AS apositiontaking2,-- unuse in this report
-					b.betfrom,
 					0 AS scomm, -- unuse in this report
 					0 AS acomm, -- unuse in this report
 					0 AS comm,	-- unuse in this report
@@ -2071,7 +2052,6 @@ BEGIN
 					b.creator,
 					b.ip,
 					b.Username,
-					b.betfrom,
 					b.comstatus,
 					b.matchid,
 					b.transdesc,
@@ -2143,7 +2123,6 @@ BEGIN
 					0 AS spositiontaking2,-- unuse in this report
 					0 AS mpositiontaking2,-- unuse in this report
 					0 AS apositiontaking2,-- unuse in this report
-					b.betfrom,
 					0 AS scomm, -- unuse in this report
 					0 AS acomm, -- unuse in this report
 					0 AS comm,	-- unuse in this report
@@ -2182,7 +2161,6 @@ BEGIN
 					b.creator,
 					b.ip,
 					b.Username,
-					b.betfrom,
 					b.comstatus,
 					b.matchid,
 					b.transdesc,
@@ -2255,7 +2233,6 @@ BEGIN
 					0 AS spositiontaking2,-- unuse in this report
 					0 AS mpositiontaking2,-- unuse in this report
 					0 AS apositiontaking2,-- unuse in this report
-					b.betfrom,
 					0 AS scomm, -- unuse in this report
 					0 AS acomm, -- unuse in this report
 					0 AS comm,	-- unuse in this report
@@ -2350,7 +2327,6 @@ BEGIN
 					0 AS spositiontaking2,-- unuse in this report
 					0 AS mpositiontaking2,-- unuse in this report
 					0 AS apositiontaking2,-- unuse in this report
-					b.betfrom,
 					0 AS scomm, -- unuse in this report
 					0 AS acomm, -- unuse in this report
 					0 AS comm,	-- unuse in this report
@@ -2386,7 +2362,6 @@ BEGIN
 					b.creator,
 					b.ip,
 					b.Username,
-					b.betfrom,
 					b.comstatus,
 					s.ProductID,
 					b.matchid
@@ -2457,7 +2432,6 @@ BEGIN
 					0 AS spositiontaking2,-- unuse in this report
 					0 AS mpositiontaking2,-- unuse in this report
 					0 AS apositiontaking2,-- unuse in this report
-					b.betfrom,
 					0 AS scomm, -- unuse in this report
 					0 AS acomm, -- unuse in this report
 					0 AS comm,	-- unuse in this report
@@ -2493,7 +2467,6 @@ BEGIN
 					b.creator,
 					b.ip,
 					b.Username,
-					b.betfrom,
 					b.comstatus,
 					s.ProductID,
 					b.matchid
@@ -2559,7 +2532,6 @@ BEGIN
 					0 spositiontaking2,-- unuse in this report
 					0 mpositiontaking2,-- unuse in this report
 					0 apositiontaking2,-- unuse in this report
-					b.betfrom,
 					0 scomm, -- unuse in this report
 					0 acomm, -- unuse in this report
 					0 comm,	-- unuse in this report
@@ -2644,7 +2616,6 @@ BEGIN
 					0 spositiontaking2,-- unuse in this report
 					0 mpositiontaking2,-- unuse in this report
 					0 apositiontaking2,-- unuse in this report
-					b.betfrom,
 					0 scomm, -- unuse in this report
 					0 acomm, -- unuse in this report
 					0 comm,	-- unuse in this report
@@ -2729,7 +2700,6 @@ BEGIN
 				0 spositiontaking2,
 				0 mpositiontaking2,
 				0 apositiontaking2,
-				b.betfrom,
 				0 scomm,
 				0 acomm,
 				0 comm,
@@ -2824,7 +2794,6 @@ BEGIN
 				0 AS spositiontaking2,-- unuse in this report
 				0 AS mpositiontaking2,-- unuse in this report
 				0 AS apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 AS scomm, -- unuse in this report
 				0 AS acomm, -- unuse in this report
 				0 AS comm,	-- unuse in this report
@@ -2910,7 +2879,6 @@ BEGIN
 				0 spositiontaking2,-- unuse in this report
 				0 mpositiontaking2,-- unuse in this report
 				0 apositiontaking2,-- unuse in this report
-				b.betfrom,
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report

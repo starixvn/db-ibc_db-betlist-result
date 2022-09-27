@@ -20,6 +20,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
+		- 20220927@Razor: Remove Betfrom column [Redmine: #126137]
 
 	Parameters:
 		- @TransId: TransId of ticket bettype 901
@@ -67,7 +68,6 @@ BEGIN
 		LeagueId			INT,
 		SportType			SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR (1),
 		MatchId				INT,
 		IsNeutral			BIT,
 		WinLost				MONEY,
@@ -129,7 +129,6 @@ BEGIN
 			m.leagueid,
 			m.sporttype,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			b1.winlost,
@@ -195,7 +194,6 @@ BEGIN
 			m.leagueid,
 			m.sporttype,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			b1.winlost,
@@ -261,7 +259,6 @@ BEGIN
 			m.leagueid,
 			m.sporttype,
 			dp.IP,
-			b.betfrom,
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			b1.winlost,
@@ -288,10 +285,4 @@ BEGIN
 
 	SELECT * FROM @Data
 END
-GO
-
-
-
-
-GRANT	EXECUTE	ON	[Acc_BetList_BetTrade_Detail]	TO	bodbAdminNet
 GO

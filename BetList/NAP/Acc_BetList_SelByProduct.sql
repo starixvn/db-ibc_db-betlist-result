@@ -84,6 +84,7 @@ AS
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
+		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 */
 
 BEGIN
@@ -140,7 +141,6 @@ BEGIN
 		LeagueId		INT,
 		SportType		SMALLINT,
 		Ip				VARCHAR(45),
-		BetFrom			NVARCHAR (1),
 		MatchId			INT,
 		WinLost			MONEY,
 		Commission		MONEY,
@@ -263,7 +263,6 @@ BEGIN
 							ELSE b.productID
 						END AS SportType,
 						b.ip,
-						b.betfrom,
 						0 AS MatchId,
 						(- b.actual_stake) AS WinLost,
 						0 AS Commission,
@@ -330,7 +329,6 @@ BEGIN
 							0 AS LeagueId,
 							255 AS SportType,
 							b.ip,
-							b.betfrom,
 							0 AS MatchId,
 							(b.winlost - b.actual_stake) AS WinLost,
 							b.playercomm AS Commission,
@@ -397,7 +395,6 @@ BEGIN
 							0 AS LeagueId,
 							b.matchid AS SportType,
 							b.ip,
-							b.betfrom,
 							0 AS MatchId,
 							(b.winlost - b.actual_stake) AS WinLost,
 							b.playercomm AS Commission,
@@ -512,10 +509,6 @@ BEGIN
 						0 AS LeagueId,
 						b.productID AS SportType,
 						b.ip,
-						CASE
-							WHEN s.ProductID = 39 THEN ISNULL(bg.betfrom, '')
-							ELSE b.betfrom
-						END AS BetFrom,
 						0 AS MatchId,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.winlost - bg.stake, 0)
@@ -627,7 +620,6 @@ BEGIN
 						0 AS LeagueId,
 						b.productID AS SportType,
 						b.ip,
-						b.betfrom,
 						0 AS MatchId,
 						(b.winlost - b.actual_stake) AS WinLost,
 						b.playercomm AS Commission,
@@ -700,7 +692,6 @@ BEGIN
 						0 AS LeagueId,
 						bg.matchid AS SportType,
 						b.ip,
-						bg.betfrom,
 						0 AS MatchId,
 						bg.winlost - bg.actual_stake AS WinLost,
 						bg.playercomm AS Commission,
@@ -778,7 +769,6 @@ BEGIN
 						0 AS LeagueId,
 						255 AS SportType,
 						b.ip,
-						b.betfrom,
 						0 AS MatchId,
 						(b.winlost - b.actual_stake) AS WinLost,
 						b.playercomm AS Commission,
@@ -847,7 +837,6 @@ BEGIN
 						0 AS LeagueId,
 						b.matchid AS SportType,
 						b.ip,
-						b.betfrom,
 						0 AS MatchId,
 						(b.winlost - b.actual_stake) AS WinLost,
 						b.playercomm AS Commission,
@@ -963,10 +952,6 @@ BEGIN
 						0 AS LeagueId,
 						b.productID AS SportType,
 						b.ip,
-						CASE
-							WHEN s.ProductID = 39 THEN ISNULL(bg.betfrom, '')
-							ELSE b.betfrom
-						END AS BetFrom,
 						0 AS MatchId,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.winlost - bg.stake, 0)
@@ -1078,7 +1063,6 @@ BEGIN
 						0 AS LeagueId,
 						b.productID AS SportType,
 						b.ip,
-						b.betfrom,
 						0 AS MatchId,
 						(b.winlost - b.actual_stake) AS WinLost,
 						b.playercomm AS Commission,
@@ -1151,7 +1135,6 @@ BEGIN
 						0 AS LeagueId,
 						bg.matchid AS SportType,
 						b.ip,
-						bg.betfrom,
 						0 AS MatchId,
 						bg.winlost - bg.actual_stake AS WinLost,
 						bg.playercomm AS Commission,

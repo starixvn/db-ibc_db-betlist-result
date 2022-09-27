@@ -24,6 +24,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
+		- 20220927@Razor: Remove Betfrom column [Redmine: #126137]
 */
 
 BEGIN
@@ -102,7 +103,6 @@ BEGIN
 		LeagueId			INT,
 		SportType			SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
 		MatchId				INT,
 		IsNeutral			BIT,
 		WinLost				MONEY,
@@ -186,7 +186,6 @@ BEGIN
 			m.leagueid,
 			m.sporttype,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			(b.winlost - b.actual_stake) AS WinLost,
@@ -256,7 +255,6 @@ BEGIN
 			m.leagueid,
 			m.sporttype,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			(b.winlost - b.actual_stake) AS WinLost,
@@ -326,7 +324,6 @@ BEGIN
 			m.leagueid,
 			m.sporttype,
 			dp.Ip,
-			b.betfrom,
 			b.matchid,
 			ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 			(b.winlost - b.actual_stake) AS WinLost,
@@ -503,9 +500,4 @@ BEGIN
 	SELECT * FROM @Data
 	SELECT * FROM @CashOutData
 END
-GO
-
-
-
-GRANT	EXECUTE	ON	[Acc_BetList_CashOut_Detail]	TO	bodbAdminNet
 GO

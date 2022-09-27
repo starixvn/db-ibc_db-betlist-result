@@ -62,6 +62,7 @@ AS
 		- 20210812@Razor: Support Cashout for Basketball [Redmine: #159617]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		- 20220927@Razor: Remove Betfrom column [Redmine: #126137]
 */
 
 BEGIN
@@ -98,7 +99,6 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
@@ -176,7 +176,6 @@ BEGIN
 			LiveHomeScore,
 			LiveAwayScore,
 			Ip,
-			BetFrom,
 			MatchId,
 			BetCheck,
 			ComStatus,
@@ -215,7 +214,6 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			b.betcheck,
 			b.comstatus,
@@ -282,7 +280,6 @@ BEGIN
 			WinLostDate,
 			LiveIndicator,
 			Ip,
-			BetFrom,
 			TransDesc,
 			EventId,
 			Custom1,
@@ -303,7 +300,6 @@ BEGIN
 			b.transdate AS WinLostDate,
 			b.LiveIndicator,
 			b.ip,
-			b.betfrom,
 			b.transdesc,
 			b.eventID,
 			b.custom1,
@@ -347,7 +343,6 @@ BEGIN
 			LiveHomeScore,
 			LiveAwayScore,
 			Ip,
-			BetFrom,
 			MatchId,
 			BetCheck,
 			ComStatus,
@@ -386,7 +381,6 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			b.betcheck,
 			b.comstatus,
@@ -472,7 +466,6 @@ BEGIN
 			LiveHomeScore,
 			LiveAwayScore,
 			Ip,
-			BetFrom,
 			MatchId,
 			BetCheck,
 			ComStatus,
@@ -511,7 +504,6 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			b.betcheck,
 			b.comstatus,
@@ -1204,7 +1196,6 @@ BEGIN
 		b.LiveHomeScore,
 		b.LiveAwayScore,
 		b.Ip,
-		b.BetFrom,
 		b.LeagueId,
 		b.MatchId,
 		b.MatchCode,

@@ -38,6 +38,7 @@ AS
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 		- 20221117@Razor: Support Player Tips [Redmine: 180590]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
+		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 */
 
 BEGIN
@@ -119,7 +120,6 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
@@ -270,7 +270,6 @@ BEGIN
 			LiveHomeScore,
 			LiveAwayScore,
 			Ip,
-			BetFrom,
 			MatchId,
 			BetCheck,
 			ComStatus,
@@ -325,7 +324,6 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			b.betcheck,
 			b.comstatus,
@@ -369,7 +367,6 @@ BEGIN
 			WinLostDate,
 			LiveIndicator,
 			Ip,
-			BetFrom,
 			TransDesc,
 			ProductId,
 			EventId,
@@ -405,7 +402,6 @@ BEGIN
 			b.transdate AS WinLostDate,
 			b.LiveIndicator,
 			b.ip,
-			b.betfrom,
 			b.transdesc,
 			b.productID,
 			b.eventID,
@@ -1196,7 +1192,6 @@ BEGIN
 					LiveHomeScore		SMALLINT,
 					LiveAwayScore		SMALLINT,
 					Ip					VARCHAR(45),
-					BetFrom				NVARCHAR(1),
 					LeagueId			INT,
 					MatchId				INT,
 					MatchCode			NVARCHAR(50),
@@ -1284,7 +1279,6 @@ BEGIN
 					0 AS LiveHomeScore,
 					0 AS LiveAwayScore,
 					b.Ip,
-					b.BetFrom,
 					0 AS LeagueId,
 					0 AS MatchId,
 					'' AS MatchCode,
@@ -1419,7 +1413,6 @@ BEGIN
 		b.LiveHomeScore,
 		b.LiveAwayScore,
 		b.Ip,
-		b.BetFrom,
 		b.LeagueId,
 		b.MatchId,
 		b.MatchCode,

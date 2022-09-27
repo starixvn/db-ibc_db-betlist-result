@@ -27,6 +27,7 @@ AS
 		- 20221109@Kos: Enhance performance [Redmine: 179269]
 		- 20221117@Razor: Support Player Tips [Redmine: 180590]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
+		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 */
 
 BEGIN
@@ -136,7 +137,6 @@ BEGIN
 		LeagueId			INT,
 		SportType			SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
 		MatchId				INT,
 		IsNeutral			BIT,
 		WinLost				MONEY,
@@ -259,7 +259,6 @@ BEGIN
 				m.leagueid,
 				m.sporttype,
 				b.ip,
-				b.betfrom,
 				b.matchid,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				(b.winlost - b.actual_stake) AS winlost,
@@ -353,7 +352,6 @@ BEGIN
 				m.leagueid,
 				m.sporttype,
 				b.ip,
-				b.betfrom,
 				b.eventID AS MatchId,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				0 AS winlost,
@@ -449,7 +447,6 @@ BEGIN
 				0 AS LeagueId,
 				0 AS SportType,
 				b.ip,
-				b.betfrom,
 				0 AS MatchId,
 				CONVERT(BIT, 0) AS IsNeutral,
 				(b.winlost - b.actual_stake) AS WinLost,
@@ -529,7 +526,6 @@ BEGIN
 				odds.leagueid,
 				l.sporttype,
 				b.ip ,
-				b.betfrom,
 				b.matchid,
 				CONVERT(BIT,0) AS IsNeutral,
 				(b.winlost - b.actual_stake) AS winlost,
@@ -638,7 +634,6 @@ BEGIN
 					ELSE 0
 				END AS SportType,
 				b.ip,
-				b.betfrom,
 				CASE
 					WHEN s.ProductID = 12 THEN b.matchid
 					WHEN s.ProductID = 23 THEN b.betdaqid
@@ -751,7 +746,6 @@ BEGIN
 				r.leagueid,
 				r.sporttype,
 				b.ip,
-				b.betfrom,
 				b.matchid,
 				CONVERT (BIT, 0) AS IsNeutral,
 				(b.winlost - b.actual_stake) AS winlost,
@@ -858,7 +852,6 @@ BEGIN
 					ELSE 0
 				END AS SportType,
 				b.ip,
-				b.betfrom,
 				0 AS MatchId,
 				CONVERT(BIT, 0) AS IsNeutral,
 				(-b.actual_stake) AS winlost,
@@ -960,7 +953,6 @@ BEGIN
 						ELSE b.matchid
 					END AS Sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS MatchId,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS winlost,
@@ -1004,7 +996,6 @@ BEGIN
 					b.custid,
 					b.ip,
 					b.matchid,
-					b.betfrom,
 					b.comstatus,
 					b.transdesc,
 					s.ProductID
@@ -1069,7 +1060,6 @@ BEGIN
 						ELSE b.matchid
 					END AS Sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS MatchId,
 					CONVERT(BIT, 0) AS IsNeutral,
 					SUM(brng.winlost - brng.actual_stake) AS winlost,
@@ -1116,7 +1106,6 @@ BEGIN
 					b.custid,
 					b.ip,
 					b.matchid,
-					b.betfrom,
 					b.comstatus,
 					b.transdesc,
 					s.ProductID
@@ -1178,7 +1167,6 @@ BEGIN
 						ELSE b.matchid
 					END AS Sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS MatchId,
 					CONVERT(BIT, 0) AS IsNeutral,
 					(b.winlost - b.actual_stake) AS winlost,
@@ -1272,7 +1260,6 @@ BEGIN
 						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 59, 65, 70) THEN b.matchid
 					END AS Sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS MatchId,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS winlost,
@@ -1311,7 +1298,6 @@ BEGIN
 					b.winlostdate,
 					b.custid,
 					b.ip,
-					b.betfrom,
 					b.comstatus,
 					s.ProductID,
 					b.matchid
@@ -1371,7 +1357,6 @@ BEGIN
 						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 59, 65, 70) THEN b.matchid
 					END AS Sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS MatchId,
 					CONVERT(BIT, 0) AS IsNeutral,
 					SUM(blc.winlost - blc.actual_stake) AS winlost,
@@ -1410,7 +1395,6 @@ BEGIN
 					b.winlostdate,
 					b.custid,
 					b.ip,
-					b.betfrom,
 					b.comstatus,
 					s.ProductID,
 					b.matchid
@@ -1468,7 +1452,6 @@ BEGIN
 						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 59, 65, 70) THEN b.matchid
 					END AS Sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS MatchId,
 					CONVERT(BIT, 0) AS IsNeutral,
 					(b.winlost - b.actual_stake) AS winlost,
@@ -1548,7 +1531,6 @@ BEGIN
 				0 AS leagueid,
 				204 AS SportType,
 				b.ip,
-				b.betfrom,
 				0 AS MatchId,
 				CONVERT(BIT, 0) AS IsNeutral,
 				(b.winlost - b.actual_stake) winlost,
@@ -1628,7 +1610,6 @@ BEGIN
 				0 leagueid,
 				m.sporttype,
 				b.ip,
-				b.betfrom,
 				b.matchid,
 				CONVERT(BIT,0) AS IsNeutral,
 				(b.winlost - b.actual_stake) AS winlost,
@@ -1710,7 +1691,6 @@ BEGIN
 				m.leagueid,
 				m.sporttype,
 				b.ip,
-				b.betfrom,
 				b.matchid,
 				ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				(b.winlost - b.actual_stake) AS winlost,
@@ -1880,7 +1860,6 @@ BEGIN
 				0 AS leagueid,
 				b.productID AS Sporttype,
 				b.ip,
-				b.betfrom,
 				0 AS MatchId,
 				CONVERT(BIT, 0) AS IsNeutral,
 				(b.winlost - b.actual_stake) AS winlost,
@@ -2001,7 +1980,6 @@ BEGIN
 				0 AS leagueid,
 				b.productID AS Sporttype,
 				b.ip,
-				b.betfrom,
 				0 AS MatchId,
 				CONVERT(BIT, 0) AS IsNeutral,
 				(b.winlost - b.actual_stake) AS winlost,
@@ -2095,7 +2073,6 @@ BEGIN
 			0 AS leagueid,
 			b.productID AS Sporttype,
 			b.ip,
-			b.betfrom,
 			0 AS MatchId,
 			CONVERT(BIT, 0) AS IsNeutral,
 			(b.winlost - b.actual_stake) AS winlost,
@@ -2198,7 +2175,6 @@ BEGIN
 				0 AS leagueid,
 				ISNULL(blc.ProductID, 0) AS Sporttype,
 				ISNULL(blc.ip, '') AS Ip,
-				b.betfrom,
 				0 AS MatchId,
 				CONVERT(BIT, 0) AS IsNeutral,
 				b.winlost - b.actual_stake AS WinLost,
@@ -2278,7 +2254,6 @@ BEGIN
 				0 AS leagueid,
 				b.matchid AS Sporttype,
 				ISNULL(b2.ip, '') AS Ip,
-				b.betfrom,
 				0 AS MatchId,
 				CONVERT(BIT, 0) AS IsNeutral,
 				b.winlost - b.actual_stake AS WinLost,
@@ -2365,7 +2340,6 @@ BEGIN
 			0 AS leagueid,
 			ISNULL(blc.ProductID, 0) AS Sporttype,
 			ISNULL(blc.ip, '') AS Ip,
-			b.betfrom,
 			0 AS MatchId,
 			CONVERT(BIT, 0) AS IsNeutral,
 			b.winlost - b.actual_stake AS WinLost,
@@ -2446,7 +2420,6 @@ BEGIN
 			0 AS leagueid,
 			b.matchid AS Sporttype,
 			ISNULL(b2.ip, '') AS Ip,
-			b.betfrom,
 			0 AS MatchId,
 			CONVERT(BIT, 0) AS IsNeutral,
 			b.winlost - b.actual_stake AS WinLost,

@@ -178,6 +178,7 @@ AS
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 		- 20221117@Razor: Support Player Tips [Redmine: 180590]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
+		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 */
 
 BEGIN
@@ -237,7 +238,6 @@ BEGIN
 		LeagueId			INT,
 		SportType			SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
 		MatchId				INT,
 		IsNeutral			BIT,
 		AllowDelete			BIT,
@@ -429,7 +429,6 @@ BEGIN
 					m.leagueid,
 					m.sporttype,
 					b.ip,
-					b.betfrom,
 					b.matchid,
 					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 					CASE 
@@ -528,7 +527,6 @@ BEGIN
 					m.leagueid,
 					m.sporttype,
 					b.ip,
-					'' AS betfrom,
 					b.eventID,
 					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 					CASE
@@ -701,7 +699,6 @@ BEGIN
 					0 AS leagueid,
 					0 AS sporttype,
 					b.ip,
-					b.betfrom,
 					0 matchid,
 					CONVERT(BIT,0) AS IsNeutral,
 					0 AS allowdelete,
@@ -800,7 +797,6 @@ BEGIN
 						ELSE 0
 					END AS sporttype,
 					b.ip,
-					b.betfrom,
 					CASE
 						WHEN s.ProductID = 12 THEN b.matchid
 						WHEN s.ProductID = 74 THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
@@ -920,7 +916,6 @@ BEGIN
 						ELSE 0
 					END AS sporttype,
 					b.ip,
-					b.betfrom,
 					b.betdaqid AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -1000,7 +995,6 @@ BEGIN
 					odds.leagueid,
 					l.sporttype,
 					b.ip,
-					b.betfrom,
 					b.matchid,
 					CONVERT(BIT,0) AS IsNeutral,
 					CASE
@@ -1085,7 +1079,6 @@ BEGIN
 					r.leagueid,
 					r.sporttype,
 					b.ip,
-					b.betfrom,
 					b.matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					CASE 
@@ -1187,7 +1180,6 @@ BEGIN
 					0 leagueid,
 					m.sporttype,
 					b.ip,
-					b.betfrom,
 					b.matchid,
 					0 IsNeutral,
 					0 AS allowdelete,
@@ -1279,7 +1271,6 @@ BEGIN
 						ELSE 0
 					END AS sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS MatchId,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -1382,7 +1373,6 @@ BEGIN
 							ELSE b.matchid
 						END AS Sporttype,
 						b.ip,
-						b.betfrom,
 						0 AS matchid,
 						CONVERT(BIT, 0) AS IsNeutral,
 						0 AS allowdelete,
@@ -1427,7 +1417,6 @@ BEGIN
 						b.custid,
 						b.ip,
 						b.Username,
-						b.betfrom,
 						b.comstatus,
 						b.matchid,
 						b.transdesc,
@@ -1494,7 +1483,6 @@ BEGIN
 							ELSE b.matchid
 						END AS Sporttype,
 						b.ip,
-						b.betfrom,
 						0 AS matchid,
 						CONVERT(BIT, 0) AS IsNeutral,
 						0 AS allowdelete,
@@ -1542,7 +1530,6 @@ BEGIN
 						b.custid,
 						b.ip,
 						b.Username,
-						b.betfrom,
 						b.comstatus,
 						b.matchid,
 						b.transdesc,
@@ -1606,7 +1593,6 @@ BEGIN
 							ELSE b.matchid
 						END AS Sporttype,
 						b.ip,
-						b.betfrom,
 						0 AS matchid,
 						CONVERT(BIT, 0) AS IsNeutral,
 						0 AS allowdelete,
@@ -1701,7 +1687,6 @@ BEGIN
 							ELSE b.matchid
 						END AS Sporttype,
 						b.ip,
-						b.betfrom,
 						0 AS matchid,
 						CONVERT(BIT, 0) AS IsNeutral,
 						0 AS allowdelete,
@@ -1742,7 +1727,6 @@ BEGIN
 						b.custid,
 						b.ip,
 						b.Username,
-						b.betfrom,
 						b.comstatus,
 						s.ProductID,
 						b.matchid
@@ -1803,7 +1787,6 @@ BEGIN
 							ELSE b.matchid
 						END AS Sporttype,
 						b.ip,
-						b.betfrom,
 						0 AS matchid,
 						CONVERT(BIT, 0) AS IsNeutral,
 						0 AS allowdelete,
@@ -1844,7 +1827,6 @@ BEGIN
 						b.custid,
 						b.ip,
 						b.Username,
-						b.betfrom,
 						b.comstatus,
 						s.ProductID,
 						b.matchid
@@ -1903,7 +1885,6 @@ BEGIN
 							ELSE b.matchid
 						END AS Sporttype,
 						b.ip,
-						b.betfrom,
 						0 AS matchid,
 						CONVERT(BIT, 0) AS IsNeutral,
 						0 AS allowdelete,
@@ -1984,7 +1965,6 @@ BEGIN
 					0 AS leagueid,
 					204 AS sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -2067,7 +2047,6 @@ BEGIN
 					m.leagueid,
 					m.sporttype,
 					b.ip,
-					b.betfrom,
 					b.matchid,
 					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 					CASE 
@@ -2165,7 +2144,6 @@ BEGIN
 					m.leagueid,
 					m.sporttype,
 					b.ip,
-					b.betfrom,
 					b.matchid,
 					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 					0 AS allowdelete,
@@ -2334,7 +2312,6 @@ BEGIN
 					0 AS leagueid,
 					0 AS sporttype,
 					b.ip,
-					b.betfrom,
 					0 matchid,
 					CONVERT(BIT,0) AS IsNeutral,
 					0 AS allowdelete,
@@ -2435,7 +2412,6 @@ BEGIN
 						ELSE 0
 					END AS sporttype,
 					b.ip,
-					b.betfrom,
 					CASE
 						WHEN s.ProductID = 12 THEN b.matchid
 						WHEN s.ProductID = 74 THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
@@ -2551,7 +2527,6 @@ BEGIN
 					0 leagueid,
 					m.sporttype,
 					b.ip,
-					b.betfrom,
 					b.matchid,
 					0 IsNeutral,
 					0 AS allowdelete,
@@ -2632,7 +2607,6 @@ BEGIN
 					odds.leagueid,
 					l.sporttype,
 					b.ip,
-					b.betfrom,
 					b.matchid,
 					CONVERT(BIT,0) AS IsNeutral,
 					0 AS allowdelete,
@@ -2712,7 +2686,6 @@ BEGIN
 					r.leagueid,
 					r.sporttype,
 					b.ip,
-					b.betfrom,
 					b.matchid,
 					CONVERT (BIT, 0) AS IsNeutral,
 					CASE
@@ -2813,7 +2786,6 @@ BEGIN
 					0 AS leagueid,
 					204 AS sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -2921,7 +2893,6 @@ BEGIN
 						ELSE 0
 					END AS sporttype,
 					b.ip,
-					b.betfrom,
 					b.betdaqid AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -3011,7 +2982,6 @@ BEGIN
 					m.leagueid,
 					m.sporttype,
 					b.ip,
-					b.betfrom,
 					b.matchid,
 					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 					CASE 
@@ -3109,7 +3079,6 @@ BEGIN
 					m.leagueid,
 					m.sporttype,
 					dp.ip,
-					b.betfrom,
 					b.matchid,
 					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 					0 AS allowdelete,
@@ -3279,7 +3248,6 @@ BEGIN
 					0 AS leagueid,
 					0 AS sporttype,
 					dp.ip,
-					b.betfrom,
 					0 matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -3384,7 +3352,6 @@ BEGIN
 						ELSE 0
 					END AS sporttype,
 					dp.ip,
-					b.betfrom,
 					CASE
 						WHEN s.ProductID = 12 THEN b.matchid
 						WHEN s.ProductID = 74 THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
@@ -3502,7 +3469,6 @@ BEGIN
 					0 leagueid,
 					m.sporttype,
 					dp.ip,
-					b.betfrom,
 					b.matchid,
 					0 IsNeutral,
 					0 AS allowdelete,
@@ -3584,7 +3550,6 @@ BEGIN
 					odds.leagueid,
 					l.sporttype,
 					dp.ip,
-					b.betfrom,
 					b.matchid,
 					CONVERT(BIT,0) AS IsNeutral,
 					0 AS allowdelete,
@@ -3665,7 +3630,6 @@ BEGIN
 					r.leagueid,
 					r.sporttype,
 					dp.ip,
-					b.betfrom,
 					b.matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					CASE
@@ -3767,7 +3731,6 @@ BEGIN
 					0 AS leagueid,
 					204 AS sporttype,
 					dp.ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -3876,7 +3839,6 @@ BEGIN
 						ELSE 0
 					END AS sporttype,
 					dp.ip,
-					b.betfrom,
 					b.betdaqid AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -3967,7 +3929,6 @@ BEGIN
 					m.leagueid,
 					m.sporttype,
 					dp.ip,
-					b.betfrom,
 					b.matchid,
 					ISNULL(m.isNeutral, CONVERT(BIT,0)) AS IsNeutral,
 					CASE 
@@ -4273,7 +4234,6 @@ BEGIN
 					0 AS leagueid,
 					b.productID AS Sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -4384,7 +4344,6 @@ BEGIN
 					0 AS leagueid,
 					b.productID AS Sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -4495,7 +4454,6 @@ BEGIN
 					0 AS leagueid,
 					b.productID AS Sporttype,
 					dp.ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -4645,7 +4603,6 @@ BEGIN
 					0 AS leagueid,
 					b.productID AS Sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -4738,7 +4695,6 @@ BEGIN
 					0 AS leagueid,
 					b.productID AS Sporttype,
 					b.ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -4831,7 +4787,6 @@ BEGIN
 					0 AS leagueid,
 					b.productID AS Sporttype,
 					dp.ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -4960,7 +4915,6 @@ BEGIN
 					0 AS leagueid,
 					ISNULL(blc.ProductID, 0) AS Sporttype,
 					ISNULL(blc.ip, '') AS Ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -5041,7 +4995,6 @@ BEGIN
 					0 AS leagueid,
 					b.matchid AS Sporttype,
 					ISNULL(b2.ip, '') AS Ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -5125,7 +5078,6 @@ BEGIN
 					0 AS leagueid,
 					ISNULL(blc.ProductID, 0) AS Sporttype,
 					ISNULL(blc.ip, '') AS Ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -5206,7 +5158,6 @@ BEGIN
 					0 AS leagueid,
 					b.matchid AS Sporttype,
 					ISNULL(b2.ip, '') AS Ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -5290,7 +5241,6 @@ BEGIN
 					0 AS leagueid,
 					ISNULL(blc.ProductID, 0) AS Sporttype,
 					ISNULL(dp.ip, '') AS Ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
@@ -5372,7 +5322,6 @@ BEGIN
 					0 AS leagueid,
 					b.matchid AS Sporttype,
 					ISNULL(dp.ip, '') AS Ip,
-					b.betfrom,
 					0 AS matchid,
 					CONVERT(BIT, 0) AS IsNeutral,
 					0 AS allowdelete,
