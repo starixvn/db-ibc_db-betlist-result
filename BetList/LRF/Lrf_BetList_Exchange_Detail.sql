@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Exchange_Detail]
 	@AgentList		VARCHAR(MAX),
 	@CustId			INT,
 	@BetId			BIGINT,
-	@BaseCurrency	VARCHAR(10)
+	@BaseCurrency	VARCHAR(12)
 AS
 
 /*
@@ -17,6 +17,7 @@ AS
 		- 20190625@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN
@@ -99,24 +100,12 @@ BEGIN
 	-- Get exchange rate
 	INSERT INTO @ExchangeRate
 	SELECT
-		e.FirstExchangeDateByMonth,
-		e.LastExchangeDateByMonth,
-		CASE
-			WHEN @BaseCurrency = 'MYR' THEN e.MYR
-			WHEN @BaseCurrency = 'USD' THEN e.USD
-			WHEN @BaseCurrency = 'EUR' THEN e.EUR
-			WHEN @BaseCurrency = 'CNY' THEN e.CNY
-			WHEN @BaseCurrency = 'IDR' THEN e.IDR
-			WHEN @BaseCurrency = 'GBP' THEN e.GBP
-			WHEN @BaseCurrency = 'THB' THEN e.THB
-			WHEN @BaseCurrency = 'INH' THEN e.INH
-			WHEN @BaseCurrency = 'BDT' THEN e.BDT
-			WHEN @BaseCurrency = 'INR' THEN e.INR
-			ELSE 1
-		END AS Rate
-	FROM dbo.Lrf_f_GetSubExchangeDaily(@FDate, @TDate) AS e
+		e.FromDate,
+		e.ToDate,
+		e.Rate
+	FROM dbo.Lrf_f_GetExchangeRate(@FDate, @TDate, @BaseCurrency, '') AS e
 	WHERE e.ExchangeId = @Currency
-		AND EXISTS (SELECT 1 FROM @Data WHERE WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
+		AND EXISTS (SELECT 1 FROM @Data WHERE WinLostDate BETWEEN e.FromDate AND e.ToDate)
 
 	SELECT
 		b.TransId,

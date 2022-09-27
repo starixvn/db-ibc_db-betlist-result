@@ -11,7 +11,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee]
 	@BetType			SMALLINT		= 0,
 	@LeagueId			INT				= 0,
 	@MatchId			INT				= 0,
-	@BaseCurrency		VARCHAR(10),
+	@BaseCurrency		VARCHAR(12),
 	@ConvertToBaseCur	BIT				= 0,	-- Convert to base currency or not
 	@StatusIdList		VARCHAR(50)		= '',
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
@@ -57,6 +57,7 @@ AS
 		- 20211104@Kos: Merge Sports Lottery into Sportsbook [RedmineID: #163191]
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 		- 20220128@Kos: Support search by IP [RedmineID: #166079]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

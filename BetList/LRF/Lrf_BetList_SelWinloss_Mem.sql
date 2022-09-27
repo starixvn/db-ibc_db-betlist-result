@@ -47,7 +47,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinloss_Mem]
 	@ShowMXG			BIT			= 0,	-- MaxGame
 	@ShowBT				BIT			= 0,	-- Bet Trade
 	@ShowCO				BIT			= 0,	-- Cash Out
-	@BaseCurrency		VARCHAR(10),
+	@BaseCurrency		VARCHAR(12),
 	@PageSize			INT			= 1000,
 	@PageIndex			INT			= 1,
 	@TotalRows			INT			= 0 OUTPUT,
@@ -168,6 +168,7 @@ AS
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220526@Kos: Support FGG [Redmine: #167897]
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -3794,24 +3795,12 @@ BEGIN
 	-- Get exchange rate
 	INSERT INTO @ExchangeRate
 	SELECT
-		e.FirstExchangeDateByMonth,
-		e.LastExchangeDateByMonth,
-		CASE
-			WHEN @BaseCurrency = 'MYR' THEN e.MYR
-			WHEN @BaseCurrency = 'USD' THEN e.USD
-			WHEN @BaseCurrency = 'EUR' THEN e.EUR
-			WHEN @BaseCurrency = 'CNY' THEN e.CNY
-			WHEN @BaseCurrency = 'IDR' THEN e.IDR
-			WHEN @BaseCurrency = 'GBP' THEN e.GBP
-			WHEN @BaseCurrency = 'THB' THEN e.THB
-			WHEN @BaseCurrency = 'INH' THEN e.INH
-			WHEN @BaseCurrency = 'BDT' THEN e.BDT
-			WHEN @BaseCurrency = 'INR' THEN e.INR
-			ELSE 1
-		END AS Rate
-	FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
+		e.FromDate,
+		e.ToDate,
+		e.Rate
+	FROM dbo.Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
 	WHERE e.ExchangeId = @Currency
-		AND EXISTS (SELECT 1 FROM @BetListByDateMem WHERE WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
+		AND EXISTS (SELECT 1 FROM @BetListByDateMem WHERE WinLostDate BETWEEN e.FromDate AND e.ToDate)
 
 	-- Return data
 	SELECT

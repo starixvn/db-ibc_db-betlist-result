@@ -7,7 +7,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_SelRunningByDate_Mem]
 	@ToDate			DATETIME	= '',
 	@Username		VARCHAR(30)	= NULL, -- for API
 	@ExcludeFreeBet	BIT			= 0,	-- Exclude free tickets
-	@BaseCurrency	VARCHAR(10),
+	@BaseCurrency	VARCHAR(12),
 	@PageSize		INT			= 1000,
 	@PageIndex		INT			= 1,
 	-- check for showing product
@@ -61,6 +61,7 @@ AS
 
 	Revisions:
 		- 20220727@Kos: Created [Redmine: #175297]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

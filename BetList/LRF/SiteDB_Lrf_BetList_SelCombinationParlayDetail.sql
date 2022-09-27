@@ -5,7 +5,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_SelCombinationParlayDetail]
 	@RefNo			BIGINT,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10)	= '',
+	@BaseCurrency	VARCHAR(12)	= '',
 	@Outstanding	MONEY		= 0 OUTPUT
 AS
 
@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20220727@Kos: Created [Redmine: #175297]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

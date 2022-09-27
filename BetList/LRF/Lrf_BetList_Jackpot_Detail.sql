@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Jackpot_Detail]
 	@AgentList			VARCHAR(MAX),
 	@TransId			BIGINT,
 	@CustId				INT,
-	@BaseCurrency		VARCHAR(10),
+	@BaseCurrency		VARCHAR(12),
 	@ExcludeBettrans	BIT			= 0
 AS
 
@@ -23,6 +23,7 @@ AS
 		- 20220125@Kos: Support SG Jackpot [Redmine: #167035]
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 					- Add new input param @ExcludeBettrans BIT
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

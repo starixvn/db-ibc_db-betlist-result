@@ -8,7 +8,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Statement_Mem]
 	@BalanceUpDay	SMALLDATETIME,
 	@ProductCode	VARCHAR(100),
 	@TransType		TINYINT			= 1,
-	@BaseCurrency	VARCHAR(10),
+	@BaseCurrency	VARCHAR(12),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@Sort			NVARCHAR(50)	= N'TransDate ASC',
@@ -77,6 +77,7 @@ AS
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220512@Kos: Support FGG [Redmine: #167897]
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN
@@ -1012,20 +1013,8 @@ BEGIN
 				-- Get exchange rate
 				IF @BaseCurrency <> ''
 				BEGIN
-					SELECT @Rate = CASE
-									WHEN @BaseCurrency = 'MYR' THEN e.MYR
-									WHEN @BaseCurrency = 'USD' THEN e.USD
-									WHEN @BaseCurrency = 'EUR' THEN e.EUR
-									WHEN @BaseCurrency = 'CNY' THEN e.CNY
-									WHEN @BaseCurrency = 'IDR' THEN e.IDR
-									WHEN @BaseCurrency = 'GBP' THEN e.GBP
-									WHEN @BaseCurrency = 'THB' THEN e.THB
-									WHEN @BaseCurrency = 'INH' THEN e.INH
-									WHEN @BaseCurrency = 'BDT' THEN e.BDT
-									WHEN @BaseCurrency = 'INR' THEN e.INR
-									ELSE 1
-								END
-					FROM dbo.Lrf_f_GetExchangeDaily(@ExDate, @ExDate) AS e
+					SELECT @Rate = e.Rate
+					FROM dbo.Lrf_f_GetExchangeRate(@ExDate, @ExDate, @BaseCurrency, '') AS e
 					WHERE e.ExchangeId = @Currency
 				END
 

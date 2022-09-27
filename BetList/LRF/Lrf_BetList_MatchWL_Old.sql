@@ -8,7 +8,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Old]
 	@MatchId		INT				= 0,
 	@BetType		INT				= 0,
 	@LiveIndicator	INT				= -1,
-	@BaseCurrency	VARCHAR(10),
+	@BaseCurrency	VARCHAR(12),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@Sort			NVARCHAR(50)	= N'TransDate ASC',
@@ -32,6 +32,7 @@ AS
 		- 20211118@Kos: Hotfix - Missing linked database [Redmine: #164867]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 
 	Param's Explanation:
 		+ @LiveIndicator:

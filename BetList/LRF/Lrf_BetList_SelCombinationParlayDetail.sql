@@ -5,7 +5,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelCombinationParlayDetail]
 	@RefNo			BIGINT,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10)	= '',
+	@BaseCurrency	VARCHAR(12)	= '',
 	@Outstanding	MONEY		= 0 OUTPUT
 AS
 
@@ -35,6 +35,7 @@ AS
 		- 20191115@Kos: Show (N) for neutral match [Redmine: #123772]
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN
@@ -413,8 +414,9 @@ BEGIN
 	FROM @tmpResults
 
 	DECLARE @ExchangeRate TABLE (
-		ExchangeDate	SMALLDATETIME,
-		Rate			FLOAT
+		FirstExchangeDateByMonth	SMALLDATETIME,
+		LastExchangeDateByMonth		SMALLDATETIME,
+		Rate						FLOAT
 	)
 
 	-- Get exchange rate
@@ -422,39 +424,15 @@ BEGIN
 	BEGIN
 		INSERT INTO @ExchangeRate
 		SELECT
-			e.exchangedate,
-			CASE
-				WHEN @BaseCurrency = 'MYR' THEN e.MYR
-				WHEN @BaseCurrency = 'USD' THEN e.USD
-				WHEN @BaseCurrency = 'EUR' THEN e.EUR
-				WHEN @BaseCurrency = 'CNY' THEN e.CNY
-				WHEN @BaseCurrency = 'IDR' THEN e.IDR
-				WHEN @BaseCurrency = 'GBP' THEN e.GBP
-				WHEN @BaseCurrency = 'THB' THEN e.THB
-				WHEN @BaseCurrency = 'INH' THEN e.INH
-				WHEN @BaseCurrency = 'BDT' THEN e.BDT
-				WHEN @BaseCurrency = 'INR' THEN e.INR
-				ELSE 1
-			END AS Rate
-		FROM dbo.Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e
+			e.FromDate,
+			e.ToDate,
+			e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
 		WHERE e.ExchangeId = @Currency
-			AND EXISTS (SELECT 1 FROM @tmpResults WHERE WinLostDate = e.exchangedate)
+			AND EXISTS (SELECT 1 FROM @tmpResults WHERE WinLostDate BETWEEN e.FromDate AND e.ToDate)
 
-		SELECT @Outstanding = ISNULL(@Outstanding, 0) * 
-			CASE
-				WHEN @BaseCurrency = 'MYR' THEN e.MYR
-				WHEN @BaseCurrency = 'USD' THEN e.USD
-				WHEN @BaseCurrency = 'EUR' THEN e.EUR
-				WHEN @BaseCurrency = 'CNY' THEN e.CNY
-				WHEN @BaseCurrency = 'IDR' THEN e.IDR
-				WHEN @BaseCurrency = 'GBP' THEN e.GBP
-				WHEN @BaseCurrency = 'THB' THEN e.THB
-				WHEN @BaseCurrency = 'INH' THEN e.INH
-				WHEN @BaseCurrency = 'BDT' THEN e.BDT
-				WHEN @BaseCurrency = 'INR' THEN e.INR
-				ELSE 1
-			END
-		FROM dbo.Lrf_f_GetExchangeDaily(@Today, @Today) AS e
+		SELECT @Outstanding = ISNULL(@Outstanding, 0) * e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(@Today, @Today, @BaseCurrency, '') AS e
 		WHERE e.ExchangeId = @Currency
 	END
 	ELSE
@@ -499,7 +477,7 @@ BEGIN
 		b.Comm * ISNULL(e.Rate, 1) AS Comm,
 		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm
 	FROM @tmpResults AS b
-		LEFT JOIN @ExchangeRate AS e ON e.ExchangeDate = b.WinLostDate
+		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	WHERE b.StatusId NOT IN (0, 1)
 	ORDER BY b.WinLostDate ASC
 

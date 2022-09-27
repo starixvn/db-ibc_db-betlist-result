@@ -8,7 +8,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Mem]
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10)		= '',
+	@BaseCurrency	VARCHAR(12)		= '',
 	@StatusIdList	VARCHAR(50)		= '',
 	@Platform		VARCHAR(100)	= 'All',
 	@LiveIndicator	VARCHAR(10)		= '0,1,2',
@@ -112,6 +112,7 @@ AS
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220512@Kos: Support FGG [Redmine: #167897]
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

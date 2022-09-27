@@ -4,17 +4,19 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_CB_Detail]
 	@AgentList		VARCHAR(MAX),
 	@CustId			INT,
 	@RefNo			BIGINT,
-	@BaseCurrency	VARCHAR(10)
+	@BaseCurrency	VARCHAR(12)
 AS
 
 /*
 	Created by: Kos@20160915
 	Task: Get details info for Colossus Bets ticket
 	DB: DBEXT.bodb02
+
 	Revisions:
 		- 20170307@Kos: Support sub licensees [#Redmine: 71679]
 		- 20190528@Kos: Add new input param @BaseCurrency [#Redmine: 112531]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN
@@ -167,20 +169,8 @@ BEGIN
 		AND currency IN (SELECT DISTINCT Currency FROM @TempAg)
 
 	-- Get exchange rate
-	SELECT @ExRate = CASE
-						WHEN @BaseCurrency = 'MYR' THEN e.MYR
-						WHEN @BaseCurrency = 'USD' THEN e.USD
-						WHEN @BaseCurrency = 'EUR' THEN e.EUR
-						WHEN @BaseCurrency = 'CNY' THEN e.CNY
-						WHEN @BaseCurrency = 'IDR' THEN e.IDR
-						WHEN @BaseCurrency = 'GBP' THEN e.GBP
-						WHEN @BaseCurrency = 'THB' THEN e.THB
-						WHEN @BaseCurrency = 'INH' THEN e.INH
-						WHEN @BaseCurrency = 'BDT' THEN e.BDT
-						WHEN @BaseCurrency = 'INR' THEN e.INR
-						ELSE 1
-					END
-	FROM dbo.Lrf_f_GetExchangeDaily(@WinLostDate, @WinLostDate) AS e
+	SELECT @ExRate = e.Rate
+	FROM dbo.Lrf_f_GetExchangeRate(@WinLostDate, @WinLostDate, @BaseCurrency, '') AS e
 	WHERE e.ExchangeId = @Currency
 
 	SELECT

@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Running]
 	@AgentList			VARCHAR(MAX),
 	@CustId				INT				= 0,
 	@Username			VARCHAR(50)		= '',
-	@BaseCurrency		VARCHAR(10),
+	@BaseCurrency		VARCHAR(12),
 	@ConvertToBaseCur	BIT				= 0,	-- Convert to base currency or not
 	@StatusFilter		VARCHAR(10)		= '1,2,3',
 	@PageSize			INT				= 1000,
@@ -63,6 +63,7 @@ AS
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 		- 20220526@Kos: Support FGG [Redmine: #167897]
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

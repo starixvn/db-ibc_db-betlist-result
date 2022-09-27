@@ -17,7 +17,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_LastBetsMonitoring]
 	@LiveIndicator	INT				= 0,
 	@BetFrom		VARCHAR(100)	= 'All',
 	@CustomerClass	VARCHAR(200)	= 'All',
-	@BaseCurrency	VARCHAR(10)		='USD',
+	@BaseCurrency	VARCHAR(12)		='USD',
 	@Debug			BIT				= 0
 AS
 
@@ -28,6 +28,7 @@ AS
 
 	Revision:
 		- 20220727@Kos: Created [Redmine: #175297]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 
 	Parameter's Explanation:
 		- @BetType:

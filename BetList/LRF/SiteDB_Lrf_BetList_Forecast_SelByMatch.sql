@@ -7,7 +7,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_Forecast_SelByMatch]
 	@BetTeam		VARCHAR(20)	= NULL,
 	@LiveIndicator	INT			= -1,
 	@Handicap		SMALLMONEY	= NULL,
-	@BaseCurrency	VARCHAR(10),
+	@BaseCurrency	VARCHAR(12),
 	@BetChoice		VARCHAR(10)	= 'All',
 	@PageSize		INT			= 1000,
 	@PageIndex		INT			= 1,
@@ -21,6 +21,7 @@ AS
 
 	Revisions:
 		- 20220727@Kos: Created [Redmine: #175297]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 
 	Param's explanation:
 		- BetChoice: one of the following list: 'All','Home', 'Away', 'Over', 'Under'

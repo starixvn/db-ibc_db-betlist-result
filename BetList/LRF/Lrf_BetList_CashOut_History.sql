@@ -6,7 +6,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_CashOut_History]
 	@WinLostDate	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
 	@Currency		INT,
-	@BaseCurrency	VARCHAR(10)	= ''
+	@BaseCurrency	VARCHAR(12)	= ''
 AS
 
 /*
@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20220404@Kos: Created [Redmine: #169007]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

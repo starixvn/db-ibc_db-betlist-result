@@ -17,7 +17,7 @@ ALTER PROCEDURE [dbo].[Lrf_Monitor_BetlistSel_New]
 	@LiveIndicator	INT				= 0,
 	@BetFrom		VARCHAR(100)	= 'All',
 	@CustomerClass	VARCHAR(MAX)	= 'All',
-	@BaseCurrency	VARCHAR(10)		='USD',
+	@BaseCurrency	VARCHAR(12)		='USD',
 	@Debug			BIT				= 0
 AS
 
@@ -81,6 +81,7 @@ AS
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220811@Kos: Support Customer Class Is NULL [RedmineID: #176156]
 		- 20220825@Kos: Hotfix - Extend length for Customer Class [RedmineID: #177077]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -648,20 +649,8 @@ BEGIN
 			INSERT INTO @ExchangeRate
 			SELECT
 				e.ExchangeId,
-				CASE
-					WHEN @BaseCurrency = 'MYR' THEN e.MYR
-					WHEN @BaseCurrency = 'USD' THEN e.USD
-					WHEN @BaseCurrency = 'EUR' THEN e.EUR
-					WHEN @BaseCurrency = 'CNY' THEN e.CNY
-					WHEN @BaseCurrency = 'IDR' THEN e.IDR
-					WHEN @BaseCurrency = 'GBP' THEN e.GBP
-					WHEN @BaseCurrency = 'THB' THEN e.THB
-					WHEN @BaseCurrency = 'INH' THEN e.INH
-					WHEN @BaseCurrency = 'BDT' THEN e.BDT
-					WHEN @BaseCurrency = 'INR' THEN e.INR
-					ELSE 1
-				END AS Rate
-			FROM dbo.Lrf_f_GetExchangeDaily(CONVERT(VARCHAR(10), GETDATE(), 111), CONVERT(VARCHAR(10), GETDATE(), 111)) AS e
+				e.Rate
+			FROM dbo.Lrf_f_GetExchangeRate(CONVERT(VARCHAR(10), GETDATE(), 111), CONVERT(VARCHAR(10), GETDATE(), 111), @BaseCurrency, '') AS e
 		END
 	END
 

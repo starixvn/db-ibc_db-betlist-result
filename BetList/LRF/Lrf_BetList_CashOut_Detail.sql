@@ -8,14 +8,14 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_CashOut_Detail]
 	@OriginalTransId	BIGINT		= 0,
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
-	@BaseCurrency		VARCHAR(10)	= ''
+	@BaseCurrency		VARCHAR(12)	= ''
 AS
 
 /*
 	Created: Kos@20170321
 	Task: Get ticket detail of CashOut ticket [#Redmine: 71963]
 	DB: DBACC.bodb02
-	Original:
+
 	Revisions:
 		- 20180327@Kos: Increase TransDesc length to 1000 [#Redmine: 92433]
 		- 20180502@Kos: Missing return GBP base currency data [#Redmine: 94431]
@@ -31,6 +31,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN
@@ -534,31 +535,21 @@ BEGIN
 		
 	-- Get exchange rate
 	DECLARE @ExchangeRate AS TABLE (
-		ExchangeDate	SMALLDATETIME,
-		ExchangeId		INT,
-		Rate			FLOAT
+		FirstExchangeDateByMonth	SMALLDATETIME,
+		LastExchangeDateByMonth		SMALLDATETIME,
+		ExchangeId					INT,
+		Rate						FLOAT
 	)
 	
 	IF @BaseCurrency <> ''
 	BEGIN
 		INSERT INTO @ExchangeRate
 		SELECT
-			e.exchangedate,
+			e.FromDate,
+			e.ToDate,
 			e.ExchangeId,
-			CASE
-				WHEN @BaseCurrency = 'MYR' THEN e.MYR
-				WHEN @BaseCurrency = 'USD' THEN e.USD
-				WHEN @BaseCurrency = 'EUR' THEN e.EUR
-				WHEN @BaseCurrency = 'CNY' THEN e.CNY
-				WHEN @BaseCurrency = 'IDR' THEN e.IDR
-				WHEN @BaseCurrency = 'GBP' THEN e.GBP
-				WHEN @BaseCurrency = 'THB' THEN e.THB
-				WHEN @BaseCurrency = 'INH' THEN e.INH
-				WHEN @BaseCurrency = 'BDT' THEN e.BDT
-				WHEN @BaseCurrency = 'INR' THEN e.INR
-				ELSE 1
-			END AS Rate
-		FROM dbo.Lrf_f_GetExchangeDaily(@WinLostDate, @WinLostDate) AS e
+			e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(@WinLostDate, @WinLostDate, @BaseCurrency, '') AS e
 		WHERE EXISTS (SELECT 1 FROM @Data WHERE Currency = e.ExchangeId)
 	END
 
@@ -606,7 +597,8 @@ BEGIN
 		b.OriginalBetType
 	FROM @Data AS b
 		LEFT JOIN @ExchangeRate AS e
-			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.exchangeid = b.Currency
+			ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+				AND e.exchangeid = b.Currency
 
 	SELECT
 		b.BetType,
@@ -622,6 +614,7 @@ BEGIN
 		b.WinLost * ISNULL(e.Rate, 1) AS WinLost
 	FROM @CashOutData AS b
 		LEFT JOIN @ExchangeRate AS e
-			ON e.ExchangeDate = (CASE WHEN b.WinLostDate <= @Today THEN b.WinLostDate ELSE @Today END) AND e.exchangeid = b.Currency
+			ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+				AND e.exchangeid = b.Currency
 END
 GO

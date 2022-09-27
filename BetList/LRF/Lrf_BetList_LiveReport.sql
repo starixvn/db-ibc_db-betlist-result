@@ -7,7 +7,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport]
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10)		= '',
+	@BaseCurrency	VARCHAR(12)		= '',
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@Sort			NVARCHAR(50)	= 'TransDate ASC'
@@ -25,6 +25,7 @@ AS
 		- 20220313@Kos: Hotfix - Extend range for IP v6 [Redmine: #169856]
 		- 20220314@Kos: Support Virtual Sports 3 [Redmine: #145337]
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

@@ -7,7 +7,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_CustomerList_Mem]
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10)		= '',
+	@BaseCurrency	VARCHAR(12)		= '',
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@Sort			VARCHAR(50)		= 'TransDate ASC',
@@ -103,6 +103,7 @@ AS
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220217@Kos: Support SG Jackpot [Redmine: #167035]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN
@@ -2944,32 +2945,22 @@ BEGIN
 
 	-- Get exchange rate
 	CREATE TABLE #ExchangeRate (
-		ExchangeDate	SMALLDATETIME,
-		ExchangeId		INT,
-		Rate			FLOAT
+		FirstExchangeDateByMonth	SMALLDATETIME,
+		LastExchangeDateByMonth		SMALLDATETIME,
+		ExchangeId					INT,
+		Rate						FLOAT
 	)
 
 	IF @BaseCurrency <> ''
 	BEGIN
 		INSERT INTO #ExchangeRate
 		SELECT
-			e.exchangedate,
+			e.FromDate,
+			e.ToDate,
 			e.ExchangeId,
-			CASE
-				WHEN @BaseCurrency = 'MYR' THEN e.MYR
-				WHEN @BaseCurrency = 'USD' THEN e.USD
-				WHEN @BaseCurrency = 'EUR' THEN e.EUR
-				WHEN @BaseCurrency = 'CNY' THEN e.CNY
-				WHEN @BaseCurrency = 'IDR' THEN e.IDR
-				WHEN @BaseCurrency = 'GBP' THEN e.GBP
-				WHEN @BaseCurrency = 'THB' THEN e.THB
-				WHEN @BaseCurrency = 'INH' THEN e.INH
-				WHEN @BaseCurrency = 'BDT' THEN e.BDT
-				WHEN @BaseCurrency = 'INR' THEN e.INR
-				ELSE 1
-			END AS Rate
-		FROM Lrf_f_GetExchangeDaily(@ExFromDate, @ExToDate) AS e
-		WHERE EXISTS (SELECT 1 FROM #Data WHERE Currency = e.ExchangeId AND WinLostDate = e.exchangedate)
+			e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
+		WHERE EXISTS (SELECT 1 FROM #Data WHERE Currency = e.ExchangeId AND WinLostDate BETWEEN e.FromDate AND e.ToDate)
 	END
 
 	-- Return data
@@ -2981,7 +2972,8 @@ BEGIN
 		@SumPlayerComm	= SUM(b.PlayerComm	* ISNULL(e.Rate, 1))
 	FROM #Data AS b
 		LEFT JOIN #ExchangeRate AS e
-			ON e.ExchangeDate = b.WinLostDate AND e.ExchangeId = b.Currency
+			ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+				AND b.Currency = e.ExchangeId
 
 	-- Get sort text
 	IF @BaseCurrency <> ''
@@ -3128,7 +3120,8 @@ BEGIN
 		a.SiteId
 	FROM @PagingData AS a
 		LEFT JOIN #ExchangeRate AS e
-			ON e.ExchangeDate = a.WinLostDate AND e.ExchangeId = a.Currency
+			ON a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+				AND a.Currency = e.ExchangeId
 	ORDER BY a.RowNum ASC
 
 	-- Get sub tickets
@@ -3164,7 +3157,8 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
 				INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
 				LEFT JOIN #ExchangeRate AS e
-					ON e.ExchangeDate = b.WinLostDate AND e.ExchangeId = b.Currency
+					ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+						AND b.Currency = e.ExchangeId
 			WHERE bm.custid = @CustId
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 3
@@ -3188,7 +3182,8 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
 				INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
 				LEFT JOIN #ExchangeRate AS e
-					ON e.ExchangeDate = b.WinLostDate AND e.ExchangeId = b.Currency
+					ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+						AND b.Currency = e.ExchangeId
 			WHERE bm.custid = @CustId
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 3
@@ -3212,7 +3207,8 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.BetType = sbt.Bettype
 				INNER JOIN @SportBettype AS sbtm ON bm.bettype = sbtm.Bettype
 				LEFT JOIN #ExchangeRate AS e
-					ON e.ExchangeDate = b.WinLostDate AND e.ExchangeId = b.Currency
+					ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+						AND b.Currency = e.ExchangeId
 			WHERE bm.custid = @CustId
 				AND sbt.ProductID = 5
 				AND sbt.EventType = 3

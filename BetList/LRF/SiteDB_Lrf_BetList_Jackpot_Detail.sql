@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_Jackpot_Detail]
 	@AgentList		VARCHAR(MAX),
 	@TransId		BIGINT,
 	@CustId			INT,
-	@BaseCurrency	VARCHAR(10)
+	@BaseCurrency	VARCHAR(12)
 AS
 
 /*
@@ -14,6 +14,7 @@ AS
 
 	Revisions:
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

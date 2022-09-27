@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossParlay]
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10),
+	@BaseCurrency	VARCHAR(12),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@Sort			NVARCHAR(50)	= 'TransDate ASC',
@@ -49,6 +49,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -337,25 +338,13 @@ BEGIN
 	INSERT INTO #ExchangeRate
 	SELECT
 		e.ExchangeId,
-		e.FirstExchangeDateByMonth,
-		e.LastExchangeDateByMonth,
-		CASE
-			WHEN @BaseCurrency = 'MYR' THEN e.MYR
-			WHEN @BaseCurrency = 'USD' THEN e.USD
-			WHEN @BaseCurrency = 'EUR' THEN e.EUR
-			WHEN @BaseCurrency = 'CNY' THEN e.CNY
-			WHEN @BaseCurrency = 'IDR' THEN e.IDR
-			WHEN @BaseCurrency = 'GBP' THEN e.GBP
-			WHEN @BaseCurrency = 'THB' THEN e.THB
-			WHEN @BaseCurrency = 'INH' THEN e.INH
-			WHEN @BaseCurrency = 'BDT' THEN e.BDT
-			WHEN @BaseCurrency = 'INR' THEN e.INR
-			ELSE 1
-		END AS Rate
-	FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
+		e.FromDate,
+		e.ToDate,
+		e.Rate
+	FROM dbo.Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
 	WHERE EXISTS (SELECT 1 FROM #AgWinlossMP
 				WHERE Currency = e.ExchangeId
-					AND WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
+					AND WinLostDate BETWEEN e.FromDate AND e.ToDate)
 
 	CREATE TABLE #PagingData (
 		RowNum			INT,

@@ -11,7 +11,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_Sportsbook]
 	@BetType			SMALLINT		= 0,
 	@LeagueId			INT				= 0,
 	@MatchId			INT				= 0,
-	@BaseCurrency		VARCHAR(10),
+	@BaseCurrency		VARCHAR(12),
 	@ConvertToBaseCur	BIT				= 0,	-- Convert to base currency or not
 	@StatusIdList		VARCHAR(50)		= '',
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
@@ -70,6 +70,7 @@ AS
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220216@Kos: Support search by IP [RedmineID: #166079]
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN
@@ -1842,25 +1843,13 @@ BEGIN
 			INSERT INTO #ExchangeRate
 			SELECT
 				e.ExchangeId,
-				e.FirstExchangeDateByMonth,
-				e.LastExchangeDateByMonth,
-				CASE
-					WHEN @BaseCurrency = 'MYR' THEN e.MYR
-					WHEN @BaseCurrency = 'USD' THEN e.USD
-					WHEN @BaseCurrency = 'EUR' THEN e.EUR
-					WHEN @BaseCurrency = 'CNY' THEN e.CNY
-					WHEN @BaseCurrency = 'IDR' THEN e.IDR
-					WHEN @BaseCurrency = 'GBP' THEN e.GBP
-					WHEN @BaseCurrency = 'THB' THEN e.THB
-					WHEN @BaseCurrency = 'INH' THEN e.INH
-					WHEN @BaseCurrency = 'BDT' THEN e.BDT
-					WHEN @BaseCurrency = 'INR' THEN e.INR
-					ELSE 1
-				END AS Rate
-			FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
+				e.FromDate,
+				e.ToDate,
+				e.Rate
+			FROM dbo.Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
 			WHERE EXISTS (SELECT 1 FROM #Data
 						WHERE Currency = e.ExchangeId
-							AND WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
+							AND WinLostDate BETWEEN e.FromDate AND e.ToDate)
 
 			-- Return data
 			SELECT

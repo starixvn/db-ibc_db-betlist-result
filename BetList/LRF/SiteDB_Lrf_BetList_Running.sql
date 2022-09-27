@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_Running]
 	@AgentList			VARCHAR(MAX),
 	@CustId				INT				= 0,
 	@Username			VARCHAR(50)		= '',
-	@BaseCurrency		VARCHAR(10),
+	@BaseCurrency		VARCHAR(12),
 	@ConvertToBaseCur	BIT				= 0,	-- Convert to base currency or not
 	@StatusFilter		VARCHAR(10)		= '1,2,3',
 	@PageSize			INT				= 1000,
@@ -28,6 +28,7 @@ AS
 
 	Revisions:
 		- 20220727@Kos: Created [Redmine: #175297]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

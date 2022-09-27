@@ -5,7 +5,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_CashOut_History]
 	@CustId			INT,
 	@WinLostDate	SMALLDATETIME,
 	@Currency		INT,
-	@BaseCurrency	VARCHAR(10)	= ''
+	@BaseCurrency	VARCHAR(12)	= ''
 AS
 
 /*
@@ -15,6 +15,7 @@ AS
 
 	Revisions:
 		- 20220819@Kos: Scale out DBTRANS [Redmine: #175297]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

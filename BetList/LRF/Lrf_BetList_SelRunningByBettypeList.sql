@@ -3,7 +3,7 @@
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByBettypeList]
 	@AgentList		VARCHAR(MAX),
 	@BetType		VARCHAR(50),
-	@BaseCurrency	VARCHAR(10),
+	@BaseCurrency	VARCHAR(12),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@TotalRows		INT				= 0 OUTPUT
@@ -39,6 +39,7 @@ AS
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145832]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN
@@ -297,20 +298,8 @@ BEGIN
 		INSERT INTO #ExchangeRate
 		SELECT
 			e.ExchangeId,
-			CASE
-				WHEN @BaseCurrency = 'MYR' THEN e.MYR
-				WHEN @BaseCurrency = 'USD' THEN e.USD
-				WHEN @BaseCurrency = 'EUR' THEN e.EUR
-				WHEN @BaseCurrency = 'CNY' THEN e.CNY
-				WHEN @BaseCurrency = 'IDR' THEN e.IDR
-				WHEN @BaseCurrency = 'GBP' THEN e.GBP
-				WHEN @BaseCurrency = 'THB' THEN e.THB
-				WHEN @BaseCurrency = 'INH' THEN e.INH
-				WHEN @BaseCurrency = 'BDT' THEN e.BDT
-				WHEN @BaseCurrency = 'INR' THEN e.INR
-				ELSE 1
-			END AS Rate
-		FROM dbo.Lrf_f_GetExchangeDaily(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)) AS e
+			e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), @BaseCurrency, '') AS e
 		WHERE EXISTS (SELECT 1 FROM #Data WHERE Currency = e.ExchangeId)
 	END
 

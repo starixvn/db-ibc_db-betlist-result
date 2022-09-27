@@ -6,7 +6,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelByDayAll_Mem]
 	@FromDate		SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@TransType		INT				= 0,
-	@BaseCurrency	VARCHAR(10),
+	@BaseCurrency	VARCHAR(12),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@TotalRows		INT				= 0 OUTPUT,
@@ -129,6 +129,7 @@ AS
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220217@Kos: Support SG Jackpot [Redmine: #167035]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 
 	Param's Explanation:
 		+ @TransType:
@@ -2448,38 +2449,14 @@ BEGIN
 
 	IF @FromDate > @Today
 	BEGIN
-		SELECT @ExRate = CASE
-						WHEN @BaseCurrency = 'MYR' THEN e.MYR
-						WHEN @BaseCurrency = 'USD' THEN e.USD
-						WHEN @BaseCurrency = 'EUR' THEN e.EUR
-						WHEN @BaseCurrency = 'CNY' THEN e.CNY
-						WHEN @BaseCurrency = 'IDR' THEN e.IDR
-						WHEN @BaseCurrency = 'GBP' THEN e.GBP
-						WHEN @BaseCurrency = 'THB' THEN e.THB
-						WHEN @BaseCurrency = 'INH' THEN e.INH
-						WHEN @BaseCurrency = 'BDT' THEN e.BDT
-						WHEN @BaseCurrency = 'INR' THEN e.INR
-						ELSE 1
-					END
-		FROM dbo.Lrf_f_GetExchangeDaily(@Today, @Today) AS e
+		SELECT @ExRate = e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(@Today, @Today, @BaseCurrency, '') AS e
 		WHERE e.ExchangeId = @Currency
 	END
 	ELSE
 	BEGIN
-		SELECT @ExRate = CASE
-						WHEN @BaseCurrency = 'MYR' THEN e.MYR
-						WHEN @BaseCurrency = 'USD' THEN e.USD
-						WHEN @BaseCurrency = 'EUR' THEN e.EUR
-						WHEN @BaseCurrency = 'CNY' THEN e.CNY
-						WHEN @BaseCurrency = 'IDR' THEN e.IDR
-						WHEN @BaseCurrency = 'GBP' THEN e.GBP
-						WHEN @BaseCurrency = 'THB' THEN e.THB
-						WHEN @BaseCurrency = 'INH' THEN e.INH
-						WHEN @BaseCurrency = 'BDT' THEN e.BDT
-						WHEN @BaseCurrency = 'INR' THEN e.INR
-						ELSE 1
-					END
-		FROM dbo.Lrf_f_GetExchangeDaily(@FromDate, @FromDate) AS e
+		SELECT @ExRate = e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(@FromDate, @FromDate, @BaseCurrency, '') AS e
 		WHERE e.ExchangeId = @Currency
 	END
 

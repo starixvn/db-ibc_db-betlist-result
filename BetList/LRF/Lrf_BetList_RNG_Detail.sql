@@ -8,7 +8,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_RNG_Detail]
 	@ExcludeBettrans	BIT			= 0,
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
-	@BaseCurrency		VARCHAR(10)
+	@BaseCurrency		VARCHAR(12)
 AS
 
 /*
@@ -55,6 +55,7 @@ AS
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 					- Add new input param @ExcludeBettrans BIT
 					- Move from DBEXT to DBACC
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 
 	Parameters:
 		- @TransType

@@ -7,7 +7,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_RNG_Detail]
 	@TransType		TINYINT			= 0,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10)
+	@BaseCurrency	VARCHAR(12)
 AS
 
 /*
@@ -16,6 +16,7 @@ AS
 	DB: DBSID.bodb02
 	Revisions:
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 
 	Parameters:
 		- @TransType

@@ -8,7 +8,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LC_Detail]
 	@ExcludeBettrans	BIT			= 0,
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
-	@BaseCurrency		VARCHAR(10)
+	@BaseCurrency		VARCHAR(12)
 AS
 
 /*
@@ -37,6 +37,7 @@ AS
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 					- Add new input param @ExcludeBettrans BIT
 					- Move from DBEXT to DBACC
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 
 	Parameters:
 		- @TransType
@@ -401,24 +402,12 @@ BEGIN
 	BEGIN
 		INSERT INTO @ExchangeRate
 		SELECT
-			e.FirstExchangeDateByMonth,
-			e.LastExchangeDateByMonth,
-			CASE
-				WHEN @BaseCurrency = 'MYR' THEN e.MYR
-				WHEN @BaseCurrency = 'USD' THEN e.USD
-				WHEN @BaseCurrency = 'EUR' THEN e.EUR
-				WHEN @BaseCurrency = 'CNY' THEN e.CNY
-				WHEN @BaseCurrency = 'IDR' THEN e.IDR
-				WHEN @BaseCurrency = 'GBP' THEN e.GBP
-				WHEN @BaseCurrency = 'THB' THEN e.THB
-				WHEN @BaseCurrency = 'INH' THEN e.INH
-				WHEN @BaseCurrency = 'BDT' THEN e.BDT
-				WHEN @BaseCurrency = 'INR' THEN e.INR
-				ELSE 1
-			END AS Rate
-		FROM dbo.Lrf_f_GetSubExchangeDaily(@ExFromDate, @ExToDate) AS e
+			e.FromDate,
+			e.ToDate,
+			e.Rate
+		FROM dbo.Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
 		WHERE e.ExchangeId = @Currency
-			AND EXISTS (SELECT 1 FROM @tmpBettransLC WHERE WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth)
+			AND EXISTS (SELECT 1 FROM @tmpBettransLC WHERE WinLostDate BETWEEN e.FromDate AND e.ToDate)
 	END
 
 	SELECT

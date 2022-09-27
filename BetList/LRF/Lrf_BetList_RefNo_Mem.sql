@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_RefNo_Mem]
 	@ExcludeBettrans	BIT				= 0,
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
-	@BaseCurrency		VARCHAR(10)		= ''
+	@BaseCurrency		VARCHAR(12)		= ''
 AS
 
 /*
@@ -78,6 +78,7 @@ AS
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 					- Add new input param @ExcludeBettrans BIT
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN

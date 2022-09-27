@@ -1,14 +1,14 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_TxID_Mem]
-	@AgentList		VARCHAR(MAX),
-	@TxId			VARCHAR(100),
-	@CustId			INT				= 0,
-	@Username		VARCHAR(50)		= '',
+	@AgentList			VARCHAR(MAX),
+	@TxId				VARCHAR(100),
+	@CustId				INT				= 0,
+	@Username			VARCHAR(50)		= '',
 	@ExcludeBettrans	BIT				= 0,
-	@MoveBetsDay	SMALLDATETIME,
-	@BalanceUpDay	SMALLDATETIME,
-	@BaseCurrency	VARCHAR(10)		= ''
+	@MoveBetsDay		SMALLDATETIME,
+	@BalanceUpDay		SMALLDATETIME,
+	@BaseCurrency		VARCHAR(12)		= ''
 AS
 
 /*
@@ -25,6 +25,7 @@ AS
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 					- Add new input param @ExcludeBettrans BIT
+		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 */
 
 BEGIN
