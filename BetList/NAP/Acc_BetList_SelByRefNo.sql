@@ -5,7 +5,6 @@ ALTER PROCEDURE [dbo].[Acc_BetList_SelByRefNo]
 	@RefNo				BIGINT,
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
-	@Site				VARCHAR(10)		= '',
 	@Permission			VARCHAR(20)		= '1,2,3',
 	@ExcludeBettrans	BIT				= 0
 AS
@@ -143,7 +142,8 @@ AS
 					- Add new input param @ExcludeBettrans BIT, @Site VARCHAR(10)
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
-
+		- 20221010@Kos: Scale out DBTRANS [Redmine: #178943]
+					- Remove param @Site
 */
 
 BEGIN
@@ -345,8 +345,7 @@ BEGIN
 						FROM dbo.customer AS c WITH (NOLOCK)
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 						WHERE c.custid = @CustId
-							AND (a.site IN (SELECT Site FROM @DeniedSite)
-								OR (a.site <> @Site AND @Site <> '')))
+							AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- Bettrans
 		IF @WinLostDate > @MoveBetsDay
@@ -3685,8 +3684,7 @@ BEGIN
 						FROM dbo.customer AS c WITH (NOLOCK)
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 							WHERE c.custid = @CustId
-								AND (a.site IN (SELECT Site FROM @DeniedSite)
-									OR (a.site <> @Site AND @Site <> '')))
+								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- bettransRnG
 		IF @WinLostDate > @MoveBetsDay
@@ -3944,8 +3942,7 @@ BEGIN
 						FROM dbo.customer AS c WITH (NOLOCK)
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 							WHERE c.custid = @CustId
-								AND (a.site IN (SELECT Site FROM @DeniedSite)
-									OR (a.site <> @Site AND @Site <> '')))
+								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- bettransLC
 		IF @WinLostDate > @MoveBetsDay
@@ -4367,8 +4364,7 @@ BEGIN
 						FROM dbo.customer AS c WITH (NOLOCK)
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 							WHERE c.custid = @CustId
-								AND (a.site IN (SELECT Site FROM @DeniedSite)
-									OR (a.site <> @Site AND @Site <> '')))
+								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- bettransg
 		IF @WinLostDate > @MoveBetsDay

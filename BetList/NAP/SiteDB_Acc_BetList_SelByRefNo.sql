@@ -4,7 +4,6 @@ ALTER PROCEDURE [dbo].[SiteDB_Acc_BetList_SelByRefNo]
 	@UserId			BIGINT,
 	@RefNo			BIGINT,
 	@MoveBetsDay	SMALLDATETIME,
-	@Site			VARCHAR(10),
 	@Permission		VARCHAR(20)		= '1,2,3'
 AS
 
@@ -23,6 +22,8 @@ AS
 		- 20220729@Kos: Scale out DBTRANS [Redmine: #175253]
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
+		- 20221010@Kos: Scale out DBTRANS [Redmine: #178943]
+					- Remove param @Site
 */
 
 BEGIN
@@ -192,8 +193,7 @@ BEGIN
 						FROM CustDB.dbo.Customer AS c WITH (NOLOCK)
 							INNER JOIN CustDB.dbo.Customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 						WHERE c.custid = @CustId
-							AND (a.site IN (SELECT Site FROM @DeniedSite)
-								OR a.site <> @Site))
+							AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- Sportbooks, Number Game, Virtual Sports, BetRadar Virtual Sports, Cash Out (EventType = 1)
 		IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType)
@@ -1788,8 +1788,7 @@ BEGIN
 						FROM CustDB.dbo.Customer AS c WITH (NOLOCK)
 							INNER JOIN CustDB.dbo.Customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 							WHERE c.custid = @CustId
-								AND (a.site IN (SELECT Site FROM @DeniedSite)
-									OR a.site <> @Site))
+								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- RNG Casino Single Wallet, Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, RNG War, PG Soft, Joker, MaxGame, Habanero, CG, VGaming
 		-- AdvantPlay, AdvantPlay Mini, SEAL, MG RNGCasino
@@ -1918,8 +1917,7 @@ BEGIN
 						FROM CustDB.dbo.Customer AS c WITH (NOLOCK)
 							INNER JOIN CustDB.dbo.Customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 							WHERE c.custid = @CustId
-								AND (a.site IN (SELECT Site FROM @DeniedSite)
-									OR a.site <> @Site))
+								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- AG Casino, AllBet, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, Big Gaming, FGG
 		IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (11, 21, 45, 46, 51, 52, 57, 59, 65, 70) AND Bettype = @BetType )
@@ -2125,8 +2123,7 @@ BEGIN
 						FROM CustDB.dbo.Customer AS c WITH (NOLOCK)
 							INNER JOIN CustDB.dbo.Customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 							WHERE c.custid = @CustId
-								AND (a.site IN (SELECT Site FROM @DeniedSite)
-									OR a.site <> @Site))
+								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- SA Gaming
 		IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (39) AND Bettype = @BetType )
