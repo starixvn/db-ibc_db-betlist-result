@@ -70,7 +70,8 @@ AS
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220216@Kos: Support search by IP [RedmineID: #166079]
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 */
 
 BEGIN
@@ -129,7 +130,7 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
+		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
@@ -185,7 +186,7 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
+		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),

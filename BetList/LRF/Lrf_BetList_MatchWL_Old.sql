@@ -32,7 +32,8 @@ AS
 		- 20211118@Kos: Hotfix - Missing linked database [Redmine: #164867]
 		- 20220113@Kos: Support new 3rd result API [Redmine: #166047]
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20230404@Kos: Don't return betfrom anymore [Redmine: #178059]
 
 	Param's Explanation:
 		+ @LiveIndicator:
@@ -140,7 +141,6 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
@@ -201,7 +201,6 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
@@ -277,7 +276,6 @@ BEGIN
 			LiveHomeScore,
 			LiveAwayScore,
 			Ip,
-			BetFrom,
 			MatchId,
 			BetCheck,
 			ComStatus,
@@ -318,7 +316,6 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			dp.IP,
-			b.betfrom,
 			b.matchid,
 			b.betcheck,
 			b.comstatus,
@@ -715,7 +712,6 @@ BEGIN
 		a.Comm * ISNULL(e.Rate, 1) AS Comm,
 		a.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
 		a.Ip,
-		a.BetFrom,
 		a.BetCheck,
 		a.TransDesc,
 		a.BetdaqId,

@@ -47,6 +47,7 @@ AS
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
 		- 20230119@Kos: Support Jili [Redmine: 182914]
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
+		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 */
 
 BEGIN
@@ -101,7 +102,7 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
+		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
@@ -163,7 +164,7 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
+		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),

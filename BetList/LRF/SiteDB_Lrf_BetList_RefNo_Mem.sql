@@ -25,6 +25,7 @@ AS
 		- 20230328@Kos: Support Jili [Redmine: 182914]
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 		- 20230414@Kos: Hotfix - Fix search '_' character [Redmine: 186938]
+		- 20230415@Kos: Extend betfrom length [Redmine: #178059]
 */
 
 BEGIN
@@ -131,7 +132,7 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
+		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(1000),

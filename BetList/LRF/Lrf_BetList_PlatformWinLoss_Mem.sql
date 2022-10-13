@@ -34,7 +34,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_PlatformWinLoss_Mem]
 	@SumPlayerComm	MONEY = 0 OUTPUT,
 
 	@DrawFilter		TINYINT			= 1,
-	@PlatformType	VARCHAR(100)	= 'All'
+	@PlatformType	VARCHAR(200)	= 'All'
 AS
 
 /*
@@ -118,8 +118,9 @@ AS
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221220@Kos: Remove inactive products FW [Redmine: 181424]
+		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -230,7 +231,7 @@ BEGIN
 		OR ProductID = CASE WHEN @ShowSLT		= 0 THEN 63 END
 		OR ProductID = CASE WHEN @ShowBTC		= 0 THEN 69 END
 
-	CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(1))
+	CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(4))
 
 	INSERT INTO #PlatformList (PlatformType, BetFrom)
 	SELECT PlatformType, betfrom

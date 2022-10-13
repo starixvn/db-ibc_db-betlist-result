@@ -42,7 +42,8 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20230404@Kos: Don't return betfrom anymore [Redmine: #178059]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -118,7 +119,6 @@ BEGIN
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
 		Ip				VARCHAR(45),
-		BetFrom			NVARCHAR(1),
 		LeagueId		INT,
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
@@ -156,7 +156,6 @@ BEGIN
 		LiveHomeScore	SMALLINT,
 		LiveAwayScore	SMALLINT,
 		Ip				VARCHAR(45),
-		BetFrom			NVARCHAR(1),
 		LeagueId		INT,
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
@@ -207,7 +206,6 @@ BEGIN
 			LiveHomeScore,
 			LiveAwayScore,
 			Ip,
-			BetFrom,
 			MatchId,
 			BetCheck,
 			TransDesc,
@@ -240,7 +238,6 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			b.betcheck,
 			b.transdesc,
@@ -289,7 +286,6 @@ BEGIN
 			LiveHomeScore,
 			LiveAwayScore,
 			Ip,
-			BetFrom,
 			MatchId,
 			BetCheck,
 			TransDesc,
@@ -322,7 +318,6 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			b.betcheck,
 			b.transdesc,
@@ -448,7 +443,6 @@ BEGIN
 			b.LiveHomeScore,
 			b.LiveAwayScore,
 			b.Ip,
-			b.BetFrom,
 			CASE
 				WHEN b.EventType = 1 AND b.WhTicket = 1 THEN m.leagueid
 				WHEN b.EventType = 1 AND b.WhTicket = 2 THEN m14.leagueid
@@ -531,7 +525,6 @@ BEGIN
 				b.LiveHomeScore,
 				b.LiveAwayScore,
 				b.Ip,
-				b.BetFrom,
 				CASE
 					WHEN b.EventType = 1 AND b.WhTicket = 1 THEN m.leagueid
 					WHEN b.EventType = 1 AND b.WhTicket = 2 THEN m14.leagueid

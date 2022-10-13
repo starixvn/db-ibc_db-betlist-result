@@ -25,7 +25,8 @@ AS
 		- 20220313@Kos: Hotfix - Extend range for IP v6 [Redmine: #169856]
 		- 20220314@Kos: Support Virtual Sports 3 [Redmine: #145337]
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20230404@Kos: Don't return betfrom anymore [Redmine: #178059]
 */
 
 BEGIN
@@ -90,7 +91,6 @@ BEGIN
 		TransDate		DATETIME,
 		WinLostDate		SMALLDATETIME,
 		Ip				VARCHAR(45),
-		BetFrom			NVARCHAR(1),
 		LeagueId		INT,
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
@@ -126,7 +126,6 @@ BEGIN
 		TransDate		DATETIME,
 		WinLostDate		SMALLDATETIME,
 		Ip				VARCHAR(45),
-		BetFrom			NVARCHAR(1),
 		LeagueId		INT,
 		MatchId			INT,
 		BetCheck		NVARCHAR(50),
@@ -175,7 +174,6 @@ BEGIN
 			TransDate,
 			WinLostDate,
 			Ip,
-			BetFrom,
 			MatchId,
 			BetCheck,
 			TransDesc,
@@ -204,7 +202,6 @@ BEGIN
 			b.transdate,
 			b.winlostdate,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			ISNULL(b.betcheck, ''),
 			ISNULL(b.transdesc, ''),
@@ -248,7 +245,6 @@ BEGIN
 			TransDate,
 			WinLostDate,
 			Ip,
-			BetFrom,
 			MatchId,
 			BetCheck,
 			TransDesc,
@@ -277,7 +273,6 @@ BEGIN
 			b.transdate,
 			b.winlostdate,
 			b.ip,
-			b.betfrom,
 			b.matchid,
 			ISNULL(b.betcheck, ''),
 			ISNULL(b.transdesc, ''),
@@ -415,7 +410,6 @@ BEGIN
 			b.TransDate,
 			b.WinLostDate,
 			b.Ip,
-			b.BetFrom,
 			b.BetCheck,
 			b.TransDesc,
 			b.BetdaqId,
@@ -496,7 +490,6 @@ BEGIN
 				b.TransDate,
 				b.WinLostDate,
 				b.Ip,
-				b.BetFrom,
 				b.BetCheck,
 				b.TransDesc,
 				b.BetdaqId,

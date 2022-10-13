@@ -15,7 +15,7 @@ ALTER PROCEDURE [dbo].[Lrf_Monitor_BetlistSel_New]
 	@MinStake		MONEY			= 0,
 	@MaxStake		MONEY			= 0,
 	@LiveIndicator	INT				= 0,
-	@BetFrom		VARCHAR(100)	= 'All',
+	@BetFrom		VARCHAR(200)	= 'All',
 	@CustomerClass	VARCHAR(MAX)	= 'All',
 	@BaseCurrency	VARCHAR(12)		='USD',
 	@Debug			BIT				= 0
@@ -81,8 +81,9 @@ AS
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220811@Kos: Support Customer Class Is NULL [RedmineID: #176156]
 		- 20220825@Kos: Hotfix - Extend length for Customer Class [RedmineID: #177077]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221207@Kos: Support Saba E-Sports PinGoal [RedmineID: #181224]
+		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -225,7 +226,7 @@ BEGIN
 		Odds			MONEY,
 		Actual_Stake	MONEY,
 		Stake			MONEY,
-		BetFrom			NVARCHAR(1),
+		BetFrom			NVARCHAR(4),
 		Status			NVARCHAR(10),
 		BetTeam			NVARCHAR(10),
 		OddsType		TINYINT,
@@ -258,7 +259,7 @@ BEGIN
 		IF @MaxStake IS NULL
 			SET @MaxStake = 0
 
-		CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(1) PRIMARY KEY)
+		CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(4) PRIMARY KEY)
 
 		INSERT INTO #PlatformList (PlatformType, BetFrom)
 		SELECT PlatformType, betfrom

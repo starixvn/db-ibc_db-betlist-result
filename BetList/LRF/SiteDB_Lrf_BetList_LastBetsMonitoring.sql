@@ -15,7 +15,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_LastBetsMonitoring]
 	@MinStake		MONEY			= 0,
 	@MaxStake		MONEY			= 0,
 	@LiveIndicator	INT				= 0,
-	@BetFrom		VARCHAR(100)	= 'All',
+	@BetFrom		VARCHAR(200)	= 'All',
 	@CustomerClass	VARCHAR(200)	= 'All',
 	@BaseCurrency	VARCHAR(12)		='USD',
 	@Debug			BIT				= 0
@@ -32,6 +32,7 @@ AS
 		- 20221028@Kos: Hotfix - performance issue [Redmine: 179708]
 		- 20221107@Kos: Enhance performance [Redmine: 180045]
 		- 20221207@Kos: Support Saba E-Sports PinGoal [RedmineID: #181224]
+		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -159,7 +160,7 @@ BEGIN
 		Odds			MONEY,
 		Actual_Stake	MONEY,
 		Stake			MONEY,
-		BetFrom			NVARCHAR(1),
+		BetFrom			NVARCHAR(4),
 		Status			NVARCHAR(10),
 		BetTeam			NVARCHAR(10),
 		OddsType		TINYINT,
@@ -192,7 +193,7 @@ BEGIN
 		IF @MaxStake IS NULL
 			SET @MaxStake = 0
 
-		CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(1) PRIMARY KEY)
+		CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(4) PRIMARY KEY)
 
 		INSERT INTO #PlatformList (PlatformType, BetFrom)
 		SELECT PlatformType, betfrom

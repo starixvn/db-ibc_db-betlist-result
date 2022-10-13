@@ -28,6 +28,7 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221116@Kos: Support Player Tips [Redmine: 180590]
 		- 20221220@Kos: Remove inactive products FW [Redmine: 181424]
+		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 */
 
 BEGIN
@@ -117,7 +118,7 @@ BEGIN
 		LiveHomeScore		SMALLINT,
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
-		BetFrom				NVARCHAR(1),
+		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(1000),
