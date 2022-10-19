@@ -149,6 +149,7 @@ AS
 		- 20220511@Razor: Separate Saba Sports and Sportsbook [Redmine: #161777]
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
+		- 20221010@Razor: Support Tournament Prize for Microgaming RNG Casino [Redmine: #178335]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -669,8 +670,8 @@ BEGIN
 	WHERE c.custid = @CustId
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming
-	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG'))
+	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino
+	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
@@ -794,6 +795,21 @@ BEGIN
 							WHERE ProductId = 36 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 36 AND BetType = b.BetType)
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'MGRNG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 73 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 73 AND BetType = b.BetType)
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'MGRNG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 73 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 73 AND BetType = b.BetType)
 	END
 
 	SELECT @TotalRow = COUNT(1)
