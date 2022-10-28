@@ -28,7 +28,8 @@ AS
 
 	Revision:
 		- 20220727@Kos: Created [Redmine: #175297]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20221028@Kos: Hotfix - performance issue [Redmine: 179708]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -300,7 +301,7 @@ BEGIN
 			INNER JOIN #TempAg AS a ON b.Recommend = a.CustId
 			INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 		WHERE b.statusID IN (0, 1)
-			AND b.transid > @TransId
+			--AND b.transid > @TransId
 			AND (@Currency = ''
 				OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
 			AND (@LiveIndicator = 3
@@ -310,6 +311,9 @@ BEGIN
 				OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609, 229))
 				OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604, 7901))
 				OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604, 7901)))
+
+		DELETE @Data
+		WHERE TransId <= @TransId
 
 		-- translog
 		IF @BetType IN ('', 'Others')
