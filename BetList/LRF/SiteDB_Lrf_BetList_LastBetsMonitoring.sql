@@ -30,6 +30,7 @@ AS
 		- 20220727@Kos: Created [Redmine: #175297]
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221028@Kos: Hotfix - performance issue [Redmine: 179708]
+		- 20221107@Kos: Enhance performance [Redmine: 180045]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -501,15 +502,31 @@ BEGIN
 			END
 
 			-- Delete unselected special level
-			UPDATE b
-			SET b.SpecialLevel = ISNULL(d.SpecialLevel, 0)
-			FROM @Data AS b
-				INNER JOIN DBCUST.CustDB.dbo.Dep_CustSpecialLevel AS d WITH (NOLOCK) ON b.custid = d.custid
-
 			IF @SpecialLevel <> ''
+				AND EXISTS (SELECT 1 FROM @Data)
 			BEGIN
+				CREATE TABLE #TempCust (
+					CustId			INT PRIMARY KEY,
+					SpecialLevel	INT DEFAULT 0)
+
+				INSERT INTO #TempCust (CustId)
+				SELECT DISTINCT CustId
+				FROM @Data
+
+				UPDATE tc
+				SET tc.SpecialLevel = ISNULL(d.SpecialLevel, 0)
+				FROM #TempCust AS tc
+					INNER JOIN OPENQUERY(DBCUST, 'SELECT custid, SpecialLevel FROM CustDB.dbo.Dep_CustSpecialLevel WITH (NOLOCK)') AS d ON d.custid = tc.custid
+
+				UPDATE b
+				SET b.SpecialLevel = tc.SpecialLevel
+				FROM @Data AS b
+					INNER JOIN #TempCust AS tc ON tc.custid = b.custid
+
 				DELETE @Data
 				WHERE ',' + @SpecialLevel + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), SpecialLevel) + ',%'
+
+				DROP TABLE #TempCust
 			END
 
 			-- Delete unselected customer class
@@ -586,56 +603,114 @@ BEGIN
 		END
 	END
 
-	SELECT
-		c.username,
-		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
-		b.CustId,
-		b.CustomerClass,
-		b.MatchId,
-		b.SportType,
-		b.BetType,
-		b.TransId,
-		b.RefNo,
-		b.TransDate,
-		b.BetId,
-		b.LiveHomeScore,
-		b.LiveAwayScore,
-		b.LiveIndicator,
-		b.Hdp1,
-		b.Hdp2,
-		b.Odds,
-		b.Actual_Stake * ISNULL(b.Rate, 1) AS Actual_Stake,
-		b.Stake * ISNULL(b.Rate, 1) AS Stake,
-		b.BetFrom,
-		b.Status,
-		b.BetTeam,
-		b.OddsType,
-		b.Ip,
-		b.CurrencyId AS Currency,
-		b.SpecialLevel,
-		b.BetCheck,
-		b.TransDesc,
-		b.BetdaqId,
-		b.ExtraInfo,
-		b.OriginalStake * ISNULL(b.Rate, 1) AS OriginalStake,
-		b.OriginalBetType,
-		b.WalletType,
-		b.RefCode,
-		b.OddsSpread
-	FROM
-		(
-			SELECT TOP(@LimitRowCount)
-				d.*,
-				e.Rate
-			FROM @Data AS d
-				LEFT JOIN @ExchangeRate AS e ON e.exchangeid = d.CurrencyId
-			WHERE (@MinStake = 0 OR d.Stake * ISNULL(e.Rate, 1) >= @MinStake)
-				AND (@MaxStake = 0 OR d.Stake * ISNULL(e.Rate, 1) <= @MaxStake)
-			ORDER BY d.TransDate DESC
-		) AS b
-		LEFT JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
-	ORDER BY b.TransDate DESC
+	IF @SpecialLevel <> ''
+	BEGIN
+		SELECT
+			c.username,
+			SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
+			b.CustId,
+			b.CustomerClass,
+			b.MatchId,
+			b.SportType,
+			b.BetType,
+			b.TransId,
+			b.RefNo,
+			b.TransDate,
+			b.BetId,
+			b.LiveHomeScore,
+			b.LiveAwayScore,
+			b.LiveIndicator,
+			b.Hdp1,
+			b.Hdp2,
+			b.Odds,
+			b.Actual_Stake * ISNULL(b.Rate, 1) AS Actual_Stake,
+			b.Stake * ISNULL(b.Rate, 1) AS Stake,
+			b.BetFrom,
+			b.Status,
+			b.BetTeam,
+			b.OddsType,
+			b.Ip,
+			b.CurrencyId AS Currency,
+			b.SpecialLevel,
+			b.BetCheck,
+			b.TransDesc,
+			b.BetdaqId,
+			b.ExtraInfo,
+			b.OriginalStake * ISNULL(b.Rate, 1) AS OriginalStake,
+			b.OriginalBetType,
+			b.WalletType,
+			b.RefCode,
+			b.OddsSpread
+		FROM
+			(
+				SELECT TOP(@LimitRowCount)
+					d.*,
+					e.Rate
+				FROM @Data AS d
+					LEFT JOIN @ExchangeRate AS e ON e.exchangeid = d.CurrencyId
+				WHERE (@MinStake = 0 OR d.Stake * ISNULL(e.Rate, 1) >= @MinStake)
+					AND (@MaxStake = 0 OR d.Stake * ISNULL(e.Rate, 1) <= @MaxStake)
+				ORDER BY d.TransDate DESC
+			) AS b
+			LEFT JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
+		ORDER BY b.TransDate DESC
+	END
+	ELSE
+	BEGIN
+		SELECT
+			c.username,
+			SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
+			b.CustId,
+			b.CustomerClass,
+			b.MatchId,
+			b.SportType,
+			b.BetType,
+			b.TransId,
+			b.RefNo,
+			b.TransDate,
+			b.BetId,
+			b.LiveHomeScore,
+			b.LiveAwayScore,
+			b.LiveIndicator,
+			b.Hdp1,
+			b.Hdp2,
+			b.Odds,
+			b.Actual_Stake * ISNULL(b.Rate, 1) AS Actual_Stake,
+			b.Stake * ISNULL(b.Rate, 1) AS Stake,
+			b.BetFrom,
+			b.Status,
+			b.BetTeam,
+			b.OddsType,
+			b.Ip,
+			b.CurrencyId AS Currency,
+			ISNULL(d.SpecialLevel, 0) AS SpecialLevel,
+			b.BetCheck,
+			b.TransDesc,
+			b.BetdaqId,
+			b.ExtraInfo,
+			b.OriginalStake * ISNULL(b.Rate, 1) AS OriginalStake,
+			b.OriginalBetType,
+			b.WalletType,
+			b.RefCode,
+			b.OddsSpread
+		FROM
+			(
+				SELECT TOP(@LimitRowCount)
+					d.*,
+					e.Rate
+				FROM @Data AS d
+					LEFT JOIN @ExchangeRate AS e ON e.exchangeid = d.CurrencyId
+				WHERE (@MinStake = 0 OR d.Stake * ISNULL(e.Rate, 1) >= @MinStake)
+					AND (@MaxStake = 0 OR d.Stake * ISNULL(e.Rate, 1) <= @MaxStake)
+				ORDER BY d.TransDate DESC
+			) AS b
+			LEFT JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
+			LEFT JOIN DBCUST.CustDB.dbo.Dep_CustSpecialLevel AS d WITH (NOLOCK) ON b.CustId = d.custid
+		ORDER BY b.TransDate DESC
+	END
 
 	DROP TABLE #PlatformList
+	DROP TABLE #TempAg
+	DROP TABLE #TempSportType
 END
 GO
