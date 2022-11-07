@@ -19,6 +19,7 @@ AS
 	Revisions:
 		- 20220727@Kos: Created [Redmine: #175297]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20221104@Kos: Enhance performance [Redmine: 180045]
 */
 
 BEGIN
@@ -200,6 +201,7 @@ BEGIN
 			-- Bettrans range
 			IF @WhTicket = 0
 			BEGIN
+				-- Search by transid
 				SELECT TOP(1)
 					@TransId = b.transid,
 					@CustId = b.custid,
@@ -214,10 +216,32 @@ BEGIN
 					@WhTicket = 2		-- bettrans
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-				WHERE (b.transid = @RefNo
-						OR (b.refno = @RefNo AND s.RefTable = 3))
+				WHERE b.transid = @RefNo
 					AND (b.custid = @CustId OR @CustId = 0)
 					AND b.winlostdate > @MoveBetsDay
+
+				-- Search by refno
+				IF @WhTicket = 0
+				BEGIN
+					SELECT TOP(1)
+						@TransId = b.transid,
+						@CustId = b.custid,
+						@WinLostDate = b.winlostdate,
+						@Recommend = b.recommend,
+						@Currency = b.currency,
+						@BetType = b.bettype,
+						@RefCode = b.RefCode,
+						@ProductId = s.ProductID,
+						@EventType = s.EventType,
+						@RefTable = s.RefTable,
+						@WhTicket = 2		-- bettrans
+					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_customerinfo)
+						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+					WHERE b.refno = @RefNo
+						AND s.RefTable = 3
+						AND (b.custid = @CustId OR @CustId = 0)
+						AND b.winlostdate > @MoveBetsDay
+				END
 			END
 
 			IF @WhTicket > 0
