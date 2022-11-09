@@ -24,6 +24,7 @@ AS
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 		- 20221010@Kos: Scale out DBTRANS [Redmine: #178943]
 					- Remove param @Site
+		- 20221109@Kos: Enhance performance [Redmine: 179269]
 */
 
 BEGIN
@@ -48,7 +49,7 @@ BEGIN
 		@WinLostDate	SMALLDATETIME,
 		@CustId			INT
 
-	-- FROM translog
+	-- translog
 	SELECT TOP(1)
 		@TransId = b.translogid,
 		@BetType = b.gameID,
@@ -59,10 +60,9 @@ BEGIN
 	WHERE b.translogid = @RefNo
 		AND b.statusID IN (0, 1)
 		AND ( sp.productid IN (8, 12, 15, 28, 38, 40, 43, 49, 63)
-			OR sp.bettype BETWEEN 801 AND 899
 			OR (sp.productid = 3 AND sp.EventType = 0))
 
-	-- FROM bettrans (exclude Metric Gaming running ticket)
+	-- bettrans
 	IF @WinLostDate IS NULL
 	BEGIN
 		SELECT TOP(1)
@@ -72,14 +72,21 @@ BEGIN
 			@CustId = b.custid
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
-		WHERE
-			( b.transid = @RefNo
-				OR ( b.refno = @RefNo
-					AND (sp.productid IN (8, 12, 15, 28, 38, 40, 43, 49, 63)
-						OR sp.bettype BETWEEN 801 AND 899
-						OR (sp.productid = 3 AND sp.EventType = 0) ) ) )
-			AND (b.bettype NOT BETWEEN 801 AND 806
-				OR b.statusID NOT IN (0, 1))
+		WHERE b.transid = @RefNo
+
+		IF @WinLostDate IS NULL
+		BEGIN
+			SELECT TOP(1)
+				@TransId = b.transid,
+				@BetType = b.bettype,
+				@WinLostDate = b.winlostdate,
+				@CustId = b.custid
+			FROM dbo.bettrans AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
+			WHERE b.refno = @RefNo
+				AND (sp.productid IN (8, 12, 15, 28, 38, 40, 43, 49, 63)
+					OR (sp.productid = 3 AND sp.EventType = 0) )
+		END
 	END
 
 	DECLARE @Data TABLE (
