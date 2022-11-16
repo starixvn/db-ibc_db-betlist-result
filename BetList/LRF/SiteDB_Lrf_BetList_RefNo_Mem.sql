@@ -18,8 +18,9 @@ AS
 
 	Revisions:
 		- 20220727@Kos: Created [Redmine: #175297]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221104@Kos: Enhance performance [Redmine: 180045]
+		- 20221116@Kos: Support Player Tips [Redmine: 180590]
 */
 
 BEGIN
@@ -58,7 +59,7 @@ BEGIN
 		INSERT INTO @SportBettype
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 60, 61, 62, 63, 66, 67, 68, 69, 70)
+		WHERE ProductID IN (1, 3, 5, 6, 8, 15, 21, 22, 24, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 59, 60, 61, 62, 63, 66, 67, 68, 69, 70, 74)
 			AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914, 999)
 			AND BetType NOT BETWEEN 801 AND 899
 	END
@@ -67,7 +68,7 @@ BEGIN
 		INSERT INTO @SportBettype
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 63, 66, 69)
+		WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 63, 66, 69, 74)
 			AND BetType NOT IN (901, 902, 903, 904, 999)
 			AND BetType NOT BETWEEN 801 AND 899
 	END
@@ -291,6 +292,8 @@ BEGIN
 										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p63/@lt)[1]','VARCHAR(100)'), 0)
 									WHEN b.ExtraInfo LIKE '%p69%'
 										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
+									WHEN b.ExtraInfo LIKE '%p74%'
+										THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@lt)[1]','VARCHAR(100)'), 0)
 									ELSE ''
 								END
 			END
@@ -336,6 +339,7 @@ BEGIN
 						WHEN @ProductId = 68 THEN 'APM'			-- AdvantPlay Mini
 						WHEN @ProductId = 69 THEN 'BTC'			-- Bitcoin
 						WHEN @ProductId = 70 THEN 'FGGL'		-- FGG
+						WHEN @ProductId = 74 THEN 'TIP'			-- Player Tips
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -548,7 +552,7 @@ BEGIN
 			CASE
 				WHEN @Product = 'CB' THEN 204		-- Colossus Bet
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
-					'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.matchid
+					'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -659,6 +663,7 @@ BEGIN
 			END AS LeagueId,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'VR', 'BTC') THEN b.matchid
+				WHEN @Product = 'TIP' THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 				ELSE 0
 			END AS MatchId,
 			CASE
@@ -721,7 +726,7 @@ BEGIN
 			END AS BetdaqId,
 			CASE
 				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'SPR', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 
-					'ParlayVS2', 'VR', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+					'ParlayVS2', 'VR', 'VS3', 'BTC', 'TIP') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -756,6 +761,20 @@ BEGIN
 			LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON @Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON @Product IN ('VR') AND vr.EventID = vo.EventID
 		WHERE b.transid IN (@TransId, @BonusTransId)
+
+		-- Get match info for Player Tips
+		IF @Product = 'TIP'
+		BEGIN
+			UPDATE b
+			SET
+				LeagueId = m.leagueid,
+				HomeId = m.homeid,
+				AwayId = m.awayid,
+				EventDate = m.GlobalShowTime
+			FROM @Data AS b
+				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+			WHERE b.WhTicket = 2
+		END
 
 		-- Get more info for CashOut tickets
 		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)

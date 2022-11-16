@@ -6,7 +6,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Statement_Mem]
 	@Date			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@ProductCode	VARCHAR(100),
+	@ProductCode	VARCHAR(200),
 	@TransType		TINYINT			= 1,
 	@BaseCurrency	VARCHAR(12),
 	@PageSize		INT				= 1000,
@@ -77,7 +77,8 @@ AS
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220512@Kos: Support FGG [Redmine: #167897]
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20221116@Kos: Support Player Tips [Redmine: 180590]
 */
 
 BEGIN
@@ -796,6 +797,7 @@ BEGIN
 							WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
 							WHEN s.ProductID = 69 THEN 'BTC'							-- Bitcoin
 							WHEN s.ProductID = 70 THEN 'FGGL'							-- FGG
+							WHEN s.ProductID = 74 THEN 'TIP'							-- Player Tips
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1074,7 +1076,7 @@ BEGIN
 								END,
 						SportType = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 
-											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1180,6 +1182,7 @@ BEGIN
 									END,
 						MatchId = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'BTC') THEN b.matchid
+										WHEN b.Product IN ('TIP') THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 										ELSE 0
 									END,
 						MatchCode = CASE
@@ -1248,7 +1251,7 @@ BEGIN
 								END,
 						ExtraInfo = CASE
 										WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'NPHP', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 
-											'ParlayVS2', 'VR', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+											'ParlayVS2', 'VR', 'VS3', 'BTC', 'TIP') THEN ISNULL(b.ExtraInfo, '')
 										ELSE ''
 									END,
 						OriginalStake = CASE
@@ -1286,6 +1289,20 @@ BEGIN
 						LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 					WHERE b.TableID = 1
+
+					-- Get match info for Player Tips
+					IF EXISTS (SELECT 1 FROM #PagingData WHERE TableID = 1 AND Product = 'TIP')
+					BEGIN
+						UPDATE b
+						SET
+							LeagueId = m.leagueid,
+							HomeId = m.homeid,
+							AwayId = m.awayid,
+							EventDate = m.GlobalShowTime
+						FROM #PagingData AS b
+							INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+						WHERE b.TableID = 1 AND b.Product = 'TIP'
+					END
 
 					-- translog
 					UPDATE b
@@ -1357,7 +1374,7 @@ BEGIN
 								END,
 						SportType = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 
-											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1422,6 +1439,7 @@ BEGIN
 									END,
 						MatchId = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'BTC') THEN b.matchid
+										WHEN b.Product IN ('TIP') THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 										ELSE 0
 									END,
 						MatchCode = CASE
@@ -1489,7 +1507,7 @@ BEGIN
 								END,
 						ExtraInfo = CASE
 										WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'NPHP', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 
-											'ParlayVS2', 'VR', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+											'ParlayVS2', 'VR', 'VS3', 'BTC', 'TIP') THEN ISNULL(b.ExtraInfo, '')
 										ELSE ''
 									END,
 						OriginalStake = CASE
@@ -1524,6 +1542,20 @@ BEGIN
 						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 					WHERE b.TableID = 2
 
+					-- Get match info for Player Tips
+					IF EXISTS (SELECT 1 FROM #PagingData WHERE TableID = 2 AND Product = 'TIP')
+					BEGIN
+						UPDATE b
+						SET
+							LeagueId = m.leagueid,
+							HomeId = m.homeid,
+							AwayId = m.awayid,
+							EventDate = m.GlobalShowTime
+						FROM #PagingData AS b
+							INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+						WHERE b.TableID = 2 AND b.Product = 'TIP'
+					END
+
 					-- Get ticket detail
 					-- Virtual Sports Racing
 					INSERT INTO @DetailData
@@ -1549,7 +1581,7 @@ BEGIN
 								END,
 						SportType = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'GDG', 'SLT', 
-											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1614,6 +1646,7 @@ BEGIN
 									END,
 						MatchId = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'BTC') THEN b.matchid
+										WHEN b.Product IN ('TIP') THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 										ELSE 0
 									END,
 						MatchCode = CASE
@@ -1681,7 +1714,7 @@ BEGIN
 								END,
 						ExtraInfo = CASE
 										WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'NPHP', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 
-											'ParlayVS2', 'VR', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+											'ParlayVS2', 'VR', 'VS3', 'BTC', 'TIP') THEN ISNULL(b.ExtraInfo, '')
 										ELSE ''
 									END,
 						OriginalStake = CASE
@@ -1715,6 +1748,20 @@ BEGIN
 						LEFT JOIN bodb_Archive.dbo.VSOutright_bk AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 						LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 					WHERE b.TableID = 3
+
+					-- Get match info for Player Tips
+					IF EXISTS (SELECT 1 FROM #PagingData WHERE TableID = 3 AND Product = 'TIP')
+					BEGIN
+						UPDATE b
+						SET
+							LeagueId = m.leagueid,
+							HomeId = m.homeid,
+							AwayId = m.awayid,
+							EventDate = m.GlobalShowTime
+						FROM #PagingData AS b
+							INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+						WHERE b.TableID = 3 AND b.Product = 'TIP'
+					END
 
 					-- Get ticket detail
 					-- Virtual Sports Racing
