@@ -25,6 +25,7 @@ AS
 		- 20221010@Kos: Scale out DBTRANS [Redmine: #178943]
 					- Remove param @Site
 		- 20221109@Kos: Enhance performance [Redmine: 179269]
+		- 20221117@Razor: Support Player Tips [Redmine: 180590]
 */
 
 BEGIN
@@ -558,9 +559,10 @@ BEGIN
 		END
 
 		-- Keno, Gold Deluxe, NG2, Lottery, NPH Promotion, Virtual Games, Table Games, Indo 4D, BBIN, Leap Gaming Virtual Sports, Happy 5 Linked Games(Number Game), Sports Lottery
+		-- Player Tips
 		IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 					WHERE BetType = @BetType
-						AND (ProductID IN (8, 12, 23, 28, 37, 38, 40, 43, 47, 49, 63) OR (ProductID = 3 AND EventType = 0)))
+						AND (ProductID IN (8, 12, 23, 28, 37, 38, 40, 43, 47, 49, 63, 74) OR (ProductID = 3 AND EventType = 0)))
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -631,7 +633,7 @@ BEGIN
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 					WHEN s.ProductID = 28 THEN 220
-					WHEN s.ProductID IN (3, 37, 38, 40, 43, 47, 49, 63) THEN b.matchid
+					WHEN s.ProductID IN (3, 37, 38, 40, 43, 47, 49, 63, 74) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				b.ip,
@@ -639,6 +641,7 @@ BEGIN
 				CASE
 					WHEN s.ProductID = 12 THEN b.matchid
 					WHEN s.ProductID = 23 THEN b.betdaqid
+					WHEN s.ProductID = 74 THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 					ELSE 0
 				END AS MatchId,
 				CONVERT(BIT, 0) AS IsNeutral,
@@ -665,7 +668,7 @@ BEGIN
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
 				CASE
-					WHEN s.ProductID IN (3, 8, 28, 37, 40, 49, 63) THEN ISNULL(b.ExtraInfo, '')
+					WHEN s.ProductID IN (3, 8, 28, 37, 40, 49, 63, 74) THEN ISNULL(b.ExtraInfo, '')
 					ELSE ''
 				END AS ExtraInfo,
 				0 AS WalletType,
@@ -680,9 +683,22 @@ BEGIN
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.transid = @TransId
-				AND (s.ProductId IN (8, 12, 23, 28, 37, 38, 40, 43, 47, 49, 63)
+				AND (s.ProductId IN (8, 12, 23, 28, 37, 38, 40, 43, 47, 49, 63, 74)
 						OR (s.ProductId = 3 AND s.EventType = 0))
-					
+
+			-- Get match info for Player Tips
+			IF EXISTS (SELECT 1 FROM @Data WHERE SportType = 157)
+			BEGIN
+				UPDATE b
+				SET
+					LeagueId = m.leagueid,
+					HomeId = m.homeid,
+					AwayId = m.awayid,
+					EventDate = m.GlobalShowTime
+				FROM @Data AS b
+					INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+				WHERE b.SportType = 157
+			END
 		END
 
 		-- Virtual Horse Racing

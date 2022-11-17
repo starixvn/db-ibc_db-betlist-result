@@ -16,6 +16,7 @@ AS
 		- 20220808@Kos: Scale out DBTRANS [Redmine: #175253]
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
+		- 20221117@Razor: Support Player Tips [Redmine: 180590]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -522,7 +523,7 @@ BEGIN
 			-- RNG Casino, Keno, Gold Deluxe, AG Casino, AllBet, Voidbridge, NG2, Fishing World, Lottery, Pragmatic Casino
 			-- Card Club, NPH Promotion, Spadegaming, Virtual Games, SA Gaming, Indo 4D, Sexy Gaming, Saba.club, Table Game, BBIN
 			-- IBCBet Live Casino, RNG War, ION, PG Soft, Joker, WM, GDG, Leap Gaming Virtual Sports, Big Gaming, Happy 5 Linked Games (Number Game)
-			-- MaxGame, Habanero, CG, Sports Lottery, PP Live Casino, VGaming, AdvantPlay, AdvantPlay Mini, FGG, SEAL, MG RNGCasino
+			-- MaxGame, Habanero, CG, Sports Lottery, PP Live Casino, VGaming, AdvantPlay, AdvantPlay Mini, FGG, SEAL, MG RNGCasino, Player Tips
 			INSERT INTO @Data
 			SELECT
 				CASE
@@ -540,7 +541,7 @@ BEGIN
 					WHEN s.ProductID = 24 THEN 219
 					WHEN s.ProductID = 28 THEN 220
 					WHEN s.ProductID = 32 THEN 248
-					WHEN s.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73) THEN b.matchid
+					WHEN s.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -558,6 +559,7 @@ BEGIN
 				CASE
 					WHEN s.ProductID = 12 THEN b.matchid
 					WHEN s.ProductId = 23 THEN b.betdaqid
+					WHEN s.ProductId = 74 THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 					ELSE 0
 				END AS MatchID,
 				b.transid,
@@ -640,7 +642,7 @@ BEGIN
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
 				CASE
-					WHEN s.ProductID IN (3, 8, 37, 40, 49, 63) THEN ISNULL(b.ExtraInfo, '')
+					WHEN s.ProductID IN (3, 8, 37, 40, 49, 63, 74) THEN ISNULL(b.ExtraInfo, '')
 					ELSE ''
 				END AS ExtraInfo,
 				0 AS WalletType,
@@ -657,9 +659,23 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND (s.ProductID IN (6, 8, 11, 12, 21, 22, 23, 24, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73)
+				AND (s.ProductID IN (6, 8, 11, 12, 21, 22, 23, 24, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74)
 						OR (s.ProductID = 3 AND s.EventType = 0))
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
+
+			-- Get match info for Player Tips
+			IF EXISTS (SELECT 1 FROM @Data WHERE SportType = 157)
+			BEGIN
+				UPDATE b
+				SET
+					LeagueId = m.leagueid,
+					HomeId = m.homeid,
+					AwayId = m.awayid,
+					EventDate = m.GlobalShowTime
+				FROM @Data AS b
+					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+				WHERE b.SportType = 157
+			END
 
 			-- Colossus Bet
 			INSERT INTO @Data
@@ -1705,7 +1721,7 @@ BEGIN
 					AND b.statusID IN (0, 1)
 			END
 
-			-- Keno, Gold Deluxe, Lottery, NPH Promotion, Virtual Games, Table Games, Indo 4D, Leap Gaming Virtual Sports, Happy 5 Linked Games(Number Game), Sports Lottery (bettrans)
+			-- Keno, Gold Deluxe, Lottery, NPH Promotion, Virtual Games, Table Games, Indo 4D, Leap Gaming Virtual Sports, Happy 5 Linked Games(Number Game), Sports Lottery, Player Tips (bettrans)
 			IF EXISTS (SELECT TOP(1) 1 FROM @tmpStatus WHERE statusID NOT IN (0, 1))
 			BEGIN
 				INSERT INTO @Data
@@ -1714,7 +1730,7 @@ BEGIN
 						WHEN s.ProductId = 8 THEN 202
 						WHEN s.ProductId = 12 THEN 255
 						WHEN s.ProductID = 28 THEN 220
-						WHEN s.ProductID IN (3, 37, 38, 40, 43, 49, 63) THEN b.matchid
+						WHEN s.ProductID IN (3, 37, 38, 40, 43, 49, 63, 74) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					0 AS leagueid,
@@ -1731,6 +1747,7 @@ BEGIN
 					'' AS settletime,
 					CASE
 						WHEN s.ProductId = 12 THEN b.matchid
+						WHEN s.ProductId = 74 THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 						ELSE 0
 					END AS matchid,
 					b.transid,
@@ -1801,7 +1818,7 @@ BEGIN
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					CASE
-						WHEN s.ProductID IN (3, 8, 40, 37, 49, 63) THEN ISNULL(b.ExtraInfo, '')
+						WHEN s.ProductID IN (3, 8, 40, 37, 49, 63, 74) THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					0 AS WalletType,
@@ -1818,9 +1835,23 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE  b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND (s.ProductID IN (8, 12, 28, 37, 38, 40, 43, 49, 63)
+					AND (s.ProductID IN (8, 12, 28, 37, 38, 40, 43, 49, 63, 74)
 							OR (s.ProductID = 3 AND s.EventType = 0))
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+
+				-- Get match info for Player Tips
+				IF EXISTS (SELECT 1 FROM @Data WHERE SportType = 157)
+				BEGIN
+					UPDATE b
+					SET
+						LeagueId = m.leagueid,
+						HomeId = m.homeid,
+						AwayId = m.awayid,
+						EventDate = m.GlobalShowTime
+					FROM @Data AS b
+						INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+					WHERE b.SportType = 157
+				END
 			END
 
 			-- RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, RNG War, PG Soft, Joker, MaxGame, Habanero, CG, VGaming
