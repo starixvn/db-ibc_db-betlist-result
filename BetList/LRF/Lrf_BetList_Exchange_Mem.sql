@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Exchange_Mem]
 	@CustId			INT,
 	@FromDate		DATETIME,
 	@ToDate			DATETIME,
+	@DateOption		TINYINT		= 1,
 	@BaseCurrency	VARCHAR(12),
 	@SumWinLost		MONEY		= 0 OUTPUT
 AS
@@ -20,7 +21,9 @@ AS
 					- Remove params @SumWinLostUSD, @SumWinLostEUR, @SumWinLostGBP, ...
 		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20221117@Kos: Support filter by resettled date [Redmine: 179079]
+					- Add new input param @DateOption TINYINT
 */
 
 BEGIN
@@ -87,23 +90,46 @@ BEGIN
 
 	SET @TempToDate = DATEADD(MILLISECOND, -2, DATEADD(DAY, DATEDIFF(DAY, -1, @ToDate), 0))
 
-	INSERT INTO @Data
-	SELECT
-		b.userId,
-		b.eventTypeName,
-		b.eventID,
-		b.eventName,
-		b.marketID,
-		b.marketName,
-		b.settledDate,
-		DATEADD(DAY, 0, DATEDIFF(DAY, 0, b.settledDate)) AS WinLostDate,
-		b.marketTotal / b.ExVirtualRate AS WinLost,
-		b.commission / b.ExVirtualRate AS Commission,
-		b.Currency,
-		b.ExVirtualRate
-	FROM bodb_3rdProduct.dbo.Sum_winloss_Exchange AS b WITH (NOLOCK)
-	WHERE b.CustID = @CustId
-		AND b.settledDate BETWEEN @FromDate AND @TempToDate
+	IF @DateOption = 1		-- Filter by settled date
+	BEGIN
+		INSERT INTO @Data
+		SELECT
+			b.userId,
+			b.eventTypeName,
+			b.eventID,
+			b.eventName,
+			b.marketID,
+			b.marketName,
+			b.settledDate,
+			DATEADD(DAY, 0, DATEDIFF(DAY, 0, b.settledDate)) AS WinLostDate,
+			b.marketTotal / b.ExVirtualRate AS WinLost,
+			b.commission / b.ExVirtualRate AS Commission,
+			b.Currency,
+			b.ExVirtualRate
+		FROM bodb_3rdProduct.dbo.Sum_winloss_Exchange AS b WITH (NOLOCK)
+		WHERE b.CustID = @CustId
+			AND b.settledDate BETWEEN @FromDate AND @TempToDate
+	END
+	ELSE		-- Filter by resettled date
+	BEGIN
+		INSERT INTO @Data
+		SELECT
+			b.userId,
+			b.eventTypeName,
+			b.eventID,
+			b.eventName,
+			b.marketID,
+			b.marketName,
+			b.settledDate,
+			DATEADD(DAY, 0, DATEDIFF(DAY, 0, b.settledDate)) AS WinLostDate,
+			b.marketTotal / b.ExVirtualRate AS WinLost,
+			b.commission / b.ExVirtualRate AS Commission,
+			b.Currency,
+			b.ExVirtualRate
+		FROM bodb_3rdProduct.dbo.Sum_winloss_Exchange AS b WITH (NOLOCK)
+		WHERE b.CustID = @CustId
+			AND ISNULL(b.resettledDate, b.settledDate) BETWEEN @FromDate AND @TempToDate
+	END
 
 	DELETE @Data
 	WHERE Currency NOT IN (SELECT DISTINCT Currency FROM @TempAg)
@@ -137,8 +163,10 @@ BEGIN
 	DECLARE @FDate	DATETIME,
 		@TDate		DATETIME
 
-	SELECT @FDate = MIN(WinLostDate) FROM @Data
-	SELECT @TDate = MAX(WinLostDate) FROM @Data
+	SELECT
+		@FDate = MIN(WinLostDate),
+		@TDate = MAX(WinLostDate)
+	FROM @Data
 
 	DECLARE @ExchangeRate TABLE (
 		FirstExchangeDateByMonth	SMALLDATETIME,
