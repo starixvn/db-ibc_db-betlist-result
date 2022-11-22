@@ -28,6 +28,7 @@ AS
 					- Add new input params @FromDate SMALLDATETIME, @ToDate SMALLDATETIME, @MoveBetsDay SMALLDATETIME
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
+		- 20221122@Kos: Hotfix - Sorting not work [Redmine: #180779]
 */
 
 BEGIN
@@ -528,7 +529,6 @@ BEGIN
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK, INDEX = PK_bettrans) ON b.transid = c.TransId
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
-		ORDER BY c.TransId DESC
 	END
 
 	-- bettrans14 range
@@ -873,7 +873,6 @@ BEGIN
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.TransId
 			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
-		ORDER BY c.TransId DESC
 	END
 
 	DECLARE @BettransDetail TABLE (
@@ -890,6 +889,8 @@ BEGIN
 	)
 
 	SELECT * FROM @Data
+	ORDER BY TransId DESC
+
 	SELECT * FROM @BettransDetail
 END
 GO
