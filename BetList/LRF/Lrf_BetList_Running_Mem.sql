@@ -12,7 +12,7 @@ AS
 
 /*
 	Created: Kos@20190717
-	Task: Player Admin - Running Bet List
+	Task: LAP - Player Admin - Running Bet List
 	DB: DBBOF.bodb02
 
 	Revisions:
@@ -51,6 +51,7 @@ AS
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
 		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
+		- 20231107@Kos: Support SEAL Entertaiment [Redmine: 180648]
 */
 
 BEGIN
@@ -390,6 +391,7 @@ BEGIN
 						WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
 						WHEN s.ProductID = 69 THEN 'BTC'							-- Bitcoin
 						WHEN s.ProductID = 70 THEN 'FGGL'							-- FGG
+						WHEN s.ProductId = 72 THEN 'SEA'							-- SEAL Entertainment
 						WHEN s.ProductID = 73 THEN 'MGRNG'							-- MG-RNG
 						WHEN s.ProductID = 75 THEN 'JIG'							-- Jili
 						WHEN s.ProductID = 76 THEN 'YB'								-- YeeBet
@@ -560,6 +562,7 @@ BEGIN
 				WHEN s.ProductID = 67 THEN 'AP'		-- AdvantPlay
 				WHEN s.ProductID = 68 THEN 'APM'	-- AdvantPlay Mini
 				WHEN s.ProductID = 70 THEN 'FGGL'	-- FGG
+				WHEN s.ProductId = 72 THEN 'SEA'	-- SEAL Entertainment
 				WHEN s.ProductID = 73 THEN 'MGRNG'	-- MG-RNG
 				WHEN s.ProductID = 75 THEN 'JIG'	-- Jili
 				WHEN s.ProductID = 76 THEN 'YB'		-- YeeBet
@@ -659,7 +662,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('VB', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
-									'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG') THEN b.MatchId
+									'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'H5LG', 'SLT', 'VS3') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 								WHEN b.Product IN ('BTC') THEN m3rd.SportType
@@ -795,7 +798,7 @@ BEGIN
 							END,
 				TransDesc = CASE
 								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'PP', 
-									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG') THEN ISNULL(b.transdesc, '')
+									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE

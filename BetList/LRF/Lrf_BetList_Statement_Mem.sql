@@ -85,6 +85,7 @@ AS
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
 		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
+		- 20231107@Kos: Support SEAL Entertaiment [Redmine: 180648]
 */
 
 BEGIN
@@ -728,6 +729,7 @@ BEGIN
 							WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
 							WHEN s.ProductID = 69 THEN 'BTC'							-- Bitcoin
 							WHEN s.ProductID = 70 THEN 'FGGL'							-- FGG
+							WHEN s.ProductId = 72 THEN 'SEA'							-- SEAL Entertainment
 							WHEN s.ProductID = 73 THEN 'MGRNG'							-- MG-RNG
 							WHEN s.ProductID = 74 THEN 'TIP'							-- Player Tips
 							WHEN s.ProductID = 75 THEN 'JIG'							-- Jili
@@ -1011,7 +1013,7 @@ BEGIN
 								END,
 						SportType = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 
-											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1169,7 +1171,7 @@ BEGIN
 						ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 						TransDesc = CASE
 										WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
-											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG') THEN ISNULL(b.transdesc, '')
+											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
 										ELSE ''
 									END,
 						OddsSpread = CASE
@@ -1303,7 +1305,7 @@ BEGIN
 								END,
 						SportType = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 
-											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1420,7 +1422,7 @@ BEGIN
 						ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 						TransDesc = CASE
 										WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
-											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG') THEN ISNULL(b.transdesc, '')
+											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
 										ELSE ''
 									END,
 						OddsSpread = CASE
@@ -1506,7 +1508,7 @@ BEGIN
 								END,
 						SportType = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 
-											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1623,7 +1625,7 @@ BEGIN
 						ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 						TransDesc = CASE
 										WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
-											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG') THEN ISNULL(b.transdesc, '')
+											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
 										ELSE ''
 									END,
 						OddsSpread = CASE

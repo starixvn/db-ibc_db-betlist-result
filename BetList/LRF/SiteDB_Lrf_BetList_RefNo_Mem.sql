@@ -32,6 +32,7 @@ AS
 		- 20231019@Kos: Adjust due to new column ExtraInfo [Redmine: 195780]
 					- Return new JackpotInfo column
 		- 20231026@Kos: Support Virtual Sports 3 [Redmine: 190908]
+		- 20231107@Kos: Support SEAL Entertaiment [Redmine: 180648]
 */
 
 BEGIN
@@ -70,7 +71,7 @@ BEGIN
 		INSERT INTO @SportBettype
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (1, 3, 5, 6, 8, 21, 22, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 73, 74, 75, 76, 77)
+		WHERE ProductID IN (1, 3, 5, 6, 8, 21, 22, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 72, 73, 74, 75, 76, 77)
 			AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914, 999)
 			AND BetType NOT BETWEEN 801 AND 899
 	END
@@ -355,6 +356,7 @@ BEGIN
 						WHEN @ProductId = 68 THEN 'APM'			-- AdvantPlay Mini
 						WHEN @ProductId = 69 THEN 'BTC'			-- Bitcoin
 						WHEN @ProductId = 70 THEN 'FGGL'		-- FGG
+						WHEN @ProductId = 72 THEN 'SEA'			-- SEAL Entertainment
 						WHEN @ProductId = 73 THEN 'MGRNG'		-- MG-RNG
 						WHEN @ProductId = 74 THEN 'TIP'			-- Player Tips
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
@@ -571,7 +573,7 @@ BEGIN
 			b.recommend,
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
-					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG') THEN b.matchid
+					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -735,7 +737,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
-					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG') THEN ISNULL(b.transdesc, '')
+					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -871,20 +873,21 @@ BEGIN
 	END
 
 	SET @Product = CASE
-						WHEN @ProductId = 6 THEN 'OneRNG'		-- RNG Casino
-						WHEN @ProductId = 22 THEN 'VB'			-- Macau Games
-						WHEN @ProductId = 32 THEN 'PP'			-- Pragmatic Play Casino
-						WHEN @ProductId = 34 THEN 'CC'			-- Card Club
-						WHEN @ProductId = 36 THEN 'SG'			-- Spadegaming
-						WHEN @ProductId = 42 THEN 'SBC'			-- Saba.club
-						WHEN @ProductId = 55 THEN 'PGS'			-- PG Soft
-						WHEN @ProductId = 56 THEN 'JK'			-- Joker
-						WHEN @ProductId = 60 THEN 'MXG'			-- MaxGame
-						WHEN @ProductId = 61 THEN 'HB'			-- Habanero
-						WHEN @ProductId = 62 THEN 'CG'			-- CG
-						WHEN @ProductId = 66 THEN 'VGA'			-- Vgaming
-						WHEN @ProductId = 67 THEN 'AP'			-- AdvantPlay
-						WHEN @ProductId = 68 THEN 'APM'			-- AdvantPlay Mini
+						WHEN @ProductId = 6 THEN 'OneRNG'	-- RNG Casino
+						WHEN @ProductId = 22 THEN 'VB'		-- Macau Games
+						WHEN @ProductId = 32 THEN 'PP'		-- Pragmatic Play Casino
+						WHEN @ProductId = 34 THEN 'CC'		-- Card Club
+						WHEN @ProductId = 36 THEN 'SG'		-- Spadegaming
+						WHEN @ProductId = 42 THEN 'SBC'		-- Saba.club
+						WHEN @ProductId = 55 THEN 'PGS'		-- PG Soft
+						WHEN @ProductId = 56 THEN 'JK'		-- Joker
+						WHEN @ProductId = 60 THEN 'MXG'		-- MaxGame
+						WHEN @ProductId = 61 THEN 'HB'		-- Habanero
+						WHEN @ProductId = 62 THEN 'CG'		-- CG
+						WHEN @ProductId = 66 THEN 'VGA'		-- Vgaming
+						WHEN @ProductId = 67 THEN 'AP'		-- AdvantPlay
+						WHEN @ProductId = 68 THEN 'APM'		-- AdvantPlay Mini
+						WHEN @ProductId = 72 THEN 'SEA'		-- SEAL Entertainment
 						WHEN @ProductId = 73 THEN 'MGRNG'		-- MG-RNG
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
 						ELSE 'Unknown'

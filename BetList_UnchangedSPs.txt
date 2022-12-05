@@ -1,4 +1,1 @@
 BetList/LRF/Lrf_BetList_Licensee.sql
-BetList/LRF/Lrf_BetList_Licensee_Others.sql
-BetList/LRF/Lrf_BetList_Licensee_Sportsbook.sql
-BetList/LRF/Lrf_BetList_Licensee_TotalRows.sql
