@@ -154,11 +154,12 @@ AS
 		- 20220422@Razor: Support Virtual games result [Redmine: #170997]
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
-		- 20221117@Razor: Support Player Tips [Redmine: 180590]
+		- 20221117@Razor: Support Player Tips [Redmine: #180590]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
+		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 
 */
 
@@ -725,7 +726,6 @@ BEGIN
 						WHEN s.EventType = 0 AND s.ProductID = 21 THEN 'AllBet'
 						WHEN s.EventType = 0 AND s.ProductID = 22 THEN 'VB'			-- Macau Games
 						WHEN s.EventType = 0 AND s.ProductID = 23 THEN 'NG2'
-						WHEN s.EventType = 0 AND s.ProductID = 24 THEN 'FW'			-- Fishing World
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 						WHEN s.ProductID = 28 THEN 'Lottery'
 						WHEN s.ProductID = 32 THEN 'PP'								-- Pragmatic Play Casino
@@ -747,7 +747,6 @@ BEGIN
 						WHEN s.ProductID = 55 THEN 'PGS'							-- PG Soft
 						WHEN s.ProductID = 56 THEN 'JK'								-- Joker
 						WHEN s.ProductID = 57 THEN 'BG'								-- Big Gaming
-						WHEN s.ProductID = 59 THEN 'GDG'							-- GDG
 						WHEN s.ProductID = 60 THEN 'MXG'							-- MaxGame
 						WHEN s.ProductID = 61 THEN 'HB'								-- Habanero
 						WHEN s.ProductID = 62 THEN 'CG'								-- CG
@@ -919,7 +918,7 @@ BEGIN
 			IF @Date >= @Yesterday
 			BEGIN
 				-- bettransRnG
-				IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG'))
+				IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG'))
 				BEGIN
 					-- Running
 					INSERT INTO @TmpData
@@ -934,7 +933,7 @@ BEGIN
 						0 AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-					WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG')
+					WHERE c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG')
 						AND brng.statusID IN (0, 1)
 					GROUP BY
 						c.TransId,
@@ -963,7 +962,7 @@ BEGIN
 						END AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-					WHERE c.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG')
+					WHERE c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG')
 						AND brng.statusID NOT IN (0, 1)
 					GROUP BY
 						c.TransId,
@@ -971,7 +970,7 @@ BEGIN
 				END
 
 				-- bettransLC
-				IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL', 'YB'))
+				IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB'))
 				BEGIN
 					-- Running
 					INSERT INTO @TmpData
@@ -986,7 +985,7 @@ BEGIN
 						0 AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL', 'YB')
+					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB')
 						AND blc.statusID IN (0, 1)
 					GROUP BY
 						c.TransId,
@@ -1009,7 +1008,7 @@ BEGIN
 						0 AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL', 'YB')
+					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB')
 						AND blc.statusID NOT IN (0, 1)
 					GROUP BY
 						c.TransId,
@@ -1018,8 +1017,8 @@ BEGIN
 
 				DELETE b
 				FROM @Data AS b
-				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 
-						'ION', 'WM', 'GDG', 'BG', 'PPL', 'HB', 'VGA', 'FGGL', 'YB')
+				WHERE b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 
+						'ION', 'WM', 'BG', 'PPL', 'HB', 'VGA', 'FGGL', 'YB')
 					AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 			END
 
@@ -1034,7 +1033,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN', 'ION', 
-										'PGS', 'JK', 'RNGW', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'TIP', 'JIG', 'YB') THEN b.matchid
+										'PGS', 'JK', 'RNGW', 'WM', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'TIP', 'JIG', 'YB') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1045,7 +1044,6 @@ BEGIN
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2581 AND 2619 THEN 215 -- NG2
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2621 AND 2659 THEN 216 -- NG2
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2681 AND 2699 THEN 218 -- NG2
-									WHEN b.Product = 'FW' THEN 219		-- Fishing World
 									WHEN b.Product = 'PP' THEN 248		-- Pragmatic Casino
 									WHEN b.Product = 'CB' THEN 204		-- Colossus Bet
 									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
@@ -1175,7 +1173,7 @@ BEGIN
 								END,
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 
 										'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -1216,8 +1214,8 @@ BEGIN
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
-					AND (b.Product NOT IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'VGA', 'FGGL', 'YB')
+					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG',
+							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips
@@ -1373,10 +1371,9 @@ BEGIN
 					b.Creator,
 					b.Currency,
 					CASE
-						WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'GDG', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB') THEN b.matchid
+						WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB') THEN b.matchid
 						WHEN b.Product = 'AllBet' THEN 211 -- AllBet
 						WHEN b.Product = 'VB' THEN 212 -- Macau Games
-						WHEN b.Product = 'FW' THEN 219 -- Fishing World
 						WHEN b.Product = 'PP' THEN 248 -- Pragmatic Casino
 						ELSE 0
 					END AS SportType,
@@ -1419,7 +1416,7 @@ BEGIN
 					'' AS BetCheck,
 					CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 					CASE
-						WHEN b.Product IN ('OneRNG', 'VB', 'FW', 'PP', 'CC', 'SG', 'PGS', 'JK', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'YB') THEN b.transdesc
+						WHEN b.Product IN ('OneRNG', 'VB', 'PP', 'CC', 'SG', 'PGS', 'JK', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'YB') THEN b.transdesc
 						ELSE ''
 					END AS TransDesc,
 					-1 AS BetdaqId,
@@ -1440,13 +1437,13 @@ BEGIN
 					b.SiteId
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
-				WHERE b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 
-						'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL', 'YB')
+				WHERE b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 
+						'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB')
 					AND b.WinLostDate >= @Yesterday
 
 				DELETE FROM @Data
-				WHERE Product IN ('VB', 'FW', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 
-						'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'GDG', 'BG', 'PPL', 'FGGL', 'YB')
+				WHERE Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 
+						'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB')
 					AND WinLostDate >= @Yesterday
 
 				INSERT INTO @Data
@@ -1496,7 +1493,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 
-										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'TIP', 'YB') THEN b.matchid
+										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'TIP', 'YB') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1507,7 +1504,6 @@ BEGIN
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2581 AND 2619 THEN 215 -- NG2
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2621 AND 2659 THEN 216 -- NG2
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2681 AND 2699 THEN 218 -- NG2
-									WHEN b.Product = 'FW' THEN 219		-- Fishing World
 									WHEN b.Product = 'PP' THEN 248		-- Pragmatic Casino
 									WHEN b.Product = 'CB' THEN 204		-- Colossus Bet
 									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
@@ -1621,7 +1617,7 @@ BEGIN
 								END,
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 
 										'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -1722,7 +1718,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 
-										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'TIP', 'YB') THEN b.matchid
+										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'TIP', 'YB') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
@@ -1733,7 +1729,6 @@ BEGIN
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2581 AND 2619 THEN 215 -- NG2
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2621 AND 2659 THEN 216 -- NG2
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2681 AND 2699 THEN 218 -- NG2
-									WHEN b.Product = 'FW' THEN 219		-- Fishing World
 									WHEN b.Product = 'PP' THEN 248		-- Pragmatic Casino
 									WHEN b.Product = 'CB' THEN 204		-- Colossus Bet
 									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
@@ -1848,7 +1843,7 @@ BEGIN
 								END,
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 
 										'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,

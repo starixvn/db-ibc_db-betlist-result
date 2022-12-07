@@ -87,6 +87,7 @@ AS
 		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
 		- 20230830@Razor: Show LicTxId for MaxGame [Redmine: #193273]
+		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 */
 
 BEGIN
@@ -427,9 +428,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, GDG, PP Live Casino, FGG, YeeBet
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59, 65, 70, 76)
-			BEGIN
+			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, PP Live Casino, FGG, YeeBet
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76)
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
 				BEGIN
@@ -565,14 +565,14 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70, 76) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
+			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
 			-- SEAL Entertainment, MG RNGCasino, Jili
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75)
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -867,8 +867,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, PP Live Casino, FGG, YeeBet
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59, 65, 70, 76)
+			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, PP Live Casino, FGG, YeeBet
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -1007,14 +1007,14 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70, 76) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
 
-			-- Macau Games, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
+			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
 			-- SEAL Entertainment, MG RNGCasino, Jili
-			IF @ProductId IN (22, 24, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75)
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN

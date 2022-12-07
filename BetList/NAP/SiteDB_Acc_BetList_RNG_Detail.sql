@@ -20,6 +20,7 @@ AS
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230830@Razor: Show LicTxId for MaxGame [Redmine: #193273]
+		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 
 	Parameters:
 		- @TransType
@@ -33,7 +34,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix --
-	-- Support RNG Casino Single Wallet, Voidbridge, Fishing World, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, CG, AdvantPlay
+	-- Support RNG Casino Single Wallet, Voidbridge, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, CG, AdvantPlay
 	-- AdvantPlay Mini, SEAL, MG RNGCasino, Jili
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
@@ -44,7 +45,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 24, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75)
+	WHERE ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
