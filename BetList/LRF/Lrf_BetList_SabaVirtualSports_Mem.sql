@@ -30,14 +30,18 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20220222@Kos: Support Saba Basketball PinGoal [RedmineID: #167859]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20221207@Kos: Support Saba E-Sports PinGoal [RedmineID: #181224]
 
 	Param's Explanation:
 		+ @DrawFilter:
 			- 1: Normal,
 			- 2: No Draw,
 			- 3: No Draw for Turnover only
-		+ @SportType: sport type (Saba Soccer PinGoal: -1)
+		+ @SportType: sport type
+			- -1: Saba Soccer PinGoal
+			- -2: Saba Basketball PinGoal
+			- -43: Saba E-Sports PinGoal
 */
 
 BEGIN
@@ -302,43 +306,6 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 				AND b.statusID IN (111, 112, 113)
-
-			-- Get more info for CashOut tickets
-			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 911 AND TableID = 1)
-			BEGIN
-				UPDATE b
-				SET b.Odds = ob.odds,
-					b.LiveIndicator = ob.liveindicator,
-					b.LiveHomeScore = ob.livehomescore,
-					b.LiveAwayScore = ob.liveawayscore,
-					b.OriginalBetType = ob.bettype,
-					b.BetdaqId = ob.transid
-				FROM #Data AS b
-					INNER JOIN dbo.bettrans AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
-				WHERE b.BetType = 911 AND b.TableID = 1
-			END
-
-			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 912 AND TableID = 1)
-			BEGIN
-				UPDATE b
-				SET b.Odds = ob.odds,
-					b.LiveIndicator = ob.liveindicator,
-					b.LiveHomeScore = ob.livehomescore,
-					b.LiveAwayScore = ob.liveawayscore,
-					b.OriginalBetType = ob.bettype,
-					b.BetdaqId = ob.transid,
-					b.Stake = cob.stake,
-					b.Comm = ISNULL(cb.awinlost, 0)
-				FROM #Data AS b
-					INNER JOIN dbo.bettrans AS cob WITH (NOLOCK) ON b.RefNo = cob.transid
-					INNER JOIN dbo.bettrans AS ob WITH (NOLOCK) ON cob.RefNo = ob.transid
-					LEFT JOIN #Data AS cb
-						ON cb.RefNo = b.RefNo
-						AND cb.BetType = 913
-						AND cb.custid = @CustId
-						AND cb.winlostdate = b.WinLostDate
-				WHERE b.BetType = 912 AND b.TableID = 1
-			END
 		END
 
 		-- bettrans14
@@ -434,43 +401,6 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @TempToDate
 				AND b.statusID IN (111, 112, 113)
-
-			-- Get more info for CashOut tickets
-			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 911 AND TableID = 2)
-			BEGIN
-				UPDATE b
-				SET b.Odds = ob.odds,
-					b.LiveIndicator = ob.liveindicator,
-					b.LiveHomeScore = ob.livehomescore,
-					b.LiveAwayScore = ob.liveawayscore,
-					b.OriginalBetType = ob.bettype,
-					b.BetdaqId = ob.transid
-				FROM #Data AS b
-					INNER JOIN dbo.bettrans14 AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
-				WHERE b.BetType = 911 AND b.TableID = 2
-			END
-
-			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 912 AND TableID = 2)
-			BEGIN
-				UPDATE b
-				SET b.Odds = ob.odds,
-					b.LiveIndicator = ob.liveindicator,
-					b.LiveHomeScore = ob.livehomescore,
-					b.LiveAwayScore = ob.liveawayscore,
-					b.OriginalBetType = ob.bettype,
-					b.BetdaqId = ob.transid,
-					b.Stake = cob.stake,
-					b.Comm = ISNULL(cb.awinlost, 0)
-				FROM #Data AS b
-					INNER JOIN dbo.bettrans14 AS cob WITH (NOLOCK) ON b.RefNo = cob.transid
-					INNER JOIN dbo.bettrans14 AS ob WITH (NOLOCK) ON cob.RefNo = ob.transid
-					LEFT JOIN #Data AS cb
-						ON cb.RefNo = b.RefNo
-						AND cb.BetType = 913
-						AND cb.custid = @CustId
-						AND cb.winlostdate = b.WinLostDate
-				WHERE b.BetType = 912 AND b.TableID = 2
-			END
 		END
 
 		-- bettrans_bk
@@ -629,9 +559,9 @@ BEGIN
 				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID AND b.TableID = 1
 				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS babk WITH (NOLOCK) ON b.transid = babk.TransID AND b.TableID IN (2, 3)
 
-			DECLARE @SabaVirtualSporsLeague TABLE (LeagueId INT)
+			DECLARE @SabaVirtualSportLeague TABLE (LeagueId INT)
 
-			INSERT INTO @SabaVirtualSporsLeague
+			INSERT INTO @SabaVirtualSportLeague
 			SELECT leagueid
 			FROM dbo.league WITH (NOLOCK)
 			WHERE (@LeagueId = 0 OR leagueid = @LeagueId)
@@ -639,55 +569,57 @@ BEGIN
 					OR sporttype = CASE
 									WHEN @SportType = -1 THEN 1
 									WHEN @SportType = -2 THEN 2
+									WHEN @SportType = -43 THEN 43
 									ELSE @SportType
 								END)
 				AND ((@SportType IN (0, 1) AND sporttype = 1 AND LeagueGroupID IN (42, 74, 108))
 					OR (@SportType IN (0, -1) AND sporttype = 1 AND LeagueGroupID IN (113))
 					OR (@SportType IN (0, 2) AND sporttype = 2 AND LeagueGroupID IN (42))
 					OR (@SportType IN (0, -2) AND sporttype = 2 AND LeagueGroupID IN (122))
+					OR (@SportType IN (0, -43) AND sporttype = 43 AND LeagueGroupID IN (151))
 					OR (sporttype = 50 AND LeagueGroupID IN (42)))
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
 			WHERE b.TableID = 1
-				AND b.Product IN ('SB', 'CO')
-				AND m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSporsLeague)
+				AND b.Product IN ('SB')
+				AND m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
 			WHERE b.TableID = 2
-				AND b.Product IN ('SB', 'CO')
-				AND m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSporsLeague)
+				AND b.Product IN ('SB')
+				AND m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId
 			WHERE b.TableID = 3
 				AND b.Product IN ('SB', 'CO')
-				AND m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSporsLeague)
+				AND m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN dbo.outright AS o WITH (NOLOCK) ON o.orid = b.MatchId
 			WHERE b.TableID = 1
 				AND b.Product = ('Outright')
-				AND o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSporsLeague)
+				AND o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN dbo.outright14 AS o WITH (NOLOCK) ON o.orid = b.MatchId
 			WHERE b.TableID = 2
 				AND b.Product = ('Outright')
-				AND o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSporsLeague)
+				AND o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON o.orid = b.MatchId
 			WHERE b.TableID = 3
 				AND b.Product = ('Outright')
-				AND o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSporsLeague)
+				AND o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
 
 			DELETE #Data
 			WHERE Product = 'Unknown'
@@ -836,32 +768,32 @@ BEGIN
 				UPDATE b
 				SET
 					SportType = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN m.sporttype
+									WHEN b.Product IN ('SB') THEN m.sporttype
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN b.BetTeam
+									WHEN b.Product IN ('SB') THEN b.BetTeam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN b.Hdp1
+								WHEN b.Product IN ('SB') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN b.Hdp2
+								WHEN b.Product IN ('SB') THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN b.OddsType
+								WHEN b.Product IN ('SB') THEN b.OddsType
 								ELSE 0
 							END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'Outright') THEN b.Odds
+								WHEN b.Product IN ('SB', 'Outright') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'Outright')  THEN b.modds 
+								WHEN b.Product IN ('SB', 'Outright')  THEN b.modds 
 								ELSE 0
 							END,
 					SettlementStatus = CASE
@@ -869,65 +801,65 @@ BEGIN
 										ELSE 0
 									END,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('SB', 'CO') THEN b.liveindicator
+										WHEN b.Product IN ('SB') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.Product IN ('SB', 'CO', 'Outright') THEN b.livehomescore
+										WHEN b.Product IN ('SB', 'Outright') THEN b.livehomescore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
-										WHEN b.Product IN ('SB', 'CO', 'Outright') THEN b.liveawayscore
+										WHEN b.Product IN ('SB', 'Outright') THEN b.liveawayscore
 										ELSE 0
 									END,
 					LeagueId = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN m.leagueid
+									WHEN b.Product IN ('SB') THEN m.leagueid
 									WHEN b.Product IN ('Outright') THEN o.leagueid
 									ELSE 0
 								END,
 					MatchId = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN m.matchid
+									WHEN b.Product IN ('SB') THEN m.matchid
 									ELSE 0
 								END,
 					MatchCode = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN m.matchcode
+									WHEN b.Product IN ('SB') THEN m.matchcode
 									ELSE ''
 								END,
 					EventDate = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN m.GlobalShowTime
+								WHEN b.Product IN ('SB') THEN m.GlobalShowTime
 								ELSE b.WinLostDate
 							END,
 					HomeId = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN m.homeid
+								WHEN b.Product IN ('SB') THEN m.homeid
 								WHEN b.Product IN ('Outright') THEN o.teamid
 								ELSE 0
 							END,
 					AwayId = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN m.awayid
+								WHEN b.Product IN ('SB') THEN m.awayid
 								ELSE 0
 							END,
 					BetStatus = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN m.betstatus
+									WHEN b.Product IN ('SB') THEN m.betstatus
 									ELSE ''
 								END,
 					IsNeutral = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(m.IsNeutral, 0)
+									WHEN b.Product IN ('SB') THEN ISNULL(m.IsNeutral, 0)
 									ELSE 0
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					BetdaqId = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betdaqid, -1)
+									WHEN b.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
 								END,
 					ExtraInfo = CASE
@@ -941,7 +873,6 @@ BEGIN
 									END,
 					OriginalBetType = CASE
 										WHEN b.Product IN ('SB') AND b.stake <> 0 THEN -1
-										WHEN b.Product IN ('CO') THEN b.OriginalBetType
 										ELSE 0
 									END,
 					WalletType = CASE
@@ -953,7 +884,7 @@ BEGIN
 									ELSE 0
 								END
 				FROM #PagingData AS b
-					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO') AND b.matchid = m.matchid
+					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB') AND b.matchid = m.matchid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
 				WHERE b.TableID = 1
@@ -965,95 +896,95 @@ BEGIN
 				UPDATE b
 				SET
 					SportType = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN m.sporttype
+									WHEN b.Product IN ('SB') THEN m.sporttype
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN b.BetTeam
+									WHEN b.Product IN ('SB') THEN b.BetTeam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN b.Hdp1
+								WHEN b.Product IN ('SB') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN b.Hdp2
+								WHEN b.Product IN ('SB') THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN b.OddsType
+								WHEN b.Product IN ('SB') THEN b.OddsType
 								ELSE 0
 							END,
 					Odds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'Outright') THEN b.Odds
+								WHEN b.Product IN ('SB', 'Outright') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
-								WHEN b.Product IN ('SB', 'CO', 'Outright') THEN b.modds 
+								WHEN b.Product IN ('SB', 'Outright') THEN b.modds 
 								ELSE 0
 							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('SB', 'CO') THEN b.liveindicator
+										WHEN b.Product IN ('SB') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.Product IN ('SB', 'CO', 'Outright') THEN b.livehomescore
+										WHEN b.Product IN ('SB', 'Outright') THEN b.livehomescore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
-										WHEN b.Product IN ('SB', 'CO', 'Outright') THEN b.liveawayscore
+										WHEN b.Product IN ('SB', 'Outright') THEN b.liveawayscore
 										ELSE 0
 									END,
 					LeagueId = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN m.leagueid
+									WHEN b.Product IN ('SB') THEN m.leagueid
 									WHEN b.Product IN ('Outright') THEN o.leagueid
 									ELSE 0
 								END,
 					MatchId = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN m.matchid
+									WHEN b.Product IN ('SB') THEN m.matchid
 									ELSE 0
 								END,
 					MatchCode = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN m.matchcode
+									WHEN b.Product IN ('SB') THEN m.matchcode
 									ELSE ''
 								END,
 					EventDate = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN m.GlobalShowTime
+								WHEN b.Product IN ('SB') THEN m.GlobalShowTime
 								ELSE b.WinLostDate
 							END,
 					HomeId = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN m.homeid
+								WHEN b.Product IN ('SB') THEN m.homeid
 								WHEN b.Product IN ('Outright') THEN o.teamid
 								ELSE 0
 							END,
 					AwayId = CASE
-								WHEN b.Product IN ('SB', 'CO') THEN m.awayid
+								WHEN b.Product IN ('SB') THEN m.awayid
 								ELSE 0
 							END,
 					BetStatus = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN m.betstatus
+									WHEN b.Product IN ('SB') THEN m.betstatus
 									ELSE ''
 								END,
 					IsNeutral = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(m.IsNeutral, 0)
+									WHEN b.Product IN ('SB') THEN ISNULL(m.IsNeutral, 0)
 									ELSE 0
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product IN ('SB') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					BetdaqId = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betdaqid, -1)
+									WHEN b.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
 								END,
 					ExtraInfo = CASE
@@ -1067,7 +998,6 @@ BEGIN
 									END,
 					OriginalBetType = CASE
 										WHEN b.Product IN ('SB') AND b.stake <> 0 THEN -1
-										WHEN b.Product IN ('CO') THEN b.OriginalBetType
 										ELSE 0
 									END,
 					WalletType = CASE
@@ -1079,7 +1009,7 @@ BEGIN
 									ELSE 0
 								END
 				FROM #PagingData AS b
-					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO') AND b.matchid = m.matchid
+					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('SB') AND b.matchid = m.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
 				WHERE b.TableID = 2

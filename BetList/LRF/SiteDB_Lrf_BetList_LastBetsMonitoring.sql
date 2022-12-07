@@ -31,6 +31,7 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221028@Kos: Hotfix - performance issue [Redmine: 179708]
 		- 20221107@Kos: Enhance performance [Redmine: 180045]
+		- 20221207@Kos: Support Saba E-Sports PinGoal [RedmineID: #181224]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -57,6 +58,7 @@ AS
 				+ Saba Basketball PinGoal: <Sport SportType="2" LeagueGroupIds="122"/>
 				+ Saba Cricket: <Sport SportType="50" LeagueGroupIds="42"/>
 				+ Saba Futsal: <Sport SportType="1" LeagueGroupIds="108"/>
+				+ Saba E-Sports PinGoal: <Sport SportType="43" LeagueGroupIds="151"/>
 		- @LiveIndicator (0 : non live, 1 : live , 2 : mix non live & live)
 		- @IncludeBetFrom: 1: show column betfrom, 0: hide
 		- @BetFrom:
@@ -135,6 +137,7 @@ BEGIN
 	UNION SELECT 2, '122'	-- Saba Basketball PinGoal
 	UNION SELECT 50, '42'	-- Saba Cricket
 	UNION SELECT 1, '108'	-- Saba Futsal
+	UNION SELECT 43, '151'	-- Saba E-Sports PinGoal
 
 	DECLARE @Data TABLE (
 		CustId			INT,
