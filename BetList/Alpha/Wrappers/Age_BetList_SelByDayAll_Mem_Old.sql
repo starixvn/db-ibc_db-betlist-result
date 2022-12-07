@@ -102,6 +102,7 @@ AS
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
+		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -313,7 +314,6 @@ BEGIN
 							WHEN s.ProductID = 21 THEN 'AllBet'
 							WHEN s.ProductID = 22 THEN 'VB'		-- Macau Games
 							WHEN s.ProductID = 23 THEN 'NG2'
-							WHEN s.ProductID = 24 THEN 'FW'		-- Fishing World
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
 							WHEN s.ProductID = 34 THEN 'CC'		-- Card Club
@@ -333,7 +333,6 @@ BEGIN
 							WHEN s.ProductID = 55 THEN 'PGS'	-- PG Soft
 							WHEN s.ProductID = 56 THEN 'JK'		-- Joker
 							WHEN s.ProductID = 57 THEN 'BG'		-- Big Gaming
-							WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
 							WHEN s.ProductID = 60 THEN 'MXG'	-- MaxGame
 							WHEN s.ProductID = 61 THEN 'HB'		-- Habanero
 							WHEN s.ProductID = 62 THEN 'CG'		-- CG
@@ -376,7 +375,7 @@ BEGIN
 								ELSE b.transid
 							END,
 					SportType = CASE
-									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
+									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 
 										'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
@@ -388,7 +387,6 @@ BEGIN
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2581 AND 2619 THEN 215 -- NG2
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2621 AND 2659 THEN 216 -- NG2
 									WHEN b.Product = 'NG2' AND b.bettype BETWEEN 2681 AND 2699 THEN 218 -- NG2
-									WHEN b.Product = 'FW' THEN 219		-- Fishing World
 									WHEN b.Product = 'PP' THEN 248		-- Pragmatic Casino
 									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 									WHEN b.Product IN ('Outright') THEN l.sporttype
@@ -505,7 +503,7 @@ BEGIN
 								END,
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'FW', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG')
+									WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG')
 										THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
