@@ -42,6 +42,7 @@ AS
 		- 20201028@Kos: Return transdate [Redmine: #144388]
 		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
 		- 20211123@Razor: Check Abnormal Parlay Ticket [Redmine: #163900]
+		- 20221207@Razor: Remove linked server DBARC [Redmine: #181383]
 */
 
 BEGIN
@@ -302,7 +303,7 @@ BEGIN
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
-			LEFT JOIN DBARC.bodb_Archive.dbo.match_bk AS pmbk WITH (NOLOCK)
+			LEFT JOIN bodb_Archive.dbo.match_bk AS pmbk WITH (NOLOCK)
 				ON pmbk.matchid = m.ParentID
 				AND m.sporttype = 50
 				AND m.ChildMatchType = 200

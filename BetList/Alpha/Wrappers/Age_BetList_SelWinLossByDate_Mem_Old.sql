@@ -150,6 +150,7 @@ AS
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 		- 20221010@Razor: Support Tournament Prize for Microgaming RNG Casino [Redmine: #178335]
+		- 20221208@Razor: Support Saba E-Sports PinGoal [Redmine: #181383]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -605,6 +606,7 @@ BEGIN
 											(le.LeagueGroupID IN (42,74,108,113) AND m.sporttype = 1 ) 
 											OR (le.LeagueGroupID IN (122, 42) AND m.sporttype = 2 )
 											OR (le.LeagueGroupID = 42 AND m.sporttype = 50)
+											OR (le.LeagueGroupID = 151 AND m.sporttype = 43)
 										) AND b.betdaqid <> -2 AND b.winlostdate >= @SeparateSabaSport_Cutoff THEN le.LeagueGroupID
 									ELSE 0 
 								END,
