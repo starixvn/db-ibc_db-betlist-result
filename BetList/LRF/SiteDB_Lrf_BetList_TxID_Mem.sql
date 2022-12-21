@@ -17,7 +17,8 @@ AS
 
 	Revisions:
 		- 20220824@Kos: Scale out DBTRANS [Redmine: #175297]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20221220@Kos: Remove inactive products FW [Redmine: 181424]
 */
 
 BEGIN
@@ -520,7 +521,7 @@ BEGIN
 				0 AS LeagueId,
 				0 AS MatchId,
 				CASE
-					WHEN @Product IN ('FW', 'PP', 'CC', 'VGA') THEN Additional
+					WHEN @Product IN ('PP', 'CC', 'VGA') THEN Additional
 					WHEN @Product IN ('SBC') THEN ISNULL(SiteID, '')
 					ELSE ''
 				END AS MatchCode,

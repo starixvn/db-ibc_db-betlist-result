@@ -25,7 +25,6 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_CustomerWL_Mem]
 	@ShowAGC			BIT				= 0,	-- AG Casino Single Wallet
 	@ShowAB				BIT				= 0,	-- AllBet
 	@ShowVB				BIT				= 0,	-- Voidbridge
-	@ShowFW				BIT				= 0,	-- Fishing World
 	@ShowVS2			BIT				= 0,	-- Betradar Virtual Sports
 	@ShowLT				BIT				= 0,	-- Lottery
 	@ShowPP				BIT				= 0,	-- Pragmatic Casino
@@ -41,7 +40,6 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_CustomerWL_Mem]
 	@ShowSXG			BIT				= 0,	-- Sexy Gaming
 	@ShowPGS			BIT				= 0,	-- PG Soft
 	@ShowJK				BIT				= 0,	-- Joker
-	@ShowGDG			BIT				= 0,	-- GDG
 	@ShowSLT			BIT				= 0,	-- Sports Lottery
 	@ShowHB				BIT				= 0,	-- Habanero
 	@ShowWM				BIT				= 0,	-- WM Live Casino
@@ -66,6 +64,7 @@ AS
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230119@Kos: Support Jili [Redmine: 182914]
+		- 20230328@Kos: Remove inactive products FW, GDG [Redmine: 181424]
 */
 
 BEGIN
@@ -109,7 +108,6 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowAGC = 1	THEN 11 END
 		OR ProductID	= CASE WHEN @ShowAB = 1		THEN 21 END
 		OR ProductID	= CASE WHEN @ShowVB = 1		THEN 22 END
-		OR ProductID	= CASE WHEN @ShowFW = 1		THEN 24 END
 		OR ProductID	= CASE WHEN @ShowCO = 1		THEN 25 END
 		OR ProductID	= CASE WHEN @ShowVS2 = 1	THEN 27 END
 		OR ProductID	= CASE WHEN @ShowLT = 1		THEN 28 END
@@ -127,7 +125,6 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowPGS = 1	THEN 55 END
 		OR ProductID	= CASE WHEN @ShowJK = 1		THEN 56 END
 		OR ProductID	= CASE WHEN @ShowBGG = 1	THEN 57 END
-		OR ProductID	= CASE WHEN @ShowGDG = 1	THEN 59 END
 		OR ProductID	= CASE WHEN @ShowMXG = 1	THEN 60 END
 		OR ProductID	= CASE WHEN @ShowHB = 1		THEN 61 END
 		OR ProductID	= CASE WHEN @ShowCG = 1		THEN 62 END
@@ -419,7 +416,6 @@ BEGIN
 							WHEN s.ProductID = 8 THEN 'Keno'
 							WHEN s.ProductID = 21 THEN 'AllBet'
 							WHEN s.ProductID = 22 THEN 'VB'								-- Macau Games
-							WHEN s.ProductID = 24 THEN 'FW'								-- Fishing World
 							WHEN s.ProductID = 25 THEN 'CO'								-- Cash Out
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 32 THEN 'PP'								-- Pragmatic Play Casino
@@ -436,7 +432,6 @@ BEGIN
 							WHEN s.ProductID = 55 THEN 'PGS'							-- PG Soft
 							WHEN s.ProductID = 56 THEN 'JK'								-- Joker
 							WHEN s.ProductID = 57 THEN 'BG'								-- Big Gaming
-							WHEN s.ProductID = 59 THEN 'GDG'							-- GDG
 							WHEN s.ProductID = 60 THEN 'MXG'							-- MaxGame
 							WHEN s.ProductID = 61 THEN 'HB'								-- Habanero
 							WHEN s.ProductID = 62 THEN 'CG'								-- CG
@@ -724,10 +719,9 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 
-										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
+										'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
-									WHEN b.Product = 'FW' THEN 219			-- Fishing World
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
 									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('BTC') THEN m3rd.sporttype
@@ -752,7 +746,7 @@ BEGIN
 								ELSE 0
 							END,
 					Odds = CASE
-								WHEN b.Product IN ('VB', 'FW', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
+								WHEN b.Product IN ('VB', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2', 'Keno', 'Lottery', 
 									'OneRNG', 'VRG', 'TG', 'I4D', 'SLT', 'H5LG', 'VS3', 'BTC') THEN b.Odds
 								ELSE 0
@@ -868,7 +862,7 @@ BEGIN
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'FW', 'PP', 
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,

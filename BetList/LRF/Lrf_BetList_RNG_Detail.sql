@@ -55,7 +55,8 @@ AS
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 					- Add new input param @ExcludeBettrans BIT
 					- Move from DBEXT to DBACC
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20221220@Kos: Remove inactive products FW [Redmine: 181424]
 
 	Parameters:
 		- @TransType
@@ -99,7 +100,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE RefTable = 1 AND ProductID NOT IN (17, 50)
+	WHERE RefTable = 1 AND ProductID NOT IN (17, 24, 50)
 
 	DECLARE @tmpStatus TABLE (StatusId TINYINT)
 
@@ -200,7 +201,7 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34, 66) THEN brng.Additional
+				WHEN sbt.productID IN (32, 34, 66) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
@@ -262,7 +263,7 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34, 66) THEN brng.Additional
+				WHEN sbt.productID IN (32, 34, 66) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,
@@ -322,7 +323,7 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34, 66) THEN brng.Additional
+				WHEN sbt.productID IN (32, 34, 66) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE ''
 			END AS MatchCode,

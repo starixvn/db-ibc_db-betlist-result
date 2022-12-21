@@ -114,6 +114,7 @@ AS
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230119@Kos: Support Jili [Redmine: 182914]
+		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 */
 
 BEGIN
@@ -481,43 +482,6 @@ BEGIN
 					OR (b.winlostdate >= @Yesterday AND s.RefTable IN (1, 2)))		-- don't care status of casino's summary rows if >= yesterday
 				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-
-			-- Get more info for CashOut tickets
-			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 911 AND TableID = 1)
-			BEGIN
-				UPDATE b
-				SET b.Odds = ob.odds,
-					b.LiveIndicator = ob.liveindicator,
-					b.LiveHomeScore = ob.livehomescore,
-					b.LiveAwayScore = ob.liveawayscore,
-					b.OriginalBetType = ob.bettype,
-					b.BetdaqId = ob.transid
-				FROM #Data AS b
-					INNER JOIN dbo.bettrans AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
-				WHERE b.BetType = 911 AND b.TableID = 1
-			END
-
-			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 912 AND TableID = 1)
-			BEGIN
-				UPDATE b
-				SET b.Odds = ob.odds,
-					b.LiveIndicator = ob.liveindicator,
-					b.LiveHomeScore = ob.livehomescore,
-					b.LiveAwayScore = ob.liveawayscore,
-					b.OriginalBetType = ob.bettype,
-					b.BetdaqId = ob.transid,
-					b.Stake = cob.stake,
-					b.Comm = ISNULL(cb.awinlost, 0)
-				FROM #Data AS b
-					INNER JOIN dbo.bettrans AS cob WITH (NOLOCK) ON b.RefNo = cob.transid
-					INNER JOIN dbo.bettrans AS ob WITH (NOLOCK) ON cob.RefNo = ob.transid
-					LEFT JOIN #Data AS cb
-						ON cb.RefNo = b.RefNo
-						AND cb.BetType = 913
-						AND cb.custid = @CustId
-						AND cb.winlostdate = b.WinLostDate
-				WHERE b.BetType = 912 AND b.TableID = 1
-			END
 		END
 
 		-- bettrans14
@@ -620,43 +584,6 @@ BEGIN
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 				AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 					OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
-
-			-- Get more info for CashOut tickets
-			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 911 AND TableID = 2)
-			BEGIN
-				UPDATE b
-				SET b.Odds = ob.odds,
-					b.LiveIndicator = ob.liveindicator,
-					b.LiveHomeScore = ob.livehomescore,
-					b.LiveAwayScore = ob.liveawayscore,
-					b.OriginalBetType = ob.bettype,
-					b.BetdaqId = ob.transid
-				FROM #Data AS b
-					INNER JOIN dbo.bettrans14 AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
-				WHERE b.BetType = 911 AND b.TableID = 2
-			END
-
-			IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE BetType = 912 AND TableID = 2)
-			BEGIN
-				UPDATE b
-				SET b.Odds = ob.odds,
-					b.LiveIndicator = ob.liveindicator,
-					b.LiveHomeScore = ob.livehomescore,
-					b.LiveAwayScore = ob.liveawayscore,
-					b.OriginalBetType = ob.bettype,
-					b.BetdaqId = ob.transid,
-					b.Stake = cob.stake,
-					b.Comm = ISNULL(cb.awinlost, 0)
-				FROM #Data AS b
-					INNER JOIN dbo.bettrans14 AS cob WITH (NOLOCK) ON b.RefNo = cob.transid
-					INNER JOIN dbo.bettrans14 AS ob WITH (NOLOCK) ON cob.RefNo = ob.transid
-					LEFT JOIN #Data AS cb
-						ON cb.RefNo = b.RefNo
-						AND cb.BetType = 913
-						AND cb.custid = @CustId
-						AND cb.winlostdate = b.WinLostDate
-				WHERE b.BetType = 912 AND b.TableID = 2
-			END
 		END
 
 		-- bettrans_bk
@@ -817,10 +744,8 @@ BEGIN
 				Product = CASE
 							WHEN s.ProductID = 6 THEN 'OneRNG'							-- RNG Casino
 							WHEN s.ProductID = 8 THEN 'Keno'
-							WHEN s.ProductID = 15 THEN 'CB'								-- Colossus Bet
 							WHEN s.ProductID = 21 THEN 'AllBet'
 							WHEN s.ProductID = 22 THEN 'VB'								-- Macau Games
-							WHEN s.ProductID = 24 THEN 'FW'								-- Fishing World
 							WHEN s.ProductID = 25 THEN 'CO'								-- Cash Out
 							WHEN s.ProductID = 28 THEN 'Lottery'
 							WHEN s.ProductID = 32 THEN 'PP'								-- Pragmatic Play Casino
@@ -837,7 +762,6 @@ BEGIN
 							WHEN s.ProductID = 55 THEN 'PGS'							-- PG Soft
 							WHEN s.ProductID = 56 THEN 'JK'								-- Joker
 							WHEN s.ProductID = 57 THEN 'BG'								-- Big Gaming
-							WHEN s.ProductID = 59 THEN 'GDG'							-- GDG
 							WHEN s.ProductID = 60 THEN 'MXG'							-- MaxGame
 							WHEN s.ProductID = 61 THEN 'HB'								-- Habanero
 							WHEN s.ProductID = 62 THEN 'CG'								-- CG
@@ -935,7 +859,6 @@ BEGIN
 				WinLost = WinLost - Actual_Stake,
 				LicenseeWL = CASE
 								WHEN BATransId IS NOT NULL THEN 0
-								WHEN Product = 'CB' THEN 0
 								ELSE - (WinLost - Actual_Stake)
 							END
 
@@ -1235,11 +1158,10 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
-										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
+										'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
-									WHEN b.Product = 'CB' THEN 204			-- Colossus Bet
 									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('BTC') THEN m3rd.SportType
 									WHEN b.Product IN ('Outright') THEN l.sporttype
@@ -1352,11 +1274,10 @@ BEGIN
 					BetCheck = CASE
 									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product = 'CB' THEN ISNULL(bm.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'FW', 'PP', 
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -1392,7 +1313,6 @@ BEGIN
 								ELSE ''
 							END
 				FROM #PagingData AS b
-					LEFT JOIN dbo.bettransm AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
@@ -1413,11 +1333,10 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 
-										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
+										'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
-									WHEN b.Product = 'CB' THEN 204			-- Colossus Bet
 									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('BTC') THEN m3rd.SportType
 									WHEN b.Product IN ('Outright') THEN l.sporttype
@@ -1527,11 +1446,10 @@ BEGIN
 					BetCheck = CASE
 									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product = 'CB' THEN ISNULL(bm.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'FW', 'PP', 
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -1567,7 +1485,6 @@ BEGIN
 								ELSE ''
 							END
 				FROM #PagingData AS b
-					LEFT JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
@@ -1588,11 +1505,10 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
-										'H5LG', 'GDG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
+										'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
-									WHEN b.Product = 'CB' THEN 204			-- Colossus Bet
 									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG', 'H5LG', 'SLT') THEN b.MatchId
 									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 									WHEN b.Product IN ('BTC') THEN m3rd.SportType
@@ -1702,11 +1618,10 @@ BEGIN
 					BetCheck = CASE
 									WHEN b.Product IN ('SB', 'CO', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-									WHEN b.Product = 'CB' THEN ISNULL(bm.betcheck, '')
 									ELSE ''
 								END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'FW', 'PP', 
+									WHEN b.Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -1742,7 +1657,6 @@ BEGIN
 								ELSE ''
 							END
 				FROM #PagingData AS b
-					LEFT JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON b.Product = 'CB' AND bm.refno = b.refno AND bm.bettype = 18001
 					LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
 					LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid

@@ -46,6 +46,7 @@ AS
 		- 20220526@Kos: Support FGG [Redmine: #167897]
 		- 20220527@Kos: Support MaxGame [RedmineID: #172919]
 		- 20230119@Kos: Support Jili [Redmine: 182914]
+		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 */
 
 BEGIN
@@ -359,10 +360,8 @@ BEGIN
 						WHEN s.ProductID = 6 THEN 'OneRNG'							-- RNG Casino
 						WHEN s.ProductID = 8 THEN 'Keno'
 						WHEN s.ProductID = 11 THEN 'AG'								-- AG Casino
-						WHEN s.ProductID = 15 THEN 'CB'								-- Colossus Bet
 						WHEN s.ProductID = 21 THEN 'AllBet'
 						WHEN s.ProductID = 22 THEN 'VB'								-- Macau Games
-						WHEN s.ProductID = 24 THEN 'FW'								-- Fishing World
 						WHEN s.ProductID = 28 THEN 'Lottery'
 						WHEN s.ProductID = 32 THEN 'PP'								-- Pragmatic Play Casino
 						WHEN s.ProductID = 34 THEN 'CC'								-- Card Club
@@ -378,7 +377,6 @@ BEGIN
 						WHEN s.ProductID = 55 THEN 'PGS'							-- PG Soft
 						WHEN s.ProductID = 56 THEN 'JK'								-- Joker
 						WHEN s.ProductID = 57 THEN 'BG'								-- Big Gaming
-						WHEN s.ProductID = 59 THEN 'GDG'							-- GDG
 						WHEN s.ProductID = 60 THEN 'MXG'							-- MaxGame
 						WHEN s.ProductID = 61 THEN 'HB'								-- Habanero
 						WHEN s.ProductID = 62 THEN 'CG'								-- CG
@@ -538,7 +536,6 @@ BEGIN
 				WHEN s.ProductID = 11 THEN 'AG'		-- AG Casino
 				WHEN s.ProductID = 21 THEN 'AllBet'
 				WHEN s.ProductID = 22 THEN 'VB'		-- Macau Games
-				WHEN s.ProductID = 24 THEN 'FW'		-- Fishing World
 				WHEN s.ProductID = 32 THEN 'PP'		-- Pragmatic Play Casino
 				WHEN s.ProductID = 34 THEN 'CC'		-- Card Club
 				WHEN s.ProductID = 36 THEN 'SG'		-- Spadegaming
@@ -549,7 +546,6 @@ BEGIN
 				WHEN s.ProductID = 55 THEN 'PGS'	-- PG Soft
 				WHEN s.ProductID = 56 THEN 'JK'		-- Joker
 				WHEN s.ProductID = 57 THEN 'BG'		-- Big Gaming
-				WHEN s.ProductID = 59 THEN 'GDG'	-- GDG
 				WHEN s.ProductID = 60 THEN 'MXG'	-- MaxGame
 				WHEN s.ProductID = 61 THEN 'HB'		-- Habanero
 				WHEN s.ProductID = 62 THEN 'CG'		-- CG
@@ -653,8 +649,8 @@ BEGIN
 							ELSE b.TransId
 						END,
 				SportType = CASE
-								WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'CB', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
-									'GDG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
+								WHEN b.Product IN ('VB', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
+									'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'H5LG', 'SLT', 'VS3') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('BTC') THEN m3rd.SportType
@@ -785,12 +781,11 @@ BEGIN
 								WHEN b.Product IN ('Keno') THEN ISNULL(b.custom2, '')
 								WHEN b.Product IN ('VRG', 'H5LG', 'SLT') THEN ISNULL(b.Gameid3rd, '')
 								WHEN b.Product IN ('SB') THEN ISNULL(b.betcheck, '')
-								WHEN b.Product IN ('CB') THEN ISNULL(b.Tranid3rd, '')
 								WHEN b.Product IN ('VS3') THEN ISNULL(b.custom1, '')
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 
+								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'PP', 
 									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,

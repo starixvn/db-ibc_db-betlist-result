@@ -27,6 +27,7 @@ AS
 					- Add new input param @ExcludeBettrans BIT
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221116@Kos: Support Player Tips [Redmine: 180590]
+		- 20221220@Kos: Remove inactive products FW [Redmine: 181424]
 */
 
 BEGIN
@@ -1040,7 +1041,7 @@ BEGIN
 				0 AS LeagueId,
 				0 AS MatchId,
 				CASE
-					WHEN @Product IN ('FW', 'PP', 'CC', 'VGA') THEN Additional
+					WHEN @Product IN ('PP', 'CC', 'VGA') THEN Additional
 					WHEN @Product IN ('SBC') THEN ISNULL(SiteID, '')
 					ELSE ''
 				END AS MatchCode,
@@ -1125,7 +1126,7 @@ BEGIN
 				0 AS LeagueId,
 				0 AS MatchId,
 				CASE
-					WHEN @Product IN ('FW', 'PP', 'CC', 'VGA') THEN Additional
+					WHEN @Product IN ('PP', 'CC', 'VGA') THEN Additional
 					WHEN @Product IN ('SBC') THEN ISNULL(SiteID, '')
 					ELSE ''
 				END AS MatchCode,
@@ -1210,7 +1211,7 @@ BEGIN
 				0 AS LeagueId,
 				0 AS MatchId,
 				CASE
-					WHEN @Product IN ('FW', 'PP', 'CC', 'VGA') THEN b.Additional
+					WHEN @Product IN ('PP', 'CC', 'VGA') THEN b.Additional
 					WHEN @Product IN ('SBC') THEN ISNULL(SiteID, '')
 					ELSE ''
 				END AS MatchCode,
