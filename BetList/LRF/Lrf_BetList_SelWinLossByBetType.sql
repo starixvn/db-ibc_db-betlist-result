@@ -22,7 +22,7 @@ AS
 	Created: Kos@20160229
 	Task: Get bet list of Win Loss By Bet Type report
 	DB: DBEXT.bodb02
-	Original:
+
 	Revisions:
 		- 20160414@Kos: Support Combo Parlay [#Redmine: 55282]
 		- 20160531@Kos: Add sorting function [#Redmine: 58491]
@@ -66,7 +66,8 @@ AS
 		- 20220215@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220227@Kos: Support Virtual Sports 3 [Redmine: #145337]
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20230202@Kos: Hotfix - can not sort by nickname or username [Redmine: 183350]
 */
 
 BEGIN
@@ -117,6 +118,9 @@ BEGIN
 	CREATE TABLE #AllData (
 		TransId			BIGINT,
 		RefNo			BIGINT,
+		CustId			INT,
+		Username		NVARCHAR(50),
+		Nickname		VARCHAR(50),
 		Recommend		INT,
 		Currency		SMALLINT,
 		TransDate		DATETIME,
@@ -220,10 +224,27 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM dbo.f_GroupBettype() WHERE Bettype = @BetType)
 				OR EXISTS (SELECT 1 FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType)
 		BEGIN
-			INSERT INTO #AllData
+			INSERT INTO #AllData (
+				TransId,
+				RefNo,
+				CustId,
+				Recommend,
+				Currency,
+				TransDate,
+				WinLostDate,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				LicenseeWL,
+				Comm,
+				PlayerComm,
+				WalletType,
+				RefCode,
+				WhTicket )
 			SELECT
 				b.transid,
 				b.refno,
+				b.custid,
 				b.recommend,
 				b.currency,
 				b.transdate,
@@ -259,10 +280,27 @@ BEGIN
 		ELSE IF EXISTS (SELECT 1 FROM dbo.f_GroupBetType3rd() WHERE Bettype = @BetType)
 				OR EXISTS (SELECT 1 FROM dbo.f_GroupBetType3rd() WHERE GroupTypeId = @BetType)
 		BEGIN
-			INSERT INTO #AllData
+			INSERT INTO #AllData (
+				TransId,
+				RefNo,
+				CustId,
+				Recommend,
+				Currency,
+				TransDate,
+				WinLostDate,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				LicenseeWL,
+				Comm,
+				PlayerComm,
+				WalletType,
+				RefCode,
+				WhTicket )
 			SELECT
 				b.transid,
 				b.refno,
+				b.custid,
 				b.recommend,
 				b.currency,
 				b.transdate,
@@ -297,10 +335,27 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			INSERT INTO #AllData
+			INSERT INTO #AllData (
+				TransId,
+				RefNo,
+				CustId,
+				Recommend,
+				Currency,
+				TransDate,
+				WinLostDate,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				LicenseeWL,
+				Comm,
+				PlayerComm,
+				WalletType,
+				RefCode,
+				WhTicket )
 			SELECT
 				b.transid,
 				b.refno,
+				b.custid,
 				b.recommend,
 				b.currency,
 				b.transdate,
@@ -348,10 +403,27 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM dbo.f_GroupBettype() WHERE Bettype = @BetType)
 				OR EXISTS (SELECT 1 FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType)
 		BEGIN
-			INSERT INTO #AllData
+			INSERT INTO #AllData (
+				TransId,
+				RefNo,
+				CustId,
+				Recommend,
+				Currency,
+				TransDate,
+				WinLostDate,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				LicenseeWL,
+				Comm,
+				PlayerComm,
+				WalletType,
+				RefCode,
+				WhTicket )
 			SELECT
 				b.transid,
 				b.refno,
+				b.custid,
 				b.recommend,
 				b.currency,
 				b.transdate,
@@ -387,10 +459,27 @@ BEGIN
 		ELSE IF EXISTS (SELECT 1 FROM dbo.f_GroupBetType3rd() WHERE Bettype = @BetType)
 				OR EXISTS (SELECT 1 FROM dbo.f_GroupBetType3rd() WHERE GroupTypeId = @BetType)
 		BEGIN
-			INSERT INTO #AllData
+			INSERT INTO #AllData (
+				TransId,
+				RefNo,
+				CustId,
+				Recommend,
+				Currency,
+				TransDate,
+				WinLostDate,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				LicenseeWL,
+				Comm,
+				PlayerComm,
+				WalletType,
+				RefCode,
+				WhTicket )
 			SELECT
 				b.transid,
 				b.refno,
+				b.custid,
 				b.recommend,
 				b.currency,
 				b.transdate,
@@ -425,10 +514,27 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			INSERT INTO #AllData
+			INSERT INTO #AllData (
+				TransId,
+				RefNo,
+				CustId,
+				Recommend,
+				Currency,
+				TransDate,
+				WinLostDate,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				LicenseeWL,
+				Comm,
+				PlayerComm,
+				WalletType,
+				RefCode,
+				WhTicket )
 			SELECT
 				b.transid,
 				b.refno,
+				b.custid,
 				b.recommend,
 				b.currency,
 				b.transdate,
@@ -465,6 +571,13 @@ BEGIN
 	DELETE b
 	FROM #AllData AS b
 	WHERE NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
+
+	UPDATE b
+	SET
+		b.Username = c.username,
+		b.Nickname = SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2))
+	FROM #AllData AS b
+		INNER JOIN dbo.Customer AS c (NOLOCK) ON c.custid = b.CustId
 
 	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 	IF EXISTS (SELECT 1 FROM #AllData WHERE RefCode <> 0)

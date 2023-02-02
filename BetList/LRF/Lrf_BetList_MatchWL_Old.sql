@@ -110,6 +110,8 @@ BEGIN
 		RefNo				BIGINT,
 		BATransId			BIGINT,
 		CustId				INT,
+		Username			NVARCHAR(50),
+		Nickname			VARCHAR(50),
 		Currency			SMALLINT,
 		Recommend			INT,
 		SportType			SMALLINT,
@@ -169,6 +171,8 @@ BEGIN
 		RefNo				BIGINT,
 		BATransId			BIGINT,
 		CustId				INT,
+		Username			NVARCHAR(50),
+		Nickname			VARCHAR(50),
 		Currency			SMALLINT,
 		Recommend			INT,
 		SportType			SMALLINT,
@@ -355,6 +359,13 @@ BEGIN
 			OR (@ShowBA = 0
 				AND Product IN ('SB', 'Parlay', 'Outright')
 				AND BATransId IS NOT NULL)
+
+		UPDATE b
+		SET
+			b.Username = c.username,
+			b.Nickname = SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2))
+		FROM #Data AS b
+			INNER JOIN bodb02.dbo.Customer AS c (NOLOCK) ON c.custid = b.CustId
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
 		BEGIN
@@ -664,8 +675,8 @@ BEGIN
 
 	-- Return data
 	SELECT
-		c.username,
-		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
+		a.Username,
+		a.Nickname,
 		a.TransId,
 		a.RefNo,
 		a.BetId,
@@ -716,7 +727,6 @@ BEGIN
 		a.RefCode
 	FROM
 		#PagingData AS a
-		INNER JOIN bodb02.dbo.Customer AS c WITH (NOLOCK) ON c.custid = a.CustId
 		LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = a.Currency
 	ORDER BY a.RowNum ASC
 
