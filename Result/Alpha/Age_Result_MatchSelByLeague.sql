@@ -5,8 +5,7 @@ ALTER PROCEDURE [dbo].[Age_Result_MatchSelByLeague]
 	@MoveBetsDay	DATETIME,
 	@LeagueId		INT,
 	@SportType		SMALLINT	= 0,
-	@IsShowAll		BIT			= 1,	-- 1: Show All; 0: is NOT show Test
-	@CustId			INT			= 0
+	@IsShowAll		BIT			= 1-- 1: Show All; 0: is NOT show Test
 AS
 
 /*
@@ -58,6 +57,7 @@ AS
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
+		- 20230404@Razor: Split Sites, remove harde code with 789y site [Redmine: #181596]
 */
 
 BEGIN
@@ -68,15 +68,6 @@ BEGIN
 	DECLARE @EventDate DATETIME
 
 	SELECT @EventDate = @FromDate
-
-	DECLARE @Site VARCHAR(50)
-
-	IF @CustId <> 0
-	BEGIN
-		SELECT @Site = site
-		FROM dbo.customer WITH (NOLOCK)
-		WHERE custid = @CustId
-	END
 
 	CREATE TABLE #Match (
 		SportType			SMALLINT,
@@ -243,8 +234,6 @@ BEGIN
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND m.matchcode NOT LIKE '%hedge%'
 			AND m.matchcode NOT LIKE '%betdaq%'
-			AND (ISNULL(@Site, '') = '789y'
-				OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@Site, '') <> '789y'))
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 		OPTION (OPTIMIZE FOR (@LeagueId = 0))
 	END
@@ -314,8 +303,6 @@ BEGIN
 							AND m.sporttype = 5
 							AND m.matchcode NOT LIKE '%hedge%'
 							AND m.matchcode NOT LIKE '%betdaq%'
-							AND (ISNULL(@Site, '') = '789y'
-								OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@Site, '') <> '789y'))
 					) AS m ON m.leagueid = l.leagueid
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK)
@@ -392,8 +379,6 @@ BEGIN
 							AND m.sporttype = 5
 							AND m.matchcode NOT LIKE '%hedge%'
 							AND m.matchcode NOT LIKE '%betdaq%'
-							AND (ISNULL(@Site, '') = '789y'
-								OR (m.matchcode NOT LIKE '%(LR)%' AND ISNULL(@Site, '') <> '789y'))
 					) AS m ON m.leagueid = l.leagueid
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK)
