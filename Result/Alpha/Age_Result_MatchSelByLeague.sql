@@ -57,6 +57,7 @@ AS
 		- 20220510@Razor: Remove In-house Replication [Redmine: #171699]
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
+		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
 */
 
 BEGIN
@@ -99,7 +100,8 @@ BEGIN
 		GoalRecord			VARCHAR(50),
 		IsHTCal				BIT,
 		Calculate			BIT,
-		SettlementStatus	TINYINT)
+		SettlementStatus	TINYINT,
+		NoHTScore			BIT)
 
 	IF @SportType <> 5
 	BEGIN
@@ -126,7 +128,8 @@ BEGIN
 			m.goalrecord,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(m.SettlementStatus, 0) AS SettlementStatus
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore
 		FROM
 			dbo.league AS l WITH (NOLOCK)
 			INNER JOIN
@@ -277,7 +280,8 @@ BEGIN
 				m.goalrecord,
 				ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 				ISNULL(mr.calculate, 0) AS calculate,
-				ISNULL(m.SettlementStatus, 0) AS SettlementStatus
+				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+				ISNULL(mr.NoHTScore, 0) AS NoHTScore
 			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN (
 						SELECT m.sporttype
@@ -355,7 +359,8 @@ BEGIN
 				m.goalrecord,
 				ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 				ISNULL(mr.calculate, 0) AS calculate,
-				0 AS SettlementStatus
+				0 AS SettlementStatus,
+				ISNULL(mr.NoHTScore, 0) AS NoHTScore
 			FROM dbo.league AS l WITH (NOLOCK)
 				INNER JOIN (
 						SELECT m.sporttype

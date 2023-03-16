@@ -44,6 +44,7 @@ AS
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
+		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
 */
 
 BEGIN
@@ -83,6 +84,7 @@ BEGIN
 		IsHTCal				BIT,
 		Calculate			BIT,
 		SettlementStatus	TINYINT,
+		NoHTScore			BIT,
 		BetType				SMALLINT,
 		BetCheck			VARCHAR(50),
 		Transdesc			NVARCHAR(1000)
@@ -216,6 +218,7 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			bm.bettype,
 			bm.betcheck,
 			bm.Transdesc
@@ -409,6 +412,7 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
+			ISNULL(mr.NoHTScore, 0) As NoHTScore,
 			bm.bettype,
 			bm.betcheck,
 			bm.Transdesc
@@ -605,6 +609,7 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS isHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
+			ISNULL(mr.NoHTScore, 0) As NoHTScore,
 			bm.Bettype,
 			bm.Betcheck,
 			bm.Transdesc
