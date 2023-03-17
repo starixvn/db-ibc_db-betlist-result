@@ -57,6 +57,7 @@ AS
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
+		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
 */
 
 BEGIN
@@ -147,6 +148,7 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			m.showtime
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
@@ -327,6 +329,7 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			m.showtime
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
@@ -508,6 +511,7 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			m.showtime
 		FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
