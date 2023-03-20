@@ -11,8 +11,12 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_TotalRows]
 	@BetType		SMALLINT		= 0,
 	@LeagueId		INT				= 0,
 	@MatchId		INT				= 0,
+	@LeagueGroupIds	VARCHAR(200)	= '',
 	@StatusIdList	VARCHAR(50)		= '',
 	@LiveIndicator	VARCHAR(10)		= '0,1,2',
+	@PlatformType	VARCHAR(100)	= 'All',
+	@CustomerClass	VARCHAR(MAX)	= 'All',
+	@OddsGroup		VARCHAR(100)	= 'All',
 	@Ip				VARCHAR(45)		= '',
 	@TotalRows		INT				= 0 OUTPUT
 AS
@@ -50,6 +54,9 @@ AS
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 		- 20220128@Kos: Support search by IP [RedmineID: #166079]
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
+		- 20230316@Kos: Support Saba Sports [Redmine: 183841]
+		- 20230511@Kos: Support Saba Sports [Redmine: 183841]
+					- Add new input params @LeagueGroupIds, @PlatformType, @CustomerClass, @OddsGroup
 */
 
 
@@ -138,6 +145,8 @@ BEGIN
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = b.custid
+						INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
@@ -154,6 +163,14 @@ BEGIN
 										END
 									ELSE 1
 								END
+						AND (@PlatformType = 'All'
+							OR b.betfrom IN (SELECT betfrom FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType)))
+						AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+						AND 1 = CASE
+									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+									WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+									ELSE 0
+								END
 				END
 				ELSE
 				BEGIN
@@ -161,6 +178,8 @@ BEGIN
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = b.custid
+						INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (1, 3, 5, 25, 27)
 						LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.ProductID IN (69)
 						LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
@@ -190,6 +209,14 @@ BEGIN
 										END
 									ELSE 1
 								END
+						AND (@PlatformType = 'All'
+							OR b.betfrom IN (SELECT betfrom FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType)))
+						AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+						AND 1 = CASE
+									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+									WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+									ELSE 0
+								END
 				END
 			END
 
@@ -207,6 +234,8 @@ BEGIN
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = b.custid
+						INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ((b.bettype IN (9, 29, 2799) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
@@ -223,6 +252,14 @@ BEGIN
 										END
 									ELSE 1
 								END
+						AND (@PlatformType = 'All'
+							OR b.betfrom IN (SELECT betfrom FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType)))
+						AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+						AND 1 = CASE
+									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+									WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+									ELSE 0
+								END
 				END
 				ELSE
 				BEGIN
@@ -230,6 +267,8 @@ BEGIN
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+						INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = b.custid
+						INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (1, 3, 5, 25, 27)
 						LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.ProductID IN (69)
 						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
@@ -259,20 +298,42 @@ BEGIN
 										END
 									ELSE 1
 								END
+						AND (@PlatformType = 'All'
+							OR b.betfrom IN (SELECT betfrom FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType)))
+						AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+						AND 1 = CASE
+									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+									WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+									ELSE 0
+								END
 				END
 			END
 		END
 		ELSE
 		BEGIN
-			CREATE TABLE #TempCust (CustId INT PRIMARY KEY)
+			CREATE TABLE #TempCust (CustId INT PRIMARY KEY, CustomerClass SMALLINT)
 
-			INSERT INTO #TempCust
-			SELECT c.custid
+			INSERT INTO #TempCust (CustId, CustomerClass)
+			SELECT
+				c.custid,
+				ci.CustomerClass
 			FROM dbo.Customer AS c WITH (NOLOCK)
 				INNER JOIN #TempAg AS a ON c.recommend = a.CustId
+				LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = c.custid
 			WHERE c.roleid = 1
 				AND (c.username LIKE + '%' + @Username + '%'
 					OR c.username2 LIKE + '%$%' + @Username + '%')
+				AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+
+			IF @CustomerClass <> 'All'
+			BEGIN
+				DELETE #TempCust
+				WHERE 1 <> CASE
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+								ELSE 0
+							END
+			END
 
 			-- Bettrans range
 			IF @ToDate > @MoveBetsDay
@@ -302,6 +363,8 @@ BEGIN
 									END
 								ELSE 1
 							END
+					AND (@PlatformType = 'All'
+						OR b.betfrom IN (SELECT betfrom FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType)))
 			END
 
 			-- Bettrans14 range
@@ -332,6 +395,8 @@ BEGIN
 									END
 								ELSE 1
 							END
+					AND (@PlatformType = 'All'
+						OR b.betfrom IN (SELECT betfrom FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType)))
 			END
 		END
 	END

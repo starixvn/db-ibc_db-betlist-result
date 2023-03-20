@@ -11,10 +11,14 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee]
 	@BetType			SMALLINT		= 0,
 	@LeagueId			INT				= 0,
 	@MatchId			INT				= 0,
+	@LeagueGroupIds		VARCHAR(200)	= '',
 	@BaseCurrency		VARCHAR(12),
 	@ConvertToBaseCur	BIT				= 0,	-- Convert to base currency or not
 	@StatusIdList		VARCHAR(50)		= '',
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
+	@PlatformType		VARCHAR(100)	= 'All',
+	@CustomerClass		VARCHAR(MAX)	= 'All',
+	@OddsGroup			VARCHAR(100)	= 'All',
 	@Ip					VARCHAR(45)		= '',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
@@ -58,6 +62,8 @@ AS
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 		- 20220128@Kos: Support search by IP [RedmineID: #166079]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20230316@Kos: Support Saba Sports [Redmine: 183841]
+					- Add new input params @LeagueGroupIds, @PlatformType, @CustomerClass, @OddsGroup
 */
 
 BEGIN
@@ -76,10 +82,14 @@ BEGIN
 			@BetType = @BetType,
 			@LeagueId = @LeagueId,
 			@MatchId = @MatchId,
+			@LeagueGroupIds = @LeagueGroupIds,
 			@BaseCurrency = @BaseCurrency,
 			@ConvertToBaseCur = @ConvertToBaseCur,
 			@StatusIdList = @StatusIdList,
 			@LiveIndicator = @LiveIndicator,
+			@PlatformType = @PlatformType,
+			@CustomerClass = @CustomerClass,
+			@OddsGroup = @OddsGroup,
 			@Ip = @Ip,
 			@PageSize = @PageSize,
 			@PageIndex = @PageIndex,
@@ -106,6 +116,9 @@ BEGIN
 			@ConvertToBaseCur = @ConvertToBaseCur,
 			@StatusIdList = @StatusIdList,
 			@LiveIndicator = @LiveIndicator,
+			@PlatformType = @PlatformType,
+			@CustomerClass = @CustomerClass,
+			@OddsGroup = @OddsGroup,
 			@Ip = @Ip,
 			@PageSize = @PageSize,
 			@PageIndex = @PageIndex,

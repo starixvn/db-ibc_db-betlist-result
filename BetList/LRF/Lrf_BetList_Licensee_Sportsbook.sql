@@ -11,10 +11,14 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_Sportsbook]
 	@BetType			SMALLINT		= 0,
 	@LeagueId			INT				= 0,
 	@MatchId			INT				= 0,
+	@LeagueGroupIds		VARCHAR(200)	= '',
 	@BaseCurrency		VARCHAR(12),
 	@ConvertToBaseCur	BIT				= 0,	-- Convert to base currency or not
 	@StatusIdList		VARCHAR(50)		= '',
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
+	@PlatformType		VARCHAR(100)	= 'All',
+	@CustomerClass		VARCHAR(MAX)	= 'All',
+	@OddsGroup			VARCHAR(100)	= 'All',
 	@Ip					VARCHAR(45)		= '',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
@@ -72,6 +76,8 @@ AS
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
+		- 20230511@Kos: Support Saba Sports [Redmine: 183841]
+					- Add new input params @LeagueGroupIds, @PlatformType, @CustomerClass, @OddsGroup
 */
 
 BEGIN
@@ -98,6 +104,18 @@ BEGIN
 	BEGIN CATCH
 		SET @HasError = 1
 	END CATCH
+
+	-- Get Saba sport type list
+	DECLARE @SabaSportType TABLE (SportType SMALLINT, LeagueGroupIdList VARCHAR(200))
+
+	INSERT INTO @SabaSportType
+	SELECT 1, '42,74'		-- Saba Soccer
+	UNION SELECT 1, '113'	-- Saba Soccer PinGoal
+	UNION SELECT 2, '42'	-- Saba Basketball
+	UNION SELECT 2, '122'	-- Saba Basketball PinGoal
+	UNION SELECT 50, '42'	-- Saba Cricket
+	UNION SELECT 1, '108'	-- Saba Futsal
+	UNION SELECT 43, '151'	-- Saba E-Sports PinGoal
 
 	CREATE TABLE #Data (
 		TransId				BIGINT,
@@ -132,6 +150,7 @@ BEGIN
 		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
@@ -188,6 +207,7 @@ BEGIN
 		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
@@ -275,17 +295,31 @@ BEGIN
 			SET @StatusIdList = @StatusIdList + ',111,112,113'
 		END
 
-		CREATE TABLE #TempCust (CustId INT PRIMARY KEY)
+		CREATE TABLE #TempCust (CustId INT PRIMARY KEY, CustomerClass SMALLINT)
 
 		IF @Username IS NOT NULL AND @Username <> ''
 		BEGIN
-			INSERT INTO #TempCust
-			SELECT c.custid
+			INSERT INTO #TempCust (CustId, CustomerClass)
+			SELECT
+				c.custid,
+				ci.CustomerClass
 			FROM dbo.Customer AS c WITH (NOLOCK)
 				INNER JOIN #TempAg AS a ON c.recommend = a.CustId
+				LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = c.custid
 			WHERE c.roleid = 1
 				AND (c.username LIKE + '%' + @Username + '%'
 					OR c.username2 LIKE + '%$%' + @Username + '%')
+				AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+
+			IF @CustomerClass <> 'All'
+			BEGIN
+				DELETE #TempCust
+				WHERE 1 <> CASE
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+								ELSE 0
+							END
+			END
 		END
 
 		DECLARE @NumOfMem	INT = 0
@@ -535,6 +569,8 @@ BEGIN
 							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 							LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+							LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
@@ -543,9 +579,12 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0
 								OR (m.sporttype = @SportType AND s.EventType = 1)
+								OR (l.sporttype = @SportType AND b.bettype = 10)
 								OR (b.matchid = @SportType AND s.ProductId IN (63))
 								OR (m3rd.SportType = @SportType AND s.EventType = 5))
-							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
+							AND (@LeagueId = 0
+								OR (m.leagueid = @LeagueId AND s.EventType = 1)
+								OR (o.leagueid = @LeagueId AND b.bettype = 10))
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
 								OR b.matchid IN (SELECT MatchId FROM @Match))
@@ -869,6 +908,8 @@ BEGIN
 							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 							LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
@@ -877,9 +918,12 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0
 								OR (m.sporttype = @SportType AND s.EventType = 1)
+								OR (l.sporttype = @SportType AND b.bettype = 10)
 								OR (b.matchid = @SportType AND s.ProductId IN (63))
 								OR (m3rd.SportType = @SportType AND s.EventType = 5))
-							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
+							AND (@LeagueId = 0
+								OR (m.leagueid = @LeagueId AND s.EventType = 1)
+								OR (o.leagueid = @LeagueId AND b.bettype = 10))
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
 								OR b.matchid IN (SELECT MatchId FROM @Match))
@@ -1205,6 +1249,8 @@ BEGIN
 							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 							LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+							LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND b.bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
@@ -1213,9 +1259,12 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0
 								OR (m.sporttype = @SportType AND s.EventType = 1)
+								OR (l.sporttype = @SportType AND b.bettype = 10)
 								OR (b.matchid = @SportType AND s.ProductId IN (63))
 								OR (m3rd.SportType = @SportType AND s.EventType = 5))
-							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
+							AND (@LeagueId = 0
+								OR (m.leagueid = @LeagueId AND s.EventType = 1)
+								OR (o.leagueid = @LeagueId AND b.bettype = 10))
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
 								OR b.matchid IN (SELECT MatchId FROM @Match))
@@ -1539,6 +1588,8 @@ BEGIN
 							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 							LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
 							CROSS APPLY ( SELECT CustId FROM #TempCust ) AS t
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 							AND t.CustId = b.custid
@@ -1549,9 +1600,12 @@ BEGIN
 								OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
 							AND (@SportType = 0
 								OR (m.sporttype = @SportType AND s.EventType = 1)
+								OR (l.sporttype = @SportType AND b.bettype = 10)
 								OR (b.matchid = @SportType AND s.ProductId IN (63))
 								OR (m3rd.SportType = @SportType AND s.EventType = 5))
-							AND (@LeagueId = 0 OR m.leagueid = @LeagueId)
+							AND (@LeagueId = 0
+								OR (m.leagueid = @LeagueId AND s.EventType = 1)
+								OR (o.leagueid = @LeagueId AND b.bettype = 10))
 							AND (@MatchId = 0
 								OR b.matchid = @MatchId
 								OR b.matchid IN (SELECT MatchId FROM @Match))
@@ -1683,6 +1737,12 @@ BEGIN
 			WHERE Ip <> @Ip
 		END
 
+		IF @PlatformType <> 'All'
+		BEGIN
+			DELETE #Data
+			WHERE BetFrom NOT IN (SELECT betfrom FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType))
+		END
+
 		UPDATE b
 		SET b.Product = CASE
 							WHEN s.ProductId = 63 THEN 'SLT'						-- Sports Lottery
@@ -1695,11 +1755,91 @@ BEGIN
 		FROM #Data AS b
 			INNER JOIN #SportBettype AS s ON s.BetType = b.BetType
 
+		IF EXISTS (SELECT 1 FROM @SabaSportType WHERE SportType = @SportType)
+		BEGIN
+			-- Get event info
+			UPDATE b
+			SET SportType = m.sporttype,
+				LeagueId = m.leagueid,
+				LeagueGroupId = l.LeagueGroupID
+			FROM #Data AS b
+				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
+			WHERE b.Product = 'SB' AND b.WhTicket = 1
+
+			UPDATE b
+			SET SportType = m.sporttype,
+				LeagueId = m.leagueid,
+				LeagueGroupId = l.LeagueGroupID
+			FROM #Data AS b
+				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
+			WHERE b.Product = 'SB' AND b.WhTicket = 2
+
+			UPDATE b
+			SET SportType = l.sporttype,
+				LeagueId = l.leagueid,
+				LeagueGroupId = l.LeagueGroupID
+			FROM #Data AS b
+				INNER JOIN dbo.outright AS o WITH (NOLOCK) ON o.orid = b.MatchId
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = o.leagueid
+			WHERE b.Product = 'Outright' AND b.WhTicket = 1
+
+			UPDATE b
+			SET SportType = l.sporttype,
+				LeagueId = l.leagueid,
+				LeagueGroupId = l.LeagueGroupID
+			FROM #Data AS b
+				INNER JOIN dbo.outright14 AS o WITH (NOLOCK) ON o.orid = b.MatchId
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = o.leagueid
+			WHERE b.Product = 'Outright' AND b.WhTicket = 2
+
+			IF @LeagueGroupIds <> ''
+			BEGIN
+				DELETE FROM #Data
+				WHERE Product IN ('SB', 'Outright')
+					AND ',' + @LeagueGroupIds + ',' NOT LIKE '%,' + CONVERT(VARCHAR(11), LeagueGroupId) + ',%'
+			END
+			ELSE
+			BEGIN
+				DELETE b
+				FROM #Data AS b
+				WHERE Product IN ('SB', 'Outright')
+					AND EXISTS (SELECT 1 FROM @SabaSportType
+								WHERE SportType = @SportType
+									AND ',' + LeagueGroupIdList + ',' LIKE '%,' + CONVERT(VARCHAR(11), b.LeagueGroupId) + ',%')
+			END
+		END
+
+		IF @Username IS NULL OR @Username = ''
+		BEGIN
+			INSERT INTO #TempCust (CustId, CustomerClass)
+			SELECT DISTINCT
+				c.custid,
+				ci.CustomerClass
+			FROM dbo.Customer AS c WITH (NOLOCK)
+				INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = c.custid
+			WHERE c.roleid = 1
+				AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+				AND EXISTS (SELECT 1 FROM #Data WHERE CustId = c.CustId)
+
+			IF @CustomerClass <> 'All'
+			BEGIN
+				DELETE #TempCust
+				WHERE 1 <> CASE
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+								ELSE 0
+							END
+			END
+		END
+
 		IF @Username IS NULL OR @Username = '' OR @NumOfMem <= 5000
 		BEGIN
 			DELETE b
 			FROM #Data AS b
 			WHERE b.Product = 'Unknown'
+				OR NOT EXISTS (SELECT 1 FROM #TempCust WHERE CustId = b.CustId)
 				OR NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 				OR (b.Product NOT IN ('SB', 'Parlay')
 					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
@@ -2264,10 +2404,12 @@ BEGIN
 				a.OriginalBetType,
 				a.WalletType,
 				a.RefCode,
-				a.SiteId
+				a.SiteId,
+				ci.CustomerClass
 			FROM
 				#PagingData AS a
 				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = a.CustId
+				INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = a.CustId
 				LEFT JOIN #ExchangeRate AS e
 					ON e.ExchangeId = a.Currency
 						AND a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
@@ -2573,20 +2715,24 @@ BEGIN
 			END
 			
 			CREATE TABLE #Customer (
-				CustId		INT,
-				Username	VARCHAR(30),
-				NickName	VARCHAR(50))
+				CustId			INT,
+				Username		VARCHAR(30),
+				NickName		VARCHAR(50),
+				CustomerClass	SMALLINT)
 
 			INSERT INTO #Customer (
 				CustId,
 				Username,
-				NickName)
+				NickName,
+				CustomerClass)
 			SELECT
-				custid,
-				username,
-				SUBSTRING(username2, CHARINDEX('$', username2) + 1, LEN(username2) - CHARINDEX('$', username2)) AS NickName
-			FROM dbo.Customer WITH (NOLOCK)
-			WHERE custid IN (SELECT DISTINCT CustId FROM #Data)
+				c.custid,
+				c.username,
+				SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS NickName,
+				ci.CustomerClass
+			FROM dbo.Customer AS c WITH (NOLOCK)
+				INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = c.custid
+			WHERE c.custid IN (SELECT DISTINCT CustId FROM #Data)
 
 			SET @Sql = 
 				N'SELECT
@@ -2639,7 +2785,8 @@ BEGIN
 					a.OriginalBetType,
 					a.WalletType,
 					a.RefCode,
-					a.SiteId
+					a.SiteId,
+					c.CustomerClass
 				FROM
 					#Data AS a
 					INNER JOIN #Customer AS c ON c.custid = a.CustId
@@ -2661,7 +2808,10 @@ BEGIN
 	SELECT DISTINCT * FROM @Detail
 
 	DROP TABLE #PagingData
+	DROP TABLE #TempAg
+	DROP TABLE #TempCust
 	DROP TABLE #Data
 	DROP TABLE #ExchangeRate
+	DROP TABLE #SportBettype
 END
 GO
