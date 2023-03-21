@@ -21,6 +21,7 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221104@Kos: Enhance performance [Redmine: 180045]
 		- 20221116@Kos: Support Player Tips [Redmine: 180590]
+		- 20230321@Kos: Hotfix - enhance performance [Redmine: 185448]
 */
 
 BEGIN
@@ -85,10 +86,15 @@ BEGIN
 
 		IF @CustId = -1
 		BEGIN
-			SELECT @CustId = custid
-			FROM  CustDB.dbo.Customer AS c WITH (NOLOCK)
-			WHERE EXISTS (SELECT 1 FROM @TempAg WHERE CustId = c.recommend)
-				AND c.username2 LIKE + '%$' + @Username
+			DECLARE @Site VARCHAR(10)
+
+			SELECT @Site = site
+			FROM CustDB.dbo.Customer WITH (NOLOCK)
+			WHERE custid IN (SELECT TOP(1) CustId FROM @TempAg)
+
+			SELECT @CustId = c.custid
+			FROM CustDB.dbo.Customer AS c WITH (NOLOCK)
+			WHERE c.username2 = @Site + '$' + @Username
 		END
 	END
 
@@ -236,7 +242,7 @@ BEGIN
 						@EventType = s.EventType,
 						@RefTable = s.RefTable,
 						@WhTicket = 2		-- bettrans
-					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_customerinfo)
+					FROM dbo.bettrans AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 					WHERE b.refno = @RefNo
 						AND s.RefTable = 3
