@@ -58,6 +58,7 @@ AS
 		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
 		- 20220623@Kos: Support more map for E-Sports [Redmine: #174251]
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
+		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
 
 		*******************
 		sample test case:
@@ -162,7 +163,8 @@ BEGIN
 				ISNULL(mr.calculate, 0) AS calculate,
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				ISNULL(m.showtime, '') AS showtime,
-				m.homeid2
+				m.homeid2,
+				ISNULL(mr.NoHTScore, 0) AS NoHTScore
 			FROM dbo.match AS m WITH (NOLOCK)
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
@@ -346,7 +348,8 @@ BEGIN
 				ISNULL(mr.calculate, 0) AS calculate,
 				0 AS SettlementStatus,
 				ISNULL(m.showtime, '') AS showtime,
-				m.homeid2
+				m.homeid2,
+				ISNULL(mr.NoHTScore, 0) AS NoHTScore
 			FROM dbo.match14 AS m WITH (NOLOCK)
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
@@ -530,7 +533,8 @@ BEGIN
 				ISNULL(mr.calculate, 0) AS calculate,
 				0 AS SettlementStatus,
 				ISNULL(m.showtime, '') AS showtime,
-				m.homeid2
+				m.homeid2,
+				ISNULL(mr.NoHTScore, 0) AS NoHTScore
 			FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 				LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'

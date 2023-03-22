@@ -37,6 +37,7 @@ AS
 		- 20220325@Kos: Extend OtherInfo length [Redmine: #168034]
 		- 20220623@Kos: Support more map for E-Sports [Redmine: #174251]
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
+		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
 */
 
 BEGIN
@@ -89,7 +90,8 @@ BEGIN
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			ISNULL(m.SettlementStatus, 0) AS SettlementStatus
+			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
@@ -229,7 +231,8 @@ BEGIN
 			ISNULL(m.homeid2, 0) AS homeid2,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
-			0 AS SettlementStatus
+			0 AS SettlementStatus,
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.matchID = m.matchid AND r.ResourceId = '00'
