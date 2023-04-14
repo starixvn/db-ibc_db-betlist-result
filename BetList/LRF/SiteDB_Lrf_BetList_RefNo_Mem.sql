@@ -24,6 +24,7 @@ AS
 		- 20230321@Kos: Hotfix - enhance performance [Redmine: 185448]
 		- 20230328@Kos: Support Jili [Redmine: 182914]
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
+		- 20230414@Kos: Hotfix - Fix search '_' character [Redmine: 186938]
 */
 
 BEGIN
@@ -96,7 +97,7 @@ BEGIN
 
 			SELECT @CustId = c.custid
 			FROM CustDB.dbo.Customer AS c WITH (NOLOCK)
-			WHERE c.username2 = @Site + '$' + @Username
+			WHERE c.username2 LIKE @Site + '$' + @Username
 		END
 	END
 
