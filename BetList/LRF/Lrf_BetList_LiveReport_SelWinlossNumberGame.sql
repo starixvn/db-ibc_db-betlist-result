@@ -44,6 +44,7 @@ AS
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230404@Kos: Don't return betfrom anymore [Redmine: #178059]
+		- 20230515@Kos: Hotfix - extend dynamic SQL length [Redmine: #188202]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -340,7 +341,7 @@ BEGIN
 
 	SELECT @TotalRows = COUNT(1) FROM #Data
 
-	DECLARE @Sql NVARCHAR(2000)
+	DECLARE @Sql NVARCHAR(3000)
 
 	IF @TotalRows > 0
 	BEGIN
