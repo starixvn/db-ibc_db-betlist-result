@@ -14,6 +14,7 @@ AS
 
 	Revisions:
 		- 20220727@Kos: Created [Redmine: #175297]
+		- 20230522@Kos: Hotfix - Can not show all parlay detail [Redmine: #188539]
 */
 
 BEGIN
@@ -75,6 +76,16 @@ BEGIN
 		@Status = b.status
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.transid = @TransId AND b.custid = @CustId
+
+	IF @RefNo IS NULL
+	BEGIN
+		SELECT
+			@RefNo = b.refno,
+			@CurrencyId = b.currency,
+			@Status = b.status
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+		WHERE b.transid = @TransId AND b.custid = @CustId
+	END
 
 	IF EXISTS (	SELECT 1
 				FROM dbo.bettransm AS b WITH (NOLOCK)
