@@ -83,6 +83,7 @@ AS
 		- 20230119@Kos: Support Jili [Redmine: 182914]
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
+		- 20230524@Kos: Hotfix - Slow when input username [Redmine: #188737]
 */
 
 BEGIN
@@ -147,10 +148,15 @@ BEGIN
 
 		IF @CustId = -1
 		BEGIN
-			SELECT @CustId = custid
+			DECLARE @Site VARCHAR(10)
+
+			SELECT @Site = site
+			FROM dbo.Customer WITH (NOLOCK)
+			WHERE custid IN (SELECT TOP(1) CustId FROM @TempAg)
+
+			SELECT @CustId = c.custid
 			FROM dbo.Customer AS c WITH (NOLOCK)
-			WHERE EXISTS (SELECT 1 FROM @TempAg WHERE CustId = c.recommend)
-				AND c.username2 LIKE + '%$' + @Username
+			WHERE c.username2 LIKE @Site + '$' + @Username
 		END
 	END
 
