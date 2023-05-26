@@ -152,6 +152,7 @@ AS
 		- 20221010@Razor: Support Tournament Prize for Microgaming RNG Casino [Redmine: #178335]
 		- 20221208@Razor: Support Saba E-Sports PinGoal [Redmine: #181383]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
+		- 20230526@Razor: Support YeeBet [Redmine: #186547]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -421,6 +422,7 @@ BEGIN
 						WHEN s.ProductID = 72 THEN 'SEA'	-- SEAL Entertainment
 						WHEN s.ProductID = 73 THEN 'MGRNG'	-- MG-RNG
 						WHEN s.ProductID = 75 THEN 'JIG'	-- Jili
+						WHEN s.ProductID = 76 THEN 'YB'		-- YeeBet
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
@@ -450,7 +452,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'GDG', 'VS3', 'BG', 'H5LG', 
-									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG') THEN b.matchid
+									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB') THEN b.matchid
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'GD' THEN 255		-- Gold Deluxe
