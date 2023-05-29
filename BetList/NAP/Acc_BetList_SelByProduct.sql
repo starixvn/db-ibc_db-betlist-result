@@ -85,6 +85,7 @@ AS
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
+		- 20230526@Razor: Support YeeBet [Redmine: #186547]
 */
 
 BEGIN
@@ -425,8 +426,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, GDG, PP Live Casino, FGG
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59, 65, 70)
+			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, GDG, PP Live Casino, FGG, YeeBet
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59, 65, 70, 76)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -563,7 +564,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70, 76) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END
@@ -866,8 +867,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, PP Live Casino, FGG
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59, 65, 70)
+			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, PP Live Casino, FGG, YeeBet
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 59, 65, 70, 76)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -1006,7 +1007,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70) AND b.TranId3rd = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70, 76) AND b.TranId3rd = @BetId)
 							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
 				END
 			END

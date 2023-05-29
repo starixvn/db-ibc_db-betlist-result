@@ -19,6 +19,7 @@ AS
 		- 20221117@Razor: Support Player Tips [Redmine: 180590]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
+		- 20230526@Razor: Support YeeBet [Redmine: #186547]
 
 	Param's Explanation:
 		+ @TransType:
@@ -2168,7 +2169,7 @@ BEGIN
 				OPTION (RECOMPILE)
 			END
 
-			-- AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, Big Gaming, PP Live Casino, FGG
+			-- AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, Big Gaming, PP Live Casino, FGG, YeeBet
 			IF @TransType = 1	-- before yesterday settled ticket
 				AND @FromDate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 			BEGIN
@@ -2177,7 +2178,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 21 THEN 211
-						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 59, 65, 70) THEN b.matchid
+						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 59, 65, 70, 76) THEN b.matchid
 						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
@@ -2254,7 +2255,7 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59, 65, 70)
+					AND s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59, 65, 70, 76)
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 			END
 
@@ -2267,7 +2268,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 21 THEN 211
-						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 59, 65, 70) THEN b.matchid
+						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 59, 65, 70, 76) THEN b.matchid
 						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
@@ -2349,7 +2350,7 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59, 65, 70)
+					AND s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59, 65, 70, 76)
 					AND blc.statusID NOT IN (0, 1)
 				GROUP BY
 					b.transid,
@@ -2376,7 +2377,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 21 THEN 211
-						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 59, 65, 70) THEN b.matchid
+						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 59, 65, 70, 76) THEN b.matchid
 						ELSE 0
 					END AS Sporttype,
 					0 AS leagueid,
@@ -2454,7 +2455,7 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59, 65, 70)
+					AND s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 59, 65, 70, 76)
 					AND blc.statusID IN (0, 1)
 				GROUP BY
 					b.transid,
