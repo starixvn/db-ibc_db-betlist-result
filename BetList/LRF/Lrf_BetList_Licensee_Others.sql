@@ -80,6 +80,7 @@ AS
 		- 20230119@Kos: Support Jili [Redmine: 182914]
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
+		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 */
 
 BEGIN
@@ -1060,6 +1061,7 @@ BEGIN
 							WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
 							WHEN s.ProductID = 70 THEN 'FGGL'							-- FGG
 							WHEN s.ProductID = 75 THEN 'JIG'							-- Jili
+							WHEN s.ProductID = 76 THEN 'YB'								-- YeeBet
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
@@ -1329,7 +1331,7 @@ BEGIN
 				SET
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
-										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
+										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
@@ -1473,7 +1475,7 @@ BEGIN
 				SET
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 
-										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
+										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
@@ -1721,7 +1723,7 @@ BEGIN
 				SET
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
-										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
+										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
@@ -1864,7 +1866,7 @@ BEGIN
 				SET
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
-										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG') THEN b.MatchId
+										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB') THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino

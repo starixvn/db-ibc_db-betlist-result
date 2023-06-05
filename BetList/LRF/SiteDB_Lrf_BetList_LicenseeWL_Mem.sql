@@ -43,6 +43,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_LicenseeWL_Mem]
 	@ShowFGGL			BIT			= 0,	-- FGG
 	@ShowMXG			BIT			= 0,	-- MaxGame
 	@ShowJIG			BIT			= 0,	-- Jili
+	@ShowYB				BIT			= 0,	-- YeeBet
 	@ShowBT				BIT			= 0,	-- Bet Trade
 	@ShowCO				BIT			= 0,	-- Cash Out
 	@BaseCurrency		VARCHAR(12),
@@ -65,6 +66,7 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230119@Kos: Support Jili [Redmine: 182914]
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
+		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -208,7 +210,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 25, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 75)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 25, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 75, 76)
 		AND Bettype NOT IN (904, 914)
 		AND BetType NOT IN (SELECT BetType FROM dbo.Lrf_f_SelExcludedBetType())
 
@@ -254,6 +256,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowBTC = 0	THEN 69 END
 		OR ProductID	= CASE WHEN @ShowFGGL = 0	THEN 70 END
 		OR ProductID	= CASE WHEN @ShowJIG = 0	THEN 75 END
+		OR ProductID	= CASE WHEN @ShowYB = 1		THEN 76 END
 
 	IF @tdate > @MoveBetsDay
 	BEGIN
@@ -1224,8 +1227,8 @@ BEGIN
 			END
 		END
 
-		-- AG Casino, AllBet, SA Gaming, Sexy Gaming, WM Live Casino, Big Gaming, FGG
-		IF @ShowAGC = 1 OR @ShowAB = 1 OR @ShowSAG = 1 OR @ShowSXG = 1 OR @ShowWM = 1 OR @ShowBGG = 1 OR @ShowFGGL = 1
+		-- AG Casino, AllBet, SA Gaming, Sexy Gaming, WM Live Casino, Big Gaming, FGG, YeeBet
+		IF @ShowAGC = 1 OR @ShowAB = 1 OR @ShowSAG = 1 OR @ShowSXG = 1 OR @ShowWM = 1 OR @ShowBGG = 1 OR @ShowFGGL = 1 OR @ShowYB = 1
 		BEGIN
 			-- Up to yesterday settled ticket
 			INSERT INTO @BetListByDateMem
@@ -1233,7 +1236,7 @@ BEGIN
 				CASE
 					WHEN sbt.ProductID = 11 THEN 250
 					WHEN sbt.ProductID = 21 THEN 211
-					WHEN sbt.ProductID IN (39, 45, 51, 57, 70) THEN b.matchid
+					WHEN sbt.ProductID IN (39, 45, 51, 57, 70, 76) THEN b.matchid
 					ELSE 0
 				END AS Sporttype,
 				b.transid,
@@ -1290,7 +1293,7 @@ BEGIN
 				b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.winlostdate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
 				AND b.custid = @CustId
-				AND sbt.ProductID IN (11, 21, 39, 45, 51, 57, 70)
+				AND sbt.ProductID IN (11, 21, 39, 45, 51, 57, 70, 76)
 				AND b.statusID IN (111, 112, 113)
 
 			IF @tdate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)				-- yesterday
@@ -1302,7 +1305,7 @@ BEGIN
 					CASE
 						WHEN sbt.ProductID = 11 THEN 250
 						WHEN sbt.ProductID = 21 THEN 211
-						WHEN sbt.ProductID IN (39, 45, 51, 57, 70) THEN b.matchid
+						WHEN sbt.ProductID IN (39, 45, 51, 57, 70, 76) THEN b.matchid
 						ELSE 0
 					END AS Sporttype,
 					b.transid,
@@ -1364,7 +1367,7 @@ BEGIN
 					AND b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) 
 						AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
 					AND b.custid = @CustId
-					AND sbt.ProductID IN (11, 21, 39, 45, 51, 57, 70)
+					AND sbt.ProductID IN (11, 21, 39, 45, 51, 57, 70, 76)
 					AND blc.statusID <> 0
 				GROUP BY
 					b.transid,

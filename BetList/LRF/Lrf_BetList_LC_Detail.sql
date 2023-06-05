@@ -39,6 +39,7 @@ AS
 					- Move from DBEXT to DBACC
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221220@Kos: Remove inactive products GDG [Redmine: 181424]
+		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 
 	Parameters:
 		- @TransType
@@ -196,12 +197,12 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 51, 57, 70) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 51, 57, 70, 76) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 51, 57, 70) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 51, 57, 70, 76) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -273,12 +274,12 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 51, 57, 70) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 51, 57, 70, 76) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 51, 57, 70) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 51, 57, 70, 76) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -348,12 +349,12 @@ BEGIN
 			dp.IP,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 51, 57, 70) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 51, 57, 70, 76) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 51, 57, 70) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 51, 57, 70, 76) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE

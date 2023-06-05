@@ -26,6 +26,7 @@ AS
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 		- 20230414@Kos: Hotfix - Fix search '_' character [Redmine: 186938]
 		- 20230415@Kos: Extend betfrom length [Redmine: #178059]
+		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 */
 
 BEGIN
@@ -64,7 +65,7 @@ BEGIN
 		INSERT INTO @SportBettype
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (1, 3, 5, 6, 8, 21, 22, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 74, 75)
+		WHERE ProductID IN (1, 3, 5, 6, 8, 21, 22, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 74, 75, 76)
 			AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914, 999)
 			AND BetType NOT BETWEEN 801 AND 899
 	END
@@ -348,6 +349,7 @@ BEGIN
 						WHEN @ProductId = 70 THEN 'FGGL'		-- FGG
 						WHEN @ProductId = 74 THEN 'TIP'			-- Player Tips
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
+						WHEN @ProductID = 76 THEN 'YB'			-- YeeBet
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -558,7 +560,7 @@ BEGIN
 			b.recommend,
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
-					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG') THEN b.matchid
+					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -1003,6 +1005,7 @@ BEGIN
 						WHEN @ProductId = 51 THEN 'WM'
 						WHEN @ProductId = 57 THEN 'BG'
 						WHEN @ProductId = 70 THEN 'FGGL'
+						WHEN @ProductID = 76 THEN 'YB'
 						ELSE 'Unknown'
 					END
 
