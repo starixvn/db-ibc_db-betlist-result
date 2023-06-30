@@ -21,6 +21,7 @@ AS
 		- 20230328@Kos: Remove inactive products FW, GDG, CB [Redmine: 181424]
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
+		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
 */
 
 BEGIN
@@ -360,6 +361,7 @@ BEGIN
 						WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
 						WHEN s.ProductID = 69 THEN 'BTC'							-- Bitcoin
 						WHEN s.ProductID = 70 THEN 'FGGL'							-- FGG
+						WHEN s.ProductID = 73 THEN 'MGRNG'							-- MG-RNG
 						WHEN s.ProductID = 75 THEN 'JIG'							-- Jili
 						WHEN s.ProductID = 76 THEN 'YB'								-- YeeBet
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
@@ -528,6 +530,7 @@ BEGIN
 				WHEN s.ProductID = 67 THEN 'AP'		-- AdvantPlay
 				WHEN s.ProductID = 68 THEN 'APM'	-- AdvantPlay Mini
 				WHEN s.ProductID = 70 THEN 'FGGL'	-- FGG
+				WHEN s.ProductID = 73 THEN 'MGRNG'	-- MG-RNG
 				WHEN s.ProductID = 75 THEN 'JIG'	-- Jili
 				WHEN s.ProductID = 76 THEN 'YB'		-- YeeBet
 				ELSE 'Unknown'
@@ -626,7 +629,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('VB', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
-									'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG', 'JIG', 'YB') THEN b.MatchId
+									'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'H5LG', 'SLT', 'VS3') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('BTC') THEN m3rd.SportType

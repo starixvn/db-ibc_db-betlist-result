@@ -83,6 +83,7 @@ AS
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
+		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
 */
 
 BEGIN
@@ -726,6 +727,7 @@ BEGIN
 							WHEN s.ProductID = 68 THEN 'APM'							-- AdvantPlay Mini
 							WHEN s.ProductID = 69 THEN 'BTC'							-- Bitcoin
 							WHEN s.ProductID = 70 THEN 'FGGL'							-- FGG
+							WHEN s.ProductID = 73 THEN 'MGRNG'							-- MG-RNG
 							WHEN s.ProductID = 74 THEN 'TIP'							-- Player Tips
 							WHEN s.ProductID = 75 THEN 'JIG'							-- Jili
 							WHEN s.ProductID = 76 THEN 'YB'								-- YeeBet
@@ -1007,7 +1009,7 @@ BEGIN
 								END,
 						SportType = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 
-											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1299,7 +1301,7 @@ BEGIN
 								END,
 						SportType = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 
-											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1502,7 +1504,7 @@ BEGIN
 								END,
 						SportType = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 
-											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
+											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG') THEN b.matchid		-- ONERnG, Card Club, NPH Promotion
 										WHEN b.Product = 'Keno' THEN 202	-- Keno
 										WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 										WHEN b.Product = 'AllBet' THEN 211	-- AllBet

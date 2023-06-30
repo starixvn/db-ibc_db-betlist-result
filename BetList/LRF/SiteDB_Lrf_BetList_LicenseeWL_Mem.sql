@@ -44,6 +44,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_LicenseeWL_Mem]
 	@ShowMXG			BIT			= 0,	-- MaxGame
 	@ShowJIG			BIT			= 0,	-- Jili
 	@ShowYB				BIT			= 0,	-- YeeBet
+	@ShowMGRNG			BIT			= 0,	-- MG-RNG
 	@ShowBT				BIT			= 0,	-- Bet Trade
 	@ShowCO				BIT			= 0,	-- Cash Out
 	@BaseCurrency		VARCHAR(12),
@@ -67,6 +68,7 @@ AS
 		- 20230119@Kos: Support Jili [Redmine: 182914]
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
+		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -210,7 +212,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 25, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 75, 76)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 25, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 73, 75, 76)
 		AND Bettype NOT IN (904, 914)
 		AND BetType NOT IN (SELECT BetType FROM dbo.Lrf_f_SelExcludedBetType())
 
@@ -255,6 +257,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowAPM = 0	THEN 68 END
 		OR ProductID	= CASE WHEN @ShowBTC = 0	THEN 69 END
 		OR ProductID	= CASE WHEN @ShowFGGL = 0	THEN 70 END
+		OR ProductID	= CASE WHEN @ShowMGRNG = 0	THEN 73 END
 		OR ProductID	= CASE WHEN @ShowJIG = 0	THEN 75 END
 		OR ProductID	= CASE WHEN @ShowYB = 1		THEN 76 END
 
@@ -1067,15 +1070,16 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- RNG Casino Single Wallet, Voidbridge, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, Habanero, Vgaming, CG, AdvantPlay, AdvantPlay Mini, MaxGame, Jili
+		-- RNG Casino Single Wallet, Voidbridge, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, Habanero, Vgaming, CG, AdvantPlay, AdvantPlay Mini
+		-- MaxGame, Jili, MG-RNG
 		IF @ShowCS = 1 OR @ShowVB = 1 OR @ShowPP = 1 OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowSBC = 1 OR @ShowPGS = 1 OR @ShowJK = 1 
-			OR @ShowHB = 1 OR @ShowVGA = 1 OR @ShowCG = 1 OR @ShowAP = 1 OR @ShowAPM = 1 OR @ShowMXG = 1 OR @ShowJIG = 1
+			OR @ShowHB = 1 OR @ShowVGA = 1 OR @ShowCG = 1 OR @ShowAP = 1 OR @ShowAPM = 1 OR @ShowMXG = 1 OR @ShowJIG = 1 OR @ShowMGRNG = 1
 		BEGIN
 			-- Up to yesterday settled ticket
 			INSERT INTO @BetListByDateMem
 			SELECT
 				CASE
-					WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 75) THEN b.matchid
+					WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 73, 75) THEN b.matchid
 					WHEN sbt.ProductID = 22 THEN 212
 					WHEN sbt.ProductID = 32 THEN 248
 					ELSe 0
@@ -1134,7 +1138,7 @@ BEGIN
 				b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.winlostdate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)	-- not yesterday and today
 				AND b.custid = @CustId
-				AND (sbt.ProductID IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 75)
+				AND (sbt.ProductID IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 73, 75)
 					OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 				AND b.statusID IN (111, 112, 113)
 
@@ -1145,7 +1149,7 @@ BEGIN
 				INSERT INTO @BetListByDateMem
 				SELECT
 					CASE
-						WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 75) THEN b.matchid
+						WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 73, 75) THEN b.matchid
 						WHEN sbt.ProductID = 22 THEN 212
 						WHEN sbt.ProductID = 32 THEN 248
 						ELSE 0
@@ -1209,7 +1213,7 @@ BEGIN
 					AND b.winlostdate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0) 
 						AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)		-- yesterday and today
 					AND b.custid = @CustId 
-					AND (sbt.ProductID IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 75)
+					AND (sbt.ProductID IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 73, 75)
 						OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 					AND brng.statusID <> 0
 				GROUP BY

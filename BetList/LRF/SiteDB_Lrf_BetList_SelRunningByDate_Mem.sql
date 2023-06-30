@@ -47,6 +47,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_SelRunningByDate_Mem]
 	@ShowMXG	BIT			= 0,	-- MaxGame
 	@ShowJIG	BIT			= 0,	-- Jili
 	@ShowYB		BIT			= 0,	-- YeeBet
+	@ShowMGRNG	BIT			= 0,	-- MG-RNG
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -64,6 +65,7 @@ AS
 		- 20230119@Kos: Support Jili [Redmine: 182914]
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
+		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
 */
 
 BEGIN
@@ -136,7 +138,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 75, 76)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 73, 75, 76)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -173,6 +175,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowAPM = 0	THEN 68 END
 		OR ProductID	= CASE WHEN @ShowBTC = 0	THEN 69 END
 		OR ProductID	= CASE WHEN @ShowFGGL = 0	THEN 70 END
+		OR ProductID	= CASE WHEN @ShowMGRNG = 0	THEN 73 END
 		OR ProductID	= CASE WHEN @ShowJIG = 0	THEN 75 END
 		OR ProductID	= CASE WHEN @ShowYB = 0		THEN 76 END
 
@@ -910,16 +913,16 @@ BEGIN
 	END
 
 	-- RNG Casino Single Wallet, Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, Habanero, Vgaming, CG, AdvantPlay, AdvantPlay Mini
-	-- MaxGame, Jili
+	-- MaxGame, Jili, MG-RNG
 	IF (@ShowCS = 1 OR @ShowVB = 1 OR @ShowPP = 1 OR @ShowCC = 1 OR @ShowSG = 1 OR @ShowSBC = 1 OR @ShowPGS = 1 OR @ShowJK = 1
-		OR @ShowHB = 1 OR @ShowVGA = 1 OR @ShowCG = 1 OR @ShowAP = 1 OR @ShowAPM = 1 OR @ShowMXG = 1 OR @ShowJIG = 1)
+		OR @ShowHB = 1 OR @ShowVGA = 1 OR @ShowCG = 1 OR @ShowAP = 1 OR @ShowAPM = 1 OR @ShowMXG = 1 OR @ShowJIG = 1 OR @ShowMGRNG = 1)
 		AND EXISTS (SELECT 1 FROM dbo.bettransRnG WITH (NOLOCK) WHERE custid = @CustId AND statusID IN (0, 1))
 	BEGIN
 		-- Yesterday and today running ticket
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
 			CASE
-				WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 75) THEN b.matchid
+				WHEN sbt.ProductID IN (6, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 73, 75) THEN b.matchid
 				WHEN sbt.ProductID = 22 THEN 212
 				WHEN sbt.ProductID = 32 THEN 248
 				ELSE 0
@@ -971,7 +974,7 @@ BEGIN
 			b.transdate BETWEEN @FromDate AND @ToDate
 			AND b.winlostdate BETWEEN @Yesterday AND @Today
 			AND brng.custid = @CustId
-			AND (sbt.ProductID IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 75)
+			AND (sbt.ProductID IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 73, 75)
 				OR (sbt.ProductID = 6 AND sbt.SubProduct <> ''))
 			AND sbt.EventType = 0
 			AND brng.statusID IN (0, 1)
