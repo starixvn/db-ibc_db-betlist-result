@@ -78,6 +78,7 @@ AS
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 		- 20230511@Kos: Support Saba Sports [Redmine: 183841]
 					- Add new input params @LeagueGroupIds, @PlatformType, @CustomerClass, @OddsGroup
+		- 20230703@Kos: Support Saba Tennis [RedmineID: #190465]
 */
 
 BEGIN
@@ -116,6 +117,7 @@ BEGIN
 	UNION SELECT 50, '42'	-- Saba Cricket
 	UNION SELECT 1, '108'	-- Saba Futsal
 	UNION SELECT 43, '151'	-- Saba E-Sports PinGoal
+	UNION SELECT 5, '42'	-- Saba Tennis
 
 	CREATE TABLE #Data (
 		TransId				BIGINT,
@@ -309,7 +311,8 @@ BEGIN
 			WHERE c.roleid = 1
 				AND (c.username LIKE + '%' + @Username + '%'
 					OR c.username2 LIKE + '%$%' + @Username + '%')
-				AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+				AND (@OddsGroup = 'All'
+					OR ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%')
 
 			IF @CustomerClass <> 'All'
 			BEGIN
@@ -1820,7 +1823,8 @@ BEGIN
 			FROM dbo.Customer AS c WITH (NOLOCK)
 				INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = c.custid
 			WHERE c.roleid = 1
-				AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+				AND (@OddsGroup = 'All'
+					OR ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%')
 				AND EXISTS (SELECT 1 FROM #Data WHERE CustId = c.CustId)
 
 			IF @CustomerClass <> 'All'

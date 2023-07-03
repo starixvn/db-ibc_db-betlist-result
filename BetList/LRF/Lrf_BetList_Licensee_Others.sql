@@ -287,7 +287,8 @@ BEGIN
 			WHERE c.roleid = 1
 				AND (c.username LIKE + '%' + @Username + '%'
 					OR c.username2 LIKE + '%$%' + @Username + '%')
-				AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+				AND (@OddsGroup = 'All'
+					OR ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%')
 
 			IF @CustomerClass <> 'All'
 			BEGIN
@@ -1102,7 +1103,8 @@ BEGIN
 			FROM dbo.Customer AS c WITH (NOLOCK)
 				INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = c.custid
 			WHERE c.roleid = 1
-				AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+				AND (@OddsGroup = 'All'
+					OR ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%')
 				AND EXISTS (SELECT 1 FROM #Data WHERE CustId = c.CustId)
 
 			IF @CustomerClass <> 'All'

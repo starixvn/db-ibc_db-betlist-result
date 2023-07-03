@@ -32,6 +32,7 @@ AS
 		- 20220222@Kos: Support Saba Basketball PinGoal [RedmineID: #167859]
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221207@Kos: Support Saba E-Sports PinGoal [RedmineID: #181224]
+		- 20230703@Kos: Support Saba Tennis [RedmineID: #190465]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -80,6 +81,8 @@ BEGIN
 	WHERE ProductID IN (1, 25)
 		AND BetType NOT IN (9, 29, 914, 901, 902, 903, 904)
 		AND BetType NOT BETWEEN 801 AND 899
+
+	DECLARE @CutOffDate SMALLDATETIME = '2023-07-01'
 
 	CREATE TABLE #Data (
 		TransId				BIGINT,
@@ -569,6 +572,7 @@ BEGIN
 					OR sporttype = CASE
 									WHEN @SportType = -1 THEN 1
 									WHEN @SportType = -2 THEN 2
+									WHEN @SportType = -5 THEN 5
 									WHEN @SportType = -43 THEN 43
 									ELSE @SportType
 								END)
@@ -576,6 +580,7 @@ BEGIN
 					OR (@SportType IN (0, -1) AND sporttype = 1 AND LeagueGroupID IN (113))
 					OR (@SportType IN (0, 2) AND sporttype = 2 AND LeagueGroupID IN (42))
 					OR (@SportType IN (0, -2) AND sporttype = 2 AND LeagueGroupID IN (122))
+					OR (@SportType IN (0, 5) AND sporttype = 5 AND LeagueGroupID IN (42))
 					OR (@SportType IN (0, -43) AND sporttype = 43 AND LeagueGroupID IN (151))
 					OR (sporttype = 50 AND LeagueGroupID IN (42)))
 
@@ -584,42 +589,51 @@ BEGIN
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
 			WHERE b.TableID = 1
 				AND b.Product IN ('SB')
-				AND m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+				AND (m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+					OR (m.sporttype = 5 AND b.WinLostDate < @CutOffDate))
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
 			WHERE b.TableID = 2
 				AND b.Product IN ('SB')
-				AND m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+				AND (m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+					OR (m.sporttype = 5 AND b.WinLostDate < @CutOffDate))
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId
 			WHERE b.TableID = 3
 				AND b.Product IN ('SB', 'CO')
-				AND m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+				AND (m.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+					OR (m.sporttype = 5 AND b.WinLostDate < @CutOffDate))
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN dbo.outright AS o WITH (NOLOCK) ON o.orid = b.MatchId
+				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = o.leagueid
 			WHERE b.TableID = 1
 				AND b.Product = ('Outright')
-				AND o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+				AND (o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+					OR (l.sporttype = 5 AND b.WinLostDate < @CutOffDate))
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN dbo.outright14 AS o WITH (NOLOCK) ON o.orid = b.MatchId
+				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = o.leagueid
 			WHERE b.TableID = 2
 				AND b.Product = ('Outright')
-				AND o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+				AND (o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+					OR (l.sporttype = 5 AND b.WinLostDate < @CutOffDate))
 
 			DELETE b
 			FROM #Data AS b
 				INNER JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON o.orid = b.MatchId
+				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = o.leagueid
 			WHERE b.TableID = 3
 				AND b.Product = ('Outright')
-				AND o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+				AND (o.leagueid NOT IN (SELECT LeagueId FROM @SabaVirtualSportLeague)
+					OR (l.sporttype = 5 AND b.WinLostDate < @CutOffDate))
 
 			DELETE #Data
 			WHERE Product = 'Unknown'
