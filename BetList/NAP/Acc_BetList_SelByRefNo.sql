@@ -148,6 +148,7 @@ AS
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
+		- 20230704@Razor: Remove Related tickets ION [Redmine: #190827]
 */
 
 BEGIN
@@ -4139,12 +4140,12 @@ BEGIN
 		END
 	END
 
-	-- Get AllBet, Sexy Gaming, IBCBet Live Casino, ION, WM, GDG, Big Gaming, PP Live Casino, FGG related tickets (same game), YeeBet
+	-- Get AllBet, Sexy Gaming, IBCBet Live Casino, WM, GDG, Big Gaming, PP Live Casino, FGG, YeeBet related tickets (same game)
 	IF @WinLostDate IS NOT NULL
 		AND EXISTS (SELECT 1
 					FROM @Data AS b
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-					WHERE s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70, 76) AND b.MatchCode <> '')
+					WHERE s.ProductID IN (21, 45, 46, 51, 57, 59, 65, 70, 76) AND b.MatchCode <> '')
 	BEGIN
 		IF @WinLostDate > @MoveBetsDay
 		BEGIN
@@ -4155,7 +4156,7 @@ BEGIN
 				0 AS BetId,
 				b.refno,
 				CASE
-					WHEN s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70, 76) THEN b.GameId3rd
+					WHEN s.ProductID IN (21, 45, 46, 51, 57, 59, 65, 70, 76) THEN b.GameId3rd
 					ELSE ''
 				END AS matchcode,
 				'' AS Race,
@@ -4174,7 +4175,7 @@ BEGIN
 				0 AS hdp1,
 				0 AS hdp2,
 				CASE
-					WHEN s.ProductID IN (21, 45, 46, 51, 52, 57) THEN b.odds
+					WHEN s.ProductID IN (21, 45, 46, 51, 57) THEN b.odds
 					ELSE 0
 				END AS odds,
 				0 AS finalodds,
@@ -4229,7 +4230,7 @@ BEGIN
 			FROM dbo.bettransLC AS b WITH (NOLOCK)
 				INNER JOIN @Data AS b1 ON b.custid = b1.CustId AND b.gameID = b1.BetType AND b.GameId3rd = b1.MatchCode
 				INNER JOIN @SportBettype AS s ON s.Bettype = b1.bettype
-			WHERE s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70, 76)
+			WHERE s.ProductID IN (21, 45, 46, 51, 57, 59, 65, 70, 76)
 				AND b1.MatchCode <> ''
 				AND b.transid <> @TransId
 		END
@@ -4244,7 +4245,7 @@ BEGIN
 				0 AS BetId,
 				b.refno,
 				CASE
-					WHEN s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70, 76) THEN b.GameId3rd
+					WHEN s.ProductID IN (21, 45, 46, 51, 57, 59, 65, 70, 76) THEN b.GameId3rd
 					ELSE ''
 				END AS matchcode,
 				'' AS Race,
@@ -4263,7 +4264,7 @@ BEGIN
 				0 AS hdp1,
 				0 AS hdp2,
 				CASE
-					WHEN s.ProductID IN (21, 45, 46, 51, 52, 57) THEN b.odds
+					WHEN s.ProductID IN (21, 45, 46, 51, 57) THEN b.odds
 					ELSE 0
 				END AS odds,
 				0 AS finalodds,
@@ -4318,7 +4319,7 @@ BEGIN
 			FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 				INNER JOIN @Data AS b1 ON b.custid = b1.CustId AND b.gameID = b1.BetType AND b.GameId3rd = b1.MatchCode
 				INNER JOIN @SportBettype AS s ON s.Bettype = b1.bettype
-			WHERE s.ProductID IN (21, 45, 46, 51, 52, 57, 59, 65, 70, 76)
+			WHERE s.ProductID IN (21, 45, 46, 51, 57, 59, 65, 70, 76)
 				AND b1.MatchCode <> ''
 				AND b.transid <> @TransId
 		END
