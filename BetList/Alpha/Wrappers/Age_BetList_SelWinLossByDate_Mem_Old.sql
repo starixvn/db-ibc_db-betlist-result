@@ -153,6 +153,7 @@ AS
 		- 20221208@Razor: Support Saba E-Sports PinGoal [Redmine: #181383]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
+		- 20230710@Razor: Support Saba Tennis [Redmine: #190459]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -609,7 +610,7 @@ BEGIN
 									WHEN ( 
 											(le.LeagueGroupID IN (42,74,108,113) AND m.sporttype = 1 ) 
 											OR (le.LeagueGroupID IN (122, 42) AND m.sporttype = 2 )
-											OR (le.LeagueGroupID = 42 AND m.sporttype = 50)
+											OR (le.LeagueGroupID = 42 AND m.sporttype IN (5, 50))
 											OR (le.LeagueGroupID = 151 AND m.sporttype = 43)
 										) AND b.betdaqid <> -2 AND b.winlostdate >= @SeparateSabaSport_Cutoff THEN le.LeagueGroupID
 									ELSE 0 
