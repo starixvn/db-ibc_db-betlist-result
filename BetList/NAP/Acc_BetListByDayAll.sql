@@ -397,7 +397,7 @@ BEGIN
 					ELSE -1
 				END AS BetdaqId,
 				CASE
-					WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
+					WHEN s.ProductID IN (1, 3, 5, 27, 77) THEN ISNULL(b.ExtraInfo, '')
 					ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -1321,7 +1321,7 @@ BEGIN
 					ELSE -1
 				END AS BetdaqId,
 				CASE
-					WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
+					WHEN s.ProductID IN (1, 3, 5, 27, 77) THEN ISNULL(b.ExtraInfo, '')
 					ELSE ''
 			END AS ExtraInfo,
 			CASE

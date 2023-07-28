@@ -180,6 +180,7 @@ AS
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
+		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 */
 
 BEGIN
@@ -372,7 +373,7 @@ BEGIN
 		-- Bettrans
 		IF @WinLostDate > @MoveBetsDay
 		BEGIN
-			-- Sportbooks, Number Game, Virtual Sports, BetRadar Virtual Sports, Cash Out
+			-- Sportbooks, Number Game, Virtual Sports, BetRadar Virtual Sports, Cash Out, Virtual Sports 3
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -459,7 +460,7 @@ BEGIN
 						ELSE -1
 					END AS BetdaqId,
 					CASE
-						WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
+						WHEN s.ProductID IN (1, 3, 5, 27, 77) THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					CASE
@@ -2088,7 +2089,7 @@ BEGIN
 		-- Bettrans14
 		ELSE IF @WinLostDate <= @MoveBetsDay AND @WinLostDate >= @BalanceUpDay
 		BEGIN
-			-- Sportbooks, Number Game, Virtual Sports, Betradar Virtual Sports, Cash Out
+			-- Sportbooks, Number Game, Virtual Sports, Betradar Virtual Sports, Cash Out, Virtual Sports 3
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -2170,7 +2171,7 @@ BEGIN
 						ELSE -1
 					END AS BetdaqId,
 					CASE
-						WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
+						WHEN s.ProductID IN (1, 3, 5, 27, 77) THEN ISNULL(b.ExtraInfo, '')
 						ELSE ''
 					END AS ExtraInfo,
 					CASE
@@ -3023,7 +3024,7 @@ BEGIN
 		-- bettrans_bk
 		ELSE IF @WinLostDate < @BalanceUpDay 
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports, Cash Out
+			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports, Cash Out, Virtual Sports 3
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data

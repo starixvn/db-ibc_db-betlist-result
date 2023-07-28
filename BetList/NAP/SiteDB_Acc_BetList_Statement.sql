@@ -20,6 +20,7 @@ AS
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
+		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 
 	Param's Explanation:
 		+ @TransType:
@@ -241,7 +242,7 @@ BEGIN
 					ELSE -1
 				END AS BetdaqId,
 				CASE
-					WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
+					WHEN s.ProductID IN (1, 3, 5, 27, 77) THEN ISNULL(b.ExtraInfo, '')
 					ELSE ''
 			END AS ExtraInfo,
 			CASE
@@ -929,7 +930,7 @@ BEGIN
 					ELSE -1
 				END AS BetdaqId,
 				CASE
-					WHEN s.ProductID IN (1, 3, 5, 27) THEN ISNULL(b.ExtraInfo, '')
+					WHEN s.ProductID IN (1, 3, 5, 27, 77) THEN ISNULL(b.ExtraInfo, '')
 					ELSE ''
 			END AS ExtraInfo,
 			CASE
