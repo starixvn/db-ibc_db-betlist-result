@@ -80,6 +80,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 */
 
 BEGIN
@@ -666,7 +667,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40, 47, 49, 63, 69)	-- Only support these products
+			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40, 47, 49, 63, 69, 77)	-- Only support these products
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -765,7 +766,7 @@ BEGIN
 			-- bettrans
 			IF EXISTS (SELECT 1 FROM #PagingData WHERE WhTicket = 1)
 			BEGIN
-				-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports
+				-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3
 				UPDATE b
 				SET
 					SportType = m.sporttype,
@@ -786,13 +787,13 @@ BEGIN
 					IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0)),
 					Placing = '',
 					ShowTime = CASE
-									WHEN b.ProductId IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.ProductId IN (5, 27, 77) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									ELSE ISNULL(m.showtime, '')
 								END,
 					BetCheck = b.BetCheck,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (1, 27) THEN ISNULL(b.transdesc, '')
+									WHEN b.ProductId IN (1, 27, 77) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -990,7 +991,7 @@ BEGIN
 			-- bettrans14
 			IF EXISTS (SELECT 1 FROM #PagingData WHERE WhTicket = 2)
 			BEGIN
-				-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports
+				-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3
 				UPDATE b
 				SET
 					SportType = m.sporttype,
@@ -1011,13 +1012,13 @@ BEGIN
 					IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0)),
 					Placing = '',
 					ShowTime = CASE
-									WHEN b.ProductId IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.ProductId IN (5, 27, 77) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									ELSE ISNULL(m.showtime, '')
 								END,
 					BetCheck = b.BetCheck,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (1, 27) THEN ISNULL(b.transdesc, '')
+									WHEN b.ProductId IN (1, 27, 77) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE

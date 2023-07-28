@@ -150,6 +150,7 @@ AS
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
+		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 */
 
 BEGIN
@@ -650,16 +651,16 @@ BEGIN
 			WHERE b.bettype IN (9, 29)
 				AND b.matchid IN (9, 29)
 
-			-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
+			-- Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3 (EventType = 1)
 			UPDATE b
 			SET SportType = m.sporttype
 				,LeagueId = m.leagueid
 				,MatchCode = m.matchcode
 				,Race = ''
 				,EventDate = m.eventdate
-				,MatchId = CASE WHEN b.ProductID IN (5, 27) THEN m.matchid ELSE 0 END
-				,HomeId = CASE WHEN b.ProductID IN (5, 27) THEN m.homeid ELSE 0 END
-				,AwayId = CASE WHEN b.ProductID IN (5, 27) THEN m.awayid ELSE 0 END
+				,MatchId = CASE WHEN b.ProductID IN (5, 27, 77) THEN m.matchid ELSE 0 END
+				,HomeId = CASE WHEN b.ProductID IN (5, 27, 77) THEN m.homeid ELSE 0 END
+				,AwayId = CASE WHEN b.ProductID IN (5, 27, 77) THEN m.awayid ELSE 0 END
 				,SettlementStatus = 0
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,Hdp2 = CASE WHEN b.ProductID IN (5, 27) THEN b.hdp2 ELSE 0 END
@@ -667,20 +668,20 @@ BEGIN
 								WHEN b.[Status] = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 								ELSE b.[Status]
 							END
-				,OddsType = CASE WHEN b.ProductID IN (3, 5, 27) THEN b.OddsType ELSE 0 END
+				,OddsType = CASE WHEN b.ProductID IN (3, 5, 27, 77) THEN b.OddsType ELSE 0 END
 				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT, 0))
 				,ShowTime = CASE
 								WHEN b.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 								ELSE ''
 							END
 				,BetCheck = ''
-				,TransDesc = CASE WHEN b.ProductID IN (27) THEN ISNULL(b.TransDesc, '') ELSE '' END
+				,TransDesc = CASE WHEN b.ProductID IN (27, 77) THEN ISNULL(b.TransDesc, '') ELSE '' END
 				,OddsSpread = 0
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			WHERE b.TableID = 1 -- bettrans
-				AND b.ProductID IN (3, 5, 27)
+				AND b.ProductID IN (3, 5, 27, 77)
 				AND b.EventType = 1
 
 			-- Virtual Sports (EventType = 3)
