@@ -19,7 +19,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_PlatformWinLoss_Mem]
 	@ShowTG		BIT = 0,	-- Table Games
 	@ShowI4D	BIT = 0,	-- Indo 4D
 	@ShowSLT	BIT = 0,	-- Sports Lottery
-	@ShowVS3	BIT = 0,	-- Virtual Sports 3
+	@ShowVS3	BIT = 0,	-- Virtual Sports 3 (Old)
+	@ShowLG		BIT = 0,	-- Virtual Sports 3
 	@ShowBTC	BIT = 0,	-- Bitcoin
 	@ShowBA		BIT = 0,
 
@@ -121,6 +122,7 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221220@Kos: Remove inactive products FW [Redmine: 181424]
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
+		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -211,7 +213,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 22, 27, 28, 40, 43, 49, 63, 69)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 22, 27, 28, 40, 43, 49, 63, 69, 77)
 
 	DELETE @SportBettype 
 	WHERE ProductID = 1 AND Bettype IN (901, 902, 903, 904)	-- Don't support BetTrade
@@ -230,6 +232,7 @@ BEGIN
 		OR ProductID = CASE WHEN @ShowVS3		= 0 THEN 49 END
 		OR ProductID = CASE WHEN @ShowSLT		= 0 THEN 63 END
 		OR ProductID = CASE WHEN @ShowBTC		= 0 THEN 69 END
+		OR ProductID = CASE WHEN @ShowLG		= 0 THEN 77 END
 
 	CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(4))
 
@@ -689,8 +692,8 @@ BEGIN
 				AND b.transid NOT IN (SELECT TransId FROM @BABetList) -- Exclude BA tickets
 		END
 
-		-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF @ShowSB = 1 OR @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3 (EventType = 1)
+		IF @ShowSB = 1 OR @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1 OR @ShowLG = 1
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -698,14 +701,8 @@ BEGIN
 				b.transid,
 				ISNULL(b.betid, 0) AS BetId,
 				b.bettype,
-				CASE
-					WHEN sbt.ProductId IN (1, 3, 5, 27) THEN b.hdp1
-					ELSE 0
-				END AS hdp1,
-				CASE
-					WHEN sbt.ProductId IN (1, 3, 5, 27) THEN b.hdp2
-					ELSE 0
-				END AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.modds,
 				b.oddstype,
 				b.odds,
@@ -749,7 +746,7 @@ BEGIN
 					ELSE ''
 				END AS BetCheck,
 				CASE
-					WHEN sbt.ProductId IN (1, 27) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductId IN (1, 27, 77) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				CASE
@@ -785,7 +782,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 1
-				AND (sbt.ProductID IN (3, 5, 27)
+				AND (sbt.ProductID IN (3, 5, 27, 77)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.custid = @CustId
@@ -1517,8 +1514,8 @@ BEGIN
 				AND b.transid NOT IN (SELECT Transid FROM @BABetList) -- Exclude BA tickets
 		END
 
-		-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF @ShowSB = 1 OR @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3 (EventType = 1)
+		IF @ShowSB = 1 OR @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1 OR @ShowLG = 1
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -1526,14 +1523,8 @@ BEGIN
 				b.transid,
 				ISNULL(b.betid, 0) AS BetId,
 				b.bettype,
-				CASE
-					WHEN sbt.ProductId IN (1, 3, 5, 27) THEN b.hdp1
-					ELSE 0
-				END AS hdp1,
-				CASE
-					WHEN sbt.ProductId IN (1, 3, 5, 27) THEN b.hdp2
-					ELSE 0
-				END AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.modds,
 				b.oddstype,
 				b.odds,
@@ -1574,7 +1565,7 @@ BEGIN
 					ELSE ''
 				END AS BetCheck,
 				CASE
-					WHEN sbt.ProductId IN (1, 27) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductId IN (1, 27, 77) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				CASE
@@ -1610,7 +1601,7 @@ BEGIN
 				INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 			WHERE sbt.EventType = 1
-				AND (sbt.ProductID IN (3, 5, 27)
+				AND (sbt.ProductID IN (3, 5, 27, 77)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 				AND b.custid = @CustId
@@ -2179,8 +2170,8 @@ BEGIN
 				AND b.transid NOT IN (SELECT Transid FROM @BABetList) -- Exclude BA tickets
 		END
 
-		-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF @ShowSB = 1 OR @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3 (EventType = 1)
+		IF @ShowSB = 1 OR @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1 OR @ShowLG = 1
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -2188,14 +2179,8 @@ BEGIN
 				b.transid,
 				ISNULL(b.betid, 0) AS BetId,
 				b.bettype,
-				CASE
-					WHEN sbt.ProductId IN (1, 3, 5, 27) THEN b.hdp1
-					ELSE 0
-				END AS hdp1,
-				CASE
-					WHEN sbt.ProductId IN (1, 3, 5, 27) THEN b.hdp2
-					ELSE 0
-				END AS hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.modds,
 				b.oddstype,
 				b.odds,
@@ -2236,7 +2221,7 @@ BEGIN
 					ELSE ''
 				END AS BetCheck,
 				CASE
-					WHEN sbt.ProductId IN (1, 27) THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductId IN (1, 27, 77) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				CASE
@@ -2273,7 +2258,7 @@ BEGIN
 				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 				CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			WHERE sbt.EventType = 1
-				AND (sbt.ProductID IN (3, 5, 27)
+				AND (sbt.ProductID IN (3, 5, 27, 77)
 					OR (sbt.ProductID = 1 AND @ShowSB = 1))		-- check in case of @ShowBA = 1
 				AND b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId

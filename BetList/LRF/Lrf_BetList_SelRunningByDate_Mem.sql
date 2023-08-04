@@ -42,12 +42,13 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@ShowAP		BIT			= 0,	-- AdvantPlay
 	@ShowAPM	BIT			= 0,	-- AdvantPlay Mini
 	@ShowBTC	BIT			= 0,	-- Bitcoin
-	@ShowVS3	BIT			= 0,	-- Virtual Sports 3
+	@ShowVS3	BIT			= 0,	-- Virtual Sports 3 (Old)
 	@ShowFGGL	BIT			= 0,	-- FGG
 	@ShowMXG	BIT			= 0,	-- MaxGame
 	@ShowJIG	BIT			= 0,	-- Jili
 	@ShowYB		BIT			= 0,	-- YeeBet
 	@ShowMGRNG	BIT			= 0,	-- MG-RNG
+	@ShowLG		BIT			= 0,	-- Virtual Sports 3
 	-- output info
 	@TotalRows	INT			= 0 OUTPUT,
 	@ErrorCode	INT			= 0 OUTPUT,
@@ -166,6 +167,7 @@ AS
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
+		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
 */
 
 BEGIN
@@ -238,7 +240,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 73, 75, 76)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 73, 75, 76, 77)
 		AND BetType NOT IN (71, 72, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
 
 	DELETE FROM @SportBettype
@@ -278,6 +280,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowMGRNG = 0	THEN 73 END
 		OR ProductID	= CASE WHEN @ShowJIG = 0	THEN 75 END
 		OR ProductID	= CASE WHEN @ShowYB = 0		THEN 76 END
+		OR ProductID	= CASE WHEN @ShowLG = 0		THEN 77 END
 
 	CREATE TABLE #BetListSelRunningByDateMem (
 		SportType			INT,
@@ -766,8 +769,8 @@ BEGIN
 	-- release mem for tempdb
 	DROP TABLE #TempBATicket;
 
-	-- Number Game, Virtual Sport, Betradar Virtual Sport
-	IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+	-- Number Game, Virtual Sport, Betradar Virtual Sport, Virtual Sports 3
+	IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1 OR @ShowLG = 1
 	BEGIN
 		INSERT INTO #BetListSelRunningByDateMem
 		SELECT
@@ -788,7 +791,7 @@ BEGIN
 			b.odds,
 			b.modds,
 			CASE
-				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'  
+				WHEN b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 				ELSE b.status
 			END AS status,
 			0 AS SettlementStatus,
@@ -810,7 +813,7 @@ BEGIN
 			m.matchid,
 			'' AS BetCheck,
 			CASE
-				WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+				WHEN sbt.ProductID IN (27, 77) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			-1 AS BetdaqId,
@@ -827,7 +830,7 @@ BEGIN
 		WHERE
 			b.transdate >= @FromDate AND b.transdate <= @ToDate 
 			AND b.custid = @CustID
-			AND sbt.ProductID IN (3, 5, 27)
+			AND sbt.ProductID IN (3, 5, 27, 77)
 			AND sbt.EventType = 1
 			AND b.statusID IN (0, 1)
 

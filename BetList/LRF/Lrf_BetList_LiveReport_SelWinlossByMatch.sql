@@ -12,6 +12,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch]
 	@ShowBA			BIT = 0,
 	@ShowVS			BIT = 0,
 	@ShowVS2		BIT = 0,
+	@ShowLG			BIT = 0,	-- Virtual Sports 3
 	@LiveIndicator	INT = 1,
 	@BaseCurrency	VARCHAR(12)
 AS
@@ -20,7 +21,7 @@ AS
 	Created: 20120111@Henry
 	Task: Betlist
 	DB: DBEXT.bodb02
-	Original:[Lrf_BetList_SelWinlostByMatch]
+
 	Revisions:
 		Get all tickets for a match
 		- 20120214@Jim: change to use table ExchangeDaily by use function Lrf_f_GetExchangeDaily
@@ -69,7 +70,8 @@ AS
 		- 20211125@Kos: Hotfix - Timeout in bettrans14 range [Redmine: 165188]
 		- 20211220@Kos: Support new Cash Out [Redmine: #165160]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
-		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20220922@Kos: Support crypto currency [Redmine: 177481]
+		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -114,7 +116,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 5, 27)
+	WHERE ProductID IN (1, 5, 27, 77)
 		AND Bettype NOT IN (901, 902, 903, 904)
 
 	DECLARE @RowStart INT, @RowEnd INT
@@ -366,8 +368,8 @@ BEGIN
 					OR (@LiveIndicator = 2))
 		END
 
-		-- Virtual Sports, Betradar Virtual Sports
-		IF @ShowVS = 1 OR @ShowVS2 = 1
+		-- Virtual Sports, Betradar Virtual Sports, Virtual Sports 3
+		IF @ShowVS = 1 OR @ShowVS2 = 1 OR @ShowLG = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT TOP(@RowEnd)
@@ -412,7 +414,7 @@ BEGIN
 				END AS ShowTime,
 				'' AS betcheck,
 				CASE
-					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (27, 77) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -430,7 +432,8 @@ BEGIN
 				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
 			WHERE b.statusID IN (111, 112, 113)
 				AND ((@ShowVS = 1 AND sbt.ProductID = 5 AND sbt.EventType = 1)
-					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1))
+					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1)
+					OR (@ShowLG = 1 AND sbt.ProductID = 77 AND sbt.EventType = 1))
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))
@@ -582,8 +585,8 @@ BEGIN
 					OR (@LiveIndicator = 2))
 		END
 
-		-- Virtual Sports, Betradar Virtual Sports
-		IF @ShowVS = 1 OR @ShowVS2 = 1
+		-- Virtual Sports, Betradar Virtual Sports, Virtual Sports 3
+		IF @ShowVS = 1 OR @ShowVS2 = 1 OR @ShowLG = 1
 		BEGIN
 			INSERT INTO #Data
 			SELECT TOP(@RowEnd)
@@ -628,7 +631,7 @@ BEGIN
 				END AS ShowTime,
 				'' AS betcheck,
 				CASE
-					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (27, 77) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -646,7 +649,8 @@ BEGIN
 				INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
 			WHERE b.statusID IN (111, 112, 113)
 				AND ((@ShowVS = 1 AND sbt.ProductID = 5 AND sbt.EventType = 1)
-					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1))
+					OR (@ShowVS2 = 1 AND sbt.ProductID = 27 AND sbt.EventType = 1)
+					OR (@ShowLG = 1 AND sbt.ProductID = 77 AND sbt.EventType = 1))
 				AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
 					OR (@LiveIndicator = 1 AND b.liveindicator = 1)
 					OR (@LiveIndicator = 2))

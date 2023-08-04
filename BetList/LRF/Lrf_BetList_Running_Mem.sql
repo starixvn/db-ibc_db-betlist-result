@@ -50,6 +50,7 @@ AS
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
+		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
 */
 
 BEGIN
@@ -375,7 +376,7 @@ BEGIN
 						WHEN s.ProductID = 42 THEN 'SBC'							-- Saba.club
 						WHEN s.ProductID = 43 THEN 'I4D'							-- Indo 4D
 						WHEN s.ProductID = 45 THEN 'SXG'							-- Sexy Gaming
-						WHEN s.ProductID = 49 THEN 'VS3'							-- Virtual Sports 3
+						WHEN s.ProductID = 49 THEN 'VS3'							-- Virtual Sports 3 (Old)
 						WHEN s.ProductID = 51 THEN 'WM'								-- WM Live Casino
 						WHEN s.ProductID = 55 THEN 'PGS'							-- PG Soft
 						WHEN s.ProductID = 56 THEN 'JK'								-- Joker
@@ -392,6 +393,7 @@ BEGIN
 						WHEN s.ProductID = 73 THEN 'MGRNG'							-- MG-RNG
 						WHEN s.ProductID = 75 THEN 'JIG'							-- Jili
 						WHEN s.ProductID = 76 THEN 'YB'								-- YeeBet
+						WHEN s.ProductID = 77 THEN 'LG'								-- Virtual Sports 3
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -659,35 +661,35 @@ BEGIN
 								WHEN b.Product IN ('VB', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
 									'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'H5LG', 'SLT', 'VS3') THEN b.ProductId
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 								WHEN b.Product IN ('BTC') THEN m3rd.SportType
 								WHEN b.Product IN ('Outright') THEN l.sporttype
 								WHEN b.Product IN ('VR') THEN vr.SportType
 								ELSE 0
 							END,
 				BetTeam = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC') THEN b.BetTeam
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG') THEN b.BetTeam
 								ELSE ''
 							END,
 				Hdp1 = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'BTC') THEN b.Hdp1
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'BTC', 'LG') THEN b.Hdp1
 							ELSE 0
 						END,
 				Hdp2 = CASE
-							WHEN b.Product IN ('SB', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2') THEN b.Hdp2
+							WHEN b.Product IN ('SB', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'LG') THEN b.Hdp2
 							ELSE 0
 						END,
 				OddsType = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.OddsType
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'LG') THEN b.OddsType
 							ELSE 0
 						END,
 				Odds = CASE
 							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'Keno', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 
-								'SLT', 'H5LG', 'VS3', 'BTC') THEN b.Odds
+								'SLT', 'H5LG', 'VS3', 'BTC', 'LG') THEN b.Odds
 							ELSE 0
 						END,
 				MOdds = CASE 
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2')  THEN b.modds
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2', 'LG') THEN b.modds
 							ELSE 0
 						END,
 				Stake = CASE
@@ -719,25 +721,25 @@ BEGIN
 										ELSE 0
 									END,
 				LiveIndicator = CASE
-									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveindicator
+									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.liveindicator
 									ELSE 0
 								END,
 				LiveHomeScore = CASE
-									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2') THEN b.livehomescore
+									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'ParlayVS2', 'LG') THEN b.livehomescore
 									ELSE 0
 								END,
 				LiveAwayScore = CASE
-									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.liveawayscore
+									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'LG') THEN b.liveawayscore
 									ELSE 0
 								END,
 				LeagueId = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.leagueid
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.leagueid
 								WHEN b.Product IN ('Outright') THEN o.leagueid
 								WHEN b.Product IN ('VR') THEN vr.LeagueID
 								ELSE 0
 							END,
 				MatchId = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'BTC') THEN b.matchid
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'BTC', 'LG') THEN b.matchid
 								ELSE 0
 							END,
 				MatchCode = CASE
@@ -757,21 +759,21 @@ BEGIN
 								ELSE b.WinLostDate
 							END,
 				HomeId = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.homeid
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.homeid
 							WHEN b.Product IN ('Outright') THEN o.teamid
 							WHEN b.Product IN ('VR') THEN vo.RacerID
 							ELSE 0
 						END,
 				AwayId = CASE
-							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.awayid
+							WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.awayid
 							ELSE 0
 						END,
 				BetStatus = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.betstatus
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.betstatus
 								ELSE ''
 							END,
 				IsNeutral = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 								ELSE 0
 							END,
 				Placing = CASE
@@ -793,7 +795,7 @@ BEGIN
 							END,
 				TransDesc = CASE
 								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'PP', 
-									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3') THEN ISNULL(b.transdesc, '')
+									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
@@ -805,7 +807,7 @@ BEGIN
 								ELSE -1
 							END,
 				ExtraInfo = CASE
-								WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'NG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'BTC') THEN ISNULL(b.ExtraInfo, '')
+								WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'NG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'BTC', 'LG') THEN ISNULL(b.ExtraInfo, '')
 								ELSE ''
 							END,
 				OriginalStake = CASE
@@ -830,7 +832,7 @@ BEGIN
 					ON b.RefTable IN (1, 2)
 					AND b.Winlostdate >= @Yesterday
 					AND x.RefNo = b.TransId
-				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2') AND b.matchid = m.matchid
+				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
 				LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 				LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID

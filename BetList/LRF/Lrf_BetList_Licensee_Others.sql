@@ -86,7 +86,8 @@ AS
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20230628@Kos: Support Saba Sports [Redmine: 183841]
 					- Add new input params @LeagueGroupIds, @PlatformType, @CustomerClass, @OddsGroup
-		- 20230629@Kos: Support MG-RNG [Redmine: 189988]					
+		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
+		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
 */
 
 BEGIN
@@ -479,14 +480,14 @@ BEGIN
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (3, 5, 27)
+						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
 						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
 					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							OR (b.winlostdate >= @Yesterday AND s.RefTable IN (1, 2)))		-- don't care status of casino's summary rows if >= yesterday
 						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
-						AND ((s.EventType = 1 AND s.ProductID IN (3, 5, 27) AND m.sporttype = @SportType)
+						AND ((s.EventType = 1 AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND s.ProductID = 5 AND vr.sporttype = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (3, 8, 28, 38, 40, 43, 49, 63) AND b.matchid = @SportType)
 							OR (s.EventType = 0 AND s.ProductID = 27 AND b.oddsid = @SportType))
@@ -657,14 +658,14 @@ BEGIN
 					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
 						INNER JOIN @TempCust AS c ON b.custid = c.CustId
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (3, 5, 27)
+						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
 						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
 					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							OR (b.winlostdate >= @Yesterday AND s.RefTable IN (1, 2)))		-- don't care status of casino's summary rows if >= yesterday
 						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
-						AND ((s.EventType = 1 AND s.ProductID IN (3, 5, 27) AND m.sporttype = @SportType)
+						AND ((s.EventType = 1 AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND s.ProductID = 5 AND vr.sporttype = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (3, 8, 28, 38, 40, 43, 49, 63) AND b.matchid = @SportType)
 							OR (s.EventType = 0 AND s.ProductID = 27 AND b.oddsid = @SportType))
@@ -844,13 +845,13 @@ BEGIN
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
 						INNER JOIN @TempAg AS a ON b.recommend = a.CustId
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (3, 5, 27)
+						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
 						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
-						AND ((s.EventType = 1 AND s.ProductID IN (3, 5, 27) AND m.sporttype = @SportType)
+						AND ((s.EventType = 1 AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND s.ProductID = 5 AND vr.sporttype = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (3, 8, 28, 38, 40, 43, 49, 63) AND b.matchid = @SportType)
 							OR (s.EventType = 0 AND s.ProductID = 27 AND b.oddsid = @SportType))
@@ -1020,7 +1021,7 @@ BEGIN
 						2 AS WhTicket
 					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_CustId)
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (3, 5, 27)
+						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.oddsid = vo.Orid AND s.EventType = 3 AND s.ProductID = 5
 						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = vo.EventID AND s.EventType = 3 AND s.ProductID = 5
 						CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
@@ -1028,7 +1029,7 @@ BEGIN
 						AND t.CustId = b.custid
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
-						AND ((s.EventType = 1 AND s.ProductID IN (3, 5, 27) AND m.sporttype = @SportType)
+						AND ((s.EventType = 1 AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND s.ProductID = 5 AND vr.sporttype = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (3, 8, 28, 38, 40, 43, 49, 63) AND b.matchid = @SportType)
 							OR (s.EventType = 0 AND s.ProductID = 27 AND b.oddsid = @SportType))
@@ -1083,6 +1084,7 @@ BEGIN
 							WHEN s.ProductID = 73 THEN 'MGRNG'							-- MG-RNG
 							WHEN s.ProductID = 75 THEN 'JIG'							-- Jili
 							WHEN s.ProductID = 76 THEN 'YB'								-- YeeBet
+							WHEN s.ProductID = 77 THEN 'LG'								-- Virtual Sports 3
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
@@ -1380,33 +1382,33 @@ BEGIN
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.sporttype
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2', 'ParlayVS2') THEN b.BetTeam
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'ParlayVS2', 'LG') THEN b.BetTeam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2') THEN b.Hdp1
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('VS', 'VS2', 'VR', 'ParlayVS2') THEN b.Hdp2
+								WHEN b.Product IN ('VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR') THEN b.OddsType
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'LG') THEN b.OddsType
 									ELSE 0
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 
-									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'VS3') THEN b.Odds
+									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'VS3', 'LG') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
-								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.modds 
 								ELSE 0
 							END,
 					OddsSpread = CASE
@@ -1420,24 +1422,24 @@ BEGIN
 							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2') THEN b.liveindicator
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2') THEN b.livehomescore
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.livehomescore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR') THEN b.liveawayscore
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'LG') THEN b.liveawayscore
 										ELSE 0
 									END,
 					LeagueId = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.leagueid
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.leagueid
 									WHEN b.Product IN ('VR') THEN vr.LeagueID
 									ELSE 0
 								END,
 					MatchId = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.matchid
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.matchid
 									WHEN b.Product IN ('VR') THEN b.matchid
 									ELSE 0
 								END,
@@ -1452,20 +1454,20 @@ BEGIN
 							END,
 					EventDate = b.WinLostDate,
 					HomeId = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.homeid
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.homeid
 								WHEN b.Product IN ('VR') THEN vo.RacerID
 								ELSE 0
 							END,
 					AwayId = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.awayid
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.awayid
 								ELSE 0
 							END,
 					BetStatus = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.betstatus
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.betstatus
 									ELSE ''
 								END,
 					IsNeutral = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 									ELSE 0
 								END,
 					Placing = CASE
@@ -1484,12 +1486,12 @@ BEGIN
 								END,
 					TransDesc = CASE
 									WHEN b.Product IN ('VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
-										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3') THEN ISNULL(b.transdesc, '')
+										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = -1,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'VS3') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'VS3', 'LG') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					SiteId = CASE
@@ -1497,7 +1499,7 @@ BEGIN
 								ELSE ''
 							END
 				FROM #PagingData AS b
-					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('NG', 'VS', 'VS2') AND b.matchid = m.matchid
+					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
 					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 				WHERE b.WhTicket = 1
@@ -1514,33 +1516,33 @@ BEGIN
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.sporttype
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2', 'ParlayVS2') THEN b.BetTeam
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'ParlayVS2', 'LG') THEN b.BetTeam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2') THEN b.Hdp1
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('VS', 'VS2', 'VR', 'ParlayVS2') THEN b.Hdp2
+								WHEN b.Product IN ('VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR') THEN b.OddsType
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'LG') THEN b.OddsType
 									ELSE 0
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 
-									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'VS3') THEN b.Odds
+									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'VS3', 'LG') THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE 
-								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.modds 
 								ELSE 0
 							END,
 					OddsSpread = CASE
@@ -1554,29 +1556,29 @@ BEGIN
 							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2') THEN b.liveindicator
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2') THEN b.livehomescore
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.livehomescore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR') THEN b.liveawayscore
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'LG') THEN b.liveawayscore
 										ELSE 0
 									END,
 					LeagueId = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.leagueid
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.leagueid
 									WHEN b.Product IN ('VR') THEN vr.LeagueID
 									ELSE 0
 								END,
 					MatchId = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.matchid
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.matchid
 									WHEN b.Product IN ('VR') THEN b.matchid
 									ELSE 0
 								END,
 					MatchCode = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.matchcode
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.matchcode
 									WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vo.RacerNum)
 									ELSE ''
 								END,
@@ -1586,20 +1588,20 @@ BEGIN
 							END,
 					EventDate = b.WinLostDate,
 					HomeId = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.homeid
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.homeid
 								WHEN b.Product IN ('VR') THEN vo.RacerID
 								ELSE 0
 							END,
 					AwayId = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.awayid
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.awayid
 								ELSE 0
 							END,
 					BetStatus = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.betstatus
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.betstatus
 									ELSE ''
 								END,
 					IsNeutral = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 									ELSE 0
 								END,
 					Placing = CASE
@@ -1618,12 +1620,12 @@ BEGIN
 								END,
 					TransDesc = CASE
 									WHEN b.Product IN ('VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
-										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3') THEN ISNULL(b.transdesc, '')
+										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = -1,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'VS3') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'VS3', 'LG') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					SiteId = CASE
@@ -1631,7 +1633,7 @@ BEGIN
 								ELSE ''
 							END
 				FROM #PagingData AS b
-					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('NG', 'VS', 'VS2') AND b.matchid = m.matchid
+					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
 					LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 				WHERE b.WhTicket = 2
@@ -1753,32 +1755,32 @@ BEGIN
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.sporttype
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2', 'ParlayVS2') THEN b.BetTeam
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'ParlayVS2', 'LG') THEN b.BetTeam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2') THEN b.Hdp1
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('VS', 'VS2', 'VR', 'ParlayVS2') THEN b.Hdp2
+								WHEN b.Product IN ('VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR') THEN b.OddsType
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'LG') THEN b.OddsType
 									ELSE 0
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 
-									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'VS3') THEN b.Odds
+									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'VS3', 'LG') THEN b.Odds
 								ELSE 0 END,
 					MOdds = CASE 
-								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.modds
 								ELSE 0
 							END,
 					OddsSpread = CASE
@@ -1792,29 +1794,29 @@ BEGIN
 							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2') THEN b.liveindicator
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2') THEN b.livehomescore
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.livehomescore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR') THEN b.liveawayscore
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'LG') THEN b.liveawayscore
 										ELSE 0
 									END,
 					LeagueId = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.leagueid
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.leagueid
 									WHEN b.Product IN ('VR') THEN vr.LeagueID
 									ELSE 0
 								END,
 					MatchId = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.matchid
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.matchid
 									WHEN b.Product IN ('VR') THEN b.matchid
 									ELSE 0
 								END,
 					MatchCode = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.matchcode
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.matchcode
 									WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vo.RacerNum)
 									ELSE ''
 								END,
@@ -1824,20 +1826,20 @@ BEGIN
 							END,
 					EventDate = b.WinLostDate,
 					HomeId = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.homeid
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.homeid
 								WHEN b.Product IN ('VR') THEN vo.RacerID
 								ELSE 0
 							END,
 					AwayId = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.awayid
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.awayid
 								ELSE 0
 							END,
 					BetStatus = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.betstatus
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.betstatus
 									ELSE ''
 								END,
 					IsNeutral = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 									ELSE 0
 								END,
 					Placing = CASE
@@ -1856,12 +1858,12 @@ BEGIN
 								END,
 					TransDesc = CASE
 									WHEN b.Product IN ('VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
-										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3') THEN ISNULL(b.transdesc, '')
+										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = -1,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'VS3') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'VS3', 'LG') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					SiteId = CASE
@@ -1869,7 +1871,7 @@ BEGIN
 								ELSE ''
 							END
 				FROM #Data AS b
-					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('NG', 'VS', 'VS2') AND b.matchid = m.matchid
+					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
 					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 				WHERE b.WhTicket = 1
@@ -1886,32 +1888,32 @@ BEGIN
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.sporttype
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2', 'ParlayVS2') THEN b.BetTeam
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'ParlayVS2', 'LG') THEN b.BetTeam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2') THEN b.Hdp1
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('VS', 'VS2', 'VR', 'ParlayVS2') THEN b.Hdp2
+								WHEN b.Product IN ('VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR') THEN b.OddsType
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'LG') THEN b.OddsType
 									ELSE 0
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'Keno', 'ParlayVS2', 'Lottery', 'TG', 'I4D', 'VRG', 
-									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'VS3') THEN b.Odds
+									'H5LG', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'VS3', 'LG') THEN b.Odds
 								ELSE 0 END,
 					MOdds = CASE 
-								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2')  THEN b.modds 
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.modds
 								ELSE 0
 							END,
 					OddsSpread = CASE
@@ -1925,29 +1927,29 @@ BEGIN
 							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2') THEN b.liveindicator
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2') THEN b.livehomescore
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'ParlayVS2', 'LG') THEN b.livehomescore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
-										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR') THEN b.liveawayscore
+										WHEN b.Product IN ('NG', 'VS', 'VS2', 'VR', 'LG') THEN b.liveawayscore
 										ELSE 0
 									END,
 					LeagueId = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.leagueid
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.leagueid
 									WHEN b.Product IN ('VR') THEN vr.LeagueID
 									ELSE 0
 								END,
 					MatchId = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.matchid
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.matchid
 									WHEN b.Product IN ('VR') THEN b.matchid
 									ELSE 0
 								END,
 					MatchCode = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.matchcode
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.matchcode
 									WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vo.RacerNum)
 									ELSE ''
 								END,
@@ -1957,20 +1959,20 @@ BEGIN
 							END,
 					EventDate = b.WinLostDate,
 					HomeId = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.homeid
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.homeid
 								WHEN b.Product IN ('VR') THEN vo.RacerID
 								ELSE 0
 							END,
 					AwayId = CASE
-								WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.awayid
+								WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.awayid
 								ELSE 0
 							END,
 					BetStatus = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.betstatus
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.betstatus
 									ELSE ''
 								END,
 					IsNeutral = CASE
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 									ELSE 0
 								END,
 					Placing = CASE
@@ -1989,12 +1991,12 @@ BEGIN
 								END,
 					TransDesc = CASE
 									WHEN b.Product IN ('VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
-										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3') THEN ISNULL(b.transdesc, '')
+										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG') THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = -1,
 					ExtraInfo = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'VS3') THEN ISNULL(b.ExtraInfo, '')
+									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'NG', 'H5LG', 'VS', 'VS2', 'ParlayVS2', 'VR', 'VS3', 'LG') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
 					SiteId = CASE
@@ -2002,7 +2004,7 @@ BEGIN
 								ELSE ''
 							END
 				FROM #Data AS b
-					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('NG', 'VS', 'VS2') AND b.matchid = m.matchid
+					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
 					LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 				WHERE b.WhTicket = 2

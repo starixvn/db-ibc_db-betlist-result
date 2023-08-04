@@ -38,13 +38,14 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelWinloss_Mem]
 	@ShowCG				BIT			= 0,	-- CG
 	@ShowAP				BIT			= 0,	-- AdvantPlay
 	@ShowAPM			BIT			= 0,	-- AdvantPlay Mini
-	@ShowVS3			BIT			= 0,	-- Virtual Sports 3
+	@ShowVS3			BIT			= 0,	-- Virtual Sports 3 (Old)
 	@ShowBTC			BIT			= 0,	-- Bitcoin
 	@ShowFGGL			BIT			= 0,	-- FGG
 	@ShowMXG			BIT			= 0,	-- MaxGame
 	@ShowJIG			BIT			= 0,	-- Jili
 	@ShowYB				BIT			= 0,	-- YeeBet
 	@ShowMGRNG			BIT			= 0,	-- MG-RNG
+	@ShowLG				BIT			= 0,	-- Virtual Sports 3
 	@ShowBT				BIT			= 0,	-- Bet Trade
 	@ShowCO				BIT			= 0,	-- Cash Out
 	@BaseCurrency		VARCHAR(12),
@@ -173,6 +174,7 @@ AS
 		- 20230328@Kos: Remove inactive products CB, FW, GDG [Redmine: 181424]
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
+		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
 
 	Param's Explanation:
 		+ @DrawFilter: 'No Draw' filter is supportted
@@ -316,7 +318,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 25, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 73, 75, 76)
+	WHERE ProductID IN (1, 3, 5, 6, 8, 11, 21, 22, 25, 27, 28, 32, 34, 36, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 73, 75, 76, 77)
 		AND Bettype NOT IN (904, 914)
 		AND BetType NOT IN (SELECT BetType FROM dbo.Lrf_f_SelExcludedBetType())
 
@@ -364,6 +366,7 @@ BEGIN
 		OR ProductID	= CASE WHEN @ShowMGRNG = 0	THEN 73 END
 		OR ProductID	= CASE WHEN @ShowJIG = 0	THEN 75 END
 		OR ProductID	= CASE WHEN @ShowYB = 0		THEN 76 END
+		OR ProductID	= CASE WHEN @ShowLG = 0		THEN 77 END
 
 	IF @tdate > @MoveBetsDay
 	BEGIN
@@ -889,8 +892,8 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3 (EventType = 1)
+		IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1 OR @ShowLG = 1
 		BEGIN
 			INSERT INTO @BetListByDateMem
 			SELECT
@@ -937,7 +940,7 @@ BEGIN
 				END AS ShowTime,
 				'' AS betcheck,
 				CASE
-					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (27, 77) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -955,7 +958,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @TempFromDate AND @tdate
 				AND b.custid = @CustId
-				AND sbt.ProductID IN (3, 5, 27)
+				AND sbt.ProductID IN (3, 5, 27, 77)
 				AND sbt.EventType = 1
 				AND b.statusID IN (111, 112, 113)
 		END
@@ -2023,8 +2026,8 @@ BEGIN
 				AND b.statusID IN (111, 112, 113)
 		END
 
-		-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3 (EventType = 1)
+		IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1 OR @ShowLG = 1
 		BEGIN
 			INSERT INTO @BetListByDateMem
 			SELECT
@@ -2071,7 +2074,7 @@ BEGIN
 				END AS ShowTime,
 				'' AS betcheck,
 				CASE
-					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (27, 77) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -2090,7 +2093,7 @@ BEGIN
 				b.winlostdate BETWEEN @BalanceUpDay AND @tdate
 				AND b.custid = @CustId
 				AND b.statusID IN (111, 112, 113)
-				AND sbt.ProductID IN (3, 5, 27)
+				AND sbt.ProductID IN (3, 5, 27, 77)
 				AND sbt.EventType = 1
 		END
 
@@ -2975,8 +2978,8 @@ BEGIN
 			END
 		END
 
-		-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1
+		-- Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3 (EventType = 1)
+		IF @ShowNG = 1 OR @ShowVS = 1 OR @ShowVS2 = 1 OR @ShowLG = 1
 		BEGIN
 			INSERT INTO @BetListByDateMem
 			SELECT
@@ -3023,7 +3026,7 @@ BEGIN
 				END AS ShowTime,
 				'' AS betcheck,
 				CASE
-					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (27, 77) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -3042,7 +3045,7 @@ BEGIN
 			WHERE
 				b.winlostdate BETWEEN @fdate AND @TempToDate
 				AND b.custid = @CustId 
-				AND sbt.ProductID IN (3, 5, 27)
+				AND sbt.ProductID IN (3, 5, 27, 77)
 				AND sbt.EventType = 1 
 				AND b.ruben = 1 
 				AND b.status NOT IN ('VOID', 'REJECT', 'REFUND')

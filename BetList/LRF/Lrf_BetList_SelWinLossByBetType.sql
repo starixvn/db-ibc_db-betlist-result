@@ -68,6 +68,7 @@ AS
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230202@Kos: Hotfix - can not sort by nickname or username [Redmine: 183350]
+		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
 */
 
 BEGIN
@@ -105,7 +106,7 @@ BEGIN
 	SELECT DISTINCT ProductId, Bettype, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @IsTest)
 	WHERE
-		ProductID IN (1, 3, 5, 8, 27, 28, 40, 43, 49, 63, 69)
+		ProductID IN (1, 3, 5, 8, 27, 28, 40, 43, 49, 63, 69, 77)
 		AND Bettype NOT IN (901, 902, 903, 904, 911, 912, 913, 914)
 		AND BetType IN (
 			SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType
@@ -949,8 +950,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-matchid-bettype
 		END
 
-		-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 5, 27) AND EventType = 1 AND Bettype = @BetType)
+		-- Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3 (EventType = 1)
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 5, 27, 77) AND EventType = 1 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -970,14 +971,8 @@ BEGIN
 				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				m.homeid,
 				m.awayid,
-				CASE
-					WHEN sbt.ProductId IN (3, 5, 27) THEN b.hdp1
-					ELSE 0
-				END AS Hdp1,
-				CASE
-					WHEN sbt.ProductId IN (5, 27) THEN b.hdp2
-					ELSE 0
-				END AS Hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.betteam,
 				b.odds,
 				b.oddstype,
@@ -1004,7 +999,7 @@ BEGIN
 				'' AS Race,
 				'' AS BetCheck,
 				CASE
-					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (27, 77) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
@@ -1089,7 +1084,7 @@ BEGIN
 				AND b.statusID NOT IN (0, 1, 101, 102, 103)
 		END
 
-		-- Virtual Sports (EventType = 2)
+		-- Virtual Sports (EventType = 3)
 		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId = 5 AND EventType = 3 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
@@ -1435,8 +1430,8 @@ BEGIN
 				AND b.matchid > 0 -- using index recommend-winlostdate-bettype-matchid-statusID
 		END
 
-		-- Number Game, Virtual Sports, Betradar Virtual Sports (EventType = 1)
-		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 5, 27) AND EventType = 1 AND Bettype = @BetType)
+		-- Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3 (EventType = 1)
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE ProductId IN (3, 5, 27, 77) AND EventType = 1 AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO #Data
 			SELECT
@@ -1456,14 +1451,8 @@ BEGIN
 				ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 				m.homeid,
 				m.awayid,
-				CASE
-					WHEN sbt.ProductId IN (3, 5, 27) THEN b.hdp1
-					ELSE 0
-				END AS Hdp1,
-				CASE
-					WHEN sbt.ProductId IN (5, 27) THEN b.hdp2
-					ELSE 0
-				END AS Hdp2,
+				b.hdp1,
+				b.hdp2,
 				b.betteam,
 				b.odds,
 				b.oddstype,
@@ -1490,7 +1479,7 @@ BEGIN
 				'' AS Race,
 				'' AS BetCheck,
 				CASE
-					WHEN sbt.ProductID = 27 THEN ISNULL(b.transdesc, '')
+					WHEN sbt.ProductID IN (27, 77) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS TransDesc,
 				-1 AS BetdaqId,
