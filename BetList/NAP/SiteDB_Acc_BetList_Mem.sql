@@ -40,6 +40,7 @@ AS
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
+		- 20230817@Razor: HF - Could not shown ticket YeeBet in SiteDB [Redmine: #192883]
 */
 
 BEGIN
@@ -473,7 +474,7 @@ BEGIN
 						WHEN s.ProductID = 73 THEN 'MGRNG'							-- MG-RNG
 						WHEN s.ProductID = 74 THEN 'TIP'							-- Player Tips
 						WHEN s.ProductID = 75 THEN 'JIG'							-- Jili
-						WHEN s.ProductID = 75 THEN 'YB'								-- YeeBet
+						WHEN s.ProductID = 76 THEN 'YB'								-- YeeBet
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
