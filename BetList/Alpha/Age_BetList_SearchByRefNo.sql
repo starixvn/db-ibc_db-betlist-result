@@ -4,7 +4,8 @@ ALTER PROCEDURE [dbo].[Age_BetList_SearchByRefNo]
 	@RefNo			BIGINT,
 	@UplineId		INT,
 	@RoleId			TINYINT,
-	@MoveBetsDay	SMALLDATETIME
+	@MoveBetsDay	SMALLDATETIME,
+	@BalanceUpDay	SMALLDATETIME
 AS
 
 /*
@@ -15,6 +16,7 @@ AS
 	Revisions:
 		- 20230726@Kos: Search By RefNo [Redmine: #189384]
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
+		- 20230825@Kos: Hotfix - Wrong result during Balance Up process [Redmine: #193193]
 */
 
 BEGIN
@@ -190,8 +192,9 @@ BEGIN
 			@WhTicket = 3		-- bettrans14
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-		WHERE b.transid = @RefNo
-			OR (b.refno = @RefNo AND s.RefTable = 3)
+		WHERE (b.transid = @RefNo
+				OR (b.refno = @RefNo AND s.RefTable = 3))
+			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 	END
 
 	-- Check belonging
@@ -1003,6 +1006,7 @@ BEGIN
 		FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
 		WHERE b.transid = @RefNo
+			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 	END
 
 	-- Check belonging
@@ -1254,6 +1258,7 @@ BEGIN
 		FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
 		WHERE b.transid = @RefNo
+			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 	END
 
 	-- Check belonging
@@ -1486,6 +1491,7 @@ BEGIN
 			LEFT JOIN dbo.bettransLC14 AS blc WITH (NOLOCK) ON blc.transid = b.refno AND blc.custid = b.custid AND s.ProductID = 39
 			LEFT JOIN dbo.bettrans14 AS bt WITH (NOLOCK) ON bt.transid = b.refno AND bt.custid = b.CustId AND s.ProductID = 47
 		WHERE b.transid = @RefNo
+			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 	END
 
 	-- Check belonging
