@@ -62,6 +62,7 @@ AS
 		- 20220825@Razor: Support SEAL Entertainment [Redmine: #176210]
 		- 20220909@Razor: Support Microgaming RNG Casino [Redmine: #175851]
 		- 20230206@Razor: Support Jili [Redmine: #182864]
+		- 20230830@Razor: Show LicTxId for MaxGame [Redmine: #193273]
 
 
 	Parameters:
@@ -239,9 +240,8 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34, 36, 66) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
-				ELSE ''
+				ELSE brng.Additional
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN brng.GameId3rd
@@ -307,9 +307,8 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34, 36, 66) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
-				ELSE ''
+				ELSE brng.Additional
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN brng.GameId3rd
@@ -374,9 +373,8 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (24, 32, 34, 36, 66) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
-				ELSE ''
+				ELSE brng.Additional
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN brng.GameId3rd

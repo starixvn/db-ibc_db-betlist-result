@@ -86,6 +86,7 @@ AS
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
+		- 20230830@Razor: Show LicTxId for MaxGame [Redmine: #193273]
 */
 
 BEGIN
@@ -582,9 +583,8 @@ BEGIN
 						0 AS BetId,
 						b.refno,
 						CASE
-							WHEN s.productID IN (24, 32, 34, 36, 66) THEN b.Additional
 							WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
-							ELSE ''
+							ELSE b.Additional
 						END AS MatchCode,
 						CASE
 							WHEN s.productID IN (60) THEN b.Transdate3rd
@@ -1025,9 +1025,8 @@ BEGIN
 						0 AS BetId,
 						b.refno,
 						CASE
-							WHEN s.productID IN (24, 32, 34, 36, 66) THEN b.Additional
 							WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
-							ELSE ''
+							ELSE b.Additional
 						END AS MatchCode,
 						CASE
 							WHEN s.productID IN (60) THEN b.Transdate3rd

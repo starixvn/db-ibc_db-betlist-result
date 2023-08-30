@@ -181,6 +181,7 @@ AS
 		- 20230417@Razor: Remove Betfrom column [Redmine: #126137]
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
+		- 20230830@Razor: Show LicTxId for MaxGame [Redmine: #193273]
 */
 
 BEGIN
@@ -4183,9 +4184,8 @@ BEGIN
 					0 AS BetID,
 					b.refno,
 					CASE
-						WHEN s.productID IN (24, 32, 34, 36, 66) THEN b.Additional
 						WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
-						ELSE ''
+						ELSE b.Additional
 					END AS MatchCode,
 					'' AS race,
 					CASE
@@ -4293,9 +4293,8 @@ BEGIN
 					0 AS BetID,
 					b.refno,
 					CASE
-						WHEN s.productID IN (24, 32, 34, 36, 66) THEN b.Additional
 						WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
-						ELSE ''
+						ELSE b.Additional
 					END AS MatchCode,
 					'' AS race,
 					CASE
@@ -4403,9 +4402,8 @@ BEGIN
 					0 AS BetID,
 					b.refno,
 					CASE
-						WHEN s.productID IN (24, 32, 34, 36, 66) THEN b.Additional
 						WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
-						ELSE ''
+						ELSE b.Additional
 					END AS MatchCode,
 					'' AS race,
 					CASE

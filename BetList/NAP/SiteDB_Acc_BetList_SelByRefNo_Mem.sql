@@ -1959,9 +1959,8 @@ BEGIN
 					0 AS BetID,
 					b.refno,
 					CASE
-						WHEN s.productID IN (24, 32, 34, 36, 66) THEN b.Additional
 						WHEN s.productID IN (42) THEN ISNULL(b.SiteID, '')
-						ELSE ''
+						ELSE b.Additional
 					END AS MatchCode,
 					'' AS race,
 					CASE
