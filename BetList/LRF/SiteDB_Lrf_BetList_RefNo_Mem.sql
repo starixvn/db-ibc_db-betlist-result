@@ -28,6 +28,7 @@ AS
 		- 20230415@Kos: Extend betfrom length [Redmine: #178059]
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
+		- 20230905@Kos: Support TxId for MaxGame [Redmine: 193273]
 */
 
 BEGIN
@@ -75,7 +76,7 @@ BEGIN
 		INSERT INTO @SportBettype
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 63, 66, 69, 74)
+		WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 60, 63, 66, 69, 74)
 			AND BetType NOT IN (901, 902, 903, 904, 999)
 			AND BetType NOT BETWEEN 801 AND 899
 	END
@@ -935,9 +936,8 @@ BEGIN
 				0 AS LeagueId,
 				0 AS MatchId,
 				CASE
-					WHEN @Product IN ('PP', 'CC', 'VGA') THEN Additional
 					WHEN @Product IN ('SBC') THEN ISNULL(SiteID, '')
-					ELSE ''
+					ELSE Additional
 				END AS MatchCode,
 				'' AS Race,
 				TransDate3rd AS EventDate,

@@ -18,6 +18,7 @@ AS
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221220@Kos: Remove inactive products FW [Redmine: 181424]
+		- 20230905@Kos: Support TxId for MaxGame [Redmine: 193273]
 
 	Parameters:
 		- @TransType
@@ -161,9 +162,8 @@ BEGIN
 			brng.transdesc,
 			brng.TranId3rd AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (32, 34, 66) THEN brng.Additional
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
-				ELSE ''
+				ELSE brng.Additional
 			END AS MatchCode,
 			brng.GameId3rd AS BetTeam,
 			CASE
