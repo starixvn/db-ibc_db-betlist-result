@@ -405,6 +405,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76) THEN blc.GameId3rd
+				ELSE ''
 			END AS MatchCode,
 			CASE
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')

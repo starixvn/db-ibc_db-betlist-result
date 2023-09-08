@@ -55,6 +55,8 @@ AS
 		- 20210301@Razor: Support Sports Lottery [Redmine: #147368]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
+		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
+		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 */
 
  BEGIN
@@ -73,7 +75,7 @@ AS
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID NOT IN (2, 4, 7, 9, 13, 17, 19, 26, 30, 31, 33)
+	WHERE ProductID NOT IN (2, 4, 7, 9, 12, 13, 15, 17, 19, 24, 26, 30, 31, 33, 59)
 		AND (ProductID <> 6 OR SubProduct <> '')
 
 	DECLARE @UserTicket TABLE (
@@ -90,27 +92,28 @@ AS
 		INSERT INTO @UserTicket
 		SELECT
 			custid,
-			bettype,
+			b.bettype,
 			matchid,
 			CASE
-				WHEN bettype = 29 THEN refno
+				WHEN b.bettype = 29 THEN refno
 				ELSE 0
 			END,
 			0 AS SoccerBet,
 			COUNT(1) AS TotalBet
-		FROM dbo.bettrans WITH (NOLOCK)
+		FROM dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
 		WHERE winlostdate = @FromDate
 			AND ip = @Ip
-			AND bettype < 19001
-			AND bettype NOT IN (903, 904, 913, 914)
-			AND (bettype NOT BETWEEN 801 AND 806
+			AND b.bettype < 19001
+			AND b.bettype NOT IN (903, 904, 913, 914)
+			AND (b.bettype NOT BETWEEN 801 AND 806
 				OR statusID NOT IN (0, 1))
 		GROUP BY
 			custid,
-			bettype,
+			b.bettype,
 			matchid,
 			CASE
-				WHEN bettype = 29 THEN refno
+				WHEN b.bettype = 29 THEN refno
 				ELSE 0
 			END
 
@@ -163,22 +166,23 @@ AS
 		INSERT INTO @UserTicket
 		SELECT
 			custid,
-			bettype,
+			b.bettype,
 			matchid,
 			CASE
-				WHEN bettype = 29 THEN refno
+				WHEN b.bettype = 29 THEN refno
 				ELSE 0
 			END,
 			0 AS SoccerBet,
 			COUNT(1) AS TotalBet
-		FROM dbo.bettrans14 WITH (NOLOCK)
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+		INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
 		WHERE winlostdate = @FromDate AND ip = @Ip
 		GROUP BY
 			custid,
-			bettype,
+			b.bettype,
 			matchid,
 			CASE
-				WHEN bettype = 29 THEN refno
+				WHEN b.bettype = 29 THEN refno
 				ELSE 0
 			END
 
@@ -219,23 +223,24 @@ AS
 		INSERT INTO @UserTicket
 		SELECT
 			custid,
-			bettype,
+			b.bettype,
 			matchid,
 			CASE
-				WHEN bettype IN (9, 29) THEN refno
+				WHEN b.bettype IN (9, 29) THEN refno
 				ELSE 0
 			END,
 			0 AS SoccerBet,
 			COUNT(1) AS TotalBet
-		FROM bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
+		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+		INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
 		CROSS APPLY dbo.f_IP_Decompress(ip) AS dp
 		WHERE winlostdate = @FromDate AND dp.Ip = @DeCompressedIp
 		GROUP BY
 			custid,
-			bettype,
+			b.bettype,
 			matchid,
 			CASE
-				WHEN bettype IN (9, 29) THEN refno
+				WHEN b.bettype IN (9, 29) THEN refno
 				ELSE 0
 			END
 
@@ -315,9 +320,4 @@ AS
 		c.username
 	ORDER BY c.username
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Acc_BetListbyIP_Username] TO [bodbAdminNet] AS [dbo]
 GO

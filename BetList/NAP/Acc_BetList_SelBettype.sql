@@ -30,6 +30,8 @@ AS
 		- 20191007@Kos: Move to DBACC [Redmine: #120379]
 		- 20220808@Kos: Scale out DBTRANS [Redmine: #175253]
 					- Add new input param @ExcludeBettrans BIT
+		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
+		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 */
 
 BEGIN
@@ -120,7 +122,7 @@ BEGIN
 	FROM @BetTypeTable AS b
 	WHERE EXISTS (SELECT 1 FROM dbo.SportBettypeMatrix WITH (NOLOCK)
 				WHERE BetType = b.BetType
-					AND ProductID IN (2, 4, 7, 9, 13, 17, 19, 26, 30, 31, 33))
+					AND ProductID IN (2, 4, 7, 9, 12, 13, 15, 17, 19, 24, 26, 30, 31, 33, 59))
 
 	SELECT
 		typeid,
