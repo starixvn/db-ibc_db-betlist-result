@@ -81,6 +81,7 @@ AS
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
+		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 */
 
 BEGIN
@@ -667,7 +668,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 12, 23, 27, 28, 38, 40, 47, 49, 63, 69, 77)	-- Only support these products
+			OR ProductID NOT IN (1, 3, 5, 8, 23, 27, 28, 38, 40, 47, 49, 63, 69, 77)	-- Only support these products
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -847,7 +848,6 @@ BEGIN
 				- Mix & System Parlay	: ProductId = 1
 				- Number Game			: ProductId = 3
 				- Keno					: ProductId = 8
-				- Gold Deluxe			: ProductId = 12
 				- NG2					: ProductId = 23
 				- Mix Parlay (VS2)		: ProductId = 27
 				- Lottery				: ProductId = 28
@@ -861,7 +861,6 @@ BEGIN
 				SET
 					SportType = CASE
 									WHEN b.ProductId = 8 THEN 202
-									WHEN b.ProductId = 12 THEN 255
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2501 AND 2539 THEN 213
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2541 AND 2579 THEN 214
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2581 AND 2619 THEN 215
@@ -888,7 +887,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 3, 8, 12, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
+								WHEN b.ProductId IN (1, 3, 8, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -908,10 +907,7 @@ BEGIN
 										ELSE 0
 									END,
 					LeagueId = 0,
-					MatchId = CASE
-									WHEN b.ProductId = 12 THEN 255
-									ELSE 0
-								END,
+					MatchId = 0,
 					MatchCode = '',
 					Race = '',
 					EventDate = b.WinLostDate,
@@ -922,7 +918,7 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 3, 12, 27, 38, 63) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 3, 27, 38, 63) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
@@ -947,7 +943,7 @@ BEGIN
 				FROM #PagingData AS b
 				WHERE b.WhTicket = 1
 					AND b.EventType = 0
-					AND b.ProductId NOT IN (15, 69)
+					AND b.ProductId NOT IN (69)
 
 				-- Virtual Sports (EventType = 3)
 				UPDATE b
@@ -1072,7 +1068,6 @@ BEGIN
 				- Mix & System Parlay	: ProductId = 1
 				- Number Game			: ProductId = 3
 				- Keno					: ProductId = 8
-				- Gold Deluxe			: ProductId = 12
 				- NG2					: ProductId = 23
 				- Mix Parlay			: ProductId = 27
 				- Lottery				: ProductId = 28
@@ -1086,7 +1081,6 @@ BEGIN
 				SET
 					SportType = CASE
 									WHEN b.ProductId = 8 THEN 202
-									WHEN b.ProductId = 12 THEN 255
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2501 AND 2539 THEN 213
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2541 AND 2579 THEN 214
 									WHEN b.ProductId = 23 AND b.bettype BETWEEN 2581 AND 2619 THEN 215
@@ -1113,7 +1107,7 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 3, 8, 12, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
+								WHEN b.ProductId IN (1, 3, 8, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -1133,10 +1127,7 @@ BEGIN
 										ELSE 0
 									END,
 					LeagueId = 0,
-					MatchId = CASE
-									WHEN b.ProductId = 12 THEN 255
-									ELSE 0
-								END,
+					MatchId = 0,
 					MatchCode = '',
 					Race = '',
 					EventDate = b.WinLostDate,
@@ -1147,7 +1138,7 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 3, 12, 27, 38, 63) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 3, 27, 38, 63) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
@@ -1172,7 +1163,7 @@ BEGIN
 				FROM #PagingData AS b
 				WHERE b.WhTicket = 2
 					AND b.EventType = 0
-					AND b.ProductId NOT IN (15, 69)
+					AND b.ProductId NOT IN (69)
 
 				-- Virtual Sports (EventType = 3)
 				UPDATE b
@@ -1242,30 +1233,6 @@ BEGIN
 										WHERE ProductID = 5 AND EventType = 3)
 			END
 
-			-- Gold Deluxe (bettrans)
-			IF EXISTS (SELECT 1 FROM #PagingData WHERE ProductId = 12 AND WhTicket = 1)
-			BEGIN
-				INSERT INTO @BetListDetail
-				SELECT
-					bg.refno,
-					bg.odds,
-					bg.stake,
-					bg.status,
-					bg.apositiontaking,
-					bg.mpositiontaking,
-					bg.spositiontaking,
-					bg.bettype,
-					bg.betteam,
-					bg.transdesc
-				FROM dbo.bettransg AS bg WITH (NOLOCK)
-					INNER JOIN #PagingData AS b ON bg.refno = b.transid
-				WHERE bg.custid = b.CustId
-					AND b.ProductID = 12
-					AND b.WhTicket = 1
-					AND bg.bettype IN (	SELECT DISTINCT bettype FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-										WHERE ProductID = 12)
-			END
-
 			-- Virtual Sports (bettype 1233) (bettrans14)
 			IF EXISTS (	SELECT 1 FROM #PagingData
 						WHERE ProductId = 5
@@ -1292,30 +1259,6 @@ BEGIN
 					AND b.WhTicket = 2
 					AND bm.bettype IN (	SELECT DISTINCT bettype FROM dbo.SportBettypeMatrix WITH (NOLOCK)
 										WHERE ProductID = 5 AND EventType = 3)
-			END
-
-			-- Gold Deluxe (bettrans)
-			IF EXISTS (SELECT 1 FROM #PagingData WHERE ProductId = 12 AND WhTicket = 2)
-			BEGIN
-				INSERT INTO @BetListDetail
-				SELECT
-					bg.refno,
-					bg.odds,
-					bg.stake,
-					bg.status,
-					bg.apositiontaking,
-					bg.mpositiontaking,
-					bg.spositiontaking,
-					bg.bettype,
-					bg.betteam,
-					bg.transdesc
-				FROM dbo.bettransg14 AS bg WITH (NOLOCK)
-					INNER JOIN #PagingData AS b ON bg.refno = b.transid
-				WHERE bg.custid = b.CustId
-					AND b.ProductID = 12
-					AND b.WhTicket = 2
-					AND bg.bettype IN (	SELECT DISTINCT bettype FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-										WHERE ProductID = 12)
 			END
 		END
 	END

@@ -152,6 +152,7 @@ AS
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
+		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 */
 
 BEGIN
@@ -556,6 +557,7 @@ BEGIN
 		DELETE @BetListSelRunningByDateMem
 		WHERE ProductID IS NULL
 			OR (ProductID IN (21, 39, 6, 22, 32, 34, 36, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76) AND TableID = 1)
+			OR ProductID IN (12)
 
 		IF (@hasData & 1 = 1) --got bettrans' data
 		BEGIN
@@ -819,11 +821,10 @@ BEGIN
 			WHERE b.TableID = 2 -- translog
 				AND b.SubProduct IN ('MG-SuperLive')
 
-			-- Keno, Gold Deluxe, Lottery, Virtual Games, Leap Gaming Virtual Sports 3 (translog)
+			-- Keno, Lottery, Virtual Games, Leap Gaming Virtual Sports 3 (translog)
 			UPDATE b
 			SET SportType = CASE
 								WHEN b.ProductID = 8 THEN 202
-								WHEN b.ProductID = 12 THEN 255
 								WHEN b.ProductID = 28 THEN 220
 								ELSE b.SportType
 							END
@@ -831,7 +832,7 @@ BEGIN
 				,MatchCode = ''
 				,Race = ''
 				,EventDate = ''
-				,MatchID = CASE WHEN b.ProductID = 12 THEN 255	ELSE 0 END
+				,MatchID = 0
 				,HomeID = 0
 				,AwayID = 0
 				,LiveIndicator = 0
@@ -839,7 +840,7 @@ BEGIN
 				,SettlementStatus = 0
 				,ShowTime = ''
 				,BetCheck = CASE
-								WHEN b.ProductID IN (3, 12, 38, 63) THEN b.Gameid3rd
+								WHEN b.ProductID IN (3, 38, 63) THEN b.Gameid3rd
 								WHEN b.ProductId = 8 THEN ISNULL(b.custom2, '')
 								WHEN b.ProductId = 49 THEN ISNULL(b.custom1, '')
 								ELSE '' 
@@ -852,7 +853,7 @@ BEGIN
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 2 -- translog
-				AND (b.ProductID IN (8, 12, 28, 38, 40, 49, 63)
+				AND (b.ProductID IN (8, 28, 38, 40, 49, 63)
 					OR (b.ProductID = 3 AND b.EventType = 0))
 		END -- got translog's data
 
@@ -948,29 +949,6 @@ BEGIN
 				AND b.EventType = 3
 				AND bm.bettype IN (	SELECT DISTINCT BetType FROM dbo.SportBettypeMatrix WITH (NOLOCK)
 									WHERE ProductID = 5 AND EventType = 3)
-		END
-
-		-- Gold Deluxe
-		IF EXISTS (SELECT 1 FROM @BetListSelRunningByDateMem WHERE ProductId = 12)
-		BEGIN
-			INSERT INTO @BetListDetail
-			SELECT
-				bg.refno,
-				bg.odds,
-				bg.stake,
-				bg.status,
-				bg.apositiontaking,
-				bg.mpositiontaking,
-				bg.spositiontaking,
-				bg.bettype,
-				bg.betteam,
-				bg.transdesc
-			FROM dbo.bettransg AS bg WITH (NOLOCK)
-				INNER JOIN @BetListSelRunningByDateMem AS b ON bg.refno = b.transid
-			WHERE bg.custid = @CustId
-				AND b.ProductID = 12
-				AND bg.bettype IN (	SELECT DISTINCT BetType FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-									WHERE ProductID = 12)
 		END
 	END -- got data
 

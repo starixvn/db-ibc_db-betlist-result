@@ -156,6 +156,7 @@ AS
 		- 20230710@Razor: Support Saba Tennis [Redmine: #190459]
 		- 20230727@Razor: Support LG Virtual Sports (New) [Redmine: #189205]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
+		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -329,7 +330,6 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 6 THEN 'OneRNG'	-- RNG Casino
 							WHEN s.EventType = 0 AND s.ProductID = 8 THEN 'Keno'
-							WHEN s.EventType = 0 AND s.ProductID = 12 THEN 'GD'		-- Gold Deluxe
 							WHEN s.EventType = 0 AND s.ProductID = 21 THEN 'AllBet'
 							WHEN s.EventType = 0 AND s.ProductID = 22 THEN 'VB'		-- Macau Games
 							WHEN s.EventType = 0 AND s.ProductID = 23 THEN 'NG2'
@@ -487,7 +487,6 @@ BEGIN
 									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 
 										'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB') THEN b.matchid
 									WHEN c.Product = 'Keno' THEN 202
-									WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe
 									WHEN c.Product = 'AllBet' THEN 211 -- AllBet
 									WHEN c.Product = 'VB' THEN 212 -- Macau Games
 									WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2501 AND 2539 THEN 213 -- NG2
@@ -525,7 +524,7 @@ BEGIN
 					,OddsId = b.oddsid
 					,Odds = CASE
 								WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'Allbet') AND x.Odds IS NOT NULL THEN x.Odds
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Parlay', 'OneRNG', 'PP', 'SG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT', 'BTC', 'LG') THEN b.Odds
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Parlay', 'OneRNG', 'PP', 'SG', 'Keno', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT', 'BTC', 'LG') THEN b.Odds
 								WHEN c.Product IN ('Outright') THEN b.odds
 								WHEN c.Product IN ('VR') THEN b.odds
 								ELSE 0 END
@@ -632,7 +631,6 @@ BEGIN
 									WHEN c.Product IN ('VR') THEN vr.LeagueID
 									ELSE 0 END
 					,MatchId = CASE
-									WHEN c.Product IN ('GD') THEN 255
 									WHEN c.Product IN ('NG2') THEN b.betdaqid
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.matchid
 									WHEN c.Product IN ('Outright') THEN o.orid
@@ -677,7 +675,7 @@ BEGIN
 									WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 									ELSE '' END
 					,BetCheck = CASE 
-									WHEN c.Product IN ('SB', 'Parlay', 'ParlayVS2', 'GD', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
+									WHEN c.Product IN ('SB', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
 									WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 									ELSE '' END
 					,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
@@ -749,20 +747,6 @@ BEGIN
 					INNER JOIN dbo.bettransm AS bm WITH(NOLOCK) ON c.Product IN ('VR') AND c.refno = bm.refno AND bm.custid = @custid
 				WHERE c.Product IN ('VR') -- virtual sports:: racing
 	
-				UNION ALL --Gold Deluxe
-				SELECT RefNo = bg.refno
-					,Odds = bg.odds
-					,Stake = bg.stake
-					,Status = bg.status
-					,APositionTaking = bg.apositiontaking
-					,MPositionTaking = bg.mpositiontaking
-					,SPositionTaking = bg.spositiontaking
-					,BetType = bg.bettype
-					,BetTeam = bg.betteam
-					,TransDesc = bg.transdesc
-				FROM @Tickets AS c
-					INNER JOIN dbo.bettransg AS bg WITH(NOLOCK) ON c.Product IN ('GD') AND c.transid = bg.refno AND bg.custid = @custid
-				WHERE c.Product IN ('GD') --Gold Deluxe
 			END
 		END
 	END
@@ -786,7 +770,6 @@ BEGIN
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 6 THEN 'OneRNG'	-- RNG Casino
 							WHEN s.EventType = 0 AND s.ProductID = 8 THEN 'Keno'
-							WHEN s.EventType = 0 AND s.ProductID = 12 THEN 'GD'		-- Gold Deluxe
 							WHEN s.EventType = 0 AND s.ProductID = 21 THEN 'AllBet'
 							WHEN s.EventType = 0 AND s.ProductID = 22 THEN 'VB'		-- Macau Games
 							WHEN s.EventType = 0 AND s.ProductID = 23 THEN 'NG2'
@@ -854,7 +837,6 @@ BEGIN
 								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 
 									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB') THEN b.matchid
 								WHEN c.Product = 'Keno' THEN 202
-								WHEN c.Product = 'GD' THEN 255 -- Gold Deluxe 
 								WHEN c.Product = 'AllBet' THEN 211 -- AllBet
 								WHEN c.Product = 'VB' THEN 212 -- Macau Games
 								WHEN c.Product = 'NG2' AND b.bettype BETWEEN 2501 AND 2539 THEN 213 -- NG2
@@ -889,7 +871,7 @@ BEGIN
 								ELSE 0 END
 				,OddsId = b.oddsid
 				,Odds = CASE 
-							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'SG', 'Keno', 'GD', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT', 'BTC', 'LG') THEN b.Odds
+							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'VS3', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'SG', 'Keno', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'H5LG', 'SLT', 'BTC', 'LG') THEN b.Odds
 							ELSE 0 END
 				,MOdds = CASE 
 							WHEN c.Product IN ('Parlay', 'ParlayVS2')  THEN b.modds 
@@ -957,7 +939,6 @@ BEGIN
 								WHEN c.Product IN ('VR') THEN vr.LeagueID
 								ELSE 0 END
 				,MatchId = CASE
-								WHEN c.Product IN ('GD') THEN 255
 								WHEN c.Product IN ('NG2') THEN b.betdaqid
 								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.matchid
 								WHEN c.Product IN ('Outright') THEN o.orid
@@ -1002,7 +983,7 @@ BEGIN
 								WHEN c.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 								ELSE '' END
 				,BetCheck = CASE 
-								WHEN c.Product IN ('SB', 'Parlay', 'ParlayVS2', 'GD', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
+								WHEN c.Product IN ('SB', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
 								ELSE '' END
 				,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
@@ -1069,20 +1050,6 @@ BEGIN
 				INNER JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON c.Product IN ('VR') AND c.refno = bm.refno AND bm.custid = @custid
 			WHERE c.Product IN ('VR') -- virtual sports:: racing
 	
-			UNION ALL --Gold Deluxe
-			SELECT RefNo = bg.refno
-				,Odds = bg.odds
-				,Stake = bg.stake
-				,Status = bg.status
-				,APositionTaking = bg.apositiontaking
-				,MPositionTaking = bg.mpositiontaking
-				,SPositionTaking = bg.spositiontaking
-				,BetType = bg.bettype
-				,BetTeam = bg.betteam
-				,TransDesc = bg.transdesc
-			FROM @Tickets AS c
-				INNER JOIN dbo.bettransg14 AS bg WITH (NOLOCK) ON c.Product IN ('GD') AND c.transid = bg.refno AND bg.custid = @custid
-			WHERE c.Product IN ('GD') --Gold Deluxe
 		END -- end: @@rowcount > 0
 	END -- end: bettrans14
 
