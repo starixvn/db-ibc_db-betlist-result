@@ -15,6 +15,7 @@ AS
 	Created: Kos@20180604
 	Task: Statement Service - Search By Licensee transaction ID
 	DB: DBACC.bodb02
+
 	Revisions:
 		- 20200529@Kos: Created [#Redmine: 80941]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
@@ -35,6 +36,7 @@ AS
 					- Return new JackpotInfo column
 		- 20231026@Kos: Support Virtual Sports 3 [Redmine: 190908]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20240109@Kos: Support Parlay Boost [RedmineID: #192238]
 */
 
 BEGIN
@@ -421,7 +423,7 @@ BEGIN
 				ELSE 0
 			END AS MOdds,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('SB', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			b.stake,
@@ -629,7 +631,7 @@ BEGIN
 				ELSE 0
 			END AS MOdds,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('SB', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			b.stake,
@@ -769,7 +771,7 @@ BEGIN
 				AwayId = m.awayid,
 				EventDate = m.GlobalShowTime
 			FROM @Data AS b
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
 			WHERE b.WhTicket = 3
 		END
 	END
@@ -820,7 +822,7 @@ BEGIN
 				ELSE 0
 			END AS MOdds,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('SB', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			b.stake,
@@ -961,9 +963,43 @@ BEGIN
 				AwayId = m.awayid,
 				EventDate = m.GlobalShowTime
 			FROM @Data AS b
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId
 			WHERE b.WhTicket = 4
 		END
+	END
+
+	-- Get final odds, boost rate for Mix Parlay tickets
+	IF EXISTS (SELECT 1 FROM @Data
+				WHERE BetType = 29
+					AND BetTeam = 1
+					AND WhTicket IN (2, 3))
+	BEGIN
+		UPDATE b
+		SET
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM @Data AS b
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29
+			AND b.BetTeam = 1
+			AND b.WhTicket IN (2, 3)
+	END
+
+	IF EXISTS (SELECT 1 FROM @Data
+				WHERE BetType = 29
+					AND BetTeam = 1
+					AND WhTicket = 4)
+	BEGIN
+		UPDATE b
+		SET
+			b.Odds = bpr.Odds,
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM @Data AS b
+			INNER JOIN bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29
+			AND b.BetTeam = 1
+			AND b.WhTicket = 4
 	END
 
 	-- Don't display Cash text for ticket from Cash Wallet only

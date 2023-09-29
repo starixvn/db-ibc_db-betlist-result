@@ -96,6 +96,7 @@ AS
 		- 20231227@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20231228@Kos: Support Saba Reward [Redmine: 196882]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20240109@Kos: Support Parlay Boost [RedmineID: #192238]
 */
 
 BEGIN
@@ -861,7 +862,7 @@ BEGIN
 			END AS MOdds,
 			CASE
 				WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-				WHEN @Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			CASE
@@ -1105,7 +1106,7 @@ BEGIN
 				ELSE 0
 			END AS MOdds,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			b.stake,
@@ -1315,7 +1316,7 @@ BEGIN
 				ELSE 0
 			END AS MOdds,
 			CASE
-				WHEN @Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			b.stake,
@@ -1510,6 +1511,40 @@ BEGIN
 					AND cb.winlostdate = @WinLostDate
 			WHERE b.BetType = 912
 		END
+	END
+
+	-- Get final odds, boost rate for Mix Parlay tickets
+	IF EXISTS (SELECT 1 FROM @Data
+				WHERE BetType = 29
+					AND BetTeam = 1
+					AND WhTicket IN (2, 3))
+	BEGIN
+		UPDATE b
+		SET
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM @Data AS b
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29
+			AND b.BetTeam = 1
+			AND b.WhTicket IN (2, 3)
+	END
+
+	IF EXISTS (SELECT 1 FROM @Data
+				WHERE BetType = 29
+					AND BetTeam = 1
+					AND WhTicket = 4)
+	BEGIN
+		UPDATE b
+		SET
+			b.Odds = bpr.Odds,
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM @Data AS b
+			INNER JOIN bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29
+			AND b.BetTeam = 1
+			AND b.WhTicket = 4
 	END
 
 	-- Don't display Cash text for ticket from Cash Wallet only

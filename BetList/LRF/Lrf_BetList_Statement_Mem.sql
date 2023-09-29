@@ -90,6 +90,7 @@ AS
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
+		- 20240229@Kos: Support Parlay Boost [RedmineID: #190465]
 */
 
 BEGIN
@@ -1192,7 +1193,7 @@ BEGIN
 									END,
 						OddsSpread = CASE
 										WHEN b.Product IN ('PP', 'SBC', 'VGA', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
+										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 										ELSE 0
 									END,
 						BetdaqId = CASE
@@ -1443,7 +1444,7 @@ BEGIN
 										ELSE ''
 									END,
 						OddsSpread = CASE
-										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
+										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 										ELSE 0
 									END,
 						BetdaqId = CASE
@@ -1647,7 +1648,7 @@ BEGIN
 										ELSE ''
 									END,
 						OddsSpread = CASE
-										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
+										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 										ELSE 0
 									END,
 						BetdaqId = CASE
@@ -1718,6 +1719,42 @@ BEGIN
 					FROM #PagingData AS c
 						INNER JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON c.RefNo = bm.refno
 					WHERE c.Product = 'VR' AND bm.custid = @CustId
+				END
+
+				-- Get final odds, boost rate for Mix Parlay tickets
+				IF EXISTS (SELECT 1 FROM #PagingData
+							WHERE BetType = 29
+								AND BetTeam = 1
+								AND TableID IN (1, 2))
+				BEGIN
+					-- Settled
+					UPDATE b
+					SET
+						b.Modds = bpr.mOdds,
+						b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+					FROM #PagingData AS b
+						INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+					WHERE b.BetType = 29
+						AND b.BetTeam = 1
+						AND b.TableID IN (1, 2)
+						AND b.Status NOT IN ('Running', 'Waiting')
+				END
+
+				IF EXISTS (SELECT 1 FROM #PagingData
+							WHERE BetType = 29
+								AND BetTeam = 1
+								AND TableID = 3)
+				BEGIN
+					UPDATE b
+					SET
+						b.Odds = bpr.Odds,
+						b.Modds = bpr.mOdds,
+						b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+					FROM #PagingData AS b
+						INNER JOIN bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+					WHERE b.BetType = 29
+						AND b.BetTeam = 1
+						AND b.TableID = 3
 				END
 			END
 		END

@@ -35,6 +35,7 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230404@Kos: Don't return betfrom anymore [Redmine: #178059]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
+		- 20240205@Kos: Support Parlay Boost [RedmineID: #192238]
 
 	Param's Explanation:
 		+ @LiveIndicator:
@@ -600,7 +601,7 @@ BEGIN
 								ELSE ''
 							END,
 				OddsSpread = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+								WHEN b.Product IN ('SB', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 								ELSE 0
 							END,
 				BetdaqId = CASE
@@ -635,6 +636,19 @@ BEGIN
 				LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
 				LEFT JOIN dbo.VSOutright_bk AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 				LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH(NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
+
+			-- Get final odds, boost rate for Mix Parlay tickets
+			IF EXISTS (SELECT 1 FROM #PagingData WHERE BetType = 29 AND BetTeam = 1)
+			BEGIN
+				UPDATE b
+				SET
+					b.Odds = bpr.Odds,
+					b.Modds = bpr.mOdds,
+					b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+				FROM #PagingData AS b
+					INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+				WHERE b.BetType = 29 AND b.BetTeam = 1
+			END
 		END
 	END
 

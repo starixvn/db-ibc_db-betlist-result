@@ -52,6 +52,7 @@ AS
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 					- Remove input params @ShowSB, @ShowVS2
 					- Add new input param @ProductList VARCHAR(500)
+		- 20240205@Kos: Support Parlay Boost [RedmineID: #192238]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -142,6 +143,7 @@ BEGIN
 		Hdp2			SMALLMONEY,
 		Odds			MONEY,
 		MOdds			MONEY,
+		OddsSpread		MONEY,
 		Status			NVARCHAR(50),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
@@ -158,6 +160,7 @@ BEGIN
 		Ip				VARCHAR(45),
 		Currency		SMALLINT,
 		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(1000),
 		ExtraInfo		VARCHAR(1000)
 	)
 
@@ -194,6 +197,7 @@ BEGIN
 			b.hdp2,
 			b.odds,
 			b.modds,
+			b.oddsspread,
 			b.status,
 			b.stake,
 			b.actual_stake,
@@ -210,6 +214,7 @@ BEGIN
 			b.ip,
 			b.currency,
 			ISNULL(b.betcheck, '') AS BetCheck,
+			'' AS TransDesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
@@ -245,6 +250,7 @@ BEGIN
 			b.hdp2,
 			b.odds,
 			b.modds,
+			b.oddsspread,
 			b.status,
 			b.stake,
 			b.actual_stake,
@@ -261,6 +267,7 @@ BEGIN
 			b.ip,
 			b.currency,
 			ISNULL(b.betcheck, '') AS BetCheck,
+			'' AS TransDesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
@@ -318,6 +325,7 @@ BEGIN
 		Hdp2			SMALLMONEY,
 		Odds			MONEY,
 		MOdds			MONEY,
+		OddsSpread		MONEY,
 		Status			NVARCHAR(50),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
@@ -334,6 +342,7 @@ BEGIN
 		Ip				VARCHAR(45),
 		Currency		SMALLINT,
 		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(1000),
 		ExtraInfo		VARCHAR(1000)
 	)
 
@@ -390,6 +399,18 @@ BEGIN
 	INSERT INTO #PagingData
 	EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
+	-- Get final odds, boost rate for Mix Parlay tickets
+	IF EXISTS (SELECT 1 FROM #PagingData WHERE BetType = 29 AND BetTeam = 1)
+	BEGIN
+		UPDATE b
+		SET
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM #PagingData AS b
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29 AND b.BetTeam = 1
+	END
+
 	DROP TABLE #AgWinlossMP
 
 	SELECT
@@ -405,6 +426,7 @@ BEGIN
 		b.Hdp2,
 		b.Odds,
 		b.MOdds,
+		b.OddsSpread,
 		b.Status,
 		b.Stake * ISNULL(e.Rate, 1) AS Stake,
 		b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
@@ -421,6 +443,7 @@ BEGIN
 		b.Ip,
 		b.Currency,
 		b.BetCheck,
+		b.TransDesc,
 		b.ExtraInfo
 	FROM #PagingData AS b
 		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid

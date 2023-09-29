@@ -26,6 +26,7 @@ AS
 					- Return new JackpotInfo column
 		- 20231026@Kos: Support Virtual Sports 3 [Redmine: 190908]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20240109@Kos: Support Parlay Boost [RedmineID: #192238]
 */
 
 BEGIN
@@ -303,7 +304,7 @@ BEGIN
 				ELSE 0
 			END AS MOdds,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('SB', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			b.stake,
@@ -449,6 +450,31 @@ BEGIN
 			LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON @Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON @Product IN ('VR') AND vr.EventID = vo.EventID
 		WHERE b.transid IN (@TransId, @BonusTransId)
+
+		-- Get match info for Player Tips
+		IF @Product = 'TIP'
+		BEGIN
+			UPDATE b
+			SET
+				LeagueId = m.leagueid,
+				HomeId = m.homeid,
+				AwayId = m.awayid,
+				EventDate = m.GlobalShowTime
+			FROM @Data AS b
+				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+		END
+
+		-- Get final odds, boost rate for Mix Parlay tickets
+		IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = 1)
+		BEGIN
+			UPDATE b
+			SET
+				b.Modds = bpr.mOdds,
+				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			FROM @Data AS b
+				INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+			WHERE b.BetType = 29 AND b.BetTeam = 1
+		END
 	END
 
 	-- Don't display Cash text for ticket from Cash Wallet only

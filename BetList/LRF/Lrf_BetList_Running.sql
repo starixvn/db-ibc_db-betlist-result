@@ -76,6 +76,7 @@ AS
 		- 20231227@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
+		- 20240205@Kos: Support Parlay Boost [RedmineID: #192238]
 */
 
 BEGIN
@@ -1060,7 +1061,7 @@ BEGIN
 						END,
 				OddsSpread = CASE
 								WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-								WHEN b.Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+								WHEN b.Product IN ('SB', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 								ELSE 0
 							END,
 				Stake = CASE

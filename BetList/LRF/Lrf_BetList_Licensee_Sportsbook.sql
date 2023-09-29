@@ -83,6 +83,7 @@ AS
 		- 20231225@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
 					- Add new input param @FullCustomerClass VARCHAR(MAX)
+		- 20240305@Kos: Support Parlay Boost [RedmineID: #192238]
 */
 
 BEGIN
@@ -2110,7 +2111,7 @@ BEGIN
 							ELSE 0
 						END,
 					OddsSpread = CASE
-							WHEN b.Product IN ('SB') THEN b.OddsSpread
+							WHEN b.Product IN ('SB', 'Parlay') THEN b.OddsSpread
 							ELSE 0
 						END,
 					SettlementStatus = CASE
@@ -2265,7 +2266,7 @@ BEGIN
 							ELSE 0
 						END,
 					OddsSpread = CASE
-							WHEN b.Product IN ('SB') THEN b.OddsSpread
+							WHEN b.Product IN ('SB', 'Parlay') THEN b.OddsSpread
 							ELSE 0
 						END,
 					SettlementStatus = 0,
@@ -2375,6 +2376,18 @@ BEGIN
 				WHERE b.WhTicket = 2
 			END
 
+			-- Get final odds for Mix Parlay and boost rate for Mix Parlay Boost Bonus
+			IF EXISTS (SELECT 1 FROM #PagingData WHERE BetType = 29 AND BetTeam = 1)
+			BEGIN
+				UPDATE b
+				SET
+					b.Modds = bpr.mOdds,
+					b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+				FROM #PagingData AS b
+					INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+				WHERE b.BetType = 29 AND b.BetTeam = 1
+			END
+
 			-- Return data
 			SELECT
 				c.username,
@@ -2482,7 +2495,7 @@ BEGIN
 							ELSE 0
 						END,
 					OddsSpread = CASE
-							WHEN b.Product IN ('SB') THEN b.OddsSpread
+							WHEN b.Product IN ('SB', 'Parlay') THEN b.OddsSpread
 							ELSE 0
 						END,
 					SettlementStatus = CASE
@@ -2637,7 +2650,7 @@ BEGIN
 							ELSE 0
 						END,
 					OddsSpread = CASE
-							WHEN b.Product IN ('SB') THEN b.OddsSpread
+							WHEN b.Product IN ('SB', 'Parlay') THEN b.OddsSpread
 							ELSE 0
 						END,
 					SettlementStatus = 0,
@@ -2745,6 +2758,18 @@ BEGIN
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND o.leagueid = l.leagueid
 				WHERE b.WhTicket = 2
+			END
+
+			-- Get final odds for Mix Parlay and boost rate for Mix Parlay Boost Bonus
+			IF EXISTS (SELECT 1 FROM #PagingData WHERE BetType = 29 AND BetTeam = 1)
+			BEGIN
+				UPDATE b
+				SET
+					b.Modds = bpr.mOdds,
+					b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+				FROM #PagingData AS b
+					INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+				WHERE b.BetType = 29 AND b.BetTeam = 1
 			END
 			
 			CREATE TABLE #Customer (

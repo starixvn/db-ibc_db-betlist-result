@@ -6,7 +6,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_SelCombinationParlayDetail]
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
 	@BaseCurrency	VARCHAR(12)	= '',
-	@Outstanding	MONEY		= 0 OUTPUT
+	@Outstanding	MONEY		= 0 OUTPUT,
+	@IsParlayBoost	BIT			= 0 OUTPUT
 AS
 
 /*
@@ -36,6 +37,9 @@ AS
 		- 20201123@Kos: Support God Of Fortune [Redmine: #145834]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20240109@Kos: Support Parlay Boost [RedmineID: #192238]
+					- Add output param @IsParlayBoost BIT
+					- Return additional columns Odds MONEY, ExtraValue MONEY
 */
 
 BEGIN
@@ -79,13 +83,16 @@ BEGIN
 	DECLARE @tmpBettrans AS TABLE (
 		TransId			BIGINT,
 		RefNo			BIGINT,
+		OddsSpread		MONEY,
+		BetTeam			NVARCHAR(10),
+		Status			NVARCHAR(10),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
 		ExtraInfo		VARCHAR(1000),
 		--for generating combination parlays if not in BetParlayResult
 		N				TINYINT,	-- Number of selection
-		Bitmap			INT	-- Combination Bitmap
+		Bitmap			INT			-- Combination Bitmap
 	)
 
 	DECLARE @parlay_base AS TABLE (
@@ -105,11 +112,13 @@ BEGIN
 		Serial		BIGINT,
 		StatusId	TINYINT,
 		Status		VARCHAR(20),
-		Modds		MONEY,
+		Odds		MONEY,
+		MOdds		MONEY,
 		Stake		MONEY,
 		WinLost		MONEY,
 		Comm		MONEY,
-		PlayerComm	MONEY
+		PlayerComm	MONEY,
+		ExtraValue	MONEY
 	)
 
 	DECLARE @betParlayDetail TABLE (
@@ -191,6 +200,9 @@ BEGIN
 		SELECT
 			transid,
 			refno,
+			oddsspread,
+			betteam,
+			status,
 			stake,
 			actual_stake,
 			winlost,
@@ -208,28 +220,34 @@ BEGIN
 			AND refno = @RefNo
 			AND matchid = 29
 			AND bettype = 29
-			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
 	
 		INSERT INTO @tmpResults (
 			WinLostDate,
 			Serial,
-			Modds,
+			Odds,
+			MOdds,
 			Stake,
 			WinLost,
 			StatusId,
 			Comm,
-			PlayerComm)
+			PlayerComm,
+			ExtraValue )
 		SELECT
-			b.winlostdate,
-			b.serial,
-			b.modds,
-			b.stake,
-			b.winlost,
-			b.statusid,
-			b.comm,
-			CASE WHEN b.statusid IN (112, 113) THEN b.playercomm ELSE 0 END AS playercomm
+			winlostdate,
+			serial,
+			Odds,
+			mOdds,
+			stake,
+			winlost,
+			statusid,
+			comm,
+			CASE
+				WHEN statusid IN (112, 113) THEN playercomm
+				ELSE 0
+			END AS PlayerComm,
+			ExtraValue
 		FROM bodb_Archive.dbo.BetParlayResult AS b WITH (NOLOCK)
-		WHERE refno = @RefNo
+		WHERE RefNo = @RefNo
 	END
 
 	IF @minMatchdate <= @MoveBetsDay	--- bettrans14 range
@@ -238,6 +256,9 @@ BEGIN
 		SELECT
 			transid,
 			refno,
+			oddsspread,
+			betteam,
+			status,
 			stake,
 			actual_stake,
 			winlost,
@@ -264,6 +285,9 @@ BEGIN
 		SELECT
 			transid,
 			refno,
+			oddsspread,
+			betteam,
+			status,
 			stake,
 			actual_stake,
 			winlost,
@@ -287,23 +311,31 @@ BEGIN
 	INSERT INTO @tmpResults (
 		WinLostDate,
 		Serial,
-		Modds,
+		Odds,
+		MOdds,
 		Stake,
 		WinLost,
 		StatusId,
 		Comm,
-		PlayerComm)
+		PlayerComm,
+		ExtraValue)
 	SELECT
-		b.winlostdate,
-		b.Serial,
-		b.mOdds,
-		b.stake,
-		b.winlost,
-		b.statusid,
-		b.comm,
-		CASE WHEN b.statusid IN (112, 113) THEN b.playercomm ELSE 0 END AS playercomm
+		winlostdate,
+		Serial,
+		Odds,
+		mOdds,
+		stake,
+		winlost,
+		statusid,
+		comm,
+		CASE
+			WHEN statusid IN (112, 113) THEN b.playercomm
+			ELSE 0
+		END AS PlayerComm,
+		ExtraValue
 	FROM dbo.BetParlayResult AS b WITH (NOLOCK)
-	WHERE refno = @RefNo AND serial NOT IN (SELECT serial FROM @tmpResults)
+	WHERE RefNo = @RefNo
+		AND Serial NOT IN (SELECT Serial FROM @tmpResults)
 
 	-- Generate betparlay detail
 	IF @minMatchdate < @BalanceUpday
@@ -348,7 +380,7 @@ BEGIN
 			serial,
 			matchid
 		FROM dbo.BetParlayDetail WITH (NOLOCK)
-		WHERE refno = @RefNo
+		WHERE RefNo = @RefNo
 	END
 
 	-- Get homeid, awayid
@@ -442,7 +474,8 @@ BEGIN
 
 	DECLARE @Actual_Stake	MONEY,
 		@WinLost			MONEY,
-		@Discount			MONEY
+		@Discount			MONEY,
+		@OriginalOdds		MONEY
 
 	SELECT
 		@Actual_Stake = Actual_Stake,
@@ -451,7 +484,18 @@ BEGIN
 						WHEN ExtraInfo LIKE '%p1%' THEN
 							ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@d)[1]','MONEY'), 0)
 						ELSE 0
-					END
+					END,
+		@IsParlayBoost = CASE
+							WHEN BetTeam = '1'
+								AND OddsSpread = 2
+								AND Status = 'Won'
+								AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bba)[1]','MONEY'), 0) > 0 THEN 1
+							ELSE 0
+						END,
+		@OriginalOdds = CASE
+							WHEN BetTeam = '1' THEN ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@o)[1]','MONEY'), 0)
+							ELSE 0
+						END
 	FROM @tmpBettrans
 
 	-- Return combo detail
@@ -468,14 +512,19 @@ BEGIN
 			WHEN 113 THEN 'LOSE'
 			ELSE ''
 		END AS Status,
-		b.Modds,
+		CASE
+			WHEN @OriginalOdds <> 0 THEN @OriginalOdds
+			ELSE b.Odds
+		END AS Odds,
+		b.MOdds,
 		b.Stake * ISNULL(e.Rate, 1) AS Stake,
 		CASE
 			WHEN @Discount > 0 THEN @WinLost - @Actual_Stake
 			ELSE b.WinLost - b.Stake
 		END * ISNULL(e.Rate, 1) AS WinLost,
 		b.Comm * ISNULL(e.Rate, 1) AS Comm,
-		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm
+		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		b.ExtraValue
 	FROM @tmpResults AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	WHERE b.StatusId NOT IN (0, 1)

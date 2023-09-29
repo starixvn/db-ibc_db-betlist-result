@@ -27,6 +27,7 @@ AS
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20240205@Kos: Support Parlay Boost [RedmineID: #192238]
 */
 
 BEGIN
@@ -778,7 +779,7 @@ BEGIN
 								ELSE ''
 							END,
 				OddsSpread = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+								WHEN b.Product IN ('SB', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 								ELSE 0
 							END,
 				BetdaqId = CASE
