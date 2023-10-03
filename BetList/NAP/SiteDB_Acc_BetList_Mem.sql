@@ -45,6 +45,7 @@ AS
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231005@Kos: Support Parlay Boost [Redmine: #194992]
+		- 20231020@Razor: Support show max payout [Redmine: #194491]
 */
 
 BEGIN
@@ -1007,10 +1008,7 @@ BEGIN
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
 								END,
-					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'NPHP', 'VS3', 'VR', 'NG', 'Keno', 'Lottery', 'VS', 'VS2', 'ParlayVS2', 'TG', 'H5LG', 'SLT', 'BTC', 'TIP', 'LG') THEN ISNULL(b.ExtraInfo, '')
-									ELSE ''
-								END,
+					ExtraInfo = ISNULL(b.ExtraInfo, ''),
 					WalletType = CASE
 									WHEN b.Product IN ('SB') THEN ISNULL(b.WalletType, 0)
 									ELSE 0
@@ -1132,10 +1130,7 @@ BEGIN
 								END,
 					OddsSpread = 0,
 					BetdaqId = -1,
-					ExtraInfo = CASE
-									WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b.ExtraInfo, '')
-									ELSE ''
-								END
+					ExtraInfo = ISNULL(b.ExtraInfo, '')
 				FROM @Data AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.BetType BETWEEN 801 AND 806 AND b.eventid = m.matchid
 				WHERE TableID = 4

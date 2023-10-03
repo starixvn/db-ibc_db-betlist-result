@@ -14,6 +14,7 @@ AS
 	DB: DBSIG.bodb02
 	Revisions:
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
+		- 20230927@Razor: Support show max payout [Redmine: #194491]
 */
 
 BEGIN
@@ -63,7 +64,8 @@ BEGIN
 		Ip				VARCHAR(45),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
-		BetdaqId		BIGINT
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	-- Get ticket
@@ -102,7 +104,8 @@ BEGIN
 			b.ip,
 			b.TranId3rd AS BetCheck,
 			b.transdesc,
-			ISNULL(b.RefNo2, -1) AS BetdaqId
+			ISNULL(b.RefNo2, -1) AS BetdaqId,
+			b.ExtraInfo
 		FROM dbo.bettransRnG AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
 		WHERE b.custid = @CustId AND b.transid = @TransId

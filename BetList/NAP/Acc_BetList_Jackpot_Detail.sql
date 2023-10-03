@@ -24,6 +24,7 @@ AS
 		- 20220124@Razor: Support SG Jackpot [Redmine: #166683]
 		- 20220808@Kos: Scale out DBTRANS [Redmine: #175253]
 					- Add new input param @ExcludeBettrans BIT
+		- 20230927@Razor: Support show max payout [Redmine: #194491]
 */
 
 BEGIN
@@ -73,7 +74,8 @@ BEGIN
 		Ip				VARCHAR(45),
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(300),
-		BetdaqId		BIGINT
+		BetdaqId		BIGINT,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	-- Get ticket
@@ -113,7 +115,8 @@ BEGIN
 			b.ip,
 			b.TranId3rd AS BetCheck,
 			b.transdesc,
-			ISNULL(b.RefNo2, -1) AS BetdaqId
+			ISNULL(b.RefNo2, -1) AS BetdaqId,
+			b.ExtraInfo
 		FROM dbo.bettransRnG AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
 		WHERE b.custid = @CustId AND b.transid = @TransId
@@ -153,7 +156,8 @@ BEGIN
 			b.ip,
 			b.TranId3rd AS BetCheck,
 			b.transdesc,
-			ISNULL(b.RefNo2, -1) AS BetdaqId
+			ISNULL(b.RefNo2, -1) AS BetdaqId,
+			b.ExtraInfo
 		FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
 		WHERE b.custid = @CustId AND b.transid = @TransId
@@ -193,7 +197,8 @@ BEGIN
 			dp.IP,
 			b.TranId3rd AS BetCheck,
 			b.transdesc,
-			ISNULL(b.RefNo2, -1) AS BetdaqId
+			ISNULL(b.RefNo2, -1) AS BetdaqId,
+			b.ExtraInfo
 		FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
 			CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype

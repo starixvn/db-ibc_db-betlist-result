@@ -21,6 +21,9 @@ AS
 		- 20230206@Razor: Support Jili [Redmine: #182864]
 		- 20230830@Razor: Show LicTxId for MaxGame [Redmine: #193273]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
+		- 20230927@Razor: Support show max payout [Redmine: #194491]
+					- Return new JackpotInfo column
+					- Return ExtraInfo for show Max Payout
 
 	Parameters:
 		- @TransType
@@ -122,6 +125,7 @@ BEGIN
 		OddsSpread		MONEY,
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
+		JackpotInfo		VARCHAR(50),
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(7)
 	)
@@ -194,10 +198,11 @@ BEGIN
 				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
+			brng.ExtraInfo,
 			CASE
 				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
-			END AS ExtraInfo,
+			END AS JackpotInfo,
 			brng.currency,
 			brng.SiteId
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)

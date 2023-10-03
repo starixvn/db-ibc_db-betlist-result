@@ -24,6 +24,7 @@ AS
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231005@Kos: Support Parlay Boost [Redmine: #194992]
+		- 20231020@Razor: Support show max payout [Redmine: #194491]
 
 	Param's Explanation:
 		+ @TransType:
@@ -244,10 +245,7 @@ BEGIN
 					WHEN s.ProductID = 1 THEN ISNULL(b.betdaqid, -1)
 					ELSE -1
 				END AS BetdaqId,
-				CASE
-					WHEN s.ProductID IN (1, 3, 5, 27, 77) THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				CASE
 					WHEN s.ProductID = 1 THEN ISNULL(b.WalletType, 0)
 					ELSE 0
@@ -338,10 +336,7 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				CASE
-					WHEN b.bettype = 29 THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode,
 				0 AS CurrencyId,
@@ -504,10 +499,7 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				CASE
-					WHEN s.ProductID IN (5) THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode,
 				0 AS CurrencyId,
@@ -639,10 +631,7 @@ BEGIN
 				END AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				CASE
-					WHEN s.ProductID IN (3, 8, 37, 40, 49, 63, 74) THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode,
 				CASE
@@ -847,10 +836,7 @@ BEGIN
 					WHEN s.ProductID = 1 THEN ISNULL(b.betdaqid, -1)
 					ELSE -1
 				END AS BetdaqId,
-				CASE
-					WHEN s.ProductID IN (1, 3, 5, 27, 77) THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-			END AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN s.ProductID = 1 THEN ISNULL(b.WalletType, 0)
 				ELSE 0
@@ -1042,10 +1028,7 @@ BEGIN
 				ISNULL(b.oddsspread, 0) AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				CASE
-					WHEN b.bettype = 29 THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode,
 				0 AS CurrencyId,
@@ -1208,10 +1191,7 @@ BEGIN
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
-				CASE
-					WHEN s.ProductID IN (5) THEN ISNULL(b.ExtraInfo, '')
-					ELSE ''
-				END AS ExtraInfo,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 				0 AS WalletType,
 				0 AS RefCode,
 				0 AS CurrencyId,
@@ -1530,10 +1510,7 @@ BEGIN
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
-					CASE
-						WHEN s.ProductID IN (3, 8, 40, 37, 49, 63, 74) THEN ISNULL(b.ExtraInfo, '')
-						ELSE ''
-					END AS ExtraInfo,
+					ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 					0 AS WalletType,
 					0 AS RefCode,
 					CASE

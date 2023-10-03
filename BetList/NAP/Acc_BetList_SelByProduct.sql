@@ -90,6 +90,9 @@ AS
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231016@Razor: HF for not show product Virtual Games, Sports Lottery [Redmine: #195487]
+		- 20231017@Razor: Support show max payout [Redmine: #194491]
+					- Return new JackpotInfo column
+					- Return ExtraInfo for show Max Payout
 */
 
 BEGIN
@@ -160,6 +163,7 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		OddsSpread		SMALLMONEY,
 		ExtraInfo		VARCHAR(1000),
+		JackpotInfo		VARCHAR(50),
 		BetdaqId		BIGINT,
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(7)
@@ -282,6 +286,7 @@ BEGIN
 						END AS TransDesc,
 						0 AS OddsSpread,
 						'' AS ExtraInfo,
+						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
 						b.SiteId
@@ -341,10 +346,8 @@ BEGIN
 						b.betcheck,
 						ISNULL(b.transdesc, '') AS TransDesc,
 						0 AS OddsSpread,
-						CASE
-							WHEN s.ProductID IN (63) THEN ISNULL(b.ExtraInfo, '')
-							ELSE '' 
-						END AS ExtraInfo,
+						b.ExtraInfo,
+						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
 						b.betdaqid AS SiteId
@@ -481,7 +484,11 @@ BEGIN
 						END AS BetCheck,
 						b.transdesc,
 						0 AS OddsSpread,
-						'' AS ExtraInfo,
+						CASE
+							WHEN s.ProductID IN (39) THEN bg.ExtraInfo
+							ELSE b.ExtraInfo
+						END AS ExtraInfo,
+						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
 						b.SiteId
@@ -567,10 +574,11 @@ BEGIN
 							WHEN s.ProductID IN (32, 36, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 							ELSE 0
 						END AS OddsSpread,
+						b.ExtraInfo,
 						CASE
 							WHEN s.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.JackpotInfo, '')
 							ELSE ''
-						END AS ExtraInfo,
+						END AS JackpotInfo,
 						CASE
 							WHEN s.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.RefNo2, -1)
 							ELSE -1
@@ -637,6 +645,7 @@ BEGIN
 						bg.transdesc,
 						0 AS OddsSpread,
 						'' AS ExtraInfo,
+						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
 						bg.SiteId
@@ -713,10 +722,8 @@ BEGIN
 						b.betcheck,
 						ISNULL(b.transdesc, '') AS TransDesc,
 						0 AS OddsSpread,
-						CASE
-							WHEN s.ProductID IN (63) THEN ISNULL(b.ExtraInfo, '')
-							ELSE '' 
-						END AS ExtraInfo,
+						b.ExtraInfo,
+						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
 						b.betdaqid AS SiteId
@@ -855,7 +862,11 @@ BEGIN
 						END AS BetCheck,
 						b.transdesc,
 						0 AS OddsSpread,
-						'' AS ExtraInfo,
+						CASE
+							WHEN s.ProductID IN (39) THEN bg.ExtraInfo
+							ELSE b.ExtraInfo
+						END AS ExtraInfo,
+						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
 						b.SiteId
@@ -941,10 +952,11 @@ BEGIN
 							WHEN s.ProductID IN (32, 36, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 							ELSE 0
 						END AS OddsSpread,
+						b.ExtraInfo,
 						CASE
 							WHEN s.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.JackpotInfo, '')
 							ELSE ''
-						END AS ExtraInfo,
+						END AS JackpotInfo,
 						CASE
 							WHEN s.ProductID IN (32, 36, 42, 66) THEN ISNULL(b.RefNo2, -1)
 							ELSE -1
@@ -1011,6 +1023,7 @@ BEGIN
 						bg.transdesc,
 						0 AS OddsSpread,
 						'' AS ExtraInfo,
+						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
 						bg.SiteId

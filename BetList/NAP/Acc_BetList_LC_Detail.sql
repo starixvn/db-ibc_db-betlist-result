@@ -44,6 +44,7 @@ AS
 					- Add new input param @ExcludeBettrans BIT
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
+		- 20230927@Razor: Support show max payout [Redmine: #194491]
 
 	Parameters:
 		- @TransType
@@ -142,7 +143,8 @@ BEGIN
 		LeagueId		INT,
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(7),
-		EventDate		DATETIME
+		EventDate		DATETIME,
+		ExtraInfo		VARCHAR(1000)
 	)
 
 	-- Get currency name
@@ -293,7 +295,11 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
 				ELSE ''
-			END AS EventDate
+			END AS EventDate,
+			CASE
+				WHEN sbt.ProductID IN (39) THEN bg.ExtraInfo
+				ELSE blc.ExtraInfo
+			END
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
@@ -417,7 +423,11 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
 				ELSE ''
-			END AS EventDate
+			END AS EventDate,
+			CASE
+				WHEN sbt.ProductID IN (39) THEN bg.ExtraInfo
+				ELSE blc.ExtraInfo
+			END
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
@@ -540,7 +550,11 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
 				ELSE ''
-			END AS EventDate
+			END AS EventDate,
+			CASE
+				WHEN sbt.ProductID IN (39) THEN bg.ExtraInfo
+				ELSE blc.ExtraInfo
+			END
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			CROSS APPLY dbo.f_IP_Decompress(blc.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
