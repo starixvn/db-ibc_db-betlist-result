@@ -29,6 +29,7 @@ AS
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
+		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 
 	Parameter's Explanation:
 		- @CustId: agent ID
@@ -65,7 +66,25 @@ BEGIN
 		b.liveindicator,
 		b.hdp1,
 		b.hdp2,
-		b.odds,
+		CASE
+			WHEN b.bettype = 29 AND b.betteam = '1'
+				THEN (SELECT CASE
+								WHEN COUNT(1) = b.hdp2 THEN dbo.PRODUCT(odds)
+								ELSE 0
+							END
+						FROM dbo.bettransm WITH (NOLOCK)
+						WHERE refno = b.refno )
+			ELSE b.odds
+		END AS Odds,
+		CASE
+			WHEN b.bettype = 29 AND b.betteam = '1' AND b.oddsspread = 2
+				THEN (	SELECT dbo.PRODUCT(odds) * (ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0) + 1) 
+							- ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0)
+						FROM dbo.bettransm WITH (NOLOCK)
+						WHERE refno = b.refno
+						GROUP BY refno)
+			ELSE b.modds
+		END AS MOdds,
 		b.stake,
 		b.actual_stake,
 		CASE

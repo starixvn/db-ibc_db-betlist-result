@@ -18,7 +18,6 @@ AS
 	Created: 20090122@[creator]
 	Task: [description of SP]
 	DB: DBAGE.bodb02
-	Original: BetsSelMWinLoss
 
 	Revisions:
 		- 20070205@[Thien]: Always get data from bettrans and bettrans14
@@ -157,7 +156,8 @@ AS
 		- 20230727@Razor: Support LG Virtual Sports (New) [Redmine: #189205]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
-		
+		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
+
 	Param's Explanation:
 		@ProductDetails:
 			<ROOT>
@@ -685,7 +685,7 @@ BEGIN
 									ELSE '' END
 					,OddsSpread = CASE
 									WHEN c.Product IN ('OneRNG', 'PP', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-									WHEN c.Product IN ('SB', 'OneRNG', 'PP', 'SG') THEN ISNULL(b.oddsspread, 0)
+									WHEN c.Product IN ('SB', 'OneRNG', 'PP', 'SG', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0 END
 					,BetdaqId = CASE
 									WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
@@ -992,7 +992,7 @@ BEGIN
 								WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG', 'LG') THEN ISNULL(b.transdesc, '')
 								ELSE '' END
 				,OddsSpread = CASE
-								WHEN c.Product IN ('SB', 'OneRNG', 'PP', 'SG') THEN ISNULL(b.oddsspread, 0)
+								WHEN c.Product IN ('SB', 'OneRNG', 'PP', 'SG', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 								ELSE 0 END
 				,BetdaqId = CASE
 								WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
@@ -1058,12 +1058,13 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
-			ProductId	TINYINT,
-			SportType	SMALLINT,
-			BetType		SMALLINT,
+			ProductId		TINYINT,
+			SportType		SMALLINT,
+			BetType			SMALLINT,
 			LeagueGroupID	SMALLINT,
 			TicketType		TINYINT
 		)
+
 		IF ISNULL(@ProductDetails, '') <> ''
 		BEGIN
 			DECLARE @DocHandler INT
@@ -1191,6 +1192,19 @@ BEGIN
 							WHERE ProductId = 73 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 73 AND BetType = b.BetType)
+	END
+
+	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE BetType = 29 AND BetTeam = '1')
+	BEGIN
+		UPDATE b
+		SET
+			b.Odds = bpr.Odds,
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM #MemBetTicket AS b
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29 AND b.BetTeam = '1'
 	END
 
 	DECLARE @OriginalMaxTotalRow INT

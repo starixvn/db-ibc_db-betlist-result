@@ -16,7 +16,6 @@ AS
 /*
 	Task:
 	DB: DBAGE.bodb02
-	Original: BetsSelBetListDeleted
 
 	Revisions:
 		- 20060222@[]: Remove refno
@@ -82,6 +81,7 @@ AS
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
+		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 */
 
 BEGIN
@@ -927,7 +927,10 @@ BEGIN
 									WHEN b.ProductId IN (3, 8, 23, 28, 38, 40, 49, 63) THEN b.transdesc
 									ELSE ''
 								END,
-					OddsSpread = 0,
+					OddsSpread = CASE
+									WHEN b.ProductId = 1 THEN ISNULL(b.oddsspread, 0)
+									ELSE 0
+								END,
 					ExtraInfo = CASE
 									WHEN b.ProductId IN (1, 49) THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
@@ -1147,7 +1150,10 @@ BEGIN
 									WHEN b.ProductId IN (3, 8, 23, 28, 38, 40, 49, 63) THEN b.transdesc
 									ELSE ''
 								END,
-					OddsSpread = 0,
+					OddsSpread = CASE
+									WHEN b.ProductId = 1 THEN ISNULL(b.oddsspread, 0)
+									ELSE 0
+								END,
 					ExtraInfo = CASE
 									WHEN b.ProductId IN (1, 49) THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
@@ -1202,6 +1208,42 @@ BEGIN
 					INNER JOIN dbo.match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
 				WHERE b.ProductID = 69
 					AND b.WhTicket = 2
+			END
+
+			-- Get original odds for Mix Parlay
+			IF EXISTS (SELECT 1 FROM #PagingData WHERE BetType = 29 AND BetTeam = '1')
+			BEGIN
+				DECLARE @TmpParlayData TABLE (
+					RefNo	BIGINT,
+					Odds	MONEY)
+
+				-- Mix Parlay which having at least 1 settled sub ticket
+				INSERT INTO @TmpParlayData
+				SELECT
+					b.RefNo,
+					dbo.PRODUCT(bpd.odds) AS Odds
+				FROM #PagingData AS b
+					INNER JOIN dbo.BetParlayDetail AS bpd WITH (NOLOCK) ON bpd.RefNo = b.RefNo
+				WHERE b.BetType = 29 AND b.BetTeam = '1'
+				GROUP BY b.refno
+
+				-- Mix Parlay which having no settled sub ticket
+				INSERT INTO @TmpParlayData
+				SELECT
+					b.RefNo,
+					dbo.PRODUCT(bm.odds) AS Odds
+				FROM #PagingData AS b
+					INNER JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.RefNo
+				WHERE b.BetType = 29
+					AND b.BetTeam = '1'
+					AND NOT EXISTS (SELECT 1 FROM @TmpParlayData WHERE RefNo = b.RefNo)
+				GROUP BY b.refno
+
+				UPDATE b
+				SET b.Odds = td.Odds
+				FROM #PagingData AS b
+					INNER JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
+				WHERE b.BetType = 29 AND b.BetTeam = '1'
 			END
 
 			-- Get sub tickets

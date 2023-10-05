@@ -18,6 +18,7 @@ AS
 	DB: DBBOF.bodb02
 	Revision:
 		- 20230706@Kos: Last Bets [Redmine: #186142]
+		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 
 	Parameter's Explanation:
 		- @CustId: agent CustId
@@ -86,9 +87,27 @@ BEGIN
 		b.betid,
 		b.betteam,
 		b.hdp1,
-		b.Hdp2,
+		b.hdp2,
 		b.oddstype,
-		b.odds,
+		CASE
+			WHEN b.bettype = 29 AND b.betteam = '1'
+				THEN (SELECT CASE
+								WHEN COUNT(1) = b.hdp2 THEN dbo.PRODUCT(odds)
+								ELSE 0
+							END
+						FROM dbo.bettransm WITH (NOLOCK)
+						WHERE refno = b.refno )
+			ELSE b.odds
+		END AS Odds,
+		CASE
+			WHEN b.bettype = 29 AND b.betteam = '1' AND b.oddsspread = 2
+				THEN (	SELECT dbo.PRODUCT(odds) * (ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0) + 1) 
+							- ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0)
+						FROM dbo.bettransm WITH (NOLOCK)
+						WHERE refno = b.refno
+						GROUP BY refno)
+			ELSE b.modds
+		END AS MOdds,
 		b.oddsspread,
 		b.stake,
 		b.actual_stake,

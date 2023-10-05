@@ -12,7 +12,7 @@ AS
 	Created:
 	Task: Bet List
 	DB: DBAGE.bodb02
-	Original BetsSelBetListEnglishAgent2
+
 	Revisions:
 		- 20080707@Viet: Remove Teamname, Leaguename, Sportname, TypeName
 		- 20081106@Johnny: Get more result(Sporttype: Horseracing) for betlist
@@ -136,6 +136,7 @@ AS
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
+		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 */
 
 BEGIN
@@ -676,7 +677,7 @@ BEGIN
 							WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG', 'LG') THEN ISNULL(b.transdesc, '')
 							ELSE '' END
 			,OddsSpread = CASE
-							WHEN c.Product IN ('SB', 'OneRNG', 'PP', 'SG') THEN ISNULL(b.oddsspread, 0)
+							WHEN c.Product IN ('SB', 'OneRNG', 'PP', 'SG', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 							ELSE 0 END
 			,BetdaqId = CASE
 							WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
@@ -704,6 +705,77 @@ BEGIN
 			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 		WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB')
 			OR c.WinLostDate < @Yesterday
+
+		-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+		IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE BetType = 29 AND BetTeam = '1')
+		BEGIN
+			-- Running/Waiting
+			DECLARE @TmpData TABLE (
+				RefNo		BIGINT,
+				BoostRate	MONEY)
+
+			INSERT INTO @TmpData
+			SELECT
+				b.refno,
+				CASE
+					WHEN b.bettype = 29 AND b.betteam = 1 AND b.oddsspread = 2 THEN
+						ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0)
+					ELSE 0
+				END AS BoostRate
+			FROM #MemBetTicket AS b
+			WHERE b.BetType = 29
+				AND b.BetTeam = '1'
+				AND b.Status IN ('Running', 'Waiting')
+
+			DECLARE @TmpParlayData TABLE (
+				RefNo	BIGINT,
+				Odds	MONEY,
+				MOdds	MONEY)
+
+			-- Mix Parlay which having at least 1 settled sub ticket
+			INSERT INTO @TmpParlayData
+			SELECT
+				b.RefNo,
+				dbo.PRODUCT(bpd.odds) AS Odds,
+				dbo.PRODUCT(bpd.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
+			FROM @TmpData AS b
+				INNER JOIN dbo.BetParlayDetail AS bpd WITH (NOLOCK) ON bpd.RefNo = b.RefNo
+			GROUP BY
+				b.RefNo,
+				b.BoostRate
+
+			-- Mix Parlay which having no settled sub ticket
+			INSERT INTO @TmpParlayData
+			SELECT
+				b.RefNo,
+				dbo.PRODUCT(bm.odds) AS Odds,
+				dbo.PRODUCT(bm.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
+			FROM @TmpData AS b
+				INNER JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.RefNo
+			WHERE NOT EXISTS (SELECT 1 FROM @TmpParlayData WHERE RefNo = b.RefNo)
+			GROUP BY
+				b.RefNo,
+				b.BoostRate
+
+			UPDATE b
+			SET
+				b.Odds = td.Odds,
+				b.MOdds = td.MOdds
+			FROM #MemBetTicket AS b
+				INNER JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
+
+			-- Settled
+			UPDATE b
+			SET
+				b.Odds = bpr.Odds,
+				b.Modds = bpr.mOdds,
+				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			FROM #MemBetTicket AS b
+				INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+			WHERE b.BetType = 29
+				AND b.BetTeam = '1'
+				AND b.Status NOT IN ('Running', 'Waiting')
+		END
 
 		INSERT INTO #MemBetTicket
 		SELECT TransId = b.transid

@@ -4,7 +4,6 @@ ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossParlay_SAg]
 	@CustId			INT				= NULL,
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
-	@Language		VARCHAR(2)		= 'E',
 	@MoveBetsDay	SMALLDATETIME,
 	@BetType		SMALLINT		= 9
 AS
@@ -13,7 +12,7 @@ AS
 	Created:
 	Task: Betlist
 	DB: DBAGE.bodb02
-	Original:
+
 	Revisions:
 		- 20090407@Amy: get refno field instead of transid
 		- 20090421@Henry: Include more columns: comm, acomm, scomm, awinlost, mwinlost, swinlost
@@ -40,6 +39,8 @@ AS
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 		- 20210129@Kos: Support God Of Fortune [Redmine: #149740]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
+					- Remove param @Language
 */
 
 BEGIN
@@ -55,6 +56,7 @@ BEGIN
 		Hdp2			SMALLMONEY,
 		Odds			MONEY,
 		MOdds			MONEY,
+		OddsSpread		MONEY,
 		Status			NVARCHAR(10),
 		Stake			MONEY,
 		Actual_Stake	MONEY,
@@ -111,6 +113,7 @@ BEGIN
 			b.hdp2,
 			b.odds,
 			b.modds,
+			b.oddsspread,
 			b.status,
 			b.stake,
 			b.actual_stake,
@@ -139,7 +142,7 @@ BEGIN
 			b.betid,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			ISNULL(b.transdesc, '') AS TransDesc,
+			'' AS transdesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE
@@ -171,6 +174,7 @@ BEGIN
 			b.hdp2,
 			b.odds,
 			b.modds,
+			b.oddsspread,
 			b.status,
 			b.stake,
 			b.actual_stake,
@@ -199,7 +203,7 @@ BEGIN
 			b.betid,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			ISNULL(b.transdesc, '') AS TransDesc,
+			'' AS transdesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		WHERE
@@ -208,6 +212,19 @@ BEGIN
 			AND b.bettype = @BetType
 			AND b.matchid = @BetType
 			AND b.ruben = 1
+	END
+
+	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+	IF EXISTS (SELECT 1 FROM @SAgWinlossMP WHERE BetType = 29 AND BetTeam = '1')
+	BEGIN
+		UPDATE b
+		SET
+			b.Odds = bpr.Odds,
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM @SAgWinlossMP AS b
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29 AND b.BetTeam = '1'
 	END
 
 	SELECT * FROM @SAgWinlossMP

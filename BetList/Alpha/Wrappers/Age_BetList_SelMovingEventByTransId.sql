@@ -1,20 +1,18 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelMovingEventByTransId]
-	@CustId					INT,
-	@TransId				BIGINT
+	@CustId		INT,
+	@TransId	BIGINT
 AS
 
 /*
 	Created: 20220404@[Razor]
 	Task: [Get Moving Event Date ticket]
 	DB: DBACC.bodb02
-	Original: 
 
 	Revisions:
 		- 20220404@Razor: Init [Redmine: #171070]
-
-	Param's Explanation:
+		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 */
 
 BEGIN
@@ -227,6 +225,77 @@ BEGIN
 		AND b.CustId = @CustId
 		AND b.bettype = 10
 
+	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE BetType = 29 AND BetTeam = '1')
+	BEGIN
+		-- Running/Waiting
+		DECLARE @TmpData TABLE (
+			RefNo		BIGINT,
+			BoostRate	MONEY)
+
+		INSERT INTO @TmpData
+		SELECT
+			b.refno,
+			CASE
+				WHEN b.bettype = 29 AND b.betteam = 1 AND b.oddsspread = 2 THEN
+					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0)
+				ELSE 0
+			END AS BoostRate
+		FROM #MemBetTicket AS b
+		WHERE b.BetType = 29
+			AND b.BetTeam = '1'
+			AND b.Status IN ('Running', 'Waiting')
+
+		DECLARE @TmpParlayData TABLE (
+			RefNo	BIGINT,
+			Odds	MONEY,
+			MOdds	MONEY)
+
+		-- Mix Parlay which having at least 1 settled sub ticket
+		INSERT INTO @TmpParlayData
+		SELECT
+			b.RefNo,
+			dbo.PRODUCT(bpd.odds) AS Odds,
+			dbo.PRODUCT(bpd.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
+		FROM @TmpData AS b
+			INNER JOIN dbo.BetParlayDetail AS bpd WITH (NOLOCK) ON bpd.RefNo = b.RefNo
+		GROUP BY
+			b.RefNo,
+			b.BoostRate
+
+		-- Mix Parlay which having no settled sub ticket
+		INSERT INTO @TmpParlayData
+		SELECT
+			b.RefNo,
+			dbo.PRODUCT(bm.odds) AS Odds,
+			dbo.PRODUCT(bm.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
+		FROM @TmpData AS b
+			INNER JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.RefNo
+		WHERE NOT EXISTS (SELECT 1 FROM @TmpParlayData WHERE RefNo = b.RefNo)
+		GROUP BY
+			b.RefNo,
+			b.BoostRate
+
+		UPDATE b
+		SET
+			b.Odds = td.Odds,
+			b.MOdds = td.MOdds
+		FROM #MemBetTicket AS b
+			INNER JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
+
+		-- Settled
+		UPDATE b
+		SET
+			b.Odds = bpr.Odds,
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM #MemBetTicket AS b
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29
+			AND b.BetTeam = '1'
+			AND b.Status NOT IN ('Running', 'Waiting')
+	END
+
 	IF NOT EXISTS (SELECT 1 FROM #MemBetTicket)--bettrans14
 	BEGIN
 		INSERT INTO #MemBetTicket
@@ -298,72 +367,87 @@ BEGIN
 			AND b.TransID = @TransId
 			AND s.EventType IN (0, 1)
 
-	-- Outright
-	INSERT INTO #MemBetTicket
-	SELECT TransId = b.transid
-		,RefNo = b.refno
-		,CustId = b.custid
-		,Username = b.username
-		,SportType = l.sporttype
-		,BetType = b.bettype
-		,BetId = ISNULL(b.betid, 0)
-		,b.betteam
-		,Hdp1 = b.hdp1
-		,Hdp2 = b.hdp2
-		,OddsType = b.oddstype
-		,OddsId = b.oddsid
-		,Odds = b.Odds
-		,MOdds = b.modds
-		,Stake = b.stake
-		,Actual_Stake = b.actual_stake
-		,Status = b.status
-		,SettlementStatus = 0
-		,TransDate = b.transdate
-		,WinLostDate = b.winlostdate
-		,WinLost = b.winlost - b.actual_stake
-		,AWinLost = b.awinLost
-		,MWinLost = b.mwinLost
-		,SWinLost = b.SwinLost
-		,PlayerComm = b.playercomm
-		,Comm = b.comm - b.playercomm
-		,AComm = b.acomm - b.comm
-		,SComm = b.scomm - b.acomm
-		,APositionTaking = b.APositiontaking
-		,MPositionTaking = b.MPositiontaking
-		,SPositionTaking = b.SPositiontaking
-		,TPositionTaking = b.TPositiontaking
-		,ADiscount = b.discount
-		,MDiscount = b.adiscount
-		,SDiscount = b.sdiscount
-		,LiveIndicator = b.liveindicator
-		,LiveHomeScore = b.livehomescore
-		,LiveAwayScore = b.liveawayscore
-		,FinalHomeScore = 0
-		,FinalAwayScore = 0
-		,HtHomeScore = 0
-		,HtAwayScore = 0
-		,Ip = b.ip
-		,LeagueId = odds.leagueid
-		,MatchId = b.matchid
-		,MatchCode = odds.matchcode
-		,EventDate = odds.eventdate
-		,HomeId = 0
-		,AwayId = odds.teamid
-		,BetStatus = ''
-		,IsNeutral = 0
-		,ShowTime = ''
-		,BetCheck = ISNULL(b.betcheck, '')
-		,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
-		,TransDesc = ''
-		,OddsSpread = 0
-		,BetdaqId = -1
-		,ExtraInfo = ''
-	FROM dbo.bettrans14 AS b WITH (NOLOCK)
-		INNER JOIN dbo.outright14 AS odds WITH (NOLOCK) ON b.matchid = odds.orid
-		INNER JOIN dbo.league l WITH (NOLOCK) ON odds.leagueid = l.leagueid
-	WHERE b.TransId = @TransId
-		AND b.CustId = @CustId
-		AND b.bettype = 10
+		-- Outright
+		INSERT INTO #MemBetTicket
+		SELECT TransId = b.transid
+			,RefNo = b.refno
+			,CustId = b.custid
+			,Username = b.username
+			,SportType = l.sporttype
+			,BetType = b.bettype
+			,BetId = ISNULL(b.betid, 0)
+			,b.betteam
+			,Hdp1 = b.hdp1
+			,Hdp2 = b.hdp2
+			,OddsType = b.oddstype
+			,OddsId = b.oddsid
+			,Odds = b.Odds
+			,MOdds = b.modds
+			,Stake = b.stake
+			,Actual_Stake = b.actual_stake
+			,Status = b.status
+			,SettlementStatus = 0
+			,TransDate = b.transdate
+			,WinLostDate = b.winlostdate
+			,WinLost = b.winlost - b.actual_stake
+			,AWinLost = b.awinLost
+			,MWinLost = b.mwinLost
+			,SWinLost = b.SwinLost
+			,PlayerComm = b.playercomm
+			,Comm = b.comm - b.playercomm
+			,AComm = b.acomm - b.comm
+			,SComm = b.scomm - b.acomm
+			,APositionTaking = b.APositiontaking
+			,MPositionTaking = b.MPositiontaking
+			,SPositionTaking = b.SPositiontaking
+			,TPositionTaking = b.TPositiontaking
+			,ADiscount = b.discount
+			,MDiscount = b.adiscount
+			,SDiscount = b.sdiscount
+			,LiveIndicator = b.liveindicator
+			,LiveHomeScore = b.livehomescore
+			,LiveAwayScore = b.liveawayscore
+			,FinalHomeScore = 0
+			,FinalAwayScore = 0
+			,HtHomeScore = 0
+			,HtAwayScore = 0
+			,Ip = b.ip
+			,LeagueId = odds.leagueid
+			,MatchId = b.matchid
+			,MatchCode = odds.matchcode
+			,EventDate = odds.eventdate
+			,HomeId = 0
+			,AwayId = odds.teamid
+			,BetStatus = ''
+			,IsNeutral = 0
+			,ShowTime = ''
+			,BetCheck = ISNULL(b.betcheck, '')
+			,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
+			,TransDesc = ''
+			,OddsSpread = 0
+			,BetdaqId = -1
+			,ExtraInfo = ''
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN dbo.outright14 AS odds WITH (NOLOCK) ON b.matchid = odds.orid
+			INNER JOIN dbo.league l WITH (NOLOCK) ON odds.leagueid = l.leagueid
+		WHERE b.TransId = @TransId
+			AND b.CustId = @CustId
+			AND b.bettype = 10
+
+		-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+		IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE BetType = 29 AND BetTeam = '1')
+		BEGIN
+			UPDATE b
+			SET
+				b.Odds = bpr.Odds,
+				b.Modds = bpr.mOdds,
+				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			FROM #MemBetTicket AS b
+				INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+			WHERE b.BetType = 29
+				AND b.BetTeam = '1'
+				AND b.Status NOT IN ('Running', 'Waiting')
+		END
 	END
 
 	IF NOT EXISTS (SELECT 1 FROM #MemBetTicket)--Bk
@@ -439,75 +523,89 @@ BEGIN
 			AND b.TransID = @TransId
 			AND s.EventType IN (0, 1)
 
-	-- Outright
-	INSERT INTO #MemBetTicket
-	SELECT TransId = b.transid
-		,RefNo = b.refno
-		,CustId = b.custid
-		,Username = c.username
-		,SportType = l.sporttype
-		,BetType = b.bettype
-		,BetId = ISNULL(b.betid, 0)
-		,b.betteam
-		,Hdp1 = b.hdp1
-		,Hdp2 = b.hdp2
-		,OddsType = b.oddstype
-		,OddsId = b.oddsid
-		,Odds = b.Odds
-		,MOdds = b.modds
-		,Stake = b.stake
-		,Actual_Stake = b.actual_stake
-		,Status = b.status
-		,SettlementStatus = 0
-		,TransDate = b.transdate
-		,WinLostDate = b.winlostdate
-		,WinLost = b.winlost - b.actual_stake
-		,AWinLost = b.awinLost
-		,MWinLost = b.mwinLost
-		,SWinLost = b.SwinLost
-		,PlayerComm = b.playercomm
-		,Comm = b.comm - b.playercomm
-		,AComm = b.acomm - b.comm
-		,SComm = b.scomm - b.acomm
-		,APositionTaking = b.APositiontaking
-		,MPositionTaking = b.MPositiontaking
-		,SPositionTaking = b.SPositiontaking
-		,TPositionTaking = b.TPositiontaking
-		,ADiscount = b.discount
-		,MDiscount = b.adiscount
-		,SDiscount = b.sdiscount
-		,LiveIndicator = b.liveindicator
-		,LiveHomeScore = b.livehomescore
-		,LiveAwayScore = b.liveawayscore
-		,FinalHomeScore = 0
-		,FinalAwayScore = 0
-		,HtHomeScore = 0
-		,HtAwayScore = 0
-		,Ip = dp.ip
-		,LeagueId = odds.leagueid
-		,MatchId = b.matchid
-		,MatchCode = odds.matchcode
-		,EventDate = odds.eventdate
-		,HomeId = 0
-		,AwayId = odds.teamid
-		,BetStatus = ''
-		,IsNeutral = 0
-		,ShowTime = ''
-		,BetCheck = ISNULL(b.betcheck, '')
-		,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
-		,TransDesc = ''
-		,OddsSpread = 0
-		,BetdaqId = -1
-		,ExtraInfo = ''
-	FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-		CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
-		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
-		INNER JOIN bodb_archive.dbo.Outright_bk AS odds WITH (NOLOCK) ON b.matchid = odds.orid
-		INNER JOIN dbo.league l WITH (NOLOCK) ON odds.leagueid = l.leagueid
-	WHERE b.TransId = @TransId
-		AND b.CustId = @CustId
-		AND b.bettype = 10
+		-- Outright
+		INSERT INTO #MemBetTicket
+		SELECT TransId = b.transid
+			,RefNo = b.refno
+			,CustId = b.custid
+			,Username = c.username
+			,SportType = l.sporttype
+			,BetType = b.bettype
+			,BetId = ISNULL(b.betid, 0)
+			,b.betteam
+			,Hdp1 = b.hdp1
+			,Hdp2 = b.hdp2
+			,OddsType = b.oddstype
+			,OddsId = b.oddsid
+			,Odds = b.Odds
+			,MOdds = b.modds
+			,Stake = b.stake
+			,Actual_Stake = b.actual_stake
+			,Status = b.status
+			,SettlementStatus = 0
+			,TransDate = b.transdate
+			,WinLostDate = b.winlostdate
+			,WinLost = b.winlost - b.actual_stake
+			,AWinLost = b.awinLost
+			,MWinLost = b.mwinLost
+			,SWinLost = b.SwinLost
+			,PlayerComm = b.playercomm
+			,Comm = b.comm - b.playercomm
+			,AComm = b.acomm - b.comm
+			,SComm = b.scomm - b.acomm
+			,APositionTaking = b.APositiontaking
+			,MPositionTaking = b.MPositiontaking
+			,SPositionTaking = b.SPositiontaking
+			,TPositionTaking = b.TPositiontaking
+			,ADiscount = b.discount
+			,MDiscount = b.adiscount
+			,SDiscount = b.sdiscount
+			,LiveIndicator = b.liveindicator
+			,LiveHomeScore = b.livehomescore
+			,LiveAwayScore = b.liveawayscore
+			,FinalHomeScore = 0
+			,FinalAwayScore = 0
+			,HtHomeScore = 0
+			,HtAwayScore = 0
+			,Ip = dp.ip
+			,LeagueId = odds.leagueid
+			,MatchId = b.matchid
+			,MatchCode = odds.matchcode
+			,EventDate = odds.eventdate
+			,HomeId = 0
+			,AwayId = odds.teamid
+			,BetStatus = ''
+			,IsNeutral = 0
+			,ShowTime = ''
+			,BetCheck = ISNULL(b.betcheck, '')
+			,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
+			,TransDesc = ''
+			,OddsSpread = 0
+			,BetdaqId = -1
+			,ExtraInfo = ''
+		FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+			CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
+			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
+			INNER JOIN bodb_archive.dbo.Outright_bk AS odds WITH (NOLOCK) ON b.matchid = odds.orid
+			INNER JOIN dbo.league l WITH (NOLOCK) ON odds.leagueid = l.leagueid
+		WHERE b.TransId = @TransId
+			AND b.CustId = @CustId
+			AND b.bettype = 10
 
+		-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+		IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE BetType = 29 AND BetTeam = '1')
+		BEGIN
+			UPDATE b
+			SET
+				b.Odds = bpr.Odds,
+				b.Modds = bpr.mOdds,
+				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			FROM #MemBetTicket AS b
+				INNER JOIN bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+			WHERE b.BetType = 29
+				AND b.BetTeam = '1'
+				AND b.Status NOT IN ('Running', 'Waiting')
+		END
 	END
 
 	SELECT *

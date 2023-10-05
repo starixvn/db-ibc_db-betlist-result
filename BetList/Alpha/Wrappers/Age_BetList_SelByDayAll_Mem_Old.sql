@@ -104,6 +104,7 @@ AS
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
+		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -676,6 +677,19 @@ BEGIN
 			AND EXISTS (	SELECT 1
 							FROM bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
 							WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
+	END
+
+	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+	IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = '1')
+	BEGIN
+		UPDATE b
+		SET
+			b.Odds = bpr.Odds,
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM @Data AS b
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29 AND b.BetTeam = '1'
 	END
 
 	-- Get currency name
