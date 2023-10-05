@@ -4,7 +4,8 @@ ALTER PROCEDURE [dbo].[SiteDB_Acc_BetList_Parlay_SelByRefNo]
 	@TransId		BIGINT,
 	@CustId			INT,
 	@MoveBetDay		DATETIME,
-	@BalanceUpDay	DATETIME
+	@BalanceUpDay	DATETIME,
+	@IsParlayBoost	BIT			= 0 OUTPUT
 AS
 
 /*
@@ -14,6 +15,9 @@ AS
 
 	Revisions:
 		- 20220819@Kos: Scale out DBTRANS [Redmine: #175253]
+		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
+					- Add output param @IsParlayBoost BIT
+					- Return additional columns Odds MONEY, ExtraValue MONEY
 */
 
 BEGIN
@@ -91,6 +95,7 @@ BEGIN
 		WinLostDate		SMALLDATETIME,
 		Odds			MONEY,
 		Modds			MONEY,
+		OddsSpread		MONEY,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
@@ -114,6 +119,7 @@ BEGIN
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
 		BetCheck		NVARCHAR(50),
+		TransDesc		NVARCHAR(1000),
 		ExtraInfo		VARCHAR(1000),
 		--for generating combination parlays if not in BetParlayResult
 		N				TINYINT,		-- Number of selection
@@ -156,11 +162,13 @@ BEGIN
 	DECLARE @tmpResults AS TABLE(
 		WinLostDate	DATETIME,
 		Serial		BIGINT,
-		Modds		MONEY,
+		Odds		MONEY,
+		MOdds		MONEY,
 		Stake		MONEY,
 		WinLost		MONEY,
 		StatusId	INT,
-		Status		VARCHAR(20)
+		Status		VARCHAR(20),
+		ExtraValue	MONEY
 	)
 
 	DECLARE @betParlayDetail TABLE (
@@ -393,6 +401,7 @@ BEGIN
 			b.winlostdate,
 			b.odds,
 			b.modds,
+			b.oddsspread,
 			b.stake,
 			b.actual_stake,
 			CASE
@@ -419,6 +428,7 @@ BEGIN
 			b.hdp1,
 			b.hdp2,
 			ISNULL(b.betcheck, '') AS BetCheck,
+			'' AS TransDesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN b.betcheck IS NULL THEN LEN(b.betteam)		-- old Parlay tickets
@@ -437,17 +447,21 @@ BEGIN
 		INSERT INTO @tmpResults (
 			WinLostDate,
 			Serial,
+			Odds,
 			Modds,
 			Stake,
 			WinLost,
-			StatusId)
+			StatusId,
+			ExtraValue)
 		SELECT
 			b.winlostdate,
 			b.serial,
+			b.odds,
 			b.modds,
 			b.stake,
 			b.winlost,
-			b.statusid
+			b.statusid,
+			b.ExtraValue
 		FROM DBARC.bodb_Archive.dbo.betparlayresult AS b WITH (NOLOCK)
 		WHERE b.refno = @RefNo
 	END
@@ -463,6 +477,7 @@ BEGIN
 			b.winlostdate,
 			b.odds,
 			b.modds,
+			b.oddsspread,
 			b.stake,
 			b.actual_stake,
 			CASE
@@ -489,6 +504,7 @@ BEGIN
 			b.hdp1,
 			b.hdp2,
 			ISNULL(b.betcheck, '') AS BetCheck,
+			'' AS TransDesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN b.betcheck IS NULL THEN LEN(b.betteam)		-- old Parlay tickets
@@ -515,6 +531,7 @@ BEGIN
 			b.winlostdate,
 			b.odds,
 			b.modds,
+			b.oddsspread,
 			b.stake,
 			b.actual_stake,
 			b.winlost - b.actual_stake AS winlost,
@@ -550,6 +567,7 @@ BEGIN
 			b.hdp1,
 			b.hdp2,
 			ISNULL(b.betcheck, '') AS BetCheck,
+			'' AS TransDesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN b.betcheck IS NULL THEN LEN(betteam)	-- old Parlay tickets
@@ -568,17 +586,21 @@ BEGIN
 	INSERT INTO @tmpResults (
 		WinLostDate,
 		Serial,
+		Odds,
 		Modds,
 		Stake,
 		WinLost,
-		StatusId)
+		StatusId,
+		ExtraValue)
 	SELECT 
 		b.winlostdate,
 		b.Serial,
+		b.Odds,
 		b.mOdds,
 		b.stake,
 		b.winlost,
-		b.statusid
+		b.statusid,
+		b.ExtraValue
 	FROM dbo.betparlayresult AS b WITH (NOLOCK)
 	WHERE refno = @RefNo AND serial NOT IN (SELECT serial FROM @tmpResults)
 
@@ -636,11 +658,13 @@ BEGIN
 			SELECT
 				WinLostDate,
 				Serial,
+				0 AS Odds,
 				0 AS Modds,
 				Stake,
 				0 AS WinLost,
 				0 AS StatusId,
-				'running' AS Status
+				'running' AS Status,
+				'' AS ExtraValue
 			FROM @betParlayResult
 			
 			INSERT INTO @tmpMatch
@@ -730,6 +754,80 @@ BEGIN
 		END
 	END
 
+	DECLARE
+		@WinLost	MONEY,
+		@Discount	MONEY,
+		@OriginalOdds	MONEY,
+		@FinalOdds		MONEY,
+		@BetTeam		NVARCHAR(10),
+		@BoostRate		MONEY
+
+	SELECT
+		@WinLost = WinLost,
+		@Discount = CASE
+						WHEN ExtraInfo LIKE '%p1%' THEN
+							ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@d)[1]','MONEY'), 0)
+						ELSE 0
+					END,
+		@BetTeam = BetTeam,
+		@IsParlayBoost = CASE
+							WHEN BetTeam = '1'
+								AND OddsSpread = 2
+								AND Status = 'Won'
+								AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bba)[1]','MONEY'), 0) > 0 THEN 1
+							WHEN BetTeam = '1'
+								AND OddsSpread = 2
+								AND Status IN ('Running', 'Waiting') THEN 1
+							ELSE 0
+						END,
+		@BoostRate = CASE
+						WHEN BetTeam = '1' AND OddsSpread = 2
+							THEN ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0)
+						ELSE 0
+					END
+	FROM @tmpBettrans
+
+	-- Get original odds for Mix Parlay
+	IF @BetTeam = '1'
+	BEGIN
+		IF @Status IN ('Running', 'Waiting')
+		BEGIN
+			IF EXISTS (SELECT 1 FROM dbo.BetParlayDetail WHERE RefNo = @RefNo)
+			BEGIN
+				SELECT
+					@OriginalOdds = dbo.PRODUCT(odds),
+					@FinalOdds = dbo.PRODUCT(odds) * (@BoostRate + 1) - @BoostRate
+				FROM dbo.BetParlayDetail WITH (NOLOCK)
+				WHERE RefNo = @RefNo
+				GROUP BY RefNo
+			END
+			ELSE
+			BEGIN
+				SELECT
+					@OriginalOdds = dbo.PRODUCT(odds),
+					@FinalOdds = dbo.PRODUCT(odds) * (@BoostRate + 1) - @BoostRate
+				FROM dbo.bettransm WITH (NOLOCK)
+				WHERE RefNo = @RefNo
+				GROUP BY RefNo
+			END
+
+			UPDATE @tmpBettrans
+			SET
+				Odds = @OriginalOdds,
+				Modds = @FinalOdds
+		END
+		ELSE
+		BEGIN
+			UPDATE b
+			SET
+				b.Odds = bpr.Odds,
+				b.Modds = bpr.mOdds,
+				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			FROM @tmpBettrans AS b
+				INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		END
+	END
+
 	SELECT DISTINCT
 		CASE WHEN ISNULL(BetId, 0) = 0 THEN TransId ELSE BetId END AS TransId,
 		TransDate,
@@ -737,6 +835,7 @@ BEGIN
 		WinLostDate,
 		Odds,
 		Modds,
+		OddsSpread,
 		Stake,
 		Actual_Stake,
 		WinLost,
@@ -760,6 +859,7 @@ BEGIN
 		Hdp1,
 		Hdp2,
 		BetCheck,
+		TransDesc,
 		ExtraInfo
 	FROM @tmpBettrans
 
@@ -792,23 +892,19 @@ BEGIN
 		TransDesc
 	FROM @Parlay_Base
 
-	DECLARE
-		@WinLost	MONEY,
-		@Discount	MONEY
-
-	SELECT
-		@WinLost = WinLost,
-		@Discount = CASE
-						WHEN ExtraInfo LIKE '%p1%' THEN
-							ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@d)[1]','MONEY'), 0)
-						ELSE 0
-					END
-	FROM @tmpBettrans
-
 	SELECT
 		WinLostDate,
 		Serial,
-		Modds,
+		CASE
+			WHEN @Status IN ('Running', 'Waiting') THEN @OriginalOdds
+			ELSE Odds
+		END AS Odds,
+		CASE
+			WHEN @Status IN ('Running', 'Waiting') AND @IsParlayBoost = 0 THEN @OriginalOdds
+			WHEN @Status IN ('Running', 'Waiting') AND @IsParlayBoost = 1 THEN @FinalOdds
+			WHEN @BetTeam = '1' AND StatusId = 113 AND MOdds = 0 THEN Odds
+			ELSE MOdds
+		END AS Modds,
 		Stake,
 		StatusId,
 		CASE
@@ -828,7 +924,11 @@ BEGIN
 			WHEN 113 THEN 'LOSE'
 			WHEN 0 THEN 'RUNNING'
 			ELSE ''
-		END AS status
+		END AS status,
+		CASE
+			WHEN @Status IN ('Running', 'Waiting') AND @IsParlayBoost = 1 THEN @BoostRate
+			ELSE ExtraValue
+		END AS ExtraValue
 	FROM ( SELECT DISTINCT * FROM @tmpResults ) AS tmp
 	ORDER BY CASE WHEN statusid NOT IN (0, 1) THEN winlostdate ELSE '' END ASC
 

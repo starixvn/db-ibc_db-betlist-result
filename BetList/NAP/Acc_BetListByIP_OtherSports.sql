@@ -12,7 +12,7 @@ AS
 	Created: Phuong Dao
 	Task: Bet List By IP and Other Sports
 	DB: DBACC.bodb02
-	Original: Acc_BetListByDayAllIP
+
 	Revisions:
 		- 20090509@Simon: Bet List For Casino
 		- 20090528@PhuongDao: Add HR Fixed Odd
@@ -161,7 +161,8 @@ AS
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
-
+		- 20231005@Kos: Support Parlay Boost [Redmine: #194992]
+					- Don't support Cash Out bettype 911, 912, 913 in range bettrans and bettrans14 anymore
 */
 
 BEGIN
@@ -349,42 +350,6 @@ BEGIN
 			AND b.winlostdate = @Date
 			AND b.ip = @Ip
 
-		-- Get more info for CashOut tickets
-		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)
-		BEGIN
-			UPDATE b
-			SET b.Odds = ob.odds,
-				b.LiveIndicator = ob.liveindicator,
-				b.LiveHomeScore = ob.livehomescore,
-				b.LiveAwayScore = ob.liveawayscore,
-				b.OriginalBetType = ob.bettype,
-				b.BetdaqId = ob.transid
-			FROM @Data AS b
-				INNER JOIN dbo.bettrans AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
-			WHERE b.BetType = 911
-		END
-
-		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 912)
-		BEGIN
-			UPDATE b
-			SET b.Odds = ob.odds,
-				b.LiveIndicator = ob.liveindicator,
-				b.LiveHomeScore = ob.livehomescore,
-				b.LiveAwayScore = ob.liveawayscore,
-				b.OriginalBetType = ob.bettype,
-				b.BetdaqId = ob.transid,
-				b.Stake = cob.stake
-			FROM @Data AS b
-				INNER JOIN dbo.bettrans AS cob WITH (NOLOCK) ON b.RefNo = cob.transid
-				INNER JOIN dbo.bettrans AS ob WITH (NOLOCK) ON cob.RefNo = ob.transid
-				LEFT JOIN @Data AS cb
-					ON cb.RefNo = b.RefNo
-					AND cb.BetType = 913
-					AND cb.custid = @CustId
-					AND cb.winlostdate = b.WinLostDate
-			WHERE b.BetType = 912
-		END
-
 		-- translog
 		INSERT INTO @Data (
 			TransId,
@@ -533,42 +498,6 @@ BEGIN
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
 			AND b.ip = @Ip
-
-		-- Get more info for CashOut tickets
-		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)
-		BEGIN
-			UPDATE b
-			SET b.Odds = ob.odds,
-				b.LiveIndicator = ob.liveindicator,
-				b.LiveHomeScore = ob.livehomescore,
-				b.LiveAwayScore = ob.liveawayscore,
-				b.OriginalBetType = ob.bettype,
-				b.BetdaqId = ob.transid
-			FROM @Data AS b
-				INNER JOIN dbo.bettrans14 AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
-			WHERE b.BetType = 911
-		END
-
-		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 912)
-		BEGIN
-			UPDATE b
-			SET b.Odds = ob.odds,
-				b.LiveIndicator = ob.liveindicator,
-				b.LiveHomeScore = ob.livehomescore,
-				b.LiveAwayScore = ob.liveawayscore,
-				b.OriginalBetType = ob.bettype,
-				b.BetdaqId = ob.transid,
-				b.Stake = cob.stake
-			FROM @Data AS b
-				INNER JOIN dbo.bettrans14 AS cob WITH (NOLOCK) ON b.RefNo = cob.transid
-				INNER JOIN dbo.bettrans14 AS ob WITH (NOLOCK) ON cob.RefNo = ob.transid
-				LEFT JOIN @Data AS cb
-					ON cb.RefNo = b.RefNo
-					AND cb.BetType = 913
-					AND cb.custid = @CustId
-					AND cb.winlostdate = b.WinLostDate
-			WHERE b.BetType = 912
-		END	
 	END
 	ELSE IF @Date < @BalanceUpDay		-- bettrans_bk range
 	BEGIN
@@ -1173,7 +1102,7 @@ BEGIN
 									ELSE ''
 								END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP', 'SG', 'SBC', 'VGA', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					BetdaqId = CASE
@@ -1591,7 +1520,7 @@ BEGIN
 									ELSE ''
 								END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP', 'SG', 'SBC', 'VGA', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					BetdaqId = CASE
@@ -1797,7 +1726,7 @@ BEGIN
 									ELSE ''
 								END,
 					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP', 'SG', 'SBC', 'VGA', 'Parlay') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					BetdaqId = CASE
@@ -1867,9 +1796,100 @@ BEGIN
 				FROM @Data AS c
 					INNER JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON c.RefNo = bm.refno
 				WHERE c.Product = 'VR' AND bm.custid = @CustId
-	
 			END
 		END
+	END
+
+	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+	IF EXISTS (SELECT 1 FROM @Data
+				WHERE BetType = 29
+					AND BetTeam = '1'
+					AND TableID IN (1, 2))
+	BEGIN
+		-- Running/Waiting
+		DECLARE @ParlayData TABLE (
+			RefNo		BIGINT,
+			BoostRate	MONEY)
+
+		INSERT INTO @ParlayData
+		SELECT
+			b.refno,
+			CASE
+				WHEN b.bettype = 29 AND b.betteam = 1 AND b.oddsspread = 2 THEN
+					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0)
+				ELSE 0
+			END AS BoostRate
+		FROM @Data AS b
+		WHERE b.BetType = 29
+			AND b.BetTeam = '1'
+			AND b.Status IN ('Running', 'Waiting')
+
+		DECLARE @TmpParlayData TABLE (
+			RefNo	BIGINT,
+			Odds	MONEY,
+			MOdds	MONEY)
+
+		-- Mix Parlay which having at least 1 settled sub ticket
+		INSERT INTO @TmpParlayData
+		SELECT
+			b.RefNo,
+			dbo.PRODUCT(bpd.odds) AS Odds,
+			dbo.PRODUCT(bpd.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
+		FROM @ParlayData AS b
+			INNER JOIN dbo.BetParlayDetail AS bpd WITH (NOLOCK) ON bpd.RefNo = b.RefNo
+		GROUP BY
+			b.RefNo,
+			b.BoostRate
+
+		-- Mix Parlay which having no settled sub ticket
+		INSERT INTO @TmpParlayData
+		SELECT
+			b.RefNo,
+			dbo.PRODUCT(bm.odds) AS Odds,
+			dbo.PRODUCT(bm.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
+		FROM @ParlayData AS b
+			INNER JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.RefNo
+		WHERE NOT EXISTS (SELECT 1 FROM @TmpParlayData WHERE RefNo = b.RefNo)
+		GROUP BY
+			b.RefNo,
+			b.BoostRate
+
+		UPDATE b
+		SET
+			b.Odds = td.Odds,
+			b.MOdds = td.MOdds
+		FROM @Data AS b
+			INNER JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
+
+		-- Settled
+		UPDATE b
+		SET
+			b.Odds = bpr.Odds,
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM @Data AS b
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29
+			AND b.BetTeam = '1'
+			AND TableID IN (1, 2)
+			AND b.Status NOT IN ('Running', 'Waiting')
+	END
+
+	IF EXISTS (SELECT 1 FROM @Data
+				WHERE BetType = 29
+					AND BetTeam = '1'
+					AND TableID = 3)
+	BEGIN
+		UPDATE b
+		SET
+			b.Odds = bpr.Odds,
+			b.Modds = bpr.mOdds,
+			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+		FROM @Data AS b
+			INNER JOIN bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		WHERE b.BetType = 29
+			AND b.BetTeam = '1'
+			AND b.TableID = 3
 	END
 
 	-- Get currency name
