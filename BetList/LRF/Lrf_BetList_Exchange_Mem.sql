@@ -1,13 +1,14 @@
 ﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_Exchange_Mem]
-	@AgentList		VARCHAR(MAX),
-	@CustId			INT,
-	@FromDate		DATETIME,
-	@ToDate			DATETIME,
-	@DateOption		TINYINT		= 1,
-	@BaseCurrency	VARCHAR(12),
-	@SumWinLost		MONEY		= 0 OUTPUT
+	@AgentList			VARCHAR(MAX),
+	@CustId				INT,
+	@FromDate			DATETIME,
+	@ToDate				DATETIME,
+	@DateOption			TINYINT		= 1,
+	@ViewResettledOnly	BIT			= 0,
+	@BaseCurrency		VARCHAR(12),
+	@SumWinLost			MONEY		= 0 OUTPUT
 AS
 
 /*
@@ -24,6 +25,7 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221117@Kos: Support filter by resettled date [Redmine: 179079]
 					- Add new input param @DateOption TINYINT
+		- 20231006@Kos: Support view resettled ticket only [Redmine: 193954]
 */
 
 BEGIN
@@ -86,7 +88,7 @@ BEGIN
 		WinLost			MONEY
 	)
 
-	DECLARE @TempToDate DATETIME
+	DECLARE @TempToDate	DATETIME
 
 	SET @TempToDate = DATEADD(MILLISECOND, -2, DATEADD(DAY, DATEDIFF(DAY, -1, @ToDate), 0))
 
@@ -109,6 +111,11 @@ BEGIN
 		FROM bodb_3rdProduct.dbo.Sum_winloss_Exchange AS b WITH (NOLOCK)
 		WHERE b.CustID = @CustId
 			AND b.settledDate BETWEEN @FromDate AND @TempToDate
+			AND 1 = CASE
+						WHEN @ViewResettledOnly = 0 THEN 1
+						WHEN ISNULL(b.IsResettled, 0) = 1 THEN 1
+						ELSE 0
+					END
 	END
 	ELSE		-- Filter by resettled date
 	BEGIN
@@ -129,6 +136,11 @@ BEGIN
 		FROM bodb_3rdProduct.dbo.Sum_winloss_Exchange AS b WITH (NOLOCK)
 		WHERE b.CustID = @CustId
 			AND ISNULL(b.resettledDate, b.settledDate) BETWEEN @FromDate AND @TempToDate
+			AND 1 = CASE
+						WHEN @ViewResettledOnly = 0 THEN 1
+						WHEN ISNULL(b.IsResettled, 0) = 1 THEN 1
+						ELSE 0
+					END
 	END
 
 	DELETE @Data
