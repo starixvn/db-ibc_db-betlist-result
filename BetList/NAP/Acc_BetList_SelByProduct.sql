@@ -89,6 +89,7 @@ AS
 		- 20230830@Razor: Show LicTxId for MaxGame [Redmine: #193273]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
+		- 20231016@Razor: HF for not show product Virtual Games, Sports Lottery [Redmine: #195487]
 */
 
 BEGIN
@@ -291,70 +292,68 @@ BEGIN
 						AND b.statusID IN (0, 1)
 						AND b.Gameid3rd = @GameId
 				END
-				ELSE IF @ProductId IN (38, 63)		-- Virtual Games, Sports Lottery
+
+				IF @GameId <> ''
 				BEGIN
-					IF @GameId <> ''
-					BEGIN
-						INSERT INTO @Data
-						SELECT
-							b.bettype,
-							b.transid,
-							ISNULL(b.betid, 0) AS BetId,
-							b.refno,
-							'' AS MatchCode,
-							'' AS EventDate,
-							b.sdiscount,
-							b.adiscount,
-							b.discount,
-							0 AS HomeId,
-							0 AS AwayId,
-							0 AS Hdp1,
-							0 AS Hdp2,
-							b.odds,
-							0 AS OddsType,
-							b.status,
-							CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS ComStatus,
-							b.stake,
-							b.actual_stake,
-							b.transdate,
-							'' AS BetTeam,
-							b.spositiontaking,
-							b.mpositiontaking,
-							b.apositiontaking,
-							0 AS LiveIndicator,
-							b.custid,
-							0 AS LiveHomeScore,
-							0 AS LiveAwayScore,
-							0 AS LeagueId,
-							b.matchid AS SportType,
-							b.ip,
-							0 AS MatchId,
-							(b.winlost - b.actual_stake) AS WinLost,
-							b.playercomm AS Commission,
-							(b.scomm - b.acomm) AS SComm,
-							(b.acomm - b.comm) AS AComm,
-							(b.comm - b.playercomm) AS Comm,
-							b.awinlost,
-							b.mwinlost,
-							b.swinlost,
-							b.winlostdate,
-							b.betcheck,
-							ISNULL(b.transdesc, '') AS TransDesc,
-							0 AS OddsSpread,
-							CASE
-								WHEN s.ProductID IN (63) THEN ISNULL(b.ExtraInfo, '')
-								ELSE '' 
-							END AS ExtraInfo,
-							-1 AS BetdaqId,
-							b.currency,
-							b.betdaqid AS SiteId
-						FROM dbo.bettrans AS b WITH (NOLOCK)
-							INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-						WHERE b.custid = @CustId
-							AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-							AND b.statusID NOT IN (0, 1)
-							AND b.betcheck = @GameId
-					END
+					INSERT INTO @Data
+					SELECT
+						b.bettype,
+						b.transid,
+						ISNULL(b.betid, 0) AS BetId,
+						b.refno,
+						'' AS MatchCode,
+						'' AS EventDate,
+						b.sdiscount,
+						b.adiscount,
+						b.discount,
+						0 AS HomeId,
+						0 AS AwayId,
+						0 AS Hdp1,
+						0 AS Hdp2,
+						b.odds,
+						0 AS OddsType,
+						b.status,
+						CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS ComStatus,
+						b.stake,
+						b.actual_stake,
+						b.transdate,
+						'' AS BetTeam,
+						b.spositiontaking,
+						b.mpositiontaking,
+						b.apositiontaking,
+						0 AS LiveIndicator,
+						b.custid,
+						0 AS LiveHomeScore,
+						0 AS LiveAwayScore,
+						0 AS LeagueId,
+						b.matchid AS SportType,
+						b.ip,
+						0 AS MatchId,
+						(b.winlost - b.actual_stake) AS WinLost,
+						b.playercomm AS Commission,
+						(b.scomm - b.acomm) AS SComm,
+						(b.acomm - b.comm) AS AComm,
+						(b.comm - b.playercomm) AS Comm,
+						b.awinlost,
+						b.mwinlost,
+						b.swinlost,
+						b.winlostdate,
+						b.betcheck,
+						ISNULL(b.transdesc, '') AS TransDesc,
+						0 AS OddsSpread,
+						CASE
+							WHEN s.ProductID IN (63) THEN ISNULL(b.ExtraInfo, '')
+							ELSE '' 
+						END AS ExtraInfo,
+						-1 AS BetdaqId,
+						b.currency,
+						b.betdaqid AS SiteId
+					FROM dbo.bettrans AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
+					WHERE b.custid = @CustId
+						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
+						AND b.statusID NOT IN (0, 1)
+						AND b.betcheck = @GameId
 				END
 			END
 
