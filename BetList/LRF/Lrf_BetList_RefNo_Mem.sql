@@ -87,6 +87,8 @@ AS
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
 		- 20230905@Kos: Support TxId for MaxGame [Redmine: 193273]
+		- 20231019@Kos: Adjust due to new column ExtraInfo [Redmine: 195780]
+					- Return new JackpotInfo column
 */
 
 BEGIN
@@ -209,6 +211,7 @@ BEGIN
 		TransDesc			NVARCHAR(1000),
 		BetdaqId			BIGINT,
 		ExtraInfo			VARCHAR(1000),
+		JackpotInfo			VARCHAR(50),
 		OriginalStake		MONEY,
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
@@ -633,6 +636,7 @@ BEGIN
 			ISNULL(b.transdesc, '') AS TransDesc,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo,
+			'' AS JackpotInfo,
 			0 AS OriginalStake,
 			0 AS OriginalBetType,
 			0 AS WalletType,
@@ -929,6 +933,7 @@ BEGIN
 					'ParlayVS2', 'VR', 'VS3', 'BTC', 'TIP') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
+			'' AS JackpotInfo,
 			CASE
 				WHEN @Product IN ('SB') AND b.ExtraInfo LIKE '%p25%' THEN
 					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
@@ -1131,6 +1136,7 @@ BEGIN
 					'ParlayVS2', 'VR', 'VS3', 'BTC', 'TIP') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
+			'' AS JackpotInfo,
 			CASE
 				WHEN @Product IN ('SB') AND b.ExtraInfo LIKE '%p25%' THEN
 					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
@@ -1332,6 +1338,7 @@ BEGIN
 					'ParlayVS2', 'VR', 'VS3', 'BTC', 'TIP') THEN ISNULL(b.ExtraInfo, '')
 				ELSE ''
 			END AS ExtraInfo,
+			'' AS JackpotInfo,
 			CASE
 				WHEN @Product IN ('SB') AND b.ExtraInfo LIKE '%p25%' THEN
 					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
@@ -1641,10 +1648,11 @@ BEGIN
 					WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') THEN ISNULL(RefNo2, -1)
 					ELSE -1
 				END AS BetdaqId,
+				ExtraInfo,
 				CASE
 					WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') THEN ISNULL(JackpotInfo, '')
 					ELSE ''
-				END AS ExtraInfo,
+				END AS JackpotInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -1725,10 +1733,11 @@ BEGIN
 					WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') THEN ISNULL(RefNo2, -1)
 					ELSE -1
 				END AS BetdaqId,
+				ExtraInfo,
 				CASE
 					WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') THEN ISNULL(JackpotInfo, '')
 					ELSE ''
-				END AS ExtraInfo,
+				END AS JackpotInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -1809,10 +1818,11 @@ BEGIN
 					WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.RefNo2, -1)
 					ELSE -1
 				END AS BetdaqId,
+				ExtraInfo,
 				CASE
 					WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.JackpotInfo, '')
 					ELSE ''
-				END AS ExtraInfo,
+				END AS JackpotInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -1966,7 +1976,8 @@ BEGIN
 				TranId3rd AS BetCheck,
 				transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ExtraInfo,
+				'' AS JackpotInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2032,7 +2043,8 @@ BEGIN
 				TranId3rd AS BetCheck,
 				transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ExtraInfo,
+				'' AS JackpotInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2098,7 +2110,8 @@ BEGIN
 				b.TranId3rd AS BetCheck,
 				b.transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ExtraInfo,
+				'' AS JackpotInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2251,7 +2264,8 @@ BEGIN
 				ISNULL(b.TransDesc, '') AS BetCheck,
 				blc.transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				b.ExtraInfo,
+				'' AS JackpotInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2318,7 +2332,8 @@ BEGIN
 				ISNULL(b.TransDesc, '') AS BetCheck,
 				blc.transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				b.ExtraInfo,
+				'' AS JackpotInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2385,7 +2400,8 @@ BEGIN
 				ISNULL(b.TransDesc, '') AS BetCheck,
 				blc.transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				b.ExtraInfo,
+				'' AS JackpotInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -2559,6 +2575,7 @@ BEGIN
 		a.TransDesc,
 		a.BetdaqId,
 		a.ExtraInfo,
+		a.JackpotInfo,
 		a.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
 		a.OriginalBetType,
 		a.WalletType,

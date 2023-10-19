@@ -58,6 +58,8 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221220@Kos: Remove inactive products FW [Redmine: 181424]
 		- 20230905@Kos: Support TxId for MaxGame [Redmine: 193273]
+		- 20231019@Kos: Adjust due to new column ExtraInfo [Redmine: 195780]
+					- Return new JackpotInfo column
 
 	Parameters:
 		- @TransType
@@ -163,6 +165,7 @@ BEGIN
 		OddsSpread		MONEY,
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
+		JackpotInfo		VARCHAR(50),
 		SiteId			VARCHAR(7),
 		EventDate		DATETIME
 	)
@@ -214,10 +217,11 @@ BEGIN
 				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
+			brng.ExtraInfo,
 			CASE
 				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
-			END AS ExtraInfo,
+			END AS JackpotInfo,
 			ISNULL(brng.SiteID, '') AS SiteId,
 			CASE
 				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
@@ -275,10 +279,11 @@ BEGIN
 				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
+			brng.ExtraInfo,
 			CASE
 				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
-			END AS ExtraInfo,
+			END AS JackpotInfo,
 			ISNULL(brng.SiteID, '') AS SiteId,
 			CASE
 				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
@@ -334,10 +339,11 @@ BEGIN
 				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
+			brng.ExtraInfo,
 			CASE
 				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
-			END AS ExtraInfo,
+			END AS JackpotInfo,
 			ISNULL(brng.SiteID, '') AS SiteId,
 			CASE
 				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
@@ -408,6 +414,7 @@ BEGIN
 		b.OddsSpread,
 		b.BetdaqId,
 		b.ExtraInfo,
+		b.JackpotInfo,
 		@Currency AS Currency,
 		b.SiteId,
 		b.EventDate
