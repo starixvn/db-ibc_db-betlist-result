@@ -31,6 +31,7 @@ AS
 		- 20221122@Kos: Hotfix - Sorting not work [Redmine: #180779]
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
+		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
 */
 
 BEGIN
@@ -414,7 +415,7 @@ BEGIN
 			b.betteam,
 			b.hdp1,
 			CASE
-				WHEN c.Product IN ('SB', 'VS', 'VS2') THEN b.hdp2
+				WHEN c.Product IN ('SB', 'VS', 'VS2', 'LG') THEN b.hdp2
 				ELSE 0
 			END AS Hdp2,
 			b.oddstype,
@@ -447,27 +448,27 @@ BEGIN
 			b.sdiscount AS SDiscount,
 			b.liveindicator,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.livehomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.livehomescore
 				ELSE 0
 			END AS LiveHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.liveawayscore
 				ELSE 0
 			END AS LiveAwayScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalhomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.finalhomescore
 				ELSE 0
 			END AS FinalHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.finalawayscore
 				ELSE 0
 			END AS FinalAwayScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.hthomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.hthomescore
 				ELSE 0
 			END AS HtHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.htawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.htawayscore
 				ELSE 0
 			END AS HtAwayScore,
 			b.ip,
@@ -497,11 +498,11 @@ BEGIN
 				ELSE 0
 			END AS AwayId,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.betstatus
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.betstatus
 				ELSE ''
 			END AS BetStatus,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 				ELSE 0
 			END AS IsNeutral,
 			CASE
@@ -758,7 +759,7 @@ BEGIN
 			b.betteam,
 			b.hdp1,
 			CASE
-				WHEN c.Product IN ('SB', 'VS', 'VS2') THEN b.hdp2
+				WHEN c.Product IN ('SB', 'VS', 'VS2', 'LG') THEN b.hdp2
 				ELSE 0
 			END AS Hdp2,
 			b.oddstype,
@@ -791,27 +792,27 @@ BEGIN
 			b.sdiscount AS SDiscount,
 			b.liveindicator,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.livehomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.livehomescore
 				ELSE 0
 			END AS LiveHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.liveawayscore
 				ELSE 0
 			END AS LiveAwayScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalhomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.finalhomescore
 				ELSE 0
 			END AS FinalHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.finalawayscore
 				ELSE 0
 			END AS FinalAwayScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.hthomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.hthomescore
 				ELSE 0
 			END AS HtHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.htawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.htawayscore
 				ELSE 0
 			END AS HtAwayScore,
 			b.ip,
@@ -841,11 +842,11 @@ BEGIN
 				ELSE 0
 			END AS AwayId,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.betstatus
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.betstatus
 				ELSE ''
 			END AS BetStatus,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 				ELSE 0
 			END AS IsNeutral,
 			CASE

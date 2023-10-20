@@ -138,6 +138,7 @@ AS
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
+		- 20231027@Razor: Support new bettype of Virtual Sport [Redmine: #194634]
 */
 
 BEGIN
@@ -529,7 +530,7 @@ BEGIN
 					END
 			,Hdp2 = CASE
 						WHEN c.Product IN ('Parlay', 'ParlayVS2', 'NG2') THEN b.hdp2 --parlay(s), NG2
-						WHEN c.Product IN ('SB', 'VS', 'VS2') THEN b.hdp2
+						WHEN c.Product IN ('SB', 'VS', 'VS2', 'LG') THEN b.hdp2
 						WHEN c.Product IN ('VR') THEN b.hdp2
 						ELSE 0
 					END
@@ -592,31 +593,31 @@ BEGIN
 			,SDiscount = b.sdiscount
 			,LiveIndicator = CASE 
 								WHEN c.Product IN ('Parlay') THEN b.Liveindicator 
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveindicator
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.liveindicator
 								ELSE 0 END
 			,LiveHomeScore = CASE 
 								WHEN c.Product IN ('Parlay', 'NG2') THEN b.Livehomescore
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.livehomescore
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.livehomescore
 								WHEN c.Product IN ('Outright') THEN b.livehomescore
 								WHEN c.Product IN ('VR') THEN b.livehomescore
 								ELSE 0 END
 			,LiveAwayScore = CASE 
 								WHEN c.Product IN ('Parlay') THEN b.Liveawayscore 
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveawayscore
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.liveawayscore
 								WHEN c.Product IN ('Outright') THEN b.liveawayscore
 								WHEN c.Product IN ('VR') THEN b.liveawayscore
 								ELSE 0 END
 			,FinalHomeScore = CASE
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalhomescore
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.finalhomescore
 									ELSE 0 END
 			,FinalAwayScore = CASE
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.finalawayscore
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.finalawayscore
 									ELSE 0 END
 			,HtHomeScore = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.hthomescore
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.hthomescore
 								ELSE 0 END
 			,HtAwayScore = CASE
-								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.htawayscore
+								WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.htawayscore
 								ELSE 0 END
 			,Ip = b.ip
 			,LeagueId = CASE
@@ -655,10 +656,10 @@ BEGIN
 							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.awayid
 							ELSE 0 END
 			,BetStatus = CASE
-							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.betstatus
+							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.betstatus
 							ELSE '' END
 			,IsNeutral = CASE
-							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+							WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 							ELSE 0 END
 			,Placing = CASE
 							WHEN c.Product IN ('VR') THEN CONVERT(VARCHAR(5), vo.Placing)

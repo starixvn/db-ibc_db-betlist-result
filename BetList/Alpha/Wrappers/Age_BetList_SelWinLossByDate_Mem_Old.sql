@@ -158,6 +158,7 @@ AS
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231020@Razor: Support show max payout [Redmine: #194491]
+		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -481,7 +482,7 @@ BEGIN
 							ELSE 0
 						END,
 				Hdp2 = CASE
-							WHEN b.Product IN ('SB', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'NG2') THEN b.hdp2
+							WHEN b.Product IN ('SB', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'NG2', 'LG') THEN b.hdp2
 							ELSE 0
 						END,
 				OddsType = CASE
@@ -506,15 +507,15 @@ BEGIN
 							ELSE b.Status
 						END,
 				LiveIndicator = CASE
-									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN b.liveindicator
+									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.liveindicator
 									ELSE 0
 								END,
 				LiveHomeScore = CASE
-									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'NG2') THEN b.livehomescore
+									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'NG2', 'LG') THEN b.livehomescore
 									ELSE 0
 								END,
 				LiveAwayScore = CASE
-									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.liveawayscore
+									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'LG') THEN b.liveawayscore
 									ELSE 0
 								END,
 				LeagueId = CASE
@@ -560,11 +561,11 @@ BEGIN
 							ELSE 0
 						END,
 				BetStatus = CASE
-									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.betstatus
+									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.betstatus
 									ELSE ''
 								END,
 				IsNeutral = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 								ELSE 0
 							END,
 				ShowTime = CASE
