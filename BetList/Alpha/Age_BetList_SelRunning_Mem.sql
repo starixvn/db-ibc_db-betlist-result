@@ -155,6 +155,7 @@ AS
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231021@Kos: Hotfix - Not show odds for some tickets [Redmine: #195844]
+		- 20231023@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -220,7 +221,8 @@ BEGIN
 		ProductID			INT,
 		EventType			INT,
 		SubProduct			VARCHAR(500),
-		TableID				TINYINT
+		TableID				TINYINT,
+		DeviceType			TINYINT
 	)
 
 	DECLARE @BetListDetail TABLE(
@@ -276,6 +278,7 @@ BEGIN
 		,TransDesc
 		,ExtraInfo
 		,TableID
+		,DeviceType
 	)
 	SELECT TransID = transid
 		,TransDate = transdate
@@ -312,6 +315,7 @@ BEGIN
 		,TransDesc = ISNULL(transdesc, '')
 		,ExtraInfo = ISNULL(ExtraInfo, '')
 		,TableID = 1 --bettrans
+		,DeviceType
 	FROM dbo.bettrans WITH (NOLOCK, INDEX = IX_betrunning_custid)
 	WHERE custid = @CustId
 		AND statusID IN (0,1)
@@ -362,6 +366,7 @@ BEGIN
 		,Gameid3rd
 		,Tranid3rd
 		,TableID
+		,DeviceType
 	)
 	SELECT TransId = translogid
 		,TransDate = transdate
@@ -403,6 +408,7 @@ BEGIN
 		,Gameid3rd = Gameid3rd
 		,Tranid3rd = Tranid3rd
 		,TableID = 2 -- translog
+		,DeviceType
 	FROM dbo.translog WITH (NOLOCK, INDEX = IX_betrunning_custid)
 	WHERE custid = @CustId
 		AND statusID IN (0, 1)
@@ -1046,6 +1052,7 @@ BEGIN
 		,@CustId AS CustId
 		,@Username AS Username
 		,@CurrencyName AS Currency
+		,DeviceType
 	FROM @BetListSelRunningByDateMem
 	ORDER BY TransId DESC
 

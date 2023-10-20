@@ -138,6 +138,7 @@ AS
 		- 20231020@Razor: Support show max payout [Redmine: #194491]
 		- 202311109@Razor: HF - Show Winloss value for statement of Habanero [Redmine: #196671]
 		- 20231114@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
+		- 20231116@Razor: Return Device Type info [Redmine: #192667]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -245,6 +246,7 @@ BEGIN
 		, Currency			NVARCHAR(50)
 		, CurrencyId		TINYINT
 		, SiteId			VARCHAR(20)
+		, DeviceType		TINYINT
 	);
 
 	DECLARE @Tickets TABLE (
@@ -793,6 +795,7 @@ BEGIN
 								WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
 								ELSE ''
 							END
+					,DeviceType = b.DeviceType
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
@@ -977,6 +980,7 @@ BEGIN
 									WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN b.SiteId
 									ELSE ''
 								END
+						,DeviceType = b.DeviceType
 					FROM @Tickets AS c
 						INNER JOIN dbo.translog AS b WITH (NOLOCK) ON b.translogid = c.TransId
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('MG') AND b.eventid = m.matchid
@@ -1071,6 +1075,7 @@ BEGIN
 					,BetdaqId = ISNULL(b.RefNo2, -1)
 					,ExtraInfo = ''
 					,Currency = b.currencyname
+					,DeviceType = b.DeviceType
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettransRnG AS b WITH (NOLOCK) ON b.transid = c.transid
 			END
@@ -1340,6 +1345,7 @@ BEGIN
 								WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
 								ELSE ''
 							END
+					,DeviceType = b.DeviceType
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
@@ -1454,6 +1460,7 @@ BEGIN
 					,BetdaqId = ISNULL(b.RefNo2, -1)
 					,ExtraInfo = ''
 					,Currency = b.currencyname
+					,DeviceType = b.DeviceType
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettransRnG14 AS b WITH (NOLOCK) ON b.transid = c.transid
 			END

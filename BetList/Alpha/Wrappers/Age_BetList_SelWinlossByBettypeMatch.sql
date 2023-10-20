@@ -32,6 +32,7 @@ AS
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
 		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -179,7 +180,8 @@ BEGIN
 		OddsSpread			MONEY,
 		Currency			NVARCHAR(50),
 		ExtraInfo			VARCHAR(1000),
-		BetdaqId			BIGINT
+		BetdaqId			BIGINT,
+		DeviceType			TINYINT
 	);
 
 	DECLARE @Tickets TABLE (
@@ -400,7 +402,8 @@ BEGIN
 			OddsSpread,
 			Currency,
 			ExtraInfo,
-			BetdaqId)
+			BetdaqId,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.refno,
@@ -528,7 +531,8 @@ BEGIN
 			CASE
 				WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 				ELSE -1
-			END
+			END,
+			b.DeviceType
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK, INDEX = PK_bettrans) ON b.transid = c.TransId
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
@@ -744,7 +748,8 @@ BEGIN
 			OddsSpread,
 			Currency,
 			ExtraInfo,
-			BetdaqId)
+			BetdaqId,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.refno,
@@ -872,7 +877,8 @@ BEGIN
 			CASE
 				WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 				ELSE -1
-			END
+			END,
+			b.DeviceType
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.TransId
 			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid

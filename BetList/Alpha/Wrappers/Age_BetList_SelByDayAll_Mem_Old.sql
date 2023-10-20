@@ -107,6 +107,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231020@Razor: Support show max payout [Redmine: #194491]
 		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -174,7 +175,8 @@ BEGIN
 		ExtraInfo		VARCHAR(1000),
 		Product			VARCHAR(30),
 		CurrencyId		TINYINT,
-		SiteId			VARCHAR(20)
+		SiteId			VARCHAR(20),
+		DeviceType		TINYINT
 	);
 
 	DECLARE @DetailData TABLE (
@@ -247,7 +249,8 @@ BEGIN
 			BetdaqId,
 			ExtraInfo,
 			CurrencyId,
-			SiteId)
+			SiteId,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.refno,
@@ -292,7 +295,8 @@ BEGIN
 			b.betdaqid,
 			b.ExtraInfo,
 			b.Currency,
-			b.betdaqid
+			b.betdaqid,
+			b.DeviceType
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
@@ -614,7 +618,8 @@ BEGIN
 			ComStatus,
 			TransDesc,
 			BetdaqId,
-			ExtraInfo)
+			ExtraInfo,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.RefNo,
@@ -666,7 +671,8 @@ BEGIN
 			'0' AS ComStatus,
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.RefNo2, -1) AS BetdaqId,
-			'' AS ExtraInfo
+			'' AS ExtraInfo,
+			b.DeviceType
 		FROM dbo.bettransRnG_bk AS b WITH (NOLOCK)
 			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -758,7 +764,8 @@ BEGIN
 		@CurrencyName AS Currency,
 		@Username AS Username,
 		b.CurrencyId,
-		b.SiteId
+		b.SiteId,
+		b.DeviceType
 	FROM @Data AS b
 	ORDER BY b.TransId DESC
 

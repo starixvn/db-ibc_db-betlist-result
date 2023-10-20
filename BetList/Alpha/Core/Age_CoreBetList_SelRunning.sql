@@ -41,6 +41,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231021@Kos: Hotfix - Not show odds for some tickets [Redmine: #195844]
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -104,6 +105,7 @@ BEGIN
 		, ExtraInfo			VARCHAR(1000)
 		, ProductId			TINYINT
 		, EventType			TINYINT
+		, DeviceType		TINYINT
 	)
 
 	SELECT @CustId	= ISNULL(@CustId, 0)
@@ -175,6 +177,7 @@ BEGIN
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.ProductID
 				, bt.EventType
+				, b.DeviceType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.recommend = @CustId AND b.statusID IN (0, 1)
@@ -243,6 +246,7 @@ BEGIN
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.ProductID
 				, bt.EventType
+				, b.DeviceType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.mrecommend = @CustId AND b.statusID IN (0, 1)
@@ -311,6 +315,7 @@ BEGIN
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.ProductID
 				, bt.EventType
+				, b.DeviceType
 			FROM dbo.bettrans b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
 			WHERE b.srecommend = @CustId
@@ -372,6 +377,7 @@ BEGIN
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
+				, b.DeviceType
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_recommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.recommend = @CustId
@@ -432,6 +438,7 @@ BEGIN
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
+				, b.DeviceType
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_mrecommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.mrecommend = @CustId
@@ -492,6 +499,7 @@ BEGIN
 				, ISNULL(b.ExtraInfo, '') AS ExtraInfo
 				, bt.productid
 				, bt.eventtype
+				, b.DeviceType
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_srecommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.srecommend = @CustId

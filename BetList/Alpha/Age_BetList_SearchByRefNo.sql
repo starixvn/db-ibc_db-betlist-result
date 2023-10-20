@@ -23,6 +23,7 @@ AS
 			- Return new JackpotInfo column
 			- Return ExtraInfo for show Max Payout
 		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -106,7 +107,8 @@ BEGIN
 		ExtraInfo			VARCHAR(1000),
 		JackpotInfo			VARCHAR(50),
 		SiteId				VARCHAR(20),
-		WhTicket			TINYINT
+		WhTicket			TINYINT,
+		DeviceType			TINYINT
 	)
 
 	DECLARE @Detail TABLE (
@@ -335,7 +337,8 @@ BEGIN
 			'' AS ExtraInfo,
 			'' AS JackpotInfo,
 			ISNULL(b.SiteId, '') AS SiteId,
-			1 AS WhTicket
+			1 AS WhTicket,
+			b.DeviceType
 		FROM dbo.translog AS b WITH (NOLOCK)
 		WHERE b.translogid = @TransId
 	END
@@ -751,7 +754,8 @@ BEGIN
 				WHEN @Product IN ('H5LG', 'SLT', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
 				ELSE ''
 			END AS SiteId,
-			2 AS WhTicket
+			2 AS WhTicket,
+			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			LEFT JOIN @TmpData AS x ON @RefTable IN (1, 2) AND @Winlostdate >= @Yesterday
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON @Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
@@ -953,7 +957,8 @@ BEGIN
 				WHEN @Product IN ('H5LG', 'SLT', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
 				ELSE ''
 			END AS SiteId,
-			3 AS WhTicket
+			3 AS WhTicket,
+			b.DeviceType
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON @Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
 			LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
@@ -1198,7 +1203,8 @@ BEGIN
 					ELSE ''
 				END AS JackpotInfo,
 				ISNULL(SiteID, '') AS SiteId,
-				5 AS WhTicket
+				5 AS WhTicket,
+				DeviceType
 			FROM dbo.bettransRnG WITH (NOLOCK)
 			WHERE transid = @TransId
 		END
@@ -1287,7 +1293,8 @@ BEGIN
 					ELSE ''
 				END AS JackpotInfo,
 				ISNULL(SiteID, '') AS SiteId,
-				6 AS WhTicket
+				6 AS WhTicket,
+				DeviceType
 			FROM dbo.bettransRnG14 WITH (NOLOCK)
 			WHERE transid = @TransId
 		END
@@ -1427,7 +1434,8 @@ BEGIN
 				ExtraInfo,
 				'' AS JackpotInfo,
 				SiteID,
-				8 AS WhTicket
+				8 AS WhTicket,
+				DeviceType
 			FROM dbo.bettransLC WITH (NOLOCK)
 			WHERE transid = @TransId
 		END
@@ -1500,7 +1508,8 @@ BEGIN
 				ExtraInfo,
 				'' AS JackpotInfo,
 				SiteID,
-				9 AS WhTicket
+				9 AS WhTicket,
+				DeviceType
 			FROM dbo.bettransLC14 WITH (NOLOCK)
 			WHERE transid = @TransId
 		END
@@ -1658,7 +1667,8 @@ BEGIN
 					b.ExtraInfo,
 					'' AS JackpotInfo,
 					blc.SiteID,
-					11 AS WhTicket
+					11 AS WhTicket,
+					b.DeviceType
 				FROM dbo.bettransg AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.transid = b.refno AND blc.custid = b.custid
 				WHERE b.transid = @TransId
@@ -1732,7 +1742,8 @@ BEGIN
 					b.ExtraInfo,
 					'' AS JackpotInfo,
 					b.SiteId,
-					11 AS WhTicket
+					11 AS WhTicket,
+					b.DeviceType
 				FROM dbo.bettransg AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettrans AS b2 WITH (NOLOCK) ON b2.transid = b.refno AND b2.custid = b.CustId
 				WHERE b.transid = @TransId
@@ -1810,7 +1821,8 @@ BEGIN
 					b.ExtraInfo,
 					'' AS JackpotInfo,
 					blc.SiteID,
-					12 AS WhTicket
+					12 AS WhTicket,
+					b.DeviceType
 				FROM dbo.bettransg14 AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransLC14 AS blc WITH (NOLOCK) ON blc.transid = b.refno AND blc.custid = b.custid
 				WHERE b.transid = @TransId
@@ -1884,7 +1896,8 @@ BEGIN
 					b.ExtraInfo,
 					'' AS JackpotInfo,
 					b.SiteId,
-					12 AS WhTicket
+					12 AS WhTicket,
+					b.DeviceType
 				FROM dbo.bettransg14 AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettrans14 AS b2 WITH (NOLOCK) ON b2.transid = b.refno AND b2.custid = b.CustId
 				WHERE b.transid = @TransId

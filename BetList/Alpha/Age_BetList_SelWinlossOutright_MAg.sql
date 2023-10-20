@@ -33,6 +33,7 @@ AS
 					- Prevent data duplication during Move Bet process
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -75,7 +76,8 @@ BEGIN
 		Ip				VARCHAR(45),
 		BetStatus		VARCHAR(20),
 		IsNeutral		BIT,
-		ComStatus		NVARCHAR(20)
+		ComStatus		NVARCHAR(20),
+		DeviceType		TINYINT
 	)
 
 	DECLARE @TempFromDate	SMALLDATETIME,
@@ -126,7 +128,8 @@ BEGIN
 			b.ip,
 			NULL,
 			CONVERT(BIT,0) AS IsNeutral,
-			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
+			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
@@ -182,7 +185,8 @@ BEGIN
 			b.ip,
 			NULL,
 			CONVERT(BIT,0) AS IsNeutral,
-			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus
+			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
+			b.DeviceType
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid

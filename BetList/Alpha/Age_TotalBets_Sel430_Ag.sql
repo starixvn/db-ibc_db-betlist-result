@@ -24,6 +24,7 @@ AS
 					- Remove param @Language
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -67,7 +68,8 @@ BEGIN
 		b.ip,
 		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 		b.oddstype,
-		ISNULL(b.transdesc, '') AS transdesc
+		ISNULL(b.transdesc, '') AS transdesc,
+		b.DeviceType
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 	WHERE b.recommend = @CustId
@@ -75,10 +77,4 @@ BEGIN
 		AND b.statusID IN (0, 1)
 	ORDER BY b.transid DESC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Age_TotalBets_Sel430_Ag] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_TotalBets_Sel430_Ag] TO [bodbDownlineNetView]
 GO

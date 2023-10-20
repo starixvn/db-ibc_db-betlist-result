@@ -139,6 +139,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
 		- 20231027@Razor: Support new bettype of Virtual Sport [Redmine: #194634]
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -217,6 +218,7 @@ BEGIN
 		, Currency			NVARCHAR(50)
 		, CurrencyId		TINYINT
 		, SiteId			VARCHAR(20)
+		, DeviceType		TINYINT
 	);
 
 	DECLARE @Tickets TABLE (
@@ -695,6 +697,7 @@ BEGIN
 						WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN CONVERT(VARCHAR(20), b.betdaqid)
 						ELSE ''
 					END
+			,DeviceType = b.DeviceType
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.TransId
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
@@ -851,6 +854,7 @@ BEGIN
 			,Currency = b.currencyname
 			,CurrencyId = b.currency
 			,SiteId = b.betdaqid
+			,DeviceType = b.DeviceType
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.TransId
 			INNER JOIN @temp_bettransX AS x ON x.RefNo = c.TransId
@@ -1025,6 +1029,7 @@ BEGIN
 						WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN b.SiteId
 						ELSE ''
 					END
+			,DeviceType = b.DeviceType
 		FROM @Tickets AS c
 			INNER JOIN dbo.translog AS b WITH (NOLOCK) ON b.translogid = c.transid
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('MG') AND b.eventid = m.matchid

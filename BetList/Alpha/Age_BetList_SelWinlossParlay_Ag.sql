@@ -38,6 +38,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 					- Remove param @Language
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -83,7 +84,8 @@ BEGIN
 		comstatus		NVARCHAR(20),
 		BetCheck		NVARCHAR(50),
 		transdesc		NVARCHAR(1000),
-		ExtraInfo		VARCHAR(1000)
+		ExtraInfo		VARCHAR(1000),
+		DeviceType		TINYINT
 	)
 
 	IF @Todate > @MoveBetsDay
@@ -129,7 +131,8 @@ BEGIN
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE
 			b.Recommend = @CustID AND
@@ -183,7 +186,8 @@ BEGIN
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS transdesc,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			b.DeviceType
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		WHERE
 			b.Recommend = @CustID AND

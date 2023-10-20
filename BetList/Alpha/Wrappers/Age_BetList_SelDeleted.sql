@@ -82,6 +82,7 @@ AS
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -132,7 +133,8 @@ BEGIN
 		WhTicket		TINYINT,
 		BetdaqId		BIGINT,
 		CurrencyId		TINYINT,
-		SiteId			VARCHAR(20)
+		SiteId			VARCHAR(20),
+		DeviceType		TINYINT
 	);
 
 	CREATE TABLE #PagingData (
@@ -180,7 +182,8 @@ BEGIN
 		WhTicket		TINYINT,
 		BetdaqId		BIGINT,
 		CurrencyId		TINYINT,
-		SiteId			VARCHAR(20)
+		SiteId			VARCHAR(20),
+		DeviceType		TINYINT
 	);
 
 	DECLARE @BetListDetail TABLE(
@@ -240,7 +243,8 @@ BEGIN
 				WhTicket,
 				BetdaqId,
 				CurrencyId,
-				SiteId)
+				SiteId,
+				DeviceType)
 			SELECT
 				b.transid,
 				b.refno,
@@ -272,7 +276,8 @@ BEGIN
 				1 AS WhTicket,
 				b.betdaqid,
 				b.currency,
-				b.betdaqid
+				b.betdaqid,
+				b.DeviceType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.recommend = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -312,7 +317,8 @@ BEGIN
 				WhTicket,
 				BetdaqId,
 				CurrencyId,
-				SiteId)
+				SiteId,
+				DeviceType)
 			SELECT
 				b.transid,
 				b.refno,
@@ -344,7 +350,8 @@ BEGIN
 				1 AS WhTicket,
 				b.BetdaqId,
 				b.currency,
-				b.betdaqid
+				b.betdaqid,
+				b.DeviceType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.mrecommend = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -384,7 +391,8 @@ BEGIN
 				WhTicket,
 				BetdaqId,
 				CurrencyId,
-				SiteId)
+				SiteId,
+				DeviceType)
 			SELECT
 				b.transid,
 				b.refno,
@@ -416,7 +424,8 @@ BEGIN
 				1 AS WhTicket,
 				b.BetdaqId,
 				b.currency,
-				b.betdaqid
+				b.betdaqid,
+				b.DeviceType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.srecommend = @CustId
 				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -465,7 +474,8 @@ BEGIN
 				WhTicket,
 				BetdaqId,
 				CurrencyId,
-				SiteId)
+				SiteId,
+				DeviceType)
 			SELECT
 				b.transid,
 				b.refno,
@@ -497,7 +507,8 @@ BEGIN
 				2 AS WhTicket,
 				b.BetdaqId,
 				b.currency,
-				b.betdaqid
+				b.betdaqid,
+				b.DeviceType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.recommend = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -537,7 +548,8 @@ BEGIN
 				WhTicket,
 				BetdaqId,
 				CurrencyId,
-				SiteId)
+				SiteId,
+				DeviceType)
 			SELECT
 				b.transid,
 				b.refno,
@@ -569,7 +581,8 @@ BEGIN
 				2 AS WhTicket,
 				b.BetdaqId,
 				b.currency,
-				b.betdaqid
+				b.betdaqid,
+				b.DeviceType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.mrecommend = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -609,7 +622,8 @@ BEGIN
 				WhTicket,
 				BetdaqId,
 				CurrencyId,
-				SiteId)
+				SiteId,
+				DeviceType)
 			SELECT
 				b.transid,
 				b.refno,
@@ -641,7 +655,8 @@ BEGIN
 				2 AS WhTicket,
 				b.BetdaqId,
 				b.currency,
-				b.betdaqid
+				b.betdaqid,
+				b.DeviceType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.srecommend = @CustId
 				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -717,7 +732,8 @@ BEGIN
 				WhTicket,
 				BetdaqId,
 				CurrencyId,
-				SiteId)
+				SiteId,
+				DeviceType)
 			SELECT
 				b.TransId,
 				b.RefNo,
@@ -752,7 +768,8 @@ BEGIN
 				b.WhTicket,
 				b.BetdaqId,
 				b.CurrencyId,
-				b.SiteId
+				b.SiteId,
+				b.DeviceType
 			FROM
 				(
 					SELECT
@@ -1348,7 +1365,8 @@ BEGIN
 		b.ExtraInfo,
 		b.BetdaqId,
 		b.CurrencyId,
-		b.SiteId
+		b.SiteId,
+		b.DeviceType
 	FROM #PagingData AS b
 		INNER JOIN dbo.custinfo AS c WITH (NOLOCK) ON b.CustId = c.custid
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid

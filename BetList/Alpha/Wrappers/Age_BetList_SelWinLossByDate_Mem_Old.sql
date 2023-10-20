@@ -159,6 +159,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231020@Razor: Support show max payout [Redmine: #194491]
 		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -229,7 +230,8 @@ BEGIN
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(20),
 		LeagueGroupID		SMALLINT,
-		TicketType		TINYINT
+		TicketType		TINYINT,
+		DeviceType		TINYINT
 	);
 
 	DECLARE @DetailData TABLE (
@@ -317,7 +319,8 @@ BEGIN
 		BetdaqId,
 		ExtraInfo,
 		CurrencyId,
-		SiteId)
+		SiteId,
+		DeviceType)
 	SELECT
 		b.transid,
 		b.refno,
@@ -362,7 +365,8 @@ BEGIN
 		b.betdaqid,
 		b.ExtraInfo,
 		b.currency,
-		b.betdaqid
+		b.betdaqid,
+		b.DeviceType
 	FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 	WHERE b.custid = @CustId
 		AND b.winlostdate BETWEEN @TempFromDate AND @TempToDate
@@ -889,7 +893,8 @@ BEGIN
 			@CurrencyName AS Currency,
 			@Username AS Username,
 			b.CurrencyId,
-			b.SiteId
+			b.SiteId,
+			b.DeviceType
 		FROM @Data AS b
 		ORDER BY b.TransId DESC
 	END
@@ -951,7 +956,8 @@ BEGIN
 			@CurrencyName AS Currency,
 			@Username AS Username,
 			b.CurrencyId,
-			b.SiteId
+			b.SiteId,
+			b.DeviceType
 		FROM @Data AS b
 		ORDER BY b.TransId DESC
 	END

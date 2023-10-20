@@ -19,6 +19,7 @@ AS
 	Revision:
 		- 20230706@Kos: Last Bets [Redmine: #186142]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 
 	Parameter's Explanation:
 		- @CustId: agent CustId
@@ -174,7 +175,8 @@ BEGIN
 		b.ip,
 		ISNULL(b.betcheck, '') AS BetCheck,
 		ISNULL(b.transdesc, '') AS TransDesc,
-		ISNULL(b.ExtraInfo, '') AS ExtraInfo
+		ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+		b.DeviceType
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN __bettypeList AS sbm ON sbm.BetType = b.bettype
 		LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.matchid AND sbm.EventType = 1

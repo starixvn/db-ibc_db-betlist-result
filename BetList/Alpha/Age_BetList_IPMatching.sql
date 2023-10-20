@@ -18,6 +18,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -94,7 +95,8 @@ BEGIN
 		OddsSpread			MONEY,
 		ExtraInfo			VARCHAR(1000),
 		Currency			NVARCHAR(50),
-		BetdaqId			BIGINT
+		BetdaqId			BIGINT,
+		DeviceType			TINYINT
 	);
 
 	DECLARE @Tickets TABLE (
@@ -306,7 +308,8 @@ BEGIN
 				BetdaqId = CASE
 								WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 								ELSE -1
-							END
+							END,
+				DeviceType = b.DeviceType
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB') AND b.matchid = m.matchid
@@ -395,7 +398,8 @@ BEGIN
 				OddsSpread = 0,
 				ExtraInfo = '',
 				Currency = b.currencyname,
-				betdaqid = -1
+				betdaqid = -1,
+				DeviceType = b.DeviceType
 			FROM @Tickets AS c
 				INNER JOIN dbo.translog AS b WITH (NOLOCK) ON b.translogid = c.TransId
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
@@ -568,7 +572,8 @@ BEGIN
 				BetdaqId = CASE
 								WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 								ELSE -1
-							END
+							END,
+				DeviceType = b.DeviceType
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 				LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB') AND b.matchid = m.matchid

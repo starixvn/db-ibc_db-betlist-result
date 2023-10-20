@@ -31,6 +31,7 @@ AS
 		- 20180201@Kos: Don't support Racing anymore [Redmine: #86086]
 		- 20200625@Kos: Integrate archive process for table VSRaceInfo [Redmine: #135963]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -90,7 +91,8 @@ BEGIN
 		IsNeutral		BIT,
 		ComStatus		NVARCHAR(20),
 		RefNo			NVARCHAR(50),
-		ShowTime		NVARCHAR(50)
+		ShowTime		NVARCHAR(50),
+		DeviceType		TINYINT
 	)
 
 	DECLARE @TempFromDate DATETIME,
@@ -146,7 +148,8 @@ BEGIN
 			CONVERT(BIT, 0) AS IsNeutral,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			b.refno,
-			r.EventTime AS ShowTime
+			r.EventTime AS ShowTime,
+			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.orid
 			INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
@@ -207,7 +210,8 @@ BEGIN
 			CONVERT(BIT,0) AS IsNeutral,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			b.refno,
-			r.EventTime AS ShowTime
+			r.EventTime AS ShowTime,
+			b.DeviceType
 		FROM dbo.bettrans14 b WITH (NOLOCK)
 			INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.orid
 			INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID

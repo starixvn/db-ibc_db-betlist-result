@@ -31,6 +31,7 @@ AS
 		- 20210414@Razor: Support Time Machine HDP [Redmine: #152749]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231025@Kos: Hotfix - missing oddsspread for Parlay Boost [Redmine: #196042]
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 
 	Parameter's Explanation:
 		- @CustId: agent ID
@@ -108,7 +109,8 @@ BEGIN
 		ISNULL(b.betcheck, '') AS Betcheck,
 		ISNULL(b.transdesc, '') AS transdesc,
 		ISNULL(b.oddsspread, 0) AS OddsSpread,
-		ISNULL(b.ExtraInfo, '') AS ExtraInfo
+		ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+		b.DeviceType
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.recommend = @CustId
 		AND b.statusID IN (0,1)

@@ -87,7 +87,8 @@ BEGIN
 		Currency		NVARCHAR(50),
 		Product			VARCHAR(30),
 		CurrencyId		TINYINT,
-		SiteId			VARCHAR(20)
+		SiteId			VARCHAR(20),
+		DeviceType		TINYINT
 	);
 
 	DECLARE @BettransDetail TABLE (
@@ -231,7 +232,8 @@ BEGIN
 				SiteId = CASE
 							WHEN c.Product = 'H5LG' THEN CONVERT(VARCHAR(20), b.betdaqid)
 							ELSE ''
-						END
+						END,
+				DeviceType = b.DeviceType
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 		END
@@ -359,7 +361,8 @@ BEGIN
 				SiteId = CASE
 							WHEN c.Product = 'H5LG' THEN CONVERT(VARCHAR(20), b.betdaqid)
 							ELSE ''
-						END
+						END,
+				DeviceType = b.DeviceType
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 		END

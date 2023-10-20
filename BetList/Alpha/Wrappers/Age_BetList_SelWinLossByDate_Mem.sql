@@ -160,6 +160,8 @@ AS
 		- 20231020@Razor: Support show max payout [Redmine: #194491]
 		- 20231031@Razor: HF - Show correct Status, Stake for Habanero on winlost report [Redmine: #196024]
 		- 20231101@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
+
 
 	Param's Explanation:
 		@ProductDetails:
@@ -269,6 +271,7 @@ BEGIN
 		, SiteId			VARCHAR(20)
 		, LeagueGroupID		SMALLINT
 		, TicketType		TINYINT
+		, DeviceType		TINYINT
 	);
 
 	DECLARE @BettransDetail TABLE (
@@ -718,6 +721,7 @@ BEGIN
 									WHEN b.betdaqid = -2 THEN 1
 									ELSE 0
 								END
+					,DeviceType = b.DeviceType
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
@@ -1023,6 +1027,7 @@ BEGIN
 								WHEN b.betdaqid = -2 THEN 1
 								ELSE 0
 							END
+				,DeviceType = b.DeviceType
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 				LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
