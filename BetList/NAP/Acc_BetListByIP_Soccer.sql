@@ -64,6 +64,7 @@ AS
 		- 20220927@Razor: Remove Betfrom column [Redmine: #126137]
 		- 20231005@Kos: Support Parlay Boost [Redmine: #194992]
 					- Don't support Cash Out bettype 911, 912, 913 in range bettrans and bettrans14 anymore
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -120,7 +121,8 @@ BEGIN
 		EventId				INT,
 		Custom1				NVARCHAR(50),
 		TableID				TINYINT,
-		Product				VARCHAR(30)
+		Product				VARCHAR(30),
+		DeviceType			TINYINT
 	)
 
 	-- Get ticket detail
@@ -185,7 +187,8 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
-			TableID)
+			TableID,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.refno,
@@ -223,7 +226,8 @@ BEGIN
 			b.ExtraInfo,
 			b.WalletType,
 			ISNULL(b.RefCode, 0),
-			1 AS TableID
+			1 AS TableID,
+			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
@@ -248,7 +252,8 @@ BEGIN
 			TransDesc,
 			EventId,
 			Custom1,
-			TableID
+			TableID,
+			DeviceType
 		)
 		SELECT
 			b.translogid AS TransId,
@@ -268,7 +273,8 @@ BEGIN
 			b.transdesc,
 			b.eventID,
 			b.custom1,
-			4 AS TableID
+			4 AS TableID,
+			b.DeviceType
 		FROM dbo.translog AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
@@ -316,7 +322,8 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
-			TableID)
+			TableID,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.refno,
@@ -354,7 +361,8 @@ BEGIN
 			b.ExtraInfo,
 			b.WalletType,
 			ISNULL(b.RefCode, 0),
-			2 AS TableID
+			2 AS TableID,
+			b.DeviceType
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
@@ -403,7 +411,8 @@ BEGIN
 			ExtraInfo,
 			WalletType,
 			RefCode,
-			TableID)
+			TableID,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.refno,
@@ -441,7 +450,8 @@ BEGIN
 			b.ExtraInfo,
 			b.WalletType,
 			ISNULL(b.RefCode, 0),
-			3 AS TableID
+			3 AS TableID,
+			b.DeviceType
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 		CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId
@@ -1236,7 +1246,8 @@ BEGIN
 		b.RefCode,
 		@CurrencyName AS Currency,
 		u.username AS Username,
-		c.username AS Creator
+		c.username AS Creator,
+		b.DeviceType
 	FROM @Data AS b
 		INNER JOIN dbo.custInfo AS u WITH (NOLOCK) ON u.custid = b.CustId
 		INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.Creator

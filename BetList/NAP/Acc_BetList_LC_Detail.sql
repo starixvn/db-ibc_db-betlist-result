@@ -46,7 +46,7 @@ AS
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
 		- 20231026@Razor: Due to performance, we should use index hint (IX_custid) on bettransg
-
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -145,7 +145,8 @@ BEGIN
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(7),
 		EventDate		DATETIME,
-		ExtraInfo		VARCHAR(1000)
+		ExtraInfo		VARCHAR(1000),
+		DeviceType		TINYINT
 	)
 
 	-- Get currency name
@@ -300,7 +301,8 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (39) THEN bg.ExtraInfo
 				ELSE blc.ExtraInfo
-			END
+			END,
+			blc.DeviceType
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
@@ -428,7 +430,8 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (39) THEN bg.ExtraInfo
 				ELSE blc.ExtraInfo
-			END
+			END,
+			blc.DeviceType
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
@@ -555,7 +558,8 @@ BEGIN
 			CASE
 				WHEN sbt.ProductID IN (39) THEN bg.ExtraInfo
 				ELSE blc.ExtraInfo
-			END
+			END,
+			blc.DeviceType
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			CROSS APPLY dbo.f_IP_Decompress(blc.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype

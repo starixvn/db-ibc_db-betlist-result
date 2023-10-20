@@ -47,6 +47,7 @@ AS
 		- 20231005@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231020@Razor: Support show max payout [Redmine: #194491]
 		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -156,7 +157,8 @@ BEGIN
 		Product				VARCHAR(30),
 		IsCashOut			TINYINT,
 		CurrencyId			TINYINT,
-		SiteId				VARCHAR(20)
+		SiteId				VARCHAR(20),
+		DeviceType			TINYINT
 	)
 
 	-- Get ticket detail
@@ -288,7 +290,8 @@ BEGIN
 			RefCode,
 			TableID,
 			CurrencyId,
-			SiteId)
+			SiteId,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.refno,
@@ -342,7 +345,8 @@ BEGIN
 			ISNULL(b.RefCode, 0),
 			1 AS TableID,
 			b.currency,
-			b.betdaqid
+			b.betdaqid,
+			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid)
 			INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 		WHERE b.custid = @CustId
@@ -385,7 +389,8 @@ BEGIN
 			Tranid3rd,
 			TableID,
 			CurrencyId,
-			SiteId
+			SiteId,
+			DeviceType
 		)
 		SELECT
 			b.translogid AS TransId,
@@ -420,7 +425,8 @@ BEGIN
 			b.TranId3rd,
 			4 AS TableID,
 			b.currency,
-			b.SiteId
+			b.SiteId,
+			b.DeviceType
 		FROM dbo.translog AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
@@ -1210,7 +1216,8 @@ BEGIN
 					Product				VARCHAR(30),
 					ISCashOut			TINYINT,
 					CurrencyId			TINYINT,
-					SiteId				VARCHAR(20)
+					SiteId				VARCHAR(20),
+					DeviceType			TINYINT
 				)
 
 				INSERT INTO @TmpCasinoData
@@ -1299,7 +1306,8 @@ BEGIN
 					b.Product,
 					0,
 					b.CurrencyId,
-					b.SiteId
+					b.SiteId,
+					b.DeviceType
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
 				WHERE b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
@@ -1494,7 +1502,8 @@ BEGIN
 		@Username AS Username,
 		@UGroup AS UGroup,
 		b.CurrencyId,
-		b.SiteId
+		b.SiteId,
+		b.DeviceType
 	FROM @Data AS b
 	ORDER BY b.TransId ASC
 

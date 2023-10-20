@@ -67,6 +67,7 @@ AS
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
 					- Return new JackpotInfo column
 					- Return ExtraInfo for show Max Payout
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 
 
 	Parameters:
@@ -171,7 +172,8 @@ BEGIN
 		ExtraInfo		VARCHAR(1000),
 		JackpotInfo		VARCHAR(50),
 		CurrencyId		TINYINT,
-		SiteId			VARCHAR(7)
+		SiteId			VARCHAR(7),
+		DeviceType		TINYINT
 	)
 
 	-- Get currency name
@@ -270,7 +272,8 @@ BEGIN
 				ELSE ''
 			END AS JackpotInfo,
 			brng.currency,
-			brng.SiteId
+			brng.SiteId,
+			brng.DeviceType
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.RefNo = @RefNo
@@ -338,7 +341,8 @@ BEGIN
 				ELSE ''
 			END AS JackpotInfo,
 			brng.currency,
-			brng.SiteId
+			brng.SiteId,
+			brng.DeviceType
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
 		WHERE brng.RefNo = @RefNo
@@ -405,7 +409,8 @@ BEGIN
 				ELSE ''
 			END AS JackpotInfo,
 			brng.currency,
-			brng.SiteId
+			brng.SiteId,
+			brng.DeviceType
 		FROM bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			CROSS APPLY dbo.f_IP_Decompress(brng.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype

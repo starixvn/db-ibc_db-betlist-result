@@ -93,6 +93,7 @@ AS
 		- 20231017@Razor: Support show max payout [Redmine: #194491]
 					- Return new JackpotInfo column
 					- Return ExtraInfo for show Max Payout
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -166,7 +167,8 @@ BEGIN
 		JackpotInfo		VARCHAR(50),
 		BetdaqId		BIGINT,
 		CurrencyId		TINYINT,
-		SiteId			VARCHAR(7)
+		SiteId			VARCHAR(7),
+		DeviceType		TINYINT
 	)
 
 	DECLARE @DetailData TABLE (
@@ -289,7 +291,8 @@ BEGIN
 						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
-						b.SiteId
+						b.SiteId,
+						b.DeviceType
 					FROM dbo.translog AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
@@ -350,7 +353,8 @@ BEGIN
 						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
-						b.betdaqid AS SiteId
+						b.betdaqid AS SiteId,
+						b.DeviceType
 					FROM dbo.bettrans AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 					WHERE b.custid = @CustId
@@ -491,7 +495,8 @@ BEGIN
 						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
-						b.SiteId
+						b.SiteId,
+						b.DeviceType
 					FROM dbo.bettransLC AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 						LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
@@ -584,7 +589,8 @@ BEGIN
 							ELSE -1
 						END AS BetdaqId,
 						b.currency,
-						b.SiteId
+						b.SiteId,
+						b.DeviceType
 					FROM dbo.bettransRnG AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
@@ -648,7 +654,8 @@ BEGIN
 						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
-						bg.SiteId
+						bg.SiteId,
+						b.DeviceType
 					FROM dbo.bettransg AS bg WITH (NOLOCK)
 						INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = bg.refno AND b.custid = bg.custid
@@ -726,7 +733,8 @@ BEGIN
 						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
-						b.betdaqid AS SiteId
+						b.betdaqid AS SiteId,
+						b.DeviceType
 					FROM dbo.bettrans14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 					WHERE b.custid = @CustId
@@ -869,7 +877,8 @@ BEGIN
 						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
-						b.SiteId
+						b.SiteId,
+						b.DeviceType
 					FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 						LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
@@ -962,7 +971,8 @@ BEGIN
 							ELSE -1
 						END AS BetdaqId,
 						b.currency,
-						b.SiteId
+						b.SiteId,
+						b.DeviceType
 					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
@@ -1026,7 +1036,8 @@ BEGIN
 						'' AS JackpotInfo,
 						-1 AS BetdaqId,
 						b.currency,
-						bg.SiteId
+						bg.SiteId,
+						b.DeviceType
 					FROM dbo.bettransg14 AS bg WITH (NOLOCK)
 						INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 						INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = bg.refno AND b.custid = bg.custid

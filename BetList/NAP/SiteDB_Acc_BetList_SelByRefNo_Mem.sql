@@ -24,10 +24,11 @@ AS
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
-		- 20231005@Kos: Support Parlay Boost [Redmine: #194992]		
+		- 20231005@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231020@Razor: Support show max payout [Redmine: #194491]
 					- Return new JackpotInfo column
 					- Return ExtraInfo for show Max Payout
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -110,7 +111,8 @@ BEGIN
 		WalletType			TINYINT,
 		RefCode				BIGINT,
 		CurrencyId			TINYINT,
-		SiteId				VARCHAR(20)
+		SiteId				VARCHAR(20),
+		DeviceType			TINYINT
 	)
 
 	DECLARE @TransId	BIGINT,
@@ -268,7 +270,8 @@ BEGIN
 						ELSE 0
 					END AS RefCode,
 					b.currency,
-					'' AS SiteId
+					'' AS SiteId,
+					b.DeviceType
 				FROM
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -352,7 +355,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					b.SiteId
+					b.SiteId,
+					b.DeviceType
 				FROM
 					dbo.translog AS b WITH (NOLOCK) 
 					INNER JOIN @SportBettype s ON s.Bettype = b.gameid
@@ -521,7 +525,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					'' AS SiteId
+					'' AS SiteId,
+					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 				WHERE
 					b.matchid IN (9, 29, 2799)
@@ -630,7 +635,8 @@ BEGIN
 						WHEN s.ProductId = 3 AND s.EventType = 0 THEN CONVERT(VARCHAR(20), b.betdaqid)
 						WHEN s.ProductId IN (38, 63) THEN CONVERT(VARCHAR(20), b.betdaqid)
 						ELSE '' 
-					END AS SiteId
+					END AS SiteId,
+					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
@@ -732,7 +738,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					'' AS SiteId
+					'' AS SiteId,
+					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
@@ -816,7 +823,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					'' AS SiteId
+					'' AS SiteId,
+					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 					INNER JOIN dbo.league l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -901,7 +909,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					'' AS SiteId
+					'' AS SiteId,
+					b.DeviceType
 				FROM 
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
@@ -999,7 +1008,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					'' AS SiteId
+					'' AS SiteId,
+					b.DeviceType
 				FROM
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1097,7 +1107,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					b.SiteId
+					b.SiteId,
+					b.DeviceType
 				FROM dbo.translog AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.translogid = @TransId
@@ -1193,7 +1204,8 @@ BEGIN
 						0 AS WalletType,
 						0 AS RefCode,
 						0 AS currencyId,
-						'' AS SiteId
+						'' AS SiteId,
+						0 AS DeviceType
 					FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1306,7 +1318,8 @@ BEGIN
 						0 AS WalletType,
 						0 AS RefCode,
 						0 AS currencyId,
-						'' AS SiteId
+						'' AS SiteId,
+						0 AS DeviceType
 					FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1416,7 +1429,8 @@ BEGIN
 						0 AS WalletType,
 						0 AS RefCode,
 						b.currency,
-						'' AS SiteId
+						'' AS SiteId,
+						0 AS DeviceType
 					FROM dbo.bettrans AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					WHERE b.transid = @TransId
@@ -1505,7 +1519,8 @@ BEGIN
 						0 AS WalletType,
 						0 AS RefCode,
 						0 AS CurrencyId,
-						'' AS SiteId
+						'' AS SiteId,
+						0 AS DeviceType
 					FROM dbo.bettransLC AS blc WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1606,7 +1621,8 @@ BEGIN
 						0 AS WalletType,
 						0 AS RefCode,
 						0 AS CurrencyId,
-						'' AS SiteId
+						'' AS SiteId,
+						0 AS DeviceType
 					FROM dbo.bettransLC AS blc WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1705,7 +1721,8 @@ BEGIN
 						0 AS WalletType,
 						0 AS RefCode,
 						b.currency,
-						'' AS SiteId
+						'' AS SiteId,
+						b.DeviceType
 					FROM dbo.bettrans AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					WHERE b.transid = @TransId
@@ -1792,7 +1809,8 @@ BEGIN
 					ISNULL(b.WalletType, 0) AS WalletType,
 					ISNULL(b.RefCode, 0) AS RefCode,
 					b.currency,
-					'' AS SiteId
+					'' AS SiteId,
+					b.DeviceType
 				FROM
 					dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @Data AS b1
@@ -2041,7 +2059,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					b.SiteId
+					b.SiteId,
+					b.DeviceType
 				FROM dbo.bettransRnG AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.transid = @TransId
@@ -2150,7 +2169,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b.currency,
-					b.SiteId
+					b.SiteId,
+					b.DeviceType
 				FROM dbo.bettransLC AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.transid = @TransId
@@ -2249,7 +2269,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b2.currency,
-					b.SiteId
+					b.SiteId,
+					b.DeviceType
 				FROM dbo.bettransg AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.Bettype
 					INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON b.refno = blc.transid AND b.custid = blc.CustId
@@ -2330,7 +2351,8 @@ BEGIN
 					0 AS WalletType,
 					0 AS RefCode,
 					b2.currency,
-					b.SiteId
+					b.SiteId,
+					b.DeviceType
 				FROM dbo.bettransg AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.Bettype
 					INNER JOIN dbo.bettrans AS b2 WITH (NOLOCK) ON b2.transid = b.refno AND b2.custid = b.CustId

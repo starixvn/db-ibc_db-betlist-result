@@ -165,6 +165,7 @@ AS
 					- Don't support Cash Out bettype 911, 912, 913 in range bettrans and bettrans14 anymore
 		- 20231020@Razor: Support show max payout [Redmine: #194491]
 		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
+		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -228,7 +229,8 @@ BEGIN
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		CurrencyId			TINYINT,
-		SiteId				VARCHAR(20)
+		SiteId				VARCHAR(20),
+		DeviceType			TINYINT
 	)
 
 	-- Get ticket detail
@@ -306,7 +308,8 @@ BEGIN
 			RefCode,
 			TableID,
 			CurrencyId,
-			SiteId)
+			SiteId,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.refno,
@@ -346,7 +349,8 @@ BEGIN
 			ISNULL(b.RefCode, 0),
 			1 AS TableID,
 			b.currency,
-			b.betdaqid
+			b.betdaqid,
+			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
@@ -378,7 +382,8 @@ BEGIN
 			Tranid3rd,
 			TableID,
 			CurrencyId,
-			SiteId
+			SiteId,
+			DeviceType
 		)
 		SELECT
 			b.translogid AS TransId,
@@ -405,7 +410,8 @@ BEGIN
 			b.TranId3rd,
 			4 AS TableID,
 			b.currency,
-			b.SiteId
+			b.SiteId,
+			b.DeviceType
 		FROM dbo.translog AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
@@ -455,7 +461,8 @@ BEGIN
 			RefCode,
 			TableID,
 			CurrencyId,
-			SiteId)
+			SiteId,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.refno,
@@ -495,7 +502,8 @@ BEGIN
 			ISNULL(b.RefCode, 0),
 			2 AS TableID,
 			b.currency,
-			b.betdaqid
+			b.betdaqid,
+			b.DeviceType
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
 			AND b.winlostdate = @Date
@@ -546,7 +554,8 @@ BEGIN
 			RefCode,
 			TableID,
 			CurrencyId,
-			SiteId)
+			SiteId,
+			DeviceType)
 		SELECT
 			b.transid,
 			b.refno,
@@ -586,7 +595,8 @@ BEGIN
 			ISNULL(b.RefCode, 0),
 			3 AS TableID,
 			b.currency,
-			b.betdaqid
+			b.betdaqid,
+			b.DeviceType
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 		CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId
@@ -1273,7 +1283,8 @@ BEGIN
 					TableID				TINYINT,
 					Product				VARCHAR(30),
 					CurrencyId			TINYINT,
-					SiteId				VARCHAR(20)
+					SiteId				VARCHAR(20),
+					DeviceType			TINYINT
 				)
 
 				INSERT INTO @TmpCasinoData
@@ -1347,7 +1358,8 @@ BEGIN
 					b.TableID,
 					b.Product,
 					b.CurrencyId,
-					b.SiteId
+					b.SiteId,
+					b.DeviceType
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
 				WHERE b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 
@@ -1938,7 +1950,8 @@ BEGIN
 		u.username AS Username,
 		c.username AS Creator,
 		b.CurrencyId,
-		b.SiteId
+		b.SiteId,
+		b.DeviceType
 	FROM @Data AS b
 		INNER JOIN dbo.custInfo AS u WITH (NOLOCK) ON u.custid = b.CustId
 		INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.Creator

@@ -44,6 +44,7 @@ AS
 					- Add output param @IsParlayBoost BIT
 					- Return additional columns Odds MONEY, ExtraValue MONEY
 		- 20231025@Kos: Hotfix - missing odds for bk range [Redmine: #196042]
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 */
 
 BEGIN
@@ -147,6 +148,7 @@ BEGIN
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
 		ExtraInfo		VARCHAR(1000),
+		DeviceType		TINYINT,
 		--for generating combination parlays if not in BetParlayResult
 		N				TINYINT,		-- Number of selection
 		Bitmap			INT				-- Combination bitmap
@@ -456,6 +458,7 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS TransDesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			b.DeviceType,
 			CASE
 				WHEN b.betcheck IS NULL THEN LEN(b.betteam)		-- old Parlay tickets
 				ELSE b.hdp2										-- new Parlay tickets
@@ -532,6 +535,7 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS TransDesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			b.DeviceType,
 			CASE
 				WHEN b.betcheck IS NULL THEN LEN(b.betteam)		-- old Parlay tickets
 				ELSE b.hdp2										-- new Parlay tickets
@@ -595,6 +599,7 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			'' AS TransDesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			b.DeviceType,
 			CASE
 				WHEN b.betcheck IS NULL THEN LEN(betteam)	-- old Parlay tickets
 				ELSE b.hdp2									-- new Parlay tickets
@@ -896,7 +901,8 @@ BEGIN
 		Hdp2,
 		BetCheck,
 		TransDesc,
-		ExtraInfo
+		ExtraInfo,
+		DeviceType
 	FROM @tmpBettrans
 
 	SELECT DISTINCT

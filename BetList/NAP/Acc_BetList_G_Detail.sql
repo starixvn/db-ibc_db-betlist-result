@@ -22,6 +22,7 @@ AS
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
 		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
+		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -116,7 +117,8 @@ BEGIN
 		MatchCode		VARCHAR(50),
 		BetTeam			NVARCHAR(50),
 		CurrencyId		TINYINT,
-		SiteId			VARCHAR(7)
+		SiteId			VARCHAR(7),
+		DeviceType		TINYINT
 	)
 
 	-- Get currency name
@@ -186,7 +188,8 @@ BEGIN
 			'' AS MatchCode,
 			ISNULL(bg.betteam, '') AS BetTeam,
 			b.currency,
-			bg.SiteId
+			bg.SiteId,
+			bg.DeviceType
 		FROM dbo.bettransg AS bg WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK)
@@ -232,7 +235,8 @@ BEGIN
 			'' AS MatchCode,
 			ISNULL(bg.betteam, '') AS BetTeam,
 			b.currency,
-			bg.SiteId
+			bg.SiteId,
+			bg.DeviceType
 		FROM dbo.bettransg14 AS bg WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 			INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK)
@@ -278,7 +282,8 @@ BEGIN
 			'' AS MatchCode,
 			ISNULL(bg.betteam, '') AS BetTeam,
 			b.currency,
-			bg.SiteId
+			bg.SiteId,
+			bg.DeviceType
 		FROM bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON bg.bettype = sbt.Bettype
 			INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
