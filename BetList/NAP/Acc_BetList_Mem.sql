@@ -98,6 +98,7 @@ AS
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231005@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
+		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
 */
 
 BEGIN
@@ -1307,7 +1308,7 @@ BEGIN
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'NG2') THEN b.hdp2
+								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'NG2', 'LG') THEN b.hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
@@ -1348,15 +1349,15 @@ BEGIN
 										END,
 					WinLost = b.winlost - b.actual_stake,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'NG2') THEN b.livehomescore
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'NG2', 'LG') THEN b.livehomescore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.liveawayscore
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'LG') THEN b.liveawayscore
 										ELSE 0
 									END,
 					LeagueId = CASE
@@ -1386,7 +1387,7 @@ BEGIN
 							END,
 					EventDate = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN m.GlobalShowTime
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.eventdate
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.eventdate
 									WHEN b.Product IN ('Outright') THEN o.eventdate
 									WHEN b.Product IN ('VR') THEN vo.EventDate
 									WHEN b.Product IN ('BTC') THEN m3rd.EndTime
@@ -1403,11 +1404,11 @@ BEGIN
 								ELSE 0
 							END,
 					IsNeutral = CASE
-									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 									ELSE 0
 								END,
 					ShowTime = CASE
-									WHEN b.Product IN ('VS', 'VS2') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.Product IN ('VS', 'VS2', 'LG') THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									WHEN b.Product IN ('SB', 'NG') THEN ISNULL(m.showtime, '')
 									WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 									ELSE ''
@@ -1792,7 +1793,7 @@ BEGIN
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'NG2') THEN b.hdp2
+								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'NG2', 'LG') THEN b.hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
@@ -1818,15 +1819,15 @@ BEGIN
 					SettlementStatus = 0,
 					WinLost = b.winlost - b.actual_stake,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'NG2') THEN b.livehomescore
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'NG2', 'LG') THEN b.livehomescore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.liveawayscore
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'LG') THEN b.liveawayscore
 										ELSE 0
 									END,
 					LeagueId = CASE
@@ -1856,7 +1857,7 @@ BEGIN
 							END,
 					EventDate = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN m.GlobalShowTime
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.eventdate
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.eventdate
 									WHEN b.Product IN ('Outright') THEN o.eventdate
 									WHEN b.Product IN ('VR') THEN vo.EventDate
 									WHEN b.Product IN ('BTC') THEN m3rd.EndTime
@@ -1877,7 +1878,7 @@ BEGIN
 									ELSE 0
 								END,
 					ShowTime = CASE
-									WHEN b.Product IN ('VS', 'VS2') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.Product IN ('VS', 'VS2', 'LG') THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									WHEN b.Product IN ('SB', 'CO', 'NG') THEN ISNULL(m.showtime, '')
 									WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 									ELSE ''
@@ -1990,11 +1991,11 @@ BEGIN
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'NG2') THEN b.hdp2
+								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'NG2', 'LG') THEN b.hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('SB', 'Outright', 'CO', 'NG', 'VS', 'VS2') THEN b.oddstype
+									WHEN b.Product IN ('SB', 'Outright', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN b.oddstype
 									ELSE 0
 								END,
 					Odds = CASE
@@ -2016,15 +2017,15 @@ BEGIN
 					SettlementStatus = 0,
 					WinLost = b.winlost - b.actual_stake,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN b.liveindicator
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'NG2') THEN b.livehomescore
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'NG2', 'LG') THEN b.livehomescore
 										ELSE 0
 									END,
 					LiveAwayScore = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR') THEN b.liveawayscore
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'LG') THEN b.liveawayscore
 										ELSE 0
 									END,
 					LeagueId = CASE
@@ -2054,7 +2055,7 @@ BEGIN
 							END,
 					EventDate = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN m.GlobalShowTime
-									WHEN b.Product IN ('NG', 'VS', 'VS2') THEN m.eventdate
+									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG') THEN m.eventdate
 									WHEN b.Product IN ('Outright') THEN o.eventdate
 									WHEN b.Product IN ('VR') THEN vo.EventDate
 									ELSE b.winlostdate
@@ -2070,11 +2071,11 @@ BEGIN
 								ELSE 0
 							END,
 					IsNeutral = CASE
-									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2') THEN ISNULL(m.IsNeutral, 0)
+									WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 									ELSE 0
 								END,
 					ShowTime = CASE
-									WHEN b.Product IN ('VS', 'VS2') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.Product IN ('VS', 'VS2', 'LG') THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									WHEN b.Product IN ('SB', 'CO', 'NG') THEN ISNULL(m.showtime, '')
 									WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 									ELSE ''

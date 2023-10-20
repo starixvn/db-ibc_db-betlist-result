@@ -157,6 +157,7 @@ AS
 		- 20231020@Razor: Support show max payout [Redmine: #194491]
 					- Return new JackpotInfo column
 					- Return ExtraInfo for show Max Payout
+		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
 */
 
 BEGIN
@@ -429,7 +430,7 @@ BEGIN
 					b.mwinlost,
 					b.swinlost,
 					CASE
-						WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						WHEN s.ProductID IN (5, 27, 77) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 						ELSE m.showtime
 					END AS ShowTime,
 					b.winlostdate,
@@ -1939,7 +1940,7 @@ BEGIN
 					b.mwinlost,
 					b.swinlost,
 					CASE
-						WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						WHEN s.ProductID IN (5, 27, 77) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 						ELSE m.showtime
 					END AS ShowTime,
 					b.winlostdate,
@@ -2674,7 +2675,7 @@ BEGIN
 					b.mwinlost,
 					b.swinlost,
 					CASE
-						WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						WHEN s.ProductID IN (5, 27, 77) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 						ELSE m.showtime
 					END AS ShowTime,
 					b.winlostdate,
