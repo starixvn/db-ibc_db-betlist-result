@@ -154,6 +154,7 @@ AS
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
+		- 20231021@Kos: Hotfix - Not show odds for some tickets [Redmine: #195844]
 */
 
 BEGIN
@@ -949,7 +950,7 @@ BEGIN
 			DECLARE @TmpParlayData TABLE (
 				RefNo	BIGINT,
 				Odds	MONEY,
-			MOdds	MONEY)
+				MOdds	MONEY)
 
 			-- Mix Parlay which having no settled sub ticket
 			INSERT INTO @TmpParlayData
@@ -971,6 +972,7 @@ BEGIN
 				b.MOdds = ISNULL(td.MOdds, 0)
 			FROM @BetListSelRunningByDateMem AS b
 				LEFT JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
+			WHERE b.BetType = 29 AND b.BetTeam = '1'
 		END
 
 		-- Get sub tickets

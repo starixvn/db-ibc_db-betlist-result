@@ -40,6 +40,7 @@ AS
 		- 20200922@Kos: Support Myanmar Odds [Redmine: #141825]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
+		- 20231021@Kos: Hotfix - Not show odds for some tickets [Redmine: #195844]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -557,6 +558,7 @@ BEGIN
 			b.MOdds = ISNULL(td.MOdds, 0)
 		FROM @Data AS b
 			LEFT JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
+		WHERE b.BetType = 29 AND b.BetTeam = '1'
 	END
 
 	UPDATE b
