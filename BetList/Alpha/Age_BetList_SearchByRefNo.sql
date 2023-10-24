@@ -18,6 +18,7 @@ AS
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
 		- 20230825@Kos: Hotfix - Wrong result during Balance Up process [Redmine: #193193]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
+		- 20231024@Kos: Hotfix - Parlay Boost range bettrans14 [Redmine: #195997]
 */
 
 BEGIN
@@ -967,7 +968,7 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM @Data
 				WHERE BetType = 29
 					AND BetTeam = '1'
-					AND WhTicket IN (1, 2))
+					AND WhTicket IN (2, 3))
 	BEGIN
 		-- Running/Waiting
 		DECLARE @ParlayData TABLE (
@@ -1034,25 +1035,8 @@ BEGIN
 			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		WHERE b.BetType = 29
 			AND b.BetTeam = '1'
-			AND WhTicket IN (1, 2)
+			AND WhTicket IN (2, 3)
 			AND b.Status NOT IN ('Running', 'Waiting')
-	END
-
-	IF EXISTS (SELECT 1 FROM @Data
-				WHERE BetType = 29
-					AND BetTeam = '1'
-					AND WhTicket = 3)
-	BEGIN
-		UPDATE b
-		SET
-			b.Odds = bpr.Odds,
-			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
-		FROM @Data AS b
-			INNER JOIN bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
-		WHERE b.BetType = 29
-			AND b.BetTeam = '1'
-			AND b.WhTicket = 3
 	END
 
 	-- BettransRnG tables
