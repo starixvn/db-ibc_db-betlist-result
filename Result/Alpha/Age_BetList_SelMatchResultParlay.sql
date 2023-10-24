@@ -45,6 +45,7 @@ AS
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
+		- 20231024@Razor: Return Live Score value[Redmine: #194323]
 */
 
 BEGIN
@@ -72,6 +73,8 @@ BEGIN
 		HtAwayScore			INT,
 		FinalHomeScore		INT,
 		FinalAwayScore		INT,
+		LiveHomeScore		INT,
+		LiveAwayScore		INT,
 		KickOffTime			DATETIME,
 		EventDate			DATETIME,
 		IsNeutral			BIT,
@@ -197,6 +200,8 @@ BEGIN
 			m.htawayscore,
 			m.finalhomescore,
 			m.finalawayscore,
+			m.livehomescore,
+			m.liveawayscore,
 			m.GlobalShowTime AS kickofftime,
 			m.eventdate,
 			m.IsNeutral,
@@ -391,6 +396,8 @@ BEGIN
 			m.htawayscore,
 			m.finalhomescore,
 			m.finalawayscore,
+			m.livehomescore,
+			m.liveawayscore,
 			m.GlobalShowTime AS kickofftime,
 			m.eventdate,
 			m.IsNeutral,
@@ -585,6 +592,8 @@ BEGIN
 			m.htawayscore,
 			m.finalhomescore,
 			m.finalawayscore,
+			m.livehomescore,
+			m.liveawayscore,
 			CASE
 				WHEN m.sporttype = 162 THEN m.kickofftime
 				ELSE m.GlobalShowTime
