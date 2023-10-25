@@ -105,6 +105,7 @@ AS
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
+		- 20231020@Razor: Support show max payout [Redmine: #194491]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -514,10 +515,7 @@ BEGIN
 									WHEN b.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
 								END,
-					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
-									ELSE ''
-								END,
+					ExtraInfo = ISNULL(b.ExtraInfo, ''),
 					Ip = dp.IP,
 					CurrencyId = CASE
 									WHEN b.Product IN ('H5LG', 'SLT') THEN b.CurrencyId

@@ -30,6 +30,7 @@ AS
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 		- 20221122@Kos: Hotfix - Sorting not work [Redmine: #180779]
 		- 20230727@Razor: Support Virtual Sports 3 [Redmine: #189205]
+		- 20230927@Razor: Support show max payout [Redmine: #194491]
 */
 
 BEGIN
@@ -522,10 +523,7 @@ BEGIN
 				ELSE 0
 			END AS OddsSpread,
 			b.currencyname AS Currency,
-			CASE
-				WHEN c.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
-				ELSE ''
-			END AS ExtraInfo,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 				ELSE -1
@@ -869,10 +867,7 @@ BEGIN
 				ELSE 0
 			END AS OddsSpread,
 			b.currencyname AS Currency,
-			CASE
-				WHEN c.Product IN ('SB') THEN ISNULL(b.ExtraInfo, '')
-				ELSE ''
-			END AS ExtraInfo,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			CASE
 				WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 				ELSE -1

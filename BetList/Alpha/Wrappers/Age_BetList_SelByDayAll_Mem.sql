@@ -135,6 +135,7 @@ AS
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 					- Remove params @Error, @ErrorMsg
+		- 20231020@Razor: Support show max payout [Red4491]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -780,9 +781,7 @@ BEGIN
 									WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
 								END
-					,ExtraInfo = CASE
-									WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
-									ELSE '' END
+					,ExtraInfo = ISNULL(b.ExtraInfo, '')
 					,Currency = b.currencyname
 					,CurrencyId = CASE
 									WHEN c.Product IN ('H5LG', 'SLT') THEN b.currency
@@ -1329,9 +1328,7 @@ BEGIN
 									WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
 								END
-					,ExtraInfo = CASE
-									WHEN c.Product IN ('SB', 'VS3', 'Parlay', 'SPR') THEN ISNULL(b.ExtraInfo, '')
-									ELSE '' END	
+					,ExtraInfo = ISNULL(b.ExtraInfo, '')
 					,Currency = b.currencyname
 					,CurrencyId = CASE
 									WHEN c.Product IN ('H5LG', 'SLT') THEN b.currency

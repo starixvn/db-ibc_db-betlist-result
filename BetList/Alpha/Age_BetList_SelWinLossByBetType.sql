@@ -20,6 +20,7 @@ AS
 		- 20210705@Razor: Show Odds for Happy 5 Linked Games [Redmine: #154704]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
+		- 20230927@Razor: Support show max payout [Redmine: #194491]
 
 */
 
@@ -220,10 +221,7 @@ BEGIN
 								WHEN c.Product IN ('VS3', 'H5LG') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
-				ExtraInfo = CASE
-								WHEN c.Product IN ('VS3') THEN ISNULL(b.ExtraInfo, '')
-								ELSE ''
-							END,
+				ExtraInfo = ISNULL(b.ExtraInfo, ''),
 				Currency = b.currencyname,
 				Product = c.Product,
 				CurrencyId = CASE
@@ -351,10 +349,7 @@ BEGIN
 								WHEN c.Product IN ('VS3', 'H5LG') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
-				ExtraInfo = CASE
-								WHEN c.Product IN ('VS3') THEN ISNULL(b.ExtraInfo, '')
-								ELSE ''
-							END,
+				ExtraInfo = ISNULL(b.ExtraInfo, ''),
 				Currency = b.currencyname,
 				Product = c.Product,
 				CurrencyId = CASE

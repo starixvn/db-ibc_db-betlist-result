@@ -19,6 +19,9 @@ AS
 		- 20230825@Kos: Hotfix - Wrong result during Balance Up process [Redmine: #193193]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231024@Kos: Hotfix - Parlay Boost range bettrans14 [Redmine: #195997]
+		- 20231025@Razor: Support show max payout [Redmine: #194491]
+			- Return new JackpotInfo column
+			- Return ExtraInfo for show Max Payout
 */
 
 BEGIN
@@ -100,6 +103,7 @@ BEGIN
 		TransDesc			NVARCHAR(1000),
 		BetdaqId			BIGINT,
 		ExtraInfo			VARCHAR(1000),
+		JackpotInfo			VARCHAR(50),
 		SiteId				VARCHAR(20),
 		WhTicket			TINYINT
 	)
@@ -328,6 +332,7 @@ BEGIN
 			ISNULL(b.transdesc, '') AS TransDesc,
 			-1 AS BetdaqId,
 			'' AS ExtraInfo,
+			'' AS JackpotInfo,
 			ISNULL(b.SiteId, '') AS SiteId,
 			1 AS WhTicket
 		FROM dbo.translog AS b WITH (NOLOCK)
@@ -739,11 +744,8 @@ BEGIN
 				WHEN @Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 				ELSE -1
 			END AS BetdaqId,
-			CASE
-				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'SPR', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 
-					'ParlayVS2', 'VR', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
-				ELSE ''
-			END AS ExtraInfo,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			'' AS JackpotInfo,
 			CASE
 				WHEN @Product IN ('H5LG', 'SLT', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
 				ELSE ''
@@ -944,11 +946,8 @@ BEGIN
 				WHEN @Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 				ELSE -1
 			END AS BetdaqId,
-			CASE
-				WHEN @Product IN ('SB', 'Parlay', 'Outright', 'SPR', 'Keno', 'Lottery', 'TG', 'SLT', 'NG', 'H5LG', 'VS', 'VS2', 
-					'ParlayVS2', 'VR', 'VS3', 'BTC') THEN ISNULL(b.ExtraInfo, '')
-				ELSE ''
-			END AS ExtraInfo,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			'' AS JackpotInfo,
 			CASE
 				WHEN @Product IN ('H5LG', 'SLT', 'VRG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
 				ELSE ''
@@ -1192,10 +1191,11 @@ BEGIN
 					WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') THEN ISNULL(RefNo2, -1)
 					ELSE -1
 				END AS BetdaqId,
+				ExtraInfo,
 				CASE
 					WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') THEN ISNULL(JackpotInfo, '')
 					ELSE ''
-				END AS ExtraInfo,
+				END AS JackpotInfo,
 				ISNULL(SiteID, '') AS SiteId,
 				5 AS WhTicket
 			FROM dbo.bettransRnG WITH (NOLOCK)
@@ -1280,10 +1280,11 @@ BEGIN
 					WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') THEN ISNULL(RefNo2, -1)
 					ELSE -1
 				END AS BetdaqId,
+				ExtraInfo,
 				CASE
 					WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') THEN ISNULL(JackpotInfo, '')
 					ELSE ''
-				END AS ExtraInfo,
+				END AS JackpotInfo,
 				ISNULL(SiteID, '') AS SiteId,
 				6 AS WhTicket
 			FROM dbo.bettransRnG14 WITH (NOLOCK)
@@ -1422,7 +1423,8 @@ BEGIN
 				TranId3rd AS BetCheck,
 				transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ExtraInfo,
+				'' AS JackpotInfo,
 				SiteID,
 				8 AS WhTicket
 			FROM dbo.bettransLC WITH (NOLOCK)
@@ -1494,7 +1496,8 @@ BEGIN
 				TranId3rd AS BetCheck,
 				transdesc,
 				-1 AS BetdaqId,
-				'' AS ExtraInfo,
+				ExtraInfo,
+				'' AS JackpotInfo,
 				SiteID,
 				9 AS WhTicket
 			FROM dbo.bettransLC14 WITH (NOLOCK)
@@ -1651,7 +1654,8 @@ BEGIN
 					ISNULL(b.TransDesc, '') AS BetCheck,
 					blc.transdesc,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					b.ExtraInfo,
+					'' AS JackpotInfo,
 					blc.SiteID,
 					11 AS WhTicket
 				FROM dbo.bettransg AS b WITH (NOLOCK)
@@ -1724,7 +1728,8 @@ BEGIN
 					ISNULL(b.BetID3rd, '') AS BetCheck,
 					ISNULL(b.transdesc, '') AS TransDesc,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					b.ExtraInfo,
+					'' AS JackpotInfo,
 					b.SiteId,
 					11 AS WhTicket
 				FROM dbo.bettransg AS b WITH (NOLOCK)
@@ -1801,7 +1806,8 @@ BEGIN
 					ISNULL(b.TransDesc, '') AS BetCheck,
 					blc.transdesc,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					b.ExtraInfo,
+					'' AS JackpotInfo,
 					blc.SiteID,
 					12 AS WhTicket
 				FROM dbo.bettransg14 AS b WITH (NOLOCK)
@@ -1874,7 +1880,8 @@ BEGIN
 					ISNULL(b.BetID3rd, '') AS BetCheck,
 					ISNULL(b.transdesc, '') AS TransDesc,
 					-1 AS BetdaqId,
-					'' AS ExtraInfo,
+					b.ExtraInfo,
+					'' AS JackpotInfo,
 					b.SiteId,
 					12 AS WhTicket
 				FROM dbo.bettransg14 AS b WITH (NOLOCK)
