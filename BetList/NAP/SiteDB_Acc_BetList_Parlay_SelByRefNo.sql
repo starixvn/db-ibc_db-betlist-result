@@ -18,6 +18,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 					- Add output param @IsParlayBoost BIT
 					- Return additional columns Odds MONEY, ExtraValue MONEY
+		- 20231025@Kos: Hotfix - missing odds for bk range [Redmine: #196042]
 */
 
 BEGIN
@@ -816,7 +817,7 @@ BEGIN
 				Odds = @OriginalOdds,
 				Modds = @FinalOdds
 		END
-		ELSE
+		ELSE IF @WhTicket IN (1, 2)
 		BEGIN
 			UPDATE b
 			SET
@@ -825,6 +826,16 @@ BEGIN
 				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
 			FROM @tmpBettrans AS b
 				INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		END
+		ELSE
+		BEGIN
+			UPDATE b
+			SET
+				b.Odds = bpr.Odds,
+				b.Modds = bpr.mOdds,
+				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			FROM @tmpBettrans AS b
+				INNER JOIN DBARC.bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		END
 	END
 
