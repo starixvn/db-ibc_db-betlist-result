@@ -45,6 +45,7 @@ AS
 		- 20230526@Razor: Support YeeBet [Redmine: #186547]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
+		- 20231026@Razor: Due to performance, we should use index hint (IX_custid) on bettransg
 
 	Parameters:
 		- @TransType
@@ -558,7 +559,7 @@ BEGIN
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			CROSS APPLY dbo.f_IP_Decompress(blc.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
-			LEFT JOIN bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
+			LEFT JOIN bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK, INDEX = IX_custid)
 				ON bg.refno = blc.transid
 				AND bg.custid = blc.custid
 				AND sbt.ProductID = 39
