@@ -21,6 +21,7 @@ AS
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20231108@Razor: Support WE Live Casino [Redmine: #195887]
 
 	Parameters:
 		- @TransType
@@ -43,8 +44,8 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76)	
-	-- Support AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, Big Gaming only, PP Live Casino, FGG, YeeBet
+	WHERE ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80)
+	-- Support AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, Big Gaming only, PP Live Casino, FGG, YeeBet, WE
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
 
@@ -232,12 +233,12 @@ BEGIN
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 65, 70, 76) THEN blc.TranId3rd
+				WHEN sbt.productID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80) THEN blc.TranId3rd
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76) THEN blc.GameId3rd
+				WHEN sbt.productID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80) THEN blc.GameId3rd
 				ELSE ''
 			END AS MatchCode,
 			CASE
