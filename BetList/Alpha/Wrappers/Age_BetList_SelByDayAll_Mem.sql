@@ -135,7 +135,8 @@ AS
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 					- Remove params @Error, @ErrorMsg
-		- 20231020@Razor: Support show max payout [Red4491]
+		- 20231020@Razor: Support show max payout [Redmine: #194491]
+		- 202311109@Razor: HF - Show Winloss value for statement of Habanero [Redmine: #196671]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -608,13 +609,13 @@ BEGIN
 								WHEN c.Product IN ('VR') THEN b.modds
 								ELSE 0 END
 					,Stake = CASE
-								WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB') AND x.Stake IS NOT NULL THEN x.Stake
+								WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB') AND x.Stake IS NOT NULL THEN x.Stake
 								ELSE b.stake END
 					,Actual_Stake = CASE
-									WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
+									WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB') AND x.Actual_Stake IS NOT NULL THEN x.Actual_Stake
 									ELSE b.actual_stake END
 					,Status = CASE
-								WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB') AND x.status IS NOT NULL THEN x.status
+								WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB') AND x.status IS NOT NULL THEN x.status
 								WHEN c.Product = 'SB' AND b.bettype NOT IN (9, 29)
 									AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 								WHEN b.bettype IN (9, 29, 2799) AND b.status = 'running' THEN
