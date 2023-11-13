@@ -32,6 +32,7 @@ AS
 					- Remove param @ErrorCode, @ErrorMsg, @ShowSB, @ShowNG, ...
 					- Add new input param @ProductList VARCHAR(300)
 		- 20231215@Kos: Hotfix - not convert to base currency [Redmine: 198461]
+		- 20231225@Kos: Support WE Live Casino [Redmine: 196573]
 */
 
 BEGIN
@@ -442,7 +443,7 @@ BEGIN
 			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
 
 		DELETE #Data
-		WHERE Product = 'Unknown' OR Product IS NULL
+		WHERE Product IS NULL
 
 		DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
 
@@ -682,6 +683,7 @@ BEGIN
 				SportType = CASE
 								WHEN b.Product IN ('VB', 'FW', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'CB', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
 									'GDG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG', 'SEA') THEN b.MatchId
+								WHEN b.RefTable IN (1, 2) THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'H5LG', 'SLT', 'VS3') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2') THEN m.sporttype
 								WHEN b.Product IN ('BTC') THEN m3rd.SportType
@@ -819,6 +821,7 @@ BEGIN
 				TransDesc = CASE
 								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 
 									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'SEA') THEN ISNULL(b.transdesc, '')
+								WHEN b.RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE

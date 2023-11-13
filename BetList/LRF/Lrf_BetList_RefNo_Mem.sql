@@ -91,6 +91,7 @@ AS
 					- Return new JackpotInfo column
 		- 20231026@Kos: Support Virtual Sports 3 [Redmine: 190908]
 		- 20231107@Kos: Support SEAL Entertaiment [Redmine: 180648]
+		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 */
 
 BEGIN
@@ -129,7 +130,7 @@ BEGIN
 		INSERT INTO @SportBettype
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-		WHERE ProductID IN (1, 3, 5, 6, 8, 21, 22, 25, 27, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 49, 51, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70, 72, 73, 74, 75, 76, 77)
+		WHERE ProductID NOT IN (2, 4, 7, 9, 11, 12, 13, 14, 15, 17, 19, 23, 24, 26, 30, 31, 33, 46, 47, 50, 52, 59, 65)
 			AND BetType NOT IN (71, 72, 901, 902, 903, 904, 913, 914, 999)
 			AND BetType NOT BETWEEN 801 AND 899
 	END
@@ -766,6 +767,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
 					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.matchid
+				WHEN @RefTable IN (1, 2) THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -930,6 +932,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
 					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
+				WHEN @RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -1003,6 +1006,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 
 					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.matchid
+				WHEN @RefTable IN (1, 2) THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -1133,6 +1137,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
 					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
+				WHEN @RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -1205,6 +1210,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 
 					'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.matchid
+				WHEN @RefTable IN (1, 2) THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -1335,6 +1341,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
 					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
+				WHEN @RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -1444,6 +1451,7 @@ BEGIN
 	-- BettransRnG tables
 	SET @WhTicket = 0
 	SET @ProductId = 0
+	SET @RefTable = 0
 	SET @CustId = @OriginalCustId
 
 	IF @CustId <> -1
@@ -1462,6 +1470,7 @@ BEGIN
 					@BetType = b.gameID,
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
+					@RefTable = s.RefTable,
 					@WhTicket = 5		-- BettransRnG
 				FROM dbo.bettransRnG AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -1482,6 +1491,7 @@ BEGIN
 					@BetType = b.gameID,
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
+					@RefTable = s.RefTable,
 					@WhTicket = 6		-- BettransRnG14
 				FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -1502,6 +1512,7 @@ BEGIN
 					@BetType = b.gameID,
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
+					@RefTable = s.RefTable,
 					@WhTicket = 7		-- BettransRnG_bk
 				FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -1528,6 +1539,7 @@ BEGIN
 					@BetType = b.gameID,
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
+					@RefTable = s.RefTable,
 					@WhTicket = 5		-- BettransRnG
 				FROM dbo.bettransRnG AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -1548,6 +1560,7 @@ BEGIN
 					@BetType = b.gameID,
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
+					@RefTable = s.RefTable,
 					@WhTicket = 6		-- BettransRnG14
 				FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -1585,7 +1598,7 @@ BEGIN
 						ELSE 'Unknown'
 					END
 
-	IF @Product <> 'Unknown'
+	IF @RefTable = 1
 	BEGIN
 		-- BettransRnG
 		IF @WhTicket = 5
@@ -1849,6 +1862,7 @@ BEGIN
 	-- BettransLC tables
 	SET @WhTicket = 0
 	SET @ProductId = 0
+	SET @RefTable = 0
 	SET @CustId = @OriginalCustId
 
 	IF @CustId <> -1 AND @RefNo <> 0		-- Search by refno
@@ -1865,6 +1879,7 @@ BEGIN
 				@BetType = b.gameID,
 				@ProductId = s.ProductID,
 				@EventType = s.EventType,
+				@RefTable = s.RefTable,
 				@WhTicket = 8		-- bettransLC
 			FROM dbo.bettransLC AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -1885,6 +1900,7 @@ BEGIN
 				@BetType = b.gameID,
 				@ProductId = s.ProductID,
 				@EventType = s.EventType,
+				@RefTable = s.RefTable,
 				@WhTicket = 9		-- bettransLC14
 			FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -1905,6 +1921,7 @@ BEGIN
 				@BetType = b.gameID,
 				@ProductId = s.ProductID,
 				@EventType = s.EventType,
+				@RefTable = s.RefTable,
 				@WhTicket = 10		-- bettransLC_bk
 			FROM bodb_Archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -1928,7 +1945,7 @@ BEGIN
 						ELSE 'Unknown'
 					END
 
-	IF @Product <> 'Unknown'
+	IF @RefTable = 2
 	BEGIN
 		-- BettransLC
 		IF @WhTicket = 8

@@ -89,6 +89,7 @@ AS
 		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
 		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
 		- 20231107@Kos: Support SEAL Entertaiment [Redmine: 180648]
+		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 */
 
 BEGIN
@@ -1128,8 +1129,7 @@ BEGIN
 		BEGIN
 			DELETE b
 			FROM #Data AS b
-			WHERE b.Product = 'Unknown'
-				OR NOT EXISTS (SELECT 1 FROM @TempCust WHERE CustId = b.CustId)
+			WHERE NOT EXISTS (SELECT 1 FROM @TempCust WHERE CustId = b.CustId)
 				OR NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 				OR b.BetType = 913
 		END
@@ -1137,8 +1137,7 @@ BEGIN
 		BEGIN
 			DELETE b
 			FROM #Data AS b
-			WHERE b.Product = 'Unknown'
-				OR NOT EXISTS (SELECT 1 FROM @TempCust WHERE CustId = b.CustId)
+			WHERE NOT EXISTS (SELECT 1 FROM @TempCust WHERE CustId = b.CustId)
 				OR NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 				OR b.BetType = 913
 		END
@@ -1381,6 +1380,7 @@ BEGIN
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
 										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
+									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
@@ -1489,6 +1489,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
+									WHEN b.RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = -1,
@@ -1515,6 +1516,7 @@ BEGIN
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 
 										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
+									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
@@ -1623,6 +1625,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
+									WHEN b.RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = -1,
@@ -1754,6 +1757,7 @@ BEGIN
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
 										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
+									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
@@ -1861,6 +1865,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
+									WHEN b.RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = -1,
@@ -1887,6 +1892,7 @@ BEGIN
 					SportType = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
 										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
+									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									WHEN b.Product = 'AllBet' THEN 211		-- AllBet
 									WHEN b.Product = 'VB' THEN 212			-- Macau Games
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
@@ -1994,6 +2000,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
+									WHEN b.RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = -1,

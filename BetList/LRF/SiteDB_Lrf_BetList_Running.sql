@@ -36,6 +36,7 @@ AS
 		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
 		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
 		- 20231107@Kos: Support SEAL Entertaiment [Redmine: 180648]
+		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 */
 
 BEGIN
@@ -630,8 +631,7 @@ BEGIN
 			END
 
 			DELETE #Data
-			WHERE Product = 'Unknown'
-				OR Product IS NULL
+			WHERE Product IS NULL
 				OR BetType IN (901, 902, 903, 904, 911, 912, 913, 914)
 				OR BetType BETWEEN 801 AND 899
 				OR (@ShowSB = 0
@@ -971,6 +971,7 @@ BEGIN
 				SportType = CASE
 								WHEN b.Product IN ('VB', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
 									'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
+								WHEN b.RefTable IN (1, 2) THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'TG', 'I4D', 'VRG', 'H5LG', 'SLT', 'VS3') THEN b.ProductId
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 								WHEN b.Product IN ('BTC') THEN m3rd.SportType
@@ -1112,6 +1113,7 @@ BEGIN
 				TransDesc = CASE
 								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'PP', 
 									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
+								WHEN b.RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				BetdaqId = CASE
