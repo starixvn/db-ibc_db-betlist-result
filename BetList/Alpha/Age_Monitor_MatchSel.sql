@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_Monitor_MatchSel]
 	@MatchId INT = 0
@@ -7,7 +7,7 @@ AS
 /*
 	Created: Johnson@20110628
 	Task: Monitor lastest bets list- get match running
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 
 	Revision:
 		- 20120301@Jamie: Retrieve showtime for LiveCasino
@@ -15,9 +15,10 @@ AS
 		- 20180622@Sophia: Add Betstatus [#Redmine: 97219]
 		- 20181002@Kos: Support 2 new status Result Pending and Under Settlement [#Redmine: 101949]
 		- 20190506@Kos: Show match KO time for single ticket [Redmine: #112092]
+		- 20231115@Kos: Get Sportsbook matches only [Redmine: #196745]
 
 	Parameter's Explanation:
-		- @MatchId: Lastest running match ID
+		- @MatchId: Latest running match ID
 */
 
 BEGIN
@@ -39,14 +40,7 @@ BEGIN
 		m.GlobalShowTime AS EventDate
 	FROM dbo.match AS m WITH (NOLOCK)
 	WHERE m.eventstatus <> 'completed'
+		ANd m.sporttype <= 99
 		AND m.matchid >= @MatchId
 END
-GO
-
-
-
-
-GRANT EXECUTE ON [dbo].[Age_Monitor_MatchSel] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_Monitor_MatchSel] TO [bodbDownlineNetView]
 GO
