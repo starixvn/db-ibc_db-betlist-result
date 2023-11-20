@@ -1755,7 +1755,7 @@ BEGIN
 					0 AS RefCode,
 					0 AS CurrencyId,
 					'' AS SiteId,
-					0 AS DeviceType
+					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1777,7 +1777,8 @@ BEGIN
 					b.comstatus,
 					b.matchid,
 					b.transdesc,
-					s.ProductID
+					s.ProductID,
+					b.DeviceType
 				OPTION (RECOMPILE)
 			END
 
@@ -1864,7 +1865,7 @@ BEGIN
 					0 AS RefCode,
 					0 AS CurrencyId,
 					'' AS SiteId,
-					0 AS DeviceType
+					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1886,7 +1887,8 @@ BEGIN
 					b.comstatus,
 					b.matchid,
 					b.transdesc,
-					s.ProductID
+					s.ProductID,
+					b.DeviceType
 				OPTION (RECOMPILE)
 			END
 
@@ -2067,7 +2069,7 @@ BEGIN
 					0 AS RefCode,
 					0 AS CurrencyId,
 					'' AS SiteId,
-					0 AS DeviceType
+					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -2088,7 +2090,8 @@ BEGIN
 					b.Username,
 					b.comstatus,
 					s.ProductID,
-					b.matchid
+					b.matchid,
+					b.DeviceType
 				OPTION (RECOMPILE)
 			END
 
@@ -2173,7 +2176,7 @@ BEGIN
 					0 AS RefCode,
 					0 AS CurrencyId,
 					'' AS SiteId,
-					0 AS DeviceType
+					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -2194,7 +2197,8 @@ BEGIN
 					b.Username,
 					b.comstatus,
 					s.ProductID,
-					b.matchid
+					b.matchid,
+					b.DeviceType
 				OPTION (RECOMPILE)
 			END
 

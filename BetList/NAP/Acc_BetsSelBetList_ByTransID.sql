@@ -1414,7 +1414,7 @@ BEGIN
 						0 AS RefCode,
 						0 AS currencyId,
 						'' AS SiteId,
-						0 AS DeviceType
+						b.DeviceType
 					FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1436,7 +1436,8 @@ BEGIN
 						b.comstatus,
 						b.matchid,
 						b.transdesc,
-						s.ProductID
+						s.ProductID,
+						b.DeviceType
 
 					-- Yesterday and today settled ticket
 					INSERT INTO @Data
@@ -1528,7 +1529,7 @@ BEGIN
 						0 AS RefCode,
 						0 AS currencyId,
 						'' AS SiteId,
-						0 AS DeviceType
+						b.DeviceType
 					FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1550,7 +1551,8 @@ BEGIN
 						b.comstatus,
 						b.matchid,
 						b.transdesc,
-						s.ProductID
+						s.ProductID,
+						b.DeviceType
 				END
 				ELSE
 				BEGIN
@@ -1729,7 +1731,7 @@ BEGIN
 						0 AS RefCode,
 						0 AS CurrencyId,
 						'' AS SiteId,
-						0 AS DeviceType
+						b.DeviceType
 					FROM dbo.bettransLC AS blc WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1749,7 +1751,8 @@ BEGIN
 						b.Username,
 						b.comstatus,
 						s.ProductID,
-						b.matchid
+						b.matchid,
+						b.DeviceType
 
 					-- Yesterday and today settled ticket
 					INSERT INTO @Data
@@ -1831,7 +1834,7 @@ BEGIN
 						0 AS RefCode,
 						0 AS CurrencyId,
 						'' AS SiteId,
-						0 AS DeviceType
+						b.DeviceType
 					FROM dbo.bettransLC AS blc WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
@@ -1851,7 +1854,8 @@ BEGIN
 						b.Username,
 						b.comstatus,
 						s.ProductID,
-						b.matchid
+						b.matchid,
+						b.DeviceType
 				END
 				ELSE
 				BEGIN
