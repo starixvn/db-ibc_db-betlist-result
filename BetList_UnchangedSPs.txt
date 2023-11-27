@@ -1,6 +1,4 @@
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettypeMatch_SAg.sql
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettypeMatch_MAg.sql
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettypeMatch_Ag.sql
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettype_Ag.sql
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettype_MAg.sql
-BetList/Alpha/Wrappers/Age_BetList_SelRunningByBettype_Sag.sql
+BetList/LRF/Lrf_BetList_Licensee.sql
+BetList/LRF/Lrf_BetList_Licensee_Others.sql
+BetList/LRF/Lrf_BetList_Licensee_Sportsbook.sql
+BetList/LRF/Lrf_BetList_Licensee_TotalRows.sql

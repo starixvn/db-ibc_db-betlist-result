@@ -34,6 +34,7 @@ AS
 		- 20221207@Kos: Support Saba E-Sports PinGoal [RedmineID: #181224]
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 		- 20230703@Kos: Support Saba Tennis [RedmineID: #190465]
+		- 20231127@Kos: Support Jollysports [RedmineID: #197192]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -196,10 +197,10 @@ BEGIN
 		IF @MaxStake IS NULL
 			SET @MaxStake = 0
 
-		CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(4) PRIMARY KEY)
+		CREATE TABLE #PlatformList (BetFrom NVARCHAR(4) PRIMARY KEY)
 
-		INSERT INTO #PlatformList (PlatformType, BetFrom)
-		SELECT PlatformType, betfrom
+		INSERT INTO #PlatformList (BetFrom)
+		SELECT DISTINCT betfrom
 		FROM dbo.Lrf_f_BetFromType_Sel(@BetFrom)
 
 		-- Check if @TransId and @TransId + 1 is combo ticket then reset @TransId

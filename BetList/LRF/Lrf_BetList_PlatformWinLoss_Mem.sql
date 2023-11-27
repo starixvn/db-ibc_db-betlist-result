@@ -123,6 +123,7 @@ AS
 		- 20221220@Kos: Remove inactive products FW [Redmine: 181424]
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
+		- 20231127@Kos: Support Jollysports [RedmineID: #197192]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -234,10 +235,10 @@ BEGIN
 		OR ProductID = CASE WHEN @ShowBTC		= 0 THEN 69 END
 		OR ProductID = CASE WHEN @ShowLG		= 0 THEN 77 END
 
-	CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(4))
+	CREATE TABLE #PlatformList (BetFrom NVARCHAR(4))
 
-	INSERT INTO #PlatformList (PlatformType, BetFrom)
-	SELECT PlatformType, betfrom
+	INSERT INTO #PlatformList (BetFrom)
+	SELECT DISTINCT betfrom
 	FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType)
 
 	DECLARE @Data AS TABLE (

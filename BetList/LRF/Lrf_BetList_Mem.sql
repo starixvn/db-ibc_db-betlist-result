@@ -119,6 +119,7 @@ AS
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20230629@Kos: Support MG-RNG [Redmine: 189988]
 		- 20230803@Kos: Support Virtual Sports 3 [Redmine: 190908]
+		- 20231127@Kos: Support Jollysports [RedmineID: #197192]
 */
 
 BEGIN
@@ -365,10 +366,10 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		CREATE TABLE #PlatformList (PlatformType TINYINT, BetFrom NVARCHAR(4))
+		CREATE TABLE #PlatformList (BetFrom NVARCHAR(4))
 
-		INSERT INTO #PlatformList (PlatformType, BetFrom)
-		SELECT PlatformType, betfrom
+		INSERT INTO #PlatformList (BetFrom)
+		SELECT DISTINCT betfrom
 		FROM dbo.Lrf_f_BetFromType_Sel(@Platform)
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)
