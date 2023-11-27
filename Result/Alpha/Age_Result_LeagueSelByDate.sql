@@ -52,6 +52,7 @@ AS
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 		- 20220510@Razor: Remove In-house Replication [Redmine: #171699]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
+		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197469]
 */
 
 BEGIN
@@ -174,6 +175,8 @@ BEGIN
 			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+			AND (l.LeagueGroupID IS NULL
+				OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
 		ORDER BY m.sporttype ASC,
 			l.leaguename ASC
 	END
