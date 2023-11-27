@@ -51,6 +51,7 @@ AS
 		- 20220315@Kos: Support Cricket phase 2 [Redmine: #168034]
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
+		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197440]
 */
 
 BEGIN
@@ -191,6 +192,11 @@ BEGIN
 						OR ISNULL(e.MatchID, 0) <> 0		-- E-Sports show running Match but settled least one type
 						OR ISNULL(o.MatchID, 0) <> 0		-- Badminton show running Match but settled least one type
 						OR ISNULL(c.MatchID, 0) <> 0)))		-- Cricket show running Match but settled least one type
+			AND EXISTS ( SELECT 1
+						FROM dbo.League AS l WITH (NOLOCK)
+						WHERE l.leagueid = m.leagueid
+							AND (l.LeagueGroupID IS NULL
+								OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())))
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
@@ -346,6 +352,11 @@ BEGIN
 						OR ISNULL(e.MatchID, 0) <> 0		-- E-Sports show running Match but settled least one type
 						OR ISNULL(o.MatchID, 0) <> 0		-- Badminton show running Match but settled least one type
 						OR ISNULL(c.MatchID, 0) <> 0)))		-- Cricket show running Match but settled least one type
+			AND EXISTS ( SELECT 1
+						FROM dbo.League AS l WITH (NOLOCK)
+						WHERE l.leagueid = m.leagueid
+							AND (l.LeagueGroupID IS NULL
+								OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())))
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)

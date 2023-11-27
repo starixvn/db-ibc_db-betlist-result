@@ -48,6 +48,7 @@ AS
 		- 20220607@Kos: Hotfix - Virtual Basketball [Redmine: #173815]
 		- 20220609@Kos: Remove IsDeleted for League and Team [Redmine: #171991]
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
+		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197440]
 */
 
 BEGIN
@@ -180,6 +181,8 @@ BEGIN
 				) AS m
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND (l.LeagueGroupID IS NULL
+					OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
@@ -366,6 +369,8 @@ BEGIN
 				) AS m
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND (l.LeagueGroupID IS NULL
+					OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
