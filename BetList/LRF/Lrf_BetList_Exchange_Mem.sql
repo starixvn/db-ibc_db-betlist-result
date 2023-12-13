@@ -26,6 +26,7 @@ AS
 		- 20221117@Kos: Support filter by resettled date [Redmine: 179079]
 					- Add new input param @DateOption TINYINT
 		- 20231006@Kos: Support view resettled ticket only [Redmine: 193954]
+		- 20231213@Kos: Hotfix - inconsistent odds [Redmine: 198327]
 */
 
 BEGIN
@@ -163,7 +164,7 @@ BEGIN
 		s.WinLostDate,
 		s.Currency,
 		b.matchAvgOdds AS OddsAvg,
-		b.fancyBetRuns,
+		ISNULL(bm.txFancyBetRuns, b.fancyBetRuns) AS fancyBetRuns,
 		b.matchStake / s.ExVirtualRate AS Stake,
 		b.profitLoss / s.ExVirtualRate AS WinLost
 	FROM bodb_3rdProduct.dbo.Bettrans_Exchange AS b WITH (NOLOCK)
@@ -171,6 +172,7 @@ BEGIN
 			ON b.userId = s.userId
 				AND b.eventID = s.eventID
 				AND b.marketID = s.marketID
+		LEFT JOIN bodb_3rdProduct.dbo.BettransM_Exchange AS bm WITH (NOLOCK) ON b.betID = bm.BetID
 
 	DECLARE @FDate	DATETIME,
 		@TDate		DATETIME
