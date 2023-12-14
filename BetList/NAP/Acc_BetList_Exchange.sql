@@ -19,6 +19,7 @@ AS
 		- 20180313@Kos: First revision [#Redmine: 91808]
 		- 20180313@Kos: Exclude tickets which don't have ticket detail [#Redmine: 102898]
 		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
+		- 20231213@Kos: Hotfix - inconsistent odds [Redmine: 198327]
 */
 
 BEGIN
@@ -153,7 +154,7 @@ BEGIN
 		s.WinLostDate,
 		s.Currency,
 		b.matchAvgOdds AS OddsAvg,
-		b.fancyBetRuns,
+		ISNULL(bm.txFancyBetRuns, b.fancyBetRuns) AS fancyBetRuns,
 		b.matchStake / s.ExVirtualRate AS Stake,
 		b.profitLoss / s.ExVirtualRate AS WinLost
 	FROM bodb_3rdProduct.dbo.Bettrans_Exchange AS b WITH (NOLOCK)
@@ -161,6 +162,7 @@ BEGIN
 			ON b.userId = s.userId
 				AND b.eventID = s.eventID
 				AND b.marketID = s.marketID
+		LEFT JOIN bodb_3rdProduct.dbo.BettransM_Exchange AS bm WITH (NOLOCK) ON b.betID = bm.BetID
 
 	SELECT * FROM @PagingData
 	SELECT * FROM @Detail
