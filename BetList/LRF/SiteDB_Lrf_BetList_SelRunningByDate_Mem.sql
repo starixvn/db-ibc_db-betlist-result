@@ -31,6 +31,7 @@ AS
 		- 20231107@Kos: Support SEAL Entertaiment [Redmine: 180648]
 					- Remove param @ErrorCode, @ErrorMsg, @ShowSB, @ShowNG, ...
 					- Add new input param @ProductList VARCHAR(300)
+		- 20231215@Kos: Hotfix - not convert to base currency [Redmine: 198461]
 */
 
 BEGIN
@@ -863,76 +864,92 @@ BEGIN
 		END
 	END
 
+	-- Get exchange rate
+	CREATE TABLE #ExchangeRate (
+		ExchangeId	INT,
+		Rate		FLOAT
+	)
+
+	-- Get exchange rate
+	INSERT INTO #ExchangeRate
+	SELECT
+		e.ExchangeId,
+		e.Rate
+	FROM dbo.SiteDB_Lrf_f_GetExchangeRate(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), @BaseCurrency, '') AS e
+	WHERE EXISTS (SELECT 1 FROM #PagingData WHERE Currency = e.ExchangeId)
+
 	-- Get ticket detail
 	-- Virtual Sports
-	IF EXISTS (SELECT 1 FROM #Data WHERE Product = 'VR')
+	IF EXISTS (SELECT 1 FROM #PagingData WHERE Product = 'VR')
 	BEGIN
 		INSERT INTO @Detail
 		SELECT
 			bm.refno,
 			bm.odds,
-			bm.stake,
+			bm.stake * ISNULL(e.Rate, 1) AS Stake,
 			bm.status,
 			bm.bettype,
 			bm.betteam
 		FROM dbo.bettransm AS bm WITH (NOLOCK)
 			INNER JOIN #PagingData AS b ON bm.refno = b.RefNo AND bm.custid = b.CustId
 			INNER JOIN dbo.SportBettypeMatrix AS sbt WITH (NOLOCK) ON bm.bettype = sbt.Bettype
+			LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = b.Currency
 		WHERE b.Product = 'VR'
 			AND sbt.ProductID = 5
 			AND sbt.EventType = 3
 	END
 
 	SELECT
-		TransId,
-		RefNo,
-		CustId,
-		Currency,
-		SportType,
-		BetType,
-		BetId,
-		BetTeam,
-		Hdp1,
-		Hdp2,
-		OddsId,
-		OddsType,
-		Odds,
-		MOdds,
-		OddsSpread,
-		Stake,
-		Actual_Stake,
-		Status,
-		SettlementStatus,
-		SecAcceptFlag,
-		CheckTime,
-		TransDate,
-		WinLostDate,
-		LiveIndicator,
-		LiveHomeScore,
-		LiveAwayScore,
-		Ip,
-		BetFrom,
-		LeagueId,
-		MatchId,
-		MatchCode,
-		Race,
-		EventDate,
-		HomeId,
-		AwayId,
-		BetStatus,
-		IsNeutral,
-		Placing,
-		ShowTime,
-		BetCheck,
-		ComStatus,
-		TransDesc,
-		BetdaqId,
-		ExtraInfo,
-		OriginalStake,
-		OriginalBetType,
-		WalletType,
-		RefCode
-	FROM #PagingData
+		a.TransId,
+		a.RefNo,
+		a.CustId,
+		a.Currency,
+		a.SportType,
+		a.BetType,
+		a.BetId,
+		a.BetTeam,
+		a.Hdp1,
+		a.Hdp2,
+		a.OddsId,
+		a.OddsType,
+		a.Odds,
+		a.MOdds,
+		a.OddsSpread,
+		a.Stake * ISNULL(e.Rate, 1) AS Stake,
+		a.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
+		a.Status,
+		a.SettlementStatus,
+		a.SecAcceptFlag,
+		a.CheckTime,
+		a.TransDate,
+		a.WinLostDate,
+		a.LiveIndicator,
+		a.LiveHomeScore,
+		a.LiveAwayScore,
+		a.Ip,
+		a.BetFrom,
+		a.LeagueId,
+		a.MatchId,
+		a.MatchCode,
+		a.Race,
+		a.EventDate,
+		a.HomeId,
+		a.AwayId,
+		a.BetStatus,
+		a.IsNeutral,
+		a.Placing,
+		a.ShowTime,
+		a.BetCheck,
+		a.ComStatus,
+		a.TransDesc,
+		a.BetdaqId,
+		a.ExtraInfo,
+		a.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
+		a.OriginalBetType,
+		a.WalletType,
+		a.RefCode
+	FROM #PagingData AS a
+		LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = a.Currency
 	ORDER BY RowNum ASC
 
 	SELECT DISTINCT * FROM @Detail
