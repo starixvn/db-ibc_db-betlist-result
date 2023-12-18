@@ -108,6 +108,7 @@ AS
 		- 20231020@Razor: Support show max payout [Redmine: #194491]
 		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
+		- 20231215@Razor: Support Live22 [Redmine: #197609]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -355,6 +356,7 @@ BEGIN
 							WHEN s.ProductID = 75 THEN 'JIG'	-- Jili
 							WHEN s.ProductID = 76 THEN 'YB'		-- YeeBet
 							WHEN s.ProductID = 77 THEN 'LG'		-- Virtual Sports 3
+							WHEN s.ProductID = 79 THEN 'L22'	-- Live22
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
@@ -383,7 +385,7 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 
-										'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB') THEN b.matchid
+										'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'L22') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'AllBet' THEN 211	-- AllBet

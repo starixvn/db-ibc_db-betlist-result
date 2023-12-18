@@ -156,6 +156,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231021@Kos: Hotfix - Not show odds for some tickets [Redmine: #195844]
 		- 20231023@Razor: Return Device Type info [Redmine: #192667]
+		- 20231215@Razor: Support Live22 [Redmine: #197609]
 */
 
 BEGIN
@@ -436,7 +437,7 @@ BEGIN
 			AND statusID IN (0, 1)
 			AND gameid IN (
 					SELECT DISTINCT BetType FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-					WHERE ProductID IN (6, 22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75)
+					WHERE ProductID IN (6, 22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
 				)
 		GROUP BY RefNo, gameID
 	) AS s ON s.TransID = d.TransId
@@ -564,7 +565,7 @@ BEGIN
 
 		DELETE @BetListSelRunningByDateMem
 		WHERE ProductID IS NULL
-			OR (ProductID IN (21, 39, 6, 22, 32, 34, 36, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76) AND TableID = 1)
+			OR (ProductID IN (21, 39, 6, 22, 32, 34, 36, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76, 79) AND TableID = 1)
 			OR ProductID IN (12)
 
 		IF (@hasData & 1 = 1) --got bettrans' data
@@ -866,14 +867,14 @@ BEGIN
 
 		-- Allbet, RNG Casino Single Wallet, Macau Games, Pragmatic Casino, Card Club, Spadegaming, SA Gaming
 		-- Sexy Gaming, Saba.club, IBCBet Live Casino, RNG War, ION, PG Soft, Joker, WM, Big Gaming, MaxGame, Habanero, CG, PP Live Casino, VGaming, AdvantPlay, AdvantPlay Mini
-		-- FGG, SEAL Entertainment, MG RNG Casino, Jili, YeeBet
-		IF EXISTS ( SELECT 1 FROM @BetListSelRunningByDateMem WHERE ProductId IN (21, 6, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76))
+		-- FGG, SEAL Entertainment, MG RNG Casino, Jili, YeeBet, Live22
+		IF EXISTS ( SELECT 1 FROM @BetListSelRunningByDateMem WHERE ProductId IN (21, 6, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76, 79))
 		BEGIN
 			UPDATE d
 			SET TransDate = s.transdate
 				,WinLostDate = s.winlostdate -- winlostdate
 				,Sporttype = CASE
-									WHEN d.ProductID IN (6, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76) THEN s.matchid
+									WHEN d.ProductID IN (6, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76, 79) THEN s.matchid
 									WHEN d.ProductID = 21 THEN 211
 									WHEN d.ProductID = 22 THEN 212
 									WHEN d.ProductID = 32 THEN 248
@@ -915,12 +916,12 @@ BEGIN
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS d
 				INNER JOIN dbo.bettrans AS s WITH (NOLOCK) on d.transid = s.transid
-			WHERE d.ProductID IN (21, 6, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76)
+			WHERE d.ProductID IN (21, 6, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76, 79)
 				--AND s.statusID > 1 -- settled only
 
 			-- DELETE before yesterday one or not IN From - To range
 			DELETE @BetListSelRunningByDateMem
-			WHERE ProductID IN (21, 6, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76)
+			WHERE ProductID IN (21, 6, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76, 79)
 				AND (WinLostDate < DATEADD(dd, DATEDIFF(dd, 0, CURRENT_TIMESTAMP) - 1, 0) --yesterday
 					OR TransDate < CASE @GetAll WHEN 1 THEN TransDate ELSE @FromDate END
 					OR TransDate > CASE @GetAll WHEN 1 THEN transdate ELSE @ToDate END)

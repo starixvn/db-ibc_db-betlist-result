@@ -24,6 +24,7 @@ AS
 			- Return ExtraInfo for show Max Payout
 		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
+		- 20231215@Razor: Support Live22 [Redmine: #197609]
 */
 
 BEGIN
@@ -251,6 +252,7 @@ BEGIN
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
 						WHEN @ProductID = 76 THEN 'YB'			-- YeeBet
 						WHEN @ProductID = 77 THEN 'LG'			-- Virtual Sports 3
+						WHEN @ProductID = 79 THEN 'L22'			-- Live22
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -510,7 +512,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
 					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 
-					'BBIN', 'RNGW', 'SEA', 'IBCLC', 'ION', 'PPL') THEN b.matchid
+					'BBIN', 'RNGW', 'SEA', 'IBCLC', 'ION', 'PPL', 'L22') THEN b.matchid
 				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -782,7 +784,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
 					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 
-					'BBIN', 'RNGW', 'SEA', 'IBCLC', 'ION', 'PPL') THEN b.matchid
+					'BBIN', 'RNGW', 'SEA', 'IBCLC', 'ION', 'PPL', 'L22') THEN b.matchid
 				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -1114,6 +1116,7 @@ BEGIN
 						WHEN @ProductId = 72 THEN 'SEA'			-- SEAL Entertainment
 						WHEN @ProductId = 73 THEN 'MGRNG'		-- MG-RNG
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
+						WHEN @ProductId = 79 THEN 'L22'			-- Live22
 						ELSE 'Unknown'
 					END
 
