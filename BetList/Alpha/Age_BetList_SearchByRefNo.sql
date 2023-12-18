@@ -27,6 +27,7 @@ AS
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240125@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
+		- 20240228@Razor: Support WE Live Casino [Redmine: #195887]
 */
 
 BEGIN
@@ -256,6 +257,7 @@ BEGIN
 						WHEN @ProductID = 76 THEN 'YB'			-- YeeBet
 						WHEN @ProductID = 77 THEN 'LG'			-- Virtual Sports 3
 						WHEN @ProductID = 79 THEN 'L22'			-- Live22
+						WHEN @ProductID = 80 THEN 'WE'			-- WE
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -516,7 +518,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
 					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 
-					'BBIN', 'RNGW', 'SEA', 'IBCLC', 'ION', 'PPL', 'L22') THEN b.matchid
+					'BBIN', 'RNGW', 'SEA', 'IBCLC', 'ION', 'PPL', 'L22', 'WE') THEN b.matchid
 				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -790,7 +792,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
 					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 
-					'BBIN', 'RNGW', 'SEA', 'IBCLC', 'ION', 'PPL', 'L22') THEN b.matchid
+					'BBIN', 'RNGW', 'SEA', 'IBCLC', 'ION', 'PPL', 'L22', 'WE') THEN b.matchid
 				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
@@ -1374,6 +1376,7 @@ BEGIN
 						WHEN @ProductId = 65 THEN 'PPL'			-- PP Live Casino
 						WHEN @ProductId = 70 THEN 'FGGL'
 						WHEN @ProductId = 76 THEN 'YB'
+						WHEN @ProductId = 80 THEN 'WE'
 						ELSE 'Unknown'
 					END
 
