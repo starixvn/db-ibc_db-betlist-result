@@ -95,6 +95,7 @@ AS
 					- Return ExtraInfo for show Max Payout
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20231108@Razor: Support WE Live Casino [Redmine: #195887]
+		- 20231215@Razor: Support Live22 [Redmine: #197609]
 */
 
 BEGIN
@@ -514,8 +515,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
-			-- SEAL Entertainment, MG RNGCasino, Jili
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -896,8 +897,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
-			-- SEAL Entertainment, MG RNGCasino, Jili
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
