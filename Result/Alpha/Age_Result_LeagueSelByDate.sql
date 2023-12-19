@@ -54,6 +54,7 @@ AS
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197469]
 		- 20231127@Razor: Hide Redcat88 league of Esports [Redmine: #198337]
+		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
 */
 
 BEGIN
@@ -152,14 +153,14 @@ BEGIN
 				(	SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-						AND (@SportType IN (6, 9, 45)	-- Volleyball, Badminton, Beach Volleyball
+						AND (@SportType IN (6, 9, 45, 58)	-- Volleyball, Badminton, Beach Volleyball, Bandy
 							OR (@SportType = 50
 								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 					UNION ALL
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-						AND (@SportType IN (6, 9, 45)	-- Volleyball, Badminton, Beach Volleyball
+						AND (@SportType IN (6, 9, 45, 58)	-- Volleyball, Badminton, Beach Volleyball, Bandy
 							OR (@SportType = 50
 								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 				) AS o ON o.MatchID = m.matchid

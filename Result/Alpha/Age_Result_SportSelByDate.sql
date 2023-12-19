@@ -50,6 +50,7 @@ AS
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197469]
 		- 20231127@Razor: Hide Redcat88 league of Esports [Redmine: #198337]
+		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
 */
 
 BEGIN
@@ -121,7 +122,7 @@ BEGIN
 											FROM dbo.ResultDetailOS AS o WITH (NOLOCK)
 											WHERE o.SettlementStatusID > 0
 												AND m.matchid = o.MatchId
-												AND (m.sporttype IN (6, 9, 45)		-- Volleyball, Badminton, Beach Volleyball
+												AND (m.sporttype IN (6, 9, 45, 58)		-- Volleyball, Badminton, Beach Volleyball, Bandy
 													OR (m.sporttype = 50	-- Cricket
 														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
@@ -237,7 +238,7 @@ BEGIN
 											FROM dbo.ResultDetailOS14 AS o WITH (NOLOCK)
 											WHERE o.SettlementStatusID > 0
 												AND m.matchid = o.MatchId
-												AND (m.sporttype IN (6, 9, 45)		-- Volleyball, Badminton, Beach Volleyball
+												AND (m.sporttype IN (6, 9, 45, 58)		-- Volleyball, Badminton, Beach Volleyball, Bandy
 													OR (m.sporttype = 50	-- Cricket
 														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')

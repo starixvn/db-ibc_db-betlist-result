@@ -60,6 +60,7 @@ AS
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
+		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
 */
 
 BEGIN
@@ -166,7 +167,7 @@ BEGIN
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (6, 9, 43, 45, 50, 193)
+		IF @SportType NOT IN (6, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -208,7 +209,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceID LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -342,7 +343,7 @@ BEGIN
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (6, 9, 43, 45, 50, 193)
+		IF @SportType NOT IN (6, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -384,7 +385,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceID LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -521,7 +522,7 @@ BEGIN
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (6, 9, 43, 45, 50, 193)
+		IF @SportType NOT IN (6, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -563,7 +564,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT

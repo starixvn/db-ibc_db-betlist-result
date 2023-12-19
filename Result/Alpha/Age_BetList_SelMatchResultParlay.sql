@@ -46,6 +46,7 @@ AS
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
 		- 20231024@Razor: Return Live Score value[Redmine: #194323]
+		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
 */
 
 BEGIN
@@ -280,7 +281,7 @@ BEGIN
 								OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
-		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 9, 45, 50))
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 9, 45, 50, 58))
 		BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
@@ -300,7 +301,7 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
+			WHERE p.SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
 				AND (LEN(d.ResourceID) = 2
 					OR (LEN(d.ResourceID) = 4 AND p.SportType IN (9, 45))
 					OR (p.SportType = 6 AND d.ResourceId LIKE '010%')
@@ -475,7 +476,7 @@ BEGIN
 								OR d.ResourceID LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
-		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 9, 45, 50))
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 9, 45, 50, 58))
 		BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
@@ -495,7 +496,7 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
+			WHERE p.SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
 				AND (LEN(d.ResourceID) = 2
 					OR (LEN(d.ResourceID) = 4 AND p.SportType IN (9, 45))
 					OR (p.SportType = 6 AND d.ResourceId LIKE '010%')
@@ -674,7 +675,7 @@ BEGIN
 								OR d.ResourceId LIKE '%' + REPLACE(ISNULL(p.BetCheck, ''), '8', ''))))))
 		END
 
-		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 9, 45, 50))
+		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 9, 45, 50, 58))
 		BEGIN
 			INSERT INTO @tmpResultDetail
 			SELECT
@@ -694,7 +695,7 @@ BEGIN
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = p.BetType AND d.ResourceId LIKE f.ResourceID
-			WHERE p.SportType IN (6, 9, 45, 50)		--Volleyball, Badminton, Beach Volleyball, Cricket
+			WHERE p.SportType IN (6, 9, 45, 50, 58)		--Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
 				AND (LEN(d.ResourceID) = 2
 					OR (LEN(d.ResourceID) = 4 AND p.SportType IN (9, 45))
 					OR (p.SportType = 6 AND d.ResourceId LIKE '010%')
