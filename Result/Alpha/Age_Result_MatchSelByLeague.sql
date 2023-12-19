@@ -59,6 +59,7 @@ AS
 		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
 		- 20230404@Razor: Split Sites, remove harde code with 789y site [Redmine: #181596]
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197469]
+		- 20231127@Razor: Hide Redcat88 league of Esports [Redmine: #198337]
 */
 
 BEGIN
@@ -237,7 +238,9 @@ BEGIN
 			AND m.matchcode NOT LIKE '%betdaq%'
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 			AND (l.LeagueGroupID IS NULL
-				OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
+				OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+					AND l.LeagueGroupID <> 215)) -- Redcat88 of Esports
+
 		OPTION (OPTIMIZE FOR (@LeagueId = 0))
 	END
 	ELSE IF @SportType IN (0, 5)
@@ -317,7 +320,8 @@ BEGIN
 						AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 				AND (l.LeagueGroupID IS NULL
-					OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
+					OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+						AND l.LeagueGroupID <> 215)) -- Redcat88 of Esports
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
 		ELSE
@@ -394,7 +398,8 @@ BEGIN
 						AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 				AND (l.LeagueGroupID IS NULL
-					OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
+					OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+						AND l.LeagueGroupID <> 215)) -- Redcat88 of Esports
 			OPTION (OPTIMIZE FOR (@LeagueId = 0))
 		END
 	END

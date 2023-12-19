@@ -49,6 +49,7 @@ AS
 		- 20220510@Razor: Remove In-house Replication [Redmine: #171699]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197469]
+		- 20231127@Razor: Hide Redcat88 league of Esports [Redmine: #198337]
 */
 
 BEGIN
@@ -143,7 +144,8 @@ BEGIN
 									WHERE l.leagueid = m.leagueid
 										AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
 										AND (l.LeagueGroupID IS NULL
-											OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
+											OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+												AND l.LeagueGroupID <> 215)) --Redcat88 of Esports
 									)
 
 					UNION ALL
@@ -258,7 +260,8 @@ BEGIN
 										WHERE l.leagueid = m.leagueid
 											AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
 											AND (l.LeagueGroupID IS NULL
-												OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
+												OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+													AND l.LeagueGroupID <> 215)) -- Redcat88 of Esports
 									)
 
 					UNION ALL
