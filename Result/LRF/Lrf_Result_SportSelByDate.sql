@@ -52,6 +52,7 @@ AS
 		- 20220428@Kos: Support Bitcoin [Redmine: #160160]
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197440]
+		- 20231221@Kos: Hide Redcat88 matches [Redmine: #198539]
 */
 
 BEGIN
@@ -196,7 +197,8 @@ BEGIN
 						FROM dbo.League AS l WITH (NOLOCK)
 						WHERE l.leagueid = m.leagueid
 							AND (l.LeagueGroupID IS NULL
-								OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())))
+								OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+									AND l.LeagueGroupID <> 215)))		-- Redcat88 of Esports
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
@@ -356,7 +358,8 @@ BEGIN
 						FROM dbo.League AS l WITH (NOLOCK)
 						WHERE l.leagueid = m.leagueid
 							AND (l.LeagueGroupID IS NULL
-								OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())))
+								OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+									AND l.LeagueGroupID <> 215)))		-- Redcat88 of Esports
 
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)

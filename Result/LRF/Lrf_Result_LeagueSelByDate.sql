@@ -49,6 +49,7 @@ AS
 		- 20220609@Kos: Remove IsDeleted for League and Team [Redmine: #171991]
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197440]
+		- 20231221@Kos: Hide Redcat88 matches [Redmine: #198539]
 */
 
 BEGIN
@@ -182,7 +183,8 @@ BEGIN
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
 				AND (l.LeagueGroupID IS NULL
-					OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
+					OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+						AND l.LeagueGroupID <> 215))		-- Redcat88 of Esports
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
@@ -370,7 +372,8 @@ BEGIN
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
 				AND (l.LeagueGroupID IS NULL
-					OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
+					OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+						AND l.LeagueGroupID <> 215))		-- Redcat88 of Esports
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END

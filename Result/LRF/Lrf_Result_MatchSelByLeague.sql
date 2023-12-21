@@ -60,6 +60,7 @@ AS
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197440]
+		- 20231221@Kos: Hide Redcat88 matches [Redmine: #198539]
 */
 
 BEGIN 
@@ -350,7 +351,8 @@ BEGIN
 			AND m.matchcode NOT LIKE '%(LR)%'
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 			AND (l.LeagueGroupID IS NULL
-				OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
+				OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+					AND l.LeagueGroupID <> 215))		-- Redcat88 of Esports
 		OPTION (OPTIMIZE FOR (@LeagueId = 0))
 	END
 	ELSE IF @SportType IN (0, 5)
@@ -428,7 +430,8 @@ BEGIN
 			WHERE
 				(l.leagueid = @LeagueId OR @LeagueId = 0)
 				AND (l.LeagueGroupID IS NULL
-					OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
+					OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+						AND l.LeagueGroupID <> 215))		-- Redcat88 of Esports
 				AND ( m.eventstatus NOT IN ('internal', 'closed')
 					OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
@@ -505,7 +508,8 @@ BEGIN
 			WHERE
 				(l.leagueid = @LeagueId OR @LeagueId = 0)
 				AND (l.LeagueGroupID IS NULL
-					OR l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports()))
+					OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
+						AND l.LeagueGroupID <> 215))		-- Redcat88 of Esports
 				AND ( m.eventstatus NOT IN ('internal', 'closed')
 					OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
