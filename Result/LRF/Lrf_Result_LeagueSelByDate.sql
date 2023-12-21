@@ -50,6 +50,7 @@ AS
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197440]
 		- 20231221@Kos: Hide Redcat88 matches [Redmine: #198539]
+		- 20231226@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
 */
 
 BEGIN
@@ -109,7 +110,7 @@ BEGIN
 								SELECT DISTINCT MatchID
 								FROM dbo.ResultDetailOS WITH (NOLOCK)
 								WHERE SettlementStatusID > 0
-									AND (@SportType IN (6, 9, 45)
+									AND (@SportType IN (6, 9, 45, 58)
 										OR (@SportType = 50
 											AND ResourceID NOT IN ('00', '9442', '9443')
 											AND ResourceID NOT LIKE '9410%'
@@ -299,7 +300,7 @@ BEGIN
 								SELECT DISTINCT MatchID
 								FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 								WHERE SettlementStatusID > 0
-									AND (@SportType IN (6, 9, 45)
+									AND (@SportType IN (6, 9, 45, 58)
 										OR (@SportType = 50
 											AND ResourceID NOT IN ('00', '9442', '9443')
 											AND ResourceID NOT LIKE '9410%'

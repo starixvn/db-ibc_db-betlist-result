@@ -61,6 +61,7 @@ AS
 		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197440]
 		- 20231221@Kos: Hide Redcat88 matches [Redmine: #198539]
+		- 20231226@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
 */
 
 BEGIN 
@@ -209,7 +210,7 @@ BEGIN
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetailOS WITH (NOLOCK)
 				WHERE SettlementStatusID > 0
-					AND (@SportType IN (6, 9, 45)
+					AND (@SportType IN (6, 9, 45, 58)
 						OR (@SportType = 50
 							AND ResourceID NOT IN ('00', '9442', '9443')
 							AND ResourceID NOT LIKE '9410%'
@@ -270,7 +271,7 @@ BEGIN
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 				WHERE SettlementStatusID > 0
-					AND (@SportType IN (6, 9, 45)
+					AND (@SportType IN (6, 9, 45, 58)
 						OR (@SportType = 50
 							AND ResourceID NOT IN ('00', '9442', '9443')
 							AND ResourceID NOT LIKE '9410%'
@@ -582,7 +583,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Cricket, Beach Volleyball
+		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Cricket, Beach Volleyball, Bandy
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -598,7 +599,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (6, 9, 45)
+						AND (@SportType IN (6, 9, 45, 58)
 							OR (@SportType = 50
 								AND ResourceID NOT IN ('00')
 								AND ResourceID NOT LIKE '9410%'
@@ -694,7 +695,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Cricket, Beach Volleyball
+		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Cricket, Beach Volleyball, Bandy
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -710,7 +711,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (6, 9, 45)
+						AND (@SportType IN (6, 9, 45, 58)
 							OR (@SportType = 50
 								AND ResourceID NOT IN ('00')
 								AND ResourceID NOT LIKE '9410%'

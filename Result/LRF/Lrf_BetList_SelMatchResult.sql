@@ -59,6 +59,7 @@ AS
 		- 20220623@Kos: Support more map for E-Sports [Redmine: #174251]
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
+		- 20231221@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
 
 		*******************
 		sample test case:
@@ -179,7 +180,7 @@ BEGIN
 								END
 
 			-- Get result detail
-			IF @SportType NOT IN (6, 9, 43, 45, 50, 193)
+			IF @SportType NOT IN (6, 9, 43, 45, 50, 58, 193)
 			BEGIN
 				INSERT INTO @ResultDetail
 				SELECT
@@ -221,7 +222,7 @@ BEGIN
 									AND (@BetType NOT IN (606, 607, 613, 617)
 										OR d.ResourceId LIKE '%' + @ResourceId)))))
 			END
-			ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Cricket, Beach Volleyball
+			ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Cricket, Beach Volleyball, Bandy
 			BEGIN
 				INSERT INTO @ResultDetail
 				SELECT
@@ -364,7 +365,7 @@ BEGIN
 								END
 
 			-- Get result detail
-			IF @SportType NOT IN (6, 9, 43, 45, 50, 193)
+			IF @SportType NOT IN (6, 9, 43, 45, 50, 58, 193)
 			BEGIN
 				INSERT INTO @ResultDetail
 				SELECT
@@ -406,7 +407,7 @@ BEGIN
 									AND (@BetType NOT IN (606, 607, 613, 617)
 										OR d.ResourceId LIKE '%' + @ResourceId)))))
 			END
-			ELSE IF @SportType IN (6, 9, 45, 50)		-- Badminton, Cricket, Beach Volleyball
+			ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Badminton, Cricket, Beach Volleyball, Bandy
 			BEGIN
 				INSERT INTO @ResultDetail
 				SELECT
@@ -549,7 +550,7 @@ BEGIN
 								END
 
 			-- Get result detail
-			IF @SportType NOT IN (6, 9, 43, 45, 50, 193)
+			IF @SportType NOT IN (6, 9, 43, 45, 50, 58, 193)
 			BEGIN
 				INSERT INTO @ResultDetail
 				SELECT
@@ -591,7 +592,7 @@ BEGIN
 									AND (@BetType NOT IN (606, 607, 613, 617)
 										OR d.ResourceId LIKE '%' + @ResourceId)))))
 			END
-			ELSE IF @SportType IN (6, 9, 45, 50)		-- Badminton, Cricket, Beach Volleyball
+			ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Badminton, Cricket, Beach Volleyball, Bandy
 			BEGIN
 				INSERT INTO @ResultDetail
 				SELECT
