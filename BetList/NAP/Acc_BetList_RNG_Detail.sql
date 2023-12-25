@@ -68,6 +68,7 @@ AS
 					- Return new JackpotInfo column
 					- Return ExtraInfo for show Max Payout
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20231225@Razor: Increase length of Betcheck column [Redmine: #198825]
 
 
 	Parameters:
@@ -163,7 +164,7 @@ BEGIN
 		Comm			MONEY,
 		Ip				VARCHAR(45),
 		TransDesc		NVARCHAR(1000),
-		BetCheck		NVARCHAR(50),
+		BetCheck		NVARCHAR(100),
 		MatchCode		VARCHAR(1000),
 		BetTeam			NVARCHAR(100),
 		EventDate		DATETIME,
