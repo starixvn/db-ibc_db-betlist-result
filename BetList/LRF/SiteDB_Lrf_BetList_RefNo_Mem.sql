@@ -36,6 +36,7 @@ AS
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 		- 20231227@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
+		- 20231228@Kos: Support Saba Reward [Redmine: 196882]
 */
 
 BEGIN
@@ -192,6 +193,8 @@ BEGIN
 		@Product		VARCHAR(30),
 		@WhTicket		TINYINT		= 0,
 		@BonusTransId	BIGINT		= 0
+
+	DECLARE @SabaRewardTicket TABLE (TransId BIGINT)
 
 	SET @OriginalCustId = @CustId
 
@@ -393,6 +396,20 @@ BEGIN
 		END
 	END
 
+	-- Get related Saba Reward tickets
+	IF @Product = 'SB'
+	BEGIN
+		IF @WhTicket = 2
+		BEGIN
+			INSERT INTO @SabaRewardTicket
+			SELECT transid
+			FROM dbo.bettrans AS b WITH (NOLOCK)
+			WHERE b.custid = @CustId
+				AND b.refno = @TransId
+				AND b.bettype = 17007
+		END
+	END
+
 	DECLARE @IsBA BIT = 0
 
 	IF EXISTS (SELECT TOP(1) 1 FROM dbo.LicenseeBATransaction_active WITH (NOLOCK) WHERE transid = @TransId)
@@ -577,6 +594,7 @@ BEGIN
 			b.currency,
 			b.recommend,
 			CASE
+				WHEN b.transid NOT IN (@TransId, @BonusTransId) THEN b.matchid		-- 17007
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
 					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
@@ -792,6 +810,7 @@ BEGIN
 			LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON @Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON @Product IN ('VR') AND vr.EventID = vo.EventID
 		WHERE b.transid IN (@TransId, @BonusTransId)
+			OR b.transid IN (SELECT TransId FROM @SabaRewardTicket)
 
 		-- Get match info for Player Tips
 		IF @Product = 'TIP'
