@@ -73,6 +73,7 @@ AS
 		- 20231107@Kos: Support SEAL Entertaiment [Redmine: 180648]
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
+		- 20231227@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 */
 
 BEGIN
@@ -132,6 +133,7 @@ BEGIN
 		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
@@ -195,6 +197,7 @@ BEGIN
 		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
@@ -1092,6 +1095,10 @@ BEGIN
 								WHEN b.Product IN ('VR') THEN vr.LeagueID
 								ELSE 0
 							END,
+				LeagueGroupId = CASE
+									WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+									ELSE 0
+								END,
 				MatchId = CASE
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'BTC', 'LG') THEN b.matchid
 								ELSE 0
@@ -1182,6 +1189,7 @@ BEGIN
 					AND b.Winlostdate >= @Yesterday
 					AND x.RefNo = b.TransId
 				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
+				LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 				LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 				LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
@@ -1237,6 +1245,7 @@ BEGIN
 		a.LiveAwayScore,
 		a.Race,
 		a.LeagueId,
+		a.LeagueGroupId,
 		a.MatchId,
 		a.MatchCode,
 		a.EventDate,

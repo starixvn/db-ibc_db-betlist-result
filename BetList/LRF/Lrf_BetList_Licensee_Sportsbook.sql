@@ -79,6 +79,7 @@ AS
 		- 20230511@Kos: Support Saba Sports [Redmine: 183841]
 					- Add new input params @LeagueGroupIds, @PlatformType, @CustomerClass, @OddsGroup
 		- 20230703@Kos: Support Saba Tennis [RedmineID: #190465]
+		- 20231225@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 */
 
 BEGIN
@@ -2126,6 +2127,10 @@ BEGIN
 								WHEN b.Product = 'Outright' THEN o.leagueid
 								ELSE 0
 							END,
+					LeagueGroupId = CASE
+									WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+									ELSE 0
+								END,
 					MatchId = CASE
 								WHEN b.Product IN ('SB', 'BTC') THEN b.matchid
 								ELSE 0
@@ -2204,6 +2209,7 @@ BEGIN
 							END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
+					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND o.leagueid = l.leagueid
@@ -2273,6 +2279,10 @@ BEGIN
 								WHEN b.Product = 'Outright' THEN o.leagueid
 								ELSE 0
 							END,
+					LeagueGroupId = CASE
+									WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+									ELSE 0
+								END,
 					MatchId = CASE
 								WHEN b.Product IN ('SB', 'BTC') THEN b.matchid
 								ELSE 0
@@ -2351,6 +2361,7 @@ BEGIN
 							END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
+					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND o.leagueid = l.leagueid
@@ -2383,6 +2394,7 @@ BEGIN
 				a.LiveAwayScore,
 				a.Race,
 				a.LeagueId,
+				a.LeagueGroupId,
 				a.MatchId,
 				a.MatchCode,
 				a.EventDate,
@@ -2487,6 +2499,10 @@ BEGIN
 								WHEN b.Product = 'Outright' THEN o.leagueid
 								ELSE 0
 							END,
+					LeagueGroupId = CASE
+									WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+									ELSE 0
+								END,
 					MatchId = CASE
 								WHEN b.Product IN ('SB', 'BTC') THEN b.matchid
 								ELSE 0
@@ -2565,6 +2581,7 @@ BEGIN
 							END
 				FROM #Data AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
+					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND o.leagueid = l.leagueid
@@ -2634,6 +2651,10 @@ BEGIN
 								WHEN b.Product = 'Outright' THEN o.leagueid
 								ELSE 0
 							END,
+					LeagueGroupId = CASE
+									WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+									ELSE 0
+								END,
 					MatchId = CASE
 								WHEN b.Product IN ('SB', 'BTC') THEN b.matchid
 								ELSE 0
@@ -2712,6 +2733,7 @@ BEGIN
 							END
 				FROM #Data AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product = 'SB' AND b.matchid = m.matchid
+					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product = 'Outright' AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND o.leagueid = l.leagueid
@@ -2764,6 +2786,7 @@ BEGIN
 					a.LiveAwayScore,
 					a.Race,
 					a.LeagueId,
+					a.LeagueGroupId,
 					a.MatchId,
 					a.MatchCode,
 					a.EventDate,

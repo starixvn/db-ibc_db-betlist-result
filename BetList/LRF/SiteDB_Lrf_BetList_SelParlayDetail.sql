@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20220727@Kos: Created [Redmine: #175297]
 		- 20230522@Kos: Hotfix - Can not show all parlay detail [Redmine: #188539]
+		- 20231225@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 */
 
 BEGIN
@@ -38,6 +39,7 @@ BEGIN
 		BetCheck			VARCHAR(100),
 		SportType			INT,
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		BetType				INT,
 		Stake				MONEY,
 		Currency			INT,
@@ -99,6 +101,7 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			m.sporttype,
 			m.leagueid,
+			l.LeagueGroupID,
 			b.bettype,
 			b.stake,
 			@CurrencyId AS Currency,
@@ -136,6 +139,7 @@ BEGIN
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 		WHERE b.refno = @RefNo
 			AND b.custid = @CustId
 			AND (b.winlostdate > @MoveBetsDay OR b.winlostdate IS NULL)

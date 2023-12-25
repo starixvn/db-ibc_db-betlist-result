@@ -39,6 +39,7 @@ AS
 		- 20211126@Kos: Support Parlay Abnormal Bet [Redmine: #163900]
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 					- Add new input param @MoveBetsDay SMALLDATETIME, @BalanceUpDay SMALLDATETIME, @ExcludeBettrans BIT
+		- 20231225@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 */
 
 BEGIN
@@ -62,6 +63,7 @@ BEGIN
 		BetCheck			VARCHAR(100),
 		SportType			INT,
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		BetType				INT,
 		Stake				MONEY,
 		Currency			INT,
@@ -134,6 +136,7 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			m.sporttype,
 			m.leagueid,
+			l.LeagueGroupID,
 			b.bettype,
 			b.stake,
 			@CurrencyId AS Currency,
@@ -171,6 +174,7 @@ BEGIN
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 		WHERE b.refno = @RefNo
 			AND b.custid = @CustId
 			AND (b.winlostdate > @MoveBetsDay OR b.winlostdate IS NULL)
@@ -188,6 +192,7 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			m.sporttype,
 			m.leagueid,
+			l.LeagueGroupID,
 			b.bettype,
 			b.stake,
 			@CurrencyId AS Currency,
@@ -221,6 +226,7 @@ BEGIN
 		FROM dbo.bettransm14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 		WHERE b.refno = @RefNo
 			AND b.custid = @CustId
 			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
@@ -238,6 +244,7 @@ BEGIN
 			ISNULL(b.betcheck, '') AS BetCheck,
 			m.sporttype,
 			m.leagueid,
+			l.LeagueGroupID,
 			b.bettype,
 			b.stake,
 			@CurrencyId AS Currency,
@@ -271,6 +278,7 @@ BEGIN
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 		WHERE b.refno = @RefNo
 			AND b.custid = @CustId
 			AND b.winlostdate < @BalanceUpDay
