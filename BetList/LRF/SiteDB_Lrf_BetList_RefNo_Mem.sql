@@ -34,6 +34,7 @@ AS
 		- 20231026@Kos: Support Virtual Sports 3 [Redmine: 190908]
 		- 20231107@Kos: Support SEAL Entertaiment [Redmine: 180648]
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
+		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 */
 
 BEGIN
@@ -575,11 +576,11 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'VB', 'PP', 'OneRNG', 'CC', 'SG', 'Allbet', 'SPR', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 
 					'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.matchid
-				WHEN @RefTable IN (1, 2) THEN b.matchid
 				WHEN @Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') THEN m.sporttype
 				WHEN @Product IN ('BTC') THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
+				WHEN @RefTable IN (1, 2) THEN b.matchid
 				ELSE 0
 			END AS SportType,
 			b.bettype,
@@ -740,7 +741,6 @@ BEGIN
 			CASE
 				WHEN @Product IN ('SB', 'CO', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
 					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
-				WHEN @RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
