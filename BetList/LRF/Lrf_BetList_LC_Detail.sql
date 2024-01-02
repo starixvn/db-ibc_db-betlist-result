@@ -41,6 +41,7 @@ AS
 		- 20221220@Kos: Remove inactive products GDG [Redmine: 181424]
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
+		- 20240102@Kos: Extend data type [Redmine: 198966]
 
 	Parameters:
 		- @TransType
@@ -142,7 +143,7 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(2000),
 		MatchCode		VARCHAR(50),
-		BetTeam			NVARCHAR(100),
+		BetTeam			NVARCHAR(200),
 		SiteId			VARCHAR(7),
 		EventDate		DATETIME
 	)

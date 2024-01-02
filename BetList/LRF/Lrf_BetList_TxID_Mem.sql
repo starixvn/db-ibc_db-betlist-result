@@ -34,6 +34,7 @@ AS
 		- 20231019@Kos: Adjust due to new column ExtraInfo [Redmine: 195780]
 					- Return new JackpotInfo column
 		- 20231026@Kos: Support Virtual Sports 3 [Redmine: 190908]
+		- 20240102@Kos: Extend data type [Redmine: 198966]
 */
 
 BEGIN
@@ -135,7 +136,7 @@ BEGIN
 		IsNeutral			BIT,
 		Placing				NVARCHAR(20),
 		ShowTime			NVARCHAR(50),
-		BetCheck			NVARCHAR(50),
+		BetCheck			NVARCHAR(200),
 		TransDesc			NVARCHAR(1000),
 		BetdaqId			BIGINT,
 		ExtraInfo			VARCHAR(1000),

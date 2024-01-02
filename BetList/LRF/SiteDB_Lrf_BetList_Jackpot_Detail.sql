@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20240102@Kos: Extend data type [Redmine: 198966]
 */
 
 BEGIN
@@ -73,7 +74,7 @@ BEGIN
 		Comm			MONEY,
 		PlayerComm		MONEY,
 		Ip				VARCHAR(45),
-		BetCheck		NVARCHAR(50),
+		BetCheck		NVARCHAR(200),
 		TransDesc		NVARCHAR(300),
 		BetdaqId		BIGINT
 	)

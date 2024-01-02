@@ -74,6 +74,7 @@ AS
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 		- 20231227@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
+		- 20240102@Kos: Extend data type [Redmine: 198966]
 */
 
 BEGIN
@@ -158,7 +159,7 @@ BEGIN
 		Custom2				NVARCHAR(50),
 		Custom3				NVARCHAR(50),
 		Gameid3rd			NVARCHAR(50),
-		Tranid3rd			NVARCHAR(64),
+		Tranid3rd			NVARCHAR(200),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		RefTable			TINYINT
@@ -222,7 +223,7 @@ BEGIN
 		Custom2				NVARCHAR(50),
 		Custom3				NVARCHAR(50),
 		Gameid3rd			NVARCHAR(50),
-		Tranid3rd			NVARCHAR(64),
+		Tranid3rd			NVARCHAR(200),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		RefTable			TINYINT

@@ -37,6 +37,7 @@ AS
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 		- 20231227@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20231228@Kos: Support Saba Reward [Redmine: 196882]
+		- 20240102@Kos: Extend data type [Redmine: 198966]
 */
 
 BEGIN
@@ -122,7 +123,7 @@ BEGIN
 		SportType			SMALLINT,
 		BetType				SMALLINT,
 		BetId				BIGINT,
-		BetTeam				NVARCHAR(100),
+		BetTeam				NVARCHAR(200),
 		Hdp1				SMALLMONEY,
 		Hdp2				SMALLMONEY,
 		OddsType			TINYINT,

@@ -60,6 +60,7 @@ AS
 		- 20230905@Kos: Support TxId for MaxGame [Redmine: 193273]
 		- 20231019@Kos: Adjust due to new column ExtraInfo [Redmine: 195780]
 					- Return new JackpotInfo column
+		- 20240102@Kos: Extend data type [Redmine: 198966]
 
 	Parameters:
 		- @TransType
@@ -159,7 +160,7 @@ BEGIN
 		PlayerComm		MONEY,
 		Ip				VARCHAR(45),
 		TransDesc		NVARCHAR(1000),
-		BetCheck		VARCHAR(64),
+		BetCheck		VARCHAR(200),
 		MatchCode		VARCHAR(1000),
 		BetTeam			NVARCHAR(100),
 		OddsSpread		MONEY,
