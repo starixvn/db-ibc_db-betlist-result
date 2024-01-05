@@ -50,6 +50,7 @@ AS
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231108@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
+		- 20240105@Razor: Extend data type [Redmine: #199259]
 */
 
 BEGIN
@@ -154,7 +155,7 @@ BEGIN
 		Custom2				NVARCHAR(50),
 		Custom3				NVARCHAR(50),
 		Gameid3rd			NVARCHAR(50),
-		Tranid3rd			NVARCHAR(64),
+		Tranid3rd			NVARCHAR(200),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		IsCashOut			TINYINT,
@@ -1215,7 +1216,7 @@ BEGIN
 					Custom2				NVARCHAR(50),
 					Custom3				NVARCHAR(50),
 					Gameid3rd			NVARCHAR(50),
-					Tranid3rd			NVARCHAR(64),
+					Tranid3rd			NVARCHAR(200),
 					TableID				TINYINT,
 					Product				VARCHAR(30),
 					ISCashOut			TINYINT,

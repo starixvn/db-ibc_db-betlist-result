@@ -23,6 +23,7 @@ AS
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
 		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20240105@Razor: Extend data type [Redmine: #199259]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -113,7 +114,7 @@ BEGIN
 		Comm			MONEY,
 		Ip				VARCHAR(45),
 		TransDesc		NVARCHAR(2000),
-		BetCheck		NVARCHAR(50),
+		BetCheck		NVARCHAR(200),
 		MatchCode		VARCHAR(50),
 		BetTeam			NVARCHAR(50),
 		CurrencyId		TINYINT,

@@ -25,6 +25,7 @@ AS
 		- 20220808@Kos: Scale out DBTRANS [Redmine: #175253]
 					- Add new input param @ExcludeBettrans BIT
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
+		- 20240105@Razor: Extend data type [Redmine: #199259]
 */
 
 BEGIN
@@ -72,7 +73,7 @@ BEGIN
 		AComm			MONEY,
 		SComm			MONEY,
 		Ip				VARCHAR(45),
-		BetCheck		NVARCHAR(50),
+		BetCheck		NVARCHAR(200),
 		TransDesc		NVARCHAR(300),
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000)

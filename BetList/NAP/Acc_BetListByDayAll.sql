@@ -184,6 +184,7 @@ AS
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231108@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
+		- 20240105@Razor: Extend data type [Redmine: #199259]
 
 	Param's Explanation:
 		+ @TransType:
@@ -305,7 +306,7 @@ BEGIN
 		MWinLost			MONEY,
 		SWinLost			MONEY,
 		WinLostDate			SMALLDATETIME,
-		BetCheck			NVARCHAR(50),
+		BetCheck			NVARCHAR(200),
 		TransDesc			NVARCHAR(1000),
 		OddsSpread			MONEY,
 		OriginalBetType		INT,

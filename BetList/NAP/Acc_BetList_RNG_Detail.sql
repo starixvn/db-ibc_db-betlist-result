@@ -70,6 +70,7 @@ AS
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20231225@Razor: Increase length of Betcheck column [Redmine: #198825]
 		- 20231226@Razor: Support Live22 [Redmine: #197609]
+		- 20240105@Razor: Extend data type [Redmine: #199259]
 
 
 	Parameters:
@@ -165,7 +166,7 @@ BEGIN
 		Comm			MONEY,
 		Ip				VARCHAR(45),
 		TransDesc		NVARCHAR(1000),
-		BetCheck		NVARCHAR(100),
+		BetCheck		NVARCHAR(200),
 		MatchCode		VARCHAR(1000),
 		BetTeam			NVARCHAR(100),
 		EventDate		DATETIME,

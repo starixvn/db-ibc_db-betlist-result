@@ -48,6 +48,7 @@ AS
 		- 20231026@Razor: Due to performance, we should use index hint (IX_custid) on bettransg
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231108@Razor: Support WE Live Casino [Redmine: #195887]
+		- 20240105@Razor: Extend data type [Redmine: #199259]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -141,7 +142,7 @@ BEGIN
 		TransDesc		NVARCHAR(1000),
 		BetCheck		NVARCHAR(2000),
 		MatchCode		VARCHAR(50),
-		BetTeam			NVARCHAR(50),
+		BetTeam			NVARCHAR(200),
 		LeagueId		INT,
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(7),

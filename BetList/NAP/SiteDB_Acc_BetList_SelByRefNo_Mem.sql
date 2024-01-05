@@ -31,6 +31,7 @@ AS
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20231108@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
+		- 20240105@Razor: Extend data type [Redmine: #199259]
 */
 
 BEGIN
@@ -73,7 +74,7 @@ BEGIN
 		Stake				MONEY,
 		Actual_Stake		MONEY,
 		TransDate			DATETIME,
-		BetTeam				NVARCHAR(100),
+		BetTeam				NVARCHAR(200),
 		SPositionTaking		SMALLMONEY,
 		MPositionTaking		SMALLMONEY,
 		APositionTaking		SMALLMONEY,
