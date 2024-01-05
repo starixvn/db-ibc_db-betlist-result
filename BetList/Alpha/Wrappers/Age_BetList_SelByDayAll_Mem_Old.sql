@@ -109,6 +109,7 @@ AS
 		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
+		- 20240105@Razor: Extend data type [Redmine: #199259]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -169,7 +170,7 @@ BEGIN
 		BetStatus		NVARCHAR(50),
 		IsNeutral		BIT,
 		ShowTime		NVARCHAR(50),
-		BetCheck		NVARCHAR(50),
+		BetCheck		NVARCHAR(200),
 		ComStatus		NVARCHAR(20),
 		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,

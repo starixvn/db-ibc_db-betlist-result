@@ -140,6 +140,7 @@ AS
 		- 20231114@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
 		- 20231116@Razor: Return Device Type info [Redmine: #192667]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
+		- 20240105@Razor: Extend data type [Redmine: #199259]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -238,7 +239,7 @@ BEGIN
 		, IsNeutral			BIT
 		, Placing			NVARCHAR(20)
 		, ShowTime			NVARCHAR(50)
-		, BetCheck			NVARCHAR(50)
+		, BetCheck			NVARCHAR(200)
 		, ComStatus			NVARCHAR(20)
 		, TransDesc			NVARCHAR(1000)
 		, OddsSpread		MONEY
