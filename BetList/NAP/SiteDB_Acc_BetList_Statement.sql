@@ -29,6 +29,7 @@ AS
 		- 20231122@Kos: Hotfix - Can not view Yeebet ticket [Redmine: #197311]
 		- 20231129@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
+		- 20240118@Razor: HF of SEAL Entertainment [Redmine: #199994]
 
 	Param's Explanation:
 		+ @TransType:
@@ -631,7 +632,7 @@ BEGIN
 					ELSE ''
 				END AS betcheck,
 				CASE
-					WHEN s.ProductId IN (3, 6, 8, 22, 23, 28, 32, 34, 36, 38, 40, 43, 49, 55, 56, 61, 62, 63, 67, 68) THEN b.transdesc
+					WHEN s.ProductId IN (3, 6, 8, 22, 23, 28, 32, 34, 36, 38, 40, 43, 49, 55, 56, 61, 62, 63, 67, 68, 72) THEN b.transdesc
 					ELSE ''
 				END AS transdesc,
 				CASE
@@ -1640,7 +1641,7 @@ BEGIN
 					b.winlostdate,
 					'' AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (6, 22, 32, 34, 36, 55, 56, 61, 62, 67, 68) THEN b.transdesc
+						WHEN s.ProductID IN (6, 22, 32, 34, 36, 55, 56, 61, 62, 67, 68, 72) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					CASE
@@ -1744,7 +1745,7 @@ BEGIN
 					b.winlostdate,
 					'' AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (6, 22, 32, 34, 36, 55, 56, 61, 62, 67, 68) THEN b.transdesc
+						WHEN s.ProductID IN (6, 22, 32, 34, 36, 55, 56, 61, 62, 67, 68, 72) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					CASE
@@ -1857,7 +1858,7 @@ BEGIN
 					b.winlostdate,
 					'' AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (6, 22, 32, 34, 36, 55, 56, 61, 62, 67, 68) THEN b.transdesc
+						WHEN s.ProductID IN (6, 22, 32, 34, 36, 55, 56, 61, 62, 67, 68, 72) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					0 AS OddsSpread,
