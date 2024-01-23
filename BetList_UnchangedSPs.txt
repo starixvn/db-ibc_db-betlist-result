@@ -1,1 +1,2 @@
-BetList/LRF/Lrf_BetList_Licensee.sql
+BetList/NAP/Acc_BetListbyIP_Username.sql
+BetList/NAP/Acc_BetList_SelByProduct.sql

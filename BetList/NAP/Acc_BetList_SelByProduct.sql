@@ -99,6 +99,7 @@ AS
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240206@Razor: Support new Game API related to TransId3rd/BetId3rd [Redmine: #199259]
 		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
+		- 20240222@Razor: Fix to call sp version on function [Redmine: #197160]
 */
 
 BEGIN
@@ -202,10 +203,9 @@ BEGIN
 
 	DECLARE @Sql VARCHAR(500)
 
-	SET @Sql = 'SELECT * 
-				FROM OPENQUERY(DBPOL,
-					''SELECT siteid, site, SpecialGroup
-					FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( ''''' + CAST(@UserId AS VARCHAR(50)) + ''''')'')'
+	SELECT @Sql = 'SELECT * 
+		FROM OPENQUERY(DBPOL, 
+		''SELECT siteid, site, SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser ( ''''' + CAST(@UserId AS VARCHAR(50)) + ''''')'')'
 
 	INSERT INTO @DeniedSite
 	EXEC (@Sql)
