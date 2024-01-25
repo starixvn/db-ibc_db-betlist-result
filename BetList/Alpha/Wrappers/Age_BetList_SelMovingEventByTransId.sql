@@ -14,6 +14,7 @@ AS
 		- 20220404@Razor: Init [Redmine: #171070]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 */
 
 BEGIN
@@ -83,6 +84,7 @@ BEGIN
 		, BetdaqId			BIGINT
 		, ExtraInfo			VARCHAR(1000)
 		, DeviceType		TINYINT
+		, LeagueGroupId		SMALLINT
 	);
 
 	DECLARE @SportBettype TABLE(Bettype SMALLINT, EventType TINYINT)
@@ -154,9 +156,11 @@ BEGIN
 		,BetdaqId = ISNULL(b.betdaqid, -1)
 		,ExtraInfo = ISNULL(b.ExtraInfo, '')
 		,DeviceType = b.DeviceType
+		,LeagueGroupId = le.LeagueGroupId
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 		LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 	WHERE b.TransId = @TransId
 		AND b.CustId = @CustId
 		AND s.EventType IN (0, 1)
@@ -222,6 +226,7 @@ BEGIN
 		,BetdaqId = -1
 		,ExtraInfo = ''
 		,DeviceType = b.DeviceType
+		,LeagueGroupId = l.LeagueGroupId
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.outright AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 		INNER JOIN dbo.league l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -365,9 +370,11 @@ BEGIN
 			,BetdaqId = ISNULL(b.betdaqid, -1)
 			,ExtraInfo = ISNULL(b.ExtraInfo, '')
 			,DeviceType = b.DeviceType
+			,LeagueGroupId = le.LeagueGroupId
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE b.custid = @CustId
 			AND b.TransID = @TransId
 			AND s.EventType IN (0, 1)
@@ -433,6 +440,7 @@ BEGIN
 			,BetdaqId = -1
 			,ExtraInfo = ''
 			,DeviceType = b.DeviceType
+			,LeagueGroupId = l.LeagueGroupId
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright14 AS odds WITH (NOLOCK) ON b.matchid = odds.orid
 			INNER JOIN dbo.league l WITH (NOLOCK) ON odds.leagueid = l.leagueid
@@ -521,11 +529,13 @@ BEGIN
 			,BetdaqId = ISNULL(b.betdaqid, -1)
 			,ExtraInfo = ISNULL(b.ExtraInfo, '')
 			,DeviceType = b.DeviceType
+			,LeagueGroupId = le.LeagueGroupId
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 			LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
 		WHERE b.custid = @CustId
 			AND b.TransID = @TransId
 			AND s.EventType IN (0, 1)
@@ -591,6 +601,7 @@ BEGIN
 			,BetdaqId = -1
 			,ExtraInfo = ''
 			,DeviceType = b.DeviceType
+			,LeagueGroupId = l.LeagueGroupId
 		FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid

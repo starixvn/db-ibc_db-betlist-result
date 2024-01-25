@@ -158,6 +158,7 @@ AS
 		- 20231023@Razor: Return Device Type info [Redmine: #192667]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
+		- 20240125@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 */
 
 BEGIN
@@ -224,7 +225,8 @@ BEGIN
 		EventType			INT,
 		SubProduct			VARCHAR(500),
 		TableID				TINYINT,
-		DeviceType			TINYINT
+		DeviceType			TINYINT,
+		LeagueGroupId		SMALLINT
 	)
 
 	DECLARE @BetListDetail TABLE(
@@ -589,8 +591,10 @@ BEGIN
 				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT, 0))
 				,ShowTime = ''
 				,ExtraInfo = ISNULL(b.ExtraInfo, '')
+				,LeagueGroupId = l.LeagueGroupId
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 			WHERE b.TableID = 1 -- bettrans
 				AND b.ProductID = 1
 				AND b.EventType = 1
@@ -1055,6 +1059,7 @@ BEGIN
 		,@Username AS Username
 		,@CurrencyName AS Currency
 		,DeviceType
+		,LeagueGroupId
 	FROM @BetListSelRunningByDateMem
 	ORDER BY TransId DESC
 

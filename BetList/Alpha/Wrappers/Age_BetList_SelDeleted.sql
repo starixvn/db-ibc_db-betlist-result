@@ -83,6 +83,7 @@ AS
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 */
 
 BEGIN
@@ -183,7 +184,8 @@ BEGIN
 		BetdaqId		BIGINT,
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(20),
-		DeviceType		TINYINT
+		DeviceType		TINYINT,
+		LeagueGroupId	SMALLINT
 	);
 
 	DECLARE @BetListDetail TABLE(
@@ -825,9 +827,11 @@ BEGIN
 					BetdaqId = CASE
 									WHEN b.ProductId IN (1) THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
-								END
+								END,
+					LeagueGroupId = l.LeagueGroupId
 				FROM #PagingData AS b
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+					INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 				WHERE b.WhTicket = 1 AND b.EventType = 1
 
 				-- Outright
@@ -1048,9 +1052,11 @@ BEGIN
 					BetdaqId = CASE
 									WHEN b.ProductId IN (1) THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
-								END
+								END,
+					LeagueGroupId = l.LeagueGroupId
 				FROM #PagingData AS b
 					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+					INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 				WHERE b.WhTicket = 2 AND b.EventType = 1
 
 				-- Outright
@@ -1366,7 +1372,8 @@ BEGIN
 		b.BetdaqId,
 		b.CurrencyId,
 		b.SiteId,
-		b.DeviceType
+		b.DeviceType,
+		b.LeagueGroupId
 	FROM #PagingData AS b
 		INNER JOIN dbo.custinfo AS c WITH (NOLOCK) ON b.CustId = c.custid
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid

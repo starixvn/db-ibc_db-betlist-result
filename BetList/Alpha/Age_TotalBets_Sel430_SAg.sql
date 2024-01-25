@@ -24,6 +24,7 @@ AS
 		- 20190722@Kos: Support new status Pending [#Redmine: 113142]
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 */
 
 BEGIN
@@ -68,9 +69,11 @@ BEGIN
 		ISNULL(m.IsNeutral, CONVERT(BIT,0)) AS IsNeutral,
 		b.oddstype,
 		ISNULL(b.transdesc, '') AS transdesc,
-		b.DeviceType
+		b.DeviceType,
+		le.LeagueGroupId
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 	WHERE b.srecommend = @custid
 		AND b.bettype IN (4, 30, 152, 165, 166, 405, 413, 414, 416)
 		AND b.statusID IN (0, 1)

@@ -42,6 +42,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231021@Kos: Hotfix - Not show odds for some tickets [Redmine: #195844]
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -106,6 +107,7 @@ BEGIN
 		, ProductId			TINYINT
 		, EventType			TINYINT
 		, DeviceType		TINYINT
+		, LeagueGroupId		SMALLINT
 	)
 
 	SELECT @CustId	= ISNULL(@CustId, 0)
@@ -178,6 +180,7 @@ BEGIN
 				, bt.ProductID
 				, bt.EventType
 				, b.DeviceType
+				, 0 AS LeagueGroupId
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.recommend = @CustId AND b.statusID IN (0, 1)
@@ -247,6 +250,7 @@ BEGIN
 				, bt.ProductID
 				, bt.EventType
 				, b.DeviceType
+				, 0 AS LeagueGroupId
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.mrecommend = @CustId AND b.statusID IN (0, 1)
@@ -316,6 +320,7 @@ BEGIN
 				, bt.ProductID
 				, bt.EventType
 				, b.DeviceType
+				, 0 AS LeagueGroupId
 			FROM dbo.bettrans b WITH (NOLOCK)
 				INNER JOIN @BettypeMatrix bt ON b.bettype = bt.bettype
 			WHERE b.srecommend = @CustId
@@ -378,6 +383,7 @@ BEGIN
 				, bt.productid
 				, bt.eventtype
 				, b.DeviceType
+				, 0 AS LeagueGroupId
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_recommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.recommend = @CustId
@@ -439,6 +445,7 @@ BEGIN
 				, bt.productid
 				, bt.eventtype
 				, b.DeviceType
+				, 0 AS LeagueGroupId
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_mrecommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.mrecommend = @CustId
@@ -500,6 +507,7 @@ BEGIN
 				, bt.productid
 				, bt.eventtype
 				, b.DeviceType
+				, 0 AS LeagueGroupId
 			FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_betrunning_srecommend)
 				INNER JOIN @BettypeMatrix AS bt ON b.bettype = bt.bettype
 			WHERE b.srecommend = @CustId
@@ -580,9 +588,11 @@ BEGIN
 		BetStatus	= m.betstatus,
 		SettlementStatus = ISNULL(m.SettlementStatus, 0),
 		ShowTime	= m.showtime,
-		IsNeutral	= m.IsNeutral
+		IsNeutral	= m.IsNeutral,
+		LeagueGroupId = l.LeagueGroupId
 	FROM @Data AS b
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.MatchId = m.matchid
+		INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 	WHERE b.EventType = 1
 
 	UPDATE b

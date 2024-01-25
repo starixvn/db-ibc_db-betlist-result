@@ -43,6 +43,7 @@ AS
 		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
 		- 20211123@Razor: Check Abnormal Parlay Ticket [Redmine: #163900]
 		- 20221207@Razor: Remove linked server DBARC [Redmine: #181383]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 */
 
 BEGIN
@@ -85,7 +86,8 @@ BEGIN
 		BetStatus			NVARCHAR(50),
 		IsNeutral			BIT,
 		BetCheck			NVARCHAR(50),
-		TransDesc			NVARCHAR(1000)
+		TransDesc			NVARCHAR(1000),
+		LeagueGroupId		SMALLINT
 	)
 
 	DECLARE @RefNo		BIGINT,
@@ -179,7 +181,8 @@ BEGIN
 			m.betstatus,
 			m.IsNeutral,
 			b.betcheck,
-			ISNULL(b.transdesc, '') AS transdesc
+			ISNULL(b.transdesc, '') AS transdesc,
+			le.LeagueGroupId
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -187,6 +190,7 @@ BEGIN
 				ON pm.matchid = m.ParentID
 				AND m.sporttype = 50
 				AND m.ChildMatchType = 200
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
@@ -237,7 +241,8 @@ BEGIN
 			m.betstatus,
 			m.IsNeutral,
 			b.betcheck,
-			ISNULL(b.transdesc, '') AS transdesc
+			ISNULL(b.transdesc, '') AS transdesc,
+			le.LeagueGroupId
 		FROM dbo.bettransm14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -249,6 +254,7 @@ BEGIN
 				ON pm.matchid = m.ParentID
 				AND m.sporttype = 50
 				AND m.ChildMatchType = 200
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE b.refno = @RefNo AND b.custid = @CustId
 	END
 
@@ -299,7 +305,8 @@ BEGIN
 			m.betstatus,
 			m.isNeutral,
 			b.betcheck,
-			ISNULL(b.transdesc, '') AS transdesc
+			ISNULL(b.transdesc, '') AS transdesc,
+			le.LeagueGroupId
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -315,6 +322,7 @@ BEGIN
 				ON pm.matchid = m.ParentID
 				AND m.sporttype = 50
 				AND m.ChildMatchType = 200
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE b.refno = @RefNo AND b.custID = @CustId
 	END
 

@@ -110,6 +110,7 @@ AS
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
+		- 20240125@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -178,7 +179,8 @@ BEGIN
 		Product			VARCHAR(30),
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(20),
-		DeviceType		TINYINT
+		DeviceType		TINYINT,
+		LeagueGroupId	SMALLINT
 	);
 
 	DECLARE @DetailData TABLE (
@@ -532,7 +534,8 @@ BEGIN
 					SiteId = CASE
 								WHEN b.Product IN ('VRG', 'H5LG', 'SLT') THEN b.SiteId
 								ELSE ''
-							END
+							END,
+					LeagueGroupId = le.LeagueGroupId
 				FROM @Data AS b
 					CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 					LEFT JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
@@ -541,7 +544,8 @@ BEGIN
 					LEFT JOIN dbo.VSOutright_bk AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
 					LEFT JOIN dbo.match3rd_bk AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
-
+					LEFT JOIN bodb02.dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
+					
 				-- Get ticket detail
 				-- Virtual Sports Racing
 				INSERT INTO @DetailData
@@ -768,7 +772,8 @@ BEGIN
 		@Username AS Username,
 		b.CurrencyId,
 		b.SiteId,
-		b.DeviceType
+		b.DeviceType,
+		b.LeagueGroupId
 	FROM @Data AS b
 	ORDER BY b.TransId DESC
 

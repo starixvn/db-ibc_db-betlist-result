@@ -161,6 +161,7 @@ AS
 		- 20231027@Razor: Support new bettype of Virtual Sport 3 (LG) [Redmine: #194634]
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
+		- 20240219@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -230,7 +231,7 @@ BEGIN
 		Product			VARCHAR(30),
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(20),
-		LeagueGroupID		SMALLINT,
+		LeagueGroupID	SMALLINT,
 		TicketType		TINYINT,
 		DeviceType		TINYINT
 	);
@@ -912,7 +913,8 @@ BEGIN
 			@Username AS Username,
 			b.CurrencyId,
 			b.SiteId,
-			b.DeviceType
+			b.DeviceType,
+			b.LeagueGroupID
 		FROM @Data AS b
 		ORDER BY b.TransId DESC
 	END
@@ -975,7 +977,8 @@ BEGIN
 			@Username AS Username,
 			b.CurrencyId,
 			b.SiteId,
-			b.DeviceType
+			b.DeviceType,
+			b.LeagueGroupID
 		FROM @Data AS b
 		ORDER BY b.TransId DESC
 	END

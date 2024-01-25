@@ -141,6 +141,7 @@ AS
 		- 20231116@Razor: Return Device Type info [Redmine: #192667]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		
 	Param's Explanation:
 		+ @TransType:
@@ -249,6 +250,7 @@ BEGIN
 		, CurrencyId		TINYINT
 		, SiteId			VARCHAR(20)
 		, DeviceType		TINYINT
+		, LeagueGroupId		SMALLINT
 	);
 
 	DECLARE @Tickets TABLE (
@@ -799,6 +801,7 @@ BEGIN
 								ELSE ''
 							END
 					,DeviceType = b.DeviceType
+					,LeagueGroupId = le.LeagueGroupId
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
@@ -811,7 +814,7 @@ BEGIN
 					LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
-					
+					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 				-- Virtual Sports Racing
 				INSERT INTO @BettransDetail
 				SELECT RefNo = bm.refno
@@ -984,6 +987,7 @@ BEGIN
 									ELSE ''
 								END
 						,DeviceType = b.DeviceType
+						,LeagueGroupId = 0
 					FROM @Tickets AS c
 						INNER JOIN dbo.translog AS b WITH (NOLOCK) ON b.translogid = c.TransId
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('MG') AND b.eventid = m.matchid
@@ -1079,6 +1083,7 @@ BEGIN
 					,ExtraInfo = ''
 					,Currency = b.currencyname
 					,DeviceType = b.DeviceType
+					,LeagueGroupId = 0
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettransRnG AS b WITH (NOLOCK) ON b.transid = c.transid
 			END
@@ -1350,6 +1355,7 @@ BEGIN
 								ELSE ''
 							END
 					,DeviceType = b.DeviceType
+					,LeagueGroupId = le.LeagueGroupId
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
@@ -1358,7 +1364,7 @@ BEGIN
 					LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 					LEFT JOIN dbo.match3rd14 AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
-
+					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 				-- Virtual Sports Racing
 				INSERT INTO @BettransDetail
 				SELECT RefNo = bm.refno
@@ -1465,6 +1471,7 @@ BEGIN
 					,ExtraInfo = ''
 					,Currency = b.currencyname
 					,DeviceType = b.DeviceType
+					,LeagueGroupId = 0
 				FROM @Tickets AS c
 					INNER JOIN dbo.bettransRnG14 AS b WITH (NOLOCK) ON b.transid = c.transid
 			END

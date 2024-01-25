@@ -141,6 +141,7 @@ AS
 		- 20231027@Razor: Support new bettype of Virtual Sport [Redmine: #194634]
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 */
 
 BEGIN
@@ -220,6 +221,7 @@ BEGIN
 		, CurrencyId		TINYINT
 		, SiteId			VARCHAR(20)
 		, DeviceType		TINYINT
+		, LeagueGroupId		SMALLINT
 	);
 
 	DECLARE @Tickets TABLE (
@@ -700,6 +702,7 @@ BEGIN
 						ELSE ''
 					END
 			,DeviceType = b.DeviceType
+			,LeagueGroupId = le.LeagueGroupId
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.TransId
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
@@ -708,6 +711,7 @@ BEGIN
 			LEFT JOIN dbo.VSOutright AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
 		WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB')
 			OR c.WinLostDate < @Yesterday
 
@@ -857,6 +861,7 @@ BEGIN
 			,CurrencyId = b.currency
 			,SiteId = b.betdaqid
 			,DeviceType = b.DeviceType
+			,LeagueGroupId = 0
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.TransId
 			INNER JOIN @temp_bettransX AS x ON x.RefNo = c.TransId
@@ -1032,6 +1037,7 @@ BEGIN
 						ELSE ''
 					END
 			,DeviceType = b.DeviceType
+			,LeagueGroupId = 0
 		FROM @Tickets AS c
 			INNER JOIN dbo.translog AS b WITH (NOLOCK) ON b.translogid = c.transid
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('MG') AND b.eventid = m.matchid

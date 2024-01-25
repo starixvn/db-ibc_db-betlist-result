@@ -10,6 +10,7 @@ AS
 	DB: DBAGE.bodb02
 	Revision:
 		- 20230704@Kos: Last Bets [Redmine: #186142]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 */
 
 BEGIN
@@ -22,7 +23,8 @@ BEGIN
 	SELECT DISTINCT
 		l.leagueid,
 		l.leaguename,
-		l.sporttype
+		l.sporttype,
+		l.leaguegroupId
 	FROM (
 			SELECT DISTINCT m.leagueid
 			FROM dbo.match AS m WITH (NOLOCK)

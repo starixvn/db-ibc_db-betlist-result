@@ -20,6 +20,7 @@ AS
 		- 20230706@Kos: Last Bets [Redmine: #186142]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 
 	Parameter's Explanation:
 		- @CustId: agent CustId
@@ -176,12 +177,14 @@ BEGIN
 		ISNULL(b.betcheck, '') AS BetCheck,
 		ISNULL(b.transdesc, '') AS TransDesc,
 		ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-		b.DeviceType
+		b.DeviceType,
+		le.LeagueGroupId
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN __bettypeList AS sbm ON sbm.BetType = b.bettype
 		LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.matchid AND sbm.EventType = 1
 		LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON o.orid = b.matchid AND sbm.EventType = 2
 		LEFT JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = o.leagueid AND sbm.EventType = 2
+		LEFT JOIN dbo.League AS le WITH (NOLOCK) ON le.leagueid = m.leagueid
 	WHERE b.recommend = @CustId
 		AND b.statusID IN (0, 1)
 		AND b.transid > @TransId

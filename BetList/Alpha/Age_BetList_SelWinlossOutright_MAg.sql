@@ -34,6 +34,7 @@ AS
 		- 20210706@Razor: Display Decimal Odds for Decimal Odds Only Bettypes [#Redmine: 157545]
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 */
 
 BEGIN
@@ -77,7 +78,8 @@ BEGIN
 		BetStatus		VARCHAR(20),
 		IsNeutral		BIT,
 		ComStatus		NVARCHAR(20),
-		DeviceType		TINYINT
+		DeviceType		TINYINT,
+		LeagueGroupId	INT
 	)
 
 	DECLARE @TempFromDate	SMALLDATETIME,
@@ -129,7 +131,8 @@ BEGIN
 			NULL,
 			CONVERT(BIT,0) AS IsNeutral,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
-			b.DeviceType
+			b.DeviceType,
+			l.LeagueGroupId
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
@@ -186,7 +189,8 @@ BEGIN
 			NULL,
 			CONVERT(BIT,0) AS IsNeutral,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
-			b.DeviceType
+			b.DeviceType,
+			l.LeagueGroupId
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
 			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid

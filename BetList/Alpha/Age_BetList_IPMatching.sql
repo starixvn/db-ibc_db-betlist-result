@@ -19,6 +19,7 @@ AS
 		- 20211130@Razor: Support new Cash out model [Redmine: #164903]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 */
 
 BEGIN
@@ -96,7 +97,8 @@ BEGIN
 		ExtraInfo			VARCHAR(1000),
 		Currency			NVARCHAR(50),
 		BetdaqId			BIGINT,
-		DeviceType			TINYINT
+		DeviceType			TINYINT,
+		LeagueGroupId		SMALLINT
 	);
 
 	DECLARE @Tickets TABLE (
@@ -309,12 +311,14 @@ BEGIN
 								WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 								ELSE -1
 							END,
-				DeviceType = b.DeviceType
+				DeviceType = b.DeviceType,
+				LeagueGroupId = le.LeagueGroupId
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.transid
 				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB') AND b.matchid = m.matchid
 				LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
+				LEFT JOIN dbo.League AS le WITH (NOLOCK) ON c.Product IN ('SB') AND m.leagueID = le.leagueID
 		END
 
 		DELETE FROM @Tickets
@@ -399,7 +403,8 @@ BEGIN
 				ExtraInfo = '',
 				Currency = b.currencyname,
 				betdaqid = -1,
-				DeviceType = b.DeviceType
+				DeviceType = b.DeviceType,
+				LeagueGroupId = 0
 			FROM @Tickets AS c
 				INNER JOIN dbo.translog AS b WITH (NOLOCK) ON b.translogid = c.TransId
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.eventid = m.matchid
@@ -573,12 +578,14 @@ BEGIN
 								WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
 								ELSE -1
 							END,
-				DeviceType = b.DeviceType
+				DeviceType = b.DeviceType,
+				LeagueGroupId = le.LeagueGroupId
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.transid
 				LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB') AND b.matchid = m.matchid
 				LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
+				LEFT JOIN dbo.League AS le WITH (NOLOCK) ON c.Product IN ('SB') AND m.leagueID = le.leagueID
 		END
 	END
 
