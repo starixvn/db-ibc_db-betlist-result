@@ -61,6 +61,7 @@ AS
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
 		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
+		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 */
 
 BEGIN
@@ -152,10 +153,12 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
-			m.showtime
+			m.showtime,
+			le.LeagueGroupId
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE m.matchid = @MatchId
 
 		SELECT @ResourceId = CASE
@@ -328,10 +331,12 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
-			m.showtime
+			m.showtime,
+			le.LeagueGroupId
 		FROM dbo.match14 AS m WITH(NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE m.matchid = @MatchId
 
 		SELECT @ResourceId = CASE
@@ -507,10 +512,12 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
-			m.showtime
+			m.showtime,
+			le.LeagueGroupId
 		FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
 		WHERE m.matchid = @MatchId
 
 		SELECT @ResourceId = CASE
