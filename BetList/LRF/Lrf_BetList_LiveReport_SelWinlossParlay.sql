@@ -2,25 +2,24 @@
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossParlay]
 	@AgentList		VARCHAR(MAX),
-	@BetType		INT				= 9,
+	@ProductList	VARCHAR(500),
 	@ShowBA			BIT				= 0,
-	@ShowSB			BIT				= 0,
-	@ShowVS2		BIT				= 0,
+	@BetType		INT				= 9,
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
+	@LiveIndicator	INT				= 1,
 	@BaseCurrency	VARCHAR(12),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= 'TransDate ASC',
-	@LiveIndicator	INT				= 1
+	@Sort			NVARCHAR(50)	= 'TransDate ASC'
 AS
 
 /*
 	Created: Henry@20120111
 	Task: Betlist for Parlay
 	DB: DBEXT.bodb02
-	Original: [Age_BetList_SelWinlossParlay_Ag]
+
 	Revisions:
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
 		- 20120319@Henry: show main transid for sub-ticket of system parlay 
@@ -50,6 +49,9 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
+					- Remove input params @ShowSB, @ShowVS2
+					- Add new input param @ProductList VARCHAR(500)
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -84,12 +86,57 @@ BEGIN
 		RETURN
 	END CATCH
 
+	-- Get group bettype
+	DECLARE @GroupBetType TABLE (BetType INT, GroupTypeId INT)
+
+	INSERT INTO @GroupBetType
+	SELECT
+		bettype,
+		GroupTypeId
+	FROM dbo.Lrf_f_GroupBettype()
+
+	DECLARE @ShowSB	BIT = 0
+
+	IF ',' + @ProductList + ',' LIKE '%,SB,%'
+		SET @ShowSB = 1
+
+	IF @ShowBA = 1
+		SET @ProductList = @ProductList + ',SB'
+
+	-- Get child product list
+	IF EXISTS (SELECT 1 FROM dbo.Lrf_f_GroupProduct() WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%')
+	BEGIN
+		DECLARE @ChildProductList VARCHAR(500)
+
+		SELECT @ChildProductList = STRING_AGG(ProductPrefix, ',')
+		FROM dbo.Lrf_f_GroupProduct()
+		WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%'
+
+		SET @ProductList = @ProductList + ',' + @ChildProductList
+	END
+
+	-- Get Sport Bettype Matrix
+	DECLARE @SportBettype TABLE(ProductId TINYINT, BetType SMALLINT, EventType TINYINT)
+
+	DECLARE @IsTest BIT = 0
+
+	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
+
+	INSERT INTO @SportBettype
+	SELECT s.ProductID, s.BetType, s.EventType
+	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s
+	WHERE (s.BetType = @BetType
+			OR EXISTS (SELECT 1 FROM @GroupBetType WHERE GroupTypeId = @BetType AND BetType = s.BetType))
+		AND s.BetType NOT IN (901, 902, 903, 904)
+		AND s.BetType NOT BETWEEN 801 AND 899
+
 	CREATE TABLE #AgWinlossMP (
 		Username		NVARCHAR(50),
 		CustId			INT,
 		BetType			SMALLINT,
 		RefNo			BIGINT,
 		TransId			BIGINT,
+		BATransId		BIGINT,
 		BetId			BIGINT,
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
@@ -131,96 +178,48 @@ BEGIN
 		ELSE
 			SET @TempFromDate = @FromDate
 
-		IF @ShowBA = 1 AND @BetType IN (9, 29)
-		BEGIN
-			INSERT INTO #AgWinlossMP
-			SELECT
-				b.username,
-				b.custid,
-				b.bettype,
-				b.refno,
-				CASE
-					WHEN b.bettype <> 29 THEN b.transid
-					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
-				END AS transid,
-				ISNULL(b.betid, 0),
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.modds,
-				b.status,
-				b.stake,
-				b.actual_stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				0 AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.ip,
-				b.currency,
-				ISNULL(b.betcheck, '') AS BetCheck,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo
-			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN #TempAg AS a ON a.CustId = b.recommend
-			WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND b.bettype = @BetType
-				AND b.tpositiontaking = 0
-				AND b.statusID IN (111, 112, 113)
-				AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
-					OR (@LiveIndicator = 1 AND b.livehomescore = 1)
-					OR (@LiveIndicator = 2))
-		END
-
-		IF (@ShowSB = 1 AND @BetType IN (9, 29))
-			OR (@ShowVS2 = 1 AND @BetType = 2799)
-		BEGIN
-			INSERT INTO #AgWinlossMP
-			SELECT
-				b.username,
-				b.custid,
-				b.bettype,
-				b.refno,
-				CASE
-					WHEN b.bettype <> 29 THEN b.transid
-					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
-				END AS transid,
-				ISNULL(b.betid, 0),
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.modds,
-				b.status,
-				b.stake,
-				b.actual_stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				 -(b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.ip,
-				b.currency,
-				ISNULL(b.betcheck, '') AS BetCheck,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo
-			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN #TempAg AS a ON a.CustId = b.recommend
-			WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND b.bettype = @BetType
-				AND b.tpositiontaking <> 0
-				AND b.statusID IN (111, 112, 113)
-				AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
-					OR (@LiveIndicator = 1 AND b.livehomescore = 1)
-					OR (@LiveIndicator = 2))
-		END
+		INSERT INTO #AgWinlossMP
+		SELECT
+			b.username,
+			b.custid,
+			b.bettype,
+			b.refno,
+			CASE
+				WHEN b.bettype <> 29 THEN b.transid
+				ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
+			END AS transid,
+			ba.TransID,
+			ISNULL(b.betid, 0),
+			b.hdp1,
+			b.hdp2,
+			b.odds,
+			b.modds,
+			b.status,
+			b.stake,
+			b.actual_stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			0 AS LicenseeWL,
+			b.comm,
+			b.playercomm,
+			b.transdate,
+			b.winlostdate,
+			b.betteam,
+			b.liveindicator,
+			b.livehomescore,
+			b.liveawayscore,
+			b.ip,
+			b.currency,
+			ISNULL(b.betcheck, '') AS BetCheck,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
+		FROM dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
+			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
+			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID
+		WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+			AND b.statusID IN (111, 112, 113)
+			AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
+				OR (@LiveIndicator = 1 AND b.livehomescore = 1)
+				OR (@LiveIndicator = 2))
 	END
 
 	IF @Fromdate <= @MoveBetsDay
@@ -230,97 +229,57 @@ BEGIN
 		ELSE
 			SET @TempToDate = @ToDate
 
-		IF @ShowBA = 1 AND @BetType IN (9, 29)
-		BEGIN
-			INSERT INTO #AgWinlossMP
-			SELECT
-				b.username,
-				b.custid,
-				b.bettype,
-				b.refno,
-				CASE
-					WHEN b.bettype <> 29 THEN b.transid
-					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
-				END AS transid,
-				ISNULL(b.betid, 0),
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.modds,
-				b.status,
-				b.stake,
-				b.actual_stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				0 AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.ip,
-				b.currency,
-				ISNULL(b.betcheck, '') AS BetCheck,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo
-			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN #TempAg AS a ON a.CustId = b.recommend
-			WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
-				AND b.bettype = @BetType
-				AND b.tpositiontaking = 0
-				AND b.statusID IN (111, 112, 113)
-				AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
-					OR (@LiveIndicator = 1 AND b.livehomescore = 1)
-					OR (@LiveIndicator = 2))
-		END
-
-		IF (@ShowSB = 1 AND @BetType IN (9, 29))
-			OR (@ShowVS2 = 1 AND @BetType = 2799)
-		BEGIN
-			INSERT INTO #AgWinlossMP
-			SELECT
-				b.username,
-				b.custid,
-				b.bettype,
-				b.refno,
-				CASE
-					WHEN b.bettype <> 29 THEN b.transid
-					ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
-				END AS transid,
-				ISNULL(b.betid, 0),
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.modds,
-				b.status,
-				b.stake,
-				b.actual_stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				 -(b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.winlostdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				b.ip,
-				b.currency,
-				ISNULL(b.betcheck, '') AS BetCheck,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo
-			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN #TempAg AS a ON a.CustId = b.recommend
-			WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
-				AND b.bettype = @BetType
-				AND b.tpositiontaking <> 0
-				AND b.statusID IN (111, 112, 113)
-				AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
-					OR (@LiveIndicator = 1 AND b.livehomescore = 1)
-					OR (@LiveIndicator = 2))
-		END
+		INSERT INTO #AgWinlossMP
+		SELECT
+			b.username,
+			b.custid,
+			b.bettype,
+			b.refno,
+			CASE
+				WHEN b.bettype <> 29 THEN b.transid
+				ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
+			END AS transid,
+			ba.TransID,
+			ISNULL(b.betid, 0),
+			b.hdp1,
+			b.hdp2,
+			b.odds,
+			b.modds,
+			b.status,
+			b.stake,
+			b.actual_stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			0 AS LicenseeWL,
+			b.comm,
+			b.playercomm,
+			b.transdate,
+			b.winlostdate,
+			b.betteam,
+			b.liveindicator,
+			b.livehomescore,
+			b.liveawayscore,
+			b.ip,
+			b.currency,
+			ISNULL(b.betcheck, '') AS BetCheck,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
+			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
+			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.TransID
+		WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+			AND b.statusID IN (111, 112, 113)
+			AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
+				OR (@LiveIndicator = 1 AND b.livehomescore = 1)
+				OR (@LiveIndicator = 2))
 	END
+
+	DELETE #AgWinlossMP
+	WHERE (@ShowSB = 0
+			AND BetType IN (9, 29)
+			AND BATransId IS NULL)
+		OR (@ShowBA = 0
+			AND BetType IN (9, 29)
+			AND BATransId IS NOT NULL)
 
 	-- Get exchange rate
 	DECLARE @Today SMALLDATETIME
@@ -353,6 +312,7 @@ BEGIN
 		BetType			SMALLINT,
 		RefNo			BIGINT,
 		TransId			BIGINT,
+		BATransId		BIGINT,
 		BetId			BIGINT,
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,

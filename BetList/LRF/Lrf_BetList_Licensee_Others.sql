@@ -6,7 +6,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_Others]
 	@FromDate			SMALLDATETIME,
 	@ToDate				SMALLDATETIME,
 	@MoveBetsDay		SMALLDATETIME,
-	@Product			VARCHAR(10)		= '',
+	@Product			VARCHAR(100)		= '',
 	@SportType			TINYINT			= 0,
 	@BetType			SMALLINT		= 0,
 	@BaseCurrency		VARCHAR(12),
@@ -91,6 +91,7 @@ AS
 		- 20231107@Kos: Support SEAL Entertaiment [Redmine: 180648]
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
+		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 */
 
 BEGIN
@@ -259,6 +260,18 @@ BEGIN
 
 	IF @HasError = 0 AND @StatusIdList <> '99'		-- Abnormal Bet only
 	BEGIN
+		-- Get child product list
+		IF EXISTS (SELECT 1 FROM dbo.Lrf_f_GroupProduct() WHERE ',' + @Product + ',' LIKE '%,' + GroupProductPrefix + ',%')
+		BEGIN
+			DECLARE @ChildProductList VARCHAR(500)
+
+			SELECT @ChildProductList = STRING_AGG(ProductPrefix, ',')
+			FROM dbo.Lrf_f_GroupProduct()
+			WHERE ',' + @Product + ',' LIKE '%,' + GroupProductPrefix + ',%'
+
+			SET @Product = @Product + ',' + @ChildProductList
+		END
+
 		-- Get SportBettypeMatrix
 		DECLARE @SportBettype TABLE (ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT)
 
@@ -271,7 +284,9 @@ BEGIN
 			INSERT INTO @SportBettype
 			SELECT ProductID, BetType, EventType, RefTable
 			FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @Product, @IsTest)
-			WHERE (@BetType = 0 OR BetType = @BetType)
+			WHERE (@BetType = 0
+					OR BetType IN (	SELECT @BetType
+									UNION SELECT Bettype FROM dbo.Lrf_f_GroupBettype() WHERE GroupTypeId = @BetType))
 				AND BetType <> 914
 		END
 

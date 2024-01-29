@@ -89,6 +89,7 @@ AS
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 */
 
 BEGIN
@@ -113,6 +114,18 @@ BEGIN
 	BEGIN CATCH
 		SET @HasError = 1
 	END CATCH
+
+	-- Get child product list
+	IF EXISTS (SELECT 1 FROM dbo.Lrf_f_GroupProduct() WHERE ',' + @ProductCode + ',' LIKE '%,' + GroupProductPrefix + ',%')
+	BEGIN
+		DECLARE @ChildProductList VARCHAR(500)
+
+		SELECT @ChildProductList = STRING_AGG(ProductPrefix, ',')
+		FROM dbo.Lrf_f_GroupProduct()
+		WHERE ',' + @ProductCode + ',' LIKE '%,' + GroupProductPrefix + ',%'
+
+		SET @ProductCode = @ProductCode + ',' + @ChildProductList
+	END
 
 	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT, SubProduct VARCHAR(500))

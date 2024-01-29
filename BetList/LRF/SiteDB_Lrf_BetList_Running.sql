@@ -40,6 +40,7 @@ AS
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 		- 20231227@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 */
 
 BEGIN
@@ -537,6 +538,18 @@ BEGIN
 				AND ',' + @ProductList + ',' NOT LIKE '%,SB,%'
 			BEGIN
 				SET @ProductList = 'SB,' + @ProductList
+			END
+
+			-- Get child product list
+			IF EXISTS (SELECT 1 FROM dbo.Lrf_f_GroupProduct() WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%')
+			BEGIN
+				DECLARE @ChildProductList VARCHAR(500)
+
+				SELECT @ChildProductList = STRING_AGG(ProductPrefix, ',')
+				FROM dbo.Lrf_f_GroupProduct()
+				WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%'
+
+				SET @ProductList = @ProductList + ',' + @ChildProductList
 			END
 
 			DECLARE @IsTest BIT = 0

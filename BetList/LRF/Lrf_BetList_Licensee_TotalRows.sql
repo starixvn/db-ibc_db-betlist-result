@@ -57,6 +57,7 @@ AS
 		- 20230316@Kos: Support Saba Sports [Redmine: 183841]
 		- 20230511@Kos: Support Saba Sports [Redmine: 183841]
 					- Add new input params @LeagueGroupIds, @PlatformType, @CustomerClass, @OddsGroup
+		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 */
 
 
@@ -105,6 +106,18 @@ BEGIN
 		IF ',' + @Product + ',' LIKE '%,SB,%'
 			SET @ShowSB = 1
 
+		-- Get child product list
+		IF EXISTS (SELECT 1 FROM dbo.Lrf_f_GroupProduct() WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%')
+		BEGIN
+			DECLARE @ChildProductList VARCHAR(500)
+
+			SELECT @ChildProductList = STRING_AGG(ProductPrefix, ',')
+			FROM dbo.Lrf_f_GroupProduct()
+			WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%'
+
+			SET @ProductList = @ProductList + ',' + @ChildProductList
+		END
+
 		-- Get SportBettypeMatrix
 		CREATE TABLE #SportBettype (ProductId TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
@@ -121,7 +134,7 @@ BEGIN
 			FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
 			WHERE (@BetType = 0
 				OR BetType IN (	SELECT @BetType
-								UNION SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType))
+								UNION SELECT Bettype FROM dbo.Lrf_f_GroupBettype() WHERE GroupTypeId = @BetType))
 				AND BetType NOT IN (901, 902, 903, 904, 913, 914, 999)
 				AND BetType NOT BETWEEN 801 AND 899
 		END
