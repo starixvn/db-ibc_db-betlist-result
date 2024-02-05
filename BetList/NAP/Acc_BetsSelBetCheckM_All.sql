@@ -44,6 +44,7 @@ AS
 		- 20220225@Razor: Hide Saba word in league name for China View licensee [Redmine: #169101]
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 					- Add new input param @MoveBetsDay SMALLDATETIME, @BalanceUpDay SMALLDATETIME, @ExcludeBettrans BIT
+		- 20231129@Razor: Support Project 777 - return SpecialPlatfrom [Redmine: #194591]
 */
 
 BEGIN
@@ -94,7 +95,8 @@ BEGIN
 	DECLARE @CurrencyName	NVARCHAR(50),
 		@Status				NVARCHAR(10),
 		@MainTicketIsMarked BIT,
-		@IsChinaView 		BIT
+		@IsChinaView 		BIT,
+		@SpecialPlatfrom	SMALLINT
 
 	SELECT @MainTicketIsMarked = COUNT(1)
 	FROM dbo.MarkedTransaction WITH (NOLOCK)
@@ -104,7 +106,8 @@ BEGIN
 	SELECT
 		@CurrencyName = ex.currency,
 		@Status = b.status,
-		@IsChinaView = s.IsChinaView
+		@IsChinaView = s.IsChinaView,
+		@SpecialPlatfrom = s.SpecialPlatfrom
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 		LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON c.CustId = b.CustId
@@ -116,7 +119,8 @@ BEGIN
 		SELECT
 			@CurrencyName = ex.currency,
 			@Status = b.status,
-			@IsChinaView = s.IsChinaView
+			@IsChinaView = s.IsChinaView,
+			@SpecialPlatfrom = s.SpecialPlatfrom
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 			LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON c.CustId = b.CustId
@@ -128,7 +132,8 @@ BEGIN
 			SELECT
 				@CurrencyName = ex.currency,
 				@Status = b.status,
-				@IsChinaView = s.IsChinaView
+				@IsChinaView = s.IsChinaView,
+				@SpecialPlatfrom = s.SpecialPlatfrom
 			FROM DBARC.bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
 				LEFT JOIN dbo.Customer AS c WITH (NOLOCK) ON c.CustId = b.CustId
@@ -354,7 +359,8 @@ BEGIN
 	END
 
 	SELECT DISTINCT *, 
-		@IsChinaView AS IsChinaView 
+		@IsChinaView AS IsChinaView,
+		@SpecialPlatfrom AS SpecialPlatfrom
 	FROM @BetListMP
 	ORDER BY TransId DESC
 END

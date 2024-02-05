@@ -44,6 +44,7 @@ AS
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240118@Razor: HF of SEAL Entertainment [Redmine: #199994]
 		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
+		- 20240222@Razor: Support Project 777 - return SpecialPlatfrom [Redmine: #194591]
 */
 
 BEGIN
@@ -2493,7 +2494,8 @@ BEGIN
 	SELECT b.*,
 		c.username,
 		ex.currency,
-		s.IsChinaView
+		s.IsChinaView,
+		s.SpecialPlatfrom
 	FROM @Data AS b
 		LEFT JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.CustId = b.CustId
 		LEFT JOIN CustDB.dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
