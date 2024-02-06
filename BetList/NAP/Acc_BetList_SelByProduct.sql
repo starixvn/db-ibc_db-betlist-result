@@ -97,6 +97,7 @@ AS
 		- 20231108@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
+		- 20240206@Razor: Support new Game API related to TransId3rd/BetId3rd [Redmine: #199259]
 */
 
 BEGIN
@@ -104,6 +105,9 @@ BEGIN
 
 	-- Get Sport Bettype Matrix --
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+
+	DECLARE @newBetId VARCHAR(1000)
+	SET @newBetId = CONCAT('%|$|', @BetId)
 
 	DECLARE @IsTest BIT = 0
 
@@ -510,8 +514,8 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80) AND b.TranId3rd = @BetId)
-							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80) AND (b.TranId3rd = @BetId OR b.TranId3rd LIKE @newBetId))
+							OR (s.ProductID = 39 AND (ISNULL(bg.BetID3rd, '') = @BetId OR ISNULL(bg.BetID3rd, '') LIKE @newBetId)))
 				END
 			END
 
@@ -598,7 +602,7 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-						AND b.TranId3rd = @BetId
+						AND (b.TranId3rd = @BetId OR b.TranId3rd LIKE @newBetId)
 				END
 			END
 
@@ -892,8 +896,8 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80) AND b.TranId3rd = @BetId)
-							OR (s.ProductID = 39 AND ISNULL(bg.BetID3rd, '') = @BetId))
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80) AND (b.TranId3rd = @BetId OR b.TranId3rd LIKE @newBetId))
+							OR (s.ProductID = 39 AND (ISNULL(bg.BetID3rd, '') = @BetId OR ISNULL(bg.BetID3rd, '') LIKE @newBetId)))
 				END
 			END
 
@@ -980,7 +984,7 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
-						AND b.TranId3rd = @BetId
+						AND (b.TranId3rd = @BetId OR b.TranId3rd LIKE @newBetId)
 				END
 			END
 
