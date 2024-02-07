@@ -15,6 +15,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_Others]
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
 	@PlatformType		VARCHAR(100)	= 'All',
 	@CustomerClass		VARCHAR(MAX)	= 'All',
+	@FullCustomerClass	VARCHAR(MAX)	= 'All',
 	@OddsGroup			VARCHAR(100)	= 'All',
 	@Ip					VARCHAR(45)		= '',
 	@PageSize			INT				= 1000,
@@ -92,6 +93,8 @@ AS
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
+		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
+					- Add new input param @FullCustomerClass VARCHAR(MAX)
 */
 
 BEGIN
@@ -315,6 +318,8 @@ BEGIN
 				DELETE @TempCust
 				WHERE 1 <> CASE
 								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+									AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 								ELSE 0
 							END
@@ -1135,6 +1140,8 @@ BEGIN
 				DELETE @TempCust
 				WHERE 1 <> CASE
 								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+									AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 								ELSE 0
 							END

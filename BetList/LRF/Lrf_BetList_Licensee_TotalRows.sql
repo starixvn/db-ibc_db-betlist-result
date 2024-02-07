@@ -1,24 +1,25 @@
 /*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_TotalRows]
-	@AgentList		VARCHAR(MAX),
-	@Username		VARCHAR(50)		= '',
-	@FromDate		SMALLDATETIME,
-	@ToDate			SMALLDATETIME,
-	@MoveBetsDay	SMALLDATETIME,
-	@Product		VARCHAR(100)	= '',
-	@SportType		TINYINT			= 0,
-	@BetType		SMALLINT		= 0,
-	@LeagueId		INT				= 0,
-	@MatchId		INT				= 0,
-	@LeagueGroupIds	VARCHAR(200)	= '',
-	@StatusIdList	VARCHAR(50)		= '',
-	@LiveIndicator	VARCHAR(10)		= '0,1,2',
-	@PlatformType	VARCHAR(100)	= 'All',
-	@CustomerClass	VARCHAR(MAX)	= 'All',
-	@OddsGroup		VARCHAR(100)	= 'All',
-	@Ip				VARCHAR(45)		= '',
-	@TotalRows		INT				= 0 OUTPUT
+	@AgentList			VARCHAR(MAX),
+	@Username			VARCHAR(50)		= '',
+	@FromDate			SMALLDATETIME,
+	@ToDate				SMALLDATETIME,
+	@MoveBetsDay		SMALLDATETIME,
+	@Product			VARCHAR(100)	= '',
+	@SportType			TINYINT			= 0,
+	@BetType			SMALLINT		= 0,
+	@LeagueId			INT				= 0,
+	@MatchId			INT				= 0,
+	@LeagueGroupIds		VARCHAR(200)	= '',
+	@StatusIdList		VARCHAR(50)		= '',
+	@LiveIndicator		VARCHAR(10)		= '0,1,2',
+	@PlatformType		VARCHAR(100)	= 'All',
+	@CustomerClass		VARCHAR(MAX)	= 'All',
+	@FullCustomerClass	VARCHAR(MAX)	= 'All',
+	@OddsGroup			VARCHAR(100)	= 'All',
+	@Ip					VARCHAR(45)		= '',
+	@TotalRows			INT				= 0 OUTPUT
 AS
 
 /*
@@ -58,6 +59,8 @@ AS
 		- 20230511@Kos: Support Saba Sports [Redmine: 183841]
 					- Add new input params @LeagueGroupIds, @PlatformType, @CustomerClass, @OddsGroup
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
+		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
+					- Add new input param @FullCustomerClass VARCHAR(MAX)
 */
 
 
@@ -181,6 +184,8 @@ BEGIN
 						AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
 						AND 1 = CASE
 									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+										AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 									WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 									ELSE 0
 								END
@@ -227,6 +232,8 @@ BEGIN
 						AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
 						AND 1 = CASE
 									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+										AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 									WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 									ELSE 0
 								END
@@ -270,6 +277,8 @@ BEGIN
 						AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
 						AND 1 = CASE
 									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+										AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 									WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 									ELSE 0
 								END
@@ -316,6 +325,8 @@ BEGIN
 						AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
 						AND 1 = CASE
 									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+										AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 									WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 									ELSE 0
 								END
@@ -343,6 +354,8 @@ BEGIN
 				DELETE #TempCust
 				WHERE 1 <> CASE
 								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+									AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 								ELSE 0
 							END

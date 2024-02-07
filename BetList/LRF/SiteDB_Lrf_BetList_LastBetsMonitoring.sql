@@ -1,24 +1,25 @@
 ﻿/*<info serverAlias="DBSID-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_LastBetsMonitoring]
-	@AgentList		VARCHAR(MAX),
-	@ProductList	VARCHAR(100)	= '',
-	@BetType		VARCHAR(50)		= '',
-	@Currency		VARCHAR(200)	= '',
-	@SpecialLevel	VARCHAR(200)	= '',
-	@TransId		BIGINT			= 0,
-	@TransLogId		BIGINT			= 0,
-	@LimitRowCount	INT				= 10,
-	@SportTypeList	VARCHAR(MAX)	= 'All',
-	@LeagueList		VARCHAR(MAX)	= 'All',
-	@MatchId		INT				= 0,
-	@MinStake		MONEY			= 0,
-	@MaxStake		MONEY			= 0,
-	@LiveIndicator	INT				= 0,
-	@BetFrom		VARCHAR(200)	= 'All',
-	@CustomerClass	VARCHAR(200)	= 'All',
-	@BaseCurrency	VARCHAR(12)		='USD',
-	@Debug			BIT				= 0
+	@AgentList			VARCHAR(MAX),
+	@ProductList		VARCHAR(100)	= '',
+	@BetType			VARCHAR(50)		= '',
+	@Currency			VARCHAR(200)	= '',
+	@SpecialLevel		VARCHAR(200)	= '',
+	@TransId			BIGINT			= 0,
+	@TransLogId			BIGINT			= 0,
+	@LimitRowCount		INT				= 10,
+	@SportTypeList		VARCHAR(MAX)	= 'All',
+	@LeagueList			VARCHAR(MAX)	= 'All',
+	@MatchId			INT				= 0,
+	@MinStake			MONEY			= 0,
+	@MaxStake			MONEY			= 0,
+	@LiveIndicator		INT				= 0,
+	@BetFrom			VARCHAR(200)	= 'All',
+	@CustomerClass		VARCHAR(MAX)	= 'All',
+	@FullCustomerClass	VARCHAR(MAX)	= 'All',
+	@BaseCurrency		VARCHAR(12)		='USD',
+	@Debug				BIT				= 0
 AS
 
 /*
@@ -35,6 +36,8 @@ AS
 		- 20230404@Kos: Extend betfrom length [Redmine: #178059]
 		- 20230703@Kos: Support Saba Tennis [RedmineID: #190465]
 		- 20231127@Kos: Support Jollysports [RedmineID: #197192]
+		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
+					- Add new input param @FullCustomerClass VARCHAR(MAX)
 
 	Parameter's Explanation:
 		- @BetType:
@@ -86,6 +89,7 @@ AS
 		- @ProductList: SB and all products grouped under SB (SB,SL,...)
 		- @LeagueList: list of league seperated by commas (All: all leagues)
 		- @CustomerClass: list of customer class seperated by commas (All: all customer classes)
+		- @FullCustomerClass: list of all customer class seperated by commas (All: all customer classes)
 */
 
 BEGIN
@@ -546,7 +550,13 @@ BEGIN
 			IF @CustomerClass <> 'All'
 			BEGIN
 				DELETE @Data
-				WHERE ',' + @CustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%'
+				WHERE 1 <> CASE
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+									AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+								ELSE 0
+							END
 			END
 		END
 

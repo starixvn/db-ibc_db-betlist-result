@@ -18,6 +18,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee_Sportsbook]
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
 	@PlatformType		VARCHAR(100)	= 'All',
 	@CustomerClass		VARCHAR(MAX)	= 'All',
+	@FullCustomerClass	VARCHAR(MAX)	= 'All',
 	@OddsGroup			VARCHAR(100)	= 'All',
 	@Ip					VARCHAR(45)		= '',
 	@PageSize			INT				= 1000,
@@ -80,6 +81,8 @@ AS
 					- Add new input params @LeagueGroupIds, @PlatformType, @CustomerClass, @OddsGroup
 		- 20230703@Kos: Support Saba Tennis [RedmineID: #190465]
 		- 20231225@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
+		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
+					- Add new input param @FullCustomerClass VARCHAR(MAX)
 */
 
 BEGIN
@@ -320,6 +323,8 @@ BEGIN
 				DELETE #TempCust
 				WHERE 1 <> CASE
 								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+									AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 								ELSE 0
 							END
@@ -1833,6 +1838,8 @@ BEGIN
 				DELETE #TempCust
 				WHERE 1 <> CASE
 								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+									AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
 								ELSE 0
 							END

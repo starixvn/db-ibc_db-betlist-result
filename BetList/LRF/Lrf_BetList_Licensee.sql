@@ -18,6 +18,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee]
 	@LiveIndicator		VARCHAR(10)		= '0,1,2',
 	@PlatformType		VARCHAR(100)	= 'All',
 	@CustomerClass		VARCHAR(MAX)	= 'All',
+	@FullCustomerClass	VARCHAR(MAX)	= 'All',
 	@OddsGroup			VARCHAR(100)	= 'All',
 	@Ip					VARCHAR(45)		= '',
 	@PageSize			INT				= 1000,
@@ -64,6 +65,8 @@ AS
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230316@Kos: Support Saba Sports [Redmine: 183841]
 					- Add new input params @LeagueGroupIds, @PlatformType, @CustomerClass, @OddsGroup
+		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
+					- Add new input param @FullCustomerClass VARCHAR(MAX)
 */
 
 BEGIN
@@ -89,6 +92,7 @@ BEGIN
 			@LiveIndicator = @LiveIndicator,
 			@PlatformType = @PlatformType,
 			@CustomerClass = @CustomerClass,
+			@FullCustomerClass = @FullCustomerClass,
 			@OddsGroup = @OddsGroup,
 			@Ip = @Ip,
 			@PageSize = @PageSize,
@@ -118,6 +122,7 @@ BEGIN
 			@LiveIndicator = @LiveIndicator,
 			@PlatformType = @PlatformType,
 			@CustomerClass = @CustomerClass,
+			@FullCustomerClass = @FullCustomerClass,
 			@OddsGroup = @OddsGroup,
 			@Ip = @Ip,
 			@PageSize = @PageSize,
