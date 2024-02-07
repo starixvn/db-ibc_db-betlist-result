@@ -71,7 +71,7 @@ AS
 		- 20231225@Razor: Increase length of Betcheck column [Redmine: #198825]
 		- 20231226@Razor: Support Live22 [Redmine: #197609]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
-
+		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
 
 	Parameters:
 		- @TransType
@@ -253,10 +253,7 @@ BEGIN
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE brng.Additional
 			END AS MatchCode,
-			CASE
-				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN brng.GameId3rd
-				ELSE ''
-			END AS BetTeam,
+			brng.GameId3rd AS BetTeam,
 			CASE
 				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
 				ELSE ''
@@ -322,10 +319,7 @@ BEGIN
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE brng.Additional
 			END AS MatchCode,
-			CASE
-				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN brng.GameId3rd
-				ELSE ''
-			END AS BetTeam,
+			brng.GameId3rd AS BetTeam,
 			CASE
 				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
 				ELSE ''
@@ -390,10 +384,7 @@ BEGIN
 				WHEN sbt.productID IN (42) THEN ISNULL(brng.SiteID, '')
 				ELSE brng.Additional
 			END AS MatchCode,
-			CASE
-				WHEN sbt.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN brng.GameId3rd
-				ELSE ''
-			END AS BetTeam,
+			brng.GameId3rd AS BetTeam,
 			CASE
 				WHEN sbt.productID IN (60) THEN brng.Transdate3rd
 				ELSE ''

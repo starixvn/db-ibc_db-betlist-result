@@ -33,6 +33,7 @@ AS
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240118@Razor: HF of SEAL Entertainment [Redmine: #199994]
+		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
 */
 
 BEGIN
@@ -2015,10 +2016,7 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					b.transdate,
-					CASE
-						WHEN s.productID IN (6, 22, 32, 34, 36, 50, 55, 56, 60, 61, 62, 67, 68, 73) THEN b.GameId3rd
-					ELSE ''
-					END AS BetTeam,
+					b.GameId3rd AS BetTeam,
 					b.spositiontaking,
 					b.mpositiontaking,
 					b.apositiontaking,
