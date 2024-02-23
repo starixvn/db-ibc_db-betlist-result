@@ -34,6 +34,7 @@ AS
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240118@Razor: HF of SEAL Entertainment [Redmine: #199994]
 		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
+		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 */
 
 BEGIN
@@ -178,7 +179,7 @@ BEGIN
 		-- Bettrans
 		IF @WinLostDate > @MoveBetsDay
 		BEGIN
-			-- Sportbooks, Number Game, Virtual Sports, BetRadar Virtual Sports, Cash Out, Virtual Sports 3
+			-- Sportbooks, Number Game, Virtual Sports, BetRadar Virtual Sports, Cash Out, Virtual Sports 3, Virtual Sport 4
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -442,8 +443,8 @@ BEGIN
 				END
 			END
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports)
-			IF @BetType IN (9, 29, 2799)
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
+			IF @BetType IN (9, 29, 2799, 10449)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -534,8 +535,8 @@ BEGIN
 					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 				WHERE
-					b.matchid IN (9, 29, 2799)
-					AND b.bettype IN (9, 29, 2799)
+					b.matchid IN (9, 29, 2799, 10449)
+					AND b.bettype IN (9, 29, 2799, 10449)
 					AND b.transid = @TransId
 			END
 

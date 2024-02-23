@@ -30,6 +30,7 @@ AS
 		- 20231129@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
 		- 20240118@Razor: HF of SEAL Entertainment [Redmine: #199994]
+		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 
 	Param's Explanation:
 		+ @TransType:
@@ -271,7 +272,7 @@ BEGIN
 				AND s.EventType = 1
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports)
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
 			INSERT INTO @Data
 			SELECT
 				0,
@@ -352,8 +353,8 @@ BEGIN
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND b.matchid IN (9, 29, 2799)
-				AND b.bettype IN (9, 29, 2799)
+				AND b.matchid IN (9, 29, 2799, 10449)
+				AND b.bettype IN (9, 29, 2799, 10449)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Outright
@@ -958,7 +959,7 @@ BEGIN
 				AND b.statusID IN (0,1)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus WHERE statusID IN (0, 1))
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports)
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
 			INSERT INTO @Data
 			SELECT 
 				0,
@@ -1051,8 +1052,8 @@ BEGIN
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND b.matchid IN (9, 29, 2799)
-				AND b.bettype IN (9, 29, 2799)
+				AND b.matchid IN (9, 29, 2799, 10449)
+				AND b.bettype IN (9, 29, 2799, 10449)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Outright

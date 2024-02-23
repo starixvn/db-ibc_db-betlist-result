@@ -45,12 +45,13 @@ AS
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 					- Add new input param @MoveBetsDay SMALLDATETIME, @BalanceUpDay SMALLDATETIME, @ExcludeBettrans BIT
 		- 20231129@Razor: Support Project 777 - return SpecialPlatfrom [Redmine: #194591]
+		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	-- Get Sport Bettype Matrix (support Sportsbook, Betradar Virtual Sports only)
+	-- Get Sport Bettype Matrix (support Sportsbook, Betradar Virtual Sports, Virtual Sports 4 only)
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -60,7 +61,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 27)
+	WHERE ProductID IN (1, 27, 83)
 
 	DECLARE @BetListMP TABLE (
 		TransId				BIGINT,

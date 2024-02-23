@@ -164,6 +164,7 @@ AS
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
 		- 20240222@Razor: Support Project 777 - return SpecialPlatfrom [Redmine: #194591]
+		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 */
 
 BEGIN
@@ -371,7 +372,7 @@ BEGIN
 		-- Bettrans
 		IF @WinLostDate > @MoveBetsDay
 		BEGIN
-			-- Sportbooks, Number Game, Virtual Sports, BetRadar Virtual Sports, Cash Out, Virtual Sports 3 (EventType = 1)
+			-- Sportbooks, Number Game, Virtual Sports, BetRadar Virtual Sports, Cash Out, Virtual Sports 3, Virtual Sports 4 (EventType = 1)
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
@@ -621,8 +622,8 @@ BEGIN
 				END
 			END
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports)
-			IF @BetType IN (9, 29, 2799)
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
+			IF @BetType IN (9, 29, 2799, 10449)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -711,7 +712,7 @@ BEGIN
 					0 AS LeagueGroupID,
 					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
-				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799)
+				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799, 10449)
 			END
 
 			-- Outright
@@ -1903,7 +1904,7 @@ BEGIN
 		-- Bettrans14
 		ELSE IF @WinLostDate BETWEEN @BalanceUpDay AND @MoveBetsDay
 		BEGIN
-			-- Sportbooks, Number Game, Virtual Sports, Betradar Virtual Sports, Cash Out, Virtual Sports 3 (new)
+			-- Sportbooks, Number Game, Virtual Sports, Betradar Virtual Sports, Cash Out, Virtual Sports 3 (new), Virtual Sports 4
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -2069,8 +2070,8 @@ BEGIN
 				WHERE b.BetType = 912
 			END
 
-			-- Mix Parlay, Combination Mix Parlay
-			IF @BetType IN (9, 29, 2799)
+			-- Mix Parlay, Combination Mix Parlay, Mix Parlay (VS4)
+			IF @BetType IN (9, 29, 2799, 10449)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2147,7 +2148,7 @@ BEGIN
 					0 AS LeagueGroupID,
 					b.DeviceType
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799)
+				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799, 10449)
 			END
 
 			-- Outright
@@ -2645,7 +2646,7 @@ BEGIN
 		-- Bettrans_bk
 		ELSE IF @WinLostDate < @BalanceUpDay
 		BEGIN
-			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports, Cash Out, Virtual Sports 3 (new)
+			-- Sportbooks, Number Game, Live Casino, Virtual Sports, Betradar Virtual Sports, Cash Out, Virtual Sports 3 (new), Virtual Sports 4
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -2813,8 +2814,8 @@ BEGIN
 				END
 			END
 
-			-- Mix Parlay, Combination Mix Parlay, Mix Parlay (Betradar Virtual Sports)
-			IF @BetType IN (9, 29, 2799)
+			-- Mix Parlay, Combination Mix Parlay, Mix Parlay (Betradar Virtual Sports), VS3, Mix Parlay (VS4)
+			IF @BetType IN (9, 29, 2799, 10449)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2892,7 +2893,7 @@ BEGIN
 					b.DeviceType
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
-				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799)
+				WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799, 10449)
 			END
 
 			-- Outright

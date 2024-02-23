@@ -45,6 +45,7 @@ AS
 		- 20240118@Razor: HF of SEAL Entertainment [Redmine: #199994]
 		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
 		- 20240222@Razor: Support Project 777 - return SpecialPlatfrom [Redmine: #194591]
+		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 */
 
 BEGIN
@@ -223,7 +224,7 @@ BEGIN
 						WHERE c.custid = @CustId
 							AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
-		-- Sportbooks, Number Game, Virtual Sports, BetRadar Virtual Sports, Cash Out, Virtual Sports 3 (EventType = 1)
+		-- Sportbooks, Number Game, Virtual Sports, BetRadar Virtual Sports, Cash Out, Virtual Sports 3, Virtual Sports 4 (EventType = 1)
 		IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType)
 		BEGIN
 			INSERT INTO @Data
@@ -403,8 +404,8 @@ BEGIN
 				AND s.BetType BETWEEN 801 AND 899
 		END
 
-		-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports)
-		IF @BetType IN (9, 29, 2799)
+		-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
+		IF @BetType IN (9, 29, 2799, 10449)
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -493,7 +494,7 @@ BEGIN
 				0 AS LeagueGroupID,
 				b.DeviceType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
-			WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799)
+			WHERE b.transid = @TransId AND b.bettype IN (9, 29, 2799, 10449)
 		END
 
 		-- Outright
