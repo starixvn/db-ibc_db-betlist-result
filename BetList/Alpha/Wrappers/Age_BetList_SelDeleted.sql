@@ -84,6 +84,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
+		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
 */
 
 BEGIN
@@ -685,7 +686,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 23, 27, 28, 38, 40, 47, 49, 63, 69, 77)	-- Only support these products
+			OR ProductID NOT IN (1, 3, 5, 8, 23, 27, 28, 38, 40, 47, 49, 63, 69, 77, 83)	-- Only support these products
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -786,7 +787,7 @@ BEGIN
 			-- bettrans
 			IF EXISTS (SELECT 1 FROM #PagingData WHERE WhTicket = 1)
 			BEGIN
-				-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3
+				-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3, Virtual Sports 4
 				UPDATE b
 				SET
 					SportType = m.sporttype,
@@ -807,13 +808,13 @@ BEGIN
 					IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0)),
 					Placing = '',
 					ShowTime = CASE
-									WHEN b.ProductId IN (5, 27, 77) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.ProductId IN (5, 27, 77, 83) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									ELSE ISNULL(m.showtime, '')
 								END,
 					BetCheck = b.BetCheck,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (1, 27, 77) THEN ISNULL(b.transdesc, '')
+									WHEN b.ProductId IN (1, 27, 77, 83) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -877,6 +878,7 @@ BEGIN
 				- BBIN					: ProductId = 47
 				- Leap Gaming (VS3)		: ProductId = 49
 				- Sports Lottery		: ProductId = 63
+				- Mix Parlay (VS4)		: ProductId = 83
 				*/
 				UPDATE b
 				SET
@@ -892,15 +894,15 @@ BEGIN
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.ProductId IN (1, 27) THEN b.BetTeam
+									WHEN b.ProductId IN (1, 27, 83) THEN b.BetTeam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.ProductId IN (1, 23, 27) THEN b.Hdp1
+								WHEN b.ProductId IN (1, 23, 27, 83) THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.ProductId IN (1, 23, 27) THEN b.Hdp2
+								WHEN b.ProductId IN (1, 23, 27, 83) THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
@@ -908,11 +910,11 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 3, 8, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
+								WHEN b.ProductId IN (1, 3, 8, 23, 27, 28, 38, 40, 49, 63, 83) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
-								WHEN b.ProductId IN (1, 27) THEN b.MOdds
+								WHEN b.ProductId IN (1, 27, 83) THEN b.MOdds
 								ELSE 0
 							END,
 					LiveIndicator = CASE
@@ -939,7 +941,7 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 3, 27, 38, 63) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 3, 27, 38, 63, 83) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
@@ -1011,7 +1013,7 @@ BEGIN
 			-- bettrans14
 			IF EXISTS (SELECT 1 FROM #PagingData WHERE WhTicket = 2)
 			BEGIN
-				-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3
+				-- Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3, Virtual Sports 4
 				UPDATE b
 				SET
 					SportType = m.sporttype,
@@ -1032,13 +1034,13 @@ BEGIN
 					IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0)),
 					Placing = '',
 					ShowTime = CASE
-									WHEN b.ProductId IN (5, 27, 77) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.ProductId IN (5, 27, 77, 83) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									ELSE ISNULL(m.showtime, '')
 								END,
 					BetCheck = b.BetCheck,
 					ComStatus = '',
 					TransDesc = CASE
-									WHEN b.ProductId IN (1, 27, 77) THEN ISNULL(b.transdesc, '')
+									WHEN b.ProductId IN (1, 27, 77, 83) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1102,6 +1104,7 @@ BEGIN
 				- BBIN					: ProductId = 47
 				- Leap Gaming (VS3)		: ProductId = 49
 				- Sports Lottery		: ProductId = 63
+				- Mix Parlay (VS4)		: ProductId = 83
 				*/
 				UPDATE b
 				SET
@@ -1117,15 +1120,15 @@ BEGIN
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.ProductId IN (1, 27) THEN b.BetTeam
+									WHEN b.ProductId IN (1, 27, 83) THEN b.BetTeam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.ProductId IN (1, 23, 27) THEN b.Hdp1
+								WHEN b.ProductId IN (1, 23, 27, 83) THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.ProductId IN (1, 23, 27) THEN b.Hdp2
+								WHEN b.ProductId IN (1, 23, 27, 83) THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
@@ -1133,11 +1136,11 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 3, 8, 23, 27, 28, 38, 40, 49, 63) THEN b.Odds
+								WHEN b.ProductId IN (1, 3, 8, 23, 27, 28, 38, 40, 49, 63, 83) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
-								WHEN b.ProductId IN (1, 27) THEN b.MOdds
+								WHEN b.ProductId IN (1, 27, 83) THEN b.MOdds
 								ELSE 0
 							END,
 					LiveIndicator = CASE
@@ -1164,7 +1167,7 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 3, 27, 38, 63) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 3, 27, 38, 63, 83) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,

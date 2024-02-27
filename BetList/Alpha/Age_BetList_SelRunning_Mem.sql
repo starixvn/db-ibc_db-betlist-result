@@ -160,6 +160,7 @@ AS
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240125@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20240228@Razor: Support WE Live Casino [Redmine: #195887]
+		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
 */
 
 BEGIN
@@ -668,7 +669,7 @@ BEGIN
 			WHERE b.bettype IN (9, 29)
 				AND b.matchid IN (9, 29)
 
-			-- Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3 (EventType = 1)
+			-- Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3, Virtual Sports 4 (EventType = 1)
 			UPDATE b
 			SET SportType = m.sporttype
 				,LeagueId = m.leagueid
@@ -676,8 +677,8 @@ BEGIN
 				,Race = ''
 				,EventDate = m.eventdate
 				,MatchId = CASE WHEN b.ProductID IN (5, 27, 77) THEN m.matchid ELSE 0 END
-				,HomeId = CASE WHEN b.ProductID IN (5, 27, 77) THEN m.homeid ELSE 0 END
-				,AwayId = CASE WHEN b.ProductID IN (5, 27, 77) THEN m.awayid ELSE 0 END
+				,HomeId = CASE WHEN b.ProductID IN (5, 27, 77, 83) THEN m.homeid ELSE 0 END
+				,AwayId = CASE WHEN b.ProductID IN (5, 27, 77, 83) THEN m.awayid ELSE 0 END
 				,SettlementStatus = 0
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,Hdp2 = CASE WHEN b.ProductID IN (5, 27) THEN b.hdp2 ELSE 0 END
@@ -685,20 +686,20 @@ BEGIN
 								WHEN b.[Status] = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
 								ELSE b.[Status]
 							END
-				,OddsType = CASE WHEN b.ProductID IN (3, 5, 27, 77) THEN b.OddsType ELSE 0 END
+				,OddsType = CASE WHEN b.ProductID IN (3, 5, 27, 77, 83) THEN b.OddsType ELSE 0 END
 				,IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT, 0))
 				,ShowTime = CASE
-								WHEN b.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+								WHEN b.ProductID IN (5, 27, 83) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 								ELSE ''
 							END
 				,BetCheck = ''
-				,TransDesc = CASE WHEN b.ProductID IN (27, 77) THEN ISNULL(b.TransDesc, '') ELSE '' END
+				,TransDesc = CASE WHEN b.ProductID IN (27, 77, 83) THEN ISNULL(b.TransDesc, '') ELSE '' END
 				,OddsSpread = 0
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			WHERE b.TableID = 1 -- bettrans
-				AND b.ProductID IN (3, 5, 27, 77)
+				AND b.ProductID IN (3, 5, 27, 77, 83)
 				AND b.EventType = 1
 
 			-- Virtual Sports (EventType = 3)
@@ -726,7 +727,7 @@ BEGIN
 				AND b.ProductID = 5
 				AND b.EventType = 3
 
-			-- Betradar Virtual Sports (EventType = 0) -- Mix Parlay
+			-- Betradar Virtual Sports, Virtual Sports 4 (EventType = 0) -- Mix Parlay
 			UPDATE b
 			SET SportType = 0
 				,LeagueId = 0
@@ -762,7 +763,7 @@ BEGIN
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 1 -- bettrans
-				AND b.matchid = 2799
+				AND b.matchid IN  (2799, 10449)
 
 			-- NG2, BBIN bettrans
 			UPDATE b

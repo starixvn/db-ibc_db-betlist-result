@@ -42,6 +42,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 					- Remove param @Language
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 */
 
 BEGIN
@@ -94,6 +95,18 @@ BEGIN
 	DECLARE @TempFromDate DATETIME,
 		@TempToDate DATETIME
 
+	-- Parlay, Parlay VS2, Parlay VS4
+	DECLARE @GroupBetType TABLE(Bettype SMALLINT, GroupBetType SMALLINT)
+	INSERT INTO @GroupBetType
+	SELECT 29, 29
+	UNION ALL
+	SELECT 2799, 2799
+	UNION ALL
+	SELECT 10449, 2799
+	UNION ALL
+	SELECT 2799, 10449
+	UNION ALL
+	SELECT 10449, 10449
 	IF @ToDate > @MoveBetsDay
 	BEGIN
 		IF @FromDate <= @MoveBetsDay
@@ -148,12 +161,12 @@ BEGIN
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN @GroupBetType AS f ON f.BetType = b.bettype
 		WHERE
 			b.srecommend = @CustId
 			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-			AND b.bettype = @BetType
-			AND b.matchid = @BetType
 			AND b.ruben = 1
+			AND f.GroupBetType = @BetType
 	END
 
 	IF @FromDate <= @MoveBetsDay
@@ -210,11 +223,11 @@ BEGIN
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			b.DeviceType
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN @GroupBetType AS f ON f.BetType = b.bettype
 		WHERE
 			b.srecommend = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @TempToDate
-			AND b.bettype = @BetType
-			AND b.matchid = @BetType
+			AND f.GroupBetType = @bettype
 			AND b.ruben = 1
 	END
 
