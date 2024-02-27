@@ -38,6 +38,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 					- Remove param @Language
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20240226@Kos: Get original odds for Mix Parlay from ExtraInfo [Redmine: #196425]
 */
 
 BEGIN
@@ -197,12 +198,11 @@ BEGIN
 			b.Ruben = 1
 	END
 
-	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+	-- Get final odds, boost rate for settled Mix Parlay tickets
 	IF EXISTS (SELECT 1 FROM @MAgWinlossMP WHERE BetType = 29 AND BetTeam = '1')
 	BEGIN
 		UPDATE b
 		SET
-			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
 			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
 		FROM @MAgWinlossMP AS b

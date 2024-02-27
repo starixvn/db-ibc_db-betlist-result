@@ -43,6 +43,7 @@ AS
 		- 20231021@Kos: Hotfix - Not show odds for some tickets [Redmine: #195844]
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
+		- 20240226@Kos: Get original odds for Mix Parlay from ExtraInfo [Redmine: #196425]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -527,54 +528,6 @@ BEGIN
 			OR ( @BetTeam <> '' 
 				AND bt.ProductID = 3
 				AND b.betteam <> @BetTeam )
-	END
-
-	-- Get original odds for Mix Parlay
-	IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = '1')
-	BEGIN
-		DECLARE @TmpData TABLE (
-			RefNo		BIGINT,
-			Hdp2		SMALLMONEY,
-			BoostRate	MONEY)
-
-		INSERT INTO @TmpData
-		SELECT
-			b.RefNo,
-			b.Hdp2,
-			CASE
-				WHEN b.bettype = 29 AND b.betteam = 1 AND b.oddsspread = 2 THEN
-					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0)
-				ELSE 0
-			END AS BoostRate
-		FROM @Data AS b
-		WHERE b.BetType = 29 AND b.BetTeam = '1'
-
-		DECLARE @TmpParlayData TABLE (
-			RefNo	BIGINT,
-			Odds	MONEY,
-			MOdds	MONEY)
-
-		-- Mix Parlay which having no settled sub ticket
-		INSERT INTO @TmpParlayData
-		SELECT
-			b.RefNo,
-			dbo.PRODUCT(bm.odds) AS Odds,
-			dbo.PRODUCT(bm.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
-		FROM @TmpData AS b
-			INNER JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.RefNo
-		GROUP BY
-			b.RefNo,
-			b.Hdp2,
-			b.BoostRate
-		HAVING COUNT(1) = b.Hdp2
-
-		UPDATE b
-		SET
-			b.Odds = ISNULL(td.Odds, 0),
-			b.MOdds = ISNULL(td.MOdds, 0)
-		FROM @Data AS b
-			LEFT JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
-		WHERE b.BetType = 29 AND b.BetTeam = '1'
 	END
 
 	UPDATE b

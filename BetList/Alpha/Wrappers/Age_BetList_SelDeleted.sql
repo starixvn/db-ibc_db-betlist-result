@@ -84,6 +84,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
+		- 20240226@Kos: Get original odds for Mix Parlay from ExtraInfo [Redmine: #196425]
 */
 
 BEGIN
@@ -1231,42 +1232,6 @@ BEGIN
 					INNER JOIN dbo.match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
 				WHERE b.ProductID = 69
 					AND b.WhTicket = 2
-			END
-
-			-- Get original odds for Mix Parlay
-			IF EXISTS (SELECT 1 FROM #PagingData WHERE BetType = 29 AND BetTeam = '1')
-			BEGIN
-				DECLARE @TmpParlayData TABLE (
-					RefNo	BIGINT,
-					Odds	MONEY)
-
-				-- Mix Parlay which having at least 1 settled sub ticket
-				INSERT INTO @TmpParlayData
-				SELECT
-					b.RefNo,
-					dbo.PRODUCT(bpd.odds) AS Odds
-				FROM #PagingData AS b
-					INNER JOIN dbo.BetParlayDetail AS bpd WITH (NOLOCK) ON bpd.RefNo = b.RefNo
-				WHERE b.BetType = 29 AND b.BetTeam = '1'
-				GROUP BY b.refno
-
-				-- Mix Parlay which having no settled sub ticket
-				INSERT INTO @TmpParlayData
-				SELECT
-					b.RefNo,
-					dbo.PRODUCT(bm.odds) AS Odds
-				FROM #PagingData AS b
-					INNER JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.RefNo
-				WHERE b.BetType = 29
-					AND b.BetTeam = '1'
-					AND NOT EXISTS (SELECT 1 FROM @TmpParlayData WHERE RefNo = b.RefNo)
-				GROUP BY b.refno
-
-				UPDATE b
-				SET b.Odds = td.Odds
-				FROM #PagingData AS b
-					INNER JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
-				WHERE b.BetType = 29 AND b.BetTeam = '1'
 			END
 
 			-- Get sub tickets

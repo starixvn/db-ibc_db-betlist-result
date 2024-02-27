@@ -163,6 +163,7 @@ AS
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
 		- 20231218@Razor: Support WE Live Casino [Redmine: #195887]
+		- 20240226@Kos: Get original odds for Mix Parlay from ExtraInfo [Redmine: #196425]
 
 
 	Param's Explanation:
@@ -1224,12 +1225,11 @@ BEGIN
 							WHERE ProductId = 79 AND BetType = b.BetType)
 	END
 
-	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+	-- Get final odds, boost rate for settled Mix Parlay tickets
 	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE BetType = 29 AND BetTeam = '1')
 	BEGIN
 		UPDATE b
 		SET
-			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
 			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
 		FROM #MemBetTicket AS b
