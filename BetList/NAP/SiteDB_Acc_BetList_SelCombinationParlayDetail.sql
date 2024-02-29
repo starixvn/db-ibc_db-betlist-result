@@ -6,7 +6,8 @@ ALTER PROCEDURE [dbo].[SiteDB_Acc_BetList_SelCombinationParlayDetail]
 	@MoveBetDay		SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
 	@Outstanding	MONEY		= 0 OUTPUT,
-	@IsParlayBoost	BIT			= 0 OUTPUT
+	@IsParlayBoost	BIT			= 0 OUTPUT,
+	@IsMixParlay	BIT			= 0 OUTPUT
 AS
 
 /*
@@ -20,6 +21,8 @@ AS
 					- Add output param @IsParlayBoost BIT
 					- Return additional columns Odds MONEY, ExtraValue MONEY
 					- Remove param @TransId, @BetId
+		- 20240229@Kos: Get original odds for Mix Parlay from ExtraInfo [Redmine: #196425]
+					- Add output param @IsMixParlay BIT
 */
 
 BEGIN
@@ -371,9 +374,7 @@ BEGIN
 		@Actual_Stake	MONEY,
 		@WinLost		MONEY,
 		@Discount		MONEY,
-		@OriginalOdds	MONEY,
-		@BetTeam		NVARCHAR(10),
-		@Status			NVARCHAR(10)
+		@OriginalOdds	MONEY
 
 	SELECT
 		@Actual_Stake = Actual_Stake,
@@ -383,38 +384,22 @@ BEGIN
 							ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@d)[1]','MONEY'), 0)
 						ELSE 0
 					END,
-		@BetTeam = BetTeam,
-		@Status = Status,
 		@IsParlayBoost = CASE
 							WHEN BetTeam = '1'
 								AND OddsSpread = 2
 								AND Status = 'Won'
 								AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bba)[1]','MONEY'), 0) > 0 THEN 1
 							ELSE 0
+						END,
+		@IsMixParlay = CASE
+							WHEN BetTeam = '1' THEN 1
+							ELSE 0
+						END,
+		@OriginalOdds = CASE
+							WHEN BetTeam = '1' THEN ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@o)[1]','MONEY'), 0)
+							ELSE 0
 						END
 	FROM @tmpBettrans
-
-	-- Get original odds for Mix Parlay
-	IF @BetTeam = '1'
-	BEGIN
-		IF @Status IN ('Running', 'Waiting')
-		BEGIN
-			IF EXISTS (SELECT 1 FROM dbo.BetParlayDetail WHERE RefNo = @RefNo)
-			BEGIN
-				SELECT @OriginalOdds = dbo.PRODUCT(odds)
-				FROM dbo.BetParlayDetail WITH (NOLOCK)
-				WHERE RefNo = @RefNo
-				GROUP BY RefNo
-			END
-			ELSE
-			BEGIN
-				SELECT @OriginalOdds = dbo.PRODUCT(odds)
-				FROM dbo.bettransm WITH (NOLOCK)
-				WHERE RefNo = @RefNo
-				GROUP BY RefNo
-			END
-		END
-	END
 
 	-- Return combo detail
 	SELECT DISTINCT
@@ -432,13 +417,10 @@ BEGIN
 			ELSE '' 
 		END AS status,
 		CASE
-			WHEN @Status IN ('Running', 'Waiting') THEN @OriginalOdds
+			WHEN @OriginalOdds <> 0 THEN @OriginalOdds
 			ELSE Odds
 		END AS Odds,
-		CASE
-			WHEN @BetTeam = '1' AND StatusId = 113 AND MOdds = 0 THEN Odds
-			ELSE MOdds
-		END AS Modds,
+		MOdds,
 		Stake,
 		CASE
 			WHEN @Discount > 0 THEN @WinLost - @Actual_Stake

@@ -45,6 +45,7 @@ AS
 					- Return additional columns Odds MONEY, ExtraValue MONEY
 		- 20231025@Kos: Hotfix - missing odds for bk range [Redmine: #196042]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20240229@Kos: Get original odds for Mix Parlay from ExtraInfo [Redmine: #196425]
 */
 
 BEGIN
@@ -786,12 +787,12 @@ BEGIN
 	END
 
 	DECLARE
-		@WinLost		MONEY,
-		@Discount		MONEY,
-		@OriginalOdds	MONEY,
-		@FinalOdds		MONEY,
-		@BetTeam		NVARCHAR(10),
-		@BoostRate		MONEY
+		@WinLost			MONEY,
+		@Discount			MONEY,
+		@OriginalOdds		MONEY,
+		@OriginalBoostOdds	MONEY,
+		@BetTeam			NVARCHAR(10),
+		@BoostRate			MONEY
 
 	SELECT
 		@WinLost = WinLost,
@@ -815,43 +816,24 @@ BEGIN
 						WHEN BetTeam = '1' AND OddsSpread = 2
 							THEN ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0)
 						ELSE 0
-					END
+					END,
+		@OriginalOdds = CASE
+							WHEN BetTeam = '1' THEN ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@o)[1]','MONEY'), 0)
+							ELSE 0
+						END,
+		@OriginalBoostOdds = CASE
+							WHEN BetTeam = '1' AND OddsSpread = 2 THEN ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbo)[1]','MONEY'), 0)
+							ELSE 0
+						END
 	FROM @tmpBettrans
 
-	-- Get original odds for Mix Parlay
-	IF @BetTeam = '1'
+	-- Get final odds, boost rate for Mix Parlay tickets
+	IF @BetTeam = '1' AND @Status NOT IN ('Running', 'Waiting')
 	BEGIN
-		IF @Status IN ('Running', 'Waiting')
-		BEGIN
-			IF EXISTS (SELECT 1 FROM dbo.BetParlayDetail WHERE RefNo = @RefNo)
-			BEGIN
-				SELECT
-					@OriginalOdds = dbo.PRODUCT(odds),
-					@FinalOdds = dbo.PRODUCT(odds) * (@BoostRate + 1) - @BoostRate
-				FROM dbo.BetParlayDetail WITH (NOLOCK)
-				WHERE RefNo = @RefNo
-				GROUP BY RefNo
-			END
-			ELSE
-			BEGIN
-				SELECT
-					@OriginalOdds = dbo.PRODUCT(odds),
-					@FinalOdds = dbo.PRODUCT(odds) * (@BoostRate + 1) - @BoostRate
-				FROM dbo.bettransm WITH (NOLOCK)
-				WHERE RefNo = @RefNo
-				GROUP BY RefNo
-			END
-
-			UPDATE @tmpBettrans
-			SET
-				Odds = @OriginalOdds,
-				Modds = @FinalOdds
-		END
-		ELSE IF @WhTicket IN (1, 2)
+		IF @WhTicket IN (1, 2)
 		BEGIN
 			UPDATE b
 			SET
-				b.Odds = bpr.Odds,
 				b.Modds = bpr.mOdds,
 				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
 			FROM @tmpBettrans AS b
@@ -938,15 +920,13 @@ BEGIN
 		WinLostDate,
 		Serial,
 		CASE
-			WHEN @Status IN ('Running', 'Waiting') THEN @OriginalOdds
+			WHEN @OriginalOdds <> 0 THEN @OriginalOdds
 			ELSE Odds
 		END AS Odds,
 		CASE
-			WHEN @Status IN ('Running', 'Waiting') AND @IsParlayBoost = 0 THEN @OriginalOdds
-			WHEN @Status IN ('Running', 'Waiting') AND @IsParlayBoost = 1 THEN @FinalOdds
-			WHEN @BetTeam = '1' AND StatusId = 113 AND MOdds = 0 THEN Odds
+			WHEN @Status IN ('Running', 'Waiting') AND @IsParlayBoost = 1 THEN @OriginalBoostOdds
 			ELSE MOdds
-		END AS Modds,
+		END AS MOdds,
 		Stake,
 		StatusId,
 		CASE

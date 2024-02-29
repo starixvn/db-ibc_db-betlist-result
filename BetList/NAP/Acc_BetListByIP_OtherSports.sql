@@ -169,6 +169,7 @@ AS
 		- 20231108@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20231215@Razor: Support Live22 [Redmine: #197609]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
+		- 20240229@Kos: Get original odds for Mix Parlay from ExtraInfo [Redmine: #196425]
 */
 
 BEGIN
@@ -1807,71 +1808,14 @@ BEGIN
 		END
 	END
 
-	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
+	-- Get final odds, boost rate for Mix Parlay tickets
 	IF EXISTS (SELECT 1 FROM @Data
 				WHERE BetType = 29
 					AND BetTeam = '1'
 					AND TableID IN (1, 2))
 	BEGIN
-		-- Running/Waiting
-		DECLARE @ParlayData TABLE (
-			RefNo		BIGINT,
-			BoostRate	MONEY)
-
-		INSERT INTO @ParlayData
-		SELECT
-			b.refno,
-			CASE
-				WHEN b.bettype = 29 AND b.betteam = 1 AND b.oddsspread = 2 THEN
-					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0)
-				ELSE 0
-			END AS BoostRate
-		FROM @Data AS b
-		WHERE b.BetType = 29
-			AND b.BetTeam = '1'
-			AND b.Status IN ('Running', 'Waiting')
-
-		DECLARE @TmpParlayData TABLE (
-			RefNo	BIGINT,
-			Odds	MONEY,
-			MOdds	MONEY)
-
-		-- Mix Parlay which having at least 1 settled sub ticket
-		INSERT INTO @TmpParlayData
-		SELECT
-			b.RefNo,
-			dbo.PRODUCT(bpd.odds) AS Odds,
-			dbo.PRODUCT(bpd.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
-		FROM @ParlayData AS b
-			INNER JOIN dbo.BetParlayDetail AS bpd WITH (NOLOCK) ON bpd.RefNo = b.RefNo
-		GROUP BY
-			b.RefNo,
-			b.BoostRate
-
-		-- Mix Parlay which having no settled sub ticket
-		INSERT INTO @TmpParlayData
-		SELECT
-			b.RefNo,
-			dbo.PRODUCT(bm.odds) AS Odds,
-			dbo.PRODUCT(bm.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
-		FROM @ParlayData AS b
-			INNER JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.RefNo
-		WHERE NOT EXISTS (SELECT 1 FROM @TmpParlayData WHERE RefNo = b.RefNo)
-		GROUP BY
-			b.RefNo,
-			b.BoostRate
-
 		UPDATE b
 		SET
-			b.Odds = td.Odds,
-			b.MOdds = td.MOdds
-		FROM @Data AS b
-			INNER JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
-
-		-- Settled
-		UPDATE b
-		SET
-			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
 			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
 		FROM @Data AS b
