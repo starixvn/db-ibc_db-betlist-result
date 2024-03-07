@@ -38,6 +38,7 @@ AS
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 		- 20240412@Kos: Support Gaming API [Redmine: 203734]
 		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
+		- 20240605@Kos: Support Virtual Sports 4 [Redmine: 199347]
 */
 
 BEGIN
@@ -713,31 +714,6 @@ BEGIN
 								WHEN b.RefTable IN (1, 2) THEN b.MatchId
 								ELSE 0
 							END,
-				BetTeam = CASE
-								WHEN b.EventType IN (0, 1) THEN b.BetTeam
-								WHEN b.Product IN ('BTC') THEN b.BetTeam
-								ELSE ''
-							END,
-				Hdp1 = CASE
-							WHEN b.EventType IN (0, 1) THEN b.Hdp1
-							WHEN b.Product IN ('VR', 'BTC') THEN b.Hdp1
-							ELSE 0
-						END,
-				Hdp2 = CASE
-							WHEN b.EventType IN (0, 1) THEN b.Hdp2
-							WHEN b.Product IN ('VR') THEN b.Hdp2
-							ELSE 0
-						END,
-				OddsType = CASE
-							WHEN b.EventType = 1 THEN b.OddsType
-							WHEN b.Product IN ('Outright', 'VR') THEN b.OddsType
-							ELSE 0
-						END,
-				MOdds = CASE
-							WHEN b.EventType IN (0, 1) THEN b.modds
-							WHEN b.Product IN ('Outright', 'VR') THEN b.modds
-							ELSE 0
-						END,
 				Stake = CASE
 							WHEN b.RefTable IN (1, 2) AND x.Stake IS NOT NULL THEN x.Stake
 							ELSE b.stake 
@@ -766,20 +742,6 @@ BEGIN
 										WHEN b.Product IN ('SB') THEN ISNULL(m.SettlementStatus, 0)
 										ELSE 0
 									END,
-				LiveIndicator = CASE
-									WHEN b.EventType = 1 THEN b.liveindicator
-									ELSE 0
-								END,
-				LiveHomeScore = CASE
-									WHEN b.EventType IN (0, 1) THEN b.livehomescore
-									WHEN b.Product IN ('Outright', 'VR') THEN b.livehomescore
-									ELSE 0
-								END,
-				LiveAwayScore = CASE
-									WHEN b.EventType = 1 THEN b.liveawayscore
-									WHEN b.Product IN ('Outright', 'VR') THEN b.liveawayscore
-									ELSE 0
-								END,
 				LeagueId = CASE
 								WHEN b.EventType = 1 THEN m.leagueid
 								WHEN b.Product IN ('Outright') THEN o.leagueid
@@ -839,17 +801,17 @@ BEGIN
 								ELSE ''
 							END,
 				BetCheck = CASE
-								WHEN b.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('Keno') THEN ISNULL(b.custom2, '')
 								WHEN b.Product IN ('VRG', 'SLT') THEN ISNULL(b.TranId3rd, '')
 								WHEN b.Product IN ('H5LG') THEN ISNULL(b.Gameid3rd, '')
 								WHEN b.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('VS3') THEN ISNULL(b.custom1, '')
+								WHEN b.EventType = 0 AND b.RefTable = 0 THEN ISNULL(b.betcheck, '')
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 
-									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'SEA') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 
+									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 								WHEN b.EventType = 1 THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,

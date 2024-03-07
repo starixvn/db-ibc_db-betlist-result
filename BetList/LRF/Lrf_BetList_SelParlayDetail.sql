@@ -40,6 +40,7 @@ AS
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 					- Add new input param @MoveBetsDay SMALLDATETIME, @BalanceUpDay SMALLDATETIME, @ExcludeBettrans BIT
 		- 20231225@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
+		- 20240305@Kos: Support Virtual Sports 4 [Redmine: 199347]
 */
 
 BEGIN
@@ -55,7 +56,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 27)
+	WHERE ProductID IN (1, 27, 83)
 
 	DECLARE @tmpParlay TABLE (
 		TransId				BIGINT,

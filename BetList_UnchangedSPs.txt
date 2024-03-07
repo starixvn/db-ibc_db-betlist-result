@@ -1,1 +1,7 @@
+BetList/LRF/Lrf_BetList_MatchWL.sql
+BetList/LRF/Lrf_BetList_MatchWL_Old.sql
+BetList/LRF/Lrf_BetList_LiveReport_SelWinlossByMatch.sql
+BetList/LRF/Lrf_BetList_LiveReport_SelWinlossParlay.sql
+BetList/LRF/Lrf_BetList_Licensee_Others.sql
 BetList/LRF/Lrf_BetList_Licensee.sql
+BetList/LRF/Lrf_BetList_Licensee_TotalRows.sql
