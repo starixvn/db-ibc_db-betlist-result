@@ -73,6 +73,7 @@ AS
 					- Remove input params @ShowSB, @ShowVS, @ShowVS2, @ShowLG
 					- Add new input param @ProductList VARCHAR(500)
 		- 20240326@Kos: Show Half Won / Half Lost [Redmine: 201484]
+		- 20240328@Kos: Return LeagueGroupId to hide Saba text [RedmineID: #201283]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -153,6 +154,7 @@ BEGIN
 		CustId				INT,
 		BetType				INT,
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		TransId				BIGINT,
 		BATransId			BIGINT,
 		MatchCode			VARCHAR(50),
@@ -255,6 +257,7 @@ BEGIN
 			b.custid,
 			b.bettype,
 			m.leagueid,
+			l.LeagueGroupID,
 			b.transid,
 			ba.TransID AS BATransId,
 			m.matchcode,
@@ -310,6 +313,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
 			INNER JOIN dbo.match AS m ON m.matchid = tm.MatchId
+			INNER JOIN dbo.League AS l ON l.leagueid = m.leagueid
 			LEFT JOIN bodb_licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE b.statusID IN (111, 112, 113)
 			AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
@@ -325,6 +329,7 @@ BEGIN
 			b.custid,
 			b.bettype,
 			m.leagueid,
+			l.LeagueGroupID,
 			b.transid,
 			ba.TransID AS BATransId,
 			m.matchcode,
@@ -380,6 +385,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
 			INNER JOIN dbo.match14 AS m ON m.matchid = tm.MatchId
+			INNER JOIN dbo.League AS l ON l.leagueid = m.leagueid
 			LEFT JOIN bodb_licensee.dbo.LicenseeBATransaction_bk AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE b.statusID IN (111, 112, 113)
 			AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
@@ -492,6 +498,7 @@ BEGIN
 				b.CustId,
 				b.BetType,
 				b.LeagueId,
+				b.LeagueGroupId,
 				b.TransId,
 				b.MatchCode,
 				b.EventDate,

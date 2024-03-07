@@ -26,7 +26,7 @@ AS
 	Created: Scott@20130418
 	Task: LRF Monitor lastest bets list(all bettypes and all sports) with filter by League and Sport
 	DB: DBBOF.bodb02
-	Original: [Lrf_Monitor_BetlistSel]
+
 	Revision:
 		- 20130618@Jim: Restrict permission of Licensee Users by currency
 		- 20130806@Jim: Add betting platform to Last bets monitoring
@@ -89,6 +89,7 @@ AS
 		- 20231127@Kos: Support Jollysports [RedmineID: #197192]
 		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
 					- Add new input param @FullCustomerClass VARCHAR(MAX)
+		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -117,6 +118,7 @@ AS
 				+ Saba Futsal: <Sport SportType="1" LeagueGroupIds="108"/>
 				+ Saba E-Sports PinGoal: <Sport SportType="43" LeagueGroupIds="151"/>
 				+ Saba Tennis: <Sport SportType="5" LeagueGroupIds="42"/>
+				+ Saba Ice Hockey: <Sport SportType="4" LeagueGroupIds="42"/>
 		- @LiveIndicator (0 : non live, 1 : live , 2 : mix non live & live)
 		- @IncludeBetFrom: 1: show column betfrom, 0: hide
 		- @BetFrom:
@@ -213,6 +215,7 @@ BEGIN
 	UNION SELECT 1, '108'	-- Saba Futsal
 	UNION SELECT 43, '151'	-- Saba E-Sports PinGoal
 	UNION SELECT 5, '42'	-- Saba Tennis
+	UNION SELECT 4, '42'	-- Saba Ice Hockey
 
 	DECLARE @Data TABLE (
 		CustId			INT,

@@ -83,6 +83,7 @@ AS
 		- 20231225@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
 					- Add new input param @FullCustomerClass VARCHAR(MAX)
+		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
 */
 
 BEGIN
@@ -122,6 +123,7 @@ BEGIN
 	UNION SELECT 1, '108'	-- Saba Futsal
 	UNION SELECT 43, '151'	-- Saba E-Sports PinGoal
 	UNION SELECT 5, '42'	-- Saba Tennis
+	UNION SELECT 4, '42'	-- Saba Ice Hockey
 
 	CREATE TABLE #Data (
 		TransId				BIGINT,

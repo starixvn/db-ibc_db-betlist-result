@@ -90,6 +90,7 @@ AS
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
+		- 20240328@Kos: Return LeagueGroupId to hide Saba text [RedmineID: #201283]
 */
 
 BEGIN
@@ -175,6 +176,7 @@ BEGIN
 		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
@@ -242,6 +244,7 @@ BEGIN
 		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
@@ -1131,6 +1134,10 @@ BEGIN
 										WHEN b.Product IN ('VR') THEN vr.LeagueID
 										ELSE 0
 									END,
+						LeagueGroupId = CASE
+											WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+											ELSE 0
+										END,
 						MatchId = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'BTC', 'LG') THEN b.matchid
 										WHEN b.Product IN ('TIP') THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
@@ -1228,6 +1235,7 @@ BEGIN
 								END
 					FROM #PagingData AS b
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
+						LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 						LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 						LEFT JOIN @TmpData AS x
 							ON b.RefTable IN (1, 2)
@@ -1383,6 +1391,10 @@ BEGIN
 										WHEN b.Product IN ('VR') THEN vr.LeagueID
 										ELSE 0
 									END,
+						LeagueGroupId = CASE
+											WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+											ELSE 0
+										END,
 						MatchId = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'BTC', 'LG') THEN b.matchid
 										WHEN b.Product IN ('TIP') THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
@@ -1479,6 +1491,7 @@ BEGIN
 								END
 					FROM #PagingData AS b
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
+						LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 						LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
@@ -1587,6 +1600,10 @@ BEGIN
 										WHEN b.Product IN ('VR') THEN vr.LeagueID
 										ELSE 0
 									END,
+						LeagueGroupId = CASE
+											WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+											ELSE 0
+										END,
 						MatchId = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'BTC', 'LG') THEN b.matchid
 										WHEN b.Product IN ('TIP') THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
@@ -1683,6 +1700,7 @@ BEGIN
 								END
 					FROM #PagingData AS b
 						LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG') AND b.matchid = m.matchid
+						LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 						LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 						LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
@@ -1763,6 +1781,7 @@ BEGIN
 		b.Ip,
 		b.BetFrom,
 		b.LeagueId,
+		b.LeagueGroupId,
 		b.MatchId,
 		b.MatchCode,
 		b.Race,

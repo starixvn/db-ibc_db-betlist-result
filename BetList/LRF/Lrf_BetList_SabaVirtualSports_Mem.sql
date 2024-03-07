@@ -33,6 +33,7 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20221207@Kos: Support Saba E-Sports PinGoal [RedmineID: #181224]
 		- 20230703@Kos: Support Saba Tennis [RedmineID: #190465]
+		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -572,6 +573,7 @@ BEGIN
 					OR sporttype = CASE
 									WHEN @SportType = -1 THEN 1
 									WHEN @SportType = -2 THEN 2
+									WHEN @SportType = -4 THEN 4
 									WHEN @SportType = -5 THEN 5
 									WHEN @SportType = -43 THEN 43
 									ELSE @SportType
@@ -580,6 +582,7 @@ BEGIN
 					OR (@SportType IN (0, -1) AND sporttype = 1 AND LeagueGroupID IN (113))
 					OR (@SportType IN (0, 2) AND sporttype = 2 AND LeagueGroupID IN (42))
 					OR (@SportType IN (0, -2) AND sporttype = 2 AND LeagueGroupID IN (122))
+					OR (@SportType IN (0, 4) AND sporttype = 4 AND LeagueGroupID IN (42))
 					OR (@SportType IN (0, 5) AND sporttype = 5 AND LeagueGroupID IN (42))
 					OR (@SportType IN (0, -43) AND sporttype = 43 AND LeagueGroupID IN (151))
 					OR (sporttype = 50 AND LeagueGroupID IN (42)))
