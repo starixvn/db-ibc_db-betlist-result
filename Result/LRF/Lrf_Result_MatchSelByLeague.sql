@@ -62,6 +62,8 @@ AS
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197440]
 		- 20231221@Kos: Hide Redcat88 matches [Redmine: #198539]
 		- 20231226@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
+		- 20240315@Kos: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #201283]
+					- Support Saba Ice Hockey
 */
 
 BEGIN 
@@ -77,6 +79,7 @@ BEGIN
 		SportType			SMALLINT,
 		BetStatus			NVARCHAR(50),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		Lcolor				NVARCHAR(50),
 		MatchCode			NVARCHAR(50),
@@ -105,6 +108,7 @@ BEGIN
 			l.sporttype,
 			m.betstatus,
 			m.leagueid,
+			l.LeagueGroupID,
 			m.matchid,
 			l.lcolor,
 			m.matchcode,
@@ -353,7 +357,8 @@ BEGIN
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 			AND (l.LeagueGroupID IS NULL
 				OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
-					AND l.LeagueGroupID <> 215))		-- Redcat88 of Esports
+					AND l.LeagueGroupID <> 215)			-- Redcat88 of Esports
+				OR m.sporttype NOT IN (1, 2, 43))
 		OPTION (OPTIMIZE FOR (@LeagueId = 0))
 	END
 	ELSE IF @SportType IN (0, 5)
@@ -365,6 +370,7 @@ BEGIN
 				l.sporttype,
 				m.betstatus,
 				m.leagueid,
+				l.LeagueGroupID,
 				m.matchid,
 				l.lcolor,
 				m.matchcode,
@@ -432,7 +438,8 @@ BEGIN
 				(l.leagueid = @LeagueId OR @LeagueId = 0)
 				AND (l.LeagueGroupID IS NULL
 					OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
-						AND l.LeagueGroupID <> 215))		-- Redcat88 of Esports
+						AND l.LeagueGroupID <> 215)		-- Redcat88 of Esports
+					OR m.sporttype NOT IN (1, 2, 43))
 				AND ( m.eventstatus NOT IN ('internal', 'closed')
 					OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
@@ -445,6 +452,7 @@ BEGIN
 				l.sporttype,
 				m.betstatus,
 				m.leagueid,
+				l.LeagueGroupID,
 				m.matchid,
 				l.lcolor,
 				m.matchcode,
@@ -510,7 +518,8 @@ BEGIN
 				(l.leagueid = @LeagueId OR @LeagueId = 0)
 				AND (l.LeagueGroupID IS NULL
 					OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
-						AND l.LeagueGroupID <> 215))		-- Redcat88 of Esports
+						AND l.LeagueGroupID <> 215)		-- Redcat88 of Esports
+					OR m.sporttype NOT IN (1, 2, 43))
 				AND ( m.eventstatus NOT IN ('internal', 'closed')
 					OR ( mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed')))
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
