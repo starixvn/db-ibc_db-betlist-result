@@ -48,6 +48,7 @@ AS
 		- 20231024@Razor: Return Live Score value[Redmine: #194323]
 		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
+		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 */
 
 BEGIN
@@ -63,7 +64,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 27)
+	WHERE ProductID IN (1, 27, 83)
 
 	DECLARE @tmpParlay TABLE(
 		SportType			INT,
