@@ -1,4 +1,4 @@
-/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet, wsv_alp,bodbDownlineNetView, wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunningByBettype_Ag]
 	@CustId		INT,
@@ -91,8 +91,4 @@ BEGIN
 END
 
 
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelRunningByBettype_Ag] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelRunningByBettype_Ag] TO [bodbDownlineNetView]
 GO

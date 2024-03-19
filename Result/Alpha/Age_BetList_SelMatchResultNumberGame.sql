@@ -97,13 +97,3 @@ END
 
   
 GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultNumberGame] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultNumberGame] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultNumberGame] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelMatchResultNumberGame] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelMatchResultNumberGame] TO [bodbExtAccNet]
-GO

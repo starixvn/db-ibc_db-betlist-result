@@ -1,4 +1,4 @@
-/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet, wsv_alp,bodbDownlineNetView, wsv_alpv" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelRunningByBettypeMatch_MAg]
 	@MatchId		INT,
@@ -86,10 +86,4 @@ BEGIN
 END
 
 
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelRunningByBettypeMatch_MAg] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_BetList_SelRunningByBettypeMatch_MAg] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelRunningByBettypeMatch_MAg] TO [vnteam]
 GO

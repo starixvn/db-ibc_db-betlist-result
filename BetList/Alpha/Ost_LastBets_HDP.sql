@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBOST-bodb_ost" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBOST-bodb_ost" executers="bodbDownlineNet, wsv_alp,bodbDownlineNetView, wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Ost_LastBets_HDP]
 	@CustId			INT,
@@ -48,10 +48,4 @@ BEGIN
 		AND b.bettype IN (1, 7)
 	ORDER BY b.transid DESC
 END
-GO
-
-
-GRANT EXECUTE ON [dbo].[Ost_LastBets_HDP] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Ost_LastBets_HDP] TO [bodbDownlineNetView]
 GO

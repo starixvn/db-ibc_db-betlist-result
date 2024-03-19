@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet, wsv_alp,bodbDownlineNetView, wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelWinLossByDate_Mem_Old]
 	@CustId					INT,
@@ -267,7 +267,7 @@ BEGIN
 	BEGIN
 		SELECT @LoginName = SUSER_NAME()
 
-		IF @FromDate < '2016-06-01' AND @LoginName <> 'bodbDownlineNetView'		-- acc internal login 
+		IF @FromDate < '2016-06-01' AND (@LoginName <> 'wsv_alpv' OR @LoginName <> 'wsv_alpv')		-- acc internal login 
 			SELECT @FromDate = '2016-06-01'
 	END
 

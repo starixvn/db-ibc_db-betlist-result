@@ -54,9 +54,3 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_Result_VirtualHRSelByMeeting] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_Result_VirtualHRSelByMeeting] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_Result_VirtualHRSelByMeeting] TO [vnteam] AS [dbo]
-GO

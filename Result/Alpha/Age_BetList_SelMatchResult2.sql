@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet, wsv_alp,bodbDownlineNetView, wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_BetList_SelMatchResult2]
 	@MatchId	INT
@@ -144,10 +144,4 @@ BEGIN
 	DROP TABLE #DataSumVHR
 	DROP TABLE #tmpresult
 END
-GO
-
-
-GRANT	EXECUTE	ON	Age_BetList_SelMatchResult2	TO	bodbDownlineNet
-GO
-GRANT	EXECUTE	ON	Age_BetList_SelMatchResult2	TO	bodbDownlineNetView
 GO

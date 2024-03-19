@@ -136,9 +136,3 @@ where
 
 
 GO
-GRANT  EXECUTE  ON [dbo].[Age_BetList_SelRunningAll_API]  TO [bodbDownlineNet]
-GO
-GRANT  EXECUTE  ON [dbo].[Age_BetList_SelRunningAll_API]  TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_BetList_SelRunningAll_API] TO [vnteam]
-GO

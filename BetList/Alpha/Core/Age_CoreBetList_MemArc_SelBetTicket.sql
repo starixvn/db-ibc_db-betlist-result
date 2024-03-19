@@ -1,4 +1,4 @@
-/*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBARC-bodb_Archive" executers="bodbDownlineNet, wsv_alp,bodbDownlineNetView, wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_CoreBetList_MemArc_SelBetTicket]
 (
@@ -132,11 +132,4 @@ BEGIN
 		@tempCust = @tempCust,
 		@ColumnOutput = @ColumnOutput
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Age_CoreBetList_MemArc_SelBetTicket] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CoreBetList_MemArc_SelBetTicket] TO [bodbDownlineNetView]
 GO
