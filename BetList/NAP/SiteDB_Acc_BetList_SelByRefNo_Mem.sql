@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBSIG-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBSIG-bodb02" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[SiteDB_Acc_BetList_SelByRefNo_Mem]
 	@CustId			INT,

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="wsv_nap" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Result_GetSiteInfo_Mem]
 	@CustId		INT			= 0,
 	@Username	VARCHAR(30)	= ''

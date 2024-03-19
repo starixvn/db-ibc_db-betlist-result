@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="wsv_nap,bodbDownlineNet, wsv_alp,bodbDownlineNetView, wsv_alpv" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [bodb02]
 GO
 
@@ -103,14 +103,4 @@ BEGIN
 END
 
 
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetListCB_Details] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetListCB_Details] TO [bodbDownlineNetView]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetListCB_Details] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetListCB_Details] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetListCB_Details] TO [vnteam] 
 GO

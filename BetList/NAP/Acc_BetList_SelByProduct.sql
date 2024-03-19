@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-BODB02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBAGE-BODB02" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_SelByProduct]
 	@UserId			BIGINT,
