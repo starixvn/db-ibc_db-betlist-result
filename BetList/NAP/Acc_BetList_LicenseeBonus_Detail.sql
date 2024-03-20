@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_LicenseeBonus_Detail]
 	@TransId	BIGINT,
@@ -325,8 +325,4 @@ BEGIN
 	SELECT * FROM @Data
 	ORDER BY TransId
 END
-GO
-
-
-GRANT	EXECUTE	ON	[Acc_BetList_LicenseeBonus_Detail]	TO	bodbAdminNet
 GO

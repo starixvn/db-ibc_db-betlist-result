@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE BODB02
 GO
 
@@ -88,10 +88,4 @@ BEGIN
 END
 
 
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetsSelBetCheckGD] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_BetsSelBetCheckGD] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_BetsSelBetCheckGD] TO [vnteam]
 GO

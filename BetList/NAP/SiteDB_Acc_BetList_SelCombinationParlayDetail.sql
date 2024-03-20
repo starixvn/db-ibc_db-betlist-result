@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBSIG-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBSIG-bodb02" executers="wsv_nap,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[SiteDB_Acc_BetList_SelCombinationParlayDetail]
 	@RefNo			BIGINT,
