@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet" isFunction="0" isNested=""></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet,wsv_lap" isFunction="0" isNested=""></info>*/
 
 ALTER PROCEDURE [dbo].[N88_BetList_WinLossAnalysis]
 	@CustId				INT,

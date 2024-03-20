@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet,wsv_lap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_Monitor_OutrightSel]
 AS
@@ -31,11 +31,3 @@ BEGIN
 	WHERE m.oddsstatus <> 'completed' 
 		AND m.eventdate >= CONVERT(VARCHAR(10), DATEADD(dd, -1, CURRENT_TIMESTAMP), 120)
 END
-
-
-
-GO
-GRANT EXECUTE ON [dbo].[Lrf_Monitor_OutrightSel] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_Monitor_OutrightSel] TO [vnteam]
-GO

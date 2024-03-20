@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBBOF-bodb02" executers="bodbLicenseeNet,wsv_lap" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelRunningByDate_Mem]
 	@AgentList		VARCHAR(MAX),

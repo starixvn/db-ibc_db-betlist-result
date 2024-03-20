@@ -1,4 +1,4 @@
-/*<info serverAlias="DBSID-bodb02" executers="bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBSID-bodb02" executers="bodbLicenseeNet,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_LC_Detail]
 	@AgentList		VARCHAR(MAX),
