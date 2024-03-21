@@ -45,6 +45,7 @@ AS
 		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
 		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 		- 20240604@Kos: Hotfix - wrong column order [Redmine: #205864]
+		- 20240425@Kos: Support Virtual Sports 4 [Redmine: 199347]
 */
 
 BEGIN
@@ -60,7 +61,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 27)
+	WHERE ProductID IN (1, 27, 83)
 
 	DECLARE @tmpParlay TABLE (
 		SportType			INT,
