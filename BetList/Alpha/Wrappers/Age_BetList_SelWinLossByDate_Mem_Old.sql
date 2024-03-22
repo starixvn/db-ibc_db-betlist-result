@@ -267,7 +267,7 @@ BEGIN
 	BEGIN
 		SELECT @LoginName = SUSER_NAME()
 
-		IF @FromDate < '2016-06-01' AND (@LoginName <> 'wsv_alpv' OR @LoginName <> 'wsv_alpv')		-- acc internal login 
+		IF @FromDate < '2016-06-01' AND (@LoginName <> 'bodbDownlineNetView' OR @LoginName <> 'wsv_alpv')		-- acc internal login 
 			SELECT @FromDate = '2016-06-01'
 	END
 
