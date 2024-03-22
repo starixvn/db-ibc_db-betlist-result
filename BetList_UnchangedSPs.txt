@@ -1,1 +1,2 @@
-BetList\Alpha\Age_BetList_LastBets_Ag.sql
+BetList\Alpha\Wrappers\Age_BetList_SelWinLossByDate_Mem.sql
+BetList\Alpha\Wrappers\Age_BetList_SelWinLossByDate_Mem_Old.sql

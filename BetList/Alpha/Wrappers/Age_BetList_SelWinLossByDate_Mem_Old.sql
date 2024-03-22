@@ -164,6 +164,7 @@ AS
 		- 20240219@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20240228@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
+		- 20240322@Razor: Support Virtual Ice Hockey [Redmine: #202519]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -619,7 +620,7 @@ BEGIN
 									WHEN ( 
 											(le.LeagueGroupID IN (42,74,108,113) AND m.sporttype = 1 ) 
 											OR (le.LeagueGroupID IN (122, 42) AND m.sporttype = 2 )
-											OR (le.LeagueGroupID = 42 AND m.sporttype IN (5, 50))
+											OR (le.LeagueGroupID = 42 AND m.sporttype IN (4, 5, 50))
 											OR (le.LeagueGroupID = 151 AND m.sporttype = 43)
 										) AND b.betdaqid <> -2 AND b.winlostdate >= @SeparateSabaSport_Cutoff THEN le.LeagueGroupID
 									ELSE 0 
