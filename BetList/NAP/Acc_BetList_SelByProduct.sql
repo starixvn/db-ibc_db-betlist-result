@@ -100,6 +100,7 @@ AS
 		- 20240206@Razor: Support new Game API related to TransId3rd/BetId3rd [Redmine: #199259]
 		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
 		- 20240222@Razor: Fix to call sp version on function [Redmine: #197160]
+		- 20240325@Razor: Enhance search TranId3rd/BetId3rd/GameId3rd [Redmine: #201962]
 */
 
 BEGIN
@@ -107,9 +108,6 @@ BEGIN
 
 	-- Get Sport Bettype Matrix --
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
-
-	DECLARE @newBetId VARCHAR(1000)
-	SET @newBetId = CONCAT('%|$|', @BetId)
 
 	DECLARE @IsTest BIT = 0
 
@@ -303,10 +301,11 @@ BEGIN
 						b.DeviceType
 					FROM dbo.translog AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
+						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.Gameid3rd, '|$|') ORDER BY id DESC) AS t3rd
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND b.statusID IN (0, 1)
-						AND b.Gameid3rd = @GameId
+						AND t3rd.val = @GameId
 				END
 
 				IF @GameId <> ''
@@ -365,10 +364,11 @@ BEGIN
 						b.DeviceType
 					FROM dbo.bettrans AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
+						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.betcheck, '|$|') ORDER BY id DESC) AS t3rd
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND b.statusID NOT IN (0, 1)
-						AND b.betcheck = @GameId
+						AND t3rd.val = @GameId
 				END
 			END
 
@@ -511,12 +511,14 @@ BEGIN
 							ON bg.refno = b.transid
 							AND bg.custid = b.custid
 							AND s.ProductID = 39
+						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
+						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(ISNULL(bg.BetID3rd, ''), '|$|') ORDER BY id DESC) AS b3rd
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80) AND (b.TranId3rd = @BetId OR b.TranId3rd LIKE @newBetId))
-							OR (s.ProductID = 39 AND (ISNULL(bg.BetID3rd, '') = @BetId OR ISNULL(bg.BetID3rd, '') LIKE @newBetId)))
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80) AND t3rd.val = @BetId)
+							OR (s.ProductID = 39 AND b3rd.val = @BetId))
 				END
 			END
 
@@ -598,9 +600,10 @@ BEGIN
 						b.DeviceType
 					FROM dbo.bettransRnG AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
+						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-						AND (b.TranId3rd = @BetId OR b.TranId3rd LIKE @newBetId)
+						AND t3rd.val = @BetId
 				END
 			END
 
@@ -742,10 +745,11 @@ BEGIN
 						b.DeviceType
 					FROM dbo.bettrans14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
+						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.betcheck, '|$|') ORDER BY id DESC) AS t3rd
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND b.statusID NOT IN (0, 1)
-						AND b.betcheck = @GameId
+						AND t3rd.val = @GameId
 				END
 			END
 
@@ -890,12 +894,15 @@ BEGIN
 							ON bg.refno = b.transid
 							AND bg.custid = b.custid
 							AND s.ProductID = 39
+						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
+						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(ISNULL(bg.BetID3rd, ''), '|$|')ORDER BY id DESC) AS b3rd
+
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80) AND (b.TranId3rd = @BetId OR b.TranId3rd LIKE @newBetId))
-							OR (s.ProductID = 39 AND (ISNULL(bg.BetID3rd, '') = @BetId OR ISNULL(bg.BetID3rd, '') LIKE @newBetId)))
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80) AND t3rd.val = @BetId)
+							OR (s.ProductID = 39 AND b3rd.val = @BetId))
 				END
 			END
 
@@ -977,9 +984,10 @@ BEGIN
 						b.DeviceType
 					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
+						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
-						AND (b.TranId3rd = @BetId OR b.TranId3rd LIKE @newBetId)
+						AND t3rd.val = @BetId
 				END
 			END
 
