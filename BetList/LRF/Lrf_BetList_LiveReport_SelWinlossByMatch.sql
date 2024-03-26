@@ -72,6 +72,7 @@ AS
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 					- Remove input params @ShowSB, @ShowVS, @ShowVS2, @ShowLG
 					- Add new input param @ProductList VARCHAR(500)
+		- 20240326@Kos: Show Half Won / Half Lost [Redmine: 201484]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -161,6 +162,7 @@ BEGIN
 		Hdp1				SMALLMONEY,
 		Hdp2				SMALLMONEY,
 		Odds				MONEY,
+		MOdds				MONEY,
 		Status				NVARCHAR(50),
 		SettlementStatus	TINYINT,
 		Stake				MONEY,
@@ -262,6 +264,7 @@ BEGIN
 			b.hdp1,
 			b.hdp2,
 			b.odds,
+			b.modds,
 			b.status,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			b.stake,
@@ -331,6 +334,7 @@ BEGIN
 			b.hdp1,
 			b.hdp2,
 			b.odds,
+			b.modds,
 			b.status,
 			0 AS SettlementStatus,
 			b.stake,
@@ -496,6 +500,7 @@ BEGIN
 				b.Hdp1,
 				b.Hdp2,
 				b.Odds,
+				b.MOdds,
 				b.Status,
 				b.SettlementStatus,
 				b.Stake * ISNULL(e.Rate, 1) AS Stake,
