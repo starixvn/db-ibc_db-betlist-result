@@ -29,6 +29,7 @@ AS
 		- 20240125@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20240228@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
+		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 
 */
 
@@ -258,6 +259,7 @@ BEGIN
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
 						WHEN @ProductID = 76 THEN 'YB'			-- YeeBet
 						WHEN @ProductID = 77 THEN 'LG'			-- Virtual Sports 3
+						WHEN @ProductID = 78 THEN 'UUSL'		-- UU Slots
 						WHEN @ProductID = 79 THEN 'L22'			-- Live22
 						WHEN @ProductID = 80 THEN 'WE'			-- WE
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
@@ -532,6 +534,7 @@ BEGIN
 				WHEN @Product = 'NG2' AND b.bettype BETWEEN 2581 AND 2619 THEN 215
 				WHEN @Product = 'NG2' AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 				WHEN @Product = 'NG2' AND b.bettype BETWEEN 2681 AND 2699 THEN 218
+				WHEN @RefTable IN (1, 2) THEN b.matchid
 				ELSE 0
 			END AS SportType,
 			b.bettype,
@@ -806,6 +809,7 @@ BEGIN
 				WHEN @Product = 'NG2' AND b.bettype BETWEEN 2581 AND 2619 THEN 215
 				WHEN @Product = 'NG2' AND b.bettype BETWEEN 2621 AND 2659 THEN 216
 				WHEN @Product = 'NG2' AND b.bettype BETWEEN 2681 AND 2699 THEN 218
+				WHEN @RefTable IN (1, 2) THEN b.matchid
 				ELSE 0
 			END AS SportType,
 			b.bettype,
@@ -1130,6 +1134,7 @@ BEGIN
 						WHEN @ProductId = 72 THEN 'SEA'			-- SEAL Entertainment
 						WHEN @ProductId = 73 THEN 'MGRNG'		-- MG-RNG
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
+						WHEN @ProductID = 78 THEN 'UUSL'		-- UU Slots
 						WHEN @ProductId = 79 THEN 'L22'			-- Live22
 						ELSE 'Unknown'
 					END

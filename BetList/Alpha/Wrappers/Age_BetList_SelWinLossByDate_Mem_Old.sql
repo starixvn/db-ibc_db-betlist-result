@@ -165,6 +165,7 @@ AS
 		- 20240228@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240322@Razor: Support Virtual Ice Hockey [Redmine: #202519]
+		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -436,6 +437,7 @@ BEGIN
 						WHEN s.ProductID = 75 THEN 'JIG'	-- Jili
 						WHEN s.ProductID = 76 THEN 'YB'		-- YeeBet
 						WHEN s.ProductID = 77 THEN 'LG'		-- Virtual Sports 3
+						WHEN s.ProductID = 78 THEN 'UUSL'	-- UU Slots
 						WHEN s.ProductID = 79 THEN 'L22'	-- Live22
 						WHEN s.ProductID = 80 THEN 'WE'		-- WE
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
@@ -469,7 +471,7 @@ BEGIN
 						END,
 				SportType = CASE
 								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 
-									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'L22', 'WE') THEN b.matchid
+									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'L22', 'WE', 'UUSL') THEN b.matchid
 								WHEN b.Product = 'Keno' THEN 202	-- Keno
 								WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 								WHEN b.Product = 'AllBet' THEN 211	-- AllBet

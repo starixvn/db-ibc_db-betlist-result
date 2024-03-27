@@ -144,6 +144,7 @@ AS
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20240228@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
+		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 */
 
 BEGIN
@@ -324,6 +325,7 @@ BEGIN
 			WHEN s.ProductID = 75					THEN 'JIG'			-- Jili
 			WHEN s.ProductID = 76					THEN 'YB'			-- YeeBet
 			WHEN s.ProductID = 77					THEN 'LG'			-- Virtual Sports 3
+			WHEN s.ProductID = 78					THEN 'UUSL'			-- UU Slots
 			WHEN s.ProductID = 79					THEN 'L22'			-- Live22
 			WHEN s.ProductID = 80					THEN 'WE'			-- WE
 			WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
@@ -347,7 +349,8 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM @Tickets)
 	BEGIN
 		-- bettransRnG
-		IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22') AND WinLostDate >= @Yesterday)
+		IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'UUSL')
+			AND WinLostDate >= @Yesterday)
 		BEGIN
 			-- Running
 			INSERT INTO @temp_bettransX
@@ -375,7 +378,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-			WHERE c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22')
+			WHERE c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'UUSL')
 				AND c.WinLostDate >= @Yesterday
 				AND brng.statusID IN (0, 1)
 			GROUP BY
@@ -418,7 +421,7 @@ BEGIN
 				END AS OddsSpread
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-			WHERE c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22')
+			WHERE c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'UUSL')
 				AND c.WinLostDate >= @Yesterday
 				AND brng.statusID NOT IN (0, 1)
 			GROUP BY
@@ -510,7 +513,7 @@ BEGIN
 			,Username = b.username
 			,SportType = CASE
 							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 
-								'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'L22', 'WE') THEN b.matchid
+								'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'L22', 'WE', 'UUSL') THEN b.matchid
 							WHEN c.Product = 'Keno' THEN 202
 							WHEN c.Product = 'AllBet' THEN 211 -- AllBet
 							WHEN c.Product = 'VB' THEN 212 -- Macau Games
@@ -717,7 +720,7 @@ BEGIN
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
-		WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE')
+		WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL')
 			OR c.WinLostDate < @Yesterday
 
 		-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
@@ -797,7 +800,7 @@ BEGIN
 			,CustId = b.custid
 			,Username = b.username
 			,SportType = CASE
-							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'L22', 'WE') THEN b.matchid
+							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'L22', 'WE', 'UUSL') THEN b.matchid
 							WHEN c.Product = 'AllBet' THEN 211 -- AllBet
 							WHEN c.Product = 'VB' THEN 212 -- Macau Games
 							WHEN c.Product = 'PP' THEN 248 -- Pragmatic Casino
@@ -870,7 +873,7 @@ BEGIN
 		FROM @Tickets AS c
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.TransId
 			INNER JOIN @temp_bettransX AS x ON x.RefNo = c.TransId
-		WHERE c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE')
+		WHERE c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL')
 			AND c.WinLostDate >= @Yesterday
 
 		-- Virtual Sports Racing
