@@ -72,6 +72,7 @@ AS
 		- 20231226@Razor: Support Live22 [Redmine: #197609]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
+		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 
 	Parameters:
 		- @TransType
@@ -96,7 +97,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
+	WHERE ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)

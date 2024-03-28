@@ -46,6 +46,7 @@ AS
 		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
 		- 20240222@Razor: Support Project 777 - return SpecialPlatfrom [Redmine: #194591]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
+		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 */
 
 BEGIN
@@ -913,10 +914,10 @@ BEGIN
 		END
 
 		-- RNG Casino Single Wallet, Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, RNG War, PG Soft, Joker, MaxGame, CG, VGaming
-		-- Habanero, AdvantPlay, AdvantPlay Mini, SEAL, MG RNGCasino, Jili, Live22
+		-- Habanero, AdvantPlay, AdvantPlay Mini, SEAL, MG RNGCasino, Jili, Live22, UU Slots
 		IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
 					WHERE Bettype = @BetType
-						AND (ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
+						AND (ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
 							OR (ProductID = 6 AND SubProduct <> '')))
 		BEGIN
 			IF @WinLostDate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)		-- yesterday and later
@@ -1004,7 +1005,7 @@ BEGIN
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
+					AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
 						OR (s.ProductId = 6 AND s.SubProduct <> ''))
 					AND brng.statusid IN (0, 1)
 				GROUP BY
@@ -1116,7 +1117,7 @@ BEGIN
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
+					AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
 						OR (s.ProductId = 6 AND s.SubProduct <> ''))
 					AND brng.statusid NOT IN (0, 1)
 				GROUP BY
@@ -1224,7 +1225,7 @@ BEGIN
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
+					AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
 						OR (s.ProductId = 6 AND s.SubProduct <> ''))
 			END
 		END
@@ -1824,10 +1825,10 @@ BEGIN
 								AND a.site IN (SELECT Site FROM @DeniedSite))
 	BEGIN
 		-- RNG Casino Single Wallet, Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, RNG War, PG Soft, Joker, MaxGame, Habanero, CG, VGaming
-		-- AdvantPlay, AdvantPlay Mini, SEAL, MG RNGCasino, Jili, Live22
+		-- AdvantPlay, AdvantPlay Mini, SEAL, MG RNGCasino, Jili, Live22, UU Slots
 		IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
 					WHERE Bettype = @BetType
-						AND (ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
+						AND (ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
 							OR (ProductID = 6 AND SubProduct <> '')))
 		BEGIN
 			INSERT INTO @Data
@@ -1922,7 +1923,7 @@ BEGIN
 			FROM dbo.bettransRnG AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 			WHERE b.transid = @TransId
-				AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
+				AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
 					OR (s.ProductId = 6 AND s.SubProduct <> ''))
 		END
 	END

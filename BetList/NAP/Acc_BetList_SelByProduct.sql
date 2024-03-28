@@ -101,6 +101,7 @@ AS
 		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
 		- 20240222@Razor: Fix to call sp version on function [Redmine: #197160]
 		- 20240325@Razor: Enhance search TranId3rd/BetId3rd/GameId3rd [Redmine: #201962]
+		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 */
 
 BEGIN
@@ -523,8 +524,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -907,8 +908,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 79)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
