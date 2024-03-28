@@ -41,19 +41,4 @@ BEGIN
 		SELECT @TransDesc as TransDesc 
 
 END 
-
-
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultAGSel] TO [bodbDownlineNet]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultAGSel] TO [bodbExtAccNet]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultAGSel] TO [bodbDownlineNetView]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultAGSel] TO [bodbAdminNet]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultAGSel] TO [bodbLicenseeNet]
 GO
-
-
- 

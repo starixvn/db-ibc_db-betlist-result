@@ -101,11 +101,3 @@ BEGIN
 END;
 
 
-
-
- 
-GO
-GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResult] TO [bodbLicenseeNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Lrf_BetList_SelMatchResult] TO [vnteam]
-GO

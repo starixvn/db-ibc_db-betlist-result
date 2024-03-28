@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBACC-bodb02" executers="bodbLicenseeNet,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_TicketResult_BetBuilder]
 	@MatchId	INT,
@@ -177,9 +177,4 @@ BEGIN
 		WHERE MatchId = @MatchId AND MarketId = @MarketId
 	END
 END
-GO
-
-
-
-GRANT EXECUTE ON [dbo].[Lrf_TicketResult_BetBuilder] TO [bodbLicenseeNet]
 GO

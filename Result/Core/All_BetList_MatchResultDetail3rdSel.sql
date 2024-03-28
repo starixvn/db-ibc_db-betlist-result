@@ -114,19 +114,4 @@ BEGIN
 	END
 
 END
-
-
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultDetail3rdSel] TO [bodbDownlineNet]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultDetail3rdSel] TO [bodbExtAccNet]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultDetail3rdSel] TO [bodbDownlineNetView]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultDetail3rdSel] TO [bodbAdminNet]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultDetail3rdSel] TO [bodbLicenseeNet]
 GO
-
-
- 

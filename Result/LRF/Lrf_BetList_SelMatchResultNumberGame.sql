@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbLicenseeNet,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBEXT-bodb02" executers="wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResultNumberGame]
 	@MatchId INT
@@ -70,8 +70,4 @@ BEGIN
 		ORDER BY b.Seq 
 	END
 END
-
-
-GO
-GRANT EXECUTE ON [dbo].[Lrf_BetList_SelMatchResultNumberGame] TO [bodbLicenseeNet] AS [dbo]
 GO

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBARC-bodb_Archive" executers="bodbLicenseeNet,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBARC-bodb_Archive" executers="wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL_Old]
 	@AgentList		VARCHAR(MAX),

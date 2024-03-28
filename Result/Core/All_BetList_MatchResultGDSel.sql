@@ -49,19 +49,4 @@ BEGIN
 		WHERE bg.refno = @TransId
 	END
 END
-
-
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultGDSel] TO [bodbDownlineNet]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultGDSel] TO [bodbExtAccNet]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultGDSel] TO [bodbDownlineNetView]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultGDSel] TO [bodbAdminNet]
-GO 
-GRANT EXECUTE ON [dbo].[All_BetList_MatchResultGDSel] TO [bodbLicenseeNet]
 GO
-
-
- 
