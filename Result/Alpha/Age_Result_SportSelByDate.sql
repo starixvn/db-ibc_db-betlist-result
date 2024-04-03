@@ -51,6 +51,8 @@ AS
 		- 20231127@Kos: Hide Saba Virtual Sports leagues [Redmine: #197469]
 		- 20231127@Razor: Hide Redcat88 league of Esports [Redmine: #198337]
 		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
+		- 20240403@Razor: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #203378]
+					- Show Saba Ice Hockey, Criket, Tennis
 */
 
 BEGIN
@@ -146,7 +148,8 @@ BEGIN
 										AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
 										AND (l.LeagueGroupID IS NULL
 											OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
-												AND l.LeagueGroupID <> 215)) --Redcat88 of Esports
+												AND l.LeagueGroupID <> 215) --Redcat88 of Esports
+											OR l.sporttype NOT IN (1, 2, 43))
 									)
 
 					UNION ALL
@@ -262,7 +265,8 @@ BEGIN
 											AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
 											AND (l.LeagueGroupID IS NULL
 												OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
-													AND l.LeagueGroupID <> 215)) -- Redcat88 of Esports
+													AND l.LeagueGroupID <> 215) -- Redcat88 of Esports
+												OR l.sporttype NOT IN (1, 2, 43))
 									)
 
 					UNION ALL
