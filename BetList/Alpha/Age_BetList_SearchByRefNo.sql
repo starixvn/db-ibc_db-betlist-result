@@ -31,6 +31,7 @@ AS
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
+		- 20240417@Razor: Support Saba xD [Redmine: #203371]
 
 */
 
@@ -263,6 +264,7 @@ BEGIN
 						WHEN @ProductID = 78 THEN 'UUSL'		-- UU Slots
 						WHEN @ProductID = 79 THEN 'L22'			-- Live22
 						WHEN @ProductID = 80 THEN 'WE'			-- WE
+						WHEN @ProductID = 86 THEN 'SNG'			-- Saba xD
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1138,6 +1140,7 @@ BEGIN
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
 						WHEN @ProductID = 78 THEN 'UUSL'		-- UU Slots
 						WHEN @ProductId = 79 THEN 'L22'			-- Live22
+						WHEN @ProductId = 86 THEN 'SNG'			-- Saba xD
 						ELSE 'Unknown'
 					END
 
