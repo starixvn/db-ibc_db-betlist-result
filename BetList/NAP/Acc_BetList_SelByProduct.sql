@@ -103,6 +103,7 @@ AS
 		- 20240325@Razor: Enhance search TranId3rd/BetId3rd/GameId3rd [Redmine: #201962]
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
+		- 20240417@Razor: Support Saba xD [Redmine: #203371]
 */
 
 BEGIN
@@ -525,8 +526,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -909,8 +910,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN

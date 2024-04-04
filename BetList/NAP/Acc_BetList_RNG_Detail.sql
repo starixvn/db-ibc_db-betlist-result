@@ -73,6 +73,7 @@ AS
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240207@Kos: Return GameId3rd to support Live22 Result [Redmine: #197609]
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
+		- 20240403@Razor: Support Saba xD [Redmine: #203371]
 
 	Parameters:
 		- @TransType
@@ -87,7 +88,7 @@ BEGIN
 
 	-- Get Sport Bettype Matrix --
 	-- Support RNG Casino Single Wallet, Voidbridge, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, CG, AdvantPlay
-	-- AdvantPlay Mini
+	-- AdvantPlay Mini, Live22, Saba xD
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
@@ -97,7 +98,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79)
+	WHERE ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
 		OR (ProductID = 6 AND SubProduct <> '')
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
