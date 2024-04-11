@@ -74,6 +74,7 @@ AS
 					- Add new input param @ProductList VARCHAR(500)
 		- 20240326@Kos: Show Half Won / Half Lost [Redmine: 201484]
 		- 20240328@Kos: Return LeagueGroupId to hide Saba text [RedmineID: #201283]
+		- 20240411@Kos: Fix BA issue [RedmineID: #199843]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -196,7 +197,8 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
-		OddsSpread			MONEY
+		OddsSpread			MONEY,
+		ProductId			TINYINT
 	)
 
 	CREATE TABLE #ExchangeRate (
@@ -306,7 +308,8 @@ BEGIN
 			END AS OriginalBetType,
 			0 AS WalletType,
 			0 AS RefCode,
-			ISNULL(b.oddsspread, 0) AS OddsSpread
+			ISNULL(b.oddsspread, 0) AS OddsSpread,
+			sbt.ProductId
 		FROM
 			dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS ta ON ta.CustId = b.recommend
@@ -378,7 +381,8 @@ BEGIN
 			END AS OriginalBetType,
 			0 AS WalletType,
 			0 AS RefCode,
-			ISNULL(b.oddsspread, 0) AS OddsSpread
+			ISNULL(b.oddsspread, 0) AS OddsSpread,
+			sbt.ProductId
 		FROM
 			dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS ta ON ta.CustId = b.recommend
@@ -395,10 +399,10 @@ BEGIN
 
 	DELETE #Data
 	WHERE (@ShowSB = 0
-			AND BetType IN (9, 29)
+			AND ProductId = 1
 			AND BATransId IS NULL)
 		OR (@ShowBA = 0
-			AND BetType IN (9, 29)
+			AND ProductId = 1
 			AND BATransId IS NOT NULL)
 
 	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
