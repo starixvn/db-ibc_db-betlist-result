@@ -95,6 +95,7 @@ AS
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
 					- Add new input param @FullCustomerClass VARCHAR(MAX)
+		- 20240411@Kos: Hotfix - show detail ticket in bettrans14 range [RedmineID: #203793]
 */
 
 BEGIN
@@ -2020,7 +2021,6 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'VS3', 'LG', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.RefTable IN (1, 2) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = -1,
