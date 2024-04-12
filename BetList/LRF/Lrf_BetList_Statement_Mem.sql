@@ -91,6 +91,7 @@ AS
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 		- 20240328@Kos: Return LeagueGroupId to hide Saba text [RedmineID: #201283]
+		- 20240412@Kos: Support Gaming API [Redmine: 203734]
 */
 
 BEGIN
@@ -1293,7 +1294,8 @@ BEGIN
 						ShowTime = '',
 						BetCheck = CASE
 										WHEN b.Product IN ('Keno') THEN ISNULL(b.Custom2, '')
-										WHEN b.Product IN ('VRG', 'H5LG', 'SLT') THEN b.Gameid3rd
+										WHEN b.Product IN ('VRG', 'SLT') THEN b.TranId3rd
+										WHEN b.Product IN ('H5LG') THEN b.Gameid3rd
 										WHEN b.Product IN ('VS3') THEN ISNULL(b.Custom1, '')
 										ELSE ''
 									END,

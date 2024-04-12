@@ -136,6 +136,7 @@ AS
 		- 20231227@Kos: Hotfix - cannot view result [Redmine: 198900]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
+		- 20240412@Kos: Support Gaming API [Redmine: 203734]
 */
 
 BEGIN
@@ -933,7 +934,8 @@ BEGIN
 				BetCheck = CASE
 								WHEN b.Product IN ('Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('Keno') THEN ISNULL(b.custom2, '')
-								WHEN b.Product IN ('VRG', 'H5LG', 'SLT') THEN ISNULL(b.Gameid3rd, '')
+								WHEN b.Product IN ('VRG', 'SLT') THEN ISNULL(b.TranId3rd, '')
+								WHEN b.Product IN ('H5LG') THEN ISNULL(b.Gameid3rd, '')
 								WHEN b.Product IN ('SB') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('VS3') THEN ISNULL(b.custom1, '')
 								ELSE ''

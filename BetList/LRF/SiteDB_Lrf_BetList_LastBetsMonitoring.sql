@@ -39,6 +39,7 @@ AS
 		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
 					- Add new input param @FullCustomerClass VARCHAR(MAX)
 		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
+		- 20240412@Kos: Support Gaming API [Redmine: 203734]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -391,7 +392,7 @@ BEGIN
 				b.ip,
 				b.currency AS CurrencyId,
 				0 AS SpecialLevel,
-				ISNULL(b.GameId3rd, '') AS BetCheck,
+				ISNULL(b.TranId3rd, '') AS BetCheck,
 				ISNULL(b.transdesc, '') AS TransDesc,
 				-1 AS BetdaqId,
 				'' AS ExtraInfo,

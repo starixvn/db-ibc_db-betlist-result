@@ -38,6 +38,7 @@ AS
 		- 20231227@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20231228@Kos: Support Saba Reward [Redmine: 196882]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20240412@Kos: Support Gaming API [Redmine: 203734]
 */
 
 BEGIN
@@ -468,7 +469,8 @@ BEGIN
 			'' AS ShowTime,
 			CASE
 				WHEN @Product IN ('Keno') THEN ISNULL(b.custom2, '')
-				WHEN @Product IN ('VRG', 'H5LG', 'SLT') THEN b.Gameid3rd
+				WHEN @Product IN ('VRG', 'SLT') THEN b.TranId3rd
+				WHEN @Product IN ('H5LG') THEN b.Gameid3rd
 				WHEN @Product IN ('VS3') THEN ISNULL(b.custom1, '')
 				ELSE ''
 			END AS BetCheck,

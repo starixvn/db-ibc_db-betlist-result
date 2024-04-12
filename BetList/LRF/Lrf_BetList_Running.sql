@@ -76,6 +76,7 @@ AS
 		- 20231227@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
+		- 20240412@Kos: Support Gaming API [Redmine: 203734]
 */
 
 BEGIN
@@ -1163,7 +1164,8 @@ BEGIN
 				BetCheck = CASE
 								WHEN b.Product IN ('SB', 'Parlay', 'ParlayVS2') THEN ISNULL(b.betcheck, '')
 								WHEN b.Product IN ('Keno') THEN ISNULL(b.custom2, '')
-								WHEN b.Product IN ('VRG', 'H5LG', 'SLT') THEN ISNULL(b.Gameid3rd, '')
+								WHEN b.Product IN ('VRG', 'SLT') THEN ISNULL(b.TranId3rd, '')
+								WHEN b.Product IN ('H5LG') THEN ISNULL(b.Gameid3rd, '')
 								WHEN b.Product IN ('VS3') THEN ISNULL(b.Custom1, '')
 								ELSE ''
 							END,
