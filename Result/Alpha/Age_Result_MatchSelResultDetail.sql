@@ -36,6 +36,7 @@ AS
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
+		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
 */
 
 BEGIN
@@ -86,7 +87,9 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
-			ISNULL(mr.NoHTScore, 0) AS NoHTScore
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
@@ -231,7 +234,9 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
-			ISNULL(mr.NoHTScore, 0) AS NoHTScore
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'

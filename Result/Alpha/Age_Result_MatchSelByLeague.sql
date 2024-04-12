@@ -63,6 +63,7 @@ AS
 		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
 		- 20240403@Razor: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #203378]
 				- Show Saba Ice Hockey, Criket, Tennis
+		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
 */
 
 BEGIN
@@ -97,7 +98,9 @@ BEGIN
 		IsHTCal				BIT,
 		Calculate			BIT,
 		SettlementStatus	TINYINT,
-		NoHTScore			BIT)
+		NoHTScore			BIT,
+		MainType			TINYINT,
+		SubType				SMALLINT)
 
 	IF @SportType <> 5
 	BEGIN
@@ -125,7 +128,9 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
-			ISNULL(mr.NoHTScore, 0) AS NoHTScore
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType
 		FROM
 			dbo.league AS l WITH (NOLOCK)
 			INNER JOIN
@@ -280,7 +285,9 @@ BEGIN
 				ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 				ISNULL(mr.calculate, 0) AS calculate,
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
-				ISNULL(mr.NoHTScore, 0) AS NoHTScore
+				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+				ISNULL(mr.MainType, 0) AS MainType,
+				ISNULL(mr.SubType, 0) AS SubType
 			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN (
 						SELECT m.sporttype
@@ -360,7 +367,9 @@ BEGIN
 				ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 				ISNULL(mr.calculate, 0) AS calculate,
 				0 AS SettlementStatus,
-				ISNULL(mr.NoHTScore, 0) AS NoHTScore
+				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+				ISNULL(mr.MainType, 0) AS MainType,
+				ISNULL(mr.SubType, 0) AS SubType
 			FROM dbo.league AS l WITH (NOLOCK)
 				INNER JOIN (
 						SELECT m.sporttype
