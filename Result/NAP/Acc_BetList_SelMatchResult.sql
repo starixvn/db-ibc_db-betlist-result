@@ -59,6 +59,7 @@ AS
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
 		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
+		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
 */
 
 BEGIN
@@ -150,7 +151,9 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
-			m.showtime
+			m.showtime,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
@@ -331,7 +334,9 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
-			m.showtime
+			m.showtime,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
@@ -513,7 +518,9 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
-			m.showtime
+			m.showtime,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType
 		FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_bk AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
