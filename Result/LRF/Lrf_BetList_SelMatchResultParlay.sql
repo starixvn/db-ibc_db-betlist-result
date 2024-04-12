@@ -42,6 +42,7 @@ AS
 		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
 		- 20231024@Kos: Support Basketball Instant Settlement [Redmine: #194323]
 		- 20231221@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
+		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
 */
 
 BEGIN
@@ -84,6 +85,8 @@ BEGIN
 		Calculate			BIT,
 		SettlementStatus	TINYINT,
 		NoHTScore			BIT,
+		MainType			TINYINT,
+		SubType				SMALLINT,
 		BetType				SMALLINT,
 		BetCheck			VARCHAR(50),
 		TransDesc			NVARCHAR(1000)
@@ -223,6 +226,8 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType,
 			bm.BetType,
 			bm.BetCheck,
 			bm.TransDesc
@@ -421,6 +426,8 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType,
 			bm.BetType,
 			bm.BetCheck,
 			bm.TransDesc
@@ -618,6 +625,8 @@ BEGIN
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType,
 			bm.BetType,
 			bm.BetCheck,
 			bm.TransDesc

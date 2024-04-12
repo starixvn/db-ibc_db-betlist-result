@@ -38,6 +38,7 @@ AS
 		- 20220623@Kos: Support more map for E-Sports [Redmine: #174251]
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
+		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
 */
 
 BEGIN
@@ -91,7 +92,9 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
-			ISNULL(mr.NoHTScore, 0) AS NoHTScore
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
@@ -232,7 +235,9 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS calculate,
 			0 AS SettlementStatus,
-			ISNULL(mr.NoHTScore, 0) AS NoHTScore
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.matchID = m.matchid AND r.ResourceId = '00'

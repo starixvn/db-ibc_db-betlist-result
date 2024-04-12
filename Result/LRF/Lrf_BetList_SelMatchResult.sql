@@ -60,6 +60,7 @@ AS
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
 		- 20231221@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
+		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
 
 		*******************
 		sample test case:
@@ -165,7 +166,9 @@ BEGIN
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				ISNULL(m.showtime, '') AS showtime,
 				m.homeid2,
-				ISNULL(mr.NoHTScore, 0) AS NoHTScore
+				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+				ISNULL(mr.MainType, 0) AS MainType,
+				ISNULL(mr.SubType, 0) AS SubType
 			FROM dbo.match AS m WITH (NOLOCK)
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
@@ -350,7 +353,9 @@ BEGIN
 				0 AS SettlementStatus,
 				ISNULL(m.showtime, '') AS showtime,
 				m.homeid2,
-				ISNULL(mr.NoHTScore, 0) AS NoHTScore
+				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+				ISNULL(mr.MainType, 0) AS MainType,
+				ISNULL(mr.SubType, 0) AS SubType
 			FROM dbo.match14 AS m WITH (NOLOCK)
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
@@ -535,7 +540,9 @@ BEGIN
 				0 AS SettlementStatus,
 				ISNULL(m.showtime, '') AS showtime,
 				m.homeid2,
-				ISNULL(mr.NoHTScore, 0) AS NoHTScore
+				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+				ISNULL(mr.MainType, 0) AS MainType,
+				ISNULL(mr.SubType, 0) AS SubType
 			FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 				LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
