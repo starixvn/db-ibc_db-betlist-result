@@ -145,6 +145,7 @@ AS
 		- 20240228@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
+		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 */
 
 BEGIN
@@ -1024,7 +1025,8 @@ BEGIN
 							WHEN c.Product IN ('MG') THEN ISNULL(m.showtime, '')
 							ELSE '' END
 			,BetCheck = CASE 
-							WHEN c.Product IN ('VRG', 'H5LG', 'SLT') THEN b.Gameid3rd
+							WHEN c.Product IN ('H5LG') THEN b.Gameid3rd
+							WHEN c.Product IN ('VRG', 'SLT') THEN b.TranId3rd
 							WHEN c.Product IN ('Keno') THEN ISNULL(b.custom2, '')
 							WHEN c.Product IN ('VS3') THEN ISNULL(b.custom1, '')
 							ELSE '' END
