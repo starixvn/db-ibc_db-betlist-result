@@ -166,6 +166,7 @@ AS
 		- 20240222@Razor: Support Project 777 - return SpecialPlatfrom [Redmine: #194591]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
+		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 */
 
 BEGIN
@@ -300,7 +301,7 @@ BEGIN
 		FinalHomeScore		INT,
 		FinalAwayScore		INT,
 		LeagueId			INT,
-		SportType			SMALLINT,
+		SportType			INT,
 		Ip					VARCHAR(45),
 		MatchId				INT,
 		IsNeutral			BIT,
@@ -1103,7 +1104,8 @@ BEGIN
 					'' AS showtime,
 					b.winlostdate,
 					CASE
-						WHEN s.ProductID IN (3, 38, 63) THEN b.GameID3rd
+						WHEN s.ProductID IN (3) THEN b.GameID3rd
+						WHEN s.ProductID IN (38, 63) THEN b.TranId3rd
 						WHEN s.ProductId = 8 THEN ISNULL(b.custom2, '')
 						WHEN s.ProductId = 49 THEN ISNULL(b.custom1, '')
 						ELSE ''

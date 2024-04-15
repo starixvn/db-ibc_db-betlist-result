@@ -32,6 +32,7 @@ AS
 		- 20240118@Razor: HF of SEAL Entertainment [Redmine: #199994]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
+		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 
 	Param's Explanation:
 		+ @TransType:
@@ -1405,7 +1406,8 @@ BEGIN
 					0 AS swinlost,
 					b.winlostdate,
 					CASE
-						WHEN s.ProductId IN (3, 38, 63) THEN b.GameID3rd
+						WHEN s.ProductId IN (3) THEN b.GameID3rd
+						WHEN s.ProductId IN (38, 63) THEN b.TranId3rd
 						WHEN s.ProductId = 8 THEN ISNULL(b.custom2, '')
 						WHEN s.ProductId = 49 THEN ISNULL(b.custom1, '')
 						ELSE ''

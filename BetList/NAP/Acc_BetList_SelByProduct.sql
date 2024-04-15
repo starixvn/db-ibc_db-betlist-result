@@ -102,6 +102,7 @@ AS
 		- 20240222@Razor: Fix to call sp version on function [Redmine: #197160]
 		- 20240325@Razor: Enhance search TranId3rd/BetId3rd/GameId3rd [Redmine: #201962]
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
+		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 */
 
 BEGIN
@@ -156,7 +157,7 @@ BEGIN
 		LiveHomeScore	INT,
 		LiveAwayScore	INT,
 		LeagueId		INT,
-		SportType		SMALLINT,
+		SportType		INT,
 		Ip				VARCHAR(45),
 		MatchId			INT,
 		WinLost			MONEY,
@@ -288,7 +289,7 @@ BEGIN
 						0 AS MWinLost,
 						0 AS SWinLost,
 						b.winlostdate,
-						b.GameID3rd AS BetCheck,
+						b.TranId3rd AS BetCheck,
 						CASE
 							WHEN s.ProductID IN (38, 63) THEN ISNULL(b.transdesc, '')
 							ELSE ''
@@ -302,7 +303,7 @@ BEGIN
 						b.DeviceType
 					FROM dbo.translog AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
-						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.Gameid3rd, '|$|') ORDER BY id DESC) AS t3rd
+						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
 					WHERE b.custid = @CustId
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND b.statusID IN (0, 1)

@@ -54,6 +54,7 @@ AS
 		- 20240118@Razor: HF of SEAL Entertainment [Redmine: #199994]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
+		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 */
 
 BEGIN
@@ -1135,7 +1136,8 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('VRG', 'H5LG', 'SLT') THEN b.Gameid3rd
+									WHEN b.Product IN ('H5LG') THEN b.Gameid3rd
+									WHEN b.Product IN ('VRG', 'SLT') THEN b.TranId3rd
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.custom2, '')
 									WHEN b.Product IN ('VS3') THEN ISNULL(b.custom1, '')
 									ELSE ''
