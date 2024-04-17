@@ -7,6 +7,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_RefNo_Mem]
 	@CustId				INT				= 0,
 	@Username			VARCHAR(50)		= '',
 	@ExcludeBettrans	BIT				= 0,
+	@ViewSabaCoins		BIT				= 0,
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
 	@BaseCurrency		VARCHAR(12)		= ''
@@ -97,6 +98,7 @@ AS
 		- 20231228@Kos: Support Saba Reward [Redmine: 196882]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20240412@Kos: Support Gaming API [Redmine: 203734]
+		- 20240417@Kos: Support Saba Coins [Redmine: 202281]
 */
 
 BEGIN
@@ -167,10 +169,17 @@ BEGIN
 			FROM dbo.Customer WITH (NOLOCK)
 			WHERE custid IN (SELECT TOP(1) CustId FROM @TempAg)
 
-			SELECT @CustId = c.custid
-			FROM dbo.Customer AS c WITH (NOLOCK)
-			WHERE c.username2 LIKE @Site + '$' + @Username
+			SELECT @CustId = custid
+			FROM dbo.Customer WITH (NOLOCK)
+			WHERE username2 LIKE @Site + '$' + @Username
 		END
+	END
+
+	IF @ViewSabaCoins = 1 AND @CustId <> 0
+	BEGIN
+		SELECT @CustId = custid
+		FROM dbo.Customer WITH (NOLOCK)
+		WHERE username2 = 'SabaCoins$' + CONVERT(VARCHAR(10), @CustId)
 	END
 
 	DECLARE @Data TABLE (
@@ -252,7 +261,8 @@ BEGIN
 		@RefTable		TINYINT,
 		@Product		VARCHAR(30),
 		@WhTicket		TINYINT		= 0,
-		@BonusTransId	BIGINT		= 0
+		@BonusTransId	BIGINT		= 0,
+		@MainCustId		INT			= 0
 
 	DECLARE @SabaRewardTicket TABLE (TransId BIGINT, WhTicket TINYINT)
 
@@ -394,12 +404,6 @@ BEGIN
 					END
 				END
 			END
-
-			IF @WhTicket > 0
-				AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
-			BEGIN
-				SET @WhTicket = 0
-			END
 		END
 		ELSE IF ISNULL(@TxId, '') <> '' AND @CustId <> 0
 		BEGIN
@@ -499,11 +503,32 @@ BEGIN
 									ELSE ''
 								END
 			END
+		END
 
-			IF @WhTicket > 0
+		IF @WhTicket > 0
+		BEGIN
+			IF @ViewSabaCoins = 0
 				AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
 			BEGIN
 				SET @WhTicket = 0
+			END
+			ELSE IF @ViewSabaCoins = 1
+			BEGIN
+				SELECT @MainCustId = CASE
+										WHEN CHARINDEX('SabaCoins$', username2) > 0
+											THEN CAST(SUBSTRING(username2, CHARINDEX('SabaCoins$', username2) + LEN('SabaCoins$'), LEN(username2)) AS INT)
+										ELSE 0
+									END
+				FROM dbo.Customer WITH (NOLOCK)
+				WHERE custid = @CustId
+
+				IF NOT EXISTS ( SELECT 1
+								FROM @TempAg AS ta
+									INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON ta.CustId = c.recommend AND ta.Currency = c.currency
+								WHERE c.custid = @MainCustId)
+				BEGIN
+					SET @WhTicket = 0
+				END
 			END
 		END
 	END
@@ -831,7 +856,7 @@ BEGIN
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
 				WHEN @RefTable IN (1, 2) THEN b.matchid
-				ELSE 0
+				ELSE b.matchid
 			END AS SportType,
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
@@ -1077,7 +1102,7 @@ BEGIN
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
 				WHEN @RefTable IN (1, 2) THEN b.matchid
-				ELSE 0
+				ELSE b.matchid
 			END AS SportType,
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
@@ -1287,7 +1312,7 @@ BEGIN
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @Product IN ('VR') THEN vr.SportType
 				WHEN @RefTable IN (1, 2) THEN b.matchid
-				ELSE 0
+				ELSE b.matchid
 			END AS SportType,
 			b.bettype,
 			ISNULL(b.betid, 0) AS BetId,
@@ -1525,130 +1550,148 @@ BEGIN
 	WHERE RefCode <> 0
 
 	-- BettransRnG tables
-	SET @WhTicket = 0
-	SET @ProductId = 0
-	SET @RefTable = 0
-	SET @CustId = @OriginalCustId
-
-	IF @CustId <> -1
+	IF @WhTicket = 0
 	BEGIN
-		IF @RefNo <> 0		-- Search by refno
+		SET @ProductId = 0
+		SET @RefTable = 0
+		SET @CustId = @OriginalCustId
+		SET @MainCustId = 0
+
+		IF @CustId <> -1
 		BEGIN
-			-- BettransRnG range
-			IF @WhTicket = 0 AND @ExcludeBettrans = 0
+			IF @RefNo <> 0		-- Search by refno
 			BEGIN
-				SELECT TOP(1)
-					@TransId = b.transid,
-					@CustId = b.custid,
-					@WinLostDate = b.winlostdate,
-					@Recommend = b.recommend,
-					@Currency = b.currency,
-					@BetType = b.gameID,
-					@ProductId = s.ProductID,
-					@EventType = s.EventType,
-					@RefTable = s.RefTable,
-					@WhTicket = 5		-- BettransRnG
-				FROM dbo.bettransRnG AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
-				WHERE b.transid = @RefNo
-					AND (b.custid = @CustId OR @CustId = 0)
-					AND b.winlostdate > @MoveBetsDay
-			END
+				-- BettransRnG range
+				IF @WhTicket = 0 AND @ExcludeBettrans = 0
+				BEGIN
+					SELECT TOP(1)
+						@TransId = b.transid,
+						@CustId = b.custid,
+						@WinLostDate = b.winlostdate,
+						@Recommend = b.recommend,
+						@Currency = b.currency,
+						@BetType = b.gameID,
+						@ProductId = s.ProductID,
+						@EventType = s.EventType,
+						@RefTable = s.RefTable,
+						@WhTicket = 5		-- BettransRnG
+					FROM dbo.bettransRnG AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
+					WHERE b.transid = @RefNo
+						AND (b.custid = @CustId OR @CustId = 0)
+						AND b.winlostdate > @MoveBetsDay
+				END
 
-			-- BettransRnG14 range
-			IF @WhTicket = 0
-			BEGIN
-				SELECT TOP(1)
-					@TransId = b.transid,
-					@CustId = b.custid,
-					@WinLostDate = b.winlostdate,
-					@Recommend = b.recommend,
-					@Currency = b.currency,
-					@BetType = b.gameID,
-					@ProductId = s.ProductID,
-					@EventType = s.EventType,
-					@RefTable = s.RefTable,
-					@WhTicket = 6		-- BettransRnG14
-				FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
-				WHERE b.transid = @RefNo
-					AND (b.custid = @CustId OR @CustId = 0)
-					AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
-			END
+				-- BettransRnG14 range
+				IF @WhTicket = 0
+				BEGIN
+					SELECT TOP(1)
+						@TransId = b.transid,
+						@CustId = b.custid,
+						@WinLostDate = b.winlostdate,
+						@Recommend = b.recommend,
+						@Currency = b.currency,
+						@BetType = b.gameID,
+						@ProductId = s.ProductID,
+						@EventType = s.EventType,
+						@RefTable = s.RefTable,
+						@WhTicket = 6		-- BettransRnG14
+					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
+					WHERE b.transid = @RefNo
+						AND (b.custid = @CustId OR @CustId = 0)
+						AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
+				END
 
-			-- BettransRnG_bk range
-			IF @WhTicket = 0 AND @CustId <> 0
+				-- BettransRnG_bk range
+				IF @WhTicket = 0 AND @CustId <> 0
+				BEGIN
+					SELECT TOP(1)
+						@TransId = b.transid,
+						@CustId = b.custid,
+						@WinLostDate = b.winlostdate,
+						@Recommend = b.recommend,
+						@Currency = b.currency,
+						@BetType = b.gameID,
+						@ProductId = s.ProductID,
+						@EventType = s.EventType,
+						@RefTable = s.RefTable,
+						@WhTicket = 7		-- BettransRnG_bk
+					FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
+					WHERE b.transid = @RefNo AND b.custid = @CustId
+				END
+			END
+			ELSE IF ISNULL(@TxId, '') <> '' AND @CustId <> 0
 			BEGIN
-				SELECT TOP(1)
-					@TransId = b.transid,
-					@CustId = b.custid,
-					@WinLostDate = b.winlostdate,
-					@Recommend = b.recommend,
-					@Currency = b.currency,
-					@BetType = b.gameID,
-					@ProductId = s.ProductID,
-					@EventType = s.EventType,
-					@RefTable = s.RefTable,
-					@WhTicket = 7		-- BettransRnG_bk
-				FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
-				WHERE b.transid = @RefNo AND b.custid = @CustId
+				-- BettransRnG range
+				IF @WhTicket = 0 AND @ExcludeBettrans = 0
+				BEGIN
+					SELECT TOP(1)
+						@TransId = b.transid,
+						@CustId = b.custid,
+						@WinLostDate = b.winlostdate,
+						@Recommend = b.recommend,
+						@Currency = b.currency,
+						@BetType = b.gameID,
+						@ProductId = s.ProductID,
+						@EventType = s.EventType,
+						@RefTable = s.RefTable,
+						@WhTicket = 5		-- BettransRnG
+					FROM dbo.bettransRnG AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
+					WHERE b.custid = @CustId
+						AND b.winlostdate > @MoveBetsDay
+						AND ISNULL(b.Additional, '') LIKE '%lt=' + @TxId + '%'
+				END
+
+				-- BettransRnG14 range
+				IF @WhTicket = 0
+				BEGIN
+					SELECT TOP(1)
+						@TransId = b.transid,
+						@CustId = b.custid,
+						@WinLostDate = b.winlostdate,
+						@Recommend = b.recommend,
+						@Currency = b.currency,
+						@BetType = b.gameID,
+						@ProductId = s.ProductID,
+						@EventType = s.EventType,
+						@RefTable = s.RefTable,
+						@WhTicket = 6		-- BettransRnG14
+					FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
+					WHERE b.custid = @CustId
+						AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
+						AND ISNULL(b.Additional, '') LIKE '%lt=' + @TxId + '%'
+				END
 			END
 
 			IF @WhTicket > 0
-				AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
 			BEGIN
-				SET @WhTicket = 0
-			END
-		END
-		ELSE IF ISNULL(@TxId, '') <> '' AND @CustId <> 0
-		BEGIN
-			-- BettransRnG range
-			IF @WhTicket = 0 AND @ExcludeBettrans = 0
-			BEGIN
-				SELECT TOP(1)
-					@TransId = b.transid,
-					@CustId = b.custid,
-					@WinLostDate = b.winlostdate,
-					@Recommend = b.recommend,
-					@Currency = b.currency,
-					@BetType = b.gameID,
-					@ProductId = s.ProductID,
-					@EventType = s.EventType,
-					@RefTable = s.RefTable,
-					@WhTicket = 5		-- BettransRnG
-				FROM dbo.bettransRnG AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
-				WHERE b.custid = @CustId
-					AND b.winlostdate > @MoveBetsDay
-					AND ISNULL(b.Additional, '') LIKE '%lt=' + @TxId + '%'
-			END
+				IF @ViewSabaCoins = 0
+					AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
+				BEGIN
+					SET @WhTicket = 0
+				END
+				ELSE IF @ViewSabaCoins = 1
+				BEGIN
+					SELECT @MainCustId = CASE
+											WHEN CHARINDEX('SabaCoins$', username2) > 0
+												THEN CAST(SUBSTRING(username2, CHARINDEX('SabaCoins$', username2) + LEN('SabaCoins$'), LEN(username2)) AS INT)
+											ELSE 0
+										END
+					FROM dbo.Customer WITH (NOLOCK)
+					WHERE custid = @CustId
 
-			-- BettransRnG14 range
-			IF @WhTicket = 0
-			BEGIN
-				SELECT TOP(1)
-					@TransId = b.transid,
-					@CustId = b.custid,
-					@WinLostDate = b.winlostdate,
-					@Recommend = b.recommend,
-					@Currency = b.currency,
-					@BetType = b.gameID,
-					@ProductId = s.ProductID,
-					@EventType = s.EventType,
-					@RefTable = s.RefTable,
-					@WhTicket = 6		-- BettransRnG14
-				FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
-				WHERE b.custid = @CustId
-					AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
-					AND ISNULL(b.Additional, '') LIKE '%lt=' + @TxId + '%'
-			END
-
-			IF @WhTicket > 0
-				AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
-			BEGIN
-				SET @WhTicket = 0
+					IF NOT EXISTS ( SELECT 1
+									FROM @TempAg AS ta
+										INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON ta.CustId = c.recommend AND ta.Currency = c.currency
+									WHERE c.custid = @MainCustId)
+					BEGIN
+						SET @WhTicket = 0
+					END
+				END
 			END
 		END
 	END
@@ -1939,78 +1982,102 @@ BEGIN
 	END
 
 	-- BettransLC tables
-	SET @WhTicket = 0
-	SET @ProductId = 0
-	SET @RefTable = 0
-	SET @CustId = @OriginalCustId
-
-	IF @CustId <> -1 AND @RefNo <> 0		-- Search by refno
+	IF @WhTicket = 0
 	BEGIN
-		-- BettransLC range
-		IF @WhTicket = 0 AND @ExcludeBettrans = 0
-		BEGIN
-			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = b.recommend,
-				@Currency = b.currency,
-				@BetType = b.gameID,
-				@ProductId = s.ProductID,
-				@EventType = s.EventType,
-				@RefTable = s.RefTable,
-				@WhTicket = 8		-- bettransLC
-			FROM dbo.bettransLC AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
-			WHERE b.transid = @RefNo
-				AND (b.custid = @CustId OR @CustId = 0)
-				AND b.winlostdate > @MoveBetsDay
-		END
+		SET @ProductId = 0
+		SET @RefTable = 0
+		SET @CustId = @OriginalCustId
+		SET @MainCustId = 0
 
-		-- BettransLC14 range
-		IF @WhTicket = 0
+		IF @CustId <> -1 AND @RefNo <> 0		-- Search by refno
 		BEGIN
-			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = b.recommend,
-				@Currency = b.currency,
-				@BetType = b.gameID,
-				@ProductId = s.ProductID,
-				@EventType = s.EventType,
-				@RefTable = s.RefTable,
-				@WhTicket = 9		-- bettransLC14
-			FROM dbo.bettransLC14 AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
-			WHERE b.transid = @RefNo
-				AND (b.custid = @CustId OR @CustId = 0)
-				AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
-		END
+			-- BettransLC range
+			IF @WhTicket = 0 AND @ExcludeBettrans = 0
+			BEGIN
+				SELECT TOP(1)
+					@TransId = b.transid,
+					@CustId = b.custid,
+					@WinLostDate = b.winlostdate,
+					@Recommend = b.recommend,
+					@Currency = b.currency,
+					@BetType = b.gameID,
+					@ProductId = s.ProductID,
+					@EventType = s.EventType,
+					@RefTable = s.RefTable,
+					@WhTicket = 8		-- bettransLC
+				FROM dbo.bettransLC AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
+				WHERE b.transid = @RefNo
+					AND (b.custid = @CustId OR @CustId = 0)
+					AND b.winlostdate > @MoveBetsDay
+			END
 
-		-- BettransLC_bk range
-		IF @WhTicket = 0 AND @CustId <> 0
-		BEGIN
-			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = b.recommend,
-				@Currency = b.currency,
-				@BetType = b.gameID,
-				@ProductId = s.ProductID,
-				@EventType = s.EventType,
-				@RefTable = s.RefTable,
-				@WhTicket = 10		-- bettransLC_bk
-			FROM bodb_Archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
-			WHERE b.transid = @RefNo AND b.custid = @CustId
-		END
+			-- BettransLC14 range
+			IF @WhTicket = 0
+			BEGIN
+				SELECT TOP(1)
+					@TransId = b.transid,
+					@CustId = b.custid,
+					@WinLostDate = b.winlostdate,
+					@Recommend = b.recommend,
+					@Currency = b.currency,
+					@BetType = b.gameID,
+					@ProductId = s.ProductID,
+					@EventType = s.EventType,
+					@RefTable = s.RefTable,
+					@WhTicket = 9		-- bettransLC14
+				FROM dbo.bettransLC14 AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
+				WHERE b.transid = @RefNo
+					AND (b.custid = @CustId OR @CustId = 0)
+					AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
+			END
 
-		IF @WhTicket > 0
-			AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
-		BEGIN
-			SET @WhTicket = 0
+			-- BettransLC_bk range
+			IF @WhTicket = 0 AND @CustId <> 0
+			BEGIN
+				SELECT TOP(1)
+					@TransId = b.transid,
+					@CustId = b.custid,
+					@WinLostDate = b.winlostdate,
+					@Recommend = b.recommend,
+					@Currency = b.currency,
+					@BetType = b.gameID,
+					@ProductId = s.ProductID,
+					@EventType = s.EventType,
+					@RefTable = s.RefTable,
+					@WhTicket = 10		-- bettransLC_bk
+				FROM bodb_Archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
+				WHERE b.transid = @RefNo AND b.custid = @CustId
+			END
+
+			IF @WhTicket > 0
+			BEGIN
+				IF @ViewSabaCoins = 0
+					AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
+				BEGIN
+					SET @WhTicket = 0
+				END
+				ELSE IF @ViewSabaCoins = 1
+				BEGIN
+					SELECT @MainCustId = CASE
+											WHEN CHARINDEX('SabaCoins$', username2) > 0
+												THEN CAST(SUBSTRING(username2, CHARINDEX('SabaCoins$', username2) + LEN('SabaCoins$'), LEN(username2)) AS INT)
+											ELSE 0
+										END
+					FROM dbo.Customer WITH (NOLOCK)
+					WHERE custid = @CustId
+
+					IF NOT EXISTS ( SELECT 1
+									FROM @TempAg AS ta
+										INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON ta.CustId = c.recommend AND ta.Currency = c.currency
+									WHERE c.custid = @MainCustId)
+					BEGIN
+						SET @WhTicket = 0
+					END
+				END
+			END
 		END
 	END
 
@@ -2235,78 +2302,102 @@ BEGIN
 	END
 
 	-- Bettransg tables
-	SET @WhTicket = 0
-	SET @ProductId = 0
-	SET @CustId = @OriginalCustId
-
-	IF @CustId <> -1 AND @RefNo <> 0		-- Search by refno
+	IF @WhTicket = 0
 	BEGIN
-		-- Bettransg range
-		IF @WhTicket = 0 AND @ExcludeBettrans = 0
-		BEGIN
-			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = blc.recommend,
-				@Currency = blc.currency,
-				@BetType = b.bettype,
-				@ProductId = s.ProductID,
-				@EventType = s.EventType,
-				@WhTicket = 11		-- bettransg
-			FROM dbo.bettransg AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.bettype = b.bettype
-				INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON b.refno = blc.transid AND b.custid = blc.custid
-			WHERE b.transid = @RefNo
-				AND (b.custid = @CustId OR @CustId = 0)
-				AND b.winlostdate > @MoveBetsDay
-		END
+		SET @ProductId = 0
+		SET @CustId = @OriginalCustId
+		SET @MainCustId = 0
 
-		-- Bettransg14 range
-		IF @WhTicket = 0
+		IF @CustId <> -1 AND @RefNo <> 0		-- Search by refno
 		BEGIN
-			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = blc.recommend,
-				@Currency = blc.currency,
-				@BetType = b.bettype,
-				@ProductId = s.ProductID,
-				@EventType = s.EventType,
-				@WhTicket = 12		-- bettransg14
-			FROM dbo.bettransg14 AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.bettype = b.bettype
-				INNER JOIN dbo.bettransLC14 AS blc WITH (NOLOCK) ON b.refno = blc.transid AND b.custid = blc.custid
-			WHERE b.transid = @RefNo
-				AND (b.custid = @CustId OR @CustId = 0)
-				AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
-		END
+			-- Bettransg range
+			IF @WhTicket = 0 AND @ExcludeBettrans = 0
+			BEGIN
+				SELECT TOP(1)
+					@TransId = b.transid,
+					@CustId = b.custid,
+					@WinLostDate = b.winlostdate,
+					@Recommend = blc.recommend,
+					@Currency = blc.currency,
+					@BetType = b.bettype,
+					@ProductId = s.ProductID,
+					@EventType = s.EventType,
+					@WhTicket = 11		-- bettransg
+				FROM dbo.bettransg AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.bettype = b.bettype
+					INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON b.refno = blc.transid AND b.custid = blc.custid
+				WHERE b.transid = @RefNo
+					AND (b.custid = @CustId OR @CustId = 0)
+					AND b.winlostdate > @MoveBetsDay
+			END
 
-		-- Bettransg bk range
-		IF @WhTicket = 0 AND @CustId <> 0
-		BEGIN
-			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = blc.recommend,
-				@Currency = blc.currency,
-				@BetType = b.bettype,
-				@ProductId = s.ProductID,
-				@EventType = s.EventType,
-				@WhTicket = 13		-- bettransg bk
-			FROM bodb_Archive.dbo.bettransg AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.bettype = b.bettype
-				INNER JOIN bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK) ON b.refno = blc.transid AND b.custid = blc.custid
-			WHERE b.transid = @RefNo
-				AND (b.custid = @CustId OR @CustId = 0)
-		END
+			-- Bettransg14 range
+			IF @WhTicket = 0
+			BEGIN
+				SELECT TOP(1)
+					@TransId = b.transid,
+					@CustId = b.custid,
+					@WinLostDate = b.winlostdate,
+					@Recommend = blc.recommend,
+					@Currency = blc.currency,
+					@BetType = b.bettype,
+					@ProductId = s.ProductID,
+					@EventType = s.EventType,
+					@WhTicket = 12		-- bettransg14
+				FROM dbo.bettransg14 AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.bettype = b.bettype
+					INNER JOIN dbo.bettransLC14 AS blc WITH (NOLOCK) ON b.refno = blc.transid AND b.custid = blc.custid
+				WHERE b.transid = @RefNo
+					AND (b.custid = @CustId OR @CustId = 0)
+					AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
+			END
 
-		IF @WhTicket > 0
-			AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
-		BEGIN
-			SET @WhTicket = 0
+			-- Bettransg bk range
+			IF @WhTicket = 0 AND @CustId <> 0
+			BEGIN
+				SELECT TOP(1)
+					@TransId = b.transid,
+					@CustId = b.custid,
+					@WinLostDate = b.winlostdate,
+					@Recommend = blc.recommend,
+					@Currency = blc.currency,
+					@BetType = b.bettype,
+					@ProductId = s.ProductID,
+					@EventType = s.EventType,
+					@WhTicket = 13		-- bettransg bk
+				FROM bodb_Archive.dbo.bettransg AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.bettype = b.bettype
+					INNER JOIN bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK) ON b.refno = blc.transid AND b.custid = blc.custid
+				WHERE b.transid = @RefNo
+					AND (b.custid = @CustId OR @CustId = 0)
+			END
+
+			IF @WhTicket > 0
+			BEGIN
+				IF @ViewSabaCoins = 0
+					AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend AND Currency = @Currency)
+				BEGIN
+					SET @WhTicket = 0
+				END
+				ELSE IF @ViewSabaCoins = 1
+				BEGIN
+					SELECT @MainCustId = CASE
+											WHEN CHARINDEX('SabaCoins$', username2) > 0
+												THEN CAST(SUBSTRING(username2, CHARINDEX('SabaCoins$', username2) + LEN('SabaCoins$'), LEN(username2)) AS INT)
+											ELSE 0
+										END
+					FROM dbo.Customer WITH (NOLOCK)
+					WHERE custid = @CustId
+
+					IF NOT EXISTS ( SELECT 1
+									FROM @TempAg AS ta
+										INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON ta.CustId = c.recommend AND ta.Currency = c.currency
+									WHERE c.custid = @MainCustId)
+					BEGIN
+						SET @WhTicket = 0
+					END
+				END
+			END
 		END
 	END
 
@@ -2528,8 +2619,11 @@ BEGIN
 		END
 	END
 
-	DELETE @Data
-	WHERE Currency NOT IN (SELECT DISTINCT Currency FROM @TempAg)
+	IF @ViewSabaCoins = 0
+	BEGIN
+		DELETE @Data
+		WHERE Currency NOT IN (SELECT DISTINCT Currency FROM @TempAg)
+	END
 
 	DECLARE @ExFromDate SMALLDATETIME,
 		@ExToDate SMALLDATETIME
@@ -2638,10 +2732,24 @@ BEGIN
 			AND sbt.EventType = 3
 	END
 
+	DECLARE @Nickname VARCHAR(50)
+
+	IF EXISTS (SELECT 1 FROM @Data)
+	BEGIN
+		SELECT
+			@Username = username,
+			@Nickname = SUBSTRING(username2, CHARINDEX('$', username2) + 1, LEN(username2) - CHARINDEX('$', username2))
+		FROM dbo.Customer WITH (NOLOCK)
+		WHERE custid = CASE
+							WHEN @ViewSabaCoins = 0 THEN @CustId
+							ELSE @MainCustId
+						END
+	END
+
 	SELECT
-		c.CustId,
-		c.username,
-		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS NickName,
+		a.CustId,
+		@Username AS Username,
+		@Nickname AS NickName,
 		a.TransId,
 		a.RefNo,
 		a.BetId,
@@ -2694,7 +2802,6 @@ BEGIN
 		a.RefCode,
 		a.SiteId
 	FROM @Data AS a
-		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = a.CustId
 		LEFT JOIN @ExchangeRate AS e
 			ON e.ExchangeId = a.Currency
 			AND a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth

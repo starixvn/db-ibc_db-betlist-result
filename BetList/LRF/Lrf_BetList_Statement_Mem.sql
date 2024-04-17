@@ -3,6 +3,7 @@
 ALTER PROCEDURE [dbo].[Lrf_BetList_Statement_Mem]
 	@AgentList		VARCHAR(MAX),
 	@CustId			INT,
+	@ViewSabaCoins	BIT				= 0,
 	@Date			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
@@ -92,6 +93,7 @@ AS
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 		- 20240328@Kos: Return LeagueGroupId to hide Saba text [RedmineID: #201283]
 		- 20240412@Kos: Support Gaming API [Redmine: 203734]
+		- 20240417@Kos: Support Saba Coins [Redmine: 202281]
 */
 
 BEGIN
@@ -302,7 +304,26 @@ BEGIN
 	)
 
 	DECLARE @Currency	INT,
-		@Rate			FLOAT = 1
+		@Recommend		INT		= 0,
+		@Rate			FLOAT	= 1
+
+	IF @ViewSabaCoins = 1
+	BEGIN
+		SELECT @Recommend = recommend
+		FROM dbo.Customer WITH (NOLOCK)
+		WHERE custid = @CustId
+
+		IF EXISTS (SELECT 1 FROM @TempAg WHERE CustId = @Recommend)
+		BEGIN
+			SELECT @CustId = custid
+			FROM dbo.Customer WITH (NOLOCK)
+			WHERE username2 = 'SabaCoins$' + CONVERT(VARCHAR(10), @CustId)
+		END
+		ELSE
+		BEGIN
+			SET @CustId = 0
+		END
+	END
 
 	IF @HasError = 0
 	BEGIN
@@ -772,8 +793,8 @@ BEGIN
 
 			DELETE b
 			FROM #Data AS b
-			WHERE NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
-				OR Product IS NULL
+			WHERE (@ViewSabaCoins = 0
+					AND NOT EXISTS (SELECT 1 FROM @TempAg WHERE CustId = b.Recommend AND Currency = b.Currency))
 				OR BetType IN (903, 913)
 
 			IF EXISTS (SELECT 1 FROM #Data)
@@ -1043,7 +1064,7 @@ BEGIN
 										WHEN b.Product IN ('Outright') THEN l.sporttype
 										WHEN b.Product IN ('VR') THEN vr.SportType
 										WHEN b.RefTable IN (1, 2) THEN b.MatchId
-										ELSE 0
+										ELSE b.MatchId
 									END,
 						BetTeam = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG') THEN b.betteam
@@ -1342,7 +1363,7 @@ BEGIN
 										WHEN b.Product IN ('Outright') THEN l.sporttype
 										WHEN b.Product IN ('VR') THEN vr.SportType
 										WHEN b.RefTable IN (1, 2) THEN b.MatchId
-										ELSE 0
+										ELSE b.MatchId
 									END,
 						BetTeam = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG') THEN b.betteam
@@ -1551,7 +1572,7 @@ BEGIN
 										WHEN b.Product IN ('Outright') THEN l.sporttype
 										WHEN b.Product IN ('VR') THEN vr.SportType
 										WHEN b.RefTable IN (1, 2) THEN b.MatchId
-										ELSE 0
+										ELSE b.MatchId
 									END,
 						BetTeam = CASE
 										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG') THEN b.betteam
