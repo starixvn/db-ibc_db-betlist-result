@@ -173,6 +173,7 @@ AS
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
+		- 20240419@Razor: Support Saba Coins [Redmine: #204003]
 */
 
 BEGIN
@@ -712,9 +713,10 @@ BEGIN
 						WHEN s.ProductID = 76 THEN 'YB'								-- YeeBet
 						WHEN s.ProductID = 77 THEN 'LG'								-- Virtual Sports 3
 						WHEN s.ProductID = 78 THEN 'UUSL'							-- UU Slots
-						WHEN s.ProductID = 80 THEN 'WE'								-- WE Live Casino
 						WHEN s.ProductID = 79 THEN 'L22'							-- Live22
 						WHEN s.ProductID = 86 THEN 'SNG'							-- Saba xD
+						WHEN s.ProductID = 80 THEN 'WE'								-- WE Live Casino
+						WHEN s.ProductID = 81 THEN 'SAC'							-- Saba Coins
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -986,7 +988,8 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 'BBIN', 'ION', 
-										'PGS', 'JK', 'RNGW', 'WM', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'TIP', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG') THEN b.matchid
+										'PGS', 'JK', 'RNGW', 'WM', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG',
+										'TIP', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG', 'SAC') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1417,7 +1420,8 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 
-										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'TIP', 'YB', 'WE', 'L22', 'UUSL', 'SNG') THEN b.matchid
+										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 
+										'SEA', 'MGRNG', 'JIG', 'TIP', 'YB', 'WE', 'L22', 'UUSL', 'SNG', 'SAC') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'AllBet' THEN 211	-- AllBet
@@ -1619,7 +1623,8 @@ BEGIN
 							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'NPHP', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'I4D', 'SXG', 'IBCLC', 
-										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'TIP', 'YB', 'WE', 'L22', 'UUSL', 'SNG') THEN b.matchid
+										'BBIN', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 'MXG', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 
+										'SEA', 'MGRNG', 'JIG', 'TIP', 'YB', 'WE', 'L22', 'UUSL', 'SAC', 'SNG') THEN b.matchid
 									WHEN b.Product = 'Keno' THEN 202	-- Keno
 									WHEN b.Product = 'Lottery' THEN 220	-- Lottery
 									WHEN b.Product = 'AllBet' THEN 211	-- AllBet

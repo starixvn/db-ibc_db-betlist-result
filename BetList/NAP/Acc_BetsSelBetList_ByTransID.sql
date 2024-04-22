@@ -196,6 +196,7 @@ AS
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
+		- 20240419@Razor: Support Saba Coins [Redmine: #204003]
 */
 
 BEGIN
@@ -752,9 +753,9 @@ BEGIN
 			END
 
 			-- Keno, Lottery, NPH Promotion, Virtual Games, Table Games, Indo 4D, BBIN, Leap Gaming Virtual Sports, Happy 5 Linked Games(Number Game)
-			-- Sports Lottery, Player Tips
+			-- Sports Lottery, Player Tips, Saba Coins
 			IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype
-						WHERE Bettype = @BetType AND (ProductID IN (8, 28, 37, 38, 40, 43, 47, 49, 63, 74) OR (ProductID = 3 AND EventType = 0)))
+						WHERE Bettype = @BetType AND (ProductID IN (8, 28, 37, 38, 40, 43, 47, 49, 63, 74, 81) OR (ProductID = 3 AND EventType = 0)))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -811,7 +812,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 28 THEN 220
-						WHEN s.ProductID IN (3, 37, 38, 40, 43, 47, 49, 63, 74) THEN b.matchid
+						WHEN s.ProductID IN (3, 37, 38, 40, 43, 47, 49, 63, 74, 81) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					b.ip,
@@ -857,7 +858,7 @@ BEGIN
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND (s.ProductId IN (8, 28, 37, 38, 40, 43, 47, 49, 63, 74)
+					AND (s.ProductId IN (8, 28, 37, 38, 40, 43, 47, 49, 63, 74, 81)
 							OR (s.ProductId = 3 AND s.EventType = 0))
 
 				-- Get match info for Player Tips
@@ -2305,10 +2306,10 @@ BEGIN
 			-- Keno, Lottery, Card Club, NPH Promotion, Spadegaming, Virtual Games, Table Games, Indo 4D, 
 			-- Sexy Gaming, Saba.club, IBCBet Live Casino, BBIN, RNG War, ION, PG Soft, Joker, WM, Leap Gaming Virtual Sports, Big Gaming
 			-- MaxGame, Happy 5 Linked Games (Number Game), Habanero, CG, Sports Lottery, PP Live Casino, VGaming, AdvantPlay, AdvantPlay Mini, FGG, SEAL Entertainment, MG RNG Casino
-			-- Player Tips, Jili, YeeBet, WE, Live22, UU Slots, Saba xD
+			-- Player Tips, Jili, YeeBet, WE, Live22, UU Slots, Saba xD, Saba Coins
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype 
 						WHERE Bettype = @BetType
-							AND (ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86) OR (ProductID = 3 AND EventType = 0)))
+							AND (ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81) OR (ProductID = 3 AND EventType = 0)))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2365,7 +2366,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 28 THEN 220
-						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86) THEN b.matchid
+						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					b.ip,
@@ -2414,7 +2415,7 @@ BEGIN
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND (s.ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86)
+					AND (s.ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81)
 							OR (s.ProductID = 3 AND s.EventType = 0))
 
 				-- Get match info for Player Tips
@@ -3167,10 +3168,10 @@ BEGIN
 			-- RNG Casino, Keno, Lottery, Card Club, NPH Promotion, Spadegaming, Virtual Games, Table Games, 
 			-- Indo 4D, Sexy Gaming, Saba.club, IBCBet Live Casino, BBIN, RNG War, ION, PG Soft, Joker, WM, Leap Gaming Virtual Sports, Big Gaming
 			-- Happy 5 Linked Games (Number Game), MaxGame, Habanero, CG, Sports Lottery, PP Live Casino, VGaming, AdvantPlay, AdvantPlay Mini, FGG, SEAL Entertainment, MG RNG Casino
-			-- Player Tips, Jili, YeeBet, WE, Live22, UU Slots, Saba xD
+			-- Player Tips, Jili, YeeBet, WE, Live22, UU Slots, Saba xD, Saba Coins
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType 
-							AND (ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86)
+							AND (ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81)
 								OR (ProductID = 6 AND SubProduct = '')
 								OR (ProductID = 3 AND EventType = 0)))
 			BEGIN
@@ -3230,7 +3231,7 @@ BEGIN
 						WHEN s.ProductID = 6 THEN 251
 						WHEN s.ProductID = 8 THEN 202
 						WHEN s.ProductID = 28 THEN 220
-						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86) THEN b.matchid
+						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					dp.ip,
@@ -3280,7 +3281,7 @@ BEGIN
 					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND (s.ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86)
+					AND (s.ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81)
 						OR (s.ProductID = 6 AND s.SubProduct = '')
 						OR (s.ProductID = 3 AND s.EventType = 0))
 

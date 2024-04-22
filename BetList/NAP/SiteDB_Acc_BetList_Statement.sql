@@ -34,6 +34,7 @@ AS
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
+		- 20240419@Razor: Support Saba Coins [Redmine: #204003]
 
 	Param's Explanation:
 		+ @TransType:
@@ -532,7 +533,7 @@ BEGIN
 			-- Card Club, NPH Promotion, Spadegaming, Virtual Games, SA Gaming, Indo 4D, Sexy Gaming, Saba.club, Table Game, BBIN
 			-- IBCBet Live Casino, RNG War, ION, PG Soft, Joker, WM, Leap Gaming Virtual Sports, Big Gaming, Happy 5 Linked Games (Number Game)
 			-- MaxGame, Habanero, CG, Sports Lottery, PP Live Casino, VGaming, AdvantPlay, AdvantPlay Mini, FGG, SEAL, MG RNGCasino, Player Tips, Jili, YeeBet, WE, Live22, UU Slots
-			-- Saba xD
+			-- Saba xD, Saba coins
 			INSERT INTO @Data
 			SELECT
 				CASE
@@ -548,7 +549,7 @@ BEGIN
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 					WHEN s.ProductID = 28 THEN 220
 					WHEN s.ProductID = 32 THEN 248
-					WHEN s.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 79, 86) THEN b.matchid
+					WHEN s.ProductID IN (3, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 79, 86, 81) THEN b.matchid
 					ELSE 0
 				END AS SportType,
 				0 AS leagueid,
@@ -662,7 +663,7 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND (s.ProductID IN (6, 8, 11, 21, 22, 23, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 79, 86)
+				AND (s.ProductID IN (6, 8, 11, 21, 22, 23, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 79, 86, 81)
 						OR (s.ProductID = 3 AND s.EventType = 0))
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
@@ -1442,7 +1443,7 @@ BEGIN
 					AND b.statusID IN (0, 1)
 			END
 
-			-- Keno, Lottery, NPH Promotion, Virtual Games, Table Games, Indo 4D, Leap Gaming Virtual Sports, Happy 5 Linked Games(Number Game), Sports Lottery, Player Tips (bettrans)
+			-- Keno, Lottery, NPH Promotion, Virtual Games, Table Games, Indo 4D, Leap Gaming Virtual Sports, Happy 5 Linked Games(Number Game), Sports Lottery, Player Tips, Saba Coin (bettrans)
 			IF EXISTS (SELECT TOP(1) 1 FROM @tmpStatus WHERE statusID NOT IN (0, 1))
 			BEGIN
 				INSERT INTO @Data
@@ -1450,7 +1451,7 @@ BEGIN
 					CASE
 						WHEN s.ProductId = 8 THEN 202
 						WHEN s.ProductID = 28 THEN 220
-						WHEN s.ProductID IN (3, 37, 38, 40, 43, 49, 63, 74) THEN b.matchid
+						WHEN s.ProductID IN (3, 37, 38, 40, 43, 49, 63, 74, 81) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					0 AS leagueid,
@@ -1551,7 +1552,7 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE  b.custid = @CustId
 					AND b.winlostdate = @FromDate
-					AND (s.ProductID IN (8, 28, 37, 38, 40, 43, 49, 63, 74)
+					AND (s.ProductID IN (8, 28, 37, 38, 40, 43, 49, 63, 74, 81)
 							OR (s.ProductID = 3 AND s.EventType = 0))
 					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
 
