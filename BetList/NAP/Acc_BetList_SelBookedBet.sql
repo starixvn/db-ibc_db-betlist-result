@@ -22,6 +22,7 @@ AS
 			- 4: Cancelled
 	Revisions:
 		- 20240319@Razor: Init [Redmine: #202426]
+		- 20240425@Razor: HF for filter checking time of Create time [Redmine: #204345]
 */
 
 BEGIN
@@ -82,6 +83,9 @@ BEGIN
 		Reason			SMALLINT
 	);
 
+	DECLARE @TempToDate	SMALLDATETIME
+	SET @TempToDate = DATEADD(DAY, 1, @ToDate)
+
 	IF ',' + @StatusIdList + ',' LIKE '%,0,%'
 	BEGIN
 		SET @StatusIdList = @StatusIdList + ',3'
@@ -135,7 +139,7 @@ BEGIN
 		b.AwayTeamId
 	FROM dbo.ReservationTickets AS b WITH (NOLOCK)
 	WHERE b.custid = @CustId
-		AND b.Createtime BETWEEN @FromDate AND @ToDate
+		AND b.Createtime >= @FromDate AND b.Createtime < @TempToDate
 		AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.status) + ',%'
 
 
