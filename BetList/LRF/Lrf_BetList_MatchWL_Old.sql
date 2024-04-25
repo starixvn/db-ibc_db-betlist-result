@@ -35,6 +35,7 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230404@Kos: Don't return betfrom anymore [Redmine: #178059]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
+		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 
 	Param's Explanation:
 		+ @LiveIndicator:
@@ -155,6 +156,7 @@ BEGIN
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
@@ -216,6 +218,7 @@ BEGIN
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
@@ -542,6 +545,10 @@ BEGIN
 								WHEN b.Product IN ('VR') THEN vr.LeagueID
 								ELSE 0
 							END,
+				LeagueGroupId = CASE
+									WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+									ELSE 0
+								END,
 				MatchId = CASE
 								WHEN b.EventType = 1 THEN m.matchid
 								WHEN b.Product IN ('VR') THEN b.matchid
@@ -631,6 +638,7 @@ BEGIN
 							END
 			FROM #PagingData AS b
 				LEFT JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.EventType = 1 AND b.matchid = m.matchid
+				LEFT JOIN bodb02.dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 				LEFT JOIN dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
 				LEFT JOIN dbo.VSOutright_bk AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
@@ -685,6 +693,7 @@ BEGIN
 		a.LiveAwayScore,
 		a.Race,
 		a.LeagueId,
+		a.LeagueGroupId,
 		a.MatchId,
 		a.MatchCode,
 		a.EventDate,

@@ -137,6 +137,7 @@ AS
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 		- 20240412@Kos: Support Gaming API [Redmine: 203734]
+		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 */
 
 BEGIN
@@ -256,6 +257,7 @@ BEGIN
 		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
@@ -319,6 +321,7 @@ BEGIN
 		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		Race				NVARCHAR(50),
@@ -883,6 +886,10 @@ BEGIN
 								WHEN b.Product IN ('VR') THEN vr.LeagueID
 								ELSE 0
 							END,
+				LeagueGroupId = CASE
+									WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+									ELSE 0
+								END,
 				MatchId = CASE
 								WHEN b.EventType = 1 THEN m.matchid
 								WHEN b.Product IN ('VR', 'BTC') THEN b.matchid
@@ -982,6 +989,7 @@ BEGIN
 					AND b.Winlostdate >= @Yesterday
 					AND x.RefNo = b.TransId
 				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.EventType = 1 AND b.matchid = m.matchid
+				LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 				LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 				LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
@@ -1055,6 +1063,7 @@ BEGIN
 		a.Ip,
 		a.BetFrom,
 		a.LeagueId,
+		a.LeagueGroupId,
 		a.MatchId,
 		a.MatchCode,
 		a.Race,

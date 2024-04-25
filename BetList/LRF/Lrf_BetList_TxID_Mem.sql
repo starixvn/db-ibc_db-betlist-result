@@ -15,6 +15,7 @@ AS
 	Created: Kos@20180604
 	Task: Statement Service - Search By Licensee transaction ID
 	DB: DBACC.bodb02
+
 	Revisions:
 		- 20200529@Kos: Created [#Redmine: 80941]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
@@ -35,6 +36,7 @@ AS
 					- Return new JackpotInfo column
 		- 20231026@Kos: Support Virtual Sports 3 [Redmine: 190908]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 */
 
 BEGIN
@@ -126,6 +128,7 @@ BEGIN
 		Ip					VARCHAR(45),
 		BetFrom				NVARCHAR(4),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(1000),
 		Race				NVARCHAR(50),
@@ -472,6 +475,10 @@ BEGIN
 				ELSE 0
 			END AS LeagueId,
 			CASE
+				WHEN @Product IN ('SB') THEN le.LeagueGroupID
+				ELSE 0
+			END AS LeagueGroupId,
+			CASE
 				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'BTC', 'LG') THEN b.matchid
 				WHEN @Product = 'TIP' THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 				ELSE 0
@@ -561,6 +568,7 @@ BEGIN
 			2 AS WhTicket
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON @EventType = 1 AND b.matchid = m.matchid
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON @Product IN ('SB') AND le.leagueid = m.leagueid
 			LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
@@ -663,6 +671,10 @@ BEGIN
 				ELSE 0
 			END AS LeagueId,
 			CASE
+				WHEN @Product IN ('SB') THEN le.LeagueGroupID
+				ELSE 0
+			END AS LeagueGroupId,
+			CASE
 				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'BTC', 'LG') THEN b.matchid
 				WHEN @Product = 'TIP' THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 				ELSE 0
@@ -752,6 +764,7 @@ BEGIN
 			3 AS WhTicket
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON @EventType = 1 AND b.matchid = m.matchid
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON @Product IN ('SB') AND le.leagueid = m.leagueid
 			LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
@@ -854,6 +867,10 @@ BEGIN
 				ELSE 0
 			END AS LeagueId,
 			CASE
+				WHEN @Product IN ('SB') THEN le.LeagueGroupID
+				ELSE 0
+			END AS LeagueGroupId,
+			CASE
 				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'BTC', 'LG') THEN b.matchid
 				WHEN @Product = 'TIP' THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 				ELSE 0
@@ -943,6 +960,7 @@ BEGIN
 			4 AS WhTicket
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON @EventType = 1 AND b.matchid = m.matchid
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON @Product IN ('SB') AND le.leagueid = m.leagueid
 			LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN bodb_Archive.dbo.Outright_bk AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
@@ -1103,6 +1121,7 @@ BEGIN
 				ip,
 				betfrom,
 				0 AS LeagueId,
+				0 AS LeagueGroupId,
 				0 AS MatchId,
 				CASE
 					WHEN @Product IN ('SBC') THEN ISNULL(SiteID, '')
@@ -1188,6 +1207,7 @@ BEGIN
 				ip,
 				betfrom,
 				0 AS LeagueId,
+				0 AS LeagueGroupId,
 				0 AS MatchId,
 				CASE
 					WHEN @Product IN ('SBC') THEN ISNULL(SiteID, '')
@@ -1273,6 +1293,7 @@ BEGIN
 				dp.IP,
 				b.betfrom,
 				0 AS LeagueId,
+				0 AS LeagueGroupId,
 				0 AS MatchId,
 				CASE
 					WHEN @Product IN ('SBC') THEN ISNULL(SiteID, '')
@@ -1367,6 +1388,7 @@ BEGIN
 		a.LiveAwayScore,
 		a.Race,
 		a.LeagueId,
+		a.LeagueGroupId,
 		a.MatchId,
 		a.MatchCode,
 		a.Race,

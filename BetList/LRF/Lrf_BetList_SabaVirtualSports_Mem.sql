@@ -34,6 +34,7 @@ AS
 		- 20221207@Kos: Support Saba E-Sports PinGoal [RedmineID: #181224]
 		- 20230703@Kos: Support Saba Tennis [RedmineID: #190465]
 		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
+		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -119,6 +120,7 @@ BEGIN
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		EventDate			DATETIME,
@@ -174,6 +176,7 @@ BEGIN
 		LiveAwayScore		SMALLINT,
 		Ip					VARCHAR(45),
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		EventDate			DATETIME,
@@ -834,6 +837,10 @@ BEGIN
 									WHEN b.Product IN ('Outright') THEN o.leagueid
 									ELSE 0
 								END,
+					LeagueGroupId = CASE
+										WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+										ELSE 0
+									END,
 					MatchId = CASE
 									WHEN b.Product IN ('SB') THEN m.matchid
 									ELSE 0
@@ -902,6 +909,7 @@ BEGIN
 								END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB') AND b.matchid = m.matchid
+					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
 				WHERE b.TableID = 1
@@ -959,6 +967,10 @@ BEGIN
 									WHEN b.Product IN ('Outright') THEN o.leagueid
 									ELSE 0
 								END,
+					LeagueGroupId = CASE
+										WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+										ELSE 0
+									END,
 					MatchId = CASE
 									WHEN b.Product IN ('SB') THEN m.matchid
 									ELSE 0
@@ -1027,6 +1039,7 @@ BEGIN
 								END
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('SB') AND b.matchid = m.matchid
+					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
 				WHERE b.TableID = 2
@@ -1084,6 +1097,10 @@ BEGIN
 									WHEN b.Product IN ('Outright') THEN o.leagueid
 									ELSE 0
 								END,
+					LeagueGroupId = CASE
+										WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+										ELSE 0
+									END,
 					MatchId = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN m.matchid
 									ELSE 0
@@ -1153,6 +1170,7 @@ BEGIN
 								END
 				FROM #PagingData AS b
 					LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO') AND b.matchid = m.matchid
+					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 					LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
 				WHERE b.TableID = 3
@@ -1185,6 +1203,7 @@ BEGIN
 		a.LiveHomeScore,
 		a.LiveAwayScore,
 		a.LeagueId,
+		a.LeagueGroupId,
 		a.MatchId,
 		a.MatchCode,
 		a.EventDate,
