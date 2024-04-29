@@ -43,6 +43,7 @@ AS
 		- 20231024@Kos: Support Basketball Instant Settlement [Redmine: #194323]
 		- 20231221@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
 		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
+		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 */
 
 BEGIN
@@ -63,6 +64,7 @@ BEGIN
 	DECLARE @tmpParlay TABLE (
 		SportType			INT,
 		LeagueId			INT,
+		LeagueGroupId		SMALLINT,
 		MatchId				INT,
 		HomeId				INT,
 		AwayId				INT,
@@ -192,6 +194,7 @@ BEGIN
 		SELECT
 			m.sporttype,
 			m.leagueid,
+			l.LeagueGroupID,
 			m.matchid,
 			m.homeid,
 			m.awayid,
@@ -234,6 +237,7 @@ BEGIN
 		FROM
 			@SubTicket AS bm
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
 
@@ -393,6 +397,7 @@ BEGIN
 			m.sporttype,
 			m.leagueid,
 			m.matchid,
+			l.LeagueGroupID,
 			m.homeid,
 			m.awayid,
 			m.hthomescore,
@@ -434,6 +439,7 @@ BEGIN
 		FROM
 			@SubTicket AS bm
 			INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON bm.matchid = m.matchid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH(NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
 
@@ -591,6 +597,7 @@ BEGIN
 		SELECT
 			m.sporttype,
 			m.LeagueID,
+			l.LeagueGroupID,
 			m.matchid,
 			m.homeID,
 			m.awayID,
@@ -633,6 +640,7 @@ BEGIN
 		FROM
 			@SubTicket AS bm
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 			LEFT OUTER JOIN bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN bodb_Archive.dbo.ResultDetail_bk AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
 

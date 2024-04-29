@@ -61,6 +61,7 @@ AS
 		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
 		- 20231221@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
 		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
+		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 
 		*******************
 		sample test case:
@@ -134,6 +135,7 @@ BEGIN
 					ELSE DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP)
 				END AS PlayTime,
 				m.leagueid,
+				l.LeagueGroupID,
 				m.matchid,
 				m.homeid,
 				m.awayid,
@@ -170,6 +172,7 @@ BEGIN
 				ISNULL(mr.MainType, 0) AS MainType,
 				ISNULL(mr.SubType, 0) AS SubType
 			FROM dbo.match AS m WITH (NOLOCK)
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId
@@ -321,6 +324,7 @@ BEGIN
 					ELSE DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP)
 				END AS playtime,
 				m.leagueid,
+				l.LeagueGroupID,
 				m.matchid,
 				m.homeid,
 				m.awayid,
@@ -357,6 +361,7 @@ BEGIN
 				ISNULL(mr.MainType, 0) AS MainType,
 				ISNULL(mr.SubType, 0) AS SubType
 			FROM dbo.match14 AS m WITH (NOLOCK)
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId
@@ -508,6 +513,7 @@ BEGIN
 					ELSE DATEDIFF(MINUTE, m.kickofftime, CURRENT_TIMESTAMP)
 				END AS PlayTime,
 				m.LeagueID,
+				l.LeagueGroupID,
 				m.matchid,
 				m.homeID,
 				m.awayID,
@@ -544,6 +550,7 @@ BEGIN
 				ISNULL(mr.MainType, 0) AS MainType,
 				ISNULL(mr.SubType, 0) AS SubType
 			FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
+				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 				LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 				LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK) ON d.matchID = M.MatchID AND d.ResourceId = '00'
 			WHERE m.matchid = @MatchId

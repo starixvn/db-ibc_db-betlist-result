@@ -8,7 +8,7 @@ AS
 	Created: 20141021@Jim
 	Task: Retrieve result detail of a match
 	DB: DBEXT.bodb02
-	Original: [Age_Result_MatchSelResultDetail]
+
 	Revisions:
 		- 20150407@Sophia: Support to get BetRadar
 		- 20150810@Sophia: Hardcode to exclude ResultDetail of bettype 216, 217 for a temporary time [#40991]
@@ -39,6 +39,7 @@ AS
 		- 20220722@Kos: Support Volleyball AIO [Redmine: #175143]
 		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
 		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
+		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 */
 
 BEGIN
@@ -62,6 +63,7 @@ BEGIN
 			m.sporttype,
 			m.betstatus,
 			m.leagueid,
+			l.LeagueGroupID,
 			m.matchid,
 			m.matchcode,
 			m.eventdate,
@@ -96,6 +98,7 @@ BEGIN
 			ISNULL(mr.MainType, 0) AS MainType,
 			ISNULL(mr.SubType, 0) AS SubType
 		FROM dbo.match AS m WITH (NOLOCK)
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
 		WHERE m.matchid = @MatchId
@@ -205,6 +208,7 @@ BEGIN
 			m.sporttype,
 			m.betstatus,
 			m.leagueid,
+			l.LeagueGroupID,
 			m.matchid,
 			m.matchcode,
 			m.eventdate,
@@ -239,6 +243,7 @@ BEGIN
 			ISNULL(mr.MainType, 0) AS MainType,
 			ISNULL(mr.SubType, 0) AS SubType
 		FROM dbo.match14 AS m WITH (NOLOCK)
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.matchID = m.matchid AND r.ResourceId = '00'
 		WHERE m.matchid = @MatchId

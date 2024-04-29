@@ -53,6 +53,7 @@ AS
 		- 20231226@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
 		- 20240315@Kos: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #201283]
 					- Support Saba Ice Hockey
+		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 */
 
 BEGIN
@@ -67,6 +68,7 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
+				l.LeagueGroupID,
 				@EventDate AS EventDate,
 				m.sporttype
 			FROM (
@@ -197,6 +199,7 @@ BEGIN
 			SELECT DISTINCT
 				l.LeagueName,
 				l.League3rdId AS LeagueId,
+				0 AS LeagueGroupID,
 				m.EventDate,
 				m.SportType
 			FROM dbo.League3rd AS l WITH (NOLOCK)
@@ -212,6 +215,7 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
+				0 AS LeagueGroupID,
 				@EventDate AS EventDate,
 				@SportType AS SportType
 			FROM dbo.League AS l WITH (NOLOCK)
@@ -237,6 +241,7 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
+				0 AS LeagueGroupID,
 				@EventDate AS EventDate,
 				@SportType AS SportType
 			FROM dbo.League AS l WITH (NOLOCK)
@@ -258,6 +263,7 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
+				l.LeagueGroupID,
 				@EventDate AS EventDate,
 				m.sporttype
 			FROM (
@@ -387,6 +393,7 @@ BEGIN
 			SELECT DISTINCT
 				l.LeagueName,
 				l.League3rdId AS LeagueId,
+				0 AS LeagueGroupID,
 				m.EventDate,
 				m.SportType
 			FROM dbo.League3rd AS l WITH (NOLOCK)
@@ -402,6 +409,7 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
+				0 AS LeagueGroupID,
 				@EventDate AS EventDate,
 				@SportType AS SportType
 			FROM dbo.League AS l WITH (NOLOCK)
@@ -426,6 +434,7 @@ BEGIN
 			SELECT DISTINCT
 				l.leaguename,
 				l.leagueid,
+				0 AS LeagueGroupID,
 				@EventDate AS EventDate,
 				@SportType AS SportType
 			FROM dbo.League AS l WITH (NOLOCK)
