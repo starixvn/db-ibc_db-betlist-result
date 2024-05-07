@@ -104,6 +104,7 @@ AS
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
+		- 20240507@Razor: Check permission for Real Currency [Redmine: #202523]
 */
 
 BEGIN
@@ -201,7 +202,12 @@ BEGIN
 		SiteId			INT,
 		Site			NVARCHAR(50),
 		SpecialGroup	TINYINT)
-
+		
+	DECLARE @DeniedCurrency TABLE (
+		ExchangeId			INT,
+		Currency			NVARCHAR(50),
+		OfferSite			TINYINT)
+		
 	DECLARE @Sql VARCHAR(500)
 
 	SELECT @Sql = 'SELECT * 
@@ -210,6 +216,12 @@ BEGIN
 
 	INSERT INTO @DeniedSite
 	EXEC (@Sql)
+
+	SET @Sql = 'SELECT * 
+		FROM OPENQUERY(DBPOL, 
+		''SELECT ExchangeId, Currency, OfferSite FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser ( ''''' + CAST(@UserId AS VARCHAR(50)) + ''''')'')'
+	INSERT INTO @DeniedCurrency (ExchangeId, Currency, OfferSite)
+	EXECUTE(@Sql)
 
 	INSERT INTO @DeniedSite (SiteId, Site, SpecialGroup)
 	SELECT
@@ -232,6 +244,10 @@ BEGIN
 						INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 						WHERE c.custid = @CustId
 							AND a.site IN (SELECT Site FROM @DeniedSite))
+		AND NOT EXISTS ( SELECT 1
+						FROM dbo.customer AS c WITH (NOLOCK)
+						WHERE c.custid = @CustId
+							AND c.currency IN (SELECT ExchangeId FROM @DeniedCurrency))
 	BEGIN
 		-- bettrans range
 		IF @Todate > @MoveBetsDay

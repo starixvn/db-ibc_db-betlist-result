@@ -169,6 +169,7 @@ AS
 		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
 		- 20240419@Razor: Support Saba Coins [Redmine: #204003]
+		- 20240507@Razor: Check permission for Real Currency [Redmine: #202523]
 */
 
 BEGIN
@@ -337,6 +338,11 @@ BEGIN
 		Site			NVARCHAR(50),
 		SpecialGroup	TINYINT)
 
+	DECLARE @DeniedCurrency TABLE (
+		ExchangeId			INT,
+		Currency			NVARCHAR(50),
+		OfferSite			TINYINT)
+
 	DECLARE @tmpUserid VARCHAR(50)
 
 	SELECT @tmpUserid = CAST(@UserId AS VARCHAR(50))
@@ -346,8 +352,13 @@ BEGIN
 	SELECT @SearchQuery = 'SELECT * 
 		FROM OPENQUERY(DBPOL, 
 		''SELECT siteid, site, SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser ( ''''' + @tmpUserid + ''''')'')'
-
 	INSERT INTO @DeniedSite (siteid, site, SpecialGroup)
+	EXECUTE(@SearchQuery)
+
+	SET @SearchQuery = 'SELECT * 
+		FROM OPENQUERY(DBPOL, 
+		''SELECT ExchangeId, Currency, OfferSite FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser ( ''''' + @tmpUserid + ''''')'')'
+	INSERT INTO @DeniedCurrency (ExchangeId, Currency, OfferSite)
 	EXECUTE(@SearchQuery)
 
 	INSERT INTO @DeniedSite (SiteId, Site, SpecialGroup)
@@ -372,6 +383,10 @@ BEGIN
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 						WHERE c.custid = @CustId
 							AND a.site IN (SELECT Site FROM @DeniedSite))
+		AND NOT EXISTS ( SELECT 1
+						FROM dbo.customer AS c WITH (NOLOCK)
+						WHERE c.custid = @CustId
+							AND c.currency IN (SELECT ExchangeId FROM @DeniedCurrency))
 	BEGIN
 		-- Bettrans
 		IF @WinLostDate > @MoveBetsDay
@@ -3606,6 +3621,10 @@ BEGIN
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 							WHERE c.custid = @CustId
 								AND a.site IN (SELECT Site FROM @DeniedSite))
+		AND NOT EXISTS ( SELECT 1
+						FROM dbo.customer AS c WITH (NOLOCK)
+						WHERE c.custid = @CustId
+							AND c.currency IN (SELECT ExchangeId FROM @DeniedCurrency))
 	BEGIN
 		-- bettransRnG
 		IF @WinLostDate > @MoveBetsDay
@@ -3858,6 +3877,10 @@ BEGIN
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 							WHERE c.custid = @CustId
 								AND a.site IN (SELECT Site FROM @DeniedSite))
+		AND NOT EXISTS ( SELECT 1
+						FROM dbo.customer AS c WITH (NOLOCK)
+						WHERE c.custid = @CustId
+							AND c.currency IN (SELECT ExchangeId FROM @DeniedCurrency))
 	BEGIN
 		-- bettransLC
 		IF @WinLostDate > @MoveBetsDay
@@ -4284,6 +4307,10 @@ BEGIN
 							INNER JOIN dbo.customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 							WHERE c.custid = @CustId
 								AND a.site IN (SELECT Site FROM @DeniedSite))
+		AND NOT EXISTS ( SELECT 1
+						FROM dbo.customer AS c WITH (NOLOCK)
+						WHERE c.custid = @CustId
+							AND c.currency IN (SELECT ExchangeId FROM @DeniedCurrency))
 	BEGIN
 		-- bettransg
 		IF @WinLostDate > @MoveBetsDay

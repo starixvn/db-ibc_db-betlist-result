@@ -57,6 +57,7 @@ AS
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
+		- 20240507@Razor: Check permission for Real Currency [Redmine: #202523]
 */
 
  BEGIN
@@ -279,6 +280,11 @@ AS
 		Site			NVARCHAR(50),
 		SpecialGroup	TINYINT)
 
+	DECLARE @DeniedCurrency TABLE (
+		ExchangeId			INT,
+		Currency			NVARCHAR(50),
+		OfferSite			TINYINT)
+
 	DECLARE @tmpUserid VARCHAR(50),
 		@SearchQuery VARCHAR(1024)
 
@@ -291,6 +297,12 @@ AS
 	INSERT INTO @DeniedSite (siteid, site, SpecialGroup)
 	EXECUTE(@SearchQuery)
 
+	SET @SearchQuery = 'SELECT * 
+		FROM OPENQUERY(DBPOL, 
+		''SELECT ExchangeId, Currency, OfferSite FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser ( ''''' + @tmpUserid + ''''')'')'
+	INSERT INTO @DeniedCurrency (ExchangeId, Currency, OfferSite)
+	EXECUTE(@SearchQuery)
+	
 	INSERT INTO @DeniedSite (SiteId, Site, SpecialGroup)
 	SELECT
 		s.siteid,
@@ -316,6 +328,7 @@ AS
 		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON u.custid = c.custid
 		INNER JOIN dbo.Customer AS a WITH (NOLOCK) ON c.recommend = a.custid
 	WHERE a.site NOT IN (SELECT Site FROM @DeniedSite)
+			AND c.currency NOT IN (SELECT ExchangeId FROM @DeniedCurrency)
 	GROUP BY c.custid,
 		c.username
 	ORDER BY c.username
