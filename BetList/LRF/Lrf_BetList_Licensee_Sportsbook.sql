@@ -84,6 +84,7 @@ AS
 		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
 					- Add new input param @FullCustomerClass VARCHAR(MAX)
 		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
+		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
 */
 
 BEGIN
@@ -124,6 +125,7 @@ BEGIN
 	UNION SELECT 43, '151'	-- Saba E-Sports PinGoal
 	UNION SELECT 5, '42'	-- Saba Tennis
 	UNION SELECT 4, '42'	-- Saba Ice Hockey
+	UNION SELECT 47, '42'	-- Saba Kabaddi
 
 	CREATE TABLE #Data (
 		TransId				BIGINT,

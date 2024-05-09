@@ -24,6 +24,7 @@ AS
 	Created: 20201002@Kos
 	Task: LAP - Saba Virtual Sports Report bet list
 	DB: DBACC.bodb02
+
 	Revisions:
 		- 20201002@Kos: New SP [RedmineID: #141454]
 		- 20210520@Kos: Support Saba Soccer PinGoal [RedmineID: #155335]
@@ -35,6 +36,7 @@ AS
 		- 20230703@Kos: Support Saba Tennis [RedmineID: #190465]
 		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
 		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
+		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -579,6 +581,7 @@ BEGIN
 									WHEN @SportType = -4 THEN 4
 									WHEN @SportType = -5 THEN 5
 									WHEN @SportType = -43 THEN 43
+									WHEN @SportType = -47 THEN 47
 									ELSE @SportType
 								END)
 				AND ((@SportType IN (0, 1) AND sporttype = 1 AND LeagueGroupID IN (42, 74, 108))
@@ -588,6 +591,7 @@ BEGIN
 					OR (@SportType IN (0, 4) AND sporttype = 4 AND LeagueGroupID IN (42))
 					OR (@SportType IN (0, 5) AND sporttype = 5 AND LeagueGroupID IN (42))
 					OR (@SportType IN (0, -43) AND sporttype = 43 AND LeagueGroupID IN (151))
+					OR (@SportType IN (0, 47) AND sporttype = 47 AND LeagueGroupID IN (42))
 					OR (sporttype = 50 AND LeagueGroupID IN (42)))
 
 			DELETE b

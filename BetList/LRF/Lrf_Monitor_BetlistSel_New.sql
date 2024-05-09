@@ -91,6 +91,7 @@ AS
 					- Add new input param @FullCustomerClass VARCHAR(MAX)
 		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
 		- 20240412@Kos: Support Gaming API [Redmine: 203734]
+		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -120,6 +121,7 @@ AS
 				+ Saba E-Sports PinGoal: <Sport SportType="43" LeagueGroupIds="151"/>
 				+ Saba Tennis: <Sport SportType="5" LeagueGroupIds="42"/>
 				+ Saba Ice Hockey: <Sport SportType="4" LeagueGroupIds="42"/>
+				+ Saba Kabaddi: <Sport SportType="47" LeagueGroupIds="42"/>
 		- @LiveIndicator (0 : non live, 1 : live , 2 : mix non live & live)
 		- @IncludeBetFrom: 1: show column betfrom, 0: hide
 		- @BetFrom:
@@ -217,6 +219,7 @@ BEGIN
 	UNION SELECT 43, '151'	-- Saba E-Sports PinGoal
 	UNION SELECT 5, '42'	-- Saba Tennis
 	UNION SELECT 4, '42'	-- Saba Ice Hockey
+	UNION SELECT 47, '42'	-- Saba Kabaddi
 
 	DECLARE @Data TABLE (
 		CustId			INT,
