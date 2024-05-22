@@ -167,6 +167,7 @@ AS
 		- 20240322@Razor: Support Virtual Ice Hockey [Redmine: #202519]
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240403@Razor: Support Saba xD [Redmine: #203371]
+		- 20240522@Razor: Support Saba Kabbadi [Redmine: #205314]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -622,9 +623,9 @@ BEGIN
 						END,
 				LeagueGroupID = CASE 
 									WHEN ( 
-											(le.LeagueGroupID IN (42,74,108,113) AND m.sporttype = 1 ) 
+											(le.LeagueGroupID IN (42,74,108,113) AND m.sporttype = 1 )
 											OR (le.LeagueGroupID IN (122, 42) AND m.sporttype = 2 )
-											OR (le.LeagueGroupID = 42 AND m.sporttype IN (4, 5, 50))
+											OR (le.LeagueGroupID = 42 AND m.sporttype IN (4, 5, 47, 50))
 											OR (le.LeagueGroupID = 151 AND m.sporttype = 43)
 										) AND b.betdaqid <> -2 AND b.winlostdate >= @SeparateSabaSport_Cutoff THEN le.LeagueGroupID
 									ELSE 0 
@@ -695,8 +696,8 @@ BEGIN
 			BEGIN TRY
 				EXEC sp_xml_preparedocument @DocHandler OUTPUT, @ProductDetails
 				INSERT INTO @ProductDetail (ProductId, SportType, BetType, LeagueGroupID, TicketType)
-				SELECT ProductId, SportType, BetType, LeagueGroupID, TicketType
-				FROM OPENXML(@DocHandler, '/ROOT/ProductDetail', 1) WITH (ProductId TINYINT, Sporttype SMALLINT, Bettype SMALLINT, LeagueGroupID SMALLINT, TicketType SMALLINT)
+				SELECT ProductId, SportType, BetType, LeagueGroupId, TicketType
+				FROM OPENXML(@DocHandler, '/ROOT/ProductDetail', 1) WITH (ProductId TINYINT, Sporttype SMALLINT, Bettype SMALLINT, LeagueGroupId SMALLINT, TicketType SMALLINT)
 
 				EXEC sp_xml_removedocument @DocHandler
 			END TRY
