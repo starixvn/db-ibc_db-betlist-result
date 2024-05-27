@@ -10,7 +10,12 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport]
 	@BaseCurrency	VARCHAR(12)		= '',
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= 'TransDate ASC'
+	@Sort			NVARCHAR(50)	= 'TransDate ASC',
+	@TotalRows		INT				= 0 OUTPUT,
+	@SumWinLost		MONEY			= 0 OUTPUT,
+	@SumLicenseeWL	MONEY			= 0 OUTPUT,
+	@SumComm		MONEY			= 0 OUTPUT,
+	@SumPlayerComm	MONEY			= 0 OUTPUT
 AS
 
 /*
@@ -27,6 +32,8 @@ AS
 		- 20220428@Kos: Support Bitcoin [RedmineID: #160160]
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230404@Kos: Don't return betfrom anymore [Redmine: #178059]
+		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
+				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
 */
 
 BEGIN
@@ -66,8 +73,14 @@ BEGIN
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, @SportType, 0, 2, '', @ProductList, @IsTest)
 
-	DECLARE @TempFromDate DATETIME,
-		@TempToDate DATETIME
+	-- Insert fake bettypes to get correct exec plan
+	INSERT INTO @SportBettype
+	SELECT 0, -BetType, 0
+	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
+	WHERE BetType < 200
+
+	DECLARE @TempFromDate SMALLDATETIME,
+		@TempToDate SMALLDATETIME
 
 	CREATE TABLE #Data (
 		TransId			BIGINT,
@@ -280,7 +293,7 @@ BEGIN
 			ISNULL(b.ExtraInfo, ''),
 			sbt.EventType,
 			2 AS WhTicket
-		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+		FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_recommend)
 			INNER JOIN #TempAg AS t ON t.custid = b.recommend
 			INNER JOIN @SportBettype AS sbt ON sbt.bettype = b.Bettype
 		WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
@@ -291,13 +304,9 @@ BEGIN
 	FROM #Data AS b
 	WHERE NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 
-	DECLARE @TotalRows INT
-
-	SELECT @TotalRows = COUNT(1) FROM #Data
-
 	DECLARE @Sql NVARCHAR(2000)
 
-	IF @TotalRows > 0
+	IF EXISTS (SELECT 1 FROM #Data)
 	BEGIN
 		UPDATE b
 		SET b.Product = CASE
@@ -331,6 +340,18 @@ BEGIN
 						WHERE Currency = e.ExchangeId
 							AND WinLostDate BETWEEN e.FromDate AND e.ToDate	)
 		END
+
+		-- Return data
+		SELECT
+			@TotalRows		= COUNT(b.TransId),
+			@SumWinlost		= SUM(b.WinLost * ISNULL(e.Rate, 1)),
+			@SumLicenseeWL	= SUM(b.LicenseeWL * ISNULL(e.Rate, 1)),
+			@SumComm		= SUM(b.Comm * ISNULL(e.Rate, 1)),
+			@SumPlayerComm	= SUM(b.PlayerComm * ISNULL(e.Rate, 1))
+		FROM #Data AS b
+			LEFT JOIN #ExchangeRate AS e
+				ON e.ExchangeId = b.Currency
+					AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 
 		-- Get sort text
 		IF @BaseCurrency <> ''
@@ -523,6 +544,7 @@ BEGIN
 
 	DROP TABLE #Data
 	DROP TABLE #PagingData
+	DROP TABLE #TempAg
 	DROP TABLE #ExchangeRate
 END
 GO

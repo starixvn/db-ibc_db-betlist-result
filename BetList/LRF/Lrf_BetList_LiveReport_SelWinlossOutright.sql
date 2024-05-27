@@ -9,14 +9,18 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossOutright]
 	@MoveBetsDay	SMALLDATETIME,
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 0,
-	@BaseCurrency	VARCHAR(12)
+	@BaseCurrency	VARCHAR(12),
+	@TotalRows		INT				= 0 OUTPUT,
+	@SumWinLost		MONEY			= 0 OUTPUT,
+	@SumLicenseeWL	MONEY			= 0 OUTPUT,
+	@SumComm		MONEY			= 0 OUTPUT,
+	@SumPlayerComm	MONEY			= 0 OUTPUT
 AS
 
 /*
 	Created: Henry@20120111
 	Task: get bet tickets for outright, horse racing in Live Report
 	DB: DBEXT.bodb02
-	Original: [Lrf_BetList_SelWinlossOutright]
 
 	Revisions:
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
@@ -40,6 +44,8 @@ AS
 		- 20210706@Kos: Support Beach Volleyball [Redmine: #157296]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
+				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
 */
 
 BEGIN
@@ -321,6 +327,18 @@ BEGIN
 	WHERE EXISTS (SELECT 1 FROM #AgWinlossOutright
 				WHERE Currency = e.ExchangeId
 					AND WinLostDate BETWEEN e.FromDate AND e.ToDate)
+
+	-- Return data
+	SELECT
+		@TotalRows		= COUNT(b.TransId),
+		@SumWinlost		= SUM(b.WinLost * ISNULL(e.Rate, 1)),
+		@SumLicenseeWL	= SUM(b.LicenseeWL * ISNULL(e.Rate, 1)),
+		@SumComm		= SUM(b.Comm * ISNULL(e.Rate, 1)),
+		@SumPlayerComm	= SUM(b.PlayerComm * ISNULL(e.Rate, 1))
+	FROM #AgWinlossOutright AS b
+		LEFT JOIN #ExchangeRate AS e
+			ON e.ExchangeId = b.Currency
+				AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 
 	DECLARE @RowStart INT,
 		@RowEnd INT

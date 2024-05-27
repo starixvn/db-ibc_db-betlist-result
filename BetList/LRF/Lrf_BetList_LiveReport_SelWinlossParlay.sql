@@ -12,7 +12,12 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossParlay]
 	@BaseCurrency	VARCHAR(12),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= 'TransDate ASC'
+	@Sort			NVARCHAR(50)	= 'TransDate ASC',
+	@TotalRows		INT				= 0 OUTPUT,
+	@SumWinLost		MONEY			= 0 OUTPUT,
+	@SumLicenseeWL	MONEY			= 0 OUTPUT,
+	@SumComm		MONEY			= 0 OUTPUT,
+	@SumPlayerComm	MONEY			= 0 OUTPUT
 AS
 
 /*
@@ -52,6 +57,8 @@ AS
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 					- Remove input params @ShowSB, @ShowVS2
 					- Add new input param @ProductList VARCHAR(500)
+		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
+				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -198,7 +205,10 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
-			0 AS LicenseeWL,
+			CASE
+				WHEN ba.TransID IS NULL THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.transdate,
@@ -249,7 +259,10 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
-			0 AS LicenseeWL,
+			CASE
+				WHEN ba.TransID IS NULL THEN - (b.winlost - b.actual_stake)
+				ELSE 0
+			END AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.transdate,
@@ -304,6 +317,18 @@ BEGIN
 	WHERE EXISTS (SELECT 1 FROM #AgWinlossMP
 				WHERE Currency = e.ExchangeId
 					AND WinLostDate BETWEEN e.FromDate AND e.ToDate)
+
+	-- Return data
+	SELECT
+		@TotalRows		= COUNT(b.TransId),
+		@SumWinlost		= SUM(b.WinLost * ISNULL(e.Rate, 1)),
+		@SumLicenseeWL	= SUM(b.LicenseeWL * ISNULL(e.Rate, 1)),
+		@SumComm		= SUM(b.Comm * ISNULL(e.Rate, 1)),
+		@SumPlayerComm	= SUM(b.PlayerComm * ISNULL(e.Rate, 1))
+	FROM #AgWinlossMP AS b
+		LEFT JOIN #ExchangeRate AS e
+			ON e.ExchangeId = b.Currency
+				AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 
 	CREATE TABLE #PagingData (
 		RowNum			INT,

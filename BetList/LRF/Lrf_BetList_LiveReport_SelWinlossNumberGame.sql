@@ -10,14 +10,19 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossNumberGame]
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@Sort			NVARCHAR(50)	= 'TransDate ASC',
-	@LiveIndicator	INT				= 1
+	@LiveIndicator	INT				= 1,
+	@TotalRows		INT				= 0 OUTPUT,
+	@SumWinLost		MONEY			= 0 OUTPUT,
+	@SumLicenseeWL	MONEY			= 0 OUTPUT,
+	@SumComm		MONEY			= 0 OUTPUT,
+	@SumPlayerComm	MONEY			= 0 OUTPUT
 AS
 
 /*
 	Created: Henry@20120119
 	Task: Live Report - Number Game Betlist
 	DB: DBEXT.bodb02
-	Original: [Lrf_BetList_SelWinlossNumberGame]
+
 	Revisions:
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
 		- 20120614@Jim: optimize code
@@ -45,6 +50,8 @@ AS
 		- 20220922@Kos: Support crypto currency [Redmine: 177481]
 		- 20230404@Kos: Don't return betfrom anymore [Redmine: #178059]
 		- 20230515@Kos: Hotfix - extend dynamic SQL length [Redmine: #188202]
+		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
+				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -337,13 +344,9 @@ BEGIN
 	FROM #Data AS b
 	WHERE NOT EXISTS (SELECT 1 FROM #TempAg WHERE CustId = b.Recommend AND Currency = b.Currency)
 
-	DECLARE @TotalRows INT
-
-	SELECT @TotalRows = COUNT(1) FROM #Data
-
 	DECLARE @Sql NVARCHAR(3000)
 
-	IF @TotalRows > 0
+	IF EXISTS (SELECT 1 FROM #Data)
 	BEGIN
 		DECLARE @ExFromDate SMALLDATETIME,
 			@ExToDate SMALLDATETIME
@@ -367,6 +370,18 @@ BEGIN
 						WHERE Currency = e.ExchangeId
 							AND WinLostDate BETWEEN e.FromDate AND e.ToDate)
 		END
+
+		-- Return data
+		SELECT
+			@TotalRows		= COUNT(b.TransId),
+			@SumWinlost		= SUM(b.WinLost * ISNULL(e.Rate, 1)),
+			@SumLicenseeWL	= SUM(b.LicenseeWL * ISNULL(e.Rate, 1)),
+			@SumComm		= SUM(b.Comm * ISNULL(e.Rate, 1)),
+			@SumPlayerComm	= SUM(b.PlayerComm * ISNULL(e.Rate, 1))
+		FROM #Data AS b
+			LEFT JOIN #ExchangeRate AS e
+				ON e.ExchangeId = b.Currency
+					AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 
 		-- Get sort text
 		IF @BaseCurrency <> ''
