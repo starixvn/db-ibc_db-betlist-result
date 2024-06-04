@@ -44,6 +44,7 @@ AS
 		- 20231221@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
 		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
 		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
+		- 20240604@Kos: Hotfix - wrong column order [Redmine: #205864]
 */
 
 BEGIN
@@ -396,8 +397,8 @@ BEGIN
 		SELECT
 			m.sporttype,
 			m.leagueid,
-			m.matchid,
 			l.LeagueGroupID,
+			m.matchid,
 			m.homeid,
 			m.awayid,
 			m.hthomescore,
