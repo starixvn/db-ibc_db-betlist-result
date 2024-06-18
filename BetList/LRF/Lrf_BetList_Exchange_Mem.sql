@@ -27,6 +27,7 @@ AS
 					- Add new input param @DateOption TINYINT
 		- 20231006@Kos: Support view resettled ticket only [Redmine: 193954]
 		- 20231213@Kos: Hotfix - inconsistent odds [Redmine: 198327]
+		- 20240618@Kos: Exclude non-settled tickets [Redmine: 206505]
 */
 
 BEGIN
@@ -173,6 +174,7 @@ BEGIN
 				AND b.eventID = s.eventID
 				AND b.marketID = s.marketID
 		LEFT JOIN bodb_3rdProduct.dbo.BettransM_Exchange AS bm WITH (NOLOCK) ON b.betID = bm.BetID
+	WHERE b.betstatus = 'Settled'
 
 	DECLARE @FDate	DATETIME,
 		@TDate		DATETIME
@@ -223,6 +225,9 @@ BEGIN
 		b.ExVirtualRate
 	FROM @Data AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+	WHERE EXISTS (SELECT 1 FROM @Detail WHERE userId = b.userId
+										AND eventID = b.eventID
+										AND marketID = b.marketID)
 
 	SELECT
 		b.BetId,
