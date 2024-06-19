@@ -100,6 +100,7 @@ AS
 		- 20240412@Kos: Support Gaming API [Redmine: 203734]
 		- 20240417@Kos: Support Saba Coins [Redmine: 202281]
 		- 20240425@Kos: Support Virtual Sports 4 [Redmine: 199347]
+		- 20240619@Kos: Hotfix - Missing TranId3rd for Sports Lottery and Virtual Games [Redmine: 206758]
 */
 
 BEGIN
@@ -990,7 +991,7 @@ BEGIN
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN @Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
+				WHEN @Product IN ('SB', 'CO', 'VRG', 'SLT') THEN ISNULL(b.betcheck, '')
 				WHEN @Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 				WHEN @EventType = 0 AND @RefTable = 0 THEN ISNULL(b.betcheck, '')
 				ELSE ''
@@ -1168,7 +1169,7 @@ BEGIN
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN @Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
+				WHEN @Product IN ('SB', 'CO', 'VRG', 'SLT') THEN ISNULL(b.betcheck, '')
 				WHEN @Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 				WHEN @EventType = 0 AND @RefTable = 0 THEN ISNULL(b.betcheck, '')
 				ELSE ''
@@ -1344,7 +1345,7 @@ BEGIN
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN @Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
+				WHEN @Product IN ('SB', 'CO', 'VRG', 'SLT') THEN ISNULL(b.betcheck, '')
 				WHEN @Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 				WHEN @EventType = 0 AND @RefTable = 0 THEN ISNULL(b.betcheck, '')
 				ELSE ''

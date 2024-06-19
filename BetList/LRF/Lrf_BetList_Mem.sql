@@ -126,6 +126,7 @@ AS
 		- 20231227@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 		- 20240305@Kos: Support Virtual Sports 4 [Redmine: 199347]
+		- 20240619@Kos: Hotfix - Missing TranId3rd for Sports Lottery and Virtual Games [Redmine: 206758]
 */
 
 BEGIN
@@ -1281,7 +1282,7 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO', 'VRG', 'SLT') THEN ISNULL(b.betcheck, '')
 									WHEN b.EventType = 0 AND b.RefTable = 0 THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 									ELSE ''
@@ -1429,7 +1430,7 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO', 'VRG', 'SLT') THEN ISNULL(b.betcheck, '')
 									WHEN b.EventType = 0 AND b.RefTable = 0 THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 									ELSE ''
@@ -1577,7 +1578,7 @@ BEGIN
 									ELSE ''
 								END,
 					BetCheck = CASE
-									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betcheck, '')
+									WHEN b.Product IN ('SB', 'CO', 'VRG', 'SLT') THEN ISNULL(b.betcheck, '')
 									WHEN b.EventType = 0 AND b.RefTable = 0 THEN ISNULL(b.betcheck, '')
 									WHEN b.Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
 									ELSE ''
