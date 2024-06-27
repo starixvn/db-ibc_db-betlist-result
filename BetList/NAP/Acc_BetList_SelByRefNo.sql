@@ -170,23 +170,24 @@ AS
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
 		- 20240419@Razor: Support Saba Coins [Redmine: #204003]
 		- 20240507@Razor: Check permission for Real Currency [Redmine: #202523]
+		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix --
-	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500), RefTable TINYINT)
 
 	DECLARE @IsTest BIT = 0
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
-	SELECT ProductID, BetType, EventType, SubProduct
+	SELECT ProductID, BetType, EventType, SubProduct, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE BetType NOT IN (903, 904, 913, 914)
-		AND ProductID NOT IN (2, 4, 7, 9, 13, 17, 19, 26, 30, 31, 33)
+		AND ProductID NOT IN (2, 4, 7, 9, 13, 17, 19, 24, 26, 30, 31, 33)
 
 	DECLARE
 		@TransId		BIGINT,
@@ -1155,7 +1156,8 @@ BEGIN
 			IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType
 							AND (ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
-								OR (ProductID = 6 AND SubProduct <> '')))
+								OR (ProductID = 6 AND SubProduct <> '')
+								OR RefTable = 1))
 			BEGIN
 				IF @WinLostDate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)		-- yesterday and later
 				BEGIN
@@ -1243,7 +1245,8 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					WHERE b.transid = @TransId
 						AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
-							OR (s.ProductId = 6 AND s.SubProduct <> ''))
+							OR (s.ProductId = 6 AND s.SubProduct <> '')
+							OR s.RefTable = 1)
 						AND brng.statusid IN (0, 1)
 					GROUP BY
 						b.transid,
@@ -1355,7 +1358,8 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					WHERE b.transid = @TransId
 						AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
-							OR (s.ProductId = 6 AND s.SubProduct <> ''))
+							OR (s.ProductId = 6 AND s.SubProduct <> '')
+							OR s.RefTable = 1)
 						AND brng.statusid NOT IN (0, 1)
 					GROUP BY
 						b.transid,
@@ -1463,7 +1467,8 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 					WHERE b.transid = @TransId
 						AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
-							OR (s.ProductId = 6 AND s.SubProduct <> ''))
+							OR (s.ProductId = 6 AND s.SubProduct <> '')
+							OR RefTable = 1)
 				END
 			END
 
@@ -2357,7 +2362,8 @@ BEGIN
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType
 							AND (ProductID IN (6, 8, 11, 21, 22, 23, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 79, 80, 86, 81))
-									OR (ProductID = 3 AND EventType = 0))
+									OR (ProductID = 3 AND EventType = 0)
+									OR RefTable = 1)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2432,6 +2438,7 @@ BEGIN
 						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 						WHEN s.ProductID = 28 THEN 220
 						WHEN s.ProductID = 32 THEN 248
+						WHEN s.RefTable = 1 THEN b.matchid
 						ELSE 0
 					END AS SportType,
 					b.ip,
@@ -2482,7 +2489,8 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransID
 					AND (s.ProductID IN (6, 8, 11, 21, 22, 23, 28, 32, 34, 36, 37, 38, 39, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 79, 80, 86, 81)
-							OR (s.ProductID = 3 AND s.EventType = 0))
+							OR (s.ProductID = 3 AND s.EventType = 0)
+							OR RefTable = 1)
 
 				-- Get match info for Player Tips
 				IF EXISTS (SELECT 1 FROM @Data WHERE SportType = 157)
@@ -3105,7 +3113,8 @@ BEGIN
 						WHERE Bettype = @BetType 
 							AND (ProductID IN (11, 21, 22, 23, 32, 34, 36, 37, 39, 42, 45, 46, 47, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 79, 80, 86, 81)
 								OR (ProductID = 6 AND SubProduct <> '')
-								OR (ProductID = 3 AND EventType = 0)))
+								OR (ProductID = 3 AND EventType = 0)
+								OR RefTable = 1))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -3175,6 +3184,7 @@ BEGIN
 						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 						WHEN s.ProductID = 32 THEN 248
 						WHEN s.ProductID IN (3, 34, 36, 37, 39, 42, 45, 46, 47, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 79, 80, 86, 81) THEN b.matchid
+						WHEN s.RefTable = 1 THEN b.matchid
 						ELSE 0
 					END AS SportType,
 					dp.ip,
@@ -3227,7 +3237,8 @@ BEGIN
 				WHERE b.transid = @TransID
 					AND (s.ProductID IN (11, 21, 22, 23, 32, 34, 36, 37, 39, 42, 45, 46, 47, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 79, 80, 86, 81)
 						OR (s.ProductID = 6 AND s.SubProduct <> '')
-						OR (s.ProductID = 3 AND s.EventType = 0))
+						OR (s.ProductID = 3 AND s.EventType = 0)
+						OR RefTable = 1)
 
 				-- Get match info for Player Tips
 				IF EXISTS (SELECT 1 FROM @Data WHERE SportType = 157)
@@ -3634,7 +3645,8 @@ BEGIN
 			IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType
 							AND (ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
-								OR (ProductID = 6 AND SubProduct <> '')))
+								OR (ProductID = 6 AND SubProduct <> '')
+								OR RefTable = 1))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -3729,7 +3741,8 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.transid = @TransId
 					AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
-						OR (s.ProductId = 6 AND s.SubProduct <> ''))
+						OR (s.ProductId = 6 AND s.SubProduct <> '')
+						OR RefTable = 1)
 			END
 		END
 
@@ -3741,7 +3754,8 @@ BEGIN
 			IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType
 							AND (ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
-								OR (ProductID = 6 AND SubProduct <> '')))
+								OR (ProductID = 6 AND SubProduct <> '')
+								OR RefTable = 1))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -3836,7 +3850,8 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 				WHERE b.transid = @TransId
 					AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
-						OR (s.ProductId = 6 AND s.SubProduct <> ''))
+						OR (s.ProductId = 6 AND s.SubProduct <> '')
+						OR RefTable = 1)
 			END
 		END
 	END

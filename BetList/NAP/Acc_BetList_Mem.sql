@@ -108,22 +108,23 @@ AS
 		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
 		- 20240419@Razor: Support Saba Coins [Redmine: #204003]
+		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix
-	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
+	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT)
 
 	DECLARE @IsTest BIT = 0
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
-	SELECT ProductID, BetType, EventType
+	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID NOT IN (2, 4, 7, 9, 13, 17, 19, 26, 30, 31, 33)
+	WHERE ProductID NOT IN (2, 4, 7, 9, 13, 17, 19, 24, 26, 30, 31, 33)
 		AND (ProductID <> 6 OR SubProduct <> '')
 		AND (@BetType = 0
 			OR BetType = @BetType
@@ -138,7 +139,8 @@ BEGIN
 		SELECT
 			s.ProductID,
 			f.BetType,
-			s.EventType
+			s.EventType,
+			s.RefTable
 		FROM @SportBettype AS s
 			INNER JOIN (SELECT * FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f ON s.Bettype = f.GroupTypeId
 		WHERE NOT EXISTS ( SELECT 1 FROM @SportBettype AS sbt WHERE sbt.Bettype = f.Bettype )
@@ -218,7 +220,8 @@ BEGIN
 		IsCashOut			TINYINT,
 		CurrencyId			TINYINT,
 		SiteId				VARCHAR(20),
-		DeviceType			TINYINT
+		DeviceType			TINYINT,
+		RefTable			TINYINT
 	)
 
 	-- Get ticket detail
@@ -413,7 +416,8 @@ BEGIN
 			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND (',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 				OR (s.ProductID IN (6, 21, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 69, 70, 72, 73, 75, 76, 78, 79, 80, 86)
-					AND b.winlostdate >= @Yesterday))		-- Don't care status of yesterday and today summary casino rows
+					AND b.winlostdate >= @Yesterday)		-- Don't care status of yesterday and today summary casino rows
+				OR (s.RefTable = 1 AND b.winlostdate >= @Yesterday))
 
 		-- Get more info for CashOut tickets
 		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911 AND TableID = 1)
@@ -922,6 +926,7 @@ BEGIN
 						WHEN s.ProductID = 80 THEN 'WE'								-- WE Live Casino
 						WHEN s.ProductID = 86 THEN 'SNG'							-- Saba xD
 						WHEN s.ProductID = 81 THEN 'SAC'							-- Saba Coins
+						WHEN s.ProductID = 87 THEN 'FS'								-- FastSpin
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -935,7 +940,8 @@ BEGIN
 			IsCashOut = CASE
 							WHEN b.betdaqid = -2 AND s.EventType = 1 AND s.ProductID = 1 AND ',' + @OriginalStatusIdList + ',' LIKE '%,88,%' THEN 1
 							ELSE 0
-						END
+						END,
+			RefTable = s.RefTable
 		FROM @Data AS b
 			INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
@@ -944,7 +950,7 @@ BEGIN
 			OR Product IS NULL
 			OR BetType IN (903, 904, 913, 914)
 			OR (Product NOT IN ('SB', 'Parlay')
-				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG')
+				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG', 'FS')
 					OR WinLostDate < @Yesterday)
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'		-- Abnormal Bets
@@ -1114,7 +1120,9 @@ BEGIN
 			BEGIN
 				-- Get yesterday and today running and settled bettransRnG/bettransLC tickets
 				IF EXISTS ( SELECT 1 FROM @Data
-						WHERE Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'UUSL', 'SNG') AND WinLostDate >= @Yesterday)	-- bettransRnG
+						WHERE (Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'UUSL', 'SNG') -- bettransRnG
+									OR RefTable = 1)
+						AND WinLostDate >= @Yesterday)
 				BEGIN
 					-- Running
 					IF ',' + @OriginalStatusIdList + ',' LIKE '%,0,%'
@@ -1144,7 +1152,8 @@ BEGIN
 							0 AS OddsSpread
 						FROM @Data AS c
 							INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-					WHERE c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'UUSL', 'SNG')
+					WHERE (c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'UUSL', 'SNG')
+								OR c.RefTable = 1)
 							AND c.WinLostDate >= @Yesterday
 							AND brng.statusID IN (0, 1)
 						GROUP BY
@@ -1192,7 +1201,8 @@ BEGIN
 							END AS OddsSpread
 						FROM @Data AS c
 							INNER JOIN dbo.bettransRnG AS brng WITH (NOLOCK) ON brng.RefNo = c.TransId
-					WHERE c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'UUSL', 'SNG')
+					WHERE (c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'UUSL', 'SNG')
+								OR c.RefTable = 1)
 							AND c.WinLostDate >= @Yesterday
 							AND brng.statusID NOT IN (0, 1)
 						GROUP BY
@@ -1289,8 +1299,9 @@ BEGIN
 
 				DELETE b
 				FROM @Data AS b
-				WHERE b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 
+				WHERE (b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 
 						'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL')
+							OR b.RefTable = 1)
 					AND b.Winlostdate >= @Yesterday
 					AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 			END
@@ -1322,6 +1333,7 @@ BEGIN
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									WHEN b.Product = 'BTC' THEN m3rd.sporttype
+									WHEN b.RefTable = 1 THEN b.matchid
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -1475,7 +1487,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 
-							'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL')
+							'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'FS')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips
@@ -1660,7 +1672,8 @@ BEGIN
 					ISCashOut			TINYINT,
 					CurrencyId			TINYINT,
 					SiteId				VARCHAR(20),
-					DeviceType			TINYINT
+					DeviceType			TINYINT,
+					RefTable			TINYINT
 				)
 
 				INSERT INTO @TmpCasinoData
@@ -1675,6 +1688,7 @@ BEGIN
 						WHEN b.Product = 'AllBet' THEN 211 -- AllBet
 						WHEN b.Product = 'VB' THEN 212 -- Macau Games
 						WHEN b.Product = 'PP' THEN 248 -- Pragmatic Casino
+						WHEN b.RefTable = 1 THEN b.matchid
 						ELSE 0
 					END AS SportType,
 					b.BetType,
@@ -1750,16 +1764,19 @@ BEGIN
 					0,
 					b.CurrencyId,
 					b.SiteId,
-					b.DeviceType
+					b.DeviceType,
+					b.RefTable
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
-				WHERE b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
+				WHERE (b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
 						'PGS', 'JK', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL')
+							OR b.RefTable = 1)
 					AND b.WinLostDate >= @Yesterday
 
 				DELETE FROM @Data
-				WHERE Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
+				WHERE (Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
 						'PGS', 'JK', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL')
+							OR RefTable = 1)
 					AND WinLostDate >= @Yesterday
 
 				INSERT INTO @Data
@@ -1811,6 +1828,7 @@ BEGIN
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									WHEN b.Product = 'BTC' THEN m3rd.sporttype
+									WHEN b.RefTable = 1 THEN b.matchid
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -2010,6 +2028,7 @@ BEGIN
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									WHEN b.Product IN ('BTC') THEN m3rd.sporttype
+									WHEN b.RefTable = 1 THEN b.matchid
 									ELSE 0
 								END,
 					BetTeam = CASE
