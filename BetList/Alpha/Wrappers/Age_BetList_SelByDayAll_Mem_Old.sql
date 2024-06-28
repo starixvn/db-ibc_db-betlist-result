@@ -115,6 +115,7 @@ AS
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240403@Razor: Support Saba xD [Redmine: #203371]
+		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 
 	Param's Explanation:
 		+ @TransType:
@@ -184,7 +185,8 @@ BEGIN
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(20),
 		DeviceType		TINYINT,
-		LeagueGroupId	SMALLINT
+		LeagueGroupId	SMALLINT,
+		RefTable		TINYINT
 	);
 
 	DECLARE @DetailData TABLE (
@@ -205,7 +207,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
+	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT)
 
 	DECLARE @Date	SMALLDATETIME
 
@@ -316,9 +318,9 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @Data)
 		BEGIN
 			INSERT INTO @SportBettype
-			SELECT ProductID, BetType, EventType
+			SELECT ProductID, BetType, EventType, RefTable
 			FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-			WHERE ProductID NOT IN (2, 4, 7, 9, 10, 11, 13, 14, 15, 17, 19, 25, 26, 30, 31, 33)
+			WHERE ProductID NOT IN (2, 4, 7, 9, 10, 11, 13, 14, 15, 17, 19, 24, 25, 26, 30, 31, 33)
 				AND BetType NOT IN (71, 72, 901, 902, 903, 904)
 
 			UPDATE b
@@ -367,6 +369,7 @@ BEGIN
 							WHEN s.ProductID = 79 THEN 'L22'	-- Live22
 							WHEN s.ProductID = 80 THEN 'WE'		-- WE
 							WHEN s.ProductID = 86 THEN 'SNG'	-- Saba xD
+							WHEN s.ProductID = 87 THEN 'FS'		-- FastSpin
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 83 THEN 'ParlayVS4' --Virtual Sports 4 Parlay
@@ -379,7 +382,8 @@ BEGIN
 							WHEN s.EventType = 2 AND s.ProductID = 1 THEN 'Outright'
 							WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'		-- Virtual sports:: racing
 							ELSE 'Unknown'
-						END
+						END,
+						RefTable = s.RefTable
 			FROM @Data AS b
 				INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
@@ -412,6 +416,7 @@ BEGIN
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									WHEN b.Product IN ('BTC') THEN m3rd.SportType
+									WHEN b.RefTable = 1 THEN b.matchid
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -579,7 +584,7 @@ BEGIN
 	ELSE		-- Grand Prize
 	BEGIN
 		INSERT INTO @SportBettype
-		SELECT ProductID, BetType, EventType
+		SELECT ProductID, BetType, EventType, RefTable
 		FROM bodb02.dbo.f_SportBettypeMatrix_Sel (6, 0, 0, 2, '', '', @IsTest)
 		WHERE Bettype NOT IN (71, 72)
 

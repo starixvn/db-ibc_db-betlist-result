@@ -168,6 +168,7 @@ AS
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240403@Razor: Support Saba xD [Redmine: #203371]
 		- 20240522@Razor: Support Saba Kabbadi [Redmine: #205314]
+		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -239,7 +240,8 @@ BEGIN
 		SiteId			VARCHAR(20),
 		LeagueGroupID	SMALLINT,
 		TicketType		TINYINT,
-		DeviceType		TINYINT
+		DeviceType		TINYINT,
+		RefTable		TINYINT
 	);
 
 	DECLARE @DetailData TABLE (
@@ -391,10 +393,10 @@ BEGIN
 
 		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-		DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
+		DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT)
 
 		INSERT INTO @SportBettype
-		SELECT ProductID, BetType, EventType
+		SELECT ProductID, BetType, EventType, RefTable
 		FROM bodb02.dbo.f_SportBettypeMatrixByProduct_Sel(@ProductIds, @IsTest)
 
 		UPDATE b
@@ -442,7 +444,8 @@ BEGIN
 						WHEN s.ProductID = 78 THEN 'UUSL'	-- UU Slots
 						WHEN s.ProductID = 79 THEN 'L22'	-- Live22
 						WHEN s.ProductID = 80 THEN 'WE'		-- WE
-						WHEN s.ProductID = 86 THEN 'SNG'		-- Saba xD
+						WHEN s.ProductID = 86 THEN 'SNG'	-- Saba xD
+						WHEN s.ProductID = 87 THEN 'FS'		-- FastSpin
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 83 THEN 'ParlayVS4' --Virtual Sports 4 Parlay
@@ -455,7 +458,8 @@ BEGIN
 						WHEN s.EventType = 2 AND s.ProductID = 1 THEN 'Outright'
 						WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'		-- Virtual sports:: racing
 						ELSE 'Unknown'
-					END
+					END,
+				RefTable = s.RefTable
 		FROM @Data AS b
 			INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
@@ -489,6 +493,7 @@ BEGIN
 								WHEN b.Product IN ('Outright') THEN l.sporttype
 								WHEN b.Product IN ('VR') THEN vr.SportType
 								WHEN b.Product IN ('BTC') THEN m3rd.sporttype
+								WHEN b.RefTable = 1 THEN b.matchid
 								ELSE 0
 							END,
 				BetTeam = CASE
@@ -678,7 +683,7 @@ BEGIN
 
 	-- Filter due to product detail
 	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22
-	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG'))
+	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
@@ -833,6 +838,22 @@ BEGIN
 							WHERE ProductId = 79 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 79 AND BetType = b.BetType)
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'FS'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 87 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 87 AND BetType = b.BetType)
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'FS'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 87 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 87 AND BetType = b.BetType)
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
