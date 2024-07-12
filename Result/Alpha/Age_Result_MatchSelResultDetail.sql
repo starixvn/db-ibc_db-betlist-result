@@ -37,6 +37,7 @@ AS
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
 		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
+		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 */
 
 BEGIN
@@ -146,7 +147,7 @@ BEGIN
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
-		ELSE IF @SportType IN (6, 9, 50)		-- Volleyball, Badminton, Cricket
+		ELSE IF @SportType IN (6, 8, 9, 50)		-- Volleyball, Baseball, Badminton, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -162,7 +163,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (6, 9)
+						AND (@SportType IN (6, 8, 9)
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC
@@ -293,7 +294,7 @@ BEGIN
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
-		ELSE IF @SportType IN (6, 9, 50)		-- Volleyball, Badminton, Cricket
+		ELSE IF @SportType IN (6, 8, 9, 50)		-- Volleyball, Baseball, Badminton, Cricket
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -309,7 +310,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (6, 9)
+						AND (@SportType IN (6, 8, 9)
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC

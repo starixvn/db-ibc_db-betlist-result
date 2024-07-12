@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02,DBEXT-bodb02,DBACC-bodb02" selecters="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBAGE-bodb02,DBEXT-bodb02,DBACC-bodb02" selecters="wsv_alp, wsv_alpv" viewers="" isFunction="1" isNested="1"></info>*/
 
 ALTER FUNCTION [dbo].[f_ResourceBettype]
 (
@@ -36,6 +36,7 @@ AS
 		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]		
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
+		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 */
 
 BEGIN
@@ -784,6 +785,15 @@ BEGIN
 	SELECT 6, 14, 'Volleyball AIO', 3909, '3909%'	UNION ALL
 	SELECT 6, 14, 'Volleyball AIO', 3915, '3915%'	UNION ALL
 	SELECT 6, 14, 'Volleyball AIO', 3916, '3915%'
+
+	-- 14. Baseball AIO 
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	SELECT 8, 15, 'Baseball AIO', 8815, '8815'		UNION ALL
+	SELECT 8, 15, 'Baseball AIO', 8820, '88200%'	UNION ALL
+	SELECT 8, 15, 'Baseball AIO', 8821, '8821'		UNION ALL
+	SELECT 8, 15, 'Baseball AIO', 8823, '88230%'	UNION ALL
+	SELECT 8, 15, 'Baseball AIO', 8824, '88230%'	UNION ALL
+	SELECT 8, 15, 'Baseball AIO', 8827, '8827'
 
 	RETURN
 END

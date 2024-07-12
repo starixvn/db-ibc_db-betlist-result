@@ -53,6 +53,7 @@ AS
 		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
 		- 20240403@Razor: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #203378]
 					- Show Saba Ice Hockey, Criket, Tennis
+		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 */
 
 BEGIN
@@ -124,7 +125,7 @@ BEGIN
 											FROM dbo.ResultDetailOS AS o WITH (NOLOCK)
 											WHERE o.SettlementStatusID > 0
 												AND m.matchid = o.MatchId
-												AND (m.sporttype IN (6, 9, 45, 58)		-- Volleyball, Badminton, Beach Volleyball, Bandy
+												AND (m.sporttype IN (6, 8, 9, 45, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Bandy
 													OR (m.sporttype = 50	-- Cricket
 														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')
@@ -241,7 +242,7 @@ BEGIN
 											FROM dbo.ResultDetailOS14 AS o WITH (NOLOCK)
 											WHERE o.SettlementStatusID > 0
 												AND m.matchid = o.MatchId
-												AND (m.sporttype IN (6, 9, 45, 58)		-- Volleyball, Badminton, Beach Volleyball, Bandy
+												AND (m.sporttype IN (6, 8, 9, 45, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Bandy
 													OR (m.sporttype = 50	-- Cricket
 														AND o.ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 												AND ( ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running')

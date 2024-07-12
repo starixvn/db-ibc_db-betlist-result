@@ -64,6 +64,7 @@ AS
 		- 20240403@Razor: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #203378]
 				- Show Saba Ice Hockey, Criket, Tennis
 		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
+		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 */
 
 BEGIN
@@ -205,14 +206,14 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-						AND (@SportType IN (6, 9, 45, 58)	-- Volleyball, Badminton, Beach Volleyball, Bandy
+						AND (@SportType IN (6, 8, 9, 45, 58)	-- Volleyball, Baseball, Badminton, Beach Volleyball, Bandy
 							OR (@SportType = 50
 								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 					UNION ALL
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-						AND (@SportType IN (6, 9, 45, 58)	-- Volleyball, Badminton, Beach Volleyball, Bandy
+						AND (@SportType IN (6, 8, 9, 45, 58)	-- Volleyball, Baseball, Badminton, Beach Volleyball, Bandy
 							OR (@SportType = 50
 								AND ResourceID IN ('H1', 'H2', 'A1', 'A2', '9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', '94511', '96151')))
 					UNION ALL
@@ -486,7 +487,7 @@ BEGIN
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
+		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -502,7 +503,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (6, 9, 45)
+						AND (@SportType IN (6, 8, 9, 45)
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC
@@ -589,7 +590,7 @@ BEGIN
 			ORDER BY MatchID ASC,
 				ResourceId ASC
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
+		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -605,7 +606,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (6, 9, 45)	-- Volleyball, Badminton, Beach Volleyball
+						AND (@SportType IN (6, 8, 9, 45)	-- Volleyball, Baseball, Badminton, Beach Volleyball
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453')))))
 			ORDER BY MatchID ASC,
 				ResourceId ASC
