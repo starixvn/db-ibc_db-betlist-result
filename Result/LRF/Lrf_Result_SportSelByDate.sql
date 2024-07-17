@@ -56,6 +56,7 @@ AS
 		- 20231226@Kos: Switch to use ResultDetailOS for Bandy [Redmine: #198714]
 		- 20240315@Kos: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #201283]
 					- Support Saba Ice Hockey
+		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
 */
 
 BEGIN
@@ -121,7 +122,7 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-				) AS o ON o.MatchID = m.matchid AND m.sporttype IN (6, 9, 45, 58)
+				) AS o ON o.MatchID = m.matchid AND m.sporttype IN (6, 8, 9, 45, 58)
 			LEFT JOIN (
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS WITH (NOLOCK)
@@ -284,7 +285,7 @@ BEGIN
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 					WHERE SettlementStatusID > 0
-				) AS o ON o.MatchID = m.matchid AND m.sporttype IN (6, 9, 45, 58)
+				) AS o ON o.MatchID = m.matchid AND m.sporttype IN (6, 8, 9, 45, 58)
 			LEFT JOIN (
 					SELECT DISTINCT MatchID
 					FROM dbo.ResultDetailOS14 WITH (NOLOCK)
@@ -391,11 +392,18 @@ BEGIN
 		END
 	END
 
+	DELETE @Sport
+	WHERE SportType NOT IN (SELECT DISTINCT s.SportType
+							FROM dbo.SportBettypeMatrix AS s WITH (NOLOCK)
+							WHERE s.ProductID = 1
+								OR (s.ProductID = 3
+									AND EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 2))
+								OR EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = s.ProductID))
+
 	SELECT DISTINCT SportType,
 		SportName
 	FROM dbo.Sports WITH (NOLOCK)
 	WHERE SportType IN (SELECT SportType FROM @Sport)
-		AND (SportType <> 161 OR EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 2))
 	ORDER BY SportType ASC,
 		SportName ASC
 

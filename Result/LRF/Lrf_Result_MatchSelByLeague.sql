@@ -65,6 +65,7 @@ AS
 		- 20240315@Kos: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #201283]
 					- Support Saba Ice Hockey
 		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
+		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
 */
 
 BEGIN 
@@ -219,7 +220,7 @@ BEGIN
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetailOS WITH (NOLOCK)
 				WHERE SettlementStatusID > 0
-					AND (@SportType IN (6, 9, 45, 58)
+					AND (@SportType IN (6, 8, 9, 45, 58)
 						OR (@SportType = 50
 							AND ResourceID NOT IN ('00', '9442', '9443')
 							AND ResourceID NOT LIKE '9410%'
@@ -280,7 +281,7 @@ BEGIN
 				SELECT DISTINCT MatchID
 				FROM dbo.ResultDetailOS14 WITH (NOLOCK)
 				WHERE SettlementStatusID > 0
-					AND (@SportType IN (6, 9, 45, 58)
+					AND (@SportType IN (6, 8, 9, 45, 58)
 						OR (@SportType = 50
 							AND ResourceID NOT IN ('00', '9442', '9443')
 							AND ResourceID NOT LIKE '9410%'
@@ -601,7 +602,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Cricket, Beach Volleyball, Bandy
+		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Badminton, Cricket, Beach Volleyball, Bandy, Baseball
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -617,7 +618,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (6, 9, 45, 58)
+						AND (@SportType IN (6, 8, 9, 45, 58)
 							OR (@SportType = 50
 								AND ResourceID NOT IN ('00')
 								AND ResourceID NOT LIKE '9410%'
@@ -713,7 +714,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Cricket, Beach Volleyball, Bandy
+		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Badminton, Cricket, Beach Volleyball, Bandy, Baseball
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -729,7 +730,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (6, 9, 45, 58)
+						AND (@SportType IN (6, 8, 9, 45, 58)
 							OR (@SportType = 50
 								AND ResourceID NOT IN ('00')
 								AND ResourceID NOT LIKE '9410%'

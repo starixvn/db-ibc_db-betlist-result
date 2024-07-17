@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02,DBEXT-bodb02,DBACC-bodb02" selecters="wsv_alp, wsv_alpv" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBAGE-bodb02,DBEXT-bodb02,DBACC-bodb02" selecters="wsv_alp,wsv_alpv,wsv_lap" viewers="" isFunction="1" isNested="1"></info>*/
 
 ALTER FUNCTION [dbo].[f_ResourceBettype]
 (
@@ -33,7 +33,7 @@ AS
 		- 20210823@Razor: Support Cricket AIO 1.2 [Redmine: #160409]
 		- 20210922@Razor: Support Cricket AIO 1.2 - add bettype 9442, 9443 [Redmine: #160409]
 		- 20220120@Razor: Support E-Sports phase 4 [Redmine: #166326]
-		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]		
+		- 20220310@Razor: Support Cricket AIO 2 [Redmine: #166334]
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]

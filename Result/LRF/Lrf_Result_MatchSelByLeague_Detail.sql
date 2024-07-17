@@ -40,6 +40,7 @@ AS
 		- 20230321@Kos: Change Display HT Score for some Special League of Soccer [Redmine: #181331]
 		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
 		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
+		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
 */
 
 BEGIN
@@ -152,7 +153,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (6, 9, 50)		-- Volleyball, Badminton, Cricket
+		ELSE IF @SportType IN (6, 8, 9, 50)		-- Volleyball, Badminton, Cricket, Baseball
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -168,7 +169,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (6, 9)
+						AND (@SportType IN (6, 8, 9)
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', 
 								'94511', '96151')))))
 		END
@@ -297,7 +298,7 @@ BEGIN
 						AND (LEN(ResourceID) = 2
 							OR SettlementStatusID > 0)))
 		END
-		ELSE IF @SportType IN (6, 9, 50)		-- Volleyball, Badminton, Cricket
+		ELSE IF @SportType IN (6, 8, 9, 50)		-- Volleyball, Badminton, Cricket, Baseball
 		BEGIN
 			INSERT INTO @Detail
 			SELECT
@@ -313,7 +314,7 @@ BEGIN
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (6, 9))
 					OR (SettlementStatusID > 0
-						AND (@SportType IN (6, 9)
+						AND (@SportType IN (6, 8, 9)
 							OR (@SportType = 50 AND ResourceID IN ('9400', '9401', '9442', '9443', '9446', '9447', '9450', '9449', '9452', '9453', 
 								'94511', '96151')))))
 		END
