@@ -170,6 +170,7 @@ AS
 		- 20240522@Razor: Support Saba Kabbadi [Redmine: #205314]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
+		- 20240718@Razor: Support Vgaming Promotion [Redmine: #208019]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -1116,8 +1117,8 @@ BEGIN
 	END -- end: bettrans14
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22
-	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'FS'))
+	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming
+	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'FS', 'VGA'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId		TINYINT,
@@ -1274,17 +1275,32 @@ BEGIN
 		FROM #MemBetTicket AS b
 		WHERE b.Product = 'FS'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 87 AND BetType = b.BetType)
+					WHERE ProductId = 87 AND BetType = b.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 87 AND BetType = b.BetType)
+					WHERE ProductId = 87 AND BetType = b.BetType)
 
 		DELETE b
 		FROM #MemBetTicket AS b
 		WHERE b.Product = 'FS'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 87 AND BetType = 0)
+						WHERE ProductId = 87 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 87 AND BetType = b.BetType)
+						WHERE ProductId = 87 AND BetType = b.BetType)
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'VGA'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 66 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 66 AND BetType = b.BetType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'VGA'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 66 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 66 AND BetType = b.BetType)
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
