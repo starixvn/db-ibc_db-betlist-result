@@ -59,6 +59,7 @@ AS
 				- Show Saba Ice Hockey, Criket, Tennis
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 */
 
 BEGIN
@@ -70,7 +71,7 @@ BEGIN
 
 	SELECT @ToDate = DATEADD(s, -1, DATEADD(d, 1, @EventDate))
 
-	IF @SportType NOT IN (175, 181, 182, 184, 183, 185, 193)
+	IF @SportType NOT IN (147, 175, 181, 182, 184, 183, 185, 193)
 	BEGIN
 		SELECT DISTINCT
 			l.leaguename,
@@ -256,7 +257,7 @@ BEGIN
 		ORDER BY m.sporttype ASC,
 			l.leaguename ASC
 	END
-	ELSE IF @SportType  = 175 --Bitcoin
+	ELSE IF @SportType  IN (147, 175) --VS 5, Bitcoin
 	BEGIN
 		SELECT DISTINCT
 			l.leaguename AS leaguename,
@@ -266,16 +267,21 @@ BEGIN
 		FROM dbo.League3rd AS l WITH (NOLOCK)
 			INNER JOIN
 			(
-				SELECT match3rdid, league3rdid, eventdate, eventstatus, sporttype
+				SELECT match3rdid, league3rdid, eventdate, eventstatus, sporttype, hthomescore, htawayscore
 				FROM dbo.match3rd WITH (NOLOCK)
 				UNION ALL
-				SELECT match3rdid, league3rdid, eventdate, eventstatus, sporttype
+				SELECT match3rdid, league3rdid, eventdate, eventstatus, sporttype, hthomescore, htawayscore
 				FROM dbo.match3rd14 WITH (NOLOCK)
 			) AS m ON m.league3rdid = l.league3rdid
 		WHERE
 			m.eventdate = @EventDate
-			AND m.eventstatus IN ('completed')
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
+			AND 1 = CASE
+							WHEN m.SportType IN (147, 175) AND m.eventstatus = 'completed' THEN 1
+							WHEN m.SportType = 147 
+								AND m.eventstatus IN ('Suspend', 'Running') 
+								AND (m.hthomescore IS NOT NULL OR m.htawayscore IS NOT NULL) THEN 1
+						ELSE 0 END
 		ORDER BY m.sporttype ASC,
 			l.leaguename ASC
 	END

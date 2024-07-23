@@ -55,6 +55,7 @@ AS
 					- Show Saba Ice Hockey, Criket, Tennis
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 */
 
 BEGIN
@@ -175,7 +176,13 @@ BEGIN
 					SELECT m.SportType
 					FROM dbo.Match3rd AS m WITH (NOLOCK)
 					WHERE m.EventDate = @MatchDate
-						AND m.EventStatus IN ('completed')
+						AND 1 = CASE
+									WHEN SportType IN (147, 175) AND m.EventStatus = 'completed' THEN 1
+									WHEN SportType = 147 
+										AND m.EventStatus IN ('suspend', 'running')
+										AND (m.hthomescore IS NOT NULL OR m.htawayscore IS NOT NULL) THEN 1
+									ELSE 0
+								END
 			) AS t
 			ON s.SportType = t.sporttype
 		ORDER BY s.SportType ASC,
@@ -292,7 +299,13 @@ BEGIN
 					SELECT m.SportType
 					FROM dbo.Match3rd14 AS m WITH (NOLOCK)
 					WHERE m.EventDate = @MatchDate
-						AND m.EventStatus IN ('completed')
+						AND 1 = CASE
+									WHEN SportType IN (147, 175) AND m.EventStatus = 'completed' THEN 1
+									WHEN SportType = 147 
+										AND m.EventStatus IN ('suspend')
+										AND (m.hthomescore IS NOT NULL OR m.htawayscore IS NOT NULL) THEN 1
+									ELSE 0
+								END
 			) t
 			ON s.SportType = t.sporttype
 		ORDER BY s.SportType ASC,
