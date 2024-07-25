@@ -19,7 +19,7 @@ AS
 		- 20101224@Johnson: change column bettype from tinyint to smallint in temporary table
 		- 20110620@Johnson: change column commission to playercomm
 		- 20110725@Lukas: Get refund tickets
-		- 20110825@Sophia: Edit betID not hard code bettype = 87, and show BetID for every bettype. If Deadball (liveindicator = 0), web code will hide BetID.
+		- 20110825@Sophia: Edit betID not hard code bettype = 89, and show BetID for every bettype. If Deadball (liveindicator = 0), web code will hide BetID.
 		- 20110826@Sophia: Add Bettype = 29, add column Actual_stake, show Betteam for System Parlay
 		- 20110826@Jamie: Get modds as winning odds  for system parlay
 		- 20110829@Sophia: Get BetID for Parlay
@@ -116,6 +116,7 @@ AS
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240403@Razor: Support Saba xD [Redmine: #203371]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
+		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 
 	Param's Explanation:
 		+ @TransType:
@@ -370,6 +371,7 @@ BEGIN
 							WHEN s.ProductID = 80 THEN 'WE'		-- WE
 							WHEN s.ProductID = 86 THEN 'SNG'	-- Saba xD
 							WHEN s.ProductID = 87 THEN 'FS'		-- FastSpin
+							WHEN s.ProductID = 89 THEN 'FAC'		-- FA CHAI
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 83 THEN 'ParlayVS4' --Virtual Sports 4 Parlay

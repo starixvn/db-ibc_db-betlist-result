@@ -169,6 +169,7 @@ AS
 		- 20240403@Razor: Support Saba xD [Redmine: #203371]
 		- 20240522@Razor: Support Saba Kabbadi [Redmine: #205314]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
+		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -389,6 +390,7 @@ BEGIN
 							WHEN s.ProductID = 80						THEN 'WE'	-- WE
 							WHEN s.ProductID = 86						THEN 'SNG'	-- Saba xD
 							WHEN s.ProductID = 87						THEN 'FS'	-- FastSpin
+							WHEN s.ProductID = 89						THEN 'FAC'	-- FA CHAI
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
@@ -864,6 +866,7 @@ BEGIN
 							WHEN s.ProductID = 80					THEN 'WE'		-- WE
 							WHEN s.ProductID = 86					THEN 'SNG'		-- Saba xD
 							WHEN s.ProductID = 87					THEN 'FS'		-- FastSpin
+							WHEN s.ProductID = 89					THEN 'FAC'		-- FA CHAI
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games

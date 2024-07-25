@@ -148,6 +148,7 @@ AS
 		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
+		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 */
 
 BEGIN
@@ -335,6 +336,7 @@ BEGIN
 			WHEN s.ProductID = 80					THEN 'WE'			-- WE
 			WHEN s.ProductID = 86					THEN 'SNG'			-- Saba xD
 			WHEN s.ProductID = 87					THEN 'FS'			-- FastSpin
+			WHEN s.ProductID = 89					THEN 'FAC'			-- FA CHAI
 			WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 			WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 			WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Number Game - Happy 5 Linked Games
@@ -732,7 +734,7 @@ BEGIN
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
-		WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG', 'FS')
+		WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG', 'FS', 'FAC')
 			OR c.WinLostDate < @Yesterday
 
 		-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
