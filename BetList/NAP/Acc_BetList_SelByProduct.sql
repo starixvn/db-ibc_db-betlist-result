@@ -106,6 +106,7 @@ AS
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
 		- 20240507@Razor: Check permission for Real Currency [Redmine: #202523]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
+		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 */
 
 BEGIN
@@ -543,8 +544,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86, 87)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86, 87, 89)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -927,8 +928,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86, 87)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86, 87, 89)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN

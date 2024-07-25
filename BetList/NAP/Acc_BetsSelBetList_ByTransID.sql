@@ -4234,7 +4234,8 @@ BEGIN
 			IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype 
 						WHERE Bettype = @BetType
 							AND (ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
-								OR (ProductID = 6 AND SubProduct <> '')))
+								OR (ProductID = 6 AND SubProduct <> '')
+								OR RefTable = 1))
 			BEGIN
 				INSERT INTO @Data
 				SELECT
