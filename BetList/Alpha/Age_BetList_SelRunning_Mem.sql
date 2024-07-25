@@ -167,6 +167,7 @@ AS
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241016@Razor: Provide Risk Amount [Redmine: #202427]
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Red
 */
 
 BEGIN
@@ -713,6 +714,33 @@ BEGIN
 				AND b.ProductID IN (3, 5, 27, 77, 83)
 				AND b.EventType = 1
 
+			-- Virtual Sports 5 (EventType = 5)
+			UPDATE b
+			SET SportType = m.sporttype
+				,LeagueId = m.league3rdid
+				,MatchCode = m.matchcode
+				,Race = ''
+				,EventDate = m.eventdate
+				,MatchId = m.match3rdid
+				,HomeId =  m.homeid
+				,AwayId = m.awayid
+				,SettlementStatus = 0
+				,ComStatus = '0'
+				,Hdp2 = b.hdp2
+				,[Status] = b.[Status]
+				,OddsType = b.OddsType
+				,IsNeutral = CONVERT(BIT, 0)
+				,ShowTime = ''
+				,BetCheck = ''
+				,TransDesc = ISNULL(b.TransDesc, '')
+				,OddsSpread = 0
+				,ExtraInfo = ''
+			FROM @BetListSelRunningByDateMem AS b
+				INNER JOIN dbo.match3rd AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+			WHERE b.TableID = 1 -- bettrans
+				AND b.ProductID IN (88)
+				AND b.EventType = 5
+
 			-- Virtual Sports (EventType = 3)
 			UPDATE b
 			SET SportType = r.SportType
@@ -738,7 +766,7 @@ BEGIN
 				AND b.ProductID = 5
 				AND b.EventType = 3
 
-			-- Betradar Virtual Sports, Virtual Sports 4 (EventType = 0) -- Mix Parlay
+			-- Betradar Virtual Sports, Virtual Sports 4, VS 5 (EventType = 0) -- Mix Parlay
 			UPDATE b
 			SET SportType = 0
 				,LeagueId = 0
@@ -774,7 +802,7 @@ BEGIN
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.TableID = 1 -- bettrans
-				AND b.matchid IN  (2799, 10449)
+				AND b.matchid IN  (2799, 10449, 11099)
 
 			-- NG2, BBIN bettrans
 			UPDATE b

@@ -43,6 +43,7 @@ AS
 					- Remove param @Language
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
+		- 20240723@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 */
 
 BEGIN
@@ -95,18 +96,6 @@ BEGIN
 	DECLARE @TempFromDate DATETIME,
 		@TempToDate DATETIME
 
-	-- Parlay, Parlay VS2, Parlay VS4
-	DECLARE @GroupBetType TABLE(Bettype SMALLINT, GroupBetType SMALLINT)
-	INSERT INTO @GroupBetType
-	SELECT 29, 29
-	UNION ALL
-	SELECT 2799, 2799
-	UNION ALL
-	SELECT 10449, 2799
-	UNION ALL
-	SELECT 2799, 10449
-	UNION ALL
-	SELECT 10449, 10449
 	IF @ToDate > @MoveBetsDay
 	BEGIN
 		IF @FromDate <= @MoveBetsDay
@@ -161,12 +150,15 @@ BEGIN
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN @GroupBetType AS f ON f.BetType = b.bettype
 		WHERE
 			b.srecommend = @CustId
 			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND b.ruben = 1
-			AND f.GroupBetType = @BetType
+			AND 1 = CASE
+						WHEN @BetType  = 29 AND b.bettype = @BetType THEN 1
+						WHEN @BetType IN (2799, 10449, 11099) AND b.bettype IN (2799, 10449, 11099) THEN 1
+						ELSE 0
+					END
 	END
 
 	IF @FromDate <= @MoveBetsDay
@@ -223,12 +215,15 @@ BEGIN
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			b.DeviceType
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-			INNER JOIN @GroupBetType AS f ON f.BetType = b.bettype
 		WHERE
 			b.srecommend = @CustId
 			AND b.winlostdate BETWEEN @FromDate AND @TempToDate
-			AND f.GroupBetType = @bettype
 			AND b.ruben = 1
+			AND 1 = CASE
+						WHEN @BetType  = 29 AND b.bettype = @BetType THEN 1
+						WHEN @BetType IN (2799, 10449, 11099) AND b.bettype IN (2799, 10449, 11099) THEN 1
+						ELSE 0
+					END
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus

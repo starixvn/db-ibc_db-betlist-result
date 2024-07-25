@@ -46,6 +46,7 @@ AS
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 */
 
 BEGIN
@@ -61,7 +62,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 27, 83)
+	WHERE ProductID IN (1, 27, 83, 88)
 
 	DECLARE @tmpParlay TABLE (
 		TransId				BIGINT,
@@ -140,12 +141,19 @@ BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
 			b.transid,
-			m.sporttype,
-			m.leagueid,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.sporttype
+				ELSE m.sporttype
+			END AS sporttype,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.league3rdid
+				ELSE m.leagueid
+			END AS leagueid,
 			b.bettype,
 			b.stake,
 			@CurrencyName AS Currency,
 			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.match3rdid
 				WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN pm.matchid
 				ELSE m.matchid
 			END AS MatchId,
@@ -158,8 +166,14 @@ BEGIN
 				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.showtime
 				ELSE m.showtime
 			END AS ShowTime,
-			m.homeid,
-			m.awayid,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.homeid
+				ELSE m.homeid
+			END AS HomeId,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.awayid
+				ELSE m.awayid
+			END AS AwayId,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -180,20 +194,25 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
-			m.betstatus,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.betstatus
+				ELSE m.betstatus
+			END,
 			m.IsNeutral,
 			b.betcheck,
 			ISNULL(b.transdesc, '') AS transdesc,
 			le.LeagueGroupId
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
+			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN dbo.match AS pm WITH (NOLOCK)
 				ON pm.matchid = m.ParentID
 				AND m.sporttype IN (8, 50)
 				AND m.ChildMatchType = 200
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE b.refno = @RefNo AND b.custid = @CustId
+
 	END
 
 	IF EXISTS (	SELECT 1
@@ -204,12 +223,19 @@ BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
 			b.transid,
-			m.sporttype,
-			m.leagueid,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.sporttype
+				ELSE m.sporttype
+			END AS SportType,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.league3rdid
+				ELSE m.leagueid
+			END AS leagueid,
 			b.bettype,
 			b.stake,
 			@CurrencyName AS Currency,
 			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.match3rdid
 				WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pm14.matchid, pm.matchid)
 				ELSE m.matchid
 			END AS MatchId,
@@ -222,8 +248,14 @@ BEGIN
 				WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pm14.showtime, pm.showtime)
 				ELSE m.showtime
 			END AS ShowTime,
-			m.homeid,
-			m.awayid,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.homeid
+				ELSE m.homeid
+			END AS HomeId,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.awayid
+				ELSE m.awayid
+			END AS AwayId,				
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -240,14 +272,18 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
-			m.betstatus,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.betstatus
+				ELSE m.betstatus
+			END AS betstatus,
 			m.IsNeutral,
 			b.betcheck,
 			ISNULL(b.transdesc, '') AS transdesc,
 			le.LeagueGroupId
 		FROM dbo.bettransm14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN dbo.match3rd14 AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
+			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN dbo.match14 AS pm14 WITH (NOLOCK)
 				ON pm14.matchid = m.ParentID
 				AND m.sporttype IN (8, 50)
@@ -268,12 +304,19 @@ BEGIN
 		INSERT INTO @tmpParlay
 		SELECT
 			b.transid,
-			m.sporttype,
-			m.leagueid,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.sporttype
+				ELSE m.sporttype
+			END AS SportType,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.league3rdid
+				ELSE m.leagueid
+			END AS LeagueId,
 			b.bettype,
 			b.stake,
 			@CurrencyName AS Currency,
 			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.match3rdid
 				WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pmbk.matchid, ISNULL(pm14.matchid, pm.matchid))
 				ELSE m.matchid
 			END AS MatchId,
@@ -286,8 +329,14 @@ BEGIN
 				WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pmbk.showtime, ISNULL(pm14.showtime, pm.showtime))
 				ELSE m.showtime
 			END AS ShowTime,
-			m.homeid,
-			m.awayid,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.homeid
+				ELSE m.homeid
+			END AS HomeId,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.awayid
+				ELSE m.awayid
+			END AS AwayId,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -311,7 +360,8 @@ BEGIN
 			le.LeagueGroupId
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN bodb_Archive.dbo.match3rd_bk AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
+			LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN bodb_Archive.dbo.match_bk AS pmbk WITH (NOLOCK)
 				ON pmbk.matchid = m.ParentID
 				AND m.sporttype IN (8, 50)

@@ -85,6 +85,7 @@ AS
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
+		- 20240723@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 */
 
 BEGIN
@@ -686,7 +687,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 23, 27, 28, 38, 40, 47, 49, 63, 69, 77, 83)	-- Only support these products
+			OR ProductID NOT IN (1, 3, 5, 8, 23, 27, 28, 38, 40, 47, 49, 63, 69, 77, 83, 88)	-- Only support these products
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -835,6 +836,32 @@ BEGIN
 					INNER JOIN dbo.league AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 				WHERE b.WhTicket = 1 AND b.EventType = 1
 
+				-- Virtual Sports 5
+				UPDATE b
+				SET
+					SportType = m.sporttype,
+					Hdp2 = b.Hdp2,
+					LeagueId = m.league3rdid,
+					MatchCode = m.matchcode,
+					Race = '',
+					EventDate = m.eventdate,
+					HomeId = m.homeid,
+					AwayId = m.awayid,
+					BetStatus = m.betstatus,
+					IsNeutral = CONVERT(BIT,0),
+					Placing = '',
+					ShowTime = '',
+					BetCheck = b.BetCheck,
+					ComStatus = '',
+					TransDesc = ISNULL(b.transdesc, ''),
+					OddsSpread = ISNULL(b.oddsspread, 0),
+					ExtraInfo = ISNULL(b.ExtraInfo, ''),
+					BetdaqId = ISNULL(b.betdaqid, -1),
+					LeagueGroupId = 0
+				FROM #PagingData AS b
+					INNER JOIN dbo.match3rd AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.WhTicket = 1 AND b.EventType = 5
+
 				-- Outright
 				UPDATE b
 				SET
@@ -879,6 +906,7 @@ BEGIN
 				- Leap Gaming (VS3)		: ProductId = 49
 				- Sports Lottery		: ProductId = 63
 				- Mix Parlay (VS4)		: ProductId = 83
+				- Mix Parlay (VS5)		: ProductId = 88
 				*/
 				UPDATE b
 				SET
@@ -894,15 +922,15 @@ BEGIN
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.ProductId IN (1, 27, 83) THEN b.BetTeam
+									WHEN b.ProductId IN (1, 27, 83, 88) THEN b.BetTeam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.ProductId IN (1, 23, 27, 83) THEN b.Hdp1
+								WHEN b.ProductId IN (1, 23, 27, 83, 88) THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.ProductId IN (1, 23, 27, 83) THEN b.Hdp2
+								WHEN b.ProductId IN (1, 23, 27, 83, 88) THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
@@ -910,11 +938,11 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 3, 8, 23, 27, 28, 38, 40, 49, 63, 83) THEN b.Odds
+								WHEN b.ProductId IN (1, 3, 8, 23, 27, 28, 38, 40, 49, 63, 83, 88) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
-								WHEN b.ProductId IN (1, 27, 83) THEN b.MOdds
+								WHEN b.ProductId IN (1, 27, 83, 88) THEN b.MOdds
 								ELSE 0
 							END,
 					LiveIndicator = CASE
@@ -941,7 +969,7 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 3, 27, 38, 63, 83) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 3, 27, 38, 63, 83, 88) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,
@@ -1061,6 +1089,32 @@ BEGIN
 					INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
 				WHERE b.WhTicket = 2 AND b.EventType = 1
 
+				-- Virtual Sports 5
+				UPDATE b
+				SET
+					SportType = m.sporttype,
+					Hdp2 = b.Hdp2,
+					LeagueId = m.league3rdid,
+					MatchCode = m.matchcode,
+					Race = '',
+					EventDate = m.eventdate,
+					HomeId = m.homeid,
+					AwayId = m.awayid,
+					BetStatus = m.betstatus,
+					IsNeutral = CONVERT(BIT,0),
+					Placing = '',
+					ShowTime = '',
+					BetCheck = b.BetCheck,
+					ComStatus = '',
+					TransDesc = ISNULL(b.transdesc, ''),
+					OddsSpread = 0,
+					ExtraInfo = ISNULL(b.ExtraInfo, ''),
+					BetdaqId = -1,
+					LeagueGroupId = 0
+				FROM #PagingData AS b
+					INNER JOIN dbo.match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.WhTicket = 2 AND b.EventType = 5
+
 				-- Outright
 				UPDATE b
 				SET
@@ -1105,6 +1159,7 @@ BEGIN
 				- Leap Gaming (VS3)		: ProductId = 49
 				- Sports Lottery		: ProductId = 63
 				- Mix Parlay (VS4)		: ProductId = 83
+				- Mix Parlay (VS5)		: ProductId = 88
 				*/
 				UPDATE b
 				SET
@@ -1120,15 +1175,15 @@ BEGIN
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.ProductId IN (1, 27, 83) THEN b.BetTeam
+									WHEN b.ProductId IN (1, 27, 83, 88) THEN b.BetTeam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.ProductId IN (1, 23, 27, 83) THEN b.Hdp1
+								WHEN b.ProductId IN (1, 23, 27, 83, 88) THEN b.Hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.ProductId IN (1, 23, 27, 83) THEN b.Hdp2
+								WHEN b.ProductId IN (1, 23, 27, 83, 88) THEN b.Hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
@@ -1136,11 +1191,11 @@ BEGIN
 									ELSE 0
 								END,
 					Odds = CASE
-								WHEN b.ProductId IN (1, 3, 8, 23, 27, 28, 38, 40, 49, 63, 83) THEN b.Odds
+								WHEN b.ProductId IN (1, 3, 8, 23, 27, 28, 38, 40, 49, 63, 83, 88) THEN b.Odds
 								ELSE 0
 							END,
 					MOdds = CASE
-								WHEN b.ProductId IN (1, 27, 83) THEN b.MOdds
+								WHEN b.ProductId IN (1, 27, 83, 88) THEN b.MOdds
 								ELSE 0
 							END,
 					LiveIndicator = CASE
@@ -1167,7 +1222,7 @@ BEGIN
 					Placing = '',
 					ShowTime = '',
 					BetCheck = CASE
-									WHEN b.ProductId IN (1, 3, 27, 38, 63, 83) THEN ISNULL(b.BetCheck, '')
+									WHEN b.ProductId IN (1, 3, 27, 38, 63, 83, 88) THEN ISNULL(b.BetCheck, '')
 									WHEN b.ProductId = 8 THEN ISNULL(b.ComStatus, '')
 									ELSE ''
 								END,

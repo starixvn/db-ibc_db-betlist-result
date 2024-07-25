@@ -9,7 +9,8 @@ ALTER PROCEDURE [dbo].[Age_BetList_SelWinlossByBettypeMatch]
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@BetType		SMALLINT,
-	@LiveIndicator	BIT			= 0
+	@LiveIndicator	BIT			= 0,
+	@EventType		INT			= 1
 AS
 
 /*
@@ -36,6 +37,7 @@ AS
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 */
 
 BEGIN
@@ -56,40 +58,60 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	-- Support Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3, Virtual Sports 4 only
+	-- Support Sportsbook, Number Game, Virtual Sports, Betradar Virtual Sports, Virtual Sports 3, Virtual Sports 4, VS 5 only
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest) AS s
-	WHERE ProductID IN (1, 3, 5, 27, 77, 83)
+	WHERE ProductID IN (1, 3, 5, 27, 77, 83, 88)
 		AND BetType NOT IN (901, 902, 903, 904)
 		AND (BetType = @BetType
 			OR EXISTS (SELECT 1 FROM @GroupBetType AS f WHERE f.GroupTypeId = @BetType AND f.BetType = s.BetType))
+		AND EventType = @EventType
 
 	DECLARE @IsBet14	BIT = 0,
 		@EventDate		DATETIME,
 		@SportType		SMALLINT,
 		@ChildMatchType TINYINT,
 		@ParentId		INT
-
-	SELECT
-		@EventDate = eventdate,
-		@SportType = sporttype,
-		@ParentId = ParentID
-	FROM dbo.match WITH (NOLOCK)
-	WHERE matchid = @MatchId AND eventdate > @MoveBetsDay
-
-	IF @EventDate IS NULL
+	IF @EventType = 5
 	BEGIN
-		SET @IsBet14 = 1
+		SELECT
+			@EventDate = eventdate
+		FROM dbo.match3rd WITH (NOLOCK)
+		WHERE match3rdid = @MatchId AND eventdate > @MoveBetsDay
 
+		IF @EventDate IS NULL
+		BEGIN
+			SET @IsBet14 = 1
+
+			SELECT
+				@EventDate = eventdate
+			FROM dbo.match3rd14 WITH (NOLOCK)
+			WHERE match3rdid = @MatchId
+		END
+	END
+	ELSE
+	BEGIN
 		SELECT
 			@EventDate = eventdate,
 			@SportType = sporttype,
 			@ParentId = ParentID
-		FROM dbo.match14 WITH (NOLOCK)
-		WHERE matchid = @MatchId
-	END
+		FROM dbo.match WITH (NOLOCK)
+		WHERE matchid = @MatchId AND eventdate > @MoveBetsDay
 
+		IF @EventDate IS NULL
+		BEGIN
+			SET @IsBet14 = 1
+
+			SELECT
+				@EventDate = eventdate,
+				@SportType = sporttype,
+				@ParentId = ParentID
+			FROM dbo.match14 WITH (NOLOCK)
+			WHERE matchid = @MatchId
+		END
+	END
+	
 	DECLARE @Match TABLE(MatchId INT, EventDate DATETIME)
 
 	IF @SportType IN (8, 50) AND @ParentId IS NULL	-- Baseball, Cricket parent match
@@ -282,6 +304,7 @@ BEGIN
 						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
 						WHEN s.EventType = 1 AND s.ProductID = 77 THEN 'LG'		-- Virtual Sports 3
 						WHEN s.EventType = 1 AND s.ProductID = 83 THEN 'VS4'	-- Virtual Sports 4
+						WHEN s.EventType = 5 AND s.ProductID = 88 THEN 'VS5'	-- Virtual Sports 5
 						ELSE 'Unknown'
 					END AS Product
 				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
@@ -306,6 +329,7 @@ BEGIN
 						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
 						WHEN s.EventType = 1 AND s.ProductID = 77 THEN 'LG'		-- Virtual Sports 3
 						WHEN s.EventType = 1 AND s.ProductID = 83 THEN 'VS4'	-- Virtual Sports 4
+						WHEN s.EventType = 5 AND s.ProductID = 88 THEN 'VS5'	-- Virtual Sports 5
 						ELSE 'Unknown'
 					END AS Product
 				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_MRecommend)
@@ -330,6 +354,7 @@ BEGIN
 						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
 						WHEN s.EventType = 1 AND s.ProductID = 77 THEN 'LG'		-- Virtual Sports 3
 						WHEN s.EventType = 1 AND s.ProductID = 83 THEN 'VS4'	-- Virtual Sports 4
+						WHEN s.EventType = 5 AND s.ProductID = 88 THEN 'VS5'	-- Virtual Sports 5
 						ELSE 'Unknown'
 					END AS Product
 				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_SRecommend)
@@ -419,6 +444,7 @@ BEGIN
 			b.username,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.sporttype
+				WHEN c.Product IN ('VS5') THEN m3rd.sporttype
 				ELSE 0
 			END AS SportType,
 			b.bettype,
@@ -426,14 +452,14 @@ BEGIN
 			b.betteam,
 			b.hdp1,
 			CASE
-				WHEN c.Product IN ('SB', 'VS', 'VS2', 'LG') THEN b.hdp2
+				WHEN c.Product IN ('SB', 'VS', 'VS2', 'LG', 'VS5') THEN b.hdp2
 				ELSE 0
 			END AS Hdp2,
 			b.oddstype,
 			b.oddsid,
 			b.odds,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.modds
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS5') THEN b.modds
 				ELSE 0
 			END AS MOdds,
 			b.stake,
@@ -468,31 +494,38 @@ BEGIN
 			END AS LiveAwayScore,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.finalhomescore
+				WHEN c.Product IN ('VS5') THEN m3rd.finalhomescore
 				ELSE 0
 			END AS FinalHomeScore,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.finalawayscore
+				WHEN c.Product IN ('VS5') THEN m3rd.finalawayscore
 				ELSE 0
 			END AS FinalAwayScore,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.hthomescore
+				WHEN c.Product IN ('VS5') THEN m3rd.hthomescore
 				ELSE 0
 			END AS HtHomeScore,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.htawayscore
+				WHEN c.Product IN ('VS5') THEN m3rd.htawayscore
 				ELSE 0
 			END AS HtAwayScore,
 			b.ip,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.leagueid
+				WHEN c.Product IN ('VS5') THEN m3rd.league3rdid
 				ELSE 0
 			END AS LeagueId,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchid
+				WHEN c.Product IN ('VS5') THEN m3rd.match3rdid
 				ELSE 0
 			END AS MatchId,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchcode
+				WHEN c.Product IN ('VS5') THEN m3rd.matchcode
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -502,10 +535,12 @@ BEGIN
 			END AS EventDate,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.homeid
+				WHEN c.Product IN ('VS5') THEN m3rd.homeid
 				ELSE 0
 			END AS HomeId,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.awayid
+				WHEN c.Product IN ('VS5') THEN m3rd.awayid
 				ELSE 0
 			END AS AwayId,
 			CASE
@@ -527,7 +562,7 @@ BEGIN
 			END AS BetCheck,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 			CASE
-				WHEN c.Product IN ('SB', 'VS2', 'LG', 'VS4') THEN ISNULL(b.transdesc, '')
+				WHEN c.Product IN ('SB', 'VS2', 'LG', 'VS4', 'VS5') THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -546,6 +581,7 @@ BEGIN
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK, INDEX = PK_bettrans) ON b.transid = c.TransId
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') AND b.matchid = m.matchid
 			LEFT JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
+			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON c.Product IN ('VS5') AND b.matchid = m3rd.match3rdid
 	END
 
 	-- bettrans14 range
@@ -634,6 +670,7 @@ BEGIN
 						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
 						WHEN s.EventType = 1 AND s.ProductID = 77 THEN 'LG'		-- Virtual Sports 3
 						WHEN s.EventType = 1 AND s.ProductID = 83 THEN 'VS4'	-- Virtual Sports 4
+						WHEN s.EventType = 5 AND s.ProductID = 88 THEN 'VS5'	-- Virtual Sports 5
 						ELSE 'Unknown'
 					END
 				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_Recommend)
@@ -658,6 +695,7 @@ BEGIN
 						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
 						WHEN s.EventType = 1 AND s.ProductID = 77 THEN 'LG'		-- Virtual Sports 3
 						WHEN s.EventType = 1 AND s.ProductID = 83 THEN 'VS4'	-- Virtual Sports 4
+						WHEN s.EventType = 5 AND s.ProductID = 88 THEN 'VS5'	-- Virtual Sports 5
 						ELSE 'Unknown'
 					END
 				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_MRecommend)
@@ -682,6 +720,7 @@ BEGIN
 						WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'	-- Betradar Virtual Sports
 						WHEN s.EventType = 1 AND s.ProductID = 77 THEN 'LG'		-- Virtual Sports 3
 						WHEN s.EventType = 1 AND s.ProductID = 83 THEN 'VS4'	-- Virtual Sports 4
+						WHEN s.EventType = 5 AND s.ProductID = 88 THEN 'VS5'	-- Virtual Sports 5
 						ELSE 'Unknown'
 					END
 				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_SRecommend)
@@ -770,7 +809,7 @@ BEGIN
 			b.custid,
 			b.username,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.sporttype
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4', 'VS5') THEN m.sporttype
 				ELSE 0
 			END AS SportType,
 			b.bettype,
@@ -778,14 +817,14 @@ BEGIN
 			b.betteam,
 			b.hdp1,
 			CASE
-				WHEN c.Product IN ('SB', 'VS', 'VS2', 'LG') THEN b.hdp2
+				WHEN c.Product IN ('SB', 'VS', 'VS2', 'LG', 'VS5') THEN b.hdp2
 				ELSE 0
 			END AS Hdp2,
 			b.oddstype,
 			b.oddsid,
 			b.odds,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.modds
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS5') THEN b.modds
 				ELSE 0
 			END AS MOdds,
 			b.stake,
@@ -811,40 +850,43 @@ BEGIN
 			b.sdiscount AS SDiscount,
 			b.liveindicator,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.livehomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS5') THEN b.livehomescore
 				ELSE 0
 			END AS LiveHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN b.liveawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS5') THEN b.liveawayscore
 				ELSE 0
 			END AS LiveAwayScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.finalhomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4', 'VS5') THEN m.finalhomescore
 				ELSE 0
 			END AS FinalHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.finalawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4', 'VS5') THEN m.finalawayscore
 				ELSE 0
 			END AS FinalAwayScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.hthomescore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS5') THEN m.hthomescore
 				ELSE 0
 			END AS HtHomeScore,
 			CASE
-				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.htawayscore
+				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS5') THEN m.htawayscore
 				ELSE 0
 			END AS HtAwayScore,
 			b.ip,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.leagueid
+				WHEN c.Product IN ('VS5') THEN m3rd.league3rdid
 				ELSE 0
 			END AS LeagueId,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchid
+				WHEN c.Product IN ('VS5') THEN m3rd.match3rdid
 				ELSE 0
 			END AS MatchId,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchcode
+				WHEN c.Product IN ('VS5') THEN m3rd.matchcode
 				ELSE ''
 			END AS MatchCode,
 			CASE
@@ -854,10 +896,12 @@ BEGIN
 			END AS EventDate,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.homeid
+				WHEN c.Product IN ('VS5') THEN m3rd.homeid
 				ELSE 0
 			END AS HomeId,
 			CASE
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.awayid
+				WHEN c.Product IN ('VS5') THEN m3rd.awayid
 				ELSE 0
 			END AS AwayId,
 			CASE
@@ -879,7 +923,7 @@ BEGIN
 			END AS BetCheck,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 			CASE
-				WHEN c.Product IN ('SB', 'VS2', 'LG', 'VS4') THEN ISNULL(b.transdesc, '')
+				WHEN c.Product IN ('SB', 'VS2', 'LG', 'VS4', 'VS5') THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -898,6 +942,7 @@ BEGIN
 			INNER JOIN dbo.bettrans14 AS b WITH (NOLOCK) ON b.transid = c.TransId
 			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') AND b.matchid = m.matchid
 			LEFT JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
+			LEFT JOIN dbo.match3rd14 AS m3rd WITH (NOLOCK) ON c.Product IN ('VS5') AND b.matchid = m3rd.match3rdid
 	END
 
 	DECLARE @BettransDetail TABLE (
