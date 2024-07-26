@@ -200,6 +200,7 @@ AS
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 */
 
 BEGIN
@@ -658,8 +659,90 @@ BEGIN
 				END
 			END
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
-			IF @BetType IN (9, 29, 2799, 10449)
+			-- Virtual Sports 5
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 5 AND bettype = @BetType )
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					ISNULL(b.betid, 0) AS BetID,
+					b.refno,
+					m.matchcode,
+					'' AS race,
+					'' AS EventDate,
+					0 AS virtualrate,
+					0 AS isShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					b.playerdiscount,
+					m.homeid,
+					m.awayid,
+					ISNULL(b.checktime,'') AS settleTime,
+					b.hdp1,
+					b.hdp2,
+					b.odds,
+					0 finalodds,
+					0 finalodds2,
+					b.OddsType,
+					'' AS status,
+					0 AS SettlementStatus,
+					0 AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 spositiontaking2,
+					0 mpositiontaking2,
+					0 apositiontaking2,
+					b.liveindicator,
+					b.modds,
+					b.custid,
+					b.livehomescore,
+					b.liveawayscore,
+					m.finalhomescore,
+					m.finalawayscore,
+					m.league3rdid,
+					m.sporttype,
+					b.ip,
+					b.matchid,
+					CONVERT(BIT,0) AS IsNeutral,
+					0 AS allowdelete,
+					(b.winlost - b.actual_stake) AS WinLost,
+					b.playercomm AS commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					'' AS ShowTime,
+					b.winlostdate,
+					b.BetCheck,
+					ISNULL(b.transdesc, '') AS transdesc,
+					ISNULL(b.oddsspread, 0) AS OddsSpread,	-- For Myanmar Odds
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+					'' AS JackpotInfo,
+					0 AS WalletType,
+					0 AS RefCode,
+					b.currency,
+					'' AS SiteId,
+					b.DeviceType
+				FROM
+					dbo.bettrans AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+					INNER JOIN dbo.match3rd AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.transid = @TransId AND s.EventType = 5
+			END
+
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)
+			IF @BetType IN (9, 29, 2799, 10449, 11099)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -750,8 +833,8 @@ BEGIN
 					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 				WHERE
-					b.matchid IN (9, 29, 2799, 10449)
-					AND b.bettype IN (9, 29, 2799, 10449)
+					b.matchid IN (9, 29, 2799, 10449, 11099)
+					AND b.bettype IN (9, 29, 2799, 10449, 11099)
 					AND b.transid = @TransId
 			END
 
@@ -2224,8 +2307,90 @@ BEGIN
 				END
 			END
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
-			IF @BetType IN (9, 29, 2799, 10449)
+			-- Virtual Sports 5
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 5 AND bettype = @BetType )
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					ISNULL(b.betid, 0) AS BetID,
+					b.refno,
+					m.matchcode,
+					'' AS race,
+					'' AS EventDate,
+					0 AS virtualrate,
+					0 AS isShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					b.playerdiscount,
+					m.homeid,
+					m.awayid,
+					ISNULL(b.checktime,'') settleTime,
+					b.hdp1,
+					b.hdp2,
+					b.odds,
+					0 finalodds,
+					0 finalodds2,
+					b.OddsType,
+					b.status AS status,
+					0 AS SettlementStatus,
+					0 AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 spositiontaking2,
+					0 mpositiontaking2,
+					0 apositiontaking2,
+					b.liveindicator,
+					b.modds,
+					b.custid,
+					b.livehomescore,
+					b.liveawayscore,
+					m.finalhomescore,
+					m.finalawayscore,
+					m.league3rdid,
+					m.sporttype,
+					b.ip,
+					b.matchid,
+					CONVERT(BIT,0) AS IsNeutral,
+					0 AS allowdelete,
+					(b.winlost - b.actual_stake)  winlost,
+					b.playercomm AS commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					'' AS ShowTime,
+					b.winlostdate,
+					b.BetCheck,
+					ISNULL(b.transdesc, '') AS transdesc,
+					ISNULL(b.oddsspread, 0) AS OddsSpread,		-- For Myanmar Odds
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+					'' AS JackpotInfo,
+					0 AS WalletType,
+					0 AS RefCode,
+					b.currency,
+					'' AS SiteId,
+					b.DeviceType
+				FROM
+					dbo.bettrans14 AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+					INNER JOIN dbo.match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.transid = @TransId AND s.EventType = 5
+			END
+
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)
+			IF @BetType IN (9, 29, 2799, 10449, 11099)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2304,8 +2469,8 @@ BEGIN
 					b.DeviceType
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				WHERE b.transid = @TransId
-					AND b.matchid IN (9, 29, 2799, 10449)
-					AND b.bettype IN (9, 29, 2799, 10449)
+					AND b.matchid IN (9, 29, 2799, 10449, 11099)
+					AND b.bettype IN (9, 29, 2799, 10449, 11099)
 			END
 
 			-- AG Casino, RNG Casino Single Wallet, AllBet, Voidbridge, NG2, Pragmatic Casino, SA Gaming
@@ -2992,8 +3157,91 @@ BEGIN
 				END
 			END
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
-			IF @BetType IN (9, 29, 2799, 10449)
+			-- Virtual Sports 5
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE eventtype = 1 AND bettype = @BetType )
+			BEGIN
+				INSERT INTO @Data
+				SELECT
+					b.bettype,
+					b.transid,
+					ISNULL(b.BetID,0) AS BetID,
+					b.refno,
+					m.matchcode,
+					'' AS race,
+					'' AS EventDate,
+					0 AS virtualrate,
+					0 AS isShowOTExRate,
+					b.sdiscount,
+					b.adiscount,
+					b.discount,
+					b.playerdiscount,
+					m.homeid,
+					m.awayid,
+					ISNULL(b.checktime,'') settleTime,
+					b.hdp1,
+					b.hdp2,
+					b.odds,
+					0 finalodds,
+					0 finalodds2,
+					b.OddsType,
+					b.status AS status,
+					0 AS SettlementStatus,
+					0 AS comstatus,
+					b.stake,
+					b.actual_stake,
+					b.transdate,
+					b.betteam,
+					b.spositiontaking,
+					b.mpositiontaking,
+					b.apositiontaking,
+					0 spositiontaking2,
+					0 mpositiontaking2,
+					0 apositiontaking2,
+					b.liveindicator,
+					b.modds,
+					b.custid,
+					b.livehomescore,
+					b.liveawayscore,
+					m.finalhomescore,
+					m.finalawayscore,
+					m.league3rdid,
+					m.sporttype,
+					dp.ip,
+					b.matchid,
+					CONVERT(BIT,0) AS IsNeutral,
+					0 AS allowdelete,
+					(b.winlost - b.actual_stake) AS winlost,
+					b.playercomm AS commission,
+					(b.scomm - b.acomm) AS scomm,
+					(b.acomm - b.comm) AS acomm,
+					(b.comm - b.playercomm) AS comm,
+					b.awinlost,
+					b.mwinlost,
+					b.swinlost,
+					'' AS ShowTime,
+					b.winlostdate,
+					b.BetCheck,
+					ISNULL(b.transdesc, '') AS transdesc,
+					ISNULL(b.oddsspread, 0) AS OddsSpread,	-- For Myanmar Odds
+					0 AS OriginalBetType,
+					-1 AS BetdaqId,
+					ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+					'' AS JackpotInfo,
+					0 AS WalletType,
+					0 AS RefCode,
+					b.currency,
+					'' AS SiteId,
+					b.DeviceType
+				FROM
+					bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
+					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType
+					INNER JOIN bodb_Archive.dbo.match3rd_bk AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.transid = @TransId AND s.EventType = 5
+			END
+
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)
+			IF @BetType IN (9, 29, 2799, 10449, 11099)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -3073,8 +3321,8 @@ BEGIN
 				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 				CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 				WHERE b.transid = @TransId
-					AND b.matchid IN (9, 29, 2799, 10449)
-					AND b.bettype IN (9, 29, 2799, 10449)
+					AND b.matchid IN (9, 29, 2799, 10449, 11099)
+					AND b.bettype IN (9, 29, 2799, 10449, 11099)
 			END
 
 			-- RNG Casino, Keno, Lottery, Card Club, NPH Promotion, Spadegaming, Virtual Games, Table Games, 

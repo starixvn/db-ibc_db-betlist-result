@@ -18,12 +18,13 @@ AS
 		- 20231129@Razor: Support Project 777 - return SpecialPlatfrom [Redmine: #194591]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	-- Get Sport Bettype Matrix (support Sportsbook, Betradar Virtual Sports, Virtual Sports 4 only)
+	-- Get Sport Bettype Matrix (support Sportsbook, Betradar Virtual Sports, Virtual Sports 4 only, VS 5)
 	DECLARE @SportBettype TABLE(ProductId TINYINT, Bettype SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -33,7 +34,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 27, 83)
+	WHERE ProductID IN (1, 27, 83, 88)
 
 	DECLARE @BetListMP TABLE (
 		TransId				BIGINT,
@@ -99,8 +100,14 @@ BEGIN
 			b.bettype,
 			b.stake,
 			@CurrencyName AS Currency,
-			m.homeid,
-			m.awayid,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.HomeId
+				ELSE m.homeid
+			END AS HomeId,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.AwayId
+				ELSE m.awayid
+			END AS AwayId,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -122,10 +129,17 @@ BEGIN
 			b.livehomescore,
 			b.liveawayscore,
 			b.liveindicator,
-			m.leagueid,
-			m.sporttype,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.league3rdid
+				ELSE m.leagueid
+			END AS LeagueId,
+			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.SportType
+				ELSE m.sporttype
+			END AS SportType,
 			m.IsNeutral,
 			CASE
+				WHEN sbt.EventType = 5 THEN m3rd.match3rdid
 				WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN pm.matchid
 				ELSE m.matchid
 			END AS MatchId,
@@ -147,7 +161,8 @@ BEGIN
 			l.LeagueGroupId
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
+			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN dbo.match AS pm WITH (NOLOCK)
 				ON pm.matchid = m.ParentID
 				AND m.sporttype IN (8, 50)

@@ -38,6 +38,7 @@ AS
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 
 	Param's Explanation:
 		+ @TransType:
@@ -279,7 +280,7 @@ BEGIN
 				AND s.EventType = 1
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)
 			INSERT INTO @Data
 			SELECT
 				0,
@@ -360,8 +361,8 @@ BEGIN
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND b.matchid IN (9, 29, 2799, 10449)
-				AND b.bettype IN (9, 29, 2799, 10449)
+				AND b.matchid IN (9, 29, 2799, 10449, 11099)
+				AND b.bettype IN (9, 29, 2799, 10449, 11099)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Outright
@@ -684,14 +685,26 @@ BEGIN
 				WHERE b.SportType = 157
 			END
 
-			-- Bitcoin
+			-- Bitcoin, VS 5
 			INSERT INTO @Data
 			SELECT
 				m.sporttype,
-				0 leagueid,
-				0 homeid,
-				0 awayid,
-				''  matchcode,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.League3rdID
+					ELSE 0
+				END AS leagueid,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.homeid
+					ELSE 0
+				END AS homeid,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.awayid
+					ELSE 0
+				END AS awayid,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.matchcode
+					ELSE ''
+				END AS matchcode,
 				'' AS race,
 				m.EndTime AS EventDate,
 				0,
@@ -708,9 +721,15 @@ BEGIN
 				0.oddsid,
 				b.bettype,
 				b.hdp1,
-				0 hdp2,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.hdp2
+					ELSE 0
+				END AS hdp2,
 				b.odds,
-				0 modds,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.modds
+					ELSE 0
+				END AS modds,
 				0 AS finalodds,
 				0 AS finalodds2,
 				b.oddstype,
@@ -723,11 +742,26 @@ BEGIN
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				b.playercomm,
-				0 livehomescore,
-				0 liveawayscore,
-				0 liveindicator,
-				0 finalhomescore,
-				0 finalawayscore,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.livehomescore
+					ELSE 0
+				END AS livehomescore,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.liveawayscore
+					ELSE 0
+				END AS liveawayscore,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.liveindicator
+					ELSE 0
+				END AS liveindicator,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.finalhomescore
+					ELSE 0
+				END AS finalhomescore,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.finalawayscore
+					ELSE 0
+				END AS finalawayscore,
 				0 hthomescore,
 				0 htawayscore,
 				b.creator,
@@ -748,8 +782,14 @@ BEGIN
 				b.mwinlost,
 				b.swinlost,
 				b.winlostdate,
-				'' betcheck,
-				'' AS transdesc,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.betcheck
+					ELSE 0
+				END AS betcheck,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.transdesc
+					ELSE ''
+				END AS transdesc,
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
@@ -967,7 +1007,7 @@ BEGIN
 				AND b.statusID IN (0,1)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus WHERE statusID IN (0, 1))
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)
 			INSERT INTO @Data
 			SELECT 
 				0,
@@ -1060,8 +1100,8 @@ BEGIN
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND b.matchid IN (9, 29, 2799, 10449)
-				AND b.bettype IN (9, 29, 2799, 10449)
+				AND b.matchid IN (9, 29, 2799, 10449, 11099)
+				AND b.bettype IN (9, 29, 2799, 10449, 11099)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Outright
@@ -2214,14 +2254,26 @@ BEGIN
 				OPTION (RECOMPILE)
 			END
 
-			-- Bitcoin
+			-- Bitcoin, VS 5
 			INSERT INTO @Data
 			SELECT
 				m.sporttype,
-				0 leagueid,
-				0 homeid,
-				0 awayid,
-				'' matchcode,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.League3rdID
+					ELSE 0
+				END AS leagueid,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.homeid
+					ELSE 0
+				END AS homeid,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.awayid
+					ELSE 0
+				END AS awayid,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.matchcode
+					ELSE ''
+				END AS matchcode,
 				'' AS race,
 				m.EndTime AS EventDate,
 				0,
@@ -2230,34 +2282,55 @@ BEGIN
 				b.adiscount,
 				b.discount,
 				'' AS settletime,
-				m.match3rdid,
+				b.matchid,
 				b.transid,
 				0 betid,
 				b.refno,
 				b.transdate,
-				0 oddsid,
+				0.oddsid,
 				b.bettype,
 				b.hdp1,
-				0 hdp2,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.hdp2
+					ELSE 0
+				END AS hdp2,
 				b.odds,
-				0 modds,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.modds
+					ELSE 0
+				END AS modds,
 				0 AS finalodds,
 				0 AS finalodds2,
 				b.oddstype,
 				b.betteam,
 				b.status,
 				0 AS SettlementStatus,
-				'' AS betstatus,
+				m.betstatus,
 				0 AS comstatus,
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
 				b.playercomm,
-				0 livehomescore,
-				0 liveawayscore,
-				0 liveindicator,
-				0 finalhomescore,
-				0 finalawayscore,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.livehomescore
+					ELSE 0
+				END AS livehomescore,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.liveawayscore
+					ELSE 0
+				END AS liveawayscore,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.liveindicator
+					ELSE 0
+				END AS liveindicator,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.finalhomescore
+					ELSE 0
+				END AS finalhomescore,
+				CASE 
+					WHEN s.ProductId = 88 THEN m.finalawayscore
+					ELSE 0
+				END AS finalawayscore,
 				0 hthomescore,
 				0 htawayscore,
 				b.creator,
@@ -2273,13 +2346,19 @@ BEGIN
 				0 apositiontaking2,
 				0 scomm,
 				0 acomm,
-				0 comm,
+				0 comm,	
 				b.awinlost,
 				b.mwinlost,
 				b.swinlost,
 				b.winlostdate,
-				'' BetCheck,
-				'' AS transdesc,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.betcheck
+					ELSE 0
+				END AS betcheck,
+				CASE 
+					WHEN s.ProductId = 88 THEN b.transdesc
+					ELSE ''
+				END AS transdesc,
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
@@ -2294,7 +2373,8 @@ BEGIN
 				INNER JOIN dbo.match3rd AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
+
 		END
 	END
 

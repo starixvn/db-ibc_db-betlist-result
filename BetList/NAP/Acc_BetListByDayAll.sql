@@ -193,6 +193,7 @@ AS
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 
 	Param's Explanation:
 		+ @TransType:
@@ -434,7 +435,90 @@ BEGIN
 				AND s.EventType = 1
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
+			-- VS 5
+			INSERT INTO @Data
+			SELECT
+				m.sporttype,
+				m.league3rdid,
+				m.homeid,
+				m.awayid,
+				m.matchcode,
+				'' AS race,
+				'' AS EventDate,
+				0,
+				0,
+				b.sdiscount,
+				b.adiscount,
+				b.discount,
+				ISNULL(b.checktime, '') AS settletime,
+				m.match3rdid,
+				b.transid,
+				ISNULL(b.BetID, 0),
+				b.refno,
+				b.transdate,
+				b.oddsid,
+				b.bettype,
+				b.hdp1,
+				b.hdp2,
+				b.odds,
+				b.modds,
+				0 AS finalodds,
+				0 AS finalodds2,
+				b.oddstype,
+				b.betteam,
+				b.status,
+				0 AS SettlementStatus,
+				m.betstatus,
+				0 AS comstatus,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				b.playercomm,
+				b.livehomescore,
+				b.liveawayscore,
+				b.liveindicator,
+				m.finalhomescore,
+				m.finalawayscore,
+				m.hthomescore,
+				m.htawayscore,
+				b.creator,
+				b.ip,
+				b.Username,
+				CONVERT(BIT, 0) AS IsNeutral,
+				'' AS ShowTime,
+				0 spositiontaking, -- unuse in this report
+				0 mpositiontaking, -- unuse in this report
+				0 apositiontaking, -- unuse in this report
+				0 spositiontaking2,-- unuse in this report
+				0 mpositiontaking2,-- unuse in this report
+				0 apositiontaking2,-- unuse in this report
+				0 scomm, -- unuse in this report
+				0 acomm, -- unuse in this report
+				0 comm,	-- unuse in this report
+				b.awinlost,
+				b.mwinlost,
+				b.swinlost,
+				b.winlostdate,
+				b.betcheck,
+				ISNULL(b.transdesc, '') AS transdesc,
+				ISNULL(b.oddsspread, 0) AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode,
+				0 AS CurrencyId,
+				'' AS SiteId,
+				b.DeviceType
+			FROM dbo.bettrans14 AS b WITH (NOLOCK)
+				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+				INNER JOIN dbo.match3rd14 AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+			WHERE b.custid = @CustId
+				AND b.winlostdate = @FromDate
+				AND s.EventType = 5
+				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
+
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)
 			INSERT INTO @Data
 			SELECT
 				0,
@@ -515,8 +599,8 @@ BEGIN
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND b.matchid IN (9, 29, 2799, 10449)
-				AND b.bettype IN (9, 29, 2799, 10449)
+				AND b.matchid IN (9, 29, 2799, 10449, 11099)
+				AND b.bettype IN (9, 29, 2799, 10449, 11099)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Outright
@@ -1135,6 +1219,89 @@ BEGIN
 				AND (b.bettype NOT BETWEEN 801 AND 806			--exclude metric gaming running ticket
 					OR (b.bettype BETWEEN 801 AND 806 AND b.statusID NOT IN (0, 1)))
 
+			-- VS 5
+			INSERT INTO @Data
+			SELECT
+				m.sporttype,
+				m.league3rdid,
+				m.homeid,
+				m.awayid,
+				m.matchcode,
+				'' AS race,
+				'' AS EventDate,
+				0,
+				0,
+				b.sdiscount,
+				b.adiscount,
+				b.discount,
+				ISNULL(b.checktime, '') AS settletime,
+				m.match3rdid,
+				b.transid,
+				ISNULL(b.betid, 0),
+				b.refno,
+				b.transdate,
+				b.oddsid,
+				b.bettype,
+				b.hdp1,
+				b.hdp2,
+				b.odds,
+				b.modds,
+				0 AS finalodds,
+				0 AS finalodds2,
+				b.oddstype,
+				b.betteam,
+				b.status AS status,
+				0 AS SettlementStatus,
+				m.betstatus,
+				0 AS comstatus,
+				b.stake,
+				b.actual_stake,
+				(b.winlost - b.actual_stake) AS WinLost,
+				b.playercomm,
+				b.livehomescore,
+				b.liveawayscore,
+				b.liveindicator,
+				m.finalhomescore,
+				m.finalawayscore,
+				m.hthomescore,
+				m.htawayscore,
+				b.creator,
+				b.ip,
+				b.Username,
+				CONVERT(BIT, 0) AS IsNeutral, --phuong.nguyen, get isneutral from Match
+				'' AS ShowTime,
+				0 spositiontaking, -- unuse in this report
+				0 mpositiontaking, -- unuse in this report
+				0 apositiontaking, -- unuse in this report
+				0 spositiontaking2,-- unuse in this report
+				0 mpositiontaking2,-- unuse in this report
+				0 apositiontaking2,-- unuse in this report
+				0 scomm, -- unuse in this report
+				0 acomm, -- unuse in this report
+				0 comm,	-- unuse in this report
+				b.awinlost,
+				b.mwinlost,
+				b.swinlost,
+				b.winlostdate,
+				b.BetCheck,
+				ISNULL(b.transdesc, '') AS transdesc,
+				ISNULL(b.oddsspread, 0) AS OddsSpread,
+				0 AS OriginalBetType,
+				-1 AS BetdaqId,
+				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				0 AS WalletType,
+				0 AS RefCode,
+				0 AS CurrencyId,
+				'' AS SiteId,
+				b.DeviceType
+				FROM dbo.bettrans AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+					INNER JOIN dbo.match3rd AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
+				WHERE b.custid = @CustId
+					AND b.winlostdate = @FromDate
+					AND s.EventType = 5
+					AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+
 			-- Metric gaming running ticket
 			UNION ALL
 			SELECT 
@@ -1223,7 +1390,7 @@ BEGIN
 				AND b.statusID IN (0,1)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus WHERE statusID IN (0, 1))
 
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4)
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)
 			INSERT INTO @Data
 			SELECT 
 				0,
@@ -1316,8 +1483,8 @@ BEGIN
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND b.matchid IN (9, 29, 2799, 10449)
-				AND b.bettype IN (9, 29, 2799, 10449)
+				AND b.matchid IN (9, 29, 2799, 10449, 11099)
+				AND b.bettype IN (9, 29, 2799, 10449, 11099)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Outright
