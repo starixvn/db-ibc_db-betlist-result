@@ -172,6 +172,7 @@ AS
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
 					- Remove input param @ShowBA
+		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 */
 
 BEGIN
@@ -734,7 +735,7 @@ BEGIN
 														WHEN s.EventType = 5 THEN m3rd.SportType
 														WHEN s.EventType = 3 THEN vr.sporttype
 														WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-														WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+														WHEN s.EventType = 0 AND s.ProductID IN (27, 83, 88) THEN b.oddsid
 														WHEN s.RefTable IN (1, 2) THEN b.matchid
 														ELSE 0
 													END)
@@ -964,7 +965,7 @@ BEGIN
 														WHEN s.EventType = 5 THEN m3rd.SportType
 														WHEN s.EventType = 3 THEN vr.sporttype
 														WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-														WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+														WHEN s.EventType = 0 AND s.ProductID IN (27, 83, 88) THEN b.oddsid
 														WHEN s.RefTable IN (1, 2) THEN b.matchid
 														ELSE 0
 													END)
@@ -1191,7 +1192,7 @@ BEGIN
 														WHEN s.EventType = 5 THEN m3rd.SportType
 														WHEN s.EventType = 3 THEN vr.sporttype
 														WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-														WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+														WHEN s.EventType = 0 AND s.ProductID IN (27, 83, 88) THEN b.oddsid
 														WHEN s.RefTable IN (1, 2) THEN b.matchid
 														ELSE 0
 													END)
@@ -1714,11 +1715,6 @@ BEGIN
 									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									ELSE 0
 								END,
-					OddsType = CASE
-								WHEN b.EventType IN (1, 3, 5) THEN b.OddsType
-								WHEN b.Product IN ('Outright') THEN b.OddsType
-								ELSE 0
-							END,
 					OddsSpread = CASE
 									WHEN b.Product IN ('SB', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
@@ -1800,7 +1796,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE
@@ -1860,11 +1856,6 @@ BEGIN
 									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									ELSE 0
 								END,
-					OddsType = CASE
-								WHEN b.EventType IN (1, 3, 5) THEN b.OddsType
-								WHEN b.Product IN ('Outright') THEN b.OddsType
-								ELSE 0
-							END,
 					OddsSpread = CASE
 									WHEN b.Product IN ('SB', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
@@ -1943,7 +1934,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE
@@ -2003,11 +1994,6 @@ BEGIN
 									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									ELSE 0
 								END,
-					OddsType = CASE
-								WHEN b.EventType IN (1, 3, 5) THEN b.OddsType
-								WHEN b.Product IN ('Outright') THEN b.OddsType
-								ELSE 0
-							END,
 					OddsSpread = CASE
 									WHEN b.Product IN ('SB', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
@@ -2086,7 +2072,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE

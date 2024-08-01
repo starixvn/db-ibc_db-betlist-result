@@ -12,7 +12,6 @@ AS
 	Created: Henry@20101210
 	Task: Get parlay sub tickets
 	DB: DBACC.bodb02
-	Original: [Age_BetList_SelParlayDetail]
 
 	Revisions:
 		- 20110930@Henry: Add column statusID
@@ -41,6 +40,7 @@ AS
 					- Add new input param @MoveBetsDay SMALLDATETIME, @BalanceUpDay SMALLDATETIME, @ExcludeBettrans BIT
 		- 20231225@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20240305@Kos: Support Virtual Sports 4 [Redmine: 199347]
+		- 20240801@Kos: Support Virtual Sports 5 [Redmine: 207582]
 */
 
 BEGIN
@@ -56,7 +56,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 27, 83)
+	WHERE ProductID IN (1, 27, 83, 88)
 
 	DECLARE @tmpParlay TABLE (
 		TransId				BIGINT,
@@ -135,20 +135,36 @@ BEGIN
 			b.transid,
 			NULL,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			m.sporttype,
-			m.leagueid,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.sporttype
+				WHEN sbt.EventType = 5 THEN m3rd.SportType
+				ELSE 0
+			END AS SportType,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.leagueid
+				WHEN sbt.EventType = 5 THEN m3rd.League3rdId
+				ELSE 0
+			END AS LeagueId,
 			l.LeagueGroupID,
 			b.bettype,
 			b.stake,
 			@CurrencyId AS Currency,
-			m.matchid,
+			b.matchid,
 			m.GlobalShowTime AS EventDate,
 			CASE
 				WHEN sbt.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE m.showtime
 			END AS ShowTime,
-			m.homeid,
-			m.awayid,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.homeid
+				WHEN sbt.EventType = 5 THEN m3rd.HomeId
+				ELSE 0
+			END AS HomeId,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.awayid
+				WHEN sbt.EventType = 5 THEN m3rd.AwayId
+				ELSE 0
+			END AS AwayId,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -174,8 +190,9 @@ BEGIN
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
+			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON sbt.EventType = 1 AND b.matchid = m.matchid
+			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON sbt.EventType = 1 AND l.leagueid = m.leagueid
+			LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON sbt.EventType = 5 AND m3rd.Match3rdId = b.matchid
 		WHERE b.refno = @RefNo
 			AND b.custid = @CustId
 			AND (b.winlostdate > @MoveBetsDay OR b.winlostdate IS NULL)
@@ -191,20 +208,36 @@ BEGIN
 			b.transid,
 			NULL,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			m.sporttype,
-			m.leagueid,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.sporttype
+				WHEN sbt.EventType = 5 THEN m3rd.SportType
+				ELSE 0
+			END AS SportType,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.leagueid
+				WHEN sbt.EventType = 5 THEN m3rd.League3rdId
+				ELSE 0
+			END AS LeagueId,
 			l.LeagueGroupID,
 			b.bettype,
 			b.stake,
 			@CurrencyId AS Currency,
-			m.matchid,
+			b.matchid,
 			m.GlobalShowTime AS EventDate,
 			CASE
 				WHEN sbt.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE m.showtime
 			END AS ShowTime,
-			m.homeid,
-			m.awayid,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.homeid
+				WHEN sbt.EventType = 5 THEN m3rd.HomeId
+				ELSE 0
+			END AS HomeId,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.awayid
+				WHEN sbt.EventType = 5 THEN m3rd.AwayId
+				ELSE 0
+			END AS AwayId,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -226,8 +259,9 @@ BEGIN
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM dbo.bettransm14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
-			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
+			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
+			LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON sbt.EventType = 5 AND m3rd.Match3rdId = b.matchid
 		WHERE b.refno = @RefNo
 			AND b.custid = @CustId
 			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
@@ -243,20 +277,36 @@ BEGIN
 			b.transid,
 			NULL,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			m.sporttype,
-			m.leagueid,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.sporttype
+				WHEN sbt.EventType = 5 THEN m3rd.SportType
+				ELSE 0
+			END AS SportType,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.leagueid
+				WHEN sbt.EventType = 5 THEN m3rd.League3rdId
+				ELSE 0
+			END AS LeagueId,
 			l.LeagueGroupID,
 			b.bettype,
 			b.stake,
 			@CurrencyId AS Currency,
-			m.matchid,
+			b.matchid,
 			m.GlobalShowTime AS EventDate,
 			CASE
 				WHEN sbt.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				ELSE m.showtime
 			END AS ShowTime,
-			m.homeid,
-			m.awayid,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.homeid
+				WHEN sbt.EventType = 5 THEN m3rd.HomeId
+				ELSE 0
+			END AS HomeId,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.awayid
+				WHEN sbt.EventType = 5 THEN m3rd.AwayId
+				ELSE 0
+			END AS AwayId,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -278,8 +328,9 @@ BEGIN
 			ISNULL(b.transdesc, '') AS transdesc
 		FROM bodb_Archive.dbo.bettransm AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.bettype = sbt.Bettype
-			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
-			INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
+			LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
+			LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON sbt.EventType = 5 AND m3rd.Match3rdId = b.matchid
 		WHERE b.refno = @RefNo
 			AND b.custid = @CustId
 			AND b.winlostdate < @BalanceUpDay

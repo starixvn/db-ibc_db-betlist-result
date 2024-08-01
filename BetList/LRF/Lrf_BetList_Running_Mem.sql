@@ -60,6 +60,7 @@ AS
 		- 20240605@Kos: Support Virtual Sports 4 [Redmine: 199347]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
+		- 20241216@Kos: Support Virtual Sports 5 [Redmine: 207582]
 */
 
 BEGIN
@@ -775,7 +776,7 @@ BEGIN
 				TransDesc = CASE
 								WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'VB', 'PP', 
 									'CC', 'SG', 'VRG', 'TG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-								WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+								WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE

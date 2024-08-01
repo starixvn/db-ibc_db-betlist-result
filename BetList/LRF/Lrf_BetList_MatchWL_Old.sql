@@ -43,6 +43,7 @@ AS
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
 					- Remove input param @ShowBA
+		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 
 	Param's Explanation:
 		+ @LiveIndicator:
@@ -535,11 +536,6 @@ BEGIN
 								WHEN b.EventType = 3 THEN vr.SportType
 								ELSE 0
 							END,
-				OddsType = CASE
-								WHEN b.EventType IN (1, 3, 5) THEN b.OddsType
-								WHEN b.Product IN ('Outright') THEN b.OddsType
-								ELSE 0
-							END,
 				LiveIndicator = CASE
 									WHEN b.EventType IN (1, 5) THEN b.liveindicator
 									ELSE 0
@@ -608,7 +604,7 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+								WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 								WHEN b.Product IN ('H5LG') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,

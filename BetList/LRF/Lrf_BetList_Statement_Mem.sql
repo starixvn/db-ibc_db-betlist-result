@@ -101,6 +101,7 @@ AS
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
+		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 */
 
 BEGIN
@@ -1182,7 +1183,7 @@ BEGIN
 						TransDesc = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
 											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-										WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+										WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 										ELSE ''
 									END,
 						OddsSpread = CASE
@@ -1380,7 +1381,7 @@ BEGIN
 						TransDesc = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
 											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-										WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+										WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 										ELSE ''
 									END,
 						OddsSpread = CASE
@@ -1529,7 +1530,7 @@ BEGIN
 						TransDesc = CASE
 										WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
 											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-										WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+										WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 										ELSE ''
 									END,
 						OddsSpread = CASE

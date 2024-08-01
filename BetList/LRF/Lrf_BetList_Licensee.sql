@@ -109,6 +109,7 @@ AS
 		- 20250306@Kos: Hotfix - Missing ExtraInfo for some products [RedmineID: #219311]
 		- 20250307@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
+		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 */
 
 BEGIN
@@ -605,7 +606,7 @@ BEGIN
 														WHEN s.EventType = 5 THEN m3rd.SportType
 														WHEN s.EventType = 3 THEN vr.sporttype
 														WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-														WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+														WHEN s.EventType = 0 AND s.ProductID IN (27, 83, 88) THEN b.oddsid
 														WHEN s.RefTable IN (1, 2) THEN b.matchid
 														ELSE 0
 													END))
@@ -738,7 +739,7 @@ BEGIN
 														WHEN s.EventType = 5 THEN m3rd.SportType
 														WHEN s.EventType = 3 THEN vr.sporttype
 														WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-														WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+														WHEN s.EventType = 0 AND s.ProductID IN (27, 83, 88) THEN b.oddsid
 														WHEN s.RefTable IN (1, 2) THEN b.matchid
 														ELSE 0
 													END))
@@ -873,7 +874,7 @@ BEGIN
 														WHEN s.EventType = 5 THEN m3rd.SportType
 														WHEN s.EventType = 3 THEN vr.sporttype
 														WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-														WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+														WHEN s.EventType = 0 AND s.ProductID IN (27, 83, 88) THEN b.oddsid
 														WHEN s.RefTable IN (1, 2) THEN b.matchid
 														ELSE 0
 													END))
@@ -1006,7 +1007,7 @@ BEGIN
 														WHEN s.EventType = 5 THEN m3rd.SportType
 														WHEN s.EventType = 3 THEN vr.sporttype
 														WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-														WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+														WHEN s.EventType = 0 AND s.ProductID IN (27, 83, 88) THEN b.oddsid
 														WHEN s.RefTable IN (1, 2) THEN b.matchid
 														ELSE 0
 													END))
@@ -1654,7 +1655,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE
@@ -1780,7 +1781,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE
@@ -1989,7 +1990,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE
@@ -2115,7 +2116,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					BetdaqId = CASE

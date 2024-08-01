@@ -44,6 +44,7 @@ AS
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
+		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 */
 
 BEGIN
@@ -80,7 +81,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 60, 63, 66, 69, 71, 74, 77, 83)
+	WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 60, 63, 66, 69, 71, 74, 77, 83, 88)
 		AND BetType NOT BETWEEN 801 AND 899
 		AND BetType NOT IN (901, 902, 903, 904)
 
@@ -205,6 +206,8 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate > @MoveBetsDay
 				AND @TxId = CASE
+								WHEN b.ExtraInfo LIKE '%p88%'
+									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p88/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p83%'
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p83/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p77%'
@@ -254,6 +257,8 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 				AND @TxId = CASE
+								WHEN b.ExtraInfo LIKE '%p88%'
+									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p88/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p83%'
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p83/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p77%'
@@ -302,6 +307,8 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 			WHERE b.custid = @CustId
 				AND @TxId = CASE
+								WHEN b.ExtraInfo LIKE '%p88%'
+									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p88/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p71%'
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p71/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p1%' AND s.ProductID = 1
@@ -517,7 +524,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
-				WHEN @EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -662,7 +669,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
-				WHEN @EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -807,7 +814,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
-				WHEN @EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
+				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
