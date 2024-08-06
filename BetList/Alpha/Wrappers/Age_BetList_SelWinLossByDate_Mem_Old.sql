@@ -171,6 +171,7 @@ AS
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 		- 20240718@Razor: Support Vgaming Promotion [Redmine: #208019]
+		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -449,6 +450,7 @@ BEGIN
 						WHEN s.ProductID = 86 THEN 'SNG'	-- Saba xD
 						WHEN s.ProductID = 87 THEN 'FS'		-- FastSpin
 						WHEN s.ProductID = 89 THEN 'FAC'	-- FA CHAI
+						WHEN s.ProductID = 85 THEN 'NS'		-- Nextspin
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 83 THEN 'ParlayVS4' --Virtual Sports 4 Parlay

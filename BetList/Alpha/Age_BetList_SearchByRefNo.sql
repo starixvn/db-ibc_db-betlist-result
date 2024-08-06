@@ -34,6 +34,7 @@ AS
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
+		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 
 */
 
@@ -266,6 +267,7 @@ BEGIN
 						WHEN @ProductID = 78 THEN 'UUSL'		-- UU Slots
 						WHEN @ProductID = 79 THEN 'L22'			-- Live22
 						WHEN @ProductID = 80 THEN 'WE'			-- WE
+						WHEN @ProductID = 85 THEN 'NS'			-- Nextspin
 						WHEN @ProductID = 86 THEN 'SNG'			-- Saba xD
 						WHEN @ProductID = 87 THEN 'FS'			-- FastSpin
 						WHEN @ProductID = 89 THEN 'FAC'			-- FA CHAI
@@ -1144,6 +1146,7 @@ BEGIN
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
 						WHEN @ProductID = 78 THEN 'UUSL'		-- UU Slots
 						WHEN @ProductId = 79 THEN 'L22'			-- Live22
+						WHEN @ProductId = 85 THEN 'NS'			-- Nextspin
 						WHEN @ProductId = 86 THEN 'SNG'			-- Saba xD
 						WHEN @ProductId = 87 THEN 'FS'			-- FastSpin
 						WHEN @ProductId = 89 THEN 'FAC'			-- FA CHAI
