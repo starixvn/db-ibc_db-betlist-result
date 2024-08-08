@@ -1,7 +1,6 @@
 /*<info serverAlias="DBAGE-BODB02" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_BetList_SelByProduct]
-	@UserId			BIGINT,
 	@ProductId		TINYINT,
 	@CustId			INT				= 0,
 	@Username		NVARCHAR(50)	= '',
@@ -11,7 +10,8 @@ ALTER PROCEDURE [dbo].[Acc_BetList_SelByProduct]
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
-	@Permission		VARCHAR(20)		= '1,2,3'
+	@Permission		VARCHAR(20)		= '1,2,3',
+	@DeniedList		VARCHAR(MAX) = ''
 AS
 
 /*
@@ -109,6 +109,7 @@ AS
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
+		- 20241003@Razor: Remove Linked Server on DBCust [Redmine: #206893]
 */
 
 BEGIN
@@ -204,34 +205,44 @@ BEGIN
 
 	DECLARE @DeniedSite TABLE (
 		SiteId			INT,
-		Site			NVARCHAR(50),
-		SpecialGroup	TINYINT)
-		
+		Site			NVARCHAR(50))
+
 	DECLARE @DeniedCurrency TABLE (
-		ExchangeId			INT,
-		Currency			NVARCHAR(50),
-		OfferSite			TINYINT)
-		
-	DECLARE @Sql VARCHAR(500)
+		ExchangeId			INT)
 
-	SELECT @Sql = 'SELECT * 
-		FROM OPENQUERY(DBPOL, 
-		''SELECT siteid, site, SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser ( ''''' + CAST(@UserId AS VARCHAR(50)) + ''''')'')'
+	IF @DeniedList <> ''
+	BEGIN
+		INSERT INTO @DeniedSite(SiteId, Site)
+		SELECT vl.ID, vl.Name
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Site'
 
-	INSERT INTO @DeniedSite
-	EXEC (@Sql)
+		INSERT INTO @DeniedCurrency (ExchangeId)
+		SELECT vl.ID
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]		NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Exchange'
+	END
 
-	SET @Sql = 'SELECT * 
-		FROM OPENQUERY(DBPOL, 
-		''SELECT ExchangeId, Currency, OfferSite FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser ( ''''' + CAST(@UserId AS VARCHAR(50)) + ''''')'')'
-	INSERT INTO @DeniedCurrency (ExchangeId, Currency, OfferSite)
-	EXECUTE(@Sql)
-
-	INSERT INTO @DeniedSite (SiteId, Site, SpecialGroup)
+	INSERT INTO @DeniedSite (SiteId, Site)
 	SELECT
 		s.siteid,
-		s.site,
-		s.SpecialGroup
+		s.site
 	FROM dbo.Site AS s WITH (NOLOCK)
 	WHERE NOT EXISTS (SELECT 1 FROM @DeniedSite WHERE SiteId = s.siteid)
 		AND ((s.isLicensee = 0									-- Don't have Credit sites permission
