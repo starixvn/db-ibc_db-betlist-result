@@ -60,6 +60,7 @@ AS
 		- 20230316@Razor: Change HT Score display for Soccer [Redmine: #181331]
 		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
 		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
+		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 */
 
 BEGIN
@@ -168,7 +169,7 @@ BEGIN
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (6, 9, 43, 45, 50, 58, 193)
+		IF @SportType NOT IN (6, 8, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -215,7 +216,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
+		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -237,6 +238,7 @@ BEGIN
 				AND (LEN(d.ResourceId) = 2
 					OR (LEN(d.ResourceId) = 4 AND @SportType IN (9, 45))
 					OR (@SportType = 6 AND d.ResourceId LIKE '010%')
+					OR (@SportType = 8 AND (d.ResourceId LIKE '010%' OR d.ResourceId = '8816'))
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
@@ -351,7 +353,7 @@ BEGIN
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (6, 9, 43, 45, 50, 58, 193)
+		IF @SportType NOT IN (6, 8, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -398,7 +400,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
+		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -420,6 +422,7 @@ BEGIN
 				AND (LEN(d.ResourceId) = 2
 					OR (LEN(d.ResourceId) = 4 AND @SportType IN (9, 45))
 					OR (@SportType = 6 AND d.ResourceId LIKE '010%')
+					OR (@SportType = 8 AND (d.ResourceId LIKE '010%' OR d.ResourceId = '8816'))
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
@@ -535,7 +538,7 @@ BEGIN
 							END
 
 		-- Get result detail
-		IF @SportType NOT IN (6, 9, 43, 45, 50, 58, 193)
+		IF @SportType NOT IN (6, 8, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -582,7 +585,7 @@ BEGIN
 								AND (@BetType NOT IN (606, 607, 613, 617)
 									OR d.ResourceId LIKE '%' + @ResourceId)))))
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50, 58)		-- Volleyball, Badminton, Beach Volleyball, Cricket, Bandy
+		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
 			SELECT
@@ -604,6 +607,7 @@ BEGIN
 				AND (LEN(d.ResourceId) = 2
 					OR (LEN(d.ResourceId) = 4 AND @SportType IN (9, 45))
 					OR (@SportType = 6 AND d.ResourceId LIKE '010%')
+					OR (@SportType = 8 AND (d.ResourceId LIKE '010%' OR d.ResourceId = '8816'))
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceId LIKE f.ResourceID
 						AND d.ResourceId LIKE '%' + @ResourceId))
