@@ -64,6 +64,7 @@ AS
 					- Add new param @IsShowAll BIT
 		- 20241002@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241028@Kos: Support Betby Virtual Sports 6 [Redmine: #212446]
+		- 20241216@Kos: Support Virtual Sports 5 [Redmine: 207582]
 */
 
 BEGIN
@@ -236,8 +237,8 @@ BEGIN
 				AND @IsShowAll IN (1, l.IsTest)
 		END
 
-		-- Bitcoin, Virtual Sports 6
-		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID IN (69, 71))
+		-- Bitcoin, Virtual Sports 6, Virtual Sports 5
+		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID IN (69, 71, 88))
 		BEGIN
 			INSERT INTO @Sport
 			SELECT DISTINCT m.SportType
@@ -250,10 +251,13 @@ BEGIN
 			WHERE m.EventDate = @EventDate
 				AND @IsShowAll IN (1, l.IsTest)
 				AND 1 = CASE
-							WHEN m.SportType IN (134, 175) AND m.EventStatus = 'completed' THEN 1
+							WHEN m.SportType IN (134, 147, 175) AND m.EventStatus = 'completed' THEN 1
 							WHEN m.SportType = 134
 								AND m.EventStatus IN ('Running', 'Ended')
 								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
+							WHEN m.SportType = 147
+								AND EventStatus IN ('Suspend', 'Running')
+								AND (hthomescore IS NOT NULL OR htawayscore IS NOT NULL) THEN 1
 							ELSE 0
 						END
 		END
@@ -408,8 +412,8 @@ BEGIN
 				AND @IsShowAll IN (1, l.IsTest)
 		END
 
-		-- Bitcoin, Virtual Sports 6
-		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID IN (69, 71))
+		-- Bitcoin, Virtual Sports 6, Virtual Sports 5
+		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID IN (69, 71, 88))
 		BEGIN
 			INSERT INTO @Sport
 			SELECT DISTINCT m.SportType
@@ -422,7 +426,7 @@ BEGIN
 			WHERE m.EventDate = @EventDate
 				AND @IsShowAll IN (1, l.IsTest)
 				AND 1 = CASE
-							WHEN m.SportType IN (134, 175) AND m.EventStatus = 'completed' THEN 1
+							WHEN m.SportType IN (134, 147, 175) AND m.EventStatus = 'completed' THEN 1
 							WHEN m.SportType = 134
 								AND m.EventStatus IN ('Running', 'Ended')
 								AND ISNULL(r.MatchID, 0) <> 0 THEN 1

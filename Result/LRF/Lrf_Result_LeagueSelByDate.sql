@@ -58,6 +58,7 @@ AS
 		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241028@Kos: Support Betby Virtual Sports 6 [Redmine: #212446]
+		- 20241216@Kos: Support Virtual Sports 5 [Redmine: 207582]
 */
 
 BEGIN
@@ -65,7 +66,7 @@ BEGIN
 
 	IF @EventDate > @MoveBetsDay
 	BEGIN
-		IF @SportType NOT IN (134, 175, 177, 193, 198)
+		IF @SportType NOT IN (134, 147, 175, 177, 193, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -196,7 +197,7 @@ BEGIN
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
-		ELSE IF @SportType IN (134, 175)	-- Bitcoin, Virtual Sports 6
+		ELSE IF @SportType IN (134, 147, 175)	-- Bitcoin, Virtual Sports 6, VS5
 		BEGIN
 			SELECT DISTINCT
 				l.LeagueName,
@@ -211,11 +212,15 @@ BEGIN
 					AND m.SportType IN (134)
 					AND r.SettlementStatusID > 0
 			WHERE m.EventDate = @EventDate
+				AND l.sporttype = @SportType
 				AND 1 = CASE
 							WHEN m.EventStatus = 'completed' THEN 1
 							WHEN m.SportType = 134
 								AND m.EventStatus IN ('Running', 'Ended')
 								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
+							WHEN m.SportType = 147
+								AND m.EventStatus IN ('Suspend', 'Running')
+								AND (m.hthomescore IS NOT NULL OR m.htawayscore IS NOT NULL) THEN 1
 							ELSE 0
 						END
 			ORDER BY m.SportType ASC,
@@ -269,7 +274,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		IF @SportType NOT IN (134, 175, 177, 193, 198)
+		IF @SportType NOT IN (134, 147, 175, 177, 193, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -399,7 +404,7 @@ BEGIN
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
-		ELSE IF @SportType IN (134, 175)	-- Bitcoin, Virtual Sports 6
+		ELSE IF @SportType IN (134, 147, 175)	-- Bitcoin, Virtual Sports 6, VS5
 		BEGIN
 			SELECT DISTINCT
 				l.LeagueName,
@@ -414,6 +419,7 @@ BEGIN
 					AND m.SportType IN (134)
 					AND r.SettlementStatusID > 0
 			WHERE m.EventDate = @EventDate
+				AND l.sporttype = @SportType
 				AND 1 = CASE
 							WHEN m.EventStatus = 'completed' THEN 1
 							WHEN m.SportType = 134

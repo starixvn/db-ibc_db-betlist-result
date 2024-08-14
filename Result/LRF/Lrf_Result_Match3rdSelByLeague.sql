@@ -14,6 +14,7 @@ AS
 	Revisions:
 		- 20210914@Kos: Support Bitcoin [Redmine: #160160]
 		- 20241028@Kos: Support Betby Virtual Sports 6 [Redmine: #212446]
+		- 20241216@Kos: Support Virtual Sports 5 [Redmine: #207582]
 
 */
 
@@ -75,8 +76,11 @@ BEGIN
 			AND 1 = CASE
 						WHEN m.EventStatus = 'completed' THEN 1
 						WHEN m.SportType = 134
-								AND m.EventStatus IN ('Running', 'Ended')
-								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
+							AND m.EventStatus IN ('Running', 'Ended')
+							AND ISNULL(r.MatchID, 0) <> 0 THEN 1
+						WHEN m.SportType = 147
+							AND m.EventStatus IN ('Suspend', 'Running')
+							AND (m.hthomescore IS NOT NULL OR m.htawayscore IS NOT NULL) THEN 1
 						ELSE 0
 					END
 
