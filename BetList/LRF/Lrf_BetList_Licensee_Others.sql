@@ -98,6 +98,7 @@ AS
 		- 20240411@Kos: Hotfix - show detail ticket in bettrans14 range [RedmineID: #203793]
 		- 20240425@Kos: Support Virtual Sports 4 [Redmine: 199347]
 		- 20240619@Kos: Hotfix - Missing TranId3rd for Sports Lottery and Virtual Games [Redmine: 206758]
+		- 20240815@Kos: Don't support Promotion tickets [Redmine: 208144]
 */
 
 BEGIN
@@ -296,6 +297,7 @@ BEGIN
 					OR BetType IN (	SELECT @BetType
 									UNION SELECT Bettype FROM dbo.Lrf_f_GroupBettype() WHERE GroupTypeId = @BetType))
 				AND BetType <> 914
+				AND BetType NOT IN (SELECT BetType FROM dbo.Lrf_f_SelExcludedBetType())
 		END
 
 		DECLARE @TempToDate	SMALLDATETIME,

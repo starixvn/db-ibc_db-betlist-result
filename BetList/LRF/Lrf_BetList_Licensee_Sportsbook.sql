@@ -85,6 +85,7 @@ AS
 					- Add new input param @FullCustomerClass VARCHAR(MAX)
 		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
 		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
+		- 20240815@Kos: Don't support Promotion tickets [Redmine: 208144]
 */
 
 BEGIN
@@ -290,6 +291,7 @@ BEGIN
 				OR BetType IN (	SELECT @BetType
 								UNION SELECT Bettype FROM dbo.f_GroupBettype() WHERE GroupTypeId = @BetType))
 			AND BetType <> 999
+			AND BetType NOT IN (SELECT BetType FROM dbo.Lrf_f_SelExcludedBetType())
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)
 

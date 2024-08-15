@@ -158,6 +158,7 @@ AS
 		- 20240619@Kos: Hotfix - Missing TranId3rd for Sports Lottery and Virtual Games [Redmine: 206758]
 		- 20240705@Kos: Support more filters [Redmine: 202409]
 					- Add new input params @SportTypeList, @BetTypeList, @CashoutMode
+		- 20240815@Kos: Don't support Promotion tickets [Redmine: 208144]
 */
 
 BEGIN
@@ -237,6 +238,7 @@ BEGIN
 		AND (@BetTypeList = 'All'
 			OR ',' + @BetTypeList + ',' LIKE '%,' + CONVERT(VARCHAR(6), BetType) + ',%'
 			OR BetType IN (SELECT Bettype FROM @BetType))
+		AND BetType NOT IN (SELECT BetType FROM dbo.Lrf_f_SelExcludedBetType())
 
 	-- Get sport type list
 	CREATE TABLE #TempSportType (SportType SMALLINT, LeagueGroupIdList VARCHAR(200))
