@@ -18,6 +18,7 @@ AS
 		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20240821@Kos: Support BTC Exchange Running [#Redmine: 208108]
 */
 
 BEGIN
@@ -44,13 +45,22 @@ BEGIN
 		RETURN
 	END CATCH
 
+	DECLARE @Currency	INT,
+		@ExVirtualRate	FLOAT
+
+	SELECT
+		@Currency = c.currency,
+		@ExVirtualRate = IIF(c.site = '12bet', e.ExVirtualRate, 1)
+	FROM dbo.Customer AS c WITH (NOLOCK)
+		INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = c.currency
+	WHERE c.custid = @CustId
+
 	DECLARE @Data AS TABLE (
 		TransId			BIGINT,
 		EventType		INT,
 		CategoryType	SMALLINT,
 		BetTaken		DATETIME,
 		WinLostDate		DATETIME,
-		Currency		TINYINT,
 		Stake			MONEY,
 		OddsRequest		SMALLMONEY,
 		OddsMatched		SMALLMONEY,
@@ -63,21 +73,19 @@ BEGIN
 		b.eventType,
 		b.categoryType,
 		bm.betTaken,
-		DATEADD(DAY, 0, DATEDIFF(DAY, 0, s.settledDate)) AS WinLostDate,
-		s.Currency,
-		bm.txStake / s.ExVirtualRate AS Stake,
+		DATEADD(DAY, 0, DATEDIFF(DAY, 0, ISNULL(s.settledDate, GETDATE()))) AS WinLostDate,
+		bm.txStake / @ExVirtualRate AS Stake,
 		bm.actualOdds AS OddsRequest,
 		bm.txOddsMatched AS OddsMatched,
 		bm.txFancyBetRuns AS FancyBetRuns
 	FROM bodb_3rdProduct.dbo.Bettrans_Exchange AS b WITH (NOLOCK)
 		INNER JOIN bodb_3rdProduct.dbo.BettransM_Exchange AS bm WITH (NOLOCK) ON b.betID = bm.BetID
-		INNER JOIN bodb_3rdProduct.dbo.Sum_winloss_Exchange AS s WITH (NOLOCK)
+		LEFT JOIN bodb_3rdProduct.dbo.Sum_winloss_Exchange AS s WITH (NOLOCK)
 			ON b.userId = s.userId
 				AND b.eventID = s.eventID
 				AND b.marketID = s.marketID
 	WHERE b.betID = @BetId
-		AND s.CustID = @CustId
-		AND s.Currency IN (SELECT DISTINCT Currency FROM @TempAg)
+		AND ISNULL(s.CustID, b.CustID) = @CustId
 
 	DECLARE @FDate	DATETIME,
 		@TDate		DATETIME
@@ -90,12 +98,6 @@ BEGIN
 		LastExchangeDateByMonth		SMALLDATETIME,
 		Rate						FLOAT
 	)
-
-	DECLARE @Currency	INT
-
-	SELECT @Currency = currency
-	FROM dbo.Customer WITH (NOLOCK)
-	WHERE custid = @CustId
 
 	-- Get exchange rate
 	INSERT INTO @ExchangeRate
@@ -113,7 +115,7 @@ BEGIN
 		b.CategoryType,
 		b.BetTaken,
 		b.WinLostDate,
-		b.Currency,
+		@Currency AS Currency,
 		b.Stake * ISNULL(e.Rate, 1) AS Stake,
 		b.OddsRequest,
 		b.OddsMatched,
