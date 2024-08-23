@@ -14,6 +14,7 @@ AS
 	DB: DBACC.bodb02
 	Revisions:
 		- 20240725@Kos: Created [#Redmine: 207623]
+		- 20240725@Kos: Return additional column [#Redmine: 207623]
 */
 
 BEGIN
@@ -642,6 +643,7 @@ BEGIN
 
 	SELECT
 		a.CustId,
+		a.Recommend,
 		@Username AS Username,
 		@Nickname AS NickName,
 		a.TransId,
