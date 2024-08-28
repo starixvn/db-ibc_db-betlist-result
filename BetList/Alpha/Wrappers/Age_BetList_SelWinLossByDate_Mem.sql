@@ -172,6 +172,7 @@ AS
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 		- 20240718@Razor: Support Vgaming Promotion [Redmine: #208019]
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
+		- 20240828@Razor: Support FA CHAI Promotion [Redmine: #209720]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -1120,8 +1121,8 @@ BEGIN
 	END -- end: bettrans14
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming
-	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'FS', 'VGA'))
+	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI
+	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'FS', 'VGA', 'FAC'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId		TINYINT,
@@ -1304,6 +1305,22 @@ BEGIN
 							WHERE ProductId = 66 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 66 AND BetType = b.BetType)
+							
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'FAC'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 89 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 89 AND BetType = b.BetType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'FAC'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 89 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 89 AND BetType = b.BetType)
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
