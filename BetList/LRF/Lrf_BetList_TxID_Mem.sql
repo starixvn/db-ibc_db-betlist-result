@@ -40,6 +40,7 @@ AS
 		- 20240605@Kos: Support Virtual Sports 4 [Redmine: 199347]
 		- 20240619@Kos: Hotfix - Missing TranId3rd for Sports Lottery and Virtual Games [Redmine: 206758]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+		- 20241018@Kos: Enhance match info for Player Tips [Redmine: 210279]
 */
 
 BEGIN
@@ -546,20 +547,6 @@ BEGIN
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON @EventType = 3 AND vr.EventID = b.matchid
 		WHERE b.transid IN (@TransId, @BonusTransId)
-
-		-- Get match info for Player Tips
-		IF @Product = 'TIP'
-		BEGIN
-			UPDATE b
-			SET
-				LeagueId = m.leagueid,
-				HomeId = m.homeid,
-				AwayId = m.awayid,
-				EventDate = m.GlobalShowTime
-			FROM @Data AS b
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
-			WHERE b.WhTicket = 2
-		END
 	END
 	ELSE IF @WhTicket = 3		-- Bettrans14 range
 	BEGIN
@@ -701,20 +688,6 @@ BEGIN
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 			LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON @EventType = 3 AND vr.EventID = b.matchid
 		WHERE b.transid IN (@TransId, @BonusTransId)
-
-		-- Get match info for Player Tips
-		IF @Product = 'TIP'
-		BEGIN
-			UPDATE b
-			SET
-				LeagueId = m.leagueid,
-				HomeId = m.homeid,
-				AwayId = m.awayid,
-				EventDate = m.GlobalShowTime
-			FROM @Data AS b
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
-			WHERE b.WhTicket = 3
-		END
 	END
 	ELSE IF @WhTicket = 4		-- Bettrans_bk range
 	BEGIN
@@ -857,9 +830,14 @@ BEGIN
 			LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON @EventType = 3 AND vr.EventID = b.matchid
 			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.transid IN (@TransId, @BonusTransId)
+	END
 
-		-- Get match info for Player Tips
-		IF @Product = 'TIP'
+	-- Get match info for Player Tips
+	IF @Product = 'TIP'
+	BEGIN
+		IF EXISTS (	SELECT 1
+					FROM @Data AS b
+						INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId)
 		BEGIN
 			UPDATE b
 			SET
@@ -869,7 +847,30 @@ BEGIN
 				EventDate = m.GlobalShowTime
 			FROM @Data AS b
 				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
-			WHERE b.WhTicket = 4
+		END
+		ELSE IF EXISTS ( SELECT 1
+						FROM @Data AS b
+							INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId)
+		BEGIN
+			UPDATE b
+			SET
+				LeagueId = m.leagueid,
+				HomeId = m.homeid,
+				AwayId = m.awayid,
+				EventDate = m.GlobalShowTime
+			FROM @Data AS b
+				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+		END
+		ELSE
+		BEGIN
+			UPDATE b
+			SET
+				LeagueId = m.leagueid,
+				HomeId = m.homeid,
+				AwayId = m.awayid,
+				EventDate = m.GlobalShowTime
+			FROM @Data AS b
+				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId
 		END
 	END
 

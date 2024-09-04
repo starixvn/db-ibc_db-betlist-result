@@ -97,6 +97,7 @@ AS
 		- 20240425@Kos: Support Virtual Sports 4 [Redmine: 199347]
 		- 20240619@Kos: Hotfix - Missing TranId3rd for Sports Lottery and Virtual Games [Redmine: 206758]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+		- 20241018@Kos: Enhance match info for Player Tips [Redmine: 210279]
 */
 
 BEGIN
@@ -1226,20 +1227,6 @@ BEGIN
 						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
 					WHERE b.TableID = 1
 
-					-- Get match info for Player Tips
-					IF EXISTS (SELECT 1 FROM #PagingData WHERE TableID = 1 AND Product = 'TIP')
-					BEGIN
-						UPDATE b
-						SET
-							LeagueId = m.leagueid,
-							HomeId = m.homeid,
-							AwayId = m.awayid,
-							EventDate = m.GlobalShowTime
-						FROM #PagingData AS b
-							INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
-						WHERE b.TableID = 1 AND b.Product = 'TIP'
-					END
-
 					-- translog
 					UPDATE b
 					SET SportType = CASE
@@ -1429,20 +1416,6 @@ BEGIN
 						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
 					WHERE b.TableID = 2
 
-					-- Get match info for Player Tips
-					IF EXISTS (SELECT 1 FROM #PagingData WHERE TableID = 2 AND Product = 'TIP')
-					BEGIN
-						UPDATE b
-						SET
-							LeagueId = m.leagueid,
-							HomeId = m.homeid,
-							AwayId = m.awayid,
-							EventDate = m.GlobalShowTime
-						FROM #PagingData AS b
-							INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
-						WHERE b.TableID = 2 AND b.Product = 'TIP'
-					END
-
 					-- Get ticket detail
 					-- Virtual Sports Racing
 					INSERT INTO @DetailData
@@ -1588,20 +1561,6 @@ BEGIN
 						LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
 					WHERE b.TableID = 3
 
-					-- Get match info for Player Tips
-					IF EXISTS (SELECT 1 FROM #PagingData WHERE TableID = 3 AND Product = 'TIP')
-					BEGIN
-						UPDATE b
-						SET
-							LeagueId = m.leagueid,
-							HomeId = m.homeid,
-							AwayId = m.awayid,
-							EventDate = m.GlobalShowTime
-						FROM #PagingData AS b
-							INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId
-						WHERE b.TableID = 3 AND b.Product = 'TIP'
-					END
-
 					-- Get ticket detail
 					-- Virtual Sports Racing
 					INSERT INTO @DetailData
@@ -1616,6 +1575,55 @@ BEGIN
 					FROM #PagingData AS c
 						INNER JOIN bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK) ON c.RefNo = bm.refno
 					WHERE c.Product = 'VR' AND bm.custid = @CustId
+				END
+
+				-- Get match info for Player Tips
+				IF EXISTS (	SELECT 1
+							FROM #PagingData AS b
+								INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+							WHERE b.Product = 'TIP')
+				BEGIN
+					UPDATE b
+					SET
+						LeagueId = m.leagueid,
+						HomeId = m.homeid,
+						AwayId = m.awayid,
+						EventDate = m.GlobalShowTime
+					FROM #PagingData AS b
+						INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+					WHERE b.Product = 'TIP'
+				END
+
+				IF EXISTS (	SELECT 1
+							FROM #PagingData AS b
+								INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+							WHERE b.Product = 'TIP')
+				BEGIN
+					UPDATE b
+					SET
+						LeagueId = m.leagueid,
+						HomeId = m.homeid,
+						AwayId = m.awayid,
+						EventDate = m.GlobalShowTime
+					FROM #PagingData AS b
+						INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+					WHERE b.Product = 'TIP'
+				END
+
+				IF EXISTS (	SELECT 1
+							FROM #PagingData AS b
+								INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+							WHERE b.Product = 'TIP')
+				BEGIN
+					UPDATE b
+					SET
+						LeagueId = m.leagueid,
+						HomeId = m.homeid,
+						AwayId = m.awayid,
+						EventDate = m.GlobalShowTime
+					FROM #PagingData AS b
+						INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+					WHERE b.Product = 'TIP'
 				END
 			END
 		END

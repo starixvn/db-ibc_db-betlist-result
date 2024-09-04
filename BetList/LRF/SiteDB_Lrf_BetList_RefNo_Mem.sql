@@ -44,6 +44,7 @@ AS
 		- 20240425@Kos: Support Virtual Sports 4 [Redmine: 199347]
 		- 20240619@Kos: Hotfix - Missing TranId3rd for Sports Lottery and Virtual Games [Redmine: 206758]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+		- 20241018@Kos: Enhance match info for Player Tips [Redmine: 210279]
 */
 
 BEGIN
@@ -805,15 +806,32 @@ BEGIN
 		-- Get match info for Player Tips
 		IF @Product = 'TIP'
 		BEGIN
-			UPDATE b
-			SET
-				LeagueId = m.leagueid,
-				HomeId = m.homeid,
-				AwayId = m.awayid,
-				EventDate = m.GlobalShowTime
-			FROM @Data AS b
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
-			WHERE b.WhTicket = 2
+			IF EXISTS (	SELECT 1
+						FROM @Data AS b
+							INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId)
+			BEGIN
+				UPDATE b
+				SET
+					LeagueId = m.leagueid,
+					HomeId = m.homeid,
+					AwayId = m.awayid,
+					EventDate = m.GlobalShowTime
+				FROM @Data AS b
+					INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+			END
+			ELSE IF EXISTS ( SELECT 1
+							FROM @Data AS b
+								INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId)
+			BEGIN
+				UPDATE b
+				SET
+					LeagueId = m.leagueid,
+					HomeId = m.homeid,
+					AwayId = m.awayid,
+					EventDate = m.GlobalShowTime
+				FROM @Data AS b
+					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+			END
 		END
 	END
 
