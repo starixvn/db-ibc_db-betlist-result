@@ -51,6 +51,7 @@ AS
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
+		- 20240905@Razor: HF - Get Result detail of Baseball AIO [Redmine: #207707]
 */
 
 BEGIN
@@ -319,7 +320,7 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
 						AND 1 = CASE
-									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 0
+									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 1
 									WHEN d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) THEN 1
 									WHEN p.BetType IN (3903, 3904, 3905) 
 										AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) + '15' THEN 1
@@ -519,7 +520,7 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
 						AND 1 = CASE
-									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 0
+									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 1
 									WHEN d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) THEN 1
 									WHEN p.BetType IN (3903, 3904, 3905) 
 										AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) + '15' THEN 1
@@ -722,7 +723,7 @@ BEGIN
 					OR (d.SettlementStatusID > 0
 						AND d.ResourceID LIKE f.ResourceID
 						AND 1 = CASE
-									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 0
+									WHEN LEN(ISNULL(p.BetCheck, '')) < 1 THEN 1
 									WHEN d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) THEN 1
 									WHEN p.BetType IN (3903, 3904, 3905) 
 										AND d.ResourceID LIKE '%' + RIGHT(p.BetCheck, LEN(ISNULL(p.BetCheck, '')) - 1) + '15' THEN 1
