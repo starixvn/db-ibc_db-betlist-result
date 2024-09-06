@@ -66,10 +66,11 @@ AS
 					- Support Saba Ice Hockey
 		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
+		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
 */
 
-BEGIN 
-	SET NOCOUNT ON 
+BEGIN
+	SET NOCOUNT ON
 
 	SELECT @IsShowAll = CASE @IsShowAll WHEN 1 THEN NULL ELSE 0 END
 
@@ -103,7 +104,8 @@ BEGIN
 		SettlementStatus	TINYINT,
 		NoHTScore			BIT,
 		MainType			TINYINT,
-		SubType				SMALLINT)
+		SubType				SMALLINT,
+		SessionTime			FLOAT)
 
 	IF @SportType <> 5
 	BEGIN
@@ -137,7 +139,8 @@ BEGIN
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			ISNULL(mr.MainType, 0) AS MainType,
-			ISNULL(mr.SubType, 0) AS SubType
+			ISNULL(mr.SubType, 0) AS SubType,
+			ISNULL(l.SessionTime, 0) AS SessionTime
 		FROM dbo.League AS l WITH (NOLOCK)
 			INNER JOIN
 				(SELECT sporttype, betstatus,matchid, matchcode, homeid, awayid, leagueid, eventdate, eventstatus,
@@ -355,7 +358,7 @@ BEGIN
 				OR (mr.IsHTCal = 1 AND m.eventstatus = 'running')
 				OR (ISNULL(R.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 			AND m.sporttype NOT IN (162, 201)
-			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
+			AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND m.matchcode NOT LIKE '%hedge%'
 			AND m.matchcode NOT LIKE '%betdaq%'
@@ -403,8 +406,9 @@ BEGIN
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 				ISNULL(mr.MainType, 0) AS MainType,
-				ISNULL(mr.SubType, 0) AS SubType
-			FROM dbo.league AS l WITH (NOLOCK)
+				ISNULL(mr.SubType, 0) AS SubType,
+				ISNULL(l.SessionTime, 0) AS SessionTime
+			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN (
 					SELECT m.sporttype
 						,m.betstatus
@@ -487,7 +491,8 @@ BEGIN
 				0 AS SettlementStatus,
 				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 				ISNULL(mr.MainType, 0) AS MainType,
-				ISNULL(mr.SubType, 0) AS SubType
+				ISNULL(mr.SubType, 0) AS SubType,
+				ISNULL(l.SessionTime, 0) AS SessionTime
 			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN (
 					SELECT m.sporttype

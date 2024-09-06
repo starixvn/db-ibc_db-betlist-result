@@ -58,6 +58,7 @@ AS
 					- Support Saba Ice Hockey
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
 		- 20240917@Kos: Hotfix - missing child products of Virtual Sports [Redmine: #210867]
+		- 20240920@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -192,7 +193,7 @@ BEGIN
 				) AS c ON c.MatchID = m.matchid AND m.sporttype = 50
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
-			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
+			AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match
 			AND m.IsDeleted = 0
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
@@ -355,7 +356,7 @@ BEGIN
 				) AS c ON c.MatchID = m.matchid AND m.sporttype = 50
 		WHERE m.eventdate = @EventDate
 			AND m.sporttype <> 162
-			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
+			AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match
 			AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 				OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed'))
 				OR (m.eventstatus = 'running'

@@ -63,6 +63,7 @@ AS
 		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
 		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
+		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
 
 		*******************
 		sample test case:
@@ -118,9 +119,9 @@ BEGIN
 			WHERE matchid = @MatchId
 		END
 
-		-- Switch to use parent match for Cricket child match (ChildMatchType = 200)
+		-- Switch to use parent match for Baseball, Cricket child match (ChildMatchType = 200)
 		SET @MatchId = CASE
-							WHEN @SportType = 50 AND @ChildMatchType = 200 THEN @ParentId
+							WHEN @SportType IN (8, 50) AND @ChildMatchType = 200 THEN @ParentId
 							ELSE @MatchId
 						END
 
@@ -171,7 +172,8 @@ BEGIN
 				m.homeid2,
 				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 				ISNULL(mr.MainType, 0) AS MainType,
-				ISNULL(mr.SubType, 0) AS SubType
+				ISNULL(mr.SubType, 0) AS SubType,
+				ISNULL(l.SessionTime, 0) AS SessionTime
 			FROM dbo.match AS m WITH (NOLOCK)
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
@@ -362,7 +364,8 @@ BEGIN
 				m.homeid2,
 				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 				ISNULL(mr.MainType, 0) AS MainType,
-				ISNULL(mr.SubType, 0) AS SubType
+				ISNULL(mr.SubType, 0) AS SubType,
+				ISNULL(l.SessionTime, 0) AS SessionTime
 			FROM dbo.match14 AS m WITH (NOLOCK)
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 				LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
@@ -553,7 +556,8 @@ BEGIN
 				m.homeid2,
 				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 				ISNULL(mr.MainType, 0) AS MainType,
-				ISNULL(mr.SubType, 0) AS SubType
+				ISNULL(mr.SubType, 0) AS SubType,
+				ISNULL(l.SessionTime, 0) AS SessionTime
 			FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 				LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid

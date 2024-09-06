@@ -47,6 +47,7 @@ AS
 		- 20240604@Kos: Hotfix - wrong column order [Redmine: #205864]
 		- 20240425@Kos: Support Virtual Sports 4 [Redmine: 199347]
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
+		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -92,6 +93,7 @@ BEGIN
 		NoHTScore			BIT,
 		MainType			TINYINT,
 		SubType				SMALLINT,
+		SessionTime			FLOAT,
 		BetType				SMALLINT,
 		BetCheck			VARCHAR(50),
 		TransDesc			NVARCHAR(1000)
@@ -183,10 +185,10 @@ BEGIN
 			AND NOT EXISTS (SELECT 1 FROM @SubTicket WHERE matchid = bm.matchid )
 	END
 
-	-- Switch to use parent match for Cricket child match (ChildMatchType = 200)
+	-- Switch to use parent match for Baseball, Cricket child match (ChildMatchType = 200)
 	UPDATE @SubTicket
 	SET MatchId = ParentId
-	WHERE SportType = 50 AND ChildMatchType = 200
+	WHERE SportType IN (8, 50) AND ChildMatchType = 200
 
 	-- Bettrans range
 	IF EXISTS ( SELECT 1
@@ -234,6 +236,7 @@ BEGIN
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			ISNULL(mr.MainType, 0) AS MainType,
 			ISNULL(mr.SubType, 0) AS SubType,
+			ISNULL(l.SessionTime, 0) AS SessionTime,
 			bm.BetType,
 			bm.BetCheck,
 			bm.TransDesc
@@ -438,6 +441,7 @@ BEGIN
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			ISNULL(mr.MainType, 0) AS MainType,
 			ISNULL(mr.SubType, 0) AS SubType,
+			ISNULL(l.SessionTime, 0) AS SessionTime,
 			bm.BetType,
 			bm.BetCheck,
 			bm.TransDesc
@@ -641,6 +645,7 @@ BEGIN
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			ISNULL(mr.MainType, 0) AS MainType,
 			ISNULL(mr.SubType, 0) AS SubType,
+			ISNULL(l.SessionTime, 0) AS SessionTime,
 			bm.BetType,
 			bm.BetCheck,
 			bm.TransDesc

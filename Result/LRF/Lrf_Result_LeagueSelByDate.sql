@@ -55,6 +55,7 @@ AS
 					- Support Saba Ice Hockey
 		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
+		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -175,7 +176,7 @@ BEGIN
 							) AS o ON o.MatchID + 1 = m.matchid + 1
 					WHERE m.eventdate = @EventDate
 						AND m.sporttype NOT IN (162, 201)
-						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
+						AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match
 						AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 						AND m.IsDeleted = 0
 						AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
@@ -370,7 +371,7 @@ BEGIN
 							) AS o ON o.MatchID + 1 = m.matchid + 1
 					WHERE m.eventdate = @EventDate
 						AND m.sporttype NOT IN (162, 201)
-						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
+						AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match
 						AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 						AND (m.eventstatus NOT IN ('internal', 'closed', 'running')
 							OR (mr.IsPending = 1 AND m.eventstatus IN ('running', 'closed') )
