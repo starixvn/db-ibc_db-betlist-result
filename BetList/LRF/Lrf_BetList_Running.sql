@@ -122,6 +122,7 @@ AS
 		- 20240705@Kos: Support more filters [Redmine: 202409]
 					- Add new input params @SportTypeList, @BetTypeList, @LeagueList, @MatchId, @LiveIndicator, 
 					@CustomerClass, @FullCustomerClass, @Platform, @OddsGroup, @Ip
+		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: 209344]
 */
 
 BEGIN
@@ -459,7 +460,7 @@ BEGIN
 
 		DECLARE @Match TABLE(MatchId INT)
 
-		IF @MatchSportType = 50 AND @ParentId IS NULL	-- Cricket, parent match
+		IF @MatchSportType IN (8, 50) AND @ParentId IS NULL		-- Baseball, Cricket, parent match
 		BEGIN
 			INSERT INTO @Match
 			SELECT DISTINCT MatchId

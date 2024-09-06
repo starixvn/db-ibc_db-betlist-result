@@ -28,6 +28,7 @@ AS
 	Revisions:
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
+		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: 209344]
 */
 
 BEGIN
@@ -100,10 +101,60 @@ BEGIN
 		AND s.BetType NOT IN (901, 902, 903, 904)
 		AND s.BetType NOT BETWEEN 801 AND 899
 
+	DECLARE @Match TABLE (MatchId INT)
+
+	DECLARE
+		@MatchSportType	SMALLINT,
+		@ParentId		INT
+
 	IF @MatchId <> 0
 	BEGIN
 		DELETE FROM @SportBettype
 		WHERE EventType IN (0, 2)
+
+		INSERT INTO @Match
+		SELECT @MatchId
+
+		IF @Date > @MoveBetsDay
+		BEGIN
+			SELECT
+				@MatchSportType = sporttype,
+				@ParentId = ParentID
+			FROM dbo.match WITH (NOLOCK)
+			WHERE matchid = @MatchId AND eventdate > @MoveBetsDay
+		END
+		ELSE
+		BEGIN
+			SELECT
+				@MatchSportType = sporttype,
+				@ParentId = ParentID
+			FROM dbo.match14 WITH (NOLOCK)
+			WHERE matchid = @MatchId
+		END
+
+		IF @MatchSportType IN (8, 50) AND @ParentId IS NULL		-- Baseball, Cricket, parent match
+		BEGIN
+			IF @Date > @MoveBetsDay
+			BEGIN
+				INSERT INTO @Match
+				SELECT DISTINCT MatchId
+				FROM dbo.match WITH (NOLOCK)
+				WHERE ParentID = @MatchId
+					AND sporttype = @MatchSportType
+					AND eventdate = @Date
+					AND ChildMatchType = 200
+			END
+			ELSE
+			BEGIN
+				INSERT INTO @Match
+				SELECT DISTINCT MatchId
+				FROM dbo.match14 WITH (NOLOCK)
+				WHERE ParentID = @MatchId
+					AND sporttype = @MatchSportType
+					AND eventdate = @Date
+					AND ChildMatchType = 200
+			END
+		END
 	END
 
 	CREATE TABLE #Data (
@@ -350,7 +401,8 @@ BEGIN
 			WHERE b.winlostdate = @_Date
 				AND b.statusID IN (111, 112, 113)
 				AND (@LiveIndicator = -1 OR b.Liveindicator = @LiveIndicator)
-				AND (b.matchid = @MatchId OR EventType NOT IN (1, 3))
+				AND (b.matchid IN (SELECT MatchId FROM @Match)
+					OR EventType NOT IN (1, 3))
 		END
 		ELSE
 		BEGIN
@@ -452,7 +504,8 @@ BEGIN
 			WHERE b.winlostdate = @_Date
 				AND b.statusID IN (111, 112, 113)
 				AND (@LiveIndicator = -1 OR b.Liveindicator = @LiveIndicator)
-				AND (b.matchid = @MatchId OR EventType NOT IN (1, 3))
+				AND (b.matchid IN (SELECT MatchId FROM @Match)
+					OR EventType NOT IN (1, 3))
 		END
 
 		DELETE #Data

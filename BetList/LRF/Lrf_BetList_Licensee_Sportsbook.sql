@@ -36,7 +36,6 @@ AS
 	Created: Kos@20180613
 	Task: Betting Ticket Center - Multiple Customer Bet List - Sportsbook and BA
 	DB: DBEXT.bodb02
-	Original: Lrf_BetList_Licensee
 	Parameter's Explanation:
 		- @StatusIdList:
 			- 101: Reject
@@ -87,6 +86,7 @@ AS
 		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
 		- 20240815@Kos: Don't support Promotion tickets [Redmine: 208144]
 		- 20240919@Kos: Enhance performance [RedmineID: #211039]
+		- 20240920@Kos: Support Baseball AIO phase 2 [Redmine: 209344]
 */
 
 BEGIN
@@ -362,7 +362,7 @@ BEGIN
 
 		DECLARE @Match TABLE(MatchId INT)
 
-		IF @MatchSportType = 50 AND @ParentId IS NULL	-- Cricket, parent match
+		IF @MatchSportType IN (8, 50) AND @ParentId IS NULL		-- Baseball, Cricket, parent match
 		BEGIN
 			INSERT INTO @Match
 			SELECT DISTINCT MatchId

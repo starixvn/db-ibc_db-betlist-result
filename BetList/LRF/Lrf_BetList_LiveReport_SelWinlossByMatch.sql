@@ -82,6 +82,7 @@ AS
 		- 20240411@Kos: Fix BA issue [RedmineID: #199843]
 		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
 				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
+		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: 209344]
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -214,8 +215,10 @@ BEGIN
 		LastExchangeDateByMonth		SMALLDATETIME,
 		Rate						FLOAT
 	)
-	DECLARE @MatchSportType	SMALLINT,
-			@ParentId			INT
+
+	DECLARE
+		@MatchSportType	SMALLINT,
+		@ParentId		INT
 
 	SELECT
 		@MatchSportType = sporttype,
@@ -237,7 +240,7 @@ BEGIN
 	INSERT INTO @Match
 	SELECT @MatchId
 
-	IF @MatchSportType = 50 AND @ParentId IS NULL	-- Cricket, parent match
+	IF @MatchSportType IN (8, 50) AND @ParentId IS NULL		-- Baseball, Cricket, parent match
 	BEGIN
 		INSERT INTO @Match
 		SELECT DISTINCT
