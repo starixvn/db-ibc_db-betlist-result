@@ -52,6 +52,7 @@ AS
 		- 20240419@Razor: Support Saba Coins [Redmine: #204003]
 		- 20240507@Razor: Check permission for Real Currency [Redmine: #202523]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
+		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 */
 
 BEGIN
@@ -1255,7 +1256,7 @@ BEGIN
 		END
 
 		-- AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, Big Gaming, PP Live Casino, FGG, YeeBet, WE
-		IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80) AND Bettype = @BetType)
+		IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE (ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR RefTable = 2) AND Bettype = @BetType)
 		BEGIN
 			IF @WinLostDate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)		-- yesterday and later
 			BEGIN
@@ -1307,7 +1308,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 21 THEN 211
-						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 65, 70, 76, 80) THEN b.matchid
+						ELSE b.matchid
 					END AS Sporttype,
 					b.ip,
 					0 AS MatchId,
@@ -1339,7 +1340,7 @@ BEGIN
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80)
+					AND (s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR s.RefTable = 2)
 					AND blc.statusID = 0
 				GROUP BY
 					b.transid,
@@ -1407,7 +1408,7 @@ BEGIN
 					CASE
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 21 THEN 211
-						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 65, 70, 76, 80) THEN b.matchid
+						ELSE b.matchid
 					END AS Sporttype,
 					b.ip,
 					0 AS MatchId,
@@ -1439,7 +1440,7 @@ BEGIN
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80)
+					AND (s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR s.RefTable = 2)
 					AND blc.statusID <> 0
 				GROUP BY
 					b.transid,
@@ -1506,6 +1507,7 @@ BEGIN
 						WHEN s.ProductID = 11 THEN 250
 						WHEN s.ProductID = 21 THEN 211
 						WHEN s.ProductID IN (39, 45, 46, 51, 52, 57, 65, 70, 76, 80) THEN b.matchid
+						WHEN s.RefTable = 2 THEN b.matchid
 					END AS Sporttype,
 					b.ip,
 					0 AS MatchId,
@@ -1536,7 +1538,7 @@ BEGIN
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80)
+					AND (s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR s.RefTable = 2)
 			END
 		END
 
@@ -1985,7 +1987,7 @@ BEGIN
 							AND c.currency IN (SELECT ExchangeId FROM @DeniedCurrency))
 	BEGIN
 		-- AG Casino, AllBet, Sexy Gaming, IBCBet Live Casino, ION, WM, Big Gaming, FGG, YeeBet, WE
-		IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (11, 21, 45, 46, 51, 52, 57, 65, 70, 76, 80) AND Bettype = @BetType )
+		IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE (ProductID IN (11, 21, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR RefTable = 2) AND Bettype = @BetType )
 		BEGIN
 			INSERT INTO @Data
 			SELECT
@@ -1994,8 +1996,8 @@ BEGIN
 				0 AS BetId,
 				b.refno,
 				CASE
-					WHEN s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80) THEN b.GameId3rd
-					ELSE ''
+					WHEN s.ProductID = 11 THEN ''
+					ELSE b.GameId3rd
 				END AS matchcode,
 				'' AS Race,
 				CASE
@@ -2013,7 +2015,7 @@ BEGIN
 				0 AS hdp1,
 				0 AS hdp2,
 				CASE
-					WHEN s.ProductID IN (21, 45, 46, 51, 52, 57) THEN b.odds
+					WHEN s.ProductID IN (21, 45, 46, 51, 52, 57, 76, 80, 96) THEN b.odds
 					ELSE 0
 				END AS odds,
 				0 AS finalodds,
@@ -2070,7 +2072,7 @@ BEGIN
 			FROM dbo.bettransLC AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
 			WHERE b.transid = @TransId
-				AND s.ProductID IN (11, 21, 45, 46, 51, 52, 57, 65, 70, 76, 80)
+				AND (s.ProductID IN (11, 21, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR s.RefTable = 2)
 		END
 	END
 
@@ -2080,7 +2082,7 @@ BEGIN
 		AND EXISTS (SELECT 1
 					FROM @Data AS b
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-					WHERE s.ProductID IN (21, 45, 46, 51, 57, 65, 70, 76, 80) AND b.MatchCode <> '')
+					WHERE (s.ProductID IN (21, 45, 46, 51, 57, 65, 70, 76, 80) OR s.RefTable = 2) AND b.MatchCode <> '')
 	BEGIN
 		INSERT INTO @Data
 		SELECT
@@ -2089,8 +2091,8 @@ BEGIN
 			0 AS BetId,
 			b.refno,
 			CASE
-				WHEN s.ProductID IN (21, 45, 46, 51, 57, 65, 70, 76, 80) THEN b.GameId3rd
-				ELSE ''
+				WHEN s.ProductID = 11 THEN ''
+				ELSE b.GameId3rd
 			END AS matchcode,
 			'' AS Race,
 			CASE
@@ -2108,7 +2110,7 @@ BEGIN
 			0 AS hdp1,
 			0 AS hdp2,
 			CASE
-				WHEN s.ProductID IN (21, 45, 46, 51, 57) THEN b.odds
+				WHEN s.ProductID IN (21, 45, 46, 51, 57, 76, 80, 96) THEN b.odds
 				ELSE 0
 			END AS odds,
 			0 AS finalodds,
@@ -2165,7 +2167,7 @@ BEGIN
 		FROM dbo.bettransLC AS b WITH (NOLOCK)
 			INNER JOIN @Data AS b1 ON b.custid = b1.CustId AND b.gameID = b1.BetType AND b.GameId3rd = b1.MatchCode
 			INNER JOIN @SportBettype AS s ON s.Bettype = b1.bettype
-		WHERE s.ProductID IN (21, 45, 46, 51, 57, 65, 70, 76, 80)
+		WHERE (s.ProductID IN (21, 45, 46, 51, 57, 65, 70, 76, 80) OR s.RefTable = 2)
 			AND b1.MatchCode <> ''
 			AND b.transid <> @TransId
 	END

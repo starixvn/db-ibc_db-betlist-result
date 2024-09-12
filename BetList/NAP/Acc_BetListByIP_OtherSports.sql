@@ -177,6 +177,7 @@ AS
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
+		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 */
 
 BEGIN
@@ -724,6 +725,7 @@ BEGIN
 						WHEN s.ProductID = 87 THEN 'FS'								-- FastSpin
 						WHEN s.ProductID = 89 THEN 'FAC'							-- FA CHAI
 						WHEN s.ProductID = 85 THEN 'NS'								-- Nextspin
+						WHEN s.ProductID = 96 THEN 'ON'								-- ON Casino
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -936,7 +938,7 @@ BEGIN
 				END
 
 				-- bettransLC
-				IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE'))
+				IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR RefTable = 2)
 				BEGIN
 					-- Running
 					INSERT INTO @TmpData
@@ -951,7 +953,7 @@ BEGIN
 						0 AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE')
+					WHERE (c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR c.RefTable = 2)
 						AND blc.statusID IN (0, 1)
 					GROUP BY
 						c.TransId,
@@ -974,7 +976,7 @@ BEGIN
 						0 AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-					WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE')
+					WHERE (c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR c.RefTable = 2)
 						AND blc.statusID NOT IN (0, 1)
 					GROUP BY
 						c.TransId,
@@ -985,7 +987,7 @@ BEGIN
 				FROM @Data AS b
 				WHERE (b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS'
 						, 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'HB', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL')
-						OR b.RefTable = 1)
+						OR b.RefTable IN (1, 2))
 					AND NOT EXISTS (SELECT 1 FROM @TmpData WHERE RefNo = b.TransId)
 			END
 
@@ -1016,7 +1018,7 @@ BEGIN
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									WHEN b.Product IN ('BTC') THEN m3rd.sporttype
-									WHEN b.RefTable = 1 THEN b.matchid
+									WHEN b.RefTable IN (1, 2) THEN b.matchid
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -1176,7 +1178,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL')
+							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips
@@ -1330,7 +1332,7 @@ BEGIN
 						WHEN b.Product = 'AllBet' THEN 211 -- AllBet
 						WHEN b.Product = 'VB' THEN 212 -- Macau Games
 						WHEN b.Product = 'PP' THEN 248 -- Pragmatic Casino
-						WHEN b.RefTable = 1 THEN b.matchid
+						WHEN b.RefTable IN (1, 2) THEN b.matchid
 						ELSE 0
 					END AS SportType,
 					b.BetType,
@@ -1397,13 +1399,13 @@ BEGIN
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
 				WHERE (b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 
 						'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL')
-						OR b.RefTable = 1)
+						OR b.RefTable IN (1, 2))
 					AND b.WinLostDate >= @Yesterday
 
 				DELETE FROM @Data
 				WHERE (Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS',
 						'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL')
-						OR RefTable = 1)
+						OR RefTable IN (1, 2))
 					AND WinLostDate >= @Yesterday
 
 				INSERT INTO @Data
@@ -1454,7 +1456,7 @@ BEGIN
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									WHEN b.Product IN ('BTC') THEN m3rd.sporttype
-									WHEN b.RefTable = 1 THEN b.matchid
+									WHEN b.RefTable IN (1, 2) THEN b.matchid
 									ELSE 0
 								END,
 					BetTeam = CASE
@@ -1658,7 +1660,7 @@ BEGIN
 									WHEN b.Product IN ('Outright') THEN l.sporttype
 									WHEN b.Product IN ('VR') THEN vr.SportType
 									WHEN b.Product IN ('BTC') THEN m3rd.sporttype
-									WHEN b.RefTable = 1 THEN b.matchid
+									WHEN b.RefTable IN (1, 2) THEN b.matchid
 									ELSE 0
 								END,
 					BetTeam = CASE
