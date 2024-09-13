@@ -173,6 +173,7 @@ AS
 		- 20240718@Razor: Support Vgaming Promotion [Redmine: #208019]
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240828@Razor: Support FA CHAI Promotion [Redmine: #209720]
+		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -452,6 +453,7 @@ BEGIN
 						WHEN s.ProductID = 87 THEN 'FS'		-- FastSpin
 						WHEN s.ProductID = 89 THEN 'FAC'	-- FA CHAI
 						WHEN s.ProductID = 85 THEN 'NS'		-- Nextspin
+						WHEN s.ProductID = 96 THEN 'ON'		-- ON Casino
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 83 THEN 'ParlayVS4' --Virtual Sports 4 Parlay
@@ -499,7 +501,7 @@ BEGIN
 								WHEN b.Product IN ('Outright') THEN l.sporttype
 								WHEN b.Product IN ('VR') THEN vr.SportType
 								WHEN b.Product IN ('BTC') THEN m3rd.sporttype
-								WHEN b.RefTable = 1 THEN b.matchid
+								WHEN b.RefTable IN (1, 2) THEN b.matchid
 								ELSE 0
 							END,
 				BetTeam = CASE

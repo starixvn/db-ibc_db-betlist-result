@@ -150,6 +150,7 @@ AS
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
+		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 */
 
 BEGIN
@@ -339,6 +340,7 @@ BEGIN
 			WHEN s.ProductID = 86					THEN 'SNG'			-- Saba xD
 			WHEN s.ProductID = 87					THEN 'FS'			-- FastSpin
 			WHEN s.ProductID = 89					THEN 'FAC'			-- FA CHAI
+			WHEN s.ProductID = 96					THEN 'ON'			-- ON Casino
 			WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 			WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 			WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Number Game - Happy 5 Linked Games
@@ -445,7 +447,7 @@ BEGIN
 		END
 
 		-- bettransLC
-		IF EXISTS (SELECT 1 FROM @Tickets WHERE Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') AND WinLostDate >= @Yesterday)
+		IF EXISTS (SELECT 1 FROM @Tickets WHERE (Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR RefTable = 2) AND WinLostDate >= @Yesterday)
 		BEGIN
 			-- Running
 			INSERT INTO @temp_bettransX
@@ -473,7 +475,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-			WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE')
+			WHERE (c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR c.RefTable = 2)
 				AND c.WinLostDate >= @Yesterday
 				AND blc.statusID IN (0, 1)
 			GROUP BY
@@ -510,7 +512,7 @@ BEGIN
 				0 AS OddsSpread
 			FROM @Tickets AS c
 				INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
-			WHERE c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE')
+			WHERE (c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR c.RefTable = 2)
 				AND c.WinLostDate >= @Yesterday
 				AND blc.statusID NOT IN (0, 1)
 			GROUP BY
@@ -543,7 +545,7 @@ BEGIN
 							WHEN c.Product IN ('Outright') THEN l.sporttype
 							WHEN c.Product IN ('VR') THEN vr.SportType
 							WHEN c.Product IN ('BTC') THEN m3rd.SportType
-							WHEN c.RefTable = 1 THEn b.matchid
+							WHEN c.RefTable IN (1, 2) THEn b.matchid
 							ELSE 0
 						END
 			,BetType = b.bettype
@@ -736,7 +738,8 @@ BEGIN
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
-		WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG', 'FS', 'FAC', 'NS')
+		WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 
+						'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON')
 			OR c.WinLostDate < @Yesterday
 
 		-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
@@ -820,7 +823,7 @@ BEGIN
 							WHEN c.Product = 'AllBet' THEN 211 -- AllBet
 							WHEN c.Product = 'VB' THEN 212 -- Macau Games
 							WHEN c.Product = 'PP' THEN 248 -- Pragmatic Casino
-							WHEN c.RefTable = 1 THEN b.matchid
+							WHEN c.RefTable IN (1, 2) THEN b.matchid
 							ELSE 0
 						END
 			,BetType = b.bettype
@@ -891,7 +894,7 @@ BEGIN
 			INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON b.transid = c.TransId
 			INNER JOIN @temp_bettransX AS x ON x.RefNo = c.TransId
 		WHERE (c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG')
-					OR c.RefTable = 1)
+					OR c.RefTable IN (1, 2))
 			AND c.WinLostDate >= @Yesterday
 
 		-- Virtual Sports Racing

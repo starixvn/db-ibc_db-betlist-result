@@ -165,6 +165,7 @@ AS
 		- 20240411@Razor: Return TranId3rd for Running ticket of Virtual Games/SportsLottery [Redmine: #203734]
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
+		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 */
 
 BEGIN
@@ -511,6 +512,7 @@ BEGIN
 			AND gameID IN (
 					SELECT DISTINCT BetType FROM dbo.SportBettypeMatrix WITH (NOLOCK)
 					WHERE ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80)
+							OR RefTable = 2
 				)
 		GROUP BY RefNo, gameID
 	) AS s ON s.TransID = d.TransID
@@ -578,7 +580,7 @@ BEGIN
 		DELETE @BetListSelRunningByDateMem
 		WHERE ProductID IS NULL
 			OR (ProductID IN (21, 39, 6, 22, 32, 34, 36, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76, 78, 79, 80, 86) AND TableID = 1)
-			OR (RefTable = 1 AND TableID = 1)
+			OR (RefTable IN (1, 2) AND TableID = 1)
 			OR ProductID IN (12)
 
 		IF (@hasData & 1 = 1) --got bettrans' data
@@ -885,7 +887,7 @@ BEGIN
 		-- Sexy Gaming, Saba.club, IBCBet Live Casino, RNG War, ION, PG Soft, Joker, WM, Big Gaming, MaxGame, Habanero, CG, PP Live Casino, VGaming, AdvantPlay, AdvantPlay Mini
 		-- FGG, SEAL Entertainment, MG RNG Casino, Jili, YeeBet, Live22, UU Slots, Saba xD
 		IF EXISTS ( SELECT 1 FROM @BetListSelRunningByDateMem WHERE ProductId IN (21, 6, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76, 78, 79, 80, 86)
-																		OR RefTable = 1)
+																		OR RefTable IN (1, 2))
 		BEGIN
 			UPDATE d
 			SET TransDate = s.transdate
@@ -895,7 +897,7 @@ BEGIN
 									WHEN d.ProductID = 21 THEN 211
 									WHEN d.ProductID = 22 THEN 212
 									WHEN d.ProductID = 32 THEN 248
-									WHEN d.RefTable = 1 THEN s.matchid
+									WHEN d.RefTable IN (1, 2) THEN s.matchid
 									ELSE 0
 								END
 				,CheckTime = s.checktime
@@ -935,13 +937,13 @@ BEGIN
 			FROM @BetListSelRunningByDateMem AS d
 				INNER JOIN dbo.bettrans AS s WITH (NOLOCK) on d.transid = s.transid
 			WHERE d.ProductID IN (21, 6, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76, 78, 79, 80, 86)
-					OR d.RefTable = 1
+					OR d.RefTable IN (1, 2)
 				--AND s.statusID > 1 -- settled only
 
 			-- DELETE before yesterday one or not IN From - To range
 			DELETE @BetListSelRunningByDateMem
 			WHERE (ProductID IN (21, 6, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 70, 72, 73, 75, 76, 78, 79, 80, 86)
-						OR RefTable = 1)
+						OR RefTable IN (1, 2))
 				AND (WinLostDate < DATEADD(dd, DATEDIFF(dd, 0, CURRENT_TIMESTAMP) - 1, 0) --yesterday
 					OR TransDate < CASE @GetAll WHEN 1 THEN TransDate ELSE @FromDate END
 					OR TransDate > CASE @GetAll WHEN 1 THEN transdate ELSE @ToDate END)
