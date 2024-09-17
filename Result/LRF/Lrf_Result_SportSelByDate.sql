@@ -57,6 +57,7 @@ AS
 		- 20240315@Kos: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #201283]
 					- Support Saba Ice Hockey
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
+		- 20240917@Kos: Hotfix - missing child products of Virtual Sports [Redmine: #210867]
 */
 
 BEGIN
@@ -66,6 +67,12 @@ BEGIN
 	INTO #LicenseeProduct
 	FROM bodb_licensee.dbo.LicenseeProduct3rd WITH (NOLOCK)
 	WHERE LicenseeID = @LicenseeId
+
+	INSERT INTO #LicenseeProduct
+	SELECT g.ProductId
+	FROM dbo.Lrf_f_GroupProduct() AS g
+	WHERE EXISTS (SELECT 1 FROM #LicenseeProduct WHERE ProductID = g.GroupProductId)
+		AND NOT EXISTS (SELECT 1 FROM #LicenseeProduct WHERE ProductID = g.ProductId)
 
 	DECLARE @Sport AS TABLE (SportType INT)
 
