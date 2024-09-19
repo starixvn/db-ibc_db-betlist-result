@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[Lrf_Result_LeagueSelByDate]
 	@EventDate		DATETIME,
 	@MoveBetsDay	DATETIME,
 	@SportType		SMALLINT	= 0,
-	@IsShowAll		BIT			= 1 -- 1: Show All; 0: is NOT show Test
+	@IsShowAll		BIT			= 0 -- 1: Show All; 0: is NOT show Test
 AS
 
 /*
@@ -56,16 +56,15 @@ AS
 		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
 		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
+		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT @IsShowAll = CASE @IsShowAll WHEN 1 THEN NULL ELSE 0 END
-
 	IF @EventDate > @MoveBetsDay
 	BEGIN
-		IF @SportType NOT IN (175, 181, 182, 183, 184, 185, 193)
+		IF @SportType NOT IN (175, 177, 193, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -188,7 +187,7 @@ BEGIN
 									OR ISNULL(o.MatchID, 0) <> 0)))
 				) AS m
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
-			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
+			WHERE @IsShowAll IN (1, l.isTest)
 				AND (l.LeagueGroupID IS NULL
 					OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
 						AND l.LeagueGroupID <> 215)				-- Redcat88 of Esports
@@ -236,31 +235,31 @@ BEGIN
 								OR (ISNULL(r.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 					) o ON l.leagueid = o.leagueid 
 			WHERE l.sporttype = @SportType
-				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND @IsShowAll IN (1, l.isTest)
 		END
-		ELSE IF @SportType IN (181, 182, 184, 183, 185)
+		ELSE IF @SportType IN (177, 198)
 		BEGIN
 			SELECT DISTINCT
-				l.leaguename,
-				l.leagueid,
+				l.LeagueName,
+				r.LeagueID,
 				0 AS LeagueGroupID,
 				@EventDate AS EventDate,
 				@SportType AS SportType
-			FROM dbo.League AS l WITH (NOLOCK)
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
+			FROM dbo.League3rd AS l WITH (NOLOCK)
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.LeagueID = l.League3rdId
 				INNER JOIN (
 						SELECT DISTINCT EventID
 						FROM dbo.VSOutright WITH (NOLOCK)
 						WHERE EventDate = @EventDate
 					) o ON r.EventID = o.EventID
-			WHERE r.EventStatus ='completed'
+			WHERE r.EventStatus = 'completed'
 				AND r.sporttype = @SportType
-				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND @IsShowAll IN (1, l.IsTest)
 		END
 	END
 	ELSE
 	BEGIN
-		IF @SportType NOT IN (175, 181, 182, 183, 184, 185, 193)
+		IF @SportType NOT IN (175, 177, 193, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -382,7 +381,7 @@ BEGIN
 									OR ISNULL(o.MatchID, 0) <> 0)))
 				) AS m
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
-			WHERE l.isTest = ISNULL(@IsShowAll, l.isTest)
+			WHERE @IsShowAll IN (1, l.isTest)
 				AND (l.LeagueGroupID IS NULL
 					OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
 						AND l.LeagueGroupID <> 215)			-- Redcat88 of Esports
@@ -429,23 +428,23 @@ BEGIN
 								OR (ISNULL(r.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 					) o ON l.leagueid = o.leagueid 
 			WHERE l.sporttype = @SportType
-				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND @IsShowAll IN (1, l.isTest)
 		END
-		ELSE IF @SportType IN (181, 182, 184, 183, 185)
+		ELSE IF @SportType IN (177, 198)
 		BEGIN
 			SELECT DISTINCT
-				l.leaguename,
-				l.leagueid,
+				l.LeagueName,
+				r.LeagueID,
 				0 AS LeagueGroupID,
 				@EventDate AS EventDate,
 				@SportType AS SportType
-			FROM dbo.League AS l WITH (NOLOCK)
-				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
-				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON r.EventID = o.EventID
+			FROM dbo.League3rd AS l WITH (NOLOCK)
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.LeagueID = l.League3rdId
+				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON o.EventID = r.EventID
 			WHERE o.EventDate = @EventDate
-				AND r.EventStatus ='completed'
+				AND r.EventStatus = 'completed'
 				AND r.sporttype = @SportType
-				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND @IsShowAll IN (1, l.IsTest)
 		END
 	END
 END

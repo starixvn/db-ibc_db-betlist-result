@@ -62,6 +62,7 @@ AS
 		- 20240920@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
 		- 20241002@Kos: Hotfix - not show league test in PRO [Redmine: #211744]
 					- Add new param @IsShowAll BIT
+		- 20241002@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 */
 
 BEGIN
@@ -211,7 +212,7 @@ BEGIN
 			AND EXISTS ( SELECT 1
 						FROM dbo.League AS l WITH (NOLOCK)
 						WHERE l.leagueid = m.leagueid
-							AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+							AND @IsShowAll IN (1, l.isTest)
 							AND (l.LeagueGroupID IS NULL
 								OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
 									AND l.LeagueGroupID <> 215)			-- Redcat88 of Esports
@@ -221,17 +222,17 @@ BEGIN
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
 		BEGIN
 			INSERT INTO @Sport
-			SELECT DISTINCT l.sporttype
+			SELECT DISTINCT r.sporttype
 			FROM (
 					SELECT DISTINCT EventID
 					FROM dbo.VSOutright WITH (NOLOCK)
 					WHERE EventDate = @EventDate
 				) AS o
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON r.LeagueID = l.leagueid
-			WHERE l.sporttype IN (181, 182, 183, 184, 185)
+				INNER JOIN dbo.League3rd AS l WITH (NOLOCK) ON l.League3rdId = r.LeagueID
+			WHERE r.sporttype IN (177, 198)
 				AND r.EventStatus = 'completed'
-				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND @IsShowAll IN (1, l.IsTest)
 		END
 
 		-- Bitcoin
@@ -375,7 +376,7 @@ BEGIN
 			AND EXISTS ( SELECT 1
 						FROM dbo.League AS l WITH (NOLOCK)
 						WHERE l.leagueid = m.leagueid
-							AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+							AND @IsShowAll IN (1, l.isTest)
 							AND (l.LeagueGroupID IS NULL
 								OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
 									AND l.LeagueGroupID <> 215)				-- Redcat88 of Esports
@@ -385,14 +386,14 @@ BEGIN
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
 		BEGIN
 			INSERT INTO @Sport
-			SELECT DISTINCT l.sporttype
+			SELECT DISTINCT r.sporttype
 			FROM dbo.VSOutright14 AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON r.LeagueID = l.leagueid
-			WHERE l.sporttype IN (181, 182, 183, 184, 185)
+				INNER JOIN dbo.League3rd AS l WITH (NOLOCK) ON l.League3rdId = r.LeagueID
+			WHERE r.sporttype IN (177, 198)
 				AND r.EventStatus = 'completed'
 				AND o.EventDate = @EventDate
-				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND @IsShowAll IN (1, l.IsTest)
 		END
 
 		-- Bitcoin
