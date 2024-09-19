@@ -86,6 +86,7 @@ AS
 		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
 		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
 		- 20240815@Kos: Don't support Promotion tickets [Redmine: 208144]
+		- 20240919@Kos: Enhance performance [RedmineID: #211039]
 */
 
 BEGIN
@@ -2199,11 +2200,7 @@ BEGIN
 									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
-					OriginalStake = CASE
-										WHEN b.Product = 'SB' AND b.ExtraInfo LIKE '%p25%' THEN
-											ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-										ELSE 0
-									END,
+					OriginalStake = 0,
 					OriginalBetType = CASE
 										WHEN b.Product = 'SB' AND b.stake <> 0 THEN -1
 										ELSE 0
@@ -2351,11 +2348,7 @@ BEGIN
 									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
-					OriginalStake = CASE
-										WHEN b.Product = 'SB' AND b.ExtraInfo LIKE '%p25%' THEN
-											ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-										ELSE 0
-									END,
+					OriginalStake = 0,
 					OriginalBetType = CASE
 										WHEN b.Product = 'SB' AND b.stake <> 0 THEN -1
 										ELSE 0
@@ -2571,11 +2564,7 @@ BEGIN
 									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
-					OriginalStake = CASE
-										WHEN b.Product = 'SB' AND b.ExtraInfo LIKE '%p25%' THEN
-											ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-										ELSE 0
-									END,
+					OriginalStake = 0,
 					OriginalBetType = CASE
 										WHEN b.Product = 'SB' AND b.stake <> 0 THEN -1
 										ELSE 0
@@ -2723,11 +2712,7 @@ BEGIN
 									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
 									ELSE ''
 								END,
-					OriginalStake = CASE
-										WHEN b.Product = 'SB' AND b.ExtraInfo LIKE '%p25%' THEN
-											ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
-										ELSE 0
-									END,
+					OriginalStake = 0,
 					OriginalBetType = CASE
 										WHEN b.Product = 'SB' AND b.stake <> 0 THEN -1
 										ELSE 0
