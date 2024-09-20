@@ -110,6 +110,7 @@ AS
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241003@Razor: Remove Linked Server on DBCust [Redmine: #206893]
+		- 20241003@Razor: Support VS2 - Racing sports [Redmine: #211092]
 */
 
 BEGIN
@@ -185,19 +186,6 @@ BEGIN
 		CurrencyId		TINYINT,
 		SiteId			VARCHAR(7),
 		DeviceType		TINYINT
-	)
-
-	DECLARE @DetailData TABLE (
-		RefNo			NVARCHAR(50),
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			NVARCHAR(50),
-		APositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		SPositionTaking SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(50),
-		TransDesc		VARCHAR(2000)
 	)
 
 	DECLARE @TempFromDate	SMALLDATETIME,
@@ -1101,7 +1089,5 @@ BEGIN
 		LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON b.CustId = ci.custid
 		LEFT JOIN dbo.Exchange AS ex WITH (NOLOCK) ON ci.currency = ex.exchangeid
 	ORDER BY b.TransId ASC
-
-	SELECT DISTINCT * FROM @DetailData
 END
 GO

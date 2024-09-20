@@ -41,6 +41,7 @@ AS
 		- 20240419@Razor: Support Saba Coins [Redmine: #204003]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
+		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
 */
 
 BEGIN
@@ -844,8 +845,8 @@ BEGIN
 					AND b.transid = @TransId
 			END
 
-			-- Virtual Horse Racing
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 5 AND EventType = 3 AND bettype = @BetType)
+			-- Virtual Horse Racing, VS2 Racing
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 3 AND bettype = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -853,7 +854,7 @@ BEGIN
 					b.transid,
 					'' AS BetID,
 					b.refno,
-					o.RacerNum matchcode, --Horse Number
+					'' AS matchcode, --Horse Number
 					b.oddsid AS Race, --Outright ID
 					'' eventdate,
 					0 AS virtualrate,
@@ -862,7 +863,7 @@ BEGIN
 					b.adiscount,
 					b.discount,
 					b.playerdiscount,
-					o.RacerID AS homeID,
+					0 AS homeID,
 					0 AS awayID,
 					'' settleTime,
 					b.hdp1,
@@ -877,7 +878,7 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					b.transdate,
-					'' betteam,
+					b.betteam AS betteam,
 					CASE WHEN b.bettype = 1233 THEN bm.spositiontaking ELSE b.spositiontaking END,
 					CASE WHEN b.bettype = 1233 THEN bm.mpositiontaking ELSE b.mpositiontaking END,
 					CASE WHEN b.bettype = 1233 THEN bm.apositiontaking ELSE b.apositiontaking END,
@@ -912,7 +913,7 @@ BEGIN
 					r.EventTime AS showtime,
 					b.winlostdate,
 					b.BetCheck,
-					'' AS transdesc,
+					b.transdesc AS transdesc,
 					0 AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
@@ -925,8 +926,7 @@ BEGIN
 					b.DeviceType
 				FROM 
 					dbo.bettrans AS b WITH (NOLOCK)
-					INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = b.matchid
 					INNER JOIN @SportBettype AS s ON s.BetType = b.BetType 
 					LEFT JOIN (
 						SELECT
@@ -943,7 +943,6 @@ BEGIN
 						) bm ON b.refno = bm.refno
 				WHERE
 					b.transid = @TransId
-					AND s.ProductID = 5
 					AND s.EventType = 3
 			END
 
@@ -1925,46 +1924,6 @@ BEGIN
 	SET RefCode = 0
 	WHERE RefCode <> 0
 
-	DECLARE @DetailData TABLE (
-		RefNo			NVARCHAR(50),
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			NVARCHAR(50),
-		APositionTaking	SMALLMONEY,
-		MPositionTaking	SMALLMONEY,
-		SPositionTaking	SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(50),
-		TransDesc		VARCHAR(2000)
-	)
-
-	-- Virtual Sports
-	IF EXISTS (	SELECT TOP(1) 1
-				FROM @SportBettype AS sp
-					INNER JOIN @Data AS d ON d.bettype = sp.bettype
-				WHERE sp.ProductID = 5 AND sp.EventType = 3)
-	BEGIN
-		IF @WinLostDate > @MoveBetsDay
-		BEGIN
-			INSERT INTO @DetailData
-			SELECT
-				bm.refno,
-				bm.odds,
-				bm.stake,
-				bm.status,
-				bm.apositiontaking,
-				bm.mpositiontaking,
-				bm.spositiontaking,
-				bm.bettype,
-				bm.betteam,
-				'' AS TransDesc
-			FROM dbo.bettransm AS bm WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sp ON bm.bettype = sp.bettype
-				INNER JOIN @Data AS b ON bm.custid = b.CustId AND bm.refno = b.RefNo
-			WHERE sp.ProductID = 5 AND sp.EventType = 3
-		END
-	END
-
 	-- BettransRnG tables
 	SET @WinLostDate = NULL
 
@@ -2390,7 +2349,5 @@ BEGIN
 		LEFT JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON b.CustId = c.custid
 		LEFT JOIN CustDB.dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
 	ORDER BY b.TransId ASC
-
-	SELECT * FROM @DetailData
 END
 GO

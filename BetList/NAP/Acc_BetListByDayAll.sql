@@ -192,6 +192,7 @@ AS
 		- 20240419@Razor: Support Saba Coins [Redmine: #204003]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
+		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
 
 	Param's Explanation:
 		+ @TransType:
@@ -601,16 +602,16 @@ BEGIN
 				AND b.winlostdate = @FromDate
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
-			-- Virtual Horse Racing
+			-- Virtual Horse Racing, VS2 Racing
 			INSERT INTO @Data
 			SELECT
 				r.SportType,
 				r.LeagueID,
-				o.RacerID AS homeid,
+				0 AS homeid,
 				0 AS awayid,
-				o.RacerNum AS matchcode,
+				'' AS matchcode,
 				b.oddsid AS Race,
-				o.EventDate,
+				'' AS EventDate,
 				0,
 				0,
 				b.sdiscount,
@@ -631,7 +632,7 @@ BEGIN
 				0 AS finalodds,
 				0 AS finalodds2,
 				b.oddstype,
-				'' AS betteam,
+				b.betteam AS betteam,
 				b.status,
 				0 AS SettlementStatus,
 				'' AS betstatus,
@@ -651,7 +652,7 @@ BEGIN
 				b.ip,
 				b.Username,
 				CONVERT(BIT, 0) AS IsNeutral,
-				CONVERT(NVARCHAR(50), r.EventTime) AS ShowTime,
+				'' AS ShowTime,
 				0 spositiontaking, -- unuse in this report
 				0 mpositiontaking, -- unuse in this report
 				0 apositiontaking, -- unuse in this report
@@ -666,7 +667,7 @@ BEGIN
 				b.swinlost,
 				b.winlostdate,
 				b.BetCheck,
-				'' AS transdesc,
+				b.transdesc AS transdesc,
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
@@ -677,12 +678,11 @@ BEGIN
 				'' AS SiteId,
 				b.DeviceType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = b.matchid
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND s.ProductID = 5
+				AND s.ProductID IN (5, 27)
 				AND s.EventType = 3
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
@@ -1403,16 +1403,16 @@ BEGIN
 				AND b.winlostdate = @FromDate
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
-			-- Virtual Horse Racing
+			-- Virtual Horse Racing, VS2 Racing
 			INSERT INTO @Data
 			SELECT 
 				r.SportType,
 				r.LeagueID,
-				o.RacerID AS homeid,
+				0 AS homeid,
 				0 AS awayid,
-				o.RacerNum AS matchcode,
+				'' AS matchcode,
 				b.oddsid AS Race,
-				o.EventDate,
+				'' AS EventDate,
 				0,
 				0,
 				b.sdiscount,
@@ -1433,7 +1433,7 @@ BEGIN
 				0 AS finalodds,
 				0 AS finalodds2,
 				b.oddstype,
-				'' AS betteam,
+				b.betteam AS betteam,
 				b.status,
 				0 AS SettlementStatus,
 				'' AS betstatus,
@@ -1453,7 +1453,7 @@ BEGIN
 				b.ip,
 				b.Username,
 				CONVERT(BIT, 0) AS IsNeutral,
-				CONVERT(NVARCHAR(50), r.EventTime) AS ShowTime,
+				'' AS ShowTime,
 				0 spositiontaking, -- unuse in this report
 				0 mpositiontaking, -- unuse in this report
 				0 apositiontaking, -- unuse in this report
@@ -1468,7 +1468,7 @@ BEGIN
 				b.swinlost,
 				b.winlostdate,
 				b.BetCheck,
-				'' AS transdesc,
+				b.transdesc AS transdesc,
 				0 AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
@@ -1479,12 +1479,10 @@ BEGIN
 				'' AS SiteId,
 				b.DeviceType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = o.EventID
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = b.matchid
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND s.ProductID = 5
 				AND s.EventType = 3
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
@@ -2820,71 +2818,5 @@ BEGIN
 		@CurrencyName AS Currency
 	FROM @Data
 	ORDER BY TransId ASC
-
-	-- Get ticket detail
-	DECLARE @DetailData TABLE (
-		RefNo			NVARCHAR(50),
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			NVARCHAR(50),
-		APositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		SPositionTaking SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(50),
-		TransDesc		VARCHAR(2000)
-	)
-
-	-- Virtual Sports
-	IF EXISTS ( SELECT TOP(1) 1
-				FROM @SportBettype AS sp
-					INNER JOIN @Data AS d ON d.bettype = sp.bettype
-				WHERE sp.ProductID = 5 AND sp.EventType = 3)
-	BEGIN
-		IF @Fromdate > @MoveBetsDay
-		BEGIN
-			INSERT INTO @DetailData
-			SELECT
-				bm.refno,
-				bm.odds,
-				bm.stake,
-				bm.status,
-				bm.apositiontaking,
-				bm.mpositiontaking,
-				bm.spositiontaking,
-				bm.bettype,
-				bm.betteam,
-				'' AS TransDesc
-			FROM dbo.bettransm AS bm WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sp ON bm.bettype = sp.bettype
-				INNER JOIN @Data AS b ON bm.refno = b.RefNo
-			WHERE sp.ProductID = 5
-				AND sp.EventType = 3
-				AND bm.custid = @CustId
-		END
-		ELSE
-		BEGIN
-			INSERT INTO @DetailData
-			SELECT
-				bm.refno,
-				bm.odds,
-				bm.stake,
-				bm.status,
-				bm.apositiontaking,
-				bm.mpositiontaking,
-				bm.spositiontaking,
-				bm.bettype,
-				bm.betteam,
-				'' AS TransDesc
-			FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-				INNER JOIN @SportBettype AS sp ON bm.bettype = sp.bettype
-				INNER JOIN @Data AS b ON bm.refno = b.RefNo
-			WHERE sp.ProductID = 5
-				AND sp.EventType = 3
-				AND bm.custid = @CustId
-		END
-	END
-
-	SELECT * FROM @DetailData
 END
 GO

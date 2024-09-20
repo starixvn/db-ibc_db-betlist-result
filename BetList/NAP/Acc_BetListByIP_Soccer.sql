@@ -65,6 +65,7 @@ AS
 		- 20231005@Kos: Support Parlay Boost [Redmine: #194992]
 					- Don't support Cash Out bettype 911, 912, 913 in range bettrans and bettrans14 anymore
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20240920@Razor: Support VS2 - Racing sports [Redmine: #211092]
 */
 
 BEGIN
@@ -123,20 +124,6 @@ BEGIN
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		DeviceType			TINYINT
-	)
-
-	-- Get ticket detail
-	DECLARE @DetailData TABLE (
-		RefNo			NVARCHAR(50),
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			NVARCHAR(50),
-		APositionTaking SMALLMONEY,
-		MPositionTaking SMALLMONEY,
-		SPositionTaking SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(50),
-		TransDesc		VARCHAR(300)
 	)
 
 	DECLARE @Date DATETIME
@@ -1252,7 +1239,5 @@ BEGIN
 		INNER JOIN dbo.custInfo AS u WITH (NOLOCK) ON u.custid = b.CustId
 		INNER JOIN dbo.custInfo AS c WITH (NOLOCK) ON c.custid = b.Creator
 	ORDER BY b.TransId ASC
-
-	SELECT DISTINCT * FROM @DetailData
 END
 GO
