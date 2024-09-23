@@ -35,6 +35,7 @@ AS
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
+		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -91,7 +92,7 @@ BEGIN
 
 	DECLARE @Match TABLE(MatchId INT, EventDate DATETIME)
 
-	IF @SportType = 50 AND @ParentId IS NULL	-- Cricket, parent match
+	IF @SportType IN (8, 50) AND @ParentId IS NULL	-- Baseball, Cricket parent match
 	BEGIN
 		INSERT INTO @Match
 		SELECT DISTINCT
@@ -197,11 +198,11 @@ BEGIN
 
 	-- bettrans range
 	IF @IsBet14 = 0
-		OR (@SportType = 50
+		OR (@SportType IN (8, 50)
 			AND @ParentId IS NULL
-			AND @ToDate > @MoveBetsDay)		-- Cricket main match
+			AND @ToDate > @MoveBetsDay)		-- Baseball, Cricket main match
 	BEGIN
-		IF @SportType = 50 AND @ParentId IS NULL	-- Cricket main match
+		IF @SportType IN (8, 50) AND @ParentId IS NULL	-- Baseball, Cricket main match
 		BEGIN
 			SET @FDate = CASE
 							WHEN @FromDate <= @MoveBetsDay THEN DATEADD(DAY, 1, @MoveBetsDay)
@@ -549,11 +550,11 @@ BEGIN
 
 	-- bettrans14 range
 	IF @IsBet14 = 1
-		OR (@SportType = 50
+		OR (@SportType IN (8, 50)
 			AND @ParentId IS NULL
-			AND @ToDate <= @MoveBetsDay)		-- Cricket main match
+			AND @ToDate <= @MoveBetsDay)		-- Baseball, Cricket main match
 	BEGIN
-		IF @SportType = 50 AND @ParentId IS NULL	-- Cricket main match
+		IF @SportType IN (8, 50) AND @ParentId IS NULL	-- Baseball, Cricket main match
 		BEGIN
 			SET @TDate = CASE
 							WHEN @ToDate >= @MoveBetsDay THEN @MoveBetsDay
