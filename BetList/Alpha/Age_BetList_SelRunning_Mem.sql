@@ -167,7 +167,8 @@ AS
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241016@Razor: Provide Risk Amount [Redmine: #202427]
-		- 20241106@Razor: Support VS 5 - Virtually Sports [Red
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20241226@Razor: Support VS2 - Racing sports [Redmine: #211092]
 */
 
 BEGIN
@@ -237,19 +238,6 @@ BEGIN
 		DeviceType			TINYINT,
 		LeagueGroupId		SMALLINT,
 		RefTable			TINYINT
-	)
-
-	DECLARE @BetListDetail TABLE(
-		RefNo			BIGINT,
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			NVARCHAR(10),
-		APositionTaking	SMALLMONEY,
-		MPositionTaking	SMALLMONEY,
-		SPositionTaking	SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(20),
-		TransDesc		VARCHAR (1000)
 	)
 
 	-- CONSTANT VALUE: 1:bettrans; 2:translog; 4:bettransRnG; 8:bettransLC
@@ -741,29 +729,13 @@ BEGIN
 				AND b.ProductID IN (88)
 				AND b.EventType = 5
 
-			-- Virtual Sports (EventType = 3)
+			-- Virtual Sports, VS 2 Racing (EventType = 3)
 			UPDATE b
 			SET SportType = r.SportType
 				,LeagueId = r.LeagueID
-				,MatchCode = o.RacerNum
-				,Race = b.oddsid
-				,EventDate = ''
-				,HomeId = o.RacerID
-				,AwayId = 0
-				,BetTeam = ''
-				,SettlementStatus = 0
-				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
-				,OddsType = 0
-				,ShowTime = r.EventTime
-				,BetCheck = ''
-				,TransDesc = ''
-				,OddsSpread = 0
-				,ExtraInfo = ''
-			FROM @BetListSelRunningByDateMem AS b
-				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
-				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+			FROM @BetListSelRunningByDateMem AS b				
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = b.matchid
 			WHERE b.TableID = 1 -- bettrans
-				AND b.ProductID = 5
 				AND b.EventType = 3
 
 			-- Betradar Virtual Sports, Virtual Sports 4, VS 5 (EventType = 0) -- Mix Parlay
@@ -1032,31 +1004,6 @@ BEGIN
 				LEFT JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
 			WHERE b.BetType = 29 AND b.BetTeam = '1'
 		END
-
-		-- Get sub tickets
-		-- Virtual Sports (bettype 1233)
-		IF EXISTS (SELECT 1 FROM @BetListSelRunningByDateMem WHERE ProductId = 5 AND EventType = 3)
-		BEGIN
-			INSERT INTO @BetListDetail
-			SELECT
-				bm.refno,
-				bm.odds,
-				bm.stake,
-				bm.status,
-				bm.apositiontaking,
-				bm.mpositiontaking,
-				bm.spositiontaking,
-				bm.bettype,
-				'' AS betteam,
-				'' AS transdesc
-			FROM dbo.bettransm AS bm WITH (NOLOCK)
-				INNER JOIN @BetListSelRunningByDateMem AS b ON bm.refno = b.refno
-			WHERE bm.custid = @CustId
-				AND b.ProductID = 5
-				AND b.EventType = 3
-				AND bm.bettype IN (	SELECT DISTINCT BetType FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-									WHERE ProductID = 5 AND EventType = 3)
-		END
 	END -- got data
 
 	SELECT
@@ -1108,8 +1055,5 @@ BEGIN
 		,LeagueGroupId
 	FROM @BetListSelRunningByDateMem
 	ORDER BY TransId DESC
-
-	SELECT * FROM @BetListDetail
-	ORDER BY RefNo ASC
 END
 GO

@@ -86,6 +86,7 @@ AS
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240723@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20241226@Razor: Support VS2 - Racing sports [Redmine: #211092]
 */
 
 BEGIN
@@ -189,20 +190,7 @@ BEGIN
 		DeviceType		TINYINT,
 		LeagueGroupId	SMALLINT
 	);
-
-	DECLARE @BetListDetail TABLE(
-		RefNo			BIGINT,
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			NVARCHAR(10),
-		APositionTaking	SMALLMONEY,
-		MPositionTaking	SMALLMONEY,
-		SPositionTaking	SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(20),
-		TransDesc		VARCHAR (1000)
-	)
-
+	
 	DECLARE @TempFromDate	SMALLDATETIME,
 		@TempToDate			SMALLDATETIME
 
@@ -999,33 +987,14 @@ BEGIN
 					AND b.EventType = 0
 					AND b.ProductId NOT IN (69)
 
-				-- Virtual Sports (EventType = 3)
+				-- Virtual Sports, VS2 Racing (EventType = 3)
 				UPDATE b
 				SET
 					SportType = r.SportType,
-					BetTeam = '',
-					OddsType = 0,
-					LiveIndicator = 0,
-					LeagueId = r.LeagueID,
-					MatchCode = CONVERT(NVARCHAR(50), o.RacerNum),
-					Race = CONVERT(NVARCHAR(50), b.OddsId),
-					EventDate = o.EventDate,
-					HomeId = o.RacerID,
-					AwayId = 0,
-					BetStatus = '',
-					IsNeutral = 0,
-					Placing = o.Placing,
-					ShowTime = CONVERT(VARCHAR(20), r.EventTime, 113),
-					BetCheck = '',
-					ComStatus = '',
-					TransDesc = '',
-					OddsSpread = 0,
-					ExtraInfo = ''
-				FROM #PagingData AS b
-					INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.OddsId = o.Orid
-					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+					LeagueId = r.LeagueID
+				FROM #PagingData AS b					
+					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = b.matchid
 				WHERE b.WhTicket = 1
-					AND b.ProductID = 5
 					AND b.EventType = 3
 
 				-- Bitcoin
@@ -1252,33 +1221,14 @@ BEGIN
 					AND b.EventType = 0
 					AND b.ProductId NOT IN (69)
 
-				-- Virtual Sports (EventType = 3)
+				-- Virtual Sports, VS2 Racing (EventType = 3)
 				UPDATE b
 				SET
-					SportType = r.SportType,
-					BetTeam = '',
-					OddsType = 0,
-					LiveIndicator = 0,
-					LeagueId = r.LeagueID,
-					MatchCode = CONVERT(NVARCHAR(50), o.RacerNum),
-					Race = CONVERT(NVARCHAR(50), b.OddsId),
-					EventDate = o.EventDate,
-					HomeId = o.RacerID,
-					AwayId = 0,
-					BetStatus = '',
-					IsNeutral = 0,
-					Placing = o.Placing,
-					ShowTime = CONVERT(VARCHAR(20), r.EventTime, 113),
-					BetCheck = '',
-					ComStatus = '',
-					TransDesc = '',
-					OddsSpread = 0,
-					ExtraInfo = ''
-				FROM #PagingData AS b
-					INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.OddsId = o.Orid
-					INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
+					SportType = r.SportType,					
+					LeagueId = r.LeagueID
+				FROM #PagingData AS b					
+					INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = b.matchid
 				WHERE b.WhTicket = 2
-					AND b.ProductID = 5
 					AND b.EventType = 3
 
 				-- Bitcoin
@@ -1325,63 +1275,6 @@ BEGIN
 				FROM #PagingData AS b
 					INNER JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
 				WHERE b.BetType = 29 AND b.BetTeam = '1'
-			END
-
-			-- Get sub tickets
-			-- Virtual Sports (bettype 1233) (bettrans)
-			IF EXISTS (	SELECT 1 FROM #PagingData
-						WHERE ProductId = 5
-							AND EventType = 3
-							AND WhTicket = 1)
-			BEGIN
-				INSERT INTO @BetListDetail
-				SELECT
-					bm.refno,
-					bm.odds,
-					bm.stake,
-					bm.status,
-					bm.apositiontaking,
-					bm.mpositiontaking,
-					bm.spositiontaking,
-					bm.bettype,
-					'' AS betteam,
-					'' AS transdesc
-				FROM dbo.bettransm AS bm WITH (NOLOCK)
-					INNER JOIN #PagingData AS b ON bm.refno = b.refno
-				WHERE bm.custid = b.CustId
-					AND b.ProductID = 5
-					AND b.EventType = 3
-					AND b.WhTicket = 1
-					AND bm.bettype IN (	SELECT DISTINCT bettype FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-										WHERE ProductID = 5 AND EventType = 3)
-			END
-
-			-- Virtual Sports (bettype 1233) (bettrans14)
-			IF EXISTS (	SELECT 1 FROM #PagingData
-						WHERE ProductId = 5
-							AND EventType = 3
-							AND WhTicket = 2)
-			BEGIN
-				INSERT INTO @BetListDetail
-				SELECT
-					bm.refno,
-					bm.odds,
-					bm.stake,
-					bm.status,
-					bm.apositiontaking,
-					bm.mpositiontaking,
-					bm.spositiontaking,
-					bm.bettype,
-					'' AS betteam,
-					'' AS transdesc
-				FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-					INNER JOIN #PagingData AS b ON bm.refno = b.refno
-				WHERE bm.custid = b.CustId
-					AND b.ProductID = 5
-					AND b.EventType = 3
-					AND b.WhTicket = 2
-					AND bm.bettype IN (	SELECT DISTINCT bettype FROM dbo.SportBettypeMatrix WITH (NOLOCK)
-										WHERE ProductID = 5 AND EventType = 3)
 			END
 		END
 	END
@@ -1436,9 +1329,6 @@ BEGIN
 		INNER JOIN dbo.custinfo AS c WITH (NOLOCK) ON b.CustId = c.custid
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
 	ORDER BY TransId DESC
-
-	SELECT * FROM @BetListDetail
-	ORDER BY RefNo ASC
 
 	DROP TABLE #PagingData
 END

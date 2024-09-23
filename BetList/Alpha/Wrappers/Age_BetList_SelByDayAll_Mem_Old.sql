@@ -119,11 +119,12 @@ AS
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
-		- 20241023@Razor: Support Playtech [Redmine: #210553]
+		- 20240920@Razor: Support VS2 - Racing sports [Redmine: #211092]
 		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241128@Razor: Fix bug, Remove unknown product[Redmine: #207589]
 		- 20241209@Razor: Insert default value for SiteId, CurrencyId [Redmine: #215005]
+		- 20240920@Razor: Support VS2 - Racing sports [Redmine: #211092]
 
 	Param's Explanation:
 		+ @TransType:
@@ -194,21 +195,9 @@ BEGIN
 		SiteId			VARCHAR(20),
 		DeviceType		TINYINT,
 		LeagueGroupId	SMALLINT,
-		RefTable		TINYINT
+		RefTable		TINYINT,
+		EventType		TINYINT
 	);
-
-	DECLARE @DetailData TABLE (
-		RefNo			BIGINT,
-		Odds			MONEY,
-		Stake			MONEY,
-		Status			NVARCHAR(10),
-		APositionTaking	SMALLMONEY,
-		MPositionTaking	SMALLMONEY,
-		SPositionTaking	SMALLMONEY,
-		BetType			SMALLINT,
-		BetTeam			NVARCHAR(10),
-		TransDesc		VARCHAR(300)
-	)
 
 	-- Gather BettypeMatrix
 	DECLARE @IsTest BIT = 0
@@ -394,10 +383,11 @@ BEGIN
 							WHEN s.EventType = 1 AND s.ProductID = 83 THEN 'VS4'	-- Virtual Sports 4
 							WHEN s.EventType = 5 AND s.ProductID = 88 THEN 'VS5'	-- Virtual Sports 5
 							WHEN s.EventType = 2 AND s.ProductID = 1 THEN 'Outright'
-							WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'		-- Virtual sports:: racing
+							WHEN s.EventType = 3 AND s.ProductID = 27 THEN 'VS2Racing'	-- VS2 Racing
 							ELSE 'Unknown'
 						END,
-						RefTable = s.RefTable
+						RefTable = s.RefTable,
+						EventType = s.EventType
 			FROM @Data AS b
 				INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
@@ -426,13 +416,14 @@ BEGIN
 									WHEN b.Product = 'PP' THEN 248		-- Pragmatic Casino
 									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.sporttype
 									WHEN b.Product IN ('Outright') THEN l.sporttype
-									WHEN b.Product IN ('VR') THEN vr.SportType
 									WHEN b.Product IN ('BTC', 'VS5') THEN m3rd.SportType
 									WHEN b.RefTable IN (1, 2) THEN b.matchid
+									WHEN b.EventType = 3 THEN vr.SportType
 									ELSE 0
 								END,
 					BetTeam = CASE
 									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.betteam
+									WHEN b.EventType = 3 THEN b.betteam
 									ELSE ''
 								END,
 					Hdp1 = CASE
@@ -450,6 +441,7 @@ BEGIN
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Outright', 'VR', 'Parlay', 'OneRNG', 'PP', 'SG', 'Keno', 'NG2', 'ParlayVS2', 'Lottery', 'VRG', 'TG', 'VS3', 
 								'H5LG', 'SLT', 'BTC', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.odds
+								WHEN b.EventType = 3 THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
@@ -480,7 +472,7 @@ BEGIN
 					LeagueId = CASE
 									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.leagueid
 									WHEN b.Product IN ('Outright') THEN o.leagueid
-									WHEN b.Product IN ('VR') THEN vr.LeagueID
+									WHEN b.EventType = 3 THEN vr.LeagueID
 									WHEN b.Product IN ('VS5') THEN m3rd.League3rdId
 									ELSE 0
 								END,
@@ -489,32 +481,29 @@ BEGIN
 									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchid
 									WHEN b.Product IN ('Outright') THEN o.orid
 									WHEN b.Product IN ('VR', 'BTC', 'VS5') THEN b.matchid
+									WHEN b.EventType = 3 THEN b.matchid
 									ELSE 0
 								END,
 					MatchCode = CASE
 									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchcode
 									WHEN b.Product IN ('Outright') THEN o.matchcode
-									WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vo.RacerNum)
 									WHEN b.Product IN ('VS5') THEN m3rd.MatchCode
 									ELSE ''
 								END,
 					Race = CASE
 								WHEN b.Product IN ('Outright') THEN o.groupmatch
-								WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
 								ELSE ''
 							END,
 					EventDate = CASE
 									WHEN b.Product IN ('SB') THEN m.GlobalShowTime
 									WHEN b.Product IN ('NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.eventdate
 									WHEN b.Product IN ('Outright') THEN o.eventdate
-									WHEN b.Product IN ('VR') THEN vo.EventDate
 									WHEN b.Product IN ('BTC') THEN m3rd.EndTime
 									ELSE b.winlostdate
 								END,
 					HomeId = CASE
 								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.homeid
 								WHEN b.Product IN ('Outright') THEN o.teamid
-								WHEN b.Product IN ('VR') THEN vo.RacerID
 								WHEN b.Product IN ('VS5') THEN m3rd.homeid
 								ELSE 0
 							END,
@@ -534,7 +523,6 @@ BEGIN
 					ShowTime = CASE
 									WHEN b.Product IN ('VS', 'VS2', 'LG', 'VS4') THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									WHEN b.Product IN ('SB', 'NG') THEN ISNULL(m.showtime, '')
-									WHEN b.Product IN ('VR') THEN CONVERT(NVARCHAR(50), vr.EventTime)
 									ELSE ''
 								END,
 					BetCheck = CASE
@@ -544,8 +532,9 @@ BEGIN
 								END,
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG', 'VS4', 'VS5')
+									WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG', 'VS4', 'VS5', 'VS2Racing')
 										THEN ISNULL(b.transdesc, '')
+									WHEN b.EventType = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -571,29 +560,10 @@ BEGIN
 					CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 					LEFT JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') AND b.matchid = m.matchid
 					LEFT JOIN dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
-					LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
-					LEFT JOIN dbo.VSOutright_bk AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
-					LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
+					LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid										
 					LEFT JOIN dbo.match3rd_bk AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 					LEFT JOIN bodb02.dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
-					
-				-- Get ticket detail
-				-- Virtual Sports Racing
-				INSERT INTO @DetailData
-				SELECT
-					bm.refno,
-					bm.odds,
-					bm.stake,
-					bm.status,
-					bm.apositiontaking,
-					bm.mpositiontaking,
-					bm.spositiontaking,
-					bm.bettype,
-					bm.betteam,
-					'' AS TransDesc
-				FROM @Data AS c
-					INNER JOIN dbo.bettransm AS bm WITH (NOLOCK) ON c.RefNo = bm.refno
-				WHERE c.Product = 'VR' AND bm.custid = @CustId
+					LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
 	
 			END
 		END
@@ -811,8 +781,5 @@ BEGIN
 		b.LeagueGroupId
 	FROM @Data AS b
 	ORDER BY b.TransId DESC
-
-	SELECT * FROM @DetailData
-	ORDER BY RefNo DESC
 END
 GO
