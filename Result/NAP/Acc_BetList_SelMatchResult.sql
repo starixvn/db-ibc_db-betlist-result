@@ -61,6 +61,7 @@ AS
 		- 20231219@Razor: Support Bandy sport using ResultDetailOS [Redmine: #198022]
 		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
+		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -110,9 +111,9 @@ BEGIN
 		WHERE matchid = @MatchId
 	END
 
-	-- Switch to use parent match for Cricket child match (ChildMatchType = 200)
+	-- Switch to use parent match for Cricket, Baseball child match (ChildMatchType = 200)
 	SET @MatchId = CASE
-						WHEN @SportType = 50 AND @ChildMatchType = 200 THEN @ParentId
+						WHEN @SportType IN (8, 50) AND @ChildMatchType = 200 THEN @ParentId
 						ELSE @MatchId
 					END
 
@@ -154,10 +155,12 @@ BEGIN
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			m.showtime,
 			ISNULL(mr.MainType, 0) AS MainType,
-			ISNULL(mr.SubType, 0) AS SubType
+			ISNULL(mr.SubType, 0) AS SubType,
+			le.SessionTime
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.matchID = m.matchid AND d.ResourceId = '00'
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE m.matchid = @MatchId
 
 		SELECT @ResourceId = CASE
@@ -338,10 +341,12 @@ BEGIN
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			m.showtime,
 			ISNULL(mr.MainType, 0) AS MainType,
-			ISNULL(mr.SubType, 0) AS SubType
+			ISNULL(mr.SubType, 0) AS SubType,
+			le.SessionTime
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE m.matchid = @MatchId
 
 		SELECT @ResourceId = CASE
@@ -523,10 +528,12 @@ BEGIN
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			m.showtime,
 			ISNULL(mr.MainType, 0) AS MainType,
-			ISNULL(mr.SubType, 0) AS SubType
+			ISNULL(mr.SubType, 0) AS SubType,
+			le.SessionTime
 		FROM DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 			LEFT OUTER JOIN DBARC.bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN DBARC.bodb_Archive.dbo.ResultDetail_bk AS d WITH (NOLOCK) ON d.matchID = m.MatchID AND d.ResourceId = '00'
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE m.matchid = @MatchId
 
 		SELECT @ResourceId = CASE
