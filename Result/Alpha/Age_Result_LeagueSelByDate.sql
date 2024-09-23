@@ -58,6 +58,7 @@ AS
 		- 20240403@Razor: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #203378]
 				- Show Saba Ice Hockey, Criket, Tennis
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
+		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -177,7 +178,7 @@ BEGIN
 				OR (ISNULL(e.MatchID, 0) <> 0 AND m.eventstatus = 'running')
 				OR (ISNULL(o.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 			AND m.sporttype NOT IN (201, 162)
-			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
+			AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 			AND (l.LeagueGroupID IS NULL

@@ -52,6 +52,7 @@ AS
 		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 		- 20240905@Razor: HF - Get Result detail of Baseball AIO [Redmine: #207707]
+		- 20240905@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -99,7 +100,8 @@ BEGIN
 		Transdesc			NVARCHAR(1000),
 		LeagueGroupId		SMALLINT,
 		MainType			TINYINT,
-		SubType				SMALLINT
+		SubType				SMALLINT,
+		SessionTime			FLOAT
 	)
 
 	DECLARE @tmpResultDetail AS TABLE (
@@ -191,7 +193,7 @@ BEGIN
 	-- Switch to use parent match for Cricket child match (ChildMatchType = 200)
 	UPDATE @SubTicket
 	SET MatchId = ParentId
-	WHERE SportType = 50 AND ChildMatchType = 200
+	WHERE SportType IN (8, 50) AND ChildMatchType = 200
 
 	-- Bettrans range
 	IF EXISTS (	SELECT 1
@@ -238,13 +240,15 @@ BEGIN
 			bm.Transdesc,
 			le.LeagueGroupId,
 			ISNULL(mr.MainType, 0) AS MainType,
-			ISNULL(mr.SubType, 0) AS SubType
+			ISNULL(mr.SubType, 0) AS SubType,
+			le.SessionTime
 		FROM
 			@SubTicket AS bm
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS d WITH (NOLOCK) ON d.MatchID = m.matchid AND d.ResourceID = '00'
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
+
 		-- Get result detail
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (1, 2, 5))
 		BEGIN
@@ -438,7 +442,8 @@ BEGIN
 			bm.Transdesc,
 			le.LeagueGroupId,
 			ISNULL(mr.MainType, 0) AS MainType,
-			ISNULL(mr.SubType, 0) AS SubType
+			ISNULL(mr.SubType, 0) AS SubType,
+			le.SessionTime
 		FROM
 			@SubTicket AS bm
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
@@ -642,7 +647,8 @@ BEGIN
 			bm.Transdesc,
 			le.LeagueGroupId,
 			ISNULL(mr.MainType, 0) AS MainType,
-			ISNULL(mr.SubType, 0) AS SubType
+			ISNULL(mr.SubType, 0) AS SubType,
+			le.SessionTime
 		FROM
 			@SubTicket AS bm
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid

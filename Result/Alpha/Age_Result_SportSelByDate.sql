@@ -54,6 +54,7 @@ AS
 		- 20240403@Razor: Only hide Saba Soccer, Saba Basketball, Saba Futsal, Saba Soccer Pingoal, Saba Basketball Pingoal, Saba E-Sports PinGoal [Redmine: #203378]
 					- Show Saba Ice Hockey, Criket, Tennis
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
+		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -75,7 +76,7 @@ BEGIN
 					FROM dbo.match AS m WITH (NOLOCK)
 					WHERE m.EventDate = @MatchDate
 						AND m.sporttype NOT IN (201, 162)
-						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
+						AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match						
 						AND (
 								m.eventstatus NOT IN ('closed', 'running')
 								OR EXISTS (	SELECT 1
@@ -192,7 +193,7 @@ BEGIN
 					FROM dbo.match14 AS m WITH (NOLOCK)
 					WHERE m.EventDate = @MatchDate
 						AND m.sporttype NOT IN (201, 162)
-						AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
+						AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match
 						AND (
 							m.eventstatus NOT IN ('closed', 'running')
 							OR EXISTS (	SELECT 1

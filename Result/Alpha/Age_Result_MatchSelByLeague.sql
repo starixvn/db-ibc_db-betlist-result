@@ -65,6 +65,7 @@ AS
 				- Show Saba Ice Hockey, Criket, Tennis
 		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
+		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -101,7 +102,8 @@ BEGIN
 		SettlementStatus	TINYINT,
 		NoHTScore			BIT,
 		MainType			TINYINT,
-		SubType				SMALLINT)
+		SubType				SMALLINT,
+		SessionTime			SMALLMONEY)
 
 	IF @SportType <> 5
 	BEGIN
@@ -131,7 +133,8 @@ BEGIN
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 			ISNULL(mr.MainType, 0) AS MainType,
-			ISNULL(mr.SubType, 0) AS SubType
+			ISNULL(mr.SubType, 0) AS SubType,
+			l.SessionTime
 		FROM
 			dbo.league AS l WITH (NOLOCK)
 			INNER JOIN
@@ -241,7 +244,7 @@ BEGIN
 				OR ( mr.IsHTCal = 1 AND m.eventstatus = 'running')
 				OR ( ISNULL(r.MatchID, 0) <> 0 AND m.eventstatus = 'running'))
 			AND m.sporttype NOT IN (201, 162)
-			AND (m.sporttype <> 50 OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Cricket child match
+			AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match
 			AND m.sporttype = CASE WHEN @SportType = 0 THEN m.sporttype ELSE @SportType END
 			AND m.matchcode NOT LIKE '%hedge%'
 			AND m.matchcode NOT LIKE '%betdaq%'
@@ -288,7 +291,8 @@ BEGIN
 				ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
 				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 				ISNULL(mr.MainType, 0) AS MainType,
-				ISNULL(mr.SubType, 0) AS SubType
+				ISNULL(mr.SubType, 0) AS SubType,
+				l.SessionTime
 			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN (
 						SELECT m.sporttype
@@ -370,7 +374,8 @@ BEGIN
 				0 AS SettlementStatus,
 				ISNULL(mr.NoHTScore, 0) AS NoHTScore,
 				ISNULL(mr.MainType, 0) AS MainType,
-				ISNULL(mr.SubType, 0) AS SubType
+				ISNULL(mr.SubType, 0) AS SubType,
+				l.SessionTime
 			FROM dbo.league AS l WITH (NOLOCK)
 				INNER JOIN (
 						SELECT m.sporttype
