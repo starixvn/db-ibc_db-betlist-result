@@ -17,6 +17,7 @@ AS
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 		- 20231129@Razor: Support Project 777 - return SpecialPlatfrom [Redmine: #194591]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
+		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -125,20 +126,20 @@ BEGIN
 			m.sporttype,
 			m.IsNeutral,
 			CASE
-				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.matchid
+				WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN pm.matchid
 				ELSE m.matchid
 			END AS MatchId,
 			CASE
-				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.matchcode
+				WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN pm.matchcode
 				ELSE m.matchcode
 			END AS MatchCode,
 			CASE
-				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.GlobalShowTime
+				WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN pm.GlobalShowTime
 				ELSE m.GlobalShowTime
 			END AS EventDate,
 			CASE
 				WHEN sbt.ProductID = 27 THEN CONVERT(NVARCHAR(50), m.kickofftime)
-				WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.showtime
+				WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN pm.showtime
 				ELSE m.showtime
 			END AS ShowTime,
 			b.betcheck,
@@ -149,7 +150,7 @@ BEGIN
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN dbo.match AS pm WITH (NOLOCK)
 				ON pm.matchid = m.ParentID
-				AND m.sporttype = 50
+				AND m.sporttype IN (8, 50)
 				AND m.ChildMatchType = 200
 			LEFT JOIN dbo.league AS l WITH (NOLOCK) ON l.leagueid = m.leagueid
 		WHERE b.refno = @RefNo

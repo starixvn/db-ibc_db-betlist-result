@@ -45,6 +45,7 @@ AS
 					- Return additional columns Odds MONEY, ExtraValue MONEY
 		- 20231025@Kos: Hotfix - missing odds for bk range [Redmine: #196042]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -271,15 +272,15 @@ BEGIN
 		m.sporttype,
 		m.IsNeutral,
 		CASE
-			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.matchid
+			WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN pm.matchid
 			ELSE m.matchid
 		END AS MatchId,
 		CASE
-			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.matchcode
+			WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN pm.matchcode
 			ELSE m.matchcode
 		END AS MatchCode,
 		CASE
-			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN pm.GlobalShowTime
+			WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN pm.GlobalShowTime
 			ELSE m.GlobalShowTime
 		END AS EventDate,
 		bm.matchdate,
@@ -290,7 +291,7 @@ BEGIN
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		LEFT JOIN dbo.match AS pm WITH (NOLOCK)
 			ON pm.matchid = m.ParentID
-			AND m.sporttype = 50
+			AND m.sporttype IN (8, 50)
 			AND m.ChildMatchType = 200
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE bm.refno = @RefNo AND bm.custid = @CustId
@@ -324,15 +325,15 @@ BEGIN
 		m.sporttype,
 		m.IsNeutral,
 		CASE
-			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pm14.matchid, pm.matchid)
+			WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pm14.matchid, pm.matchid)
 			ELSE m.matchid
 		END AS MatchId,
 		CASE
-			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pm14.matchcode, pm.matchcode)
+			WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pm14.matchcode, pm.matchcode)
 			ELSE m.matchcode
 		END AS MatchCode,
 		CASE
-			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pm14.GlobalShowTime, pm.GlobalShowTime)
+			WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pm14.GlobalShowTime, pm.GlobalShowTime)
 			ELSE m.GlobalShowTime
 		END AS EventDate,
 		bm.matchdate,
@@ -343,11 +344,11 @@ BEGIN
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		LEFT JOIN dbo.match14 AS pm14 WITH (NOLOCK)
 			ON pm14.matchid = m.ParentID
-			AND m.sporttype = 50
+			AND m.sporttype IN (8, 50)
 			AND m.ChildMatchType = 200
 		LEFT JOIN dbo.match AS pm WITH (NOLOCK)
 			ON pm.matchid = m.ParentID
-			AND m.sporttype = 50
+			AND m.sporttype IN (8, 50)
 			AND m.ChildMatchType = 200
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE bm.refno = @RefNo
@@ -381,15 +382,15 @@ BEGIN
 		m.sporttype,
 		m.isNeutral,
 		CASE
-			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pmbk.matchid, ISNULL(pm14.matchid, pm.matchid))
+			WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pmbk.matchid, ISNULL(pm14.matchid, pm.matchid))
 			ELSE m.matchid
 		END AS MatchId,
 		CASE
-			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pmbk.matchcode, ISNULL(pm14.matchcode, pm.matchcode))
+			WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pmbk.matchcode, ISNULL(pm14.matchcode, pm.matchcode))
 			ELSE m.matchcode
 		END AS MatchCode,
 		CASE
-			WHEN m.sporttype = 50 AND m.ChildMatchType = 200 THEN ISNULL(pmbk.GlobalShowTime, ISNULL(pm14.GlobalShowTime, pm.GlobalShowTime))
+			WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pmbk.GlobalShowTime, ISNULL(pm14.GlobalShowTime, pm.GlobalShowTime))
 			ELSE m.GlobalShowTime
 		END AS EventDate,
 		bm.matchdate,
@@ -400,15 +401,15 @@ BEGIN
 		INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		LEFT JOIN DBARC.bodb_Archive.dbo.match_bk AS pmbk WITH (NOLOCK)
 			ON pmbk.matchid = m.ParentID
-			AND m.sporttype = 50
+			AND m.sporttype IN (8, 50)
 			AND m.ChildMatchType = 200
 		LEFT JOIN dbo.match14 AS pm14 WITH (NOLOCK)
 			ON pm14.matchid = m.ParentID
-			AND m.sporttype = 50
+			AND m.sporttype IN (8, 50)
 			AND m.ChildMatchType = 200
 		LEFT JOIN dbo.match AS pm WITH (NOLOCK)
 			ON pm.matchid = m.ParentID
-			AND m.sporttype = 50
+			AND m.sporttype IN (8, 50)
 			AND m.ChildMatchType = 200
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 	WHERE bm.refno = @RefNo
