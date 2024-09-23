@@ -4,6 +4,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport]
 	@AgentList		VARCHAR(MAX),
 	@ProductList	VARCHAR(200),
 	@SportType		SMALLINT,
+	@MatchId		INT				= 0,
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
@@ -34,6 +35,8 @@ AS
 		- 20230404@Kos: Don't return betfrom anymore [Redmine: #178059]
 		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
 				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
+		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+				- Add new param @MatchId INT
 */
 
 BEGIN
@@ -61,6 +64,18 @@ BEGIN
 
 		RETURN
 	END CATCH
+
+	-- Get child product list
+	IF EXISTS (SELECT 1 FROM dbo.Lrf_f_GroupProduct() WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%')
+	BEGIN
+		DECLARE @ChildProductList VARCHAR(500)
+
+		SELECT @ChildProductList = STRING_AGG(ProductPrefix, ',')
+		FROM dbo.Lrf_f_GroupProduct()
+		WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%'
+
+		SET @ProductList = @ProductList + ',' + @ChildProductList
+	END
 
 	-- Get Sport Bettype Matrix
 	DECLARE @SportBettype TABLE(ProductID TINYINT, BetType SMALLINT, EventType TINYINT)
@@ -93,7 +108,9 @@ BEGIN
 		BetId			BIGINT,
 		BetTeam			NVARCHAR(20),
 		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
 		Odds			MONEY,
+		OddsType		TINYINT,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
@@ -106,6 +123,7 @@ BEGIN
 		Ip				VARCHAR(45),
 		LeagueId		INT,
 		MatchId			INT,
+		EventDate		DATETIME,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
@@ -128,7 +146,9 @@ BEGIN
 		BetId			BIGINT,
 		BetTeam			NVARCHAR(20),
 		Hdp1			SMALLMONEY,
+		Hdp2			SMALLMONEY,
 		Odds			MONEY,
+		OddsType		TINYINT,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
@@ -141,6 +161,7 @@ BEGIN
 		Ip				VARCHAR(45),
 		LeagueId		INT,
 		MatchId			INT,
+		EventDate		DATETIME,
 		BetCheck		NVARCHAR(50),
 		TransDesc		NVARCHAR(1000),
 		BetdaqId		BIGINT,
@@ -176,7 +197,9 @@ BEGIN
 			BetId,
 			BetTeam,
 			Hdp1,
+			Hdp2,
 			Odds,
+			OddsType,
 			Stake,
 			Actual_Stake,
 			WinLost,
@@ -204,7 +227,9 @@ BEGIN
 			b.betid,
 			b.betteam,
 			b.hdp1,
+			b.hdp2,
 			b.odds,
+			b.oddstype,
 			b.stake,
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
@@ -227,6 +252,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON sbt.bettype = b.Bettype
 		WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND b.statusID IN (111, 112, 113)
+			AND (b.matchid = @MatchId OR sbt.EventType <> 3)
 	END
 
 	-- bettrans14
@@ -247,7 +273,9 @@ BEGIN
 			BetId,
 			BetTeam,
 			Hdp1,
+			Hdp2,
 			Odds,
+			OddsType,
 			Stake,
 			Actual_Stake,
 			WinLost,
@@ -275,7 +303,9 @@ BEGIN
 			b.betid,
 			b.betteam,
 			b.hdp1,
+			b.hdp2,
 			b.odds,
+			b.oddstype,
 			b.stake,
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
@@ -298,6 +328,7 @@ BEGIN
 			INNER JOIN @SportBettype AS sbt ON sbt.bettype = b.Bettype
 		WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 			AND b.statusID IN (111, 112, 113)
+			AND (b.matchid = @MatchId OR sbt.EventType <> 3)
 	END
 
 	DELETE b
@@ -310,7 +341,6 @@ BEGIN
 	BEGIN
 		UPDATE b
 		SET b.Product = CASE
-							WHEN s.ProductID = 49 THEN 'VS3'	-- Virtual Sports 3
 							WHEN s.ProductID = 63 THEN 'SLT'	-- Sports Lottery
 							WHEN s.ProductID = 69 THEN 'BTC'	-- Bitcoin
 							ELSE ''
@@ -396,13 +426,69 @@ BEGIN
 		INSERT INTO #PagingData
 		EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
-		UPDATE b
-		SET
-			SiteId = CASE
-						WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
-						ELSE ''
-					END
-		FROM #PagingData AS b
+		-- bettrans
+		IF EXISTS (SELECT TOP(1) 1 FROM #PagingData WHERE WhTicket = 1)
+		BEGIN
+			UPDATE b
+			SET
+				SportType = CASE
+								WHEN b.Product IN ('BTC') THEN m3rd.SportType
+								WHEN b.EventType = 3 THEN vr.SportType
+								ELSE b.MatchId
+							END,
+				LeagueId = CASE
+								WHEN b.EventType = 3 THEN vr.LeagueID
+								ELSE 0
+							END,
+				EventDate = CASE
+								WHEN b.Product IN ('BTC') THEN m3rd.EndTime
+								ELSE b.WinLostDate
+							END,
+				TransDesc = CASE
+								WHEN b.EventType = 3 THEN ISNULL(b.transdesc, '')
+								ELSE ''
+							END,
+				SiteId = CASE
+							WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+							ELSE ''
+						END
+			FROM #PagingData AS b
+				LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
+				LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
+			WHERE b.WhTicket = 1
+		END
+
+		-- bettrans14
+		IF EXISTS (SELECT TOP(1) 1 FROM #PagingData WHERE WhTicket = 2)
+		BEGIN
+			UPDATE b
+			SET
+				SportType = CASE
+								WHEN b.Product IN ('BTC') THEN m3rd.SportType
+								WHEN b.EventType = 3 THEN vr.SportType
+								ELSE b.MatchId
+							END,
+				LeagueId = CASE
+								WHEN b.EventType = 3 THEN vr.LeagueID
+								ELSE 0
+							END,
+				EventDate = CASE
+								WHEN b.Product IN ('BTC') THEN m3rd.EndTime
+								ELSE b.WinLostDate
+							END,
+				TransDesc = CASE
+								WHEN b.EventType = 3 THEN ISNULL(b.transdesc, '')
+								ELSE ''
+							END,
+				SiteId = CASE
+							WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+							ELSE ''
+						END
+			FROM #PagingData AS b
+				LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
+				LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
+			WHERE b.WhTicket = 2
+		END
 
 		SELECT
 			c.username,
@@ -411,11 +497,7 @@ BEGIN
 			b.RefNo,
 			b.CustId,
 			b.Currency,
-			CASE
-				WHEN b.Product IN ('BTC') AND b.WhTicket = 1 THEN m3rd.SportType
-				WHEN b.Product IN ('BTC') AND b.WhTicket = 2 THEN m3rd14.SportType
-				ELSE b.MatchId
-			END AS SportType,
+			b.SportType,
 			b.BetType,
 			b.BetId,
 			b.BetTeam,
@@ -435,23 +517,13 @@ BEGIN
 			b.TransDesc,
 			b.BetdaqId,
 			b.SiteId,
-			CASE
-				WHEN b.Product IN ('BTC') AND b.WhTicket = 1 THEN m3rd.League3rdId
-				WHEN b.Product IN ('BTC') AND b.WhTicket = 2 THEN m3rd14.League3rdId
-				ELSE 0
-			END AS LeagueId,
+			b.LeagueId,
 			b.MatchId,
-			CASE
-				WHEN b.Product IN ('BTC') AND b.WhTicket = 1 THEN m3rd.EndTime
-				WHEN b.Product IN ('BTC') AND b.WhTicket = 2 THEN m3rd14.EndTime
-				ELSE ''
-			END AS EventDate,
+			b.EventDate,
 			b.ExtraInfo
 		FROM
 			#PagingData AS b
 			INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
-			LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.matchid AND b.WhTicket = 1
-			LEFT JOIN dbo.Match3rd14 AS m3rd14 WITH (NOLOCK) ON m3rd14.Match3rdId = b.matchid AND b.WhTicket = 2
 			LEFT JOIN #ExchangeRate AS e
 				ON e.ExchangeId = b.Currency
 					AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
@@ -475,13 +547,69 @@ BEGIN
 		FROM dbo.Customer WITH (NOLOCK)
 		WHERE custid IN (SELECT DISTINCT CustId FROM #Data)
 
-		UPDATE b
-		SET
-			SiteId = CASE
-						WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
-						ELSE ''
-					END
-		FROM #Data AS b
+		-- bettrans
+		IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE WhTicket = 1)
+		BEGIN
+			UPDATE b
+			SET
+				SportType = CASE
+								WHEN b.Product IN ('BTC') THEN m3rd.SportType
+								WHEN b.EventType = 3 THEN vr.SportType
+								ELSE b.MatchId
+							END,
+				LeagueId = CASE
+								WHEN b.EventType = 3 THEN vr.LeagueID
+								ELSE 0
+							END,
+				EventDate = CASE
+								WHEN b.Product IN ('BTC') THEN m3rd.EndTime
+								ELSE b.WinLostDate
+							END,
+				TransDesc = CASE
+								WHEN b.EventType = 3 THEN ISNULL(b.transdesc, '')
+								ELSE ''
+							END,
+				SiteId = CASE
+							WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+							ELSE ''
+						END
+			FROM #Data AS b
+				LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
+				LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
+			WHERE b.WhTicket = 1
+		END
+
+		-- bettrans14
+		IF EXISTS (SELECT TOP(1) 1 FROM #Data WHERE WhTicket = 2)
+		BEGIN
+			UPDATE b
+			SET
+				SportType = CASE
+								WHEN b.Product IN ('BTC') THEN m3rd.SportType
+								WHEN b.EventType = 3 THEN vr.SportType
+								ELSE b.MatchId
+							END,
+				LeagueId = CASE
+								WHEN b.EventType = 3 THEN vr.LeagueID
+								ELSE 0
+							END,
+				EventDate = CASE
+								WHEN b.Product IN ('BTC') THEN m3rd.EndTime
+								ELSE b.WinLostDate
+							END,
+				TransDesc = CASE
+								WHEN b.EventType = 3 THEN ISNULL(b.transdesc, '')
+								ELSE ''
+							END,
+				SiteId = CASE
+							WHEN b.Product IN ('SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+							ELSE ''
+						END
+			FROM #Data AS b
+				LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
+				LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
+			WHERE b.WhTicket = 2
+		END
 
 		SET @Sql = 
 			N'SELECT
@@ -491,11 +619,7 @@ BEGIN
 				b.RefNo,
 				b.CustId,
 				b.Currency,
-				CASE
-					WHEN b.Product IN (''BTC'') AND b.WhTicket = 1 THEN m3rd.SportType
-					WHEN b.Product IN (''BTC'') AND b.WhTicket = 2 THEN m3rd14.SportType
-					ELSE b.MatchId
-				END AS SportType,
+				b.SportType,
 				b.BetType,
 				b.BetId,
 				b.BetTeam,
@@ -515,23 +639,13 @@ BEGIN
 				b.TransDesc,
 				b.BetdaqId,
 				b.SiteId,
-				CASE
-					WHEN b.Product IN (''BTC'') AND b.WhTicket = 1 THEN m3rd.League3rdId
-					WHEN b.Product IN (''BTC'') AND b.WhTicket = 2 THEN m3rd14.League3rdId
-					ELSE 0
-				END AS LeagueId,
+				b.LeagueId,
 				b.MatchId,
-				CASE
-					WHEN b.Product IN (''BTC'') AND b.WhTicket = 1 THEN m3rd.EndTime
-					WHEN b.Product IN (''BTC'') AND b.WhTicket = 2 THEN m3rd14.EndTime
-					ELSE ''''
-				END AS EventDate,
+				b.EventDate,
 				b.ExtraInfo
 			FROM
 				#Data AS b
 				INNER JOIN #Customer AS c ON c.custid = b.CustId
-				LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.matchid AND b.WhTicket = 1
-				LEFT JOIN dbo.Match3rd14 AS m3rd14 WITH (NOLOCK) ON m3rd14.Match3rdId = b.matchid AND b.WhTicket = 2
 				LEFT JOIN #ExchangeRate AS e
 					ON e.ExchangeId = b.Currency
 						AND b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
