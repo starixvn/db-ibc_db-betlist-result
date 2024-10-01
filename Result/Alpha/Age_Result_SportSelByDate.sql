@@ -56,6 +56,7 @@ AS
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20241226@Razor: Support VS2 - Racing sports [Redmine: #211092]
 */
 
 BEGIN
@@ -159,15 +160,15 @@ BEGIN
 
 					-- #2. From outright table
 					SELECT l.sporttype
-					FROM dbo.League AS l WITH (NOLOCK)
+					FROM dbo.League3rd AS l WITH (NOLOCK)
 					WHERE EXISTS (	SELECT 1
 									FROM dbo.VSOutright AS o WITH (NOLOCK)
 										INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
 									WHERE o.EventDate = @EventDate
 										AND r.EventStatus = 'completed'
-										AND r.LeagueID = l.leagueid
+										AND r.LeagueID = l.League3rdId
 									)
-						AND l.sporttype IN (181, 182, 183, 185, 184)
+						AND l.sporttype IN (198, 177)
 						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
 
 					UNION ALL
@@ -282,15 +283,15 @@ BEGIN
 
 					-- #2. From outright table
 					SELECT l.sporttype
-					FROM dbo.League AS l WITH (NOLOCK)
+					FROM dbo.League3rd AS l WITH (NOLOCK)
 					WHERE EXISTS (	SELECT 1
 									FROM dbo.VSOutright14 AS o WITH (NOLOCK)
 										INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
 									WHERE o.EventDate = @EventDate
 										AND r.EventStatus = 'completed'
-										AND r.LeagueID = l.leagueid
+										AND r.LeagueID = l.League3rdId
 									)
-						AND l.sporttype IN (181, 182, 183, 185, 184)
+						AND l.sporttype IN (198, 177)
 						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
 
 					UNION ALL
