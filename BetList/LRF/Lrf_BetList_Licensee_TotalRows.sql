@@ -61,8 +61,8 @@ AS
 		- 20240129@Kos: Merge VS1, VS2, VS3 into VS [Redmine: 199523]
 		- 20240207@Kos: Hotfix - No data when filtering player has Risk Level Uncategorized [RedmineID: #200913]
 					- Add new input param @FullCustomerClass VARCHAR(MAX)
+		- 20241001@Kos: Enhance performance [Redmine: 211655]
 */
-
 
 BEGIN
 	SET NOCOUNT ON
@@ -91,6 +91,8 @@ BEGIN
 
 	DECLARE @TotalRowsBettrans	INT = 0,
 		@TotalRowsBettrans14	INT = 0
+
+	CREATE TABLE #TempCust (CustId INT PRIMARY KEY, CustomerClass SMALLINT)
 
 	IF @HasError = 0
 	BEGIN
@@ -145,7 +147,38 @@ BEGIN
 		DECLARE @TempToDate	SMALLDATETIME,
 			@TempFromDate	SMALLDATETIME
 
-		IF @Username IS NULL OR @Username = ''
+		IF @Username IS NOT NULL AND @Username <> ''
+		BEGIN
+			INSERT INTO #TempCust (CustId, CustomerClass)
+			SELECT
+				c.custid,
+				ci.CustomerClass
+			FROM dbo.Customer AS c WITH (NOLOCK)
+				INNER JOIN #TempAg AS a ON c.recommend = a.CustId
+				LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = c.custid
+			WHERE c.roleid = 1
+				AND (c.username LIKE + '%' + @Username + '%'
+					OR c.username2 LIKE + '%$%' + @Username + '%')
+				AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+
+			IF @CustomerClass <> 'All'
+			BEGIN
+				DELETE #TempCust
+				WHERE 1 <> CASE
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+									AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
+								ELSE 0
+							END
+			END
+		END
+
+		DECLARE @NumOfMem	INT = 0
+
+		SELECT @NumOfMem = COUNT(1) FROM #TempCust
+
+		IF @Username IS NULL OR @Username = '' OR @NumOfMem > 5000		-- Licensee level (not input username or number of searched member > 5000)
 		BEGIN
 			-- Bettrans range
 			IF @ToDate > @MoveBetsDay
@@ -335,32 +368,6 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			CREATE TABLE #TempCust (CustId INT PRIMARY KEY, CustomerClass SMALLINT)
-
-			INSERT INTO #TempCust (CustId, CustomerClass)
-			SELECT
-				c.custid,
-				ci.CustomerClass
-			FROM dbo.Customer AS c WITH (NOLOCK)
-				INNER JOIN #TempAg AS a ON c.recommend = a.CustId
-				LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = c.custid
-			WHERE c.roleid = 1
-				AND (c.username LIKE + '%' + @Username + '%'
-					OR c.username2 LIKE + '%$%' + @Username + '%')
-				AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
-
-			IF @CustomerClass <> 'All'
-			BEGIN
-				DELETE #TempCust
-				WHERE 1 <> CASE
-								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND CustomerClass IS NULL THEN 1
-								WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
-									AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
-								WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), CustomerClass) + ',%' THEN 1
-								ELSE 0
-							END
-			END
-
 			-- Bettrans range
 			IF @ToDate > @MoveBetsDay
 			BEGIN
@@ -428,5 +435,7 @@ BEGIN
 	END
 
 	SELECT @TotalRows = @TotalRowsBettrans + @TotalRowsBettrans14
+
+	DROP TABLE #TempCust
 END
 GO
