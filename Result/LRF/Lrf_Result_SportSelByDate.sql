@@ -3,7 +3,8 @@
 ALTER PROCEDURE [dbo].[Lrf_Result_SportSelByDate]
 	@EventDate		DATETIME,
 	@MoveBetsDay	DATETIME,
-	@LicenseeId		INT
+	@LicenseeId		INT,
+	@IsShowAll		BIT			= 0		-- 1: Show all; 0: NOT show test league
 AS
 
 /*
@@ -59,6 +60,8 @@ AS
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
 		- 20240917@Kos: Hotfix - missing child products of Virtual Sports [Redmine: #210867]
 		- 20240920@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
+		- 20241002@Kos: Hotfix - not show league test in PRO [Redmine: #211744]
+					- Add new param @IsShowAll BIT
 */
 
 BEGIN
@@ -208,6 +211,7 @@ BEGIN
 			AND EXISTS ( SELECT 1
 						FROM dbo.League AS l WITH (NOLOCK)
 						WHERE l.leagueid = m.leagueid
+							AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 							AND (l.LeagueGroupID IS NULL
 								OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
 									AND l.LeagueGroupID <> 215)			-- Redcat88 of Esports
@@ -227,6 +231,7 @@ BEGIN
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON r.LeagueID = l.leagueid
 			WHERE l.sporttype IN (181, 182, 183, 184, 185)
 				AND r.EventStatus = 'completed'
+				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 		END
 
 		-- Bitcoin
@@ -370,6 +375,7 @@ BEGIN
 			AND EXISTS ( SELECT 1
 						FROM dbo.League AS l WITH (NOLOCK)
 						WHERE l.leagueid = m.leagueid
+							AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 							AND (l.LeagueGroupID IS NULL
 								OR (l.LeagueGroupID NOT IN (SELECT LeagueGroupID FROM dbo.f_SabaVirtualSports())
 									AND l.LeagueGroupID <> 215)				-- Redcat88 of Esports
@@ -386,6 +392,7 @@ BEGIN
 			WHERE l.sporttype IN (181, 182, 183, 184, 185)
 				AND r.EventStatus = 'completed'
 				AND o.EventDate = @EventDate
+				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 		END
 
 		-- Bitcoin
