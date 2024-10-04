@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20240725@Kos: Created [#Redmine: 207623]
 		- 20240725@Kos: Return additional column [#Redmine: 207623]
+		- 20241004@Kos: Return additional column PlayerSiteId [#Redmine: 207623]
 */
 
 BEGIN
@@ -103,6 +104,7 @@ BEGIN
 		@CustId				INT,
 		@Username			VARCHAR(50),
 		@Nickname			VARCHAR(50),
+		@PlayerSiteId		INT,
 		@TransId			BIGINT,
 		@WinLostDate		SMALLDATETIME,
 		@Recommend			INT,
@@ -633,9 +635,11 @@ BEGIN
 	BEGIN
 		SELECT
 			@Username = username,
-			@Nickname = SUBSTRING(username2, CHARINDEX('$', username2) + 1, LEN(username2) - CHARINDEX('$', username2))
-		FROM dbo.Customer WITH (NOLOCK)
-		WHERE custid = CASE
+			@Nickname = SUBSTRING(username2, CHARINDEX('$', username2) + 1, LEN(username2) - CHARINDEX('$', username2)),
+			@PlayerSiteId = s.siteid
+		FROM dbo.Customer AS c WITH (NOLOCK)
+			INNER JOIN dbo.Site AS s WITH (NOLOCK) ON s.site = c.site
+		WHERE c.custid = CASE
 							WHEN @MainCustId <> 0 THEN @MainCustId		-- shadow account
 							ELSE @CustId
 						END
@@ -646,6 +650,7 @@ BEGIN
 		a.Recommend,
 		@Username AS Username,
 		@Nickname AS NickName,
+		@PlayerSiteId AS PlayerSiteId,
 		a.TransId,
 		a.RefNo,
 		a.BetId,
