@@ -2309,13 +2309,14 @@ BEGIN
 					AND b.bettype IN (9, 29, 2799, 10449)
 			END
 
+			-- AG Casino, RNG Casino Single Wallet, AllBet, Voidbridge, NG2, Pragmatic Casino, SA Gaming
 			-- Keno, Lottery, Card Club, NPH Promotion, Spadegaming, Virtual Games, Table Games, Indo 4D, 
 			-- Sexy Gaming, Saba.club, IBCBet Live Casino, BBIN, RNG War, ION, PG Soft, Joker, WM, Leap Gaming Virtual Sports, Big Gaming
 			-- MaxGame, Happy 5 Linked Games (Number Game), Habanero, CG, Sports Lottery, PP Live Casino, VGaming, AdvantPlay, AdvantPlay Mini, FGG, SEAL Entertainment, MG RNG Casino
 			-- Player Tips, Jili, YeeBet, WE, Live22, UU Slots, Saba xD, Saba Coins
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype 
 						WHERE Bettype = @BetType
-							AND (ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81) 
+							AND (ProductID IN (6, 8, 11, 21, 22, 23, 28, 32, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81) 
 									OR (ProductID = 3 AND EventType = 0)
 									OR RefTable IN (1, 2)))
 			BEGIN
@@ -2337,10 +2338,16 @@ BEGIN
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
-					0 AS hdp1,
-					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (3, 8, 28, 36, 38, 40, 42, 43, 49, 63, 66) THEN b.odds
+						WHEN s.ProductId = 23 THEN b.hdp1
+						ELSE 0
+					END AS hdp1,
+					CASE
+						WHEN s.ProductId = 23 THEN b.hdp2
+						ELSE 0
+					END AS hdp2,
+					CASE
+						WHEN s.ProductID IN (3, 6, 8, 23, 28, 32, 36, 38, 40, 42, 43, 49, 63, 66) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -2366,20 +2373,33 @@ BEGIN
 					0 AS liveindicator,
 					0 AS modds,
 					b.custid,
-					0 AS livehomescore,
+					CASE
+						WHEN s.ProductId = 23 THEN b.livehomescore
+						ELSE 0
+					END AS livehomescore,
 					0 AS liveawayscore,
 					0 AS finalhomescore,
 					0 AS finalawayscore,
 					0 AS leagueid,
 					CASE
+						WHEN s.ProductID IN (3, 6, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81) THEN b.matchid
 						WHEN s.ProductID = 8 THEN 202
+						WHEN s.ProductID = 11 THEN 250
+						WHEN s.ProductID = 21 THEN 211
+						WHEN s.ProductID = 22 THEN 212
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 						WHEN s.ProductID = 28 THEN 220
-						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81) THEN b.matchid
+						WHEN s.ProductID = 32 THEN 248					
 						WHEN s.RefTable IN (1, 2) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					b.ip,
 					CASE
+						WHEN s.ProductID = 23 THEN b.betdaqid
 						WHEN s.ProductID = 74 THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 						ELSE 0
 					END AS matchid,
@@ -2401,11 +2421,11 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
-						WHEN s.ProductID IN (3, 8, 28, 34, 36, 38, 40, 43, 49, 55, 56, 61, 62, 63, 67, 68, 72) THEN b.transdesc
+						WHEN s.ProductID IN (3, 6, 8, 22, 23, 28, 32, 34, 36, 38, 40, 43, 49, 55, 56, 61, 62, 63, 67, 68, 72) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					CASE
-						WHEN s.ProductID IN (36, 42, 66) THEN ISNULL(b.oddsspread, 0)
+						WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(b.oddsspread, 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,
@@ -2424,7 +2444,7 @@ BEGIN
 				FROM dbo.bettrans14 AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND (s.ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81)
+					AND (s.ProductID IN (6, 8, 11, 21, 22, 23, 28, 32, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81)
 							OR (s.ProductID = 3 AND s.EventType = 0)
 							OR RefTable IN (1, 2))
 
@@ -2706,121 +2726,6 @@ BEGIN
 				WHERE b.transid = @TransId
 					AND s.ProductID = 5
 					AND s.EventType = 3
-			END
-
-			-- AG Casino, RNG Casino Single Wallet, AllBet, Voidbridge, NG2, Pragmatic Casino, SA Gaming
-			IF EXISTS(	SELECT TOP(1) 1 FROM @SportBettype
-						WHERE Bettype = @BetType
-							AND (ProductID IN (11, 21, 22, 23, 32, 39)
-								OR (ProductID = 6 AND SubProduct <> '')))
-			BEGIN
-				INSERT INTO @Data
-				SELECT
-					b.bettype,
-					b.transid,
-					ISNULL(b.betid, 0) AS BetId,
-					b.refno,
-					'' AS matchcode,
-					'' AS race,
-					'' AS eventdate,
-					0 AS virtualrate,
-					0 AS isShowOTExRate,
-					b.sdiscount,
-					b.adiscount,
-					b.discount,
-					b.playerdiscount,
-					0 AS homeid,
-					0 AS awayid,
-					'' AS settleTime,
-					CASE
-						WHEN s.ProductID = 23 THEN b.hdp1
-						ELSE 0
-					END AS hdp1,
-					CASE
-						WHEN s.ProductID = 23 THEN b.hdp2
-						ELSE 0
-					END AS hdp2,
-					CASE
-						WHEN s.ProductID IN (6, 23, 32) THEN b.odds
-						ELSE 0
-					END AS odds,
-					0 AS finalodds,
-					0 AS finalodds2,
-					0 AS OddsType,
-					b.status,
-					0 AS SettlementStatus,
-					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-					b.stake,
-					b.actual_stake,
-					b.transdate,
-					'' AS betteam,
-					b.spositiontaking,
-					b.mpositiontaking,
-					b.apositiontaking,
-					0 AS spositiontaking2,
-					0 AS mpositiontaking2,
-					0 AS apositiontaking2,
-					0 AS liveindicator,
-					0 AS modds,
-					b.custid,
-					CASE
-						WHEN s.ProductID = 23 THEN b.livehomescore
-						ELSE 0
-					END AS livehomescore,
-					0 AS liveawayscore,
-					0 AS finalhomescore,
-					0 AS finalawayscore,
-					0 AS leagueid,
-					CASE
-						WHEN s.ProductID IN (6, 39) THEN b.matchid
-						WHEN s.ProductID = 11 THEN 250
-						WHEN s.ProductID = 21 THEN 211
-						WHEN s.ProductID = 22 THEN 212
-						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
-						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
-						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
-						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
-						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
-						WHEN s.ProductID = 32 THEN 248
-						ELSE 0
-					END AS sporttype,
-					b.ip,
-					b.betdaqid AS matchid,
-					CONVERT(BIT, 0) AS IsNeutral,
-					0 AS allowdelete,
-					(b.winlost - b.actual_stake) AS WinLost,
-					b.playercomm AS commission,
-					(b.scomm - b.acomm) AS scomm,
-					(b.acomm - b.comm) AS acomm,
-					(b.comm - b.playercomm) AS comm,
-					b.awinlost,
-					b.mwinlost,
-					b.swinlost,
-					'' AS showtime,
-					b.winlostdate,
-					'' AS BetCheck,
-					CASE
-						WHEN s.ProductID IN (6, 22, 23, 32) THEN b.transdesc
-						ELSE ''
-					END AS transdesc,
-					CASE
-						WHEN s.ProductID IN (6, 32) THEN ISNULL(b.oddsspread, 0)
-						ELSE 0
-					END AS OddsSpread,
-					0 AS OriginalBetType,
-					-1 AS BetdaqId,
-					b.ExtraInfo,
-					'' AS JackpotInfo,
-					0 AS WalletType,
-					0 AS RefCode,
-					b.currency,
-					'' AS SiteId,
-					b.DeviceType
-				FROM dbo.bettrans14 AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-				WHERE b.transid = @TransId
-					AND (s.ProductID IN (11, 21, 22, 23, 32, 39)
-						OR (ProductID = 6 AND SubProduct <> ''))
 			END
 
 			-- Get related Bonus/Cash tickets
@@ -3181,8 +3086,7 @@ BEGIN
 			-- Player Tips, Jili, YeeBet, WE, Live22, UU Slots, Saba xD, Saba Coins
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE Bettype = @BetType 
-							AND (ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81)
-								OR (ProductID = 6 AND SubProduct = '')
+							AND (ProductID IN (6, 8, 11, 21, 22, 23, 28, 32, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81)
 								OR (ProductID = 3 AND EventType = 0)
 								OR RefTable IN (1, 2)))
 			BEGIN
@@ -3204,10 +3108,16 @@ BEGIN
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
-					0 AS hdp1,
-					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (3, 8, 28, 36, 38, 40, 42, 43, 49, 63, 66) THEN b.odds
+						WHEN s.ProductId = 23 THEN b.hdp1
+						ELSE 0
+					END AS hdp1,
+					CASE
+						WHEN s.ProductId = 23 THEN b.hdp2
+						ELSE 0
+					END AS hdp2,
+					CASE
+						WHEN s.ProductID IN (3, 6, 8, 23, 28, 32, 36, 38, 40, 42, 43, 49, 63, 66) THEN b.odds
 						ELSE 0
 					END AS odds,
 					0 AS finalodds,
@@ -3233,21 +3143,33 @@ BEGIN
 					0 AS liveindicator,
 					0 AS modds,
 					b.custid,
-					0 AS livehomescore,
+					CASE
+						WHEN s.ProductId = 23 THEN b.livehomescore
+						ELSE 0
+					END AS livehomescore,
 					0 AS liveawayscore,
 					0 AS finalhomescore,
 					0 AS finalawayscore,
 					0 AS leagueid,
 					CASE
-						WHEN s.ProductID = 6 THEN 251
 						WHEN s.ProductID = 8 THEN 202
+						WHEN s.ProductID = 11 THEN 250
+						WHEN s.ProductID = 21 THEN 211
+						WHEN s.ProductID = 22 THEN 212
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
+						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
 						WHEN s.ProductID = 28 THEN 220
+						WHEN s.ProductID = 32 THEN 248
 						WHEN s.ProductID IN (3, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81) THEN b.matchid
 						WHEN RefTable IN (1, 2) THEN b.matchid
 						ELSE 0
 					END AS sporttype,
 					dp.ip,
 					CASE
+						WHEN s.ProductId = 23 THEN b.betdaqid
 						WHEN s.ProductID = 74 THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
 						ELSE 0
 					END AS matchid,
@@ -3269,11 +3191,12 @@ BEGIN
 						ELSE ''
 					END AS BetCheck,
 					CASE
+						WHEN s.ProductID = 6 AND s.SubProduct <> '' THEN b.transdesc
 						WHEN s.ProductID IN (3, 8, 28, 34, 36, 38, 40, 43, 49, 55, 56, 61, 62, 63, 67, 68, 72) THEN b.transdesc
 						ELSE ''
 					END AS transdesc,
 					CASE
-						WHEN s.ProductID IN (36, 42, 66) THEN ISNULL(b.oddsspread, 0)
+						WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(b.oddsspread, 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,
@@ -3293,8 +3216,7 @@ BEGIN
 					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 				WHERE b.transid = @TransId
-					AND (s.ProductID IN (8, 28, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81)
-						OR (s.ProductID = 6 AND s.SubProduct = '')
+					AND (s.ProductID IN (6, 8, 11, 21, 22, 23, 28, 32, 34, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49, 50, 51, 52, 55, 56, 57, 60, 61, 62, 63, 65, 66, 67, 68, 70, 72, 73, 74, 75, 76, 80, 79, 78, 86, 81)						
 						OR (s.ProductID = 3 AND s.EventType = 0)
 						OR RefTable IN (1, 2))
 
@@ -3579,122 +3501,6 @@ BEGIN
 				WHERE b.transid = @TransId
 					AND s.ProductID = 5
 					AND s.EventType = 3
-			END
-
-			-- AG Casino, RNG Casino Single Wallet, AllBet, Voidbridge, NG2, Pragmatic Casino, SA Gaming
-			IF EXISTS (	SELECT TOP(1) 1 FROM @SportBettype
-						WHERE Bettype = @BetType
-							AND (ProductID IN (11, 21, 22, 23, 32, 39)
-								OR (ProductID = 6 AND SubProduct <> '')))
-			BEGIN
-				INSERT INTO @Data
-				SELECT
-					b.bettype,
-					b.transid,
-					ISNULL(b.BetID, 0) AS BetId,
-					b.refno,
-					'' AS matchcode,
-					'' AS race,
-					'' AS eventdate,
-					0 AS virtualrate,
-					0 AS isShowOTExRate,
-					b.sdiscount,
-					b.adiscount,
-					b.discount,
-					b.playerdiscount,
-					0 AS homeid,
-					0 AS awayid,
-					'' AS settleTime,
-					CASE
-						WHEN s.ProductID = 23 THEN b.hdp1
-						ELSE 0
-					END AS hdp1,
-					CASE
-						WHEN s.ProductID = 23 THEN b.hdp2
-						ELSE 0
-					END AS hdp2,
-					CASE
-						WHEN s.ProductID IN (6, 23, 32) THEN b.odds
-						ELSE 0
-					END AS odds,
-					0 AS finalodds,
-					0 AS finalodds2,
-					0 AS OddsType,
-					b.status,
-					0 AS SettlementStatus,
-					CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-					b.stake,
-					b.actual_stake,
-					b.transdate,
-					'' AS betteam,
-					b.spositiontaking,
-					b.mpositiontaking,
-					b.apositiontaking,
-					0 spositiontaking2,
-					0 mpositiontaking2,
-					0 apositiontaking2,
-					0 AS liveindicator,
-					0 AS modds,
-					b.custid,
-					CASE
-						WHEN s.ProductID = 23 THEN b.livehomescore
-						ELSE 0
-					END AS livehomescore,
-					0 AS liveawayscore,
-					0,
-					0,
-					0 AS leagueid,
-					CASE
-						WHEN s.ProductID IN (6, 39) THEN b.matchid
-						WHEN s.ProductID = 11 THEN 250
-						WHEN s.ProductID = 21 THEN 211
-						WHEN s.ProductID = 22 THEN 212
-						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
-						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2541 AND 2579 THEN 214
-						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2581 AND 2619 THEN 215
-						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2621 AND 2659 THEN 216
-						WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2681 AND 2699 THEN 218
-						WHEN s.ProductID = 32 THEN 248
-						ELSE 0
-					END AS sporttype,
-					dp.ip,
-					b.betdaqid AS matchid,
-					CONVERT(BIT, 0) AS IsNeutral,
-					0 AS allowdelete,
-					(b.winlost - b.actual_stake) AS WinLost,
-					b.playercomm AS commission,
-					(b.scomm - b.acomm) AS scomm,
-					(b.acomm - b.comm) AS acomm,
-					(b.comm - b.playercomm) AS comm,
-					b.awinlost,
-					b.mwinlost,
-					b.swinlost,
-					'' AS showtime,
-					b.winlostdate,
-					'' AS BetCheck,
-					CASE
-						WHEN s.ProductID IN (6, 22, 23, 32) THEN b.transdesc
-						ELSE ''
-					END AS transdesc,
-					CASE
-						WHEN s.ProductID IN (6, 32) THEN ISNULL(b.oddsspread, 0)
-						ELSE 0
-					END AS OddsSpread,
-					0 AS OriginalBetType,
-					-1 AS BetdaqId,
-					'' AS ExtraInfo,
-					'' AS JackpotInfo,
-					0 AS WalletType,
-					0 AS RefCode,
-					b.currency,
-					'' AS SiteId,
-					b.DeviceType
-				FROM bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
-					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-				WHERE b.transid = @TransId
-					AND (s.ProductID IN (11, 21, 22, 23, 32, 39)
-						OR (s.ProductID = 6 AND s.SubProduct <> ''))
 			END
 
 			-- Get related Bonus/Cash tickets
