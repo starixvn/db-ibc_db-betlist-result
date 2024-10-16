@@ -20,6 +20,7 @@ AS
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20210208@Kos: Support Cricket AIO [Redmine: 148963]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20241016@Razor: Provide Risk Amount [Redmine: #202427]
 
 	Parameter's Explanation:
 		- @CustId : agent's ID
@@ -55,7 +56,10 @@ BEGIN
 		b.oddstype,
 		ISNULL(b.oddsspread, 0) AS OddsSpread,
 		ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-		b.DeviceType
+		b.DeviceType,
+		b.apositiontaking,
+		b.mpositiontaking,
+		b.spositiontaking
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.recommend = @CustId
 		AND b.statusID IN (0, 1)

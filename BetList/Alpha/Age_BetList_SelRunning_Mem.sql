@@ -166,6 +166,7 @@ AS
 		- 20240417@Razor: Support Saba xD [Redmine: #203371]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
+		- 20241016@Razor: Provide Risk Amount [Redmine: #202427]
 */
 
 BEGIN
@@ -635,7 +636,7 @@ BEGIN
 				,BetCheck = ''
 				,TransDesc = ''
 				,OddsSpread = 0
-				,ExtraInfo = ''
+				,ExtraInfo = ISNULL(b.ExtraInfo, '')
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
 				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid

@@ -30,6 +30,7 @@ AS
 		- 20191028@Kos: Show Running status for Marked tickets [Redmine: 122391]
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
+		- 20241016@Razor: Provide Risk Amount [Redmine: #202427]
 
 	Parameter's Explanation:
 		- @CustId: agent's ID
@@ -108,7 +109,10 @@ BEGIN
 		ISNULL(b.transdesc, '') AS transdesc,
 		ISNULL(b.oddsspread, 0) AS OddsSpread,
 		ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-		b.DeviceType
+		b.DeviceType,
+		b.apositiontaking,
+		b.mpositiontaking,
+		b.spositiontaking
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE b.recommend = @CustId 
 		AND b.transid > @TransId
