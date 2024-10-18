@@ -30,6 +30,7 @@ AS
 		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: 209344]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+		- 20241018@Kos: Hotfix - missing event info of BetRadar Horse Racing range bettrans14 [Redmine: #212397]
 */
 
 BEGIN
@@ -893,7 +894,7 @@ BEGIN
 					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
-					LEFT JOIN dbo.VSRaceInfo AS vr WITH(NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
+					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH(NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
 			END
 		END
 	END
