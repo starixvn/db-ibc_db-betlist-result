@@ -180,6 +180,7 @@ AS
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
+		- 20241023@Razor: Support GPI [Redmine: #207173]
 */
 
 BEGIN
@@ -683,6 +684,7 @@ BEGIN
 						WHEN s.ProductID = 45 THEN 'SXG'							-- Sexy Gaming
 						WHEN s.ProductID = 46 THEN 'IBCLC'							-- IBCBet Live Casino
 						WHEN s.ProductID = 47 THEN 'BBIN'							-- BBIN
+						WHEN s.ProductID = 48 THEN 'GPIRNG'							-- GPI
 						WHEN s.ProductID = 49 THEN 'VS3'							-- Leap Gaming Virtual Sports 3
 						WHEN s.ProductID = 50 THEN 'RNGW'							-- RNG War
 						WHEN s.ProductID = 51 THEN 'WM'								-- WM
