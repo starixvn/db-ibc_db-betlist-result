@@ -175,6 +175,7 @@ AS
 		- 20240828@Razor: Support FA CHAI Promotion [Redmine: #209720]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
+		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -474,9 +475,7 @@ BEGIN
 			INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
 		DELETE @Data
-		WHERE Product = 'Unknown'
-			OR Product IS NULL
-			OR BetType IN (71, 72)
+		WHERE BetType IN (71, 72)
 
 		IF EXISTS (SELECT 1 FROM @Data)
 		BEGIN

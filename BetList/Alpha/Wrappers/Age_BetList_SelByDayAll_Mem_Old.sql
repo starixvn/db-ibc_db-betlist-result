@@ -120,6 +120,7 @@ AS
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
+		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 
 	Param's Explanation:
 		+ @TransType:
@@ -394,10 +395,6 @@ BEGIN
 						RefTable = s.RefTable
 			FROM @Data AS b
 				INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
-
-			DELETE @Data
-			WHERE Product = 'Unknown'
-				OR Product IS NULL
 
 			IF EXISTS (SELECT 1 FROM @Data)
 			BEGIN

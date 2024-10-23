@@ -152,6 +152,7 @@ AS
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
+		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 */
 
 BEGIN
@@ -359,8 +360,6 @@ BEGIN
 	WHERE b.custid = @CustId
 		AND b.transdate BETWEEN @FromDate AND @ToDate
 		AND (s.SubProduct NOT IN ('MG-SuperLive') OR b.StatusId NOT IN (0, 1))
-
-	DELETE FROM @Tickets WHERE Product = 'Unknown'
 
 	IF EXISTS (SELECT 1 FROM @Tickets)
 	BEGIN
@@ -741,7 +740,7 @@ BEGIN
 			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
 		WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 
-						'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON', 'PTRNG')
+						'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON', 'PTRNG', 'Unknown')
 			OR c.WinLostDate < @Yesterday
 
 		-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus

@@ -152,6 +152,7 @@ AS
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
+		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 
 	Param's Explanation:
 		+ @TransType:
@@ -407,8 +408,6 @@ BEGIN
 							ELSE 0
 						END
 
-			DELETE FROM @Tickets WHERE Product = 'Unknown'
-			
 			IF EXISTS (SELECT 1 FROM @Tickets)
 			BEGIN
 				IF @TransType = 1
@@ -1232,8 +1231,6 @@ BEGIN
 							WHEN @TransType = 1 AND b.statusID IN (103, 111, 112, 113) THEN 1
 							WHEN @TransType = 2 AND b.statusID IN (101, 102) THEN 1
 						END
-
-			DELETE FROM @Tickets WHERE Product = 'Unknown'
 
 			IF EXISTS (SELECT 1 FROM @Tickets)
 			BEGIN

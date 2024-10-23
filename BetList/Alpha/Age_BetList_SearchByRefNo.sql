@@ -37,6 +37,7 @@ AS
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
+		- 20241023@Razor: Support GPI [Redmine: #207173]
 
 */
 
@@ -244,6 +245,7 @@ BEGIN
 						WHEN @ProductId = 45 THEN 'SXG'			-- Sexy Gaming
 						WHEN @ProductId = 46 THEN 'IBCLC'		-- IBCBet Live Casino
 						WHEN @ProductId = 47 THEN 'BBIN'
+						WHEN @ProductID = 48 THEN 'GPIRNG'		-- GPI
 						WHEN @ProductId = 49 THEN 'VS3'			-- Virtual Sports 3
 						WHEN @ProductId = 50 THEN 'RNGW'		-- RNG War
 						WHEN @ProductId = 51 THEN 'WM'			-- WM Live Casino
@@ -1155,6 +1157,7 @@ BEGIN
 						WHEN @ProductId = 87 THEN 'FS'			-- FastSpin
 						WHEN @ProductId = 89 THEN 'FAC'			-- FA CHAI
 						WHEN @ProductId = 100 THEN 'PTRNG'		-- Playtech
+						WHEN @ProductId = 48 THEN 'GPIRNG'		-- GPI
 						ELSE 'Unknown'
 					END
 
