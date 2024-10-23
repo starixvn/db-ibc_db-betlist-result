@@ -151,6 +151,7 @@ AS
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
+		- 20241023@Razor: Support Playtech [Redmine: #210553]
 */
 
 BEGIN
@@ -341,6 +342,7 @@ BEGIN
 			WHEN s.ProductID = 87					THEN 'FS'			-- FastSpin
 			WHEN s.ProductID = 89					THEN 'FAC'			-- FA CHAI
 			WHEN s.ProductID = 96					THEN 'ON'			-- ON Casino
+			WHEN s.ProductID = 100					THEN 'PTRNG'		-- Playtech
 			WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 			WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 			WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Number Game - Happy 5 Linked Games
@@ -739,7 +741,7 @@ BEGIN
 			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
 		WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 
-						'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON')
+						'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON', 'PTRNG')
 			OR c.WinLostDate < @Yesterday
 
 		-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus

@@ -174,6 +174,7 @@ AS
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240828@Razor: Support FA CHAI Promotion [Redmine: #209720]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
+		- 20241023@Razor: Support Playtech [Redmine: #210553]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -397,6 +398,7 @@ BEGIN
 							WHEN s.ProductID = 87						THEN 'FS'	-- FastSpin
 							WHEN s.ProductID = 89						THEN 'FAC'	-- FA CHAI
 							WHEN s.ProductID = 96						THEN 'ON'	-- ON Casino
+							WHEN s.ProductID = 100						THEN 'PTRNG'-- Playtech
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
@@ -875,6 +877,7 @@ BEGIN
 							WHEN s.ProductID = 87					THEN 'FS'		-- FastSpin
 							WHEN s.ProductID = 89					THEN 'FAC'		-- FA CHAI
 							WHEN s.ProductID = 96					THEN 'ON'		-- ON Casino
+							WHEN s.ProductID = 100					THEN 'PTRNG'	-- Playtech
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games

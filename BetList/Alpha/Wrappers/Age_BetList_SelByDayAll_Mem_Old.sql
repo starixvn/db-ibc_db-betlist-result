@@ -119,6 +119,7 @@ AS
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
+		- 20241023@Razor: Support Playtech [Redmine: #210553]
 
 	Param's Explanation:
 		+ @TransType:
@@ -376,6 +377,7 @@ BEGIN
 							WHEN s.ProductID = 87 THEN 'FS'		-- FastSpin
 							WHEN s.ProductID = 89 THEN 'FAC'	-- FA CHAI
 							WHEN s.ProductID = 96 THEN 'ON'		-- ON Casino
+							WHEN s.ProductID = 100 THEN 'PTRNG'	-- Playtech
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 83 THEN 'ParlayVS4' --Virtual Sports 4 Parlay

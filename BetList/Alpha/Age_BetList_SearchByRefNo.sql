@@ -36,6 +36,7 @@ AS
 		- 20240717@Razor: Support FA CHAI [Redmine: #206633]
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
+		- 20241023@Razor: Support Playtech [Redmine: #210553]
 
 */
 
@@ -273,6 +274,7 @@ BEGIN
 						WHEN @ProductID = 87 THEN 'FS'			-- FastSpin
 						WHEN @ProductID = 89 THEN 'FAC'			-- FA CHAI
 						WHEN @ProductID = 96 THEN 'ON'			-- ON Casino
+						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1152,6 +1154,7 @@ BEGIN
 						WHEN @ProductId = 86 THEN 'SNG'			-- Saba xD
 						WHEN @ProductId = 87 THEN 'FS'			-- FastSpin
 						WHEN @ProductId = 89 THEN 'FAC'			-- FA CHAI
+						WHEN @ProductId = 100 THEN 'PTRNG'		-- Playtech
 						ELSE 'Unknown'
 					END
 
