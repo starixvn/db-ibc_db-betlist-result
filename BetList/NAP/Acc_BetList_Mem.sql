@@ -113,6 +113,7 @@ AS
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20240920@Razor: Support VS2 - Racing sports [Redmine: #211092]
+		- 20241023@Razor: Support Playtech [Redmine: #210553]
 */
 
 BEGIN
@@ -408,7 +409,7 @@ BEGIN
 			AND (',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 				OR (s.ProductID IN (6, 21, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 69, 70, 72, 73, 75, 76, 78, 79, 80, 86)
 					AND b.winlostdate >= @Yesterday)		-- Don't care status of yesterday and today summary casino rows
-				OR (s.RefTable = 1 AND b.winlostdate >= @Yesterday))
+				OR (s.RefTable IN (1, 2) AND b.winlostdate >= @Yesterday))
 
 		-- Get more info for CashOut tickets
 		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911 AND TableID = 1)
@@ -920,7 +921,8 @@ BEGIN
 						WHEN s.ProductID = 81 THEN 'SAC'							-- Saba Coins
 						WHEN s.ProductID = 87 THEN 'FS'								-- FastSpin
 						WHEN s.ProductID = 89 THEN 'FAC'							-- FA CHAI
-						WHEN s.ProductID = 96 THEN 'ON'							-- ON Casino
+						WHEN s.ProductID = 96 THEN 'ON'								-- ON Casino
+						WHEN s.ProductID = 100 THEN 'PTRNG'							-- Playtech
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -945,7 +947,7 @@ BEGIN
 			OR Product IS NULL
 			OR BetType IN (903, 904, 913, 914)
 			OR (Product NOT IN ('SB', 'Parlay')
-				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON')
+				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON', 'PTRNG')
 					OR WinLostDate < @Yesterday)
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'		-- Abnormal Bets
@@ -1480,7 +1482,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 
-							'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'FS', 'FAC', 'NS', 'ON')
+							'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'FS', 'FAC', 'NS', 'ON', 'PTRNG')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips

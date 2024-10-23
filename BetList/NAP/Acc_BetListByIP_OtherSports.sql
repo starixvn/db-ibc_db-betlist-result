@@ -179,6 +179,7 @@ AS
 		- 20240806@Razor: Support Nextspin [Redmine: #199985]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
+		- 20241023@Razor: Support Playtech [Redmine: #210553]
 */
 
 BEGIN
@@ -714,6 +715,7 @@ BEGIN
 						WHEN s.ProductID = 89 THEN 'FAC'							-- FA CHAI
 						WHEN s.ProductID = 85 THEN 'NS'								-- Nextspin
 						WHEN s.ProductID = 96 THEN 'ON'								-- ON Casino
+						WHEN s.ProductID = 100 THEN 'PTRNG'							-- Playtech
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -1315,14 +1317,7 @@ BEGIN
 					b.CustId,
 					b.Creator,
 					b.Currency,
-					CASE
-						WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG') THEN b.matchid
-						WHEN b.Product = 'AllBet' THEN 211 -- AllBet
-						WHEN b.Product = 'VB' THEN 212 -- Macau Games
-						WHEN b.Product = 'PP' THEN 248 -- Pragmatic Casino
-						WHEN b.RefTable IN (1, 2) THEN b.matchid
-						ELSE 0
-					END AS SportType,
+					b.SportType,
 					b.BetType,
 					b.BetId,
 					'' AS BetTeam,
