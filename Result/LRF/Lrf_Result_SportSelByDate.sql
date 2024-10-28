@@ -63,6 +63,7 @@ AS
 		- 20241002@Kos: Hotfix - not show league test in PRO [Redmine: #211744]
 					- Add new param @IsShowAll BIT
 		- 20241002@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+		- 20241028@Kos: Support Betby Virtual Sports 6 [Redmine: #212446]
 */
 
 BEGIN
@@ -235,15 +236,26 @@ BEGIN
 				AND @IsShowAll IN (1, l.IsTest)
 		END
 
-		-- Bitcoin
-		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 69)
+		-- Bitcoin, Virtual Sports 6
+		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID IN (69, 71))
 		BEGIN
 			INSERT INTO @Sport
-			SELECT DISTINCT SportType
-			FROM dbo.Match3rd WITH (NOLOCK)
-			WHERE SportType IN (175)
-				AND EventDate = @EventDate
-				AND EventStatus = 'completed'
+			SELECT DISTINCT m.SportType
+			FROM dbo.Match3rd AS m WITH (NOLOCK)
+				INNER JOIN dbo.League3rd AS l WITH (NOLOCK) ON l.League3rdId = m.League3rdId
+				LEFT JOIN dbo.ResultDetail3rd AS r WITH (NOLOCK)
+					ON r.MatchID = m.Match3rdId
+					AND m.SportType IN (134)
+					AND r.SettlementStatusID > 0
+			WHERE m.EventDate = @EventDate
+				AND @IsShowAll IN (1, l.IsTest)
+				AND 1 = CASE
+							WHEN m.SportType IN (134, 175) AND m.EventStatus = 'completed' THEN 1
+							WHEN m.SportType = 134
+								AND m.EventStatus IN ('Running', 'Ended')
+								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
+							ELSE 0
+						END
 		END
 	END
 	ELSE
@@ -396,15 +408,26 @@ BEGIN
 				AND @IsShowAll IN (1, l.IsTest)
 		END
 
-		-- Bitcoin
-		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 69)
+		-- Bitcoin, Virtual Sports 6
+		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID IN (69, 71))
 		BEGIN
 			INSERT INTO @Sport
-			SELECT DISTINCT SportType
-			FROM dbo.Match3rd14 WITH (NOLOCK)
-			WHERE SportType IN (175)
-				AND EventDate = @EventDate
-				AND EventStatus = 'completed'
+			SELECT DISTINCT m.SportType
+			FROM dbo.Match3rd14 AS m WITH (NOLOCK)
+				INNER JOIN dbo.League3rd AS l WITH (NOLOCK) ON l.League3rdId = m.League3rdId
+				LEFT JOIN dbo.ResultDetail3rd14 AS r WITH (NOLOCK)
+					ON r.MatchID = m.Match3rdId
+					AND m.SportType IN (134)
+					AND r.SettlementStatusID > 0
+			WHERE m.EventDate = @EventDate
+				AND @IsShowAll IN (1, l.IsTest)
+				AND 1 = CASE
+							WHEN m.SportType IN (134, 175) AND m.EventStatus = 'completed' THEN 1
+							WHEN m.SportType = 134
+								AND m.EventStatus IN ('Running', 'Ended')
+								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
+							ELSE 0
+						END
 		END
 	END
 

@@ -57,6 +57,7 @@ AS
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
 		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+		- 20241028@Kos: Support Betby Virtual Sports 6 [Redmine: #212446]
 */
 
 BEGIN
@@ -64,7 +65,7 @@ BEGIN
 
 	IF @EventDate > @MoveBetsDay
 	BEGIN
-		IF @SportType NOT IN (175, 177, 193, 198)
+		IF @SportType NOT IN (134, 175, 177, 193, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -195,7 +196,7 @@ BEGIN
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
-		ELSE IF @SportType  = 175 --Bitcoin
+		ELSE IF @SportType IN (134, 175)	-- Bitcoin, Virtual Sports 6
 		BEGIN
 			SELECT DISTINCT
 				l.LeagueName,
@@ -205,9 +206,18 @@ BEGIN
 				m.SportType
 			FROM dbo.League3rd AS l WITH (NOLOCK)
 				INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON m.League3rdId = l.League3rdId
+				LEFT JOIN dbo.ResultDetail3rd AS r WITH (NOLOCK)
+					ON r.MatchID = m.Match3rdId
+					AND m.SportType IN (134)
+					AND r.SettlementStatusID > 0
 			WHERE m.EventDate = @EventDate
-				AND m.EventStatus IN ('completed')
-				AND m.SportType = @SportType
+				AND 1 = CASE
+							WHEN m.EventStatus = 'completed' THEN 1
+							WHEN m.SportType = 134
+								AND m.EventStatus IN ('Running', 'Ended')
+								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
+							ELSE 0
+						END
 			ORDER BY m.SportType ASC,
 				l.LeagueName ASC
 		END
@@ -259,7 +269,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		IF @SportType NOT IN (175, 177, 193, 198)
+		IF @SportType NOT IN (134, 175, 177, 193, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -389,7 +399,7 @@ BEGIN
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
-		ELSE IF @SportType  = 175 --Bitcoin
+		ELSE IF @SportType IN (134, 175)	-- Bitcoin, Virtual Sports 6
 		BEGIN
 			SELECT DISTINCT
 				l.LeagueName,
@@ -399,9 +409,18 @@ BEGIN
 				m.SportType
 			FROM dbo.League3rd AS l WITH (NOLOCK)
 				INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON m.League3rdId = l.League3rdId
+				LEFT JOIN dbo.ResultDetail3rd14 AS r WITH (NOLOCK)
+					ON r.MatchID = m.Match3rdId
+					AND m.SportType IN (134)
+					AND r.SettlementStatusID > 0
 			WHERE m.EventDate = @EventDate
-				AND m.EventStatus IN ('completed')
-				AND m.SportType = @SportType
+				AND 1 = CASE
+							WHEN m.EventStatus = 'completed' THEN 1
+							WHEN m.SportType = 134
+								AND m.EventStatus IN ('Running', 'Ended')
+								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
+							ELSE 0
+						END
 			ORDER BY m.SportType ASC,
 				l.LeagueName ASC
 		END
