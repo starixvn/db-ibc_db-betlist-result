@@ -63,6 +63,7 @@ AS
 					- Add new input param @FullCustomerClass VARCHAR(MAX)
 		- 20241001@Kos: Enhance performance [Redmine: 211655]
 		- 20241002@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 */
 
 BEGIN
@@ -233,7 +234,7 @@ BEGIN
 						INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = b.custid
 						INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (1, 3, 5, 25, 27)
-						LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.ProductID IN (69)
+						LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 						LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
@@ -325,7 +326,7 @@ BEGIN
 						INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = b.custid
 						INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1 AND s.ProductID IN (1, 3, 5, 25, 27)
-						LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.ProductID IN (69)
+						LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid AND s.EventType = 2 AND s.ProductID = 1
 						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3

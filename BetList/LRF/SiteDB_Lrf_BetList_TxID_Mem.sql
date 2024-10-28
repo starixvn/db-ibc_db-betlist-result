@@ -31,6 +31,7 @@ AS
 		- 20240619@Kos: Hotfix - Missing TranId3rd for Sports Lottery and Virtual Games [Redmine: 206758]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241018@Kos: Enhance match info for Player Tips [Redmine: 210279]
+		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 */
 
 BEGIN
@@ -67,7 +68,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 60, 63, 66, 69, 74, 77, 83)
+	WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 60, 63, 66, 69, 71, 74, 77, 83)
 		AND BetType NOT BETWEEN 801 AND 899
 		AND BetType NOT IN (901, 902, 903, 904)
 
@@ -198,6 +199,8 @@ BEGIN
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p77/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p74%'
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b.ExtraInfo LIKE '%p71%'
+									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p71/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p69%'
 									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
 								WHEN b.ExtraInfo LIKE '%p63%'
@@ -283,7 +286,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'SLT', 'H5LG', 'TIP') THEN b.matchid
 				WHEN @EventType = 1 THEN m.sporttype
-				WHEN @Product IN ('BTC') THEN m3rd.SportType
+				WHEN @EventType = 5 THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @EventType = 3 THEN l.sporttype
 				ELSE 0
@@ -334,6 +337,7 @@ BEGIN
 			b.betfrom,
 			CASE
 				WHEN @EventType = 1 THEN m.leagueid
+				WHEN @EventType = 5 THEN m3rd.League3rdId
 				WHEN @Product IN ('Outright') THEN o.leagueid
 				WHEN @EventType = 3 THEN vr.LeagueID
 				ELSE 0
@@ -362,11 +366,13 @@ BEGIN
 			END AS EventDate,
 			CASE
 				WHEN @EventType = 1 THEN m.homeid
+				WHEN @EventType = 5 THEN m3rd.HomeId
 				WHEN @Product IN ('Outright') THEN o.teamid
 				ELSE 0
 			END AS HomeId,
 			CASE
 				WHEN @EventType = 1 THEN m.awayid
+				WHEN @EventType = 5 THEN m3rd.AwayId
 				ELSE 0
 			END AS AwayId,
 			CASE
@@ -380,6 +386,7 @@ BEGIN
 			'' AS Placing,
 			CASE
 				WHEN @Product IN ('VS', 'VS2') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+				WHEN @EventType = 5 THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
 				ELSE ''
 			END AS ShowTime,
 			CASE
@@ -420,7 +427,7 @@ BEGIN
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON @EventType = 1 AND b.matchid = m.matchid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON @Product IN ('SB') AND le.leagueid = m.leagueid
-			LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON @Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
+			LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON @EventType = 5 AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON @EventType = 3 AND vr.EventID = b.matchid

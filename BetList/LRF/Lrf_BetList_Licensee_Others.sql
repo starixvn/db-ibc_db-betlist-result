@@ -100,6 +100,7 @@ AS
 		- 20240619@Kos: Hotfix - Missing TranId3rd for Sports Lottery and Virtual Games [Redmine: 206758]
 		- 20240815@Kos: Don't support Promotion tickets [Redmine: 208144]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 */
 
 BEGIN
@@ -513,12 +514,14 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+						LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							OR (b.winlostdate >= @Yesterday AND s.RefTable IN (1, 2)))		-- don't care status of casino's summary rows if >= yesterday
 						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
 						AND ((s.EventType = 1 AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND vr.sporttype = @SportType)
+							OR (s.EventType = 5 AND m3rd.sporttype = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (3, 8, 28, 38, 40, 43, 49, 63) AND b.matchid = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (27, 83) AND b.oddsid = @SportType))
 				END
@@ -690,12 +693,14 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+						LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							OR (b.winlostdate >= @Yesterday AND s.RefTable IN (1, 2)))		-- don't care status of casino's summary rows if >= yesterday
 						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
 						AND ((s.EventType = 1 AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND vr.sporttype = @SportType)
+							OR (s.EventType = 5 AND m3rd.sporttype = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (3, 8, 28, 38, 40, 43, 49, 63) AND b.matchid = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (27, 83) AND b.oddsid = @SportType))
 				END
@@ -876,11 +881,13 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+						LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
 						AND ((s.EventType = 1 AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND vr.sporttype = @SportType)
+							OR (s.EventType = 5 AND m3rd.sporttype = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (3, 8, 28, 38, 40, 43, 49, 63) AND b.matchid = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (27, 83) AND b.oddsid = @SportType))
 				END
@@ -1051,6 +1058,7 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+						LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 						CROSS APPLY ( SELECT CustId FROM @TempCust ) AS t
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND t.CustId = b.custid
@@ -1058,6 +1066,7 @@ BEGIN
 						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
 						AND ((s.EventType = 1 AND m.sporttype = @SportType)
 							OR (s.EventType = 3 AND vr.sporttype = @SportType)
+							OR (s.EventType = 5 AND m3rd.sporttype = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (3, 8, 28, 38, 40, 43, 49, 63) AND b.matchid = @SportType)
 							OR (s.EventType = 0 AND s.ProductID IN (27, 83) AND b.oddsid = @SportType))
 				END
@@ -1412,11 +1421,12 @@ BEGIN
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
 									WHEN b.EventType = 1 THEN m.sporttype
 									WHEN b.EventType = 3 THEN vr.SportType
+									WHEN b.EventType = 5 THEN m3rd.SportType
 									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									ELSE 0
 								END,
 					OddsType = CASE
-									WHEN b.EventType IN (1, 3) THEN b.OddsType
+									WHEN b.EventType IN (1, 3, 5) THEN b.OddsType
 									ELSE 0
 								END,
 					OddsSpread = CASE
@@ -1430,16 +1440,17 @@ BEGIN
 							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
-										WHEN b.EventType = 1 THEN b.liveindicator
+										WHEN b.EventType IN (1, 5) THEN b.liveindicator
 										ELSE 0
 									END,
 					LeagueId = CASE
 									WHEN b.EventType = 1 THEN m.leagueid
 									WHEN b.EventType = 3 THEN vr.LeagueID
+									WHEN b.EventType = 5 THEN m3rd.League3rdId
 									ELSE 0
 								END,
 					MatchId = CASE
-									WHEN b.EventType IN (1, 3) THEN b.matchid
+									WHEN b.EventType IN (1, 3, 5) THEN b.matchid
 									ELSE 0
 								END,
 					MatchCode = CASE
@@ -1450,10 +1461,12 @@ BEGIN
 					EventDate = b.WinLostDate,
 					HomeId = CASE
 								WHEN b.EventType = 1 THEN m.homeid
+								WHEN b.EventType = 5 THEN m3rd.HomeId
 								ELSE 0
 							END,
 					AwayId = CASE
 								WHEN b.EventType = 1 THEN m.awayid
+								WHEN b.EventType = 5 THEN m3rd.AwayId
 								ELSE 0
 							END,
 					BetStatus = CASE
@@ -1467,6 +1480,7 @@ BEGIN
 					Placing = '',
 					ShowTime = CASE
 									WHEN b.Product IN ('VS') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.EventType = 5 THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
 									ELSE ''
 								END,
 					BetCheck = CASE
@@ -1489,6 +1503,7 @@ BEGIN
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.EventType = 1 AND b.matchid = m.matchid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
+					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND m3rd.Match3rdId = b.matchid
 				WHERE b.WhTicket = 1
 			END
 
@@ -1505,11 +1520,12 @@ BEGIN
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
 									WHEN b.EventType = 1 THEN m.sporttype
 									WHEN b.EventType = 3 THEN vr.SportType
+									WHEN b.EventType = 5 THEN m3rd.SportType
 									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									ELSE 0
 								END,
 					OddsType = CASE
-									WHEN b.EventType IN (1, 3) THEN b.OddsType
+									WHEN b.EventType IN (1, 3, 5) THEN b.OddsType
 									ELSE 0
 								END,
 					OddsSpread = CASE
@@ -1523,16 +1539,17 @@ BEGIN
 							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
-										WHEN b.EventType = 1 THEN b.liveindicator
+										WHEN b.EventType IN (1, 5) THEN b.liveindicator
 										ELSE 0
 									END,
 					LeagueId = CASE
 									WHEN b.EventType = 1 THEN m.leagueid
 									WHEN b.EventType = 3 THEN vr.LeagueID
+									WHEN b.EventType = 5 THEN m3rd.League3rdId
 									ELSE 0
 								END,
 					MatchId = CASE
-									WHEN b.EventType IN (1, 3) THEN b.matchid
+									WHEN b.EventType IN (1, 3, 5) THEN b.matchid
 									ELSE 0
 								END,
 					MatchCode = CASE
@@ -1543,10 +1560,12 @@ BEGIN
 					EventDate = b.WinLostDate,
 					HomeId = CASE
 								WHEN b.EventType = 1 THEN m.homeid
+								WHEN b.EventType = 5 THEN m3rd.HomeId
 								ELSE 0
 							END,
 					AwayId = CASE
 								WHEN b.EventType = 1 THEN m.awayid
+								WHEN b.EventType = 5 THEN m3rd.AwayId
 								ELSE 0
 							END,
 					BetStatus = CASE
@@ -1560,6 +1579,7 @@ BEGIN
 					Placing = '',
 					ShowTime = CASE
 									WHEN b.Product IN ('VS') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.EventType = 5 THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
 									ELSE ''
 								END,
 					BetCheck = CASE
@@ -1582,6 +1602,7 @@ BEGIN
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.EventType = 1 AND b.matchid = m.matchid
 					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
+					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND m3rd.Match3rdId = b.matchid
 				WHERE b.WhTicket = 2
 			END
 
@@ -1659,11 +1680,12 @@ BEGIN
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
 									WHEN b.EventType = 1 THEN m.sporttype
 									WHEN b.EventType = 3 THEN vr.SportType
+									WHEN b.EventType = 5 THEN m3rd.SportType
 									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									ELSE 0
 								END,
 					OddsType = CASE
-									WHEN b.EventType IN (1, 3) THEN b.OddsType
+									WHEN b.EventType IN (1, 3, 5) THEN b.OddsType
 									ELSE 0
 								END,
 					OddsSpread = CASE
@@ -1677,16 +1699,17 @@ BEGIN
 							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
-										WHEN b.EventType = 1 THEN b.liveindicator
+										WHEN b.EventType IN (1, 5) THEN b.liveindicator
 										ELSE 0
 									END,
 					LeagueId = CASE
 									WHEN b.EventType = 1 THEN m.leagueid
 									WHEN b.EventType = 3 THEN vr.LeagueID
+									WHEN b.EventType = 5 THEN m3rd.League3rdId
 									ELSE 0
 								END,
 					MatchId = CASE
-									WHEN b.EventType IN (1, 3) THEN b.matchid
+									WHEN b.EventType IN (1, 3, 5) THEN b.matchid
 									ELSE 0
 								END,
 					MatchCode = CASE
@@ -1697,10 +1720,12 @@ BEGIN
 					EventDate = b.WinLostDate,
 					HomeId = CASE
 								WHEN b.EventType = 1 THEN m.homeid
+								WHEN b.EventType = 5 THEN m3rd.HomeId
 								ELSE 0
 							END,
 					AwayId = CASE
 								WHEN b.EventType = 1 THEN m.awayid
+								WHEN b.EventType = 5 THEN m3rd.AwayId
 								ELSE 0
 							END,
 					BetStatus = CASE
@@ -1714,6 +1739,7 @@ BEGIN
 					Placing = '',
 					ShowTime = CASE
 									WHEN b.Product IN ('VS') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.EventType = 5 THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
 									ELSE ''
 								END,
 					BetCheck = CASE
@@ -1736,6 +1762,7 @@ BEGIN
 				FROM #Data AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.EventType = 1 AND b.matchid = m.matchid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
+					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND m3rd.Match3rdId = b.matchid
 				WHERE b.WhTicket = 1
 			END
 
@@ -1752,11 +1779,12 @@ BEGIN
 									WHEN b.Product = 'PP' THEN 248			-- Pragmatic Casino
 									WHEN b.EventType = 1 THEN m.sporttype
 									WHEN b.EventType = 3 THEN vr.SportType
+									WHEN b.EventType = 5 THEN m3rd.SportType
 									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									ELSE 0
 								END,
 					OddsType = CASE
-									WHEN b.EventType IN (1, 3) THEN b.OddsType
+									WHEN b.EventType IN (1, 3, 5) THEN b.OddsType
 									ELSE 0
 								END,
 					OddsSpread = CASE
@@ -1770,16 +1798,17 @@ BEGIN
 							END,
 					SettlementStatus = 0,
 					LiveIndicator = CASE
-										WHEN b.EventType = 1 THEN b.liveindicator
+										WHEN b.EventType IN (1, 5) THEN b.liveindicator
 										ELSE 0
 									END,
 					LeagueId = CASE
 									WHEN b.EventType = 1 THEN m.leagueid
 									WHEN b.EventType = 3 THEN vr.LeagueID
+									WHEN b.EventType = 5 THEN m3rd.League3rdId
 									ELSE 0
 								END,
 					MatchId = CASE
-									WHEN b.EventType IN (1, 3) THEN b.matchid
+									WHEN b.EventType IN (1, 3, 5) THEN b.matchid
 									ELSE 0
 								END,
 					MatchCode = CASE
@@ -1790,10 +1819,12 @@ BEGIN
 					EventDate = b.WinLostDate,
 					HomeId = CASE
 								WHEN b.EventType = 1 THEN m.homeid
+								WHEN b.EventType = 5 THEN m3rd.HomeId
 								ELSE 0
 							END,
 					AwayId = CASE
 								WHEN b.EventType = 1 THEN m.awayid
+								WHEN b.EventType = 5 THEN m3rd.AwayId
 								ELSE 0
 							END,
 					BetStatus = CASE
@@ -1807,6 +1838,7 @@ BEGIN
 					Placing = '',
 					ShowTime = CASE
 									WHEN b.Product IN ('VS') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.EventType = 5 THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
 									ELSE ''
 								END,
 					BetCheck = CASE
@@ -1829,6 +1861,7 @@ BEGIN
 				FROM #Data AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.EventType = 1 AND b.matchid = m.matchid
 					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
+					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND m3rd.Match3rdId = b.matchid
 				WHERE b.WhTicket = 2
 			END
 			

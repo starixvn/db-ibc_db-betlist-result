@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch]
 	@ProductList	VARCHAR(500),
 	@ShowBA			BIT				= 0,
 	@MatchId		INT,
+	@EventType		TINYINT			= 1,
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME,
@@ -81,8 +82,10 @@ AS
 		- 20240328@Kos: Return LeagueGroupId to hide Saba text [RedmineID: #201283]
 		- 20240411@Kos: Fix BA issue [RedmineID: #199843]
 		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
-				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
+					- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
 		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: 209344]
+		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
+					- Add new input params @EventType TINYINT
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -147,9 +150,10 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
-	WHERE EventType = 1
+	WHERE EventType IN (1, 5)
 		AND BetType NOT IN (901, 902, 903, 904)
 		AND BetType NOT BETWEEN 801 AND 899
+		AND EventType = @EventType
 
 	DECLARE @RowStart INT, @RowEnd INT
 
@@ -260,22 +264,39 @@ BEGIN
 			AND ChildMatchType = 200
 	END
 
-	IF EXISTS (SELECT TOP(1) 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchID)
+	IF EXISTS (	SELECT TOP(1) 1
+				FROM dbo.match AS m WITH (NOLOCK)
+					INNER JOIN @Match AS ml ON m.matchid = ml.MatchId)
+		OR EXISTS (	SELECT TOP(1) 1
+					FROM dbo.Match3rd AS m WITH (NOLOCK)
+					INNER JOIN @Match AS ml ON m.Match3rdId = ml.MatchId)
 	BEGIN
 		INSERT INTO #Data
 		SELECT
-			m.sporttype,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.sporttype
+				WHEN sbt.EventType = 5 THEN m3rd.SportType
+			END AS SportType,
 			b.username,
 			b.custid,
 			b.bettype,
-			m.leagueid,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.leagueid
+				WHEN sbt.EventType = 5 THEN m3rd.League3rdId
+			END AS LeagueId,
 			l.LeagueGroupID,
 			b.transid,
 			ba.TransID AS BATransId,
 			m.matchcode,
 			m.GlobalShowTime AS EventDate,
-			m.homeid,
-			m.awayid,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.homeid
+				WHEN sbt.EventType = 5 THEN m3rd.HomeId
+			END AS HomeId,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.awayid
+				WHEN sbt.EventType = 5 THEN m3rd.AwayId
+			END AS AwayId,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -305,7 +326,10 @@ BEGIN
 			b.betid,
 			b.currency,
 			b.refno,
-			'' AS ShowTime,
+			CASE
+				WHEN sbt.EventType = 5 THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
+				ELSE ''
+			END AS ShowTime,
 			b.betcheck,
 			ISNULL(b.transdesc, '') AS transdesc,
 			ISNULL(b.betdaqid, -1) AS BetdaqId,
@@ -328,30 +352,48 @@ BEGIN
 			INNER JOIN #TempAg AS ta ON ta.CustId = b.recommend
 			INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
-			INNER JOIN dbo.match AS m ON m.matchid = tm.MatchId
-			INNER JOIN dbo.League AS l ON l.leagueid = m.leagueid
+			LEFT JOIN dbo.match AS m ON sbt.EventType = 1 AND m.matchid = tm.MatchId
+			LEFT JOIN dbo.League AS l ON sbt.EventType = 1 AND l.leagueid = m.leagueid
+			LEFT JOIN dbo.Match3rd AS m3rd ON sbt.EventType = 5 AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN bodb_licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE b.statusID IN (111, 112, 113)
-			AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
-				OR (@LiveIndicator = 1 AND b.liveindicator = 1)
-				OR (@LiveIndicator = 2))
+			AND @LiveIndicator IN (2, b.liveindicator)
+			AND b.winlostdate > @MoveBetsDay
 	END
-	ELSE
+
+	IF EXISTS (	SELECT TOP(1) 1
+				FROM dbo.match14 AS m WITH (NOLOCK)
+					INNER JOIN @Match AS ml ON m.matchid = ml.MatchId)
+		OR EXISTS (	SELECT TOP(1) 1
+					FROM dbo.Match3rd14 AS m WITH (NOLOCK)
+					INNER JOIN @Match AS ml ON m.Match3rdId = ml.MatchId)
 	BEGIN
 		INSERT INTO #Data
 		SELECT
-			m.sporttype,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.sporttype
+				WHEN sbt.EventType = 5 THEN m3rd.SportType
+			END AS SportType,
 			b.username,
 			b.custid,
 			b.bettype,
-			m.leagueid,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.leagueid
+				WHEN sbt.EventType = 5 THEN m3rd.League3rdId
+			END AS LeagueId,
 			l.LeagueGroupID,
 			b.transid,
 			ba.TransID AS BATransId,
 			m.matchcode,
 			m.GlobalShowTime AS EventDate,
-			m.homeid,
-			m.awayid,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.homeid
+				WHEN sbt.EventType = 5 THEN m3rd.HomeId
+			END AS HomeId,
+			CASE
+				WHEN sbt.EventType = 1 THEN m.awayid
+				WHEN sbt.EventType = 5 THEN m3rd.AwayId
+			END AS AwayId,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -381,7 +423,10 @@ BEGIN
 			b.betid,
 			b.currency,
 			b.refno,
-			'' AS ShowTime,
+			CASE
+				WHEN sbt.EventType = 5 THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
+				ELSE ''
+			END AS ShowTime,
 			b.betcheck,
 			ISNULL(b.transdesc, '') AS transdesc,
 			ISNULL(b.betdaqid, -1) AS BetdaqId,
@@ -404,13 +449,12 @@ BEGIN
 			INNER JOIN #TempAg AS ta ON ta.CustId = b.recommend
 			INNER JOIN @SportBettype AS sbt ON b.Bettype = sbt.Bettype
 			INNER JOIN @Match AS tm ON tm.MatchId = b.matchid
-			INNER JOIN dbo.match14 AS m ON m.matchid = tm.MatchId
-			INNER JOIN dbo.League AS l ON l.leagueid = m.leagueid
+			LEFT JOIN dbo.match14 AS m ON sbt.EventType = 1 AND m.matchid = tm.MatchId
+			LEFT JOIN dbo.League AS l ON sbt.EventType = 1 AND l.leagueid = m.leagueid
+			LEFT JOIN dbo.Match3rd14 AS m3rd ON sbt.EventType = 5 AND m3rd.Match3rdId = b.matchid
 			LEFT JOIN bodb_licensee.dbo.LicenseeBATransaction_bk AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE b.statusID IN (111, 112, 113)
-			AND ((@LiveIndicator = 0 AND b.liveindicator = 0)
-				OR (@LiveIndicator = 1 AND b.liveindicator = 1)
-				OR (@LiveIndicator = 2))
+			AND @LiveIndicator IN (2, b.liveindicator)
 	END
 
 	DELETE #Data

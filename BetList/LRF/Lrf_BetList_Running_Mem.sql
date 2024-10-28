@@ -59,6 +59,7 @@ AS
 		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 		- 20240605@Kos: Support Virtual Sports 4 [Redmine: 199347]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 */
 
 BEGIN
@@ -677,10 +678,10 @@ BEGIN
 								WHEN b.Product IN ('VB', 'PP', 'CC', 'SG', 'OneRNG', 'Allbet', 'AG', 'SBC', 'SXG', 'SAG', 'PGS', 'JK', 
 									'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
 								WHEN b.Product IN ('Keno', 'Lottery', 'VRG', 'TG', 'I4D', 'H5LG', 'SLT', 'VS3') THEN b.ProductId
-								WHEN b.Product IN ('BTC') THEN m3rd.SportType
 								WHEN b.Product IN ('Outright') THEN l.sporttype
 								WHEN b.EventType = 1 THEN m.sporttype
 								WHEN b.EventType = 3 THEN vr.SportType
+								WHEN b.EventType = 5 THEN m3rd.SportType
 								WHEN b.RefTable IN (1, 2) THEN b.MatchId
 								ELSE 0
 							END,
@@ -714,6 +715,7 @@ BEGIN
 									END,
 				LeagueId = CASE
 								WHEN b.EventType = 1 THEN m.leagueid
+								WHEN b.EventType = 5 THEN m3rd.League3rdId
 								WHEN b.Product IN ('Outright') THEN o.leagueid
 								WHEN b.EventType = 3 THEN vr.LeagueID
 								ELSE 0
@@ -738,11 +740,13 @@ BEGIN
 							END,
 				HomeId = CASE
 							WHEN b.EventType = 1 THEN m.homeid
+							WHEN b.EventType = 5 THEN m3rd.HomeId
 							WHEN b.Product IN ('Outright') THEN o.teamid
 							ELSE 0
 						END,
 				AwayId = CASE
 							WHEN b.EventType = 1 THEN m.awayid
+							WHEN b.EventType = 5 THEN m3rd.AwayId
 							ELSE 0
 						END,
 				BetStatus = CASE
@@ -756,6 +760,7 @@ BEGIN
 				Placing = '',
 				ShowTime = CASE
 								WHEN b.Product IN ('VS') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+								WHEN b.EventType = 5 THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
 								ELSE ''
 							END,
 				BetCheck = CASE
@@ -805,7 +810,7 @@ BEGIN
 					AND x.RefNo = b.TransId
 				LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.EventType = 1 AND b.matchid = m.matchid
 				LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
-				LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.Product IN ('BTC') AND m3rd.Match3rdId = b.matchid
+				LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND m3rd.Match3rdId = b.matchid
 				LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
 				LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
