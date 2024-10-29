@@ -12,6 +12,7 @@ AS
 	Revisions:
 		- 20210813@Razor: Support Bitcoin [Redmine: #159041]
 		- 20240723@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20241029@Razor: Support VS 6 - Betby Virtual Sports [Redmine: #212546]
 */
 
 BEGIN
@@ -38,10 +39,15 @@ BEGIN
 				AND 1 = CASE
 							WHEN m.SportType IN (147, 175) AND m.eventstatus = 'completed' THEN 1
 							WHEN m.SportType = 147 AND m.eventstatus IN ('Suspend', 'Running') AND (hthomescore IS NOT NULL OR htawayscore IS NOT NULL) THEN 1
+							WHEN m.SportType = 134 THEN 1
 						ELSE 0 END
 
 		SELECT
 			MatchID,
+			Custom1,
+			Custom2,
+			SettlementStatusID,
+			ResourceId,
 			GameResult
 		FROM dbo.ResultDetail3rd WITH (NOLOCK)
 		WHERE MatchID = @MatchId 
@@ -68,10 +74,15 @@ BEGIN
 				AND 1 = CASE
 					WHEN m.SportType IN (147, 175) AND m.eventstatus = 'completed' THEN 1
 					WHEN m.SportType = 147 AND m.eventstatus IN ('Suspend') AND (hthomescore IS NOT NULL OR htawayscore IS NOT NULL) THEN 1
+					WHEN m.SportType = 134 THEN 1
 				ELSE 0 END
 
 		SELECT
 			MatchID,
+			Custom1,
+			Custom2,
+			SettlementStatusID,
+			ResourceId,
 			GameResult
 		FROM dbo.ResultDetail3rd14 WITH (NOLOCK)
 		WHERE MatchID = @MatchId 
@@ -98,14 +109,19 @@ BEGIN
 			AND 1 = CASE
 				WHEN m.SportType IN (147, 175) AND m.eventstatus = 'completed' THEN 1
 				WHEN m.SportType = 147 AND m.eventstatus IN ('Suspend') AND (hthomescore IS NOT NULL OR htawayscore IS NOT NULL) THEN 1
+				WHEN m.SportType = 134 THEN 1
 			ELSE 0 END
 
 		SELECT
 			MatchID,
+			Custom1,
+			Custom2,
+			SettlementStatusID,
+			ResourceId,
 			GameResult
 		FROM DBARC.bodb_Archive.dbo.ResultDetail3rd_bk WITH (NOLOCK)
 		WHERE MatchID = @MatchId 
 			AND SettlementStatusID > 0
-	END
+	END	
 END
 GO
