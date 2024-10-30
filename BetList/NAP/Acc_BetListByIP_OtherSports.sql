@@ -184,6 +184,7 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20241202@Razor: HF - Missing Sport type today settled tickets [Redmine: #215430]
+		- 20241219@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
 		
 */
 
@@ -734,6 +735,7 @@ BEGIN
 						WHEN s.EventType = 1 AND s.ProductID = 83 THEN 'VS4'		-- Virtual Sports 4
 						WHEN s.EventType = 3 AND s.ProductID = 27 THEN 'VS2Racing'	-- VS2 Racing
 						WHEN s.EventType = 5 AND s.ProductID = 88 THEN 'VS5'		-- Virtual Sports 5
+						WHEN s.EventType = 5 AND s.ProductID = 71 THEN 'VS6'		-- VS6 Virtual Sports
 						ELSE 'Unknown'
 					END,
 			RefTable = s.RefTable,
@@ -1020,33 +1022,34 @@ BEGIN
 									WHEN b.EventType = 3 THEN vr.SportType
 									WHEN b.EventType = 5 THEN m3rd.sporttype
 									WHEN b.RefTable IN (1, 2) THEN b.matchid
+									WHEN b.EventType = 5 THEN m3rd.sporttype
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.betteam
+									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.betteam
 									WHEN b.EventType = 3 THEN b.betteam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2',  'Parlay', 'ParlayVS2', 'NG2', 'BTC', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp1
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2',  'Parlay', 'ParlayVS2', 'NG2', 'BTC', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp2
+								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('SB', 'Outright', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4','VS5') THEN b.oddstype
+									WHEN b.Product IN ('SB', 'Outright', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4','VS5', 'VS6') THEN b.oddstype
 									ELSE 0
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'OneRNG', 'Keno', 'NG2', 'ParlayVS2', 
-									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'SG', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS2Racing', 'VS5', 'ParlayVS5') THEN b.odds
+									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'SG', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS2Racing', 'VS5', 'ParlayVS5', 'VS6') THEN b.odds
 								WHEN b.EventType = 3 THEn b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'ParlayVS2', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.modds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'ParlayVS2', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.modds
 								ELSE 0
 							END,
 					Status = CASE
@@ -1072,7 +1075,7 @@ BEGIN
 										END,
 					WinLost = b.winlost - b.actual_stake,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS5') THEN b.liveindicator
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS5', 'VS6') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
@@ -1118,12 +1121,12 @@ BEGIN
 					HomeId = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.homeid
 								WHEN b.Product IN ('Outright') THEN o.teamid
-								WHEN b.Product IN ('VS5') THEN m3rd.HomeId
+								WHEN b.EventType = 5 THEN m3rd.HomeId
 								ELSE 0
 							END,
 					AwayId = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.awayid
-								WHEN b.Product IN ('VS5') THEN m3rd.awayid
+								WHEN b.EventType = 5 THEN m3rd.AwayId
 								ELSE 0
 							END,
 					IsNeutral = CASE
@@ -1133,6 +1136,7 @@ BEGIN
 					ShowTime = CASE
 									WHEN b.Product IN ('VS', 'VS2', 'LG', 'VS4') THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									WHEN b.Product IN ('SB', 'CO', 'NG') THEN ISNULL(m.showtime, '')
+									WHEN b.Product IN ('VS6') THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
 									ELSE ''
 								END,
 					BetCheck = CASE
@@ -1442,33 +1446,34 @@ BEGIN
 									WHEN b.EventType = 3 THEN vr.SportType
 									WHEN b.EventType = 5 THEN m3rd.sporttype
 									WHEN b.RefTable IN (1, 2) THEN b.matchid
+									WHEN b.EventType = 5 THEN m3rd.sporttype
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.betteam
+									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.betteam
 									WHEN b.EventType = 3 THEN b.betteam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'NG2', 'BTC', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp1
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'NG2', 'BTC', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp2
+								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('SB', 'CO', 'Outright', 'NG', 'VS', 'VS2', 'LG', 'VS4', 'VS5') THEN b.oddstype
+									WHEN b.Product IN ('SB', 'CO', 'Outright', 'NG', 'VS', 'VS2', 'LG', 'VS4', 'VS5', 'VS6') THEN b.oddstype
 									ELSE 0
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'OneRNG', 'Keno', 'NG2', 
-									'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'SG', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS2Racing') THEN b.odds
+									'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'SG', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS2Racing', 'VS6') THEN b.odds
 								WHEN b.EventType IN (3, 5) THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'ParlayVS2', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.modds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'ParlayVS2', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.modds
 								ELSE 0
 							END,
 					Status = CASE
@@ -1479,7 +1484,7 @@ BEGIN
 					SettlementStatus = 0,
 					WinLost = b.winlost - b.actual_stake,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG','VS5') THEN b.liveindicator
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG','VS5', 'VS6') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
@@ -1524,12 +1529,12 @@ BEGIN
 					HomeId = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.homeid
 								WHEN b.Product IN ('Outright') THEN o.teamid
-								WHEN b.Product IN ('VS5') THEN m3rd.homeid
+								WHEN b.EventType = 5 THEN m3rd.HomeId
 								ELSE 0
 							END,
 					AwayId = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.awayid
-								WHEN b.Product IN ('VS5') THEN m3rd.awayid
+								WHEN b.EventType = 5 THEN m3rd.AwayId
 								ELSE 0
 							END,
 					IsNeutral = CASE
@@ -1539,6 +1544,7 @@ BEGIN
 					ShowTime = CASE
 									WHEN b.Product IN ('VS', 'VS2', 'LG', 'VS4') THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									WHEN b.Product IN ('SB', 'CO', 'NG') THEN ISNULL(m.showtime, '')
+									WHEN b.Product IN ('VS6') THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
 									ELSE ''
 								END,
 					BetCheck = CASE
@@ -1628,33 +1634,34 @@ BEGIN
 									WHEN b.EventType = 3 THEN vr.SportType
 									WHEN b.EventType = 5 THEN m3rd.sporttype
 									WHEN b.RefTable IN (1, 2) THEN b.matchid
+									WHEN b.EventType = 5 THEN m3rd.sporttype
 									ELSE 0
 								END,
 					BetTeam = CASE
-									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.betteam
+									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.betteam
 									WHEN b.EventType = 3 THEN b.betteam
 									ELSE ''
 								END,
 					Hdp1 = CASE
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'NG2', 'BTC', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp1
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'NG2', 'BTC', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.hdp1
 								ELSE 0
 							END,
 					Hdp2 = CASE
-								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp2
+								WHEN b.Product IN ('SB', 'CO', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.hdp2
 								ELSE 0
 							END,
 					OddsType = CASE
-									WHEN b.Product IN ('SB', 'CO', 'Outright', 'NG', 'VS', 'VS2', 'LG', 'VS4', 'VS5') THEN b.oddstype
+									WHEN b.Product IN ('SB', 'CO', 'Outright', 'NG', 'VS', 'VS2', 'LG', 'VS4', 'VS5', 'VS6') THEN b.oddstype
 									ELSE 0
 								END,
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'OneRNG', 'Keno', 'NG2', 
-									'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'SG', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA', 'BTC', 'LG', 'VS4', 'ParlayVS4') THEN b.odds
+									'ParlayVS2', 'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'SG', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS6') THEN b.odds
 								WHEN b.EventType IN (3, 5) THEN b.odds
 								ELSE 0
 							END,
 					MOdds = CASE
-								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'ParlayVS2', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.modds
+								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'ParlayVS2', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5', 'VS6') THEN b.modds
 								ELSE 0
 							END,
 					Status = CASE
@@ -1665,7 +1672,7 @@ BEGIN
 					SettlementStatus = 0,
 					WinLost = b.winlost - b.actual_stake,
 					LiveIndicator = CASE
-										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS5') THEN b.liveindicator
+										WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS5', 'VS6') THEN b.liveindicator
 										ELSE 0
 									END,
 					LiveHomeScore = CASE
@@ -1711,12 +1718,12 @@ BEGIN
 					HomeId = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.homeid
 								WHEN b.Product IN ('Outright') THEN o.teamid
-								WHEN b.Product IN ('VS5') THEN m3rd.homeid
+								WHEN b.EventType = 5 THEN m3rd.HomeId
 								ELSE 0
 							END,
 					AwayId = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.awayid
-								WHEN b.Product IN ('VS5') THEN m3rd.awayid
+								WHEN b.EventType = 5 THEN m3rd.AwayId
 								ELSE 0
 							END,
 					IsNeutral = CASE
@@ -1726,6 +1733,7 @@ BEGIN
 					ShowTime = CASE
 									WHEN b.Product IN ('VS', 'VS2', 'LG', 'VS4') THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									WHEN b.Product IN ('SB', 'CO', 'NG') THEN ISNULL(m.showtime, '')
+									WHEN b.Product IN ('VS6') THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
 									ELSE ''
 								END,
 					BetCheck = CASE

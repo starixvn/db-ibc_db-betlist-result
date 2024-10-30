@@ -39,6 +39,7 @@ AS
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20241210@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
 
 	Param's Explanation:
 		+ @TransType:
@@ -685,21 +686,21 @@ BEGIN
 				WHERE b.SportType = 157
 			END
 
-			-- Bitcoin, VS 5
+			-- Bitcoin, VS 5, VS 6
 			INSERT INTO @Data
 			SELECT
 				m.sporttype,
-				CASE 
-					WHEN s.ProductId = 88 THEN m.League3rdID
-					ELSE 0
+				CASE
+					WHEN s.ProductID = 69 THEN 0 
+					ELSE m.League3rdId
 				END AS leagueid,
 				CASE 
-					WHEN s.ProductId = 88 THEN m.homeid
-					ELSE 0
+					WHEN s.ProductID = 69 THEN 0 
+					ELSE m.HomeId
 				END AS homeid,
-				CASE 
-					WHEN s.ProductId = 88 THEN m.awayid
-					ELSE 0
+				CASE
+					WHEN s.ProductID = 69 THEN 0
+					ELSE m.AwayId
 				END AS awayid,
 				CASE 
 					WHEN s.ProductId = 88 THEN m.matchcode
@@ -715,15 +716,18 @@ BEGIN
 				'' AS settletime,
 				b.matchid,
 				b.transid,
-				0 betid,
+				CASE
+					WHEN s.ProductId = 71 THEN b.BetID
+					ELSE 0 
+				END AS BetId,
 				b.refno,
 				b.transdate,
 				0.oddsid,
 				b.bettype,
 				b.hdp1,
 				CASE 
-					WHEN s.ProductId = 88 THEN b.hdp2
-					ELSE 0
+					WHEN s.ProductID = 69 THEN 0
+					ELSE b.hdp2
 				END AS hdp2,
 				b.odds,
 				CASE 
@@ -768,16 +772,19 @@ BEGIN
 				b.ip,
 				b.Username,
 				0 AS IsNeutral,
-				'' AS ShowTime,
-				0 spositiontaking,
-				0 mpositiontaking,
-				0 apositiontaking,
+				CASE 
+					WHEN s.ProductID = 71 THEN CONVERT(NVARCHAR(50), m.StartTime)
+					ELSE '' 
+				END AS ShowTime,
+				b.spositiontaking,
+				b.mpositiontaking,
+				b.apositiontaking,
 				0 spositiontaking2,
 				0 mpositiontaking2,
 				0 apositiontaking2,
-				0 scomm,
-				0 acomm,
-				0 comm,	
+				(b.scomm - b.acomm) AS scomm,
+				(b.acomm - b.comm) AS acomm,
+				(b.comm - b.playercomm) AS comm,	
 				b.awinlost,
 				b.mwinlost,
 				b.swinlost,
@@ -2254,21 +2261,21 @@ BEGIN
 				OPTION (RECOMPILE)
 			END
 
-			-- Bitcoin, VS 5
+			-- Bitcoin, VS 5, VS 6
 			INSERT INTO @Data
 			SELECT
 				m.sporttype,
-				CASE 
-					WHEN s.ProductId = 88 THEN m.League3rdID
-					ELSE 0
+				CASE
+					WHEN s.ProductID = 69 THEN 0 
+					ELSE m.League3rdId
 				END AS leagueid,
 				CASE 
-					WHEN s.ProductId = 88 THEN m.homeid
-					ELSE 0
+					WHEN s.ProductID = 69 THEN 0 
+					ELSE m.HomeId
 				END AS homeid,
-				CASE 
-					WHEN s.ProductId = 88 THEN m.awayid
-					ELSE 0
+				CASE
+					WHEN s.ProductID = 69 THEN 0
+					ELSE m.AwayId
 				END AS awayid,
 				CASE 
 					WHEN s.ProductId = 88 THEN m.matchcode
@@ -2284,15 +2291,18 @@ BEGIN
 				'' AS settletime,
 				b.matchid,
 				b.transid,
-				0 betid,
+				CASE
+					WHEN s.ProductId = 71 THEN b.BetID
+					ELSE 0 
+				END AS BetId,
 				b.refno,
 				b.transdate,
 				0.oddsid,
 				b.bettype,
 				b.hdp1,
 				CASE 
-					WHEN s.ProductId = 88 THEN b.hdp2
-					ELSE 0
+					WHEN s.ProductID = 69 THEN 0
+					ELSE b.hdp2
 				END AS hdp2,
 				b.odds,
 				CASE 
@@ -2337,16 +2347,19 @@ BEGIN
 				b.ip,
 				b.Username,
 				0 AS IsNeutral,
-				'' AS ShowTime,
-				0 spositiontaking,
-				0 mpositiontaking,
-				0 apositiontaking,
+				CASE 
+					WHEN s.ProductID = 71 THEN CONVERT(NVARCHAR(50), m.StartTime)
+					ELSE '' 
+				END AS ShowTime,
+				b.spositiontaking,
+				b.mpositiontaking,
+				b.apositiontaking,
 				0 spositiontaking2,
 				0 mpositiontaking2,
 				0 apositiontaking2,
-				0 scomm,
-				0 acomm,
-				0 comm,	
+				(b.scomm - b.acomm) AS scomm,
+				(b.acomm - b.comm) AS acomm,
+				(b.comm - b.playercomm) AS comm,
 				b.awinlost,
 				b.mwinlost,
 				b.swinlost,

@@ -44,6 +44,7 @@ AS
 		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
+		- 20241219@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
 */
 
 BEGIN
@@ -452,7 +453,7 @@ BEGIN
 				END
 			END
 
-			-- Virtual Sport 5
+			-- Bitcoin, Virtual Sport 5, vs6
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 5 AND bettype = @BetType )
 			BEGIN
 				INSERT INTO @Data
@@ -463,7 +464,7 @@ BEGIN
 					b.refno,
 					m.matchcode,
 					'' AS race,
-					'' AS EventDate,
+					m.EndTime AS EventDate,
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
@@ -513,7 +514,7 @@ BEGIN
 					b.awinlost,
 					b.mwinlost,
 					b.swinlost,
-					'' AS ShowTime,
+					CONVERT(NVARCHAR(50), m.StartTime) AS ShowTime,
 					b.winlostdate,
 					b.BetCheck,
 					ISNULL(b.transdesc, '') AS transdesc,
@@ -1029,88 +1030,6 @@ BEGIN
 				WHERE
 					b.transid = @TransId
 					AND s.EventType = 3
-			END
-
-			-- Bitcoin
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID = 69 AND bettype = @BetType )
-			BEGIN
-				INSERT INTO @Data
-				SELECT
-					b.bettype,
-					b.transid,
-					0 AS BetID,
-					b.refno,
-					'' matchcode,
-					'' AS race,
-					m.EndTime AS EventDate,
-					0 AS virtualrate,
-					0 AS isShowOTExRate,
-					b.sdiscount,
-					b.adiscount,
-					b.discount,
-					b.playerdiscount,
-					m.homeid,
-					m.awayid,
-					'' AS settleTime,
-					b.hdp1,
-					0 hdp2,
-					b.odds,
-					0 finalodds,
-					0 finalodds2,
-					b.OddsType,
-					b.status,
-					0 SettlementStatus,
-					0 AS comstatus,
-					b.stake,
-					b.actual_stake,
-					b.transdate,
-					b.betteam,
-					b.spositiontaking,
-					b.mpositiontaking,
-					b.apositiontaking,
-					0 spositiontaking2,
-					0 mpositiontaking2,
-					0 apositiontaking2,
-					0 liveindicator,
-					0 modds,
-					b.custid,
-					0 livehomescore,
-					0 liveawayscore,
-					0 finalhomescore,
-					0 finalawayscore,
-					0 leagueid,
-					m.sporttype,
-					b.ip,
-					b.matchid,
-					0 IsNeutral,
-					0 AS allowdelete,
-					(b.winlost - b.actual_stake) AS WinLost,
-					b.playercomm AS commission,
-					(b.scomm - b.acomm) AS scomm,
-					(b.acomm - b.comm) AS acomm,
-					(b.comm - b.playercomm) AS comm,
-					b.awinlost,
-					b.mwinlost,
-					b.swinlost,
-					'' AS ShowTime,
-					b.winlostdate,
-					'' BetCheck,
-					'' AS transdesc,
-					0 AS OddsSpread,
-					0 AS OriginalBetType,
-					-1 AS BetdaqId,
-					b.ExtraInfo,
-					'' AS JackpotInfo,
-					0 AS WalletType,
-					0 AS RefCode,
-					b.currency,
-					'' AS SiteId,
-					b.DeviceType
-				FROM
-					dbo.bettrans AS b WITH (NOLOCK)
-					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-					INNER JOIN dbo.match3rd AS m WITH (NOLOCK) ON b.matchid = m.match3rdid
-				WHERE b.transid = @TransId
 			END
 
 			-- Keno, Lottery, Virtual Games, Table Games, Indo 4D, Leap Gaming Virtual Sports, Happy 5 Linked Games(Number Game), Sports Lottery (translog)
