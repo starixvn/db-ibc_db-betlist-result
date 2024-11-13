@@ -56,7 +56,14 @@ AS
 				+ Saba Tennis: <Sport SportType="5" LeagueGroupIds="42"/>
 				+ Saba Ice Hockey: <Sport SportType="4" LeagueGroupIds="42"/>
 				+ Saba Kabaddi: <Sport SportType="47" LeagueGroupIds="42"/>
-		- @BetTypeList: list of bet type seperated by commas (All: all bet types)
+		- @BetTypeList:
+			+ All: all bet types
+			+ XML format
+				<ROOT>
+					<BetType ProductPrefix="SB" BetTypes="1,2,3,4,5,6,7,8,10,12,13,14"/>
+					<BetType ProductPrefix="VS" BetTypes="1,3,4,5,7,8,9,15,24,501,1206,1220,1231,1232"/>
+					<BetType ProductPrefix="KN" BetTypes="1501,1502,1503,1504,1505,1506"/>
+				</ROOT>
 		- @LeagueList: list of league seperated by commas (All: all leagues)
 		- @LiveIndicator:
 			- 0 : Non-live
@@ -89,6 +96,7 @@ AS
 					@CustomerClass, @FullCustomerClass, @Platform, @OddsGroup, @Ip
 		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: 209344]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
+		- 20241113@Kos: Hotfix - wrong VS tickets [Redmine: #213614]
 */
 
 BEGIN
@@ -288,6 +296,8 @@ BEGIN
 
 	CREATE TABLE #TempSportType (SportType SMALLINT, LeagueGroupIdList VARCHAR(200))
 
+	CREATE TABLE #TempBetType (ProductPrefix VARCHAR(10), BetTypeList VARCHAR(MAX))
+
 	CREATE TABLE #PlatformList (BetFrom NVARCHAR(4))
 
 	INSERT INTO #PlatformList (BetFrom)
@@ -325,31 +335,43 @@ BEGIN
 			SET @ProductList = @ProductList + ',' + @ChildProductList
 		END
 
-		DECLARE @BetType TABLE (BetType SMALLINT)
-
-		IF @BetTypeList <> 'All'
-		BEGIN
-			INSERT INTO @BetType
-			SELECT Bettype
-			FROM dbo.f_GroupBettype()
-			WHERE ',' + @BetTypeList + ',' LIKE '%,' + CONVERT(VARCHAR(6), GroupTypeId) + ',%'
-		END
-
 		-- Get Sport Bettype Matrix
-		DECLARE @SportBettype TABLE(ProductID TINYINT, BetType SMALLINT, EventType TINYINT, RefTable TINYINT)
+		DECLARE @SportBettype TABLE(ProductID TINYINT, ProductPrefix VARCHAR(500), BetType SMALLINT, EventType TINYINT, RefTable TINYINT)
 
 		DECLARE @IsTest BIT = 0
 
 		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 		INSERT INTO @SportBettype
-		SELECT ProductID, BetType, EventType, RefTable
+		SELECT ProductID, ProductPrefix, BetType, EventType, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
 		WHERE BetType NOT IN (71, 73, 901, 902, 903, 904, 911, 912, 913, 914, 997, 999)
 			AND BetType NOT BETWEEN 801 AND 899
-			AND (@BetTypeList = 'All'
-				OR ',' + @BetTypeList + ',' LIKE '%,' + CONVERT(VARCHAR(6), BetType) + ',%'
-				OR BetType IN (SELECT Bettype FROM @BetType))
+
+		IF @BetTypeList <> 'All'
+		BEGIN
+			BEGIN TRY
+				EXEC sp_xml_preparedocument @DocHandler OUTPUT, @BetTypeList
+
+				INSERT INTO #TempBetType (ProductPrefix, BetTypeList)
+				SELECT ProductPrefix, BetTypes
+				FROM OPENXML(@DocHandler, '/ROOT/BetType', 1) WITH (ProductPrefix VARCHAR(10), BetTypes VARCHAR(MAX)) AS Data
+
+				EXEC sp_xml_removedocument @DocHandler
+			END TRY
+			BEGIN CATCH
+				SET @HasError = 1
+			END CATCH
+			
+			DELETE sbt
+			FROM @SportBettype AS sbt
+				LEFT JOIN dbo.Lrf_f_GroupProduct() AS gp ON gp.ProductPrefix = sbt.ProductPrefix
+				LEFT JOIN dbo.f_GroupBettype() AS gbt ON gbt.bettype = sbt.BetType
+			WHERE NOT EXISTS (SELECT 1 FROM #TempBetType AS tbt
+							WHERE (',' + tbt.BetTypeList + ',' LIKE '%,' + CONVERT(VARCHAR(6), sbt.BetType) + ',%'
+									OR ',' + tbt.BetTypeList + ',' LIKE '%,' + CONVERT(VARCHAR(6), gbt.GroupTypeId) + ',%')
+								AND tbt.ProductPrefix IN (sbt.ProductPrefix, gp.GroupProductPrefix))
+		END
 
 		-- Get sport type list
 		IF @SportTypeList <> 'All'
@@ -1544,6 +1566,7 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 	DROP TABLE #TempSportType
+	DROP TABLE #TempBetType
 	DROP TABLE #PlatformList
 END
 GO
