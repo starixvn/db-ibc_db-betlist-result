@@ -122,6 +122,7 @@ AS
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
 		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20241128@Razor: Fix bug, Remove unknown product[Redmine: #207589]
 
 	Param's Explanation:
 		+ @TransType:
@@ -399,6 +400,8 @@ BEGIN
 			FROM @Data AS b
 				INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
+			DELETE @Data WHERE BetType NOT IN (SELECT BetType FROM @SportBetType)
+			
 			IF EXISTS (SELECT 1 FROM @Data)
 			BEGIN
 				UPDATE b
