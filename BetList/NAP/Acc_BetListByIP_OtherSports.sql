@@ -182,6 +182,7 @@ AS
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
 		- 20241023@Razor: Support GPI [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 */
 
 BEGIN
@@ -718,6 +719,7 @@ BEGIN
 						WHEN s.ProductID = 87 THEN 'FS'								-- FastSpin
 						WHEN s.ProductID = 89 THEN 'FAC'							-- FA CHAI
 						WHEN s.ProductID = 85 THEN 'NS'								-- Nextspin
+						WHEN s.ProductID = 90 THEN 'GPILC'							-- GPI Live Casino
 						WHEN s.ProductID = 96 THEN 'ON'								-- ON Casino
 						WHEN s.ProductID = 100 THEN 'PTRNG'							-- Playtech
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
@@ -1176,7 +1178,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON')
+							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'GPILC')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips

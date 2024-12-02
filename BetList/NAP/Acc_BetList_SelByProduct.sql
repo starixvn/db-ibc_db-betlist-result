@@ -113,6 +113,7 @@ AS
 		- 20241003@Razor: Support VS2 - Racing sports [Redmine: #211092]
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
 		- 20241023@Razor: Support GPI [Redmine: #207173]
+		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 */
 
 BEGIN
@@ -396,8 +397,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96)
+			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -416,7 +417,7 @@ BEGIN
 						END AS RefNo,
 						b.GameId3rd AS MatchCode,
 						CASE
-							WHEN s.ProductID = 70 THEN b.TransDate3rd
+							WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 							ELSE ''
 						END AS EventDate,
 						CASE
@@ -541,7 +542,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96) AND t3rd.val = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90) AND t3rd.val = @BetId)
 							OR (s.ProductID = 39 AND b3rd.val = @BetId))
 				END
 			END
@@ -777,8 +778,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96)
+			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -797,7 +798,7 @@ BEGIN
 						END AS RefNo,
 						b.GameId3rd AS MatchCode,
 						CASE
-							WHEN s.ProductID = 70 THEN b.TransDate3rd
+							WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 							ELSE ''
 						END AS EventDate,
 						CASE
@@ -925,7 +926,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96) AND t3rd.val = @BetId)
+							OR (s.ProductID IN (21, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90) AND t3rd.val = @BetId)
 							OR (s.ProductID = 39 AND b3rd.val = @BetId))
 				END
 			END

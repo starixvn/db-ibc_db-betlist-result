@@ -175,6 +175,7 @@ AS
 		- 20241003@Razor: Remove Linked Server on DBCust [Redmine: #206893]
 		- 20241003@Razor: Support VS2 Racing sports [Redmine: #211092]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 */
 
 BEGIN
@@ -4276,7 +4277,7 @@ BEGIN
 				END AS matchcode,
 				'' AS Race,
 				CASE
-					WHEN s.ProductID IN (70) THEN b.TransDate3rd
+					WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 					ELSE '' 
 				END AS eventdate,
 				0 AS virtualrate,
@@ -4367,7 +4368,7 @@ BEGIN
 				END AS matchcode,
 				'' AS Race,
 				CASE
-					WHEN s.ProductID IN (70) THEN b.TransDate3rd
+					WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 					ELSE '' 
 				END AS eventdate,
 				0 AS virtualrate,

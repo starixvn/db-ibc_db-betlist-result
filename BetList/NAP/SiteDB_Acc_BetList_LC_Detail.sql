@@ -24,6 +24,7 @@ AS
 		- 20231108@Razor: Support WE Live Casino [Redmine: #195887]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
+		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 
 	Parameters:
 		- @TransType
@@ -251,7 +252,7 @@ BEGIN
 			blc.currency,
 			blc.SiteId,
 			CASE
-				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
+				WHEN sbt.ProductID IN (70, 90) THEN blc.TransDate3rd
 				ELSE ''
 			END AS EventDate,
 			CASE
