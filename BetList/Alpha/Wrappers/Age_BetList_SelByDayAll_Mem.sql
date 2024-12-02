@@ -155,6 +155,7 @@ AS
 		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241202@Razor: HF for VS 5 - Virtually Sports [Redmine: #214586]
+		- 20241209@Razor: Insert default value for SiteId, CurrencyId [Redmine: #215005]
 		
 
 	Param's Explanation:
@@ -1145,6 +1146,8 @@ BEGIN
 					,BetdaqId = ISNULL(b.RefNo2, -1)
 					,ExtraInfo = ''
 					,Currency = b.currencyname
+					,CurrencyId = 0
+					,SiteId = ''
 					,DeviceType = b.DeviceType
 					,LeagueGroupId = 0
 				FROM @Tickets AS c
@@ -1550,6 +1553,8 @@ BEGIN
 					,BetdaqId = ISNULL(b.RefNo2, -1)
 					,ExtraInfo = ''
 					,Currency = b.currencyname
+					,CurrencyId = 0
+					,SiteId = ''
 					,DeviceType = b.DeviceType
 					,LeagueGroupId = 0
 				FROM @Tickets AS c

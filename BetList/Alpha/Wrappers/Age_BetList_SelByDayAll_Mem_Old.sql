@@ -123,6 +123,7 @@ AS
 		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241128@Razor: Fix bug, Remove unknown product[Redmine: #207589]
+		- 20241209@Razor: Insert default value for SiteId, CurrencyId [Redmine: #215005]
 
 	Param's Explanation:
 		+ @TransType:
@@ -656,6 +657,8 @@ BEGIN
 			TransDesc,
 			BetdaqId,
 			ExtraInfo,
+			CurrencyId,
+			SiteId,
 			DeviceType)
 		SELECT
 			b.transid,
@@ -709,6 +712,8 @@ BEGIN
 			ISNULL(b.transdesc, '') AS TransDesc,
 			ISNULL(b.RefNo2, -1) AS BetdaqId,
 			'' AS ExtraInfo,
+			0 AS CurrencyId,
+			'' AS SiteId,
 			b.DeviceType
 		FROM dbo.bettransRnG_bk AS b WITH (NOLOCK)
 			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
