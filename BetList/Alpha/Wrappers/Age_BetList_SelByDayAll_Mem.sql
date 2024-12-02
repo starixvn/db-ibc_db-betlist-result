@@ -154,6 +154,8 @@ AS
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
 		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20241202@Razor: HF for VS 5 - Virtually Sports [Redmine: #214586]
+		
 
 	Param's Explanation:
 		+ @TransType:
@@ -1361,9 +1363,9 @@ BEGIN
 									ELSE 0 END
 					,MatchId = CASE
 									WHEN c.Product IN ('NG2') THEN b.betdaqid
-									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4', 'VS5') THEN m.matchid
+									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchid
 									WHEN c.Product IN ('Outright') THEN o.orid
-									WHEN c.Product IN ('VR', 'BTC') THEN b.matchid
+									WHEN c.Product IN ('VR', 'BTC', 'VS5') THEN b.matchid
 									ELSE 0 END
 					,MatchCode = CASE
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchcode
