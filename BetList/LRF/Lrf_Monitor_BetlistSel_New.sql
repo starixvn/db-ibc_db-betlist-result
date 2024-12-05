@@ -92,6 +92,7 @@ AS
 		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
 		- 20240412@Kos: Support Gaming API [Redmine: 203734]
 		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
+		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -274,11 +275,19 @@ BEGIN
 		IF @MaxStake IS NULL
 			SET @MaxStake = 0
 
+		CREATE TABLE #AllPlatformList (BetFrom NVARCHAR(4))
 		CREATE TABLE #PlatformList (BetFrom NVARCHAR(4) PRIMARY KEY)
 
-		INSERT INTO #PlatformList (BetFrom)
-		SELECT DISTINCT betfrom
-		FROM dbo.Lrf_f_BetFromType_Sel(@BetFrom)
+		IF @BetFrom <> 'All'
+		BEGIN
+			INSERT INTO #AllPlatformList (BetFrom)
+			SELECT DISTINCT betfrom
+			FROM dbo.Lrf_f_BetFromType_Sel('All')
+
+			INSERT INTO #PlatformList (BetFrom)
+			SELECT DISTINCT betfrom
+			FROM dbo.Lrf_f_BetFromType_Sel(@BetFrom)
+		END
 
 		-- Check if @TransId and @TransId + 1 is combo ticket then reset @TransId
 		DECLARE @RefCode	BIGINT
@@ -385,7 +394,8 @@ BEGIN
 			ISNULL(b.oddsspread, 0) AS OddsSpread
 		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_monitor_recommend)
 			INNER JOIN #TempAg AS a ON b.Recommend = a.CustId
-			INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+			LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+			LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
 		WHERE b.statusID IN (0, 1)
 			AND b.transid > @TransId
 			AND (@Currency = ''
@@ -397,6 +407,13 @@ BEGIN
 				OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609, 229))
 				OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604, 7901))
 				OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604, 7901)))
+			AND 1 = CASE
+						WHEN @BetFrom = 'All' THEN 1
+						WHEN pl.BetFrom IS NOT NULL THEN 1
+						WHEN apl.BetFrom IS NULL AND ',' + @BetFrom + ',' LIKE '%,88,%' THEN 1
+						WHEN apl.BetFrom IS NULL AND ',' + @BetFrom + ',' LIKE '%,99,%' THEN 1
+						ELSE 0
+					END
 
 		-- translog
 		IF @BetType IN ('', 'Others')
@@ -469,13 +486,21 @@ BEGIN
 				0 AS OddsSpread
 			FROM dbo.translog AS b WITH (NOLOCK)
 				INNER JOIN #TempAg AS a ON b.Recommend = a.CustId
-				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+				LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+				LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
 			WHERE b.statusID IN (0, 1)
 				AND b.translogid > @TransLogId
 				AND (@Currency = ''
 					OR ',' + @Currency + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.currency) + ',%')
 				AND (@LiveIndicator = 3
 					OR (@LiveIndicator IN (0, 1) AND b.LiveIndicator = @LiveIndicator))
+				AND 1 = CASE
+						WHEN @BetFrom = 'All' THEN 1
+						WHEN pl.BetFrom IS NOT NULL THEN 1
+						WHEN apl.BetFrom IS NULL AND ',' + @BetFrom + ',' LIKE '%,88,%' THEN 1
+						WHEN apl.BetFrom IS NULL AND ',' + @BetFrom + ',' LIKE '%,99,%' THEN 1
+						ELSE 0
+					END
 		END
 
 		IF EXISTS (SELECT TOP(1) 1 FROM @Data)

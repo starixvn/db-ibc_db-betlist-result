@@ -87,6 +87,7 @@ AS
 		- 20240815@Kos: Don't support Promotion tickets [Redmine: 208144]
 		- 20240919@Kos: Enhance performance [RedmineID: #211039]
 		- 20240920@Kos: Support Baseball AIO phase 2 [Redmine: 209344]
+		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
 */
 
 BEGIN
@@ -1969,8 +1970,30 @@ BEGIN
 
 		IF @PlatformType <> 'All'
 		BEGIN
-			DELETE #Data
-			WHERE BetFrom NOT IN (SELECT betfrom FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType))
+			CREATE TABLE #AllPlatformList (BetFrom NVARCHAR(4))
+			CREATE TABLE #PlatformList (BetFrom NVARCHAR(4))
+
+			INSERT INTO #AllPlatformList (BetFrom)
+			SELECT DISTINCT betfrom
+			FROM dbo.Lrf_f_BetFromType_Sel('All')
+
+			INSERT INTO #PlatformList (BetFrom)
+			SELECT DISTINCT betfrom
+			FROM dbo.Lrf_f_BetFromType_Sel(@PlatformType)
+
+			DELETE b
+			FROM #Data AS b
+				LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.BetFrom
+				LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
+			WHERE 1 = CASE
+							WHEN pl.BetFrom IS NOT NULL THEN 0
+							WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 0
+							WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 0
+							ELSE 1
+						END
+
+			DROP TABLE #AllPlatformList
+			DROP TABLE #PlatformList
 		END
 
 		UPDATE b

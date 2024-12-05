@@ -52,6 +52,7 @@ AS
 
 	Revisions:
 		- 20240321@Kos: Support Booked Bets [#Redmine: 202341]
+		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
 */
 
 BEGIN
@@ -201,11 +202,19 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
+		CREATE TABLE #AllPlatformList (BetFrom NVARCHAR(4))
 		CREATE TABLE #PlatformList (BetFrom NVARCHAR(4))
 
-		INSERT INTO #PlatformList (BetFrom)
-		SELECT DISTINCT betfrom
-		FROM dbo.Lrf_f_BetFromType_Sel(@Platform)
+		IF @Platform <> 'All'
+		BEGIN
+			INSERT INTO #AllPlatformList (BetFrom)
+			SELECT DISTINCT betfrom
+			FROM dbo.Lrf_f_BetFromType_Sel('All')
+
+			INSERT INTO #PlatformList (BetFrom)
+			SELECT DISTINCT betfrom
+			FROM dbo.Lrf_f_BetFromType_Sel(@Platform)
+		END
 
 		IF ',' + @StatusIdList + ',' LIKE '%,0,%'		-- Processing Bet
 		BEGIN
@@ -338,10 +347,18 @@ BEGIN
 				b.OddsInfo,
 				b.Hdp
 			FROM dbo.ReservationTickets AS b WITH (NOLOCK)
-				INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+				LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+				LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
 			WHERE b.CreateTime >= @TempFromDate AND b.CreateTime < @TempToDate
 				AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.Status) + ',%'
 				AND b.CustId = @CustId
+				AND 1 = CASE
+							WHEN @Platform = 'All' THEN 1
+							WHEN pl.BetFrom IS NOT NULL THEN 1
+							WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,88,%' THEN 1
+							WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,99,%' THEN 1
+							ELSE 0
+						END
 		END
 
 		DELETE b
@@ -549,6 +566,7 @@ BEGIN
 				END BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY a.RowNum ASC
 
+	DROP TABLE #AllPlatformList
 	DROP TABLE #PlatformList
 	DROP TABLE #Data
 	DROP TABLE #PagingData

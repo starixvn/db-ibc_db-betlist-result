@@ -169,6 +169,7 @@ AS
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241113@Kos: Hotfix - wrong VS tickets [Redmine: #213614]
 		- 20241115@Kos: Support Virtual Sports 6 [Redmine: 212446]
+		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
 */
 
 BEGIN
@@ -493,6 +494,7 @@ BEGIN
 		Rate						FLOAT
 	)
 
+	CREATE TABLE #AllPlatformList (BetFrom NVARCHAR(4))
 	CREATE TABLE #PlatformList (BetFrom NVARCHAR(4))
 
 	DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
@@ -502,9 +504,16 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		INSERT INTO #PlatformList (BetFrom)
-		SELECT DISTINCT betfrom
-		FROM dbo.Lrf_f_BetFromType_Sel(@Platform)
+		IF @Platform <> 'All'
+		BEGIN
+			INSERT INTO #AllPlatformList (BetFrom)
+			SELECT DISTINCT betfrom
+			FROM dbo.Lrf_f_BetFromType_Sel('All')
+
+			INSERT INTO #PlatformList (BetFrom)
+			SELECT DISTINCT betfrom
+			FROM dbo.Lrf_f_BetFromType_Sel(@Platform)
+		END
 
 		DECLARE @OriginalStatusIdList	VARCHAR(50)
 
@@ -615,13 +624,21 @@ BEGIN
 					1 AS TableID
 				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid)
 					INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-					INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
 				WHERE b.custid = @CustId
 					AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 					AND (',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						OR (b.winlostdate >= @Yesterday AND s.RefTable IN (1, 2)))		-- don't care status of casino's summary rows if >= yesterday
 					AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 						OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+					AND 1 = CASE
+								WHEN @Platform = 'All' THEN 1
+								WHEN pl.BetFrom IS NOT NULL THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,88,%' THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,99,%' THEN 1
+								ELSE 0
+							END
 			END
 			ELSE
 			BEGIN
@@ -707,7 +724,8 @@ BEGIN
 					1 AS TableID
 				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid)
 					INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-					INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
@@ -732,6 +750,13 @@ BEGIN
 														WHEN s.RefTable IN (1, 2) THEN b.matchid
 														ELSE 0
 													END)
+					AND 1 = CASE
+								WHEN @Platform = 'All' THEN 1
+								WHEN pl.BetFrom IS NOT NULL THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,88,%' THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,99,%' THEN 1
+								ELSE 0
+							END
 			END
 		END
 
@@ -831,12 +856,20 @@ BEGIN
 					ISNULL(b.RefCode, 0),
 					2 AS TableID
 				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_memberStatement14)
-					INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
 				WHERE b.custid = @CustId
 					AND b.winlostdate BETWEEN @TempFromDate AND @TempToDate
 					AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 					AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 						OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+					AND 1 = CASE
+								WHEN @Platform = 'All' THEN 1
+								WHEN pl.BetFrom IS NOT NULL THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,88,%' THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,99,%' THEN 1
+								ELSE 0
+							END
 			END
 			ELSE
 			BEGIN
@@ -922,7 +955,8 @@ BEGIN
 					2 AS TableID
 				FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_memberStatement14)
 					INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-					INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
@@ -946,6 +980,13 @@ BEGIN
 														WHEN s.RefTable IN (1, 2) THEN b.matchid
 														ELSE 0
 													END)
+					AND 1 = CASE
+								WHEN @Platform = 'All' THEN 1
+								WHEN pl.BetFrom IS NOT NULL THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,88,%' THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,99,%' THEN 1
+								ELSE 0
+							END
 			END
 		END
 
@@ -1040,13 +1081,21 @@ BEGIN
 					ISNULL(b.RefCode, 0),
 					3 AS TableID
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
-					INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
 					CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 				WHERE b.custid = @CustId
 					AND b.winlostdate BETWEEN @FromDate AND @TempToDate
 					AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 					AND ((b.bettype IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.livehomescore) + ',%')
 						OR (b.bettype NOT IN (9, 29) AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'))
+					AND 1 = CASE
+								WHEN @Platform = 'All' THEN 1
+								WHEN pl.BetFrom IS NOT NULL THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,88,%' THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,99,%' THEN 1
+								ELSE 0
+							END
 			END
 			ELSE
 			BEGIN
@@ -1132,7 +1181,8 @@ BEGIN
 					3 AS TableID
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 					INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-					INNER JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
 					LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
 					LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 					LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
@@ -1157,6 +1207,13 @@ BEGIN
 														WHEN s.RefTable IN (1, 2) THEN b.matchid
 														ELSE 0
 													END)
+					AND 1 = CASE
+								WHEN @Platform = 'All' THEN 1
+								WHEN pl.BetFrom IS NOT NULL THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,88,%' THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,99,%' THEN 1
+								ELSE 0
+							END
 			END
 		END
 

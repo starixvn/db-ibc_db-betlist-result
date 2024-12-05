@@ -133,6 +133,7 @@ AS
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241113@Kos: Hotfix - wrong VS tickets [Redmine: #213614]
 		- 20241115@Kos: Support Virtual Sports 6 [Redmine: 212446]
+		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
 */
 
 BEGIN
@@ -334,11 +335,19 @@ BEGIN
 
 	CREATE TABLE #TempBetType (ProductPrefix VARCHAR(10), BetTypeList VARCHAR(MAX))
 
+	CREATE TABLE #AllPlatformList (BetFrom NVARCHAR(4))
 	CREATE TABLE #PlatformList (BetFrom NVARCHAR(4))
 
-	INSERT INTO #PlatformList (BetFrom)
-	SELECT DISTINCT betfrom
-	FROM dbo.Lrf_f_BetFromType_Sel(@Platform)
+	IF @Platform <> 'All'
+	BEGIN
+		INSERT INTO #AllPlatformList (BetFrom)
+		SELECT DISTINCT betfrom
+		FROM dbo.Lrf_f_BetFromType_Sel('All')
+
+		INSERT INTO #PlatformList (BetFrom)
+		SELECT DISTINCT betfrom
+		FROM dbo.Lrf_f_BetFromType_Sel(@Platform)
+	END
 
 	IF @HasError = 0
 	BEGIN
@@ -838,9 +847,19 @@ BEGIN
 		END
 
 		-- Platform filter
-		DELETE b
-		FROM #Data AS b
-		WHERE NOT EXISTS (SELECT 1 FROM #PlatformList WHERE BetFrom = b.BetFrom)
+		IF @Platform <> 'All'
+		BEGIN
+			DELETE b
+			FROM #Data AS b
+				LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.BetFrom
+				LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
+			WHERE 1 = CASE
+							WHEN pl.BetFrom IS NOT NULL THEN 0
+							WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,88,%' THEN 0
+							WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,99,%' THEN 0
+							ELSE 1
+						END
+		END
 
 		-- IP filter
 		IF ISNULL(@Ip, '') <> ''
@@ -1244,8 +1263,16 @@ BEGIN
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @TmpData AS t ON t.RefNo = b.transid AND t.BetType = b.BetType
 					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+					LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+					LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
 				WHERE t.IsNew = 1
-					AND EXISTS (SELECT 1 FROM #PlatformList WHERE BetFrom = b.BetFrom)
+					AND 1 = CASE
+								WHEN @Platform = 'All' THEN 1
+								WHEN pl.BetFrom IS NOT NULL THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,88,%' THEN 1
+								WHEN apl.BetFrom IS NULL AND ',' + @Platform + ',' LIKE '%,99,%' THEN 1
+								ELSE 0
+							END
 					AND (ISNULL(@Ip, '') = '' OR b.ip = @Ip)
 					AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.liveindicator) + ',%'
 					AND (@SportTypeList = 'All'
@@ -1607,5 +1634,6 @@ BEGIN
 	DROP TABLE #ExchangeRate
 	DROP TABLE #TempSportType
 	DROP TABLE #TempBetType
+	DROP TABLE #AllPlatformList
 	DROP TABLE #PlatformList
 END
