@@ -42,8 +42,8 @@ AS
 		- 202411202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20241231@Razor: Support PLAY STAR [Redmine: #208023]
 		- 20250106@Razor: SA Gaming support Saba Plus [Redmine: #215645]
-		- 20220213@Razor: Support ASKMESLOT [Redmine: #216976]
-
+		- 20250213@Razor: Support ASKMESLOT [Redmine: #216976]
+		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
 */
 
 BEGIN
@@ -284,6 +284,7 @@ BEGIN
 						WHEN @ProductID = 91 THEN 'PS'			-- PLAY STAR
 						WHEN @ProductID = 96 THEN 'ON'			-- ON Casino
 						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
+						WHEN @ProductID = 102 THEN 'SBK'		-- SABA Keno
 						WHEN @ProductID = 103 THEN 'ASK'		-- ASKMESLOT
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
@@ -1185,7 +1186,8 @@ BEGIN
 						WHEN @ProductId = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @ProductId = 48 THEN 'GPIRNG'		-- GPI
 						WHEN @ProductId = 91 THEN 'PS'			-- PLAY STAR
-						WHEN @ProductId = 103 THEN 'ASK'			-- ASKMESLOT
+						WHEN @ProductId = 102 THEN 'SBK'		-- SABA Keno
+						WHEN @ProductId = 103 THEN 'ASK'		-- ASKMESLOT
 						ELSE 'Unknown'
 					END
 
