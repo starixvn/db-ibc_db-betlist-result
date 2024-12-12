@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_Rpt_DailyWLDirect_Result]
 	@MatchId		INT,
@@ -38,6 +38,12 @@ AS
 		- 20210914@Kos: Support view result from League WL report [Redmine: #160196]
 		- 20220630@Kos: Don't show map result for E-Sports [Redmine: #174251]
 		- 20220923@Razor: Support VolleyballAIO [Redmine: #175205]
+		- 20241212@Razor: 
+						Change HT Score display for Soccer [Redmine: #181331]
+						Support Bandy sport using ResultDetailOS [Redmine: #198022]
+						Support display for The Last Series Of Child Match [Redmine: #202484]
+						Support Baseball AIO [Redmine: #207707]
+						Support Baseball AIO Phase 2 [Redmine: #209584]
 */
 
 BEGIN
@@ -73,9 +79,9 @@ BEGIN
 		WHERE matchid = @MatchId
 	END
 
-	-- Switch to use parent match for Cricket child match (ChildMatchType = 200)
+	-- Switch to use parent match for Baseball, Cricket child match (ChildMatchType = 200)
 	SET @MatchId = CASE
-						WHEN @SportType = 50 AND @ChildMatchType = 200 THEN @ParentId
+						WHEN @SportType IN (8, 50) AND @ChildMatchType = 200 THEN @ParentId
 						ELSE @MatchId
 					END
 
@@ -114,10 +120,15 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS Calculate,
 			ISNULL(m.SettlementStatus, 0) AS SettlementStatus,
-			m.showtime
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			m.showtime,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType,
+			le.SessionTime
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE m.matchid = @MatchId
 
 		-- Get trader name
@@ -171,7 +182,7 @@ BEGIN
 			WHERE MatchID = @MatchId AND ResourceID = '00'
 			ORDER BY ResourceID ASC
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			SELECT
 				MatchID,
@@ -185,7 +196,8 @@ BEGIN
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45))
-					OR (@SportType = 6 AND ResourceId LIKE '010%'))
+					OR (@SportType = 6 AND ResourceId LIKE '010%')
+					OR (@SportType = 8 AND (ResourceId LIKE '010%' OR ResourceId = '8816')))
 			ORDER BY ResourceID ASC
 		END
 	END
@@ -224,10 +236,15 @@ BEGIN
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS Calculate,
 			0 AS SettlementStatus,
-			m.showtime
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			m.showtime,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType,
+			le.SessionTime
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT OUTER JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN dbo.ResultDetail14 AS r WITH (NOLOCK) ON r.MatchID = m.matchid AND r.ResourceId = '00'
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE m.matchid = @MatchId
 
 		-- Get trader name
@@ -281,7 +298,7 @@ BEGIN
 			WHERE MatchID = @MatchId AND ResourceID = '00'
 			ORDER BY ResourceID ASC
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			SELECT
 				MatchID,
@@ -295,7 +312,8 @@ BEGIN
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45))
-					OR (@SportType = 6 AND ResourceId LIKE '010%'))
+					OR (@SportType = 6 AND ResourceId LIKE '010%')
+					OR (@SportType = 8 AND (ResourceId LIKE '010%' OR ResourceId = '8816')))
 			ORDER BY ResourceID ASC
 		END
 	END
@@ -332,10 +350,16 @@ BEGIN
 			m.GoalRecord,
 			ISNULL(mr.IsHTCal, 0) AS IsHTCal,
 			ISNULL(mr.calculate, 0) AS Calculate,
-			0 AS SettlementStatus
+			0 AS SettlementStatus,
+			ISNULL(mr.NoHTScore, 0) AS NoHTScore,
+			m.showtime,
+			ISNULL(mr.MainType, 0) AS MainType,
+			ISNULL(mr.SubType, 0) AS SubType,
+			le.SessionTime
 		FROM bodb_Archive.dbo.match_bk AS m WITH (NOLOCK)
 			LEFT OUTER JOIN bodb_Archive.dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
 			LEFT JOIN bodb_Archive.dbo.ResultDetail_bk AS r WITH (NOLOCK) ON r.MatchId = m.matchid AND r.ResourceId = '00'
+			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 		WHERE m.matchid = @MatchId
 
 		DECLARE @CutOffDate SMALLDATETIME = '2019-11-01 00:00:00'
@@ -408,7 +432,7 @@ BEGIN
 			WHERE MatchID = @MatchId AND ResourceID = '00'
 			ORDER BY ResourceID ASC
 		END
-		ELSE IF @SportType IN (6, 9, 45, 50)		-- Volleyball, Badminton, Beach Volleyball, Cricket
+		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			SELECT
 				MatchID,
@@ -422,7 +446,8 @@ BEGIN
 			WHERE MatchID = @MatchId
 				AND (LEN(ResourceID) = 2
 					OR (LEN(ResourceID) = 4 AND @SportType IN (9, 45))
-					OR (@SportType = 6 AND ResourceId LIKE '010%'))
+					OR (@SportType = 6 AND ResourceId LIKE '010%')
+					OR (@SportType = 8 AND (ResourceId LIKE '010%' OR ResourceId = '8816')))
 			ORDER BY ResourceID ASC
 		END
 	END
