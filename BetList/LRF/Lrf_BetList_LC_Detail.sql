@@ -42,6 +42,7 @@ AS
 		- 20230602@Kos: Support YeeBet [Redmine: 187947]
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20241212@Kos: Support GPI Live Casino [Redmine: 214458]
 
 	Parameters:
 		- @TransType
@@ -208,10 +209,7 @@ BEGIN
 				ELSE ''
 			END AS BetTeam,
 			blc.SiteId,
-			CASE
-				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
-				ELSE ''
-			END AS EventDate
+			blc.TransDate3rd AS EventDate
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
@@ -281,10 +279,7 @@ BEGIN
 				ELSE ''
 			END AS BetTeam,
 			blc.SiteId,
-			CASE
-				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
-				ELSE ''
-			END AS EventDate
+			blc.TransDate3rd AS EventDate
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
@@ -352,10 +347,7 @@ BEGIN
 				ELSE ''
 			END AS BetTeam,
 			blc.SiteId,
-			CASE
-				WHEN sbt.ProductID IN (70) THEN blc.TransDate3rd
-				ELSE ''
-			END AS EventDate
+			blc.TransDate3rd AS EventDate
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN bodb_Archive.dbo.bettransg AS bg WITH (NOLOCK)
