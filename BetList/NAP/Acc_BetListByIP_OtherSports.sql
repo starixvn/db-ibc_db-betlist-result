@@ -183,6 +183,8 @@ AS
 		- 20241023@Razor: Support GPI [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
+		- 20241202@Razor: HF - Missing Sport type today settled tickets [Redmine: #215430]
+		
 */
 
 BEGIN
@@ -1328,7 +1330,14 @@ BEGIN
 					b.CustId,
 					b.Creator,
 					b.Currency,
-					b.SportType,
+					CASE
+						WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'RNGW', 'PGS', 'JK', 'WM', 'BG', 'MXG', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG') THEN b.matchid
+						WHEN b.Product = 'AllBet' THEN 211 -- AllBet
+						WHEN b.Product = 'VB' THEN 212 -- Macau Games
+						WHEN b.Product = 'PP' THEN 248 -- Pragmatic Casino
+						WHEN b.RefTable IN (1, 2) THEN b.matchid
+						ELSE 0
+					END AS SportType,
 					b.BetType,
 					b.BetId,
 					'' AS BetTeam,
