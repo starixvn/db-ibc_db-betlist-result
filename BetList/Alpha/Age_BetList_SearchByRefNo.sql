@@ -46,6 +46,7 @@ AS
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
 		- 20250325@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -350,8 +351,14 @@ BEGIN
 			b.mpositiontaking,
 			b.spositiontaking,
 			b.tpositiontaking,
-			b.discount AS ADiscount,
-			b.adiscount AS MDiscount,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount 
+			END AS ADiscount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END AS MDiscount,
 			b.sdiscount,
 			0 AS ComStatus,
 			0 AS LiveIndicator,
@@ -693,10 +700,12 @@ BEGIN
 				ELSE b.tpositiontaking
 			END AS TPositionTaking,
 			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
 				WHEN @RefTable IN (1, 2) AND x.Discount IS NOT NULL THEN x.Discount
 				ELSE b.discount
 			END AS ADiscount,
 			CASE
+				WHEN b.mrecommend = -4 THEN 0
 				WHEN @RefTable IN (1, 2) AND x.ADiscount IS NOT NULL THEN x.ADiscount
 				ELSE b.adiscount
 			END AS MDiscount,
@@ -929,8 +938,14 @@ BEGIN
 			b.mpositiontaking,
 			b.spositiontaking,
 			b.tpositiontaking,
-			b.discount AS ADiscount,
-			b.adiscount AS MDiscount,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END	AS ADiscount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END AS MDiscount,
 			b.sdiscount,
 			CASE
 				WHEN b.comstatus = '1' THEN '1'
@@ -1278,8 +1293,14 @@ BEGIN
 				mpositiontaking,
 				spositiontaking,
 				tpositiontaking,
-				discount AS ADiscount,
-				adiscount AS MDiscount,
+				CASE
+					WHEN recommend IN (-3, -4) THEN 0
+					ELSE discount
+				END AS ADiscount,
+				CASE
+					WHEN mrecommend = -4 THEN 0
+					ELSE adiscount
+				END AS MDiscount,
 				sdiscount,
 				'0' AS ComStatus,
 				0 AS LiveIndicator,
@@ -1369,8 +1390,14 @@ BEGIN
 				mpositiontaking,
 				spositiontaking,
 				tpositiontaking,
-				discount AS ADiscount,
-				adiscount AS MDiscount,
+				CASE
+					WHEN recommend IN (-3, -4) THEN 0
+					ELSE discount
+				END AS ADiscount,
+				CASE
+					WHEN mrecommend = -4 THEN 0
+					ELSE adiscount
+				END AS MDiscount,
 				sdiscount,
 				'0' AS ComStatus,
 				0 AS LiveIndicator,
@@ -1527,8 +1554,14 @@ BEGIN
 				mpositiontaking,
 				spositiontaking,
 				tpositiontaking,
-				discount AS ADiscount,
-				adiscount AS MDiscount,
+				CASE
+					WHEN recommend IN (-3, -4) THEN 0
+					ELSE discount
+				END AS ADiscount,
+				CASE
+					WHEN mrecommend = -4 THEN 0
+					ELSE adiscount
+				END	AS MDiscount,
 				sdiscount,
 				'0' AS ComStatus,
 				0 AS LiveIndicator,
@@ -1602,8 +1635,14 @@ BEGIN
 				mpositiontaking,
 				spositiontaking,
 				tpositiontaking,
-				discount AS ADiscount,
-				adiscount AS MDiscount,
+				CASE
+					WHEN recommend IN (-3, -4) THEN 0
+					ELSE discount
+				END AS ADiscount,
+				CASE
+					WHEN mrecommend = -4 THEN 0
+					ELSE adiscount
+				END AS MDiscount,
 				sdiscount,
 				'0' AS ComStatus,
 				0 AS LiveIndicator,
@@ -1762,8 +1801,14 @@ BEGIN
 					b.mpositiontaking,
 					b.spositiontaking,
 					b.tpositiontaking,
-					b.discount AS ADiscount,
-					b.adiscount AS MDiscount,
+					CASE
+						WHEN recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END AS ADiscount,
+					CASE
+						WHEN mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END AS MDiscount,
 					b.sdiscount,
 					'0' AS ComStatus,
 					0 AS LiveIndicator,
@@ -1838,8 +1883,14 @@ BEGIN
 					b.mpositiontaking,
 					b.spositiontaking,
 					b.tpositiontaking,
-					b.discount AS ADiscount,
-					b.adiscount AS MDiscount,
+					CASE
+						WHEN recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END AS ADiscount,
+					CASE
+						WHEN mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END AS MDiscount,
 					b.sdiscount,
 					'0' AS ComStatus,
 					0 AS LiveIndicator,
@@ -1918,8 +1969,14 @@ BEGIN
 					b.mpositiontaking,
 					b.spositiontaking,
 					b.tpositiontaking,
-					b.discount AS ADiscount,
-					b.adiscount AS MDiscount,
+					CASE
+						WHEN recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END AS ADiscount,
+					CASE
+						WHEN mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END AS MDiscount,
 					b.sdiscount,
 					'0' AS ComStatus,
 					0 AS LiveIndicator,
@@ -1994,8 +2051,14 @@ BEGIN
 					b.mpositiontaking,
 					b.spositiontaking,
 					b.tpositiontaking,
-					b.discount AS ADiscount,
-					b.adiscount AS MDiscount,
+					CASE
+						WHEN recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END AS ADiscount,
+					CASE
+						WHEN mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END AS MDiscount,
 					b.sdiscount,
 					'0' AS ComStatus,
 					0 AS LiveIndicator,

@@ -39,6 +39,7 @@ AS
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -526,8 +527,14 @@ BEGIN
 			b.mpositiontaking,
 			b.spositiontaking,
 			b.tpositiontaking,
-			b.discount AS ADiscount,
-			b.adiscount AS MDiscount,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount 
+			END AS ADiscount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount 
+			END AS MDiscount,
 			b.sdiscount AS SDiscount,
 			b.liveindicator,
 			CASE
@@ -928,8 +935,14 @@ BEGIN
 			b.mpositiontaking,
 			b.spositiontaking,
 			b.tpositiontaking,
-			b.discount AS ADiscount,
-			b.adiscount AS MDiscount,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount 
+			END AS ADiscount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount 
+			END AS MDiscount,
 			b.sdiscount AS SDiscount,
 			b.liveindicator,
 			CASE

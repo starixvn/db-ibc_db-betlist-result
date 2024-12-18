@@ -181,6 +181,7 @@ AS
 		- 20241224@Razor: HF - Output MatchId to result page [Redmine: #215774]
 		- 20220213@Razor: Support ASKMESLOT [Redmine: #216976]
 		- 20250325@Benji: Support Upcomming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 
 		
 	Param's Explanation:
@@ -555,6 +556,14 @@ BEGIN
 				Comm = b.Comm - b.PlayerComm,
 				AComm = b.AComm - b.Comm,
 				SComm = b.SComm - b.AComm,
+				ADiscount = CASE
+								WHEN bk.recommend IN (-3, -4) THEN 0
+								ELSE b.adiscount
+							END,
+				MDiscount = CASE
+								WHEN bk.mrecommend = -4 THEN 0
+								ELSE b.mdiscount
+							END,
 				Status = CASE
 							WHEN b.Product = 'TG' AND b.Status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 							WHEN b.Product = 'TG' AND b.Status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
@@ -685,6 +694,7 @@ BEGIN
 							END
 			FROM @Data AS b
 				CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
+				LEFT JOIN bodb_Archive.dbo.bettrans_bk AS bk ON b.TransId = bk.TransId
 				LEFT JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') AND b.matchid = m.matchid
 				LEFT JOIN dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
 				LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid

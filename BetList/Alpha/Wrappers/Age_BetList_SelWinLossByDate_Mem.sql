@@ -179,6 +179,7 @@ AS
 		- 20220213@Razor: Support ASKMESLOT [Redmine: #216976]
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
 		- 20250325@Benji: Support Upcomming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -667,10 +668,12 @@ BEGIN
 											WHEN c.RefTable IN (1, 2) AND x.TPositiontaking IS NOT NULL THEN x.TPositiontaking
 											ELSE b.TPositiontaking END
 					,ADiscount = CASE
+									WHEN b.recommend IN (-3, -4) THEN 0
 									WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG') AND x.discount IS NOT NULL THEN x.discount
 									WHEN c.RefTable IN (1, 2) AND x.discount IS NOT NULL THEN x.discount
 									ELSE b.discount END
 					,MDiscount = CASE
+									WHEN b.mrecommend = -4 THEN 0
 									WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG') AND x.adiscount IS NOT NULL THEN x.adiscount
 									WHEN c.RefTable IN (1, 2) AND x.adiscount IS NOT NULL THEN x.adiscount
 									ELSE b.adiscount END
@@ -1027,8 +1030,14 @@ BEGIN
 				,MPositionTaking = b.MPositiontaking
 				,SPositionTaking = b.SPositiontaking
 				,TPositionTaking = b.TPositiontaking
-				,ADiscount = b.discount
-				,MDiscount = b.adiscount
+				,ADiscount = CASE
+								WHEN b.recommend IN (-3, -4) THEN 0
+								ELSE b.discount
+							END
+				,MDiscount = CASE
+								WHEN b.mrecommend = -4 THEN 0
+								ELSE b.adiscount
+							END
 				,SDiscount = b.sdiscount
 				,LiveIndicator = CASE 
 									WHEN c.Product IN ('Parlay') THEN b.Liveindicator 

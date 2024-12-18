@@ -157,6 +157,7 @@ AS
 		- 20241202@Razor: HF for VS 5 - Virtually Sports [Redmine: #214586]
 		- 20241209@Razor: Insert default value for SiteId, CurrencyId [Redmine: #215005]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 
 
 	Param's Explanation:
@@ -749,11 +750,13 @@ BEGIN
 											WHEN c.RefTable IN (1, 2) AND x.TPositiontaking IS NOT NULL THEN x.TPositiontaking
 											ELSE b.TPositiontaking END
 					,ADiscount = CASE
+									WHEN b.recommend IN (-3, -4) THEN 0
 									WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG') AND x.discount IS NOT NULL THEN x.discount
 									WHEN c.RefTable IN (1, 2) AND x.discount IS NOT NULL THEN x.discount
 									WHEN c.Product IN ('Lucky3') THEN 0
 									ELSE b.discount END
 					,MDiscount = CASE
+									WHEN b.mrecommend = -4 THEN 0
 									WHEN c.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'Allbet', 'SAG', 'SBC', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG') AND x.adiscount IS NOT NULL THEN x.adiscount
 									WHEN c.RefTable IN (1, 2) AND x.adiscount IS NOT NULL THEN x.adiscount
 									WHEN c.Product IN ('Lucky3') THEN 0
@@ -1000,8 +1003,14 @@ BEGIN
 						,MPositionTaking = b.MPositiontaking
 						,SPositionTaking = b.SPositiontaking
 						,TPositionTaking = b.TPositiontaking
-						,ADiscount = b.discount
-						,MDiscount = b.adiscount
+						,ADiscount = CASE
+										WHEN b.recommend IN (-3, -4) THEN 0
+										ELSE b.discount
+									END
+						,MDiscount = CASE
+										WHEN b.mrecommend = -4 THEN 0
+										ELSE b.adiscount
+									END
 						,SDiscount = b.sdiscount
 						,LiveIndicator = 0
 						,LiveHomeScore = 0
@@ -1137,8 +1146,14 @@ BEGIN
 					,MPositionTaking = b.MPositiontaking
 					,SPositionTaking = b.SPositiontaking
 					,TPositionTaking = b.TPositiontaking
-					,ADiscount = b.discount
-					,MDiscount = b.adiscount
+					,ADiscount = CASE
+									WHEN b.recommend IN (-3, -4) THEN 0
+									ELSE b.discount
+								END
+					,MDiscount = CASE
+									WHEN b.mrecommend = -4 THEN 0
+									ELSE b.adiscount
+								END
 					,SDiscount = b.sdiscount
 					,LiveIndicator = 0
 					,LiveHomeScore = 0
@@ -1356,8 +1371,14 @@ BEGIN
 					,MPositionTaking = b.MPositiontaking
 					,SPositionTaking = b.SPositiontaking
 					,TPositionTaking = b.TPositiontaking
-					,ADiscount = b.discount
-					,MDiscount = b.adiscount
+					,ADiscount = CASE
+									WHEN b.recommend IN (-3, -4) THEN 0
+									ELSE b.discount
+								END
+					,MDiscount = CASE
+									WHEN b.mrecommend = -4 THEN 0
+									ELSE b.adiscount
+								END
 					,SDiscount = b.sdiscount
 					,LiveIndicator = CASE 
 										WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'LG', 'VS5') THEN b.liveindicator
@@ -1562,8 +1583,14 @@ BEGIN
 					,MPositionTaking = b.MPositiontaking
 					,SPositionTaking = b.SPositiontaking
 					,TPositionTaking = b.TPositiontaking
-					,ADiscount = b.discount
-					,MDiscount = b.adiscount
+					,ADiscount = CASE
+									WHEN b.recommend IN (-3, -4) THEN 0
+									ELSE b.discount
+								END
+					,MDiscount = CASE
+									WHEN b.mrecommend = -4 THEN 0
+									ELSE b.adiscount
+								END
 					,SDiscount = b.sdiscount
 					,LiveIndicator = 0
 					,LiveHomeScore = 0

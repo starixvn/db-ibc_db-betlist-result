@@ -155,6 +155,7 @@ AS
 		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -635,8 +636,14 @@ BEGIN
 			,MPositionTaking = b.MPositiontaking
 			,SPositionTaking = b.SPositiontaking
 			,TPositionTaking = b.TPositiontaking
-			,ADiscount = b.discount
-			,MDiscount = b.adiscount
+			,ADiscount = CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE b.discount
+						END
+			,MDiscount = CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE b.adiscount
+						END
 			,SDiscount = b.sdiscount
 			,LiveIndicator = CASE 
 								WHEN c.Product IN ('Parlay') THEN b.Liveindicator 
@@ -881,8 +888,14 @@ BEGIN
 			,MPositionTaking = x.MPositiontaking
 			,SPositionTaking = x.SPositiontaking
 			,TPositionTaking = x.TPositiontaking
-			,ADiscount = x.discount
-			,MDiscount = x.adiscount
+			,ADiscount = CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE x.discount
+						END
+			,MDiscount = CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE x.adiscount
+						END
 			,SDiscount = x.sdiscount
 			,LiveIndicator = 0
 			,LiveHomeScore = 0
@@ -1024,8 +1037,14 @@ BEGIN
 			,MPositionTaking = b.MPositiontaking
 			,SPositionTaking = b.SPositiontaking
 			,TPositionTaking = b.TPositiontaking
-			,ADiscount = b.discount
-			,MDiscount = b.adiscount
+			,ADiscount = CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE b.discount
+						END
+			,MDiscount = CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE b.adiscount
+						END
 			,SDiscount = b.sdiscount
 			,LiveIndicator = 0
 			,LiveHomeScore = 0

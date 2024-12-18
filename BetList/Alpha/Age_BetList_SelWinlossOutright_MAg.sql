@@ -35,6 +35,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -120,8 +121,14 @@ BEGIN
 			b.betteam,
 			b.apositiontaking,
 			b.mpositiontaking,
-			b.discount AS adiscount,
-			b.adiscount AS mdiscount,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END AS adiscount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount 
+			END AS mdiscount,
 			b.liveindicator,
 			b.livehomescore,
 			b.liveawayscore,
@@ -178,8 +185,14 @@ BEGIN
 			b.betteam,
 			b.apositiontaking,
 			b.mpositiontaking,
-			b.discount AS adiscount,
-			b.adiscount AS mdiscount,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END AS adiscount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount 
+			END AS mdiscount,
 			b.liveindicator,
 			b.livehomescore,
 			b.liveawayscore,

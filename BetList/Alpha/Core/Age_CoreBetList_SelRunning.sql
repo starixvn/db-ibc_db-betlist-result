@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[Age_CoreBetList_SelRunning]
 AS
 
 /*
-	Created: Bobby
+	Created: Bobby
 	Task: Aphla site - refactor betlist core 
 	DB: DBBOF.bodb02
 
@@ -43,6 +43,7 @@ AS
 		- 20231021@Kos: Hotfix - Not show odds for some tickets [Redmine: #195844]
 		- 20231101@Razor: Return Device Type info [Redmine: #192667]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 
 	Param's Explanation:
 		- @BettypeMatrix	: Table TYPE variable
@@ -50,8 +51,8 @@ AS
 	Wrapped SP List:
 		- Age_BetList_SelRunningByBettype_Ag
 		- Age_BetList_SelRunningByBettype_MAg
-		- Age_BetList_SelRunningByBettype_SAg
-		- Age_BetList_SelRunningByBettypeMatch_Ag
+		- Age_BetList_SelRunningByBettype_Sag
+		- Age_BetList_SelRunningBybettypeMatch_Ag
 		- Age_BetList_SelRunningByBettypeMatch_MAg
 		- Age_BetList_SelRunningByBettypeMatch_SAg
 */
@@ -162,8 +163,14 @@ BEGIN
 				, b.mpositiontaking
 				, b.spositiontaking
 				, b.tpositiontaking
-				, b.discount AS Adiscount --Agent
-				, b.adiscount AS Mdiscount --Master
+				, CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END AS Adiscount --Agent
+				, CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END AS Mdiscount --Master
 				, b.sdiscount AS Sdiscount --Super
 				, b.liveindicator
 				, b.livehomescore
@@ -232,8 +239,14 @@ BEGIN
 				, b.MPositiontaking
 				, b.SPositiontaking
 				, b.tpositiontaking
-				, b.discount AS Adiscount --Agent
-				, b.adiscount AS Mdiscount --Master
+				, CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END AS Adiscount --Agent
+				, CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END AS Mdiscount --Master
 				, b.sdiscount AS Sdiscount --Super
 				, b.Liveindicator
 				, b.Livehomescore
@@ -302,8 +315,14 @@ BEGIN
 				, b.MPositiontaking
 				, b.SPositiontaking
 				, b.tpositiontaking
-				, b.discount AS Adiscount --Agent
-				, b.adiscount AS Mdiscount --Master
+				, CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END AS Adiscount --Agent
+				, CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END AS Mdiscount --Master
 				, b.sdiscount AS Sdiscount --Super
 				, b.Liveindicator
 				, b.Livehomescore
@@ -365,8 +384,14 @@ BEGIN
 				, b.MPositiontaking
 				, b.SPositiontaking
 				, b.tpositiontaking
-				, b.discount AS Adiscount --Agent
-				, b.adiscount AS Mdiscount --Master
+				, CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END AS Adiscount --Agent
+				, CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END AS Mdiscount --Master
 				, b.sdiscount AS Sdiscount --Super
 				, b.Liveindicator
 				, b.Livehomescore
@@ -427,8 +452,14 @@ BEGIN
 				, b.MPositiontaking
 				, b.SPositiontaking
 				, b.tpositiontaking
-				, b.discount AS Adiscount --Agent
-				, b.adiscount AS Mdiscount --Master
+				, CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END AS Adiscount --Agent
+				, CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END AS Mdiscount --Master
 				, b.sdiscount AS Sdiscount --Super
 				, b.Liveindicator
 				, b.Livehomescore
@@ -489,8 +520,14 @@ BEGIN
 				, b.MPositiontaking
 				, b.SPositiontaking
 				, b.tpositiontaking
-				, b.discount AS Adiscount --Agent
-				, b.adiscount AS Mdiscount --Master
+				, CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END AS Adiscount --Agent
+				, CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END AS Mdiscount --Master
 				, b.sdiscount AS Sdiscount --Super
 				, b.Liveindicator
 				, b.Livehomescore

@@ -125,6 +125,7 @@ AS
 		- 20241128@Razor: Fix bug, Remove unknown product[Redmine: #207589]
 		- 20241209@Razor: Insert default value for SiteId, CurrencyId [Redmine: #215005]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 
 	Param's Explanation:
 		+ @TransType:
@@ -584,7 +585,15 @@ BEGIN
 								WHEN b.Product IN ('VRG', 'H5LG', 'SLT') THEN b.SiteId
 								ELSE ''
 							END,
-					LeagueGroupId = le.LeagueGroupId
+					LeagueGroupId = le.LeagueGroupId,
+					Adiscount = CASE
+									WHEN bk.recommend IN (-3, -4) THEN 0
+									ELSE b.Adiscount
+								END,
+					MDiscount = CASE
+									WHEN bk.mrecommend = -4 THEN 0
+									ELSE b.MDiscount
+								END
 				FROM @Data AS b
 					CROSS APPLY bodb02.dbo.f_IP_Decompress(b.Ip) AS dp
 					LEFT JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') AND b.matchid = m.matchid
@@ -595,6 +604,7 @@ BEGIN
 					LEFT JOIN dbo.VSRaceInfo_bk AS vrc WITH (NOLOCK) ON b.EventType = 3 AND vrc.EventID = b.matchid
 					LEFT JOIN dbo.match3rd_bk AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 					LEFT JOIN bodb02.dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
+					LEFT JOIN bodb_Archive.dbo.bettrans_bk AS bk WITH (NOLOCK) ON bk.TransId = b.TransId
 					
 				-- Get ticket detail
 				-- Virtual Sports Racing
@@ -707,8 +717,14 @@ BEGIN
 			b.apositiontaking,
 			b.mpositiontaking,
 			b.spositiontaking,
-			b.discount AS ADiscount,
-			b.adiscount AS MDiscount,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END AS ADiscount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END AS MDiscount,
 			b.sdiscount,
 			b.status,
 			b.transdate,

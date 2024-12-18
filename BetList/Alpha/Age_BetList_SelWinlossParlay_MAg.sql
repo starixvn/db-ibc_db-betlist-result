@@ -40,6 +40,7 @@ AS
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240723@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -120,7 +121,10 @@ BEGIN
 			b.apositiontaking,
 			b.mpositiontaking,
 			b.spositiontaking,
-			b.discount AS adiscount,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END AS adiscount,
 			b.adiscount AS mdiscount,
 			b.sdiscount AS sdiscount,
 			b.liveindicator,
@@ -178,7 +182,10 @@ BEGIN
 			b.apositiontaking,
 			b.mpositiontaking,
 			b.spositiontaking,
-			b.discount AS adiscount,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END AS adiscount,
 			b.adiscount AS mdiscount,
 			b.sdiscount AS sdiscount,
 			b.liveindicator,

@@ -167,8 +167,9 @@ AS
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241016@Razor: Provide Risk Amount [Redmine: #202427]
-		- 20241106@Razor: Support VS 5 - Virtually Sports [Red
+		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -302,14 +303,20 @@ BEGIN
 		,BetType = bettype
 		,[Status] = [status]
 		,Actual_Stake = actual_stake
-		,MDiscount = adiscount --mdiscount
+		,MDiscount = CASE
+						WHEN mrecommend = -4 THEN 0
+						ELSE adiscount
+					END
 		,APositionTaking = apositiontaking
 		,BetCheck = ISNULL(betcheck, '') --betcheck
 		,BetId = ISNULL(betid, 0) --betid
 		,BetTeam = betteam
 		,CheckTime = checktime
 		,ComStatus = comstatus
-		,ADiscount = discount --adiscount
+		,ADiscount = CASE
+							WHEN recommend IN (-3, -4) THEN 0
+							ELSE discount
+					END
 		,Hdp1 = hdp1
 		,Hdp2 = hdp2
 		,Ip = ip
@@ -391,14 +398,20 @@ BEGIN
 		,BetType = gameID
 		,Status = status
 		,Actual_Stake = actual_stake
-		,MDiscount = adiscount
+		,MDiscount = CASE
+						WHEN mrecommend = -4 THEN 0
+						ELSE adiscount
+					END
 		,APositionTaking = apositiontaking
 		,BetCheck = ''
 		,BetId = 0
 		,BetTeam = ''
 		,CheckTime = NULL
 		,ComStatus = 0
-		,ADiscount = discount
+		,ADiscount = CASE
+						WHEN recommend IN (-3, -4) THEN 0
+						ELSE discount
+					END
 		,Hdp1 = 0
 		,Hdp2 = 0
 		,Ip = ip
@@ -442,8 +455,14 @@ BEGIN
 			,APositiontaking = AVG(apositiontaking)
 			,MPositiontaking = AVG(mpositiontaking)
 			,SPositiontaking = AVG(spositiontaking)
-			,ADiscount = AVG(discount)
-			,MDiscount = AVG(adiscount)
+			,ADiscount = CASE
+								WHEN recommend IN (-3, -4) THEN 0
+								ELSE AVG(discount)
+							END
+			,MDiscount = CASE
+								WHEN mrecommend = -4 THEN 0
+								ELSE AVG(adiscount)
+							END
 			,SDiscount = AVG(sdiscount)
 			,TableID = 4 --bettransRnG
 		FROM dbo.bettransRnG WITH (NOLOCK)
@@ -454,7 +473,7 @@ BEGIN
 					WHERE ProductID IN (6, 22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
 							OR RefTable = 1
 				)
-		GROUP BY RefNo, gameID
+		GROUP BY RefNo, gameID, recommend, mrecommend
 	) AS s ON s.TransID = d.TransId
 	WHEN MATCHED THEN
 		UPDATE
@@ -505,8 +524,14 @@ BEGIN
 			,APositiontaking = AVG(apositiontaking)
 			,MPositiontaking = AVG(mpositiontaking)
 			,SPositiontaking = AVG(spositiontaking)
-			,ADiscount = AVG(discount)
-			,MDiscount = AVG(adiscount)
+			,ADiscount = CASE
+								WHEN recommend IN (-3, -4) THEN 0
+								ELSE AVG(discount)
+							END
+			,MDiscount = CASE
+								WHEN mrecommend = -4 THEN 0
+								ELSE AVG(adiscount)
+							END
 			,SDiscount = AVG(sdiscount)
 			,TableID = 8 --bettransLC
 		FROM dbo.bettransLC WITH (NOLOCK)
@@ -517,7 +542,7 @@ BEGIN
 					WHERE ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80)
 							OR RefTable = 2
 				)
-		GROUP BY RefNo, gameID
+		GROUP BY RefNo, gameID, recommend, mrecommend
 	) AS s ON s.TransID = d.TransID
 	WHEN MATCHED THEN
 		UPDATE

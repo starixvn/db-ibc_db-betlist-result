@@ -20,6 +20,7 @@ AS
 		- 20231004@Kos: Support Parlay Boost [Redmine: #194992]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -225,8 +226,14 @@ BEGIN
 				MPositionTaking = b.mpositiontaking,
 				SPositionTaking = b.spositiontaking,
 				TPositionTaking = b.tpositiontaking,
-				ADiscount = b.discount,
-				MDiscount = b.adiscount,
+				ADiscount = CASE
+								WHEN b.recommend IN (-3, -4) THEN 0
+								ELSE b.discount
+							END,
+				MDiscount = CASE
+								WHEN b.mrecommend = -4 THEN 0
+								ELSE b.adiscount
+							END,
 				SDiscount = b.sdiscount,
 				LiveIndicator = CASE
 									WHEN c.Product IN ('SB') THEN b.liveindicator
@@ -376,8 +383,14 @@ BEGIN
 				MPositionTaking = b.MPositiontaking,
 				SPositionTaking = b.SPositiontaking,
 				TPositionTaking = b.TPositiontaking,
-				ADiscount = b.discount,
-				MDiscount = b.adiscount,
+				ADiscount = CASE
+								WHEN b.recommend IN (-3, -4) THEN 0
+								ELSE b.discount
+							END,
+				MDiscount = CASE
+								WHEN b.mrecommend = -4 THEN 0
+								ELSE b.adiscount
+							END,
 				SDiscount = b.sdiscount,
 				LiveIndicator = 0,
 				LiveHomeScore = 0,
@@ -492,8 +505,14 @@ BEGIN
 				MPositionTaking = b.mpositiontaking,
 				SPositionTaking = b.spositiontaking,
 				TPositionTaking = b.tpositiontaking,
-				ADiscount = b.discount,
-				MDiscount = b.adiscount,
+				ADiscount = CASE
+								WHEN b.recommend IN (-3, -4) THEN 0
+								ELSE b.discount
+							END,
+				MDiscount = CASE
+								WHEN b.mrecommend = -4 THEN 0
+								ELSE b.adiscount
+							END,
 				SDiscount = b.sdiscount,
 				LiveIndicator = CASE 
 									WHEN c.Product IN ('SB') THEN b.liveindicator

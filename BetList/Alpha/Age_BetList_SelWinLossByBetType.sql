@@ -21,6 +21,7 @@ AS
 		- 20211004@Razor: Extend Data type of IP v6 [Redmine: #90903]
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 
 */
 
@@ -209,8 +210,14 @@ BEGIN
 				MPositionTaking = b.mpositiontaking,
 				SPositionTaking = b.spositiontaking,
 				TPositionTaking = b.tpositiontaking,
-				ADiscount = b.discount,
-				MDiscount = b.adiscount,
+				ADiscount = CASE
+								WHEN b.recommend IN (-3, -4) THEN 0
+								ELSE b.discount
+							END,
+				MDiscount = CASE
+								WHEN b.mrecommend = -4 THEN 0
+								ELSE b.adiscount
+							END,
 				SDiscount = b.sdiscount,
 				Ip = b.ip,
 				ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
@@ -338,8 +345,14 @@ BEGIN
 				MPositionTaking = b.mpositiontaking,
 				SPositionTaking = b.spositiontaking,
 				TPositionTaking = b.tpositiontaking,
-				ADiscount = b.discount,
-				MDiscount = b.adiscount,
+				ADiscount = CASE
+								WHEN b.recommend IN (-3, -4) THEN 0
+								ELSE b.discount
+							END,
+				MDiscount = CASE
+								WHEN b.mrecommend = -4 THEN 0
+								ELSE b.adiscount
+							END,
 				SDiscount = b.sdiscount,
 				Ip = b.ip,
 				ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,

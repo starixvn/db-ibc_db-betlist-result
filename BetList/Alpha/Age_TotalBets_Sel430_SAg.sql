@@ -26,6 +26,7 @@ AS
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20241016@Razor: Provide Risk Amount [Redmine: #202427]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -60,8 +61,14 @@ BEGIN
 		b.spositiontaking,
 		b.mpositiontaking,
 		b.apositiontaking,
-		b.discount AS Adiscount,
-		b.adiscount AS Mdiscount,
+		CASE
+			WHEN b.recommend IN (-3, -4) THEN 0
+			ELSE b.discount
+		END AS Adiscount,
+		CASE
+			WHEN b.mrecommend = -4 THEN 0
+			ELSE b.adiscount
+		END AS Mdiscount,
 		b.sdiscount AS Sdiscount,
 		b.livehomescore,
 		b.liveawayscore,
