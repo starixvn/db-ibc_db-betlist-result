@@ -25,6 +25,7 @@ AS
 		- 20211025@Razor: Decompress IP on BK range [Redmine: #90903]
 		- 20211115@Razor: Enhance to get Detail ticket [Redmine: #164614]
 		- 20220927@Razor: Remove Betfrom column [Redmine: #126137]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -154,8 +155,14 @@ BEGIN
 			m.matchcode,
 			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END,
 			m.homeid,
 			m.awayid,
 			ISNULL(b.checktime, '') AS SettleTime,
@@ -226,8 +233,14 @@ BEGIN
 			m.matchcode,
 			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END,
 			m.homeid,
 			m.awayid,
 			ISNULL(b.checktime, '') AS SettleTime,
@@ -295,8 +308,14 @@ BEGIN
 			m.matchcode,
 			m.GlobalShowTime AS EventDate,
 			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END,
 			m.homeid,
 			m.awayid,
 			ISNULL(b.checktime, '') AS SettleTime,

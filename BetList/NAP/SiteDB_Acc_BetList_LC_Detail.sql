@@ -27,6 +27,7 @@ AS
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20250106@Razor: SA Gaming support Saba Plus [Redmine: #215645]
 		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino )
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 
 	Parameters:
 		- @TransType
@@ -216,10 +217,12 @@ BEGIN
 				ELSE blc.sdiscount
 			END AS SDiscount,
 			CASE
+				WHEN blc.mrecommend = -4 THEN 0
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.adiscount, blc.adiscount)
 				ELSE blc.adiscount
 			END AS ADiscount,
 			CASE
+				WHEN blc.recommend IN (-3, -4) THEN 0
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.discount, blc.discount)
 				ELSE blc.discount
 			END AS Discount,

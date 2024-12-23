@@ -59,6 +59,7 @@ AS
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20240507@Razor: Check permission for Real Currency [Redmine: #202523]
 		- 20240808@Razor: Remove Linked Server on DBCust [Redmine: #206893]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 */
 
  BEGIN
@@ -333,8 +334,7 @@ AS
 		SUM(u.TotalBet) AS totalBet
 	FROM @UserTicket AS u
 		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON u.custid = c.custid
-		INNER JOIN dbo.Customer AS a WITH (NOLOCK) ON c.recommend = a.custid
-	WHERE a.site NOT IN (SELECT Site FROM @DeniedSite)
+	WHERE c.site NOT IN (SELECT Site FROM @DeniedSite)
 			AND c.currency NOT IN (SELECT ExchangeId FROM @DeniedCurrency)
 	GROUP BY c.custid,
 		c.username

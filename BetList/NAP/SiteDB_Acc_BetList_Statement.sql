@@ -40,6 +40,7 @@ AS
 		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241210@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
+		- 20250116@Razor: Support Direct Member [Redmine: #211969]
 
 	Param's Explanation:
 		+ @TransType:
@@ -199,8 +200,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				ISNULL(b.checktime, '') AS settletime,
 				m.matchid,
 				b.transid,
@@ -294,8 +301,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				ISNULL(b.checktime, '') AS settletime,
 				0 AS MatchId,
 				CASE
@@ -379,8 +392,14 @@ BEGIN
 				b.virtualrate,
 				CASE WHEN b.currency2 IS NULL THEN CONVERT(BIT,0) ELSE CONVERT(BIT,1) END AS isShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				ISNULL(b.checktime, '') AS settletime,
 				'',
 				b.transid,
@@ -462,8 +481,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				ISNULL(b.checktime, '') AS settletime,
 				b.matchid,
 				b.transid,
@@ -565,8 +590,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				ISNULL(b.checktime, '') AS settletime,
 				CASE
 					WHEN s.ProductId = 23 THEN b.betdaqid
@@ -711,8 +742,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				'' AS settletime,
 				b.matchid,
 				b.transid,
@@ -839,8 +876,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				ISNULL(b.checktime, '') AS settletime,
 				m.matchid,
 				b.transid,
@@ -939,8 +982,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				'' AS settletime,
 				m.matchid,
 				b.translogid AS transid,
@@ -1027,8 +1076,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				ISNULL(b.checktime, '') AS settletime,
 				0 AS MatchId,
 				CASE
@@ -1124,8 +1179,14 @@ BEGIN
 				b.virtualrate,
 				CASE WHEN b.currency2 IS NULL THEN CONVERT(BIT,0) ELSE CONVERT(BIT,1) END AS isShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				'' AS settletime,
 				'',
 				b.transid,
@@ -1207,8 +1268,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				ISNULL(b.checktime, '') AS settletime,
 				b.matchid,
 				b.transid,
@@ -1298,8 +1365,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				'' AS settletime,
 				CASE
 					WHEN s.ProductId = 23 THEN b.betdaqid
@@ -1402,8 +1475,14 @@ BEGIN
 					0,
 					0,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					'' AS settletime,
 					0 AS MatchId,
 					0 AS transid,
@@ -1511,8 +1590,14 @@ BEGIN
 					0,
 					0,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					'' AS settletime,
 					CASE
 						WHEN s.ProductId = 74 THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
@@ -1640,8 +1725,14 @@ BEGIN
 					0,
 					0,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					'' AS settletime,
 					0 AS matchid,
 					b.transid,
@@ -1740,8 +1831,14 @@ BEGIN
 					0,
 					0,
 					AVG(brng.sdiscount) AS sdiscount,
-					AVG(brng.adiscount) AS adiscount,
-					AVG(brng.discount) AS discount,
+					CASE
+						WHEN brng.mrecommend = -4 THEN 0
+						ELSE AVG(brng.adiscount) 
+					END AS adiscount,
+					CASE
+						WHEN brng.recommend IN (-3, -4) THEN 0
+						ELSE AVG(brng.discount) 
+					END AS discount,
 					'' AS settletime,
 					0 AS matchid,
 					b.transid,
@@ -1839,7 +1936,9 @@ BEGIN
 					b.matchid,
 					b.transdesc,
 					s.ProductID,
-					b.DeviceType
+					b.DeviceType,
+					brng.recommend,
+					brng.mrecommend
 				OPTION (RECOMPILE)
 			END
 
@@ -1862,8 +1961,14 @@ BEGIN
 					0,
 					0,
 					AVG(brng.sdiscount) AS sdiscount,
-					AVG(brng.adiscount) AS adiscount,
-					AVG(brng.discount) AS discount,
+					CASE
+						WHEN brng.mrecommend = -4 THEN 0
+						ELSE AVG(brng.adiscount) 
+					END AS adiscount,
+					CASE
+						WHEN brng.recommend IN (-3, -4) THEN 0
+						ELSE AVG(brng.discount) 
+					END AS discount,
 					'' AS settletime,
 					0 AS matchid,
 					b.transid,
@@ -1950,7 +2055,9 @@ BEGIN
 					b.matchid,
 					b.transdesc,
 					s.ProductID,
-					b.DeviceType
+					b.DeviceType,
+					brng.recommend,
+					brng.mrecommend
 				OPTION (RECOMPILE)
 			END
 
@@ -1974,8 +2081,14 @@ BEGIN
 					0,
 					0,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					'' AS settletime,
 					0 AS matchid,
 					b.transid,
@@ -2064,8 +2177,14 @@ BEGIN
 					0,
 					0,
 					AVG(blc.sdiscount) AS sdiscount,
-					AVG(blc.adiscount) AS adiscount,
-					AVG(blc.discount) AS discount,
+					CASE
+						WHEN blc.mrecommend = -4 THEN 0
+						ELSE AVG(blc.adiscount) 
+					END AS adiscount,
+					CASE
+						WHEN blc.recommend IN (-3, -4) THEN 0
+						ELSE AVG(blc.discount) 
+					END AS discount,
 					'' AS settletime,
 					0 AS matchid,
 					b.transid,
@@ -2151,7 +2270,9 @@ BEGIN
 					b.comstatus,
 					s.ProductID,
 					b.matchid,
-					b.DeviceType
+					b.DeviceType,
+					blc.recommend,
+					blc.mrecommend
 				OPTION (RECOMPILE)
 			END
 
@@ -2174,8 +2295,14 @@ BEGIN
 					0,
 					0,
 					AVG(blc.sdiscount) AS sdiscount,
-					AVG(blc.adiscount) AS adiscount,
-					AVG(blc.discount) AS discount,
+					CASE
+						WHEN blc.mrecommend = -4 THEN 0
+						ELSE AVG(blc.adiscount) 
+					END AS adiscount,
+					CASE
+						WHEN blc.recommend IN (-3, -4) THEN 0
+						ELSE AVG(blc.discount) 
+					END AS discount,
 					'' AS settletime,
 					0 AS matchid,
 					b.transid,
@@ -2257,7 +2384,9 @@ BEGIN
 					b.comstatus,
 					s.ProductID,
 					b.matchid,
-					b.DeviceType
+					b.DeviceType,
+					blc.mrecommend,
+					blc.recommend
 				OPTION (RECOMPILE)
 			END
 
@@ -2286,8 +2415,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				'' AS settletime,
 				b.matchid,
 				b.transid,

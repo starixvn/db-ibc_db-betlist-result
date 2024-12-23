@@ -16,6 +16,7 @@ AS
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -96,8 +97,14 @@ BEGIN
 			b.awinlost,
 			b.mwinlost,
 			b.swinlost,
-			b.discount,
-			b.adiscount,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END,
 			b.sdiscount,
 			(b.comm - b.playercomm) AS comm,
 			(b.acomm - b.comm) AS acomm,

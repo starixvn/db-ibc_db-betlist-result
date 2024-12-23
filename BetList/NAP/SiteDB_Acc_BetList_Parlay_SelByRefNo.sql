@@ -21,6 +21,7 @@ AS
 		- 20231025@Kos: Hotfix - missing odds for bk range [Redmine: #196042]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -424,8 +425,14 @@ BEGIN
 			b.mwinlost,
 			b.awinlost,
 			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END,
 			b.scomm - b.acomm,
 			b.acomm - b.comm,
 			b.comm - b.playercomm,
@@ -501,8 +508,14 @@ BEGIN
 			b.mwinlost,
 			b.awinlost,
 			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END,
 			b.scomm - b.acomm,
 			b.acomm - b.comm,
 			b.comm - b.playercomm,
@@ -565,8 +578,14 @@ BEGIN
 			b.mwinlost,
 			b.awinlost,
 			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END,
 			b.scomm - b.acomm,
 			b.acomm - b.comm,
 			b.comm - b.playercomm,

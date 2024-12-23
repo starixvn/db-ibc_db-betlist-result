@@ -75,6 +75,7 @@ AS
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240403@Razor: Support Saba xD [Redmine: #203371]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 
 	Parameters:
 		- @TransType
@@ -243,8 +244,14 @@ BEGIN
 			brng.mwinlost,
 			brng.awinlost,
 			brng.sdiscount,
-			brng.adiscount,
-			brng.discount,
+			CASE
+				WHEN brng.mrecommend = -4 THEN 0
+				ELSE brng.adiscount
+			END,
+			CASE
+				WHEN brng.recommend IN (-3, -4) THEN 0
+				ELSE brng.discount
+			END,
 			(brng.scomm - brng.acomm) AS scomm,
 			(brng.acomm - brng.comm) AS acomm,
 			(brng.comm - brng.playercomm) AS comm,
@@ -309,8 +316,14 @@ BEGIN
 			brng.mwinlost,
 			brng.awinlost,
 			brng.sdiscount,
-			brng.adiscount,
-			brng.discount,
+			CASE
+				WHEN brng.mrecommend = -4 THEN 0
+				ELSE brng.adiscount
+			END,
+			CASE
+				WHEN brng.recommend IN (-3, -4) THEN 0
+				ELSE brng.discount
+			END,
 			(brng.scomm - brng.acomm) AS scomm,
 			(brng.acomm - brng.comm) AS acomm,
 			(brng.comm - brng.playercomm) AS comm,
@@ -374,8 +387,14 @@ BEGIN
 			brng.mwinlost,
 			brng.awinlost,
 			brng.sdiscount,
-			brng.adiscount,
-			brng.discount,
+			CASE
+				WHEN brng.mrecommend = -4 THEN 0
+				ELSE brng.adiscount
+			END,
+			CASE
+				WHEN brng.recommend IN (-3, -4) THEN 0
+				ELSE brng.discount
+			END,
 			(brng.scomm - brng.acomm) AS scomm,
 			(brng.acomm - brng.comm) AS acomm,
 			(brng.comm - brng.playercomm) AS comm,

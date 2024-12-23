@@ -58,6 +58,7 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20241219@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
+		- 20250116@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -275,8 +276,14 @@ BEGIN
 				0 AS VirtualRate,
 				0 AS IsShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				m.homeid,
 				m.awayid,
 				ISNULL(b.checktime,'') AS SettleTime,
@@ -367,8 +374,14 @@ BEGIN
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				m.homeid,
 				m.awayid,
 				'' AS settleTime,
@@ -452,8 +465,14 @@ BEGIN
 				0 AS VirtualRate,
 				0 AS IsShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				m.homeid,
 				m.awayid,
 				ISNULL(b.checktime,'') AS SettleTime,
@@ -535,8 +554,14 @@ BEGIN
 				0 AS VirtualRate,
 				0 AS IsShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				0 AS HomeId,
 				0 AS AwayId,
 				'' AS SettleTime,
@@ -625,8 +650,14 @@ BEGIN
 				0 AS VirtualRate,
 				0 AS IsShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				0 AS Homeid,
 				odds.teamid AS awayid,
 				'' AS SettleTime,
@@ -708,8 +739,14 @@ BEGIN
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				0 AS homeid,
 				0 AS awayid,
 				'' AS settleTime,
@@ -844,8 +881,14 @@ BEGIN
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				0 AS HomeId,
 				0 AS awayID,
 				'' AS SettleTime,
@@ -940,8 +983,14 @@ BEGIN
 				0,
 				0,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				0 AS homeid,
 				0 AS awayid,
 				'' AS settleTime,
@@ -1047,8 +1096,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					AVG(brng.sdiscount) AS sdiscount,
-					AVG(brng.adiscount) AS adiscount,
-					AVG(brng.discount) AS discount,
+					CASE
+						WHEN brng.mrecommend = -4 THEN 0
+						ELSE AVG(brng.adiscount) 
+					END AS adiscount,
+					CASE
+						WHEN brng.recommend IN (-3, -4) THEN 0
+						ELSE AVG(brng.discount) 
+					END AS discount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -1134,7 +1189,9 @@ BEGIN
 					b.comstatus,
 					b.transdesc,
 					s.ProductID,
-					b.DeviceType
+					b.DeviceType,
+					brng.recommend,
+					brng.mrecommend
 
 				-- Yesterday and later settled ticket
 				INSERT INTO @Data
@@ -1149,8 +1206,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					AVG(brng.sdiscount) AS sdiscount,
-					AVG(brng.adiscount) AS adiscount,
-					AVG(brng.discount) AS discount,
+					CASE
+						WHEN brng.mrecommend = -4 THEN 0
+						ELSE AVG(brng.adiscount) 
+					END AS adiscount,
+					CASE
+						WHEN brng.recommend IN (-3, -4) THEN 0
+						ELSE AVG(brng.discount) 
+					END AS discount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -1247,7 +1310,9 @@ BEGIN
 					b.comstatus,
 					b.transdesc,
 					s.ProductID,
-					b.DeviceType
+					b.DeviceType,
+					brng.mrecommend,
+					brng.recommend
 			END
 			ELSE
 			BEGIN
@@ -1264,8 +1329,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -1363,8 +1434,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					AVG(blc.sdiscount) AS sdiscount,
-					AVG(blc.adiscount) AS adiscount,
-					AVG(blc.discount) AS discount,
+					CASE
+						WHEN blc.mrecommend = -4 THEN 0
+						ELSE AVG(blc.adiscount) 
+					END AS adiscount,
+					CASE
+						WHEN blc.recommend IN (-3, -4) THEN 0
+						ELSE AVG(blc.discount) 
+					END AS discount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -1444,7 +1521,9 @@ BEGIN
 					b.comstatus,
 					s.ProductID,
 					b.matchid,
-					b.DeviceType
+					b.DeviceType,
+					blc.recommend,
+					blc.mrecommend
 
 				-- Yesterday and later settled ticket
 				INSERT INTO @Data
@@ -1459,8 +1538,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					AVG(blc.sdiscount) AS sdiscount,
-					AVG(blc.adiscount) AS adiscount,
-					AVG(blc.discount) AS discount,
+					CASE
+						WHEN blc.mrecommend = -4 THEN 0
+						ELSE AVG(blc.adiscount) 
+					END AS adiscount,
+					CASE
+						WHEN blc.recommend IN (-3, -4) THEN 0
+						ELSE AVG(blc.discount) 
+					END AS discount,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -1544,7 +1629,9 @@ BEGIN
 					b.comstatus,
 					s.ProductID,
 					b.matchid,
-					b.DeviceType
+					b.DeviceType,
+					blc.recommend,
+					blc.mrecommend
 			END
 			ELSE
 			BEGIN
@@ -1561,8 +1648,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					0 AS homeid,
 					0 AS awayid,
 					'' AS settleTime,
@@ -1631,7 +1724,6 @@ BEGIN
 					AND (s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR s.RefTable = 2)
 			END
 		END
-
 		-- Get related Bonus/Cash tickets
 		IF EXISTS (SELECT 1 FROM @Data WHERE RefCode <> 0)
 		BEGIN
@@ -1647,8 +1739,14 @@ BEGIN
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				m.homeid,
 				m.awayid,
 				ISNULL(b.checktime,'') settleTime,
@@ -1853,8 +1951,14 @@ BEGIN
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				0 AS homeid,
 				0 AS awayid,
 				'' AS settleTime,
@@ -1980,8 +2084,14 @@ BEGIN
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				0 AS homeid,
 				0 AS awayid,
 				'' AS settleTime,
@@ -2075,8 +2185,14 @@ BEGIN
 			0 AS virtualrate,
 			0 AS isShowOTExRate,
 			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END,
 			0 AS homeid,
 			0 AS awayid,
 			'' AS settleTime,
@@ -2186,8 +2302,14 @@ BEGIN
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN blc.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN blc.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				0 AS homeid,
 				0 AS awayid,
 				'' AS settleTime,
@@ -2267,8 +2389,14 @@ BEGIN
 				0 AS virtualrate,
 				0 AS isShowOTExRate,
 				b.sdiscount,
-				b.adiscount,
-				b.discount,
+				CASE
+					WHEN b2.mrecommend = -4 THEN 0
+					ELSE b.adiscount
+				END,
+				CASE
+					WHEN b2.recommend IN (-3, -4) THEN 0
+					ELSE b.discount
+				END,
 				0 AS homeid,
 				0 AS awayid,
 				'' AS settleTime,
@@ -2355,8 +2483,14 @@ BEGIN
 			0 AS virtualrate,
 			0 AS isShowOTExRate,
 			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN b2.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END,
+			CASE
+				WHEN b2.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END,
 			0 AS homeid,
 			0 AS awayid,
 			'' AS settleTime,
@@ -2437,8 +2571,14 @@ BEGIN
 			0 AS virtualrate,
 			0 AS isShowOTExRate,
 			b.sdiscount,
-			b.adiscount,
-			b.discount,
+			CASE
+				WHEN b2.mrecommend = -4 THEN 0
+				ELSE b.adiscount
+			END,
+			CASE
+				WHEN b2.recommend IN (-3, -4) THEN 0
+				ELSE b.discount
+			END,
 			0 AS homeid,
 			0 AS awayid,
 			'' AS settleTime,

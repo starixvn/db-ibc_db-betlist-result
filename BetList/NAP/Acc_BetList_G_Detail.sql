@@ -24,6 +24,7 @@ AS
 		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
+		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -178,8 +179,14 @@ BEGIN
 			bg.mwinlost,
 			bg.awinlost,
 			bg.sdiscount,
-			bg.adiscount,
-			bg.discount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE bg.adiscount
+			END,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE bg.discount
+			END,
 			bg.scomm - bg.acomm AS SComm,
 			bg.acomm - bg.comm AS AComm,
 			bg.comm - bg.playercomm AS Comm,
@@ -225,8 +232,14 @@ BEGIN
 			bg.mwinlost,
 			bg.awinlost,
 			bg.sdiscount,
-			bg.adiscount,
-			bg.discount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE bg.adiscount
+			END,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE bg.discount
+			END,
 			bg.scomm - bg.acomm AS SComm,
 			bg.acomm - bg.comm AS AComm,
 			bg.comm - bg.playercomm AS Comm,
@@ -272,8 +285,14 @@ BEGIN
 			bg.mwinlost,
 			bg.awinlost,
 			bg.sdiscount,
-			bg.adiscount,
-			bg.discount,
+			CASE
+				WHEN b.mrecommend = -4 THEN 0
+				ELSE bg.adiscount
+			END,
+			CASE
+				WHEN b.recommend IN (-3, -4) THEN 0
+				ELSE bg.discount
+			END,
 			bg.scomm - bg.acomm AS SComm,
 			bg.acomm - bg.comm AS AComm,
 			bg.comm - bg.playercomm AS Comm,

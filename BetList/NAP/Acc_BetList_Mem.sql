@@ -123,6 +123,7 @@ AS
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
 		- 20250312@Benji: Support FunkyGames [Redmine: #218176]
 		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 
 */
 
@@ -1170,8 +1171,14 @@ BEGIN
 							AVG(brng.mpositiontaking) AS mpositiontaking,
 							AVG(brng.spositiontaking) AS spositiontaking,
 							AVG(brng.playerdiscount) AS playerdiscount,
-							AVG(brng.discount) AS discount,
-							AVG(brng.adiscount) AS adiscount,
+							CASE
+								WHEN brng.recommend IN (-3, -4) THEN 0
+								ELSE AVG(brng.discount)
+							END AS discount,
+							CASE
+								WHEN brng.mrecommend = -4 THEN 0
+								ELSE AVG(brng.adiscount)
+							END AS adiscount,
 							AVG(brng.sdiscount) AS sdiscount,
 							0 AS OddsSpread
 						FROM @Data AS c
@@ -1182,7 +1189,9 @@ BEGIN
 							AND brng.statusID IN (0, 1)
 						GROUP BY
 							c.TransId,
-							c.Product
+							c.Product,
+							brng.recommend,
+							brng.mrecommend
 					END
 
 					-- Settled
@@ -1216,8 +1225,14 @@ BEGIN
 							AVG(brng.mpositiontaking) AS mpositiontaking,
 							AVG(brng.spositiontaking) AS spositiontaking,
 							AVG(brng.playerdiscount) AS playerdiscount,
-							AVG(brng.discount) AS discount,
-							AVG(brng.adiscount) AS adiscount,
+							CASE
+								WHEN brng.recommend IN (-3, -4) THEN 0
+								ELSE AVG(brng.discount)
+							END AS discount,
+							CASE
+								WHEN brng.mrecommend = -4 THEN 0
+								ELSE AVG(brng.adiscount)
+							END AS adiscount,
 							AVG(brng.sdiscount) AS sdiscount,
 							CASE
 								WHEN c.Product IN ('OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN ISNULL(SUM(brng.BetStake), 0)
@@ -1231,7 +1246,9 @@ BEGIN
 							AND brng.statusID NOT IN (0, 1)
 						GROUP BY
 							c.TransId,
-							c.Product
+							c.Product,
+							brng.recommend,
+							brng.mrecommend
 					END
 				END
 
@@ -1259,8 +1276,14 @@ BEGIN
 							AVG(blc.mpositiontaking) AS mpositiontaking,
 							AVG(blc.spositiontaking) AS spositiontaking,
 							AVG(blc.playerdiscount) AS playerdiscount,
-							AVG(blc.discount) AS discount,
-							AVG(blc.adiscount) AS adiscount,
+							CASE
+								WHEN blc.recommend IN (-3, -4) THEN 0
+								ELSE AVG(blc.discount)
+							END AS discount,
+							CASE
+								WHEN blc.mrecommend = -4 THEN 0
+								ELSE AVG(blc.adiscount)
+							END AS adiscount,
 							AVG(blc.sdiscount) AS sdiscount,
 							0 AS OddsSpread
 						FROM @Data AS c
@@ -1270,7 +1293,9 @@ BEGIN
 							AND blc.statusID IN (0, 1)
 						GROUP BY
 							c.TransId,
-							c.Product
+							c.Product,
+							blc.recommend,
+							blc.mrecommend
 					END
 
 					-- Settled
@@ -1301,8 +1326,14 @@ BEGIN
 							AVG(blc.mpositiontaking) AS mpositiontaking,
 							AVG(blc.spositiontaking) AS spositiontaking,
 							AVG(blc.playerdiscount) AS playerdiscount,
-							AVG(blc.discount) AS discount,
-							AVG(blc.adiscount) AS adiscount,
+							CASE
+								WHEN blc.recommend IN (-3, -4) THEN 0
+								ELSE AVG(blc.discount)
+							END AS discount,
+							CASE
+								WHEN blc.mrecommend = -4 THEN 0
+								ELSE AVG(blc.adiscount)
+							END AS adiscount,
 							AVG(blc.sdiscount) AS sdiscount,
 							0 AS OddsSpread
 						FROM @Data AS c
@@ -1312,7 +1343,9 @@ BEGIN
 							AND blc.statusID NOT IN (0, 1)
 						GROUP BY
 							c.TransId,
-							c.Product
+							c.Product,
+							blc.recommend,
+							blc.mrecommend
 					END
 				END
 
@@ -1506,6 +1539,14 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') THEN ISNULL(b.RefCode, 0)
 									ELSE 0
+								END,
+					Discount = CASE
+									WHEN bt.recommend IN (-3, -4) THEN 0
+									ELSE b.discount
+								END,
+					ADiscount = CASE
+									WHEN bt.mrecommend = -4 THEN 0
+									ELSE b.adiscount
 								END
 				FROM @Data AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4') AND b.matchid = m.matchid
@@ -1513,6 +1554,7 @@ BEGIN
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
+					LEFT JOIN dbo.bettrans AS bt WITH(NOLOCK) ON bt.TransId = b.TransId
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 
 							'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'FS', 'FAC', 'NS', 'ON', 'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT')
@@ -1620,9 +1662,18 @@ BEGIN
 								END,
 					OddsSpread = 0,
 					BetdaqId = -1,
-					ExtraInfo = ISNULL(b.ExtraInfo, '')
+					ExtraInfo = ISNULL(b.ExtraInfo, ''),
+					Discount = CASE
+									WHEN tl.recommend IN (-3, -4) THEN 0
+									ELSE b.discount
+								END,
+					ADiscount = CASE
+									WHEN tl.mrecommend = -4 THEN 0
+									ELSE b.adiscount
+								END
 				FROM @Data AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.BetType BETWEEN 801 AND 806 AND b.eventid = m.matchid
+					LEFT JOIN dbo.translog AS tl WITH (NOLOCK) ON tl.translogid = b.transid
 				WHERE TableID = 4
 
 				-- bettransRnG & bettransLC yesterday and today tickets
@@ -1973,6 +2024,14 @@ BEGIN
 					RefCode = CASE
 									WHEN b.Product IN ('SB') THEN ISNULL(b.RefCode, 0)
 									ELSE 0
+								END,
+					Discount = CASE
+									WHEN bt.recommend IN (-3, -4) THEN 0
+									ELSE b.discount
+								END,
+					ADiscount = CASE
+									WHEN bt.mrecommend = -4 THEN 0
+									ELSE b.adiscount
 								END
 				FROM @Data AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4') AND b.matchid = m.matchid
@@ -1980,6 +2039,7 @@ BEGIN
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
 					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
 					LEFT JOIN dbo.match3rd14 AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
+					LEFT JOIN dbo.bettrans14 AS bt WITH (NOLOCK) ON bt.TransId = b.TransId
 				WHERE b.TableID = 2
 
 				-- Get match info for Player Tips
@@ -2159,7 +2219,15 @@ BEGIN
 									WHEN b.Product IN ('SB') THEN ISNULL(b.RefCode, 0)
 									ELSE 0
 								END,
-					Ip = dp.Ip
+					Ip = dp.Ip,
+					Discount = CASE
+									WHEN bt.recommend IN (-3, -4) THEN 0
+									ELSE b.discount
+								END,
+					ADiscount = CASE
+									WHEN bt.mrecommend = -4 THEN 0
+									ELSE b.adiscount
+								END
 				FROM @Data AS b
 					CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
 					LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'LG', 'VS4') AND b.matchid = m.matchid
@@ -2167,6 +2235,7 @@ BEGIN
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueid = l.leagueid
 					LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
 					LEFT JOIN bodb_Archive.dbo.match3rd_bk AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
+					LEFT JOIN bodb_Archive.dbo.bettrans_bk AS bt WITH (NOLOCK) ON bt.TransId = b.TransId
 				WHERE b.TableID = 3
 
 				-- Get match info for Player Tips

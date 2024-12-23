@@ -204,6 +204,7 @@ AS
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20241219@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
 		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino )
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -416,8 +417,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					m.homeid,
 					m.awayid,
@@ -515,8 +522,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					m.homeid,
 					m.awayid,
@@ -677,8 +690,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					m.homeid,
 					m.awayid,
@@ -762,8 +781,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -858,8 +883,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -980,8 +1011,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -1068,8 +1105,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					odds.teamid AS awayid,
@@ -1154,8 +1197,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeID,
 					0 AS awayID,
@@ -1239,7 +1288,6 @@ BEGIN
 					b.transid = @TransId
 					AND s.EventType = 3
 			END
-
 			-- Keno, Lottery, Virtual Games, Table Games, Indo 4D, Leap Gaming Virtual Sports, Happy 5 Linked Games(Number Game), Sports Lottery (translog)
 			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype
 						WHERE (ProductID IN (8, 28, 38, 40, 43, 49, 63) OR (ProductID = 3 AND EventType = 0)) AND Bettype = @BetType )
@@ -1256,8 +1304,14 @@ BEGIN
 					0,
 					0,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -1364,8 +1418,14 @@ BEGIN
 						0 AS virtualrate,
 						0 AS isShowOTExRate,
 						AVG(brng.sdiscount) AS sdiscount,
-						AVG(brng.adiscount) AS adiscount,
-						AVG(brng.discount) AS discount,
+						CASE
+							WHEN brng.mrecommend = -4 THEN 0
+							ELSE AVG(brng.adiscount) 
+						END AS adiscount,
+						CASE
+							WHEN brng.recommend IN (-3, -4) THEN 0
+							ELSE AVG(brng.discount) 
+						END AS discount,
 						AVG(brng.playerdiscount) AS playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
@@ -1454,7 +1514,9 @@ BEGIN
 						b.matchid,
 						b.transdesc,
 						s.ProductID,
-						b.DeviceType
+						b.DeviceType,
+						brng.mrecommend,
+						brng.recommend
 
 					-- Yesterday and today settled ticket
 					INSERT INTO @Data
@@ -1469,8 +1531,14 @@ BEGIN
 						0 AS virtualrate,
 						0 AS isShowOTExRate,
 						AVG(brng.sdiscount) AS sdiscount,
-						AVG(brng.adiscount) AS adiscount,
-						AVG(brng.discount) AS discount,
+						CASE
+							WHEN brng.mrecommend = -4 THEN 0
+							ELSE AVG(brng.adiscount) 
+						END AS adiscount,
+						CASE
+							WHEN brng.recommend IN (-3, -4) THEN 0
+							ELSE AVG(brng.discount) 
+						END AS discount,
 						AVG(brng.playerdiscount) AS playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
@@ -1570,7 +1638,9 @@ BEGIN
 						b.matchid,
 						b.transdesc,
 						s.ProductID,
-						b.DeviceType
+						b.DeviceType,
+						brng.mrecommend,
+						brng.recommend
 				END
 				ELSE
 				BEGIN
@@ -1587,8 +1657,14 @@ BEGIN
 						0 AS virtualrate,
 						0 AS isShowOTExRate,
 						b.sdiscount,
-						b.adiscount,
-						b.discount,
+						CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE b.adiscount
+						END,
+						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE b.discount
+						END,
 						b.playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
@@ -1687,8 +1763,14 @@ BEGIN
 						0 AS virtualrate,
 						0 AS isShowOTExRate,
 						AVG(blc.sdiscount) AS sdiscount,
-						AVG(blc.adiscount) AS adiscount,
-						AVG(blc.discount) AS discount,
+						CASE
+							WHEN blc.mrecommend = -4 THEN 0
+							ELSE AVG(blc.adiscount) 
+						END AS adiscount,
+						CASE
+							WHEN blc.recommend IN (-3, -4) THEN 0
+							ELSE AVG(blc.discount) 
+						END AS discount,
 						AVG(blc.playerdiscount) AS playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
@@ -1771,7 +1853,9 @@ BEGIN
 						b.comstatus,
 						s.ProductID,
 						b.matchid,
-						b.DeviceType
+						b.DeviceType,
+						blc.recommend,
+						blc.mrecommend
 
 					-- Yesterday and today settled ticket
 					INSERT INTO @Data
@@ -1786,8 +1870,14 @@ BEGIN
 						0 AS virtualrate,
 						0 AS isShowOTExRate,
 						AVG(blc.sdiscount) AS sdiscount,
-						AVG(blc.adiscount) AS adiscount,
-						AVG(blc.discount) AS discount,
+						CASE
+							WHEN blc.mrecommend = -4 THEN 0
+							ELSE AVG(blc.adiscount) 
+						END AS adiscount,
+						CASE
+							WHEN blc.recommend IN (-3, -4) THEN 0
+							ELSE AVG(blc.discount) 
+						END AS discount,
 						AVG(blc.playerdiscount) AS playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
@@ -1874,7 +1964,9 @@ BEGIN
 						b.comstatus,
 						s.ProductID,
 						b.matchid,
-						b.DeviceType
+						b.DeviceType,
+						blc.recommend,
+						blc.mrecommend
 				END
 				ELSE
 				BEGIN
@@ -1891,8 +1983,14 @@ BEGIN
 						0 AS virtualrate,
 						0 AS isShowOTExRate,
 						b.sdiscount,
-						b.adiscount,
-						b.discount,
+						CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE b.adiscount
+						END,
+						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE b.discount
+						END,
 						b.playerdiscount,
 						0 AS homeid,
 						0 AS awayid,
@@ -1977,8 +2075,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					m.homeid,
 					m.awayid,
@@ -2075,8 +2179,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					m.homeid,
 					m.awayid,
@@ -2243,8 +2353,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					m.homeid,
 					m.awayid,
@@ -2328,8 +2444,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -2417,8 +2539,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -2547,7 +2675,6 @@ BEGIN
 					WHERE b.SportType = 157
 				END
 			END
-
 			-- Outright
 			IF @BetType = 10
 			BEGIN
@@ -2563,8 +2690,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					odds.teamid AS awayid,
@@ -2644,8 +2777,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeID,
 					0 AS awayID,
@@ -2744,8 +2883,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					m.homeid,
 					m.awayid,
@@ -2842,8 +2987,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					m.homeid,
 					m.awayid,
@@ -3011,8 +3162,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					m.homeid,
 					m.awayid,
@@ -3097,8 +3254,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					sdiscount,
-					adiscount,
-					discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -3186,8 +3349,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -3318,7 +3487,6 @@ BEGIN
 					WHERE b.SportType = 157
 				END
 			END
-
 			-- Outright
 			IF @BetType = 10
 			BEGIN
@@ -3334,8 +3502,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					odds.teamid AS awayid,  
@@ -3416,8 +3590,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeID,
 					0 AS awayID,
@@ -3517,8 +3697,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					m.homeid,
 					m.awayid,
@@ -3763,8 +3949,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -3873,8 +4065,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -3983,8 +4181,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -4135,8 +4339,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -4229,8 +4439,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -4323,8 +4539,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -4456,8 +4678,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN blc.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN blc.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -4538,8 +4766,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b2.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b2.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -4623,8 +4857,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN blc.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN blc.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -4705,8 +4945,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b2.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,						
+					CASE
+						WHEN b2.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -4790,8 +5036,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN blc.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN blc.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,
@@ -4873,8 +5125,14 @@ BEGIN
 					0 AS virtualrate,
 					0 AS isShowOTExRate,
 					b.sdiscount,
-					b.adiscount,
-					b.discount,
+					CASE
+						WHEN b2.mrecommend = -4 THEN 0
+						ELSE b.adiscount
+					END,
+					CASE
+						WHEN b2.recommend IN (-3, -4) THEN 0
+						ELSE b.discount
+					END,
 					b.playerdiscount,
 					0 AS homeid,
 					0 AS awayid,

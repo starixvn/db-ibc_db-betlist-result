@@ -120,6 +120,7 @@ AS
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
 		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 */
 
 BEGIN
@@ -284,8 +285,14 @@ BEGIN
 						'' AS MatchCode,
 						'' AS EventDate,
 						b.sdiscount,
-						b.adiscount,
-						b.discount,
+						CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE b.adiscount
+						END,
+						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE b.discount
+						END,
 						0 AS HomeId,
 						0 AS AwayId,
 						0 AS Hdp1,
@@ -350,8 +357,14 @@ BEGIN
 						'' AS MatchCode,
 						'' AS EventDate,
 						b.sdiscount,
-						b.adiscount,
-						b.discount,
+						CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE b.adiscount
+						END,
+						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE b.discount
+						END,
 						0 AS HomeId,
 						0 AS AwayId,
 						0 AS Hdp1,
@@ -431,10 +444,12 @@ BEGIN
 							ELSE b.sdiscount
 						END AS SDiscount,
 						CASE
+							WHEN b.mrecommend = -4 THEN 0
 							WHEN s.ProductID = 39 THEN ISNULL(bg.adiscount, b.adiscount)
 							ELSE b.adiscount
 						END AS ADiscount,
 						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
 							WHEN s.ProductID = 39 THEN ISNULL(bg.discount, b.discount)
 							ELSE b.discount
 						END AS Discount,
@@ -574,8 +589,14 @@ BEGIN
 							ELSE ''
 						END AS EventDate,
 						b.sdiscount,
-						b.adiscount,
-						b.discount,
+						CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE b.adiscount
+						END,
+						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE b.discount
+						END,
 						0 AS HomeId,
 						0 AS AwayId,
 						0 AS Hdp1,
@@ -652,8 +673,14 @@ BEGIN
 						'' AS MatchCode,
 						'' AS EventDate,
 						bg.sdiscount,
-						bg.adiscount,
-						bg.discount,
+						CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE bg.adiscount
+						END,
+						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE bg.discount
+						END,
 						0 AS HomeId,
 						0 AS AwayId,
 						0 AS Hdp1,
@@ -731,8 +758,14 @@ BEGIN
 						'' AS MatchCode,
 						'' AS EventDate,
 						b.sdiscount,
-						b.adiscount,
-						b.discount,
+						CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE b.adiscount
+						END,
+						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE b.discount
+						END,
 						0 AS HomeId,
 						0 AS AwayId,
 						0 AS Hdp1,
@@ -812,10 +845,12 @@ BEGIN
 							ELSE b.sdiscount
 						END AS SDiscount,
 						CASE
+							WHEN b.mrecommend = -4 THEN 0
 							WHEN s.ProductID = 39 THEN ISNULL(bg.adiscount, b.adiscount)
 							ELSE b.adiscount
 						END AS ADiscount,
 						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
 							WHEN s.ProductID = 39 THEN ISNULL(bg.discount, b.discount)
 							ELSE b.discount
 						END AS Discount,
@@ -955,8 +990,14 @@ BEGIN
 							ELSE ''
 						END AS EventDate,
 						b.sdiscount,
-						b.adiscount,
-						b.discount,
+						CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE b.adiscount
+						END,
+						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE b.discount
+						END,
 						0 AS HomeId,
 						0 AS AwayId,
 						0 AS Hdp1,
@@ -1033,8 +1074,14 @@ BEGIN
 						'' AS MatchCode,
 						'' AS EventDate,
 						bg.sdiscount,
-						bg.adiscount,
-						bg.discount,
+						CASE
+							WHEN b.mrecommend = -4 THEN 0
+							ELSE bg.adiscount
+						END,
+						CASE
+							WHEN b.recommend IN (-3, -4) THEN 0
+							ELSE bg.discount
+						END,
 						0 AS HomeId,
 						0 AS AwayId,
 						0 AS Hdp1,
