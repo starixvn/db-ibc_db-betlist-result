@@ -178,6 +178,7 @@ AS
 		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241128@Razor: Fix bug, show unknown bettype[Redmine: #207589]
+		- 20241224@Razor: HF - Output MatchId to result page [Redmine: #215774]
 	Param's Explanation:
 		@ProductDetails:
 			<ROOT>
@@ -562,7 +563,7 @@ BEGIN
 							END,
 				MatchId = CASE
 								WHEN b.Product IN ('NG2') THEN b.betdaqid
-								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN m.matchid
+								WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchid
 								WHEN b.Product IN ('Outright') THEN o.orid
 								WHEN b.Product IN ('VR', 'BTC', 'VS5') THEN b.matchid
 								ELSE 0
