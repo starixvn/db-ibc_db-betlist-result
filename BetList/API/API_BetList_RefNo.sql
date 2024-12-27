@@ -18,6 +18,7 @@ AS
 		- 20240725@Kos: Return additional column [#Redmine: 207623]
 		- 20241004@Kos: Return additional column PlayerSiteId [#Redmine: 207623]
 		- 20250212@Kos: Remove BA [RedmineID: #216882]
+		- 20250320@Kos: Support SabaCoins multiple wallets [Redmine: 215890]
 */
 
 BEGIN
@@ -119,7 +120,8 @@ BEGIN
 		@WhTicket			TINYINT		= 0,
 		@MainCustId			INT			= 0,
 		@IsDeposit			BIT,
-		@SpecialPlatform	TINYINT		= 0
+		@SpecialPlatform	TINYINT		= 0,
+		@ExtraInfo			VARCHAR(1000)
 
 	SELECT TOP(1)
 		@TransId = b.transid,
@@ -128,6 +130,7 @@ BEGIN
 		@Recommend = b.recommend,
 		@Currency = b.currency,
 		@BetType = b.bettype,
+		@ExtraInfo = b.ExtraInfo,
 		@ProductId = s.ProductID,
 		@EventType = s.EventType,
 		@RefTable = s.RefTable,
@@ -147,6 +150,7 @@ BEGIN
 			@Recommend = b.recommend,
 			@Currency = b.currency,
 			@BetType = b.bettype,
+			@ExtraInfo = b.ExtraInfo,
 			@ProductId = s.ProductID,
 			@EventType = s.EventType,
 			@RefTable = s.RefTable,
@@ -167,6 +171,7 @@ BEGIN
 			@Recommend = b.recommend,
 			@Currency = b.currency,
 			@BetType = b.bettype,
+			@ExtraInfo = b.ExtraInfo,
 			@ProductId = s.ProductID,
 			@EventType = s.EventType,
 			@RefTable = s.RefTable,
@@ -179,16 +184,10 @@ BEGIN
 	IF @WhTicket > 0
 	BEGIN
 		IF EXISTS ( SELECT 1
-					FROM dbo.Customer WITH (NOLOCK)
-					WHERE custid = @CustId AND CHARINDEX('SabaCoins$', username2) > 0 )		-- Shadow account
+					FROM dbo.Dep_CustSabaInfo WITH (NOLOCK)
+					WHERE CustID = @CustId AND CustType = 1 )		-- Shadow account
 		BEGIN
-			SELECT @MainCustId = CASE
-									WHEN CHARINDEX('SabaCoins$', username2) > 0
-										THEN CAST(SUBSTRING(username2, CHARINDEX('SabaCoins$', username2) + LEN('SabaCoins$'), LEN(username2)) AS INT)
-									ELSE 0
-								END
-			FROM dbo.Customer WITH (NOLOCK)
-			WHERE custid = @CustId
+			SELECT @MainCustId = ISNULL(CAST(('<xml>' + @ExtraInfo + '</xml>') AS XML).value('data(/xml/p81/@rci)[1]','INT'), 0)
 
 			SELECT
 				@IsDeposit = s.isDeposit,

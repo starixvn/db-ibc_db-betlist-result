@@ -108,6 +108,7 @@ AS
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
 		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 		- 20250401@Kos: Support Virtual Sports 7 [Redmine: 219083]
+		- 20250505@Kos: Support SabaCoins multiple wallets [Redmine: 215890]
 */
 
 BEGIN
@@ -184,11 +185,17 @@ BEGIN
 		END
 	END
 
+	DECLARE @TmpShadow TABLE (CustId INT)
+
 	IF @ViewSabaCoins = 1 AND @CustId <> 0
 	BEGIN
-		SELECT @CustId = custid
-		FROM dbo.Customer WITH (NOLOCK)
-		WHERE username2 = 'SabaCoins$' + CONVERT(VARCHAR(10), @CustId)
+		INSERT INTO @TmpShadow (CustId)
+		SELECT s.CustID
+		FROM dbo.Dep_CustSabaInfo AS m WITH (NOLOCK)
+			INNER JOIN dbo.Dep_CustSabaInfo AS s WITH (NOLOCK) ON s.SabaID = m.SabaID
+		WHERE m.CustID = @CustId
+			AND m.CustType = 0
+			AND s.CustType = 1
 	END
 
 	DECLARE @Data TABLE (
@@ -301,7 +308,12 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON b.gameID = s.bettype
 					WHERE b.translogid = @RefNo
 						AND s.RefTable = 3
-						AND (b.custid = @CustId OR @CustId = 0)
+						AND 1 = CASE
+									WHEN @CustId = 0 THEN 1
+									WHEN @ViewSabaCoins = 0 AND b.custid = @CustId THEN 1
+									WHEN @ViewSabaCoins = 1 AND b.custid IN (SELECT CustId FROM @TmpShadow) THEN 1
+									ELSE 0
+								END
 						AND b.statusID IN (0, 1)
 				END
 
@@ -324,7 +336,12 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 					WHERE (b.transid = @RefNo
 							OR (b.refno = @RefNo AND s.RefTable = 3))
-						AND (b.custid = @CustId OR @CustId = 0)
+						AND 1 = CASE
+									WHEN @CustId = 0 THEN 1
+									WHEN @ViewSabaCoins = 0 AND b.custid = @CustId THEN 1
+									WHEN @ViewSabaCoins = 1 AND b.custid IN (SELECT CustId FROM @TmpShadow) THEN 1
+									ELSE 0
+								END
 						AND b.winlostdate > @MoveBetsDay
 				END
 			END
@@ -348,7 +365,12 @@ BEGIN
 					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 				WHERE (b.transid = @RefNo
 						OR (b.refno = @RefNo AND s.RefTable = 3))
-					AND (b.custid = @CustId OR @CustId = 0)
+					AND 1 = CASE
+									WHEN @CustId = 0 THEN 1
+									WHEN @ViewSabaCoins = 0 AND b.custid = @CustId THEN 1
+									WHEN @ViewSabaCoins = 1 AND b.custid IN (SELECT CustId FROM @TmpShadow) THEN 1
+									ELSE 0
+								END
 					AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 			END
 
@@ -375,23 +397,7 @@ BEGIN
 				END
 				ELSE
 				BEGIN
-					SELECT TOP(1)
-						@TransId = b.transid,
-						@CustId = b.custid,
-						@WinLostDate = b.winlostdate,
-						@Recommend = b.recommend,
-						@Currency = b.currency,
-						@BetType = b.bettype,
-						@RefCode = b.RefCode,
-						@ProductId = s.ProductID,
-						@EventType = s.EventType,
-						@RefTable = s.RefTable,
-						@WhTicket = 4		-- bettrans_bk
-					FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_transid)
-						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-					WHERE b.custid = @CustId AND b.transid = @RefNo
-
-					IF @WhTicket = 0
+					IF @ViewSabaCoins = 0		-- View real player
 					BEGIN
 						SELECT TOP(1)
 							@TransId = b.transid,
@@ -405,11 +411,69 @@ BEGIN
 							@EventType = s.EventType,
 							@RefTable = s.RefTable,
 							@WhTicket = 4		-- bettrans_bk
-						FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+						FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_transid)
 							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-						WHERE b.custid = @CustId
-							AND b.refno = @RefNo
-							AND s.RefTable = 3
+						WHERE b.custid = @CustId AND b.transid = @RefNo
+
+						IF @WhTicket = 0
+						BEGIN
+							SELECT TOP(1)
+								@TransId = b.transid,
+								@CustId = b.custid,
+								@WinLostDate = b.winlostdate,
+								@Recommend = b.recommend,
+								@Currency = b.currency,
+								@BetType = b.bettype,
+								@RefCode = b.RefCode,
+								@ProductId = s.ProductID,
+								@EventType = s.EventType,
+								@RefTable = s.RefTable,
+								@WhTicket = 4		-- bettrans_bk
+							FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+								INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							WHERE b.custid = @CustId
+								AND b.refno = @RefNo
+								AND s.RefTable = 3
+						END
+					END
+					ELSE
+					BEGIN
+						SELECT TOP(1)
+							@TransId = b.transid,
+							@CustId = b.custid,
+							@WinLostDate = b.winlostdate,
+							@Recommend = b.recommend,
+							@Currency = b.currency,
+							@BetType = b.bettype,
+							@RefCode = b.RefCode,
+							@ProductId = s.ProductID,
+							@EventType = s.EventType,
+							@RefTable = s.RefTable,
+							@WhTicket = 4		-- bettrans_bk
+						FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_transid)
+							INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+							INNER JOIN @TmpShadow AS ts ON ts.CustId = b.custid
+						WHERE b.transid = @RefNo
+
+						IF @WhTicket = 0
+						BEGIN
+							SELECT TOP(1)
+								@TransId = b.transid,
+								@CustId = b.custid,
+								@WinLostDate = b.winlostdate,
+								@Recommend = b.recommend,
+								@Currency = b.currency,
+								@BetType = b.bettype,
+								@RefCode = b.RefCode,
+								@ProductId = s.ProductID,
+								@EventType = s.EventType,
+								@RefTable = s.RefTable,
+								@WhTicket = 4		-- bettrans_bk
+							FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+								INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
+								INNER JOIN @TmpShadow AS ts ON ts.CustId = b.custid
+							WHERE b.refno = @RefNo AND s.RefTable = 3
+						END
 					END
 				END
 			END
@@ -539,18 +603,16 @@ BEGIN
 			END
 			ELSE IF @ViewSabaCoins = 1
 			BEGIN
-				SELECT @MainCustId = CASE
-										WHEN CHARINDEX('SabaCoins$', username2) > 0
-											THEN CAST(SUBSTRING(username2, CHARINDEX('SabaCoins$', username2) + LEN('SabaCoins$'), LEN(username2)) AS INT)
-										ELSE 0
-									END
-				FROM dbo.Customer WITH (NOLOCK)
-				WHERE custid = @CustId
+				SELECT @MainCustId = m.CustID
+				FROM dbo.Dep_CustSabaInfo AS m WITH (NOLOCK)
+					INNER JOIN dbo.Dep_CustSabaInfo AS s WITH (NOLOCK) ON s.SabaID = m.SabaID
+					INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = m.CustID
+					INNER JOIN @TempAg AS ta ON ta.CustId = c.recommend AND ta.Currency = c.currency
+				WHERE s.CustID = @CustId
+					AND s.CustType = 1
+					AND m.CustType = 0
 
-				IF NOT EXISTS ( SELECT 1
-								FROM @TempAg AS ta
-									INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON ta.CustId = c.recommend AND ta.Currency = c.currency
-								WHERE c.custid = @MainCustId)
+				IF ISNULL(@MainCustId, 0) = 0
 				BEGIN
 					SET @WhTicket = 0
 				END
@@ -1529,18 +1591,16 @@ BEGIN
 				END
 				ELSE IF @ViewSabaCoins = 1
 				BEGIN
-					SELECT @MainCustId = CASE
-											WHEN CHARINDEX('SabaCoins$', username2) > 0
-												THEN CAST(SUBSTRING(username2, CHARINDEX('SabaCoins$', username2) + LEN('SabaCoins$'), LEN(username2)) AS INT)
-											ELSE 0
-										END
-					FROM dbo.Customer WITH (NOLOCK)
-					WHERE custid = @CustId
+					SELECT @MainCustId = m.CustID
+					FROM dbo.Dep_CustSabaInfo AS m WITH (NOLOCK)
+						INNER JOIN dbo.Dep_CustSabaInfo AS s WITH (NOLOCK) ON s.SabaID = m.SabaID
+						INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = m.CustID
+						INNER JOIN @TempAg AS ta ON ta.CustId = c.recommend AND ta.Currency = c.currency
+					WHERE s.CustID = @CustId
+						AND s.CustType = 1
+						AND m.CustType = 0
 
-					IF NOT EXISTS ( SELECT 1
-									FROM @TempAg AS ta
-										INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON ta.CustId = c.recommend AND ta.Currency = c.currency
-									WHERE c.custid = @MainCustId)
+					IF ISNULL(@MainCustId, 0) = 0
 					BEGIN
 						SET @WhTicket = 0
 					END
@@ -1914,18 +1974,16 @@ BEGIN
 				END
 				ELSE IF @ViewSabaCoins = 1
 				BEGIN
-					SELECT @MainCustId = CASE
-											WHEN CHARINDEX('SabaCoins$', username2) > 0
-												THEN CAST(SUBSTRING(username2, CHARINDEX('SabaCoins$', username2) + LEN('SabaCoins$'), LEN(username2)) AS INT)
-											ELSE 0
-										END
-					FROM dbo.Customer WITH (NOLOCK)
-					WHERE custid = @CustId
+					SELECT @MainCustId = m.CustID
+					FROM dbo.Dep_CustSabaInfo AS m WITH (NOLOCK)
+						INNER JOIN dbo.Dep_CustSabaInfo AS s WITH (NOLOCK) ON s.SabaID = m.SabaID
+						INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = m.CustID
+						INNER JOIN @TempAg AS ta ON ta.CustId = c.recommend AND ta.Currency = c.currency
+					WHERE s.CustID = @CustId
+						AND s.CustType = 1
+						AND m.CustType = 0
 
-					IF NOT EXISTS ( SELECT 1
-									FROM @TempAg AS ta
-										INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON ta.CustId = c.recommend AND ta.Currency = c.currency
-									WHERE c.custid = @MainCustId)
+					IF ISNULL(@MainCustId, 0) = 0
 					BEGIN
 						SET @WhTicket = 0
 					END
@@ -2234,18 +2292,16 @@ BEGIN
 				END
 				ELSE IF @ViewSabaCoins = 1
 				BEGIN
-					SELECT @MainCustId = CASE
-											WHEN CHARINDEX('SabaCoins$', username2) > 0
-												THEN CAST(SUBSTRING(username2, CHARINDEX('SabaCoins$', username2) + LEN('SabaCoins$'), LEN(username2)) AS INT)
-											ELSE 0
-										END
-					FROM dbo.Customer WITH (NOLOCK)
-					WHERE custid = @CustId
+					SELECT @MainCustId = m.CustID
+					FROM dbo.Dep_CustSabaInfo AS m WITH (NOLOCK)
+						INNER JOIN dbo.Dep_CustSabaInfo AS s WITH (NOLOCK) ON s.SabaID = m.SabaID
+						INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = m.CustID
+						INNER JOIN @TempAg AS ta ON ta.CustId = c.recommend AND ta.Currency = c.currency
+					WHERE s.CustID = @CustId
+						AND s.CustType = 1
+						AND m.CustType = 0
 
-					IF NOT EXISTS ( SELECT 1
-									FROM @TempAg AS ta
-										INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON ta.CustId = c.recommend AND ta.Currency = c.currency
-									WHERE c.custid = @MainCustId)
+					IF ISNULL(@MainCustId, 0) = 0
 					BEGIN
 						SET @WhTicket = 0
 					END
