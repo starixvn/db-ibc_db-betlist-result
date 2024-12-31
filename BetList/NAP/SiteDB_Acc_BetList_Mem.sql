@@ -67,6 +67,7 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20241219@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212549]
+		- 20241231@Razor: Support PLAY STAR [Redmine: #208023]
 */
 
 BEGIN
@@ -505,6 +506,7 @@ BEGIN
 						WHEN s.ProductID = 89 THEN 'FAC'							-- FA CHAI
 						WHEN s.ProductID = 85 THEN 'NS'								-- Nextspin
 						WHEN s.ProductID = 90 THEN 'GPILC'							-- GPI Live Casino
+						WHEN s.ProductID = 91 THEN 'PS'								-- PLAY STAR
 						WHEN s.ProductID = 96 THEN 'ON'								-- ON Casino
 						WHEN s.ProductID = 100 THEN 'PTRNG'							-- Playtech
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
@@ -536,7 +538,7 @@ BEGIN
 			OR (Product NOT IN ('SB', 'Parlay')
 				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'BG', 'MXG', 
 							'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON', 
-							'PTRNG', 'GPIRNG', 'GPILC')
+							'PTRNG', 'GPIRNG', 'GPILC', 'PS')
 					OR WinLostDate < @Yesterday)
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'		-- Abnormal Bets
@@ -1076,7 +1078,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'PTRNG', 'GPIRNG', 'GPILC')
+							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'PTRNG', 'GPIRNG', 'GPILC', 'PS')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips
