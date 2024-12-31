@@ -40,6 +40,7 @@ AS
 		- 20241023@Razor: Support GPI [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 202411202@Razor: Support GPI Live Casino [Redmine: #213486]
+		- 20241231@Razor: Support PLAY STAR [Redmine: #208023]
 
 */
 
@@ -278,6 +279,7 @@ BEGIN
 						WHEN @ProductID = 87 THEN 'FS'			-- FastSpin
 						WHEN @ProductID = 89 THEN 'FAC'			-- FA CHAI
 						WHEN @ProductID = 90 THEN 'GPILC'		-- GPI Live Casino
+						WHEN @ProductID = 91 THEN 'PS'			-- PLAY STAR
 						WHEN @ProductID = 96 THEN 'ON'			-- ON Casino
 						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
@@ -1179,6 +1181,7 @@ BEGIN
 						WHEN @ProductId = 89 THEN 'FAC'			-- FA CHAI
 						WHEN @ProductId = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @ProductId = 48 THEN 'GPIRNG'		-- GPI
+						WHEN @ProductId = 91 THEN 'PS'			-- PLAY STAR
 						ELSE 'Unknown'
 					END
 
