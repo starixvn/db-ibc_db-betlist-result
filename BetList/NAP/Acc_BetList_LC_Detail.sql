@@ -51,6 +51,7 @@ AS
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
+		- 20250106@Razor: SA Gaming support Saba Plus [Redmine: #215645]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -192,99 +193,99 @@ BEGIN
 		INSERT INTO #Data
 		SELECT
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, blc.transid)
 				ELSE blc.transid
 			END AS TransId,
 			blc.custid,
 			blc.productID AS SportType,
 			blc.gameID AS BetType,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, blc.transdate)
 				ELSE blc.transdate
 			END AS TransDate,
 			blc.winlostdate,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, blc.status)
 				ELSE blc.status
 			END AS Status,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, blc.statusID)
 				ELSE blc.statusID
 			END AS StatusId,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.odds, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.odds, blc.odds)
 				ELSE blc.odds
 			END AS Odds,
 			@CurrencyName AS Currency,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, blc.stake)
 				ELSE blc.stake
 			END AS Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, blc.actual_stake)
 				ELSE blc.actual_stake
 			END AS Actual_Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, blc.winlost - blc.actual_stake)
 				ELSE blc.winlost - blc.actual_stake
 			END AS WinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, blc.playercomm)
 				ELSE blc.playercomm
 			END AS Commission,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.spositiontaking, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.spositiontaking, blc.spositiontaking)
 				ELSE blc.spositiontaking
 			END AS SPositionTaking,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mpositiontaking, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mpositiontaking, blc.mpositiontaking)
 				ELSE blc.mpositiontaking
 			END AS MPositionTaking,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.apositiontaking, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.apositiontaking, blc.apositiontaking)
 				ELSE blc.apositiontaking
 			END AS APositionTaking,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.swinlost, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.swinlost, blc.swinlost)
 				ELSE blc.swinlost
 			END AS SWinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mwinlost, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mwinlost, blc.mwinlost)
 				ELSE blc.mwinlost
 			END AS MWinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.awinlost, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.awinlost, blc.awinlost)
 				ELSE blc.awinlost
 			END AS AWinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.sdiscount, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.sdiscount, blc.sdiscount)
 				ELSE blc.sdiscount
 			END AS SDiscount,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.adiscount, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.adiscount, blc.adiscount)
 				ELSE blc.adiscount
 			END AS ADiscount,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.discount, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.discount, blc.discount)
 				ELSE blc.discount
 			END AS Discount,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.scomm - bg.acomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.scomm - bg.acomm, blc.scomm - blc.acomm)
 				ELSE blc.scomm - blc.acomm
 			END AS SComm,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.acomm - bg.comm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.acomm - bg.comm, blc.acomm - blc.comm)
 				ELSE blc.acomm - blc.comm
 			END AS AComm,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm - bg.playercomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm - bg.playercomm, blc.comm - blc.playercomm)
 				ELSE blc.comm - blc.playercomm
 			END AS Comm,
 			blc.ip,
 			blc.transdesc,
 			CASE
 				WHEN sbt.ProductID = 11 THEN ''
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, blc.TranId3rd)
 				ELSE blc.TranId3rd
 			END AS BetCheck,
 			CASE
@@ -303,7 +304,7 @@ BEGIN
 				ELSE ''
 			END AS EventDate,
 			CASE
-				WHEN sbt.ProductID IN (39) THEN bg.ExtraInfo
+				WHEN sbt.ProductID IN (39) THEN ISNULL(bg.ExtraInfo, blc.ExtraInfo)
 				ELSE blc.ExtraInfo
 			END,
 			blc.DeviceType
@@ -321,99 +322,99 @@ BEGIN
 		INSERT INTO #Data
 		SELECT
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, blc.transid)
 				ELSE blc.transid
 			END AS TransId,
 			blc.custid,
 			blc.productID AS SportType,
 			blc.gameID AS BetType,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, blc.transdate)
 				ELSE blc.transdate
 			END AS TransDate,
 			blc.winlostdate,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, blc.status)
 				ELSE blc.status
 			END AS Status,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, blc.statusID)
 				ELSE blc.statusID
 			END AS StatusId,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.odds, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.odds, blc.odds)
 				ELSE blc.odds
 			END AS Odds,
 			@CurrencyName AS Currency,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, blc.stake)
 				ELSE blc.stake
 			END AS Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, blc.actual_stake)
 				ELSE blc.actual_stake
 			END AS Actual_Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, blc.winlost - blc.actual_stake)
 				ELSE blc.winlost - blc.actual_stake
 			END AS WinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, blc.playercomm)
 				ELSE blc.playercomm
 			END AS Commission,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.spositiontaking, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.spositiontaking, blc.spositiontaking)
 				ELSE blc.spositiontaking
 			END AS SPositionTaking,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mpositiontaking, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mpositiontaking, blc.mpositiontaking)
 				ELSE blc.mpositiontaking
 			END AS MPositionTaking,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.apositiontaking, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.apositiontaking, blc.apositiontaking)
 				ELSE blc.apositiontaking
 			END AS APositionTaking,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.swinlost, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.swinlost, blc.swinlost)
 				ELSE blc.swinlost
 			END AS SWinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mwinlost, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mwinlost, blc.mwinlost)
 				ELSE blc.mwinlost
 			END AS MWinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.awinlost, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.awinlost, blc.awinlost)
 				ELSE blc.awinlost
 			END AS AWinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.sdiscount, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.sdiscount, blc.sdiscount)
 				ELSE blc.sdiscount
 			END AS SDiscount,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.adiscount, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.adiscount, blc.adiscount)
 				ELSE blc.adiscount
 			END AS ADiscount,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.discount, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.discount, blc.discount)
 				ELSE blc.discount
 			END AS Discount,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.scomm - bg.acomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.scomm - bg.acomm, blc.scomm - blc.acomm)
 				ELSE blc.scomm - blc.acomm
 			END AS SComm,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.acomm - bg.comm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.acomm - bg.comm, blc.acomm - blc.comm)
 				ELSE blc.acomm - blc.comm
 			END AS AComm,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm - bg.playercomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm - bg.playercomm, blc.comm - blc.playercomm)
 				ELSE blc.comm - blc.playercomm
 			END AS Comm,
 			blc.ip,
 			blc.transdesc,
 			CASE
 				WHEN sbt.productID = 11 THEN ''
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, blc.TranId3rd)
 				ELSE blc.TranId3rd
 			END AS BetCheck,
 			CASE
@@ -432,7 +433,7 @@ BEGIN
 				ELSE ''
 			END AS EventDate,
 			CASE
-				WHEN sbt.ProductID IN (39) THEN bg.ExtraInfo
+				WHEN sbt.ProductID IN (39) THEN ISNULL(bg.ExtraInfo, blc.ExtraInfo)
 				ELSE blc.ExtraInfo
 			END,
 			blc.DeviceType
@@ -449,99 +450,99 @@ BEGIN
 		INSERT INTO #Data
 		SELECT
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, blc.transid)
 				ELSE blc.transid
 			END AS TransId,
 			blc.custid,
 			blc.productID AS SportType,
 			blc.gameID AS BetType,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, blc.transdate)
 				ELSE blc.transdate
 			END AS TransDate,
 			blc.winlostdate,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, blc.status)
 				ELSE blc.status
 			END AS Status,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, blc.statusID)
 				ELSE blc.statusID
 			END AS StatusId,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.odds, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.odds, blc.odds)
 				ELSE blc.odds
 			END AS Odds,
 			@CurrencyName AS Currency,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, blc.stake)
 				ELSE blc.stake
 			END AS Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, blc.actual_stake)
 				ELSE blc.actual_stake
 			END AS Actual_Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, blc.winlost - blc.actual_stake)
 				ELSE blc.winlost - blc.actual_stake
 			END AS WinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, blc.playercomm)
 				ELSE blc.playercomm
 			END AS Commission,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.spositiontaking, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.spositiontaking, blc.spositiontaking)
 				ELSE blc.spositiontaking
 			END AS SPositionTaking,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mpositiontaking, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mpositiontaking, blc.mpositiontaking)
 				ELSE blc.mpositiontaking
 			END AS MPositionTaking,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.apositiontaking, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.apositiontaking, blc.apositiontaking)
 				ELSE blc.apositiontaking
 			END AS APositionTaking,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.swinlost, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.swinlost, blc.swinlost)
 				ELSE blc.swinlost
 			END AS SWinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mwinlost, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.mwinlost, blc.mwinlost)
 				ELSE blc.mwinlost
 			END AS MWinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.awinlost, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.awinlost, blc.awinlost)
 				ELSE blc.awinlost
 			END AS AWinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.sdiscount, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.sdiscount, blc.sdiscount)
 				ELSE blc.sdiscount
 			END AS SDiscount,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.adiscount, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.adiscount, blc.adiscount)
 				ELSE blc.adiscount
 			END AS ADiscount,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.discount, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.discount, blc.discount)
 				ELSE blc.discount
 			END AS Discount,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.scomm - bg.acomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.scomm - bg.acomm, blc.scomm - blc.acomm)
 				ELSE blc.scomm - blc.acomm
 			END AS SComm,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.acomm - bg.comm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.acomm - bg.comm, blc.acomm - blc.comm)
 				ELSE blc.acomm - blc.comm
 			END AS AComm,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm - bg.playercomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm - bg.playercomm, blc.comm - blc.playercomm)
 				ELSE blc.comm - blc.playercomm
 			END AS Comm,
 			dp.IP,
 			blc.transdesc,
 			CASE
 				WHEN sbt.productID = 11 THEN ''
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, blc.TranId3rd)
 				ELSE blc.TranId3rd
 			END AS BetCheck,
 			CASE
@@ -560,7 +561,7 @@ BEGIN
 				ELSE ''
 			END AS EventDate,
 			CASE
-				WHEN sbt.ProductID IN (39) THEN bg.ExtraInfo
+				WHEN sbt.ProductID IN (39) THEN ISNULL(bg.ExtraInfo, blc.ExtraInfo)
 				ELSE blc.ExtraInfo
 			END,
 			blc.DeviceType
