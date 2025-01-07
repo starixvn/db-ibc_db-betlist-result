@@ -43,6 +43,7 @@ AS
 		- 20231110@Kos: Support WE Live Casino [Redmine: 196573]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20241212@Kos: Support GPI Live Casino [Redmine: 214458]
+		- 20250107@Kos: Support new ticket flow of SA Gaming [Redmine: 215645]
 
 	Parameters:
 		- @TransType
@@ -155,22 +156,22 @@ BEGIN
 		INSERT INTO @tmpBettransLC
 		SELECT
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, blc.transid)
 				ELSE blc.transid
 			END AS TransId,
 			blc.productID AS SportType,
 			blc.gameID AS BetType,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, blc.transdate)
 				ELSE blc.transdate
 			END AS TransDate,
 			blc.winlostdate,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, blc.status)
 				ELSE blc.status
 			END AS Status,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, blc.statusID)
 				ELSE blc.statusID
 			END AS StatusId,
 			CASE
@@ -178,29 +179,29 @@ BEGIN
 				ELSE blc.odds
 			END AS Odds,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, blc.stake)
 				ELSE blc.stake
 			END AS Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, blc.actual_stake)
 				ELSE blc.actual_stake
 			END AS Actual_Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, blc.winlost - blc.actual_stake)
 				ELSE blc.winlost - blc.actual_stake
 			END AS WinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm, blc.comm)
 				ELSE blc.comm
 			END AS Comm,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, blc.playercomm)
 				ELSE blc.playercomm
 			END AS PlayerComm,
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, blc.TranId3rd)
 				ELSE blc.TranId3rd
 			END AS BetCheck,
 			blc.GameId3rd AS MatchCode,
@@ -225,22 +226,22 @@ BEGIN
 		INSERT INTO @tmpBettransLC
 		SELECT
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, blc.transid)
 				ELSE blc.transid
 			END AS TransId,
 			blc.productID AS SportType,
 			blc.gameID AS BetType,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, blc.transdate)
 				ELSE blc.transdate
 			END AS TransDate,
 			blc.winlostdate,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, blc.status)
 				ELSE blc.status
 			END AS Status,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, blc.statusID)
 				ELSE blc.statusID
 			END AS StatusId,
 			CASE
@@ -248,29 +249,29 @@ BEGIN
 				ELSE blc.odds
 			END AS Odds,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, blc.stake)
 				ELSE blc.stake
 			END AS Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, blc.actual_stake)
 				ELSE blc.actual_stake
 			END AS Actual_Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, blc.winlost - blc.actual_stake)
 				ELSE blc.winlost - blc.actual_stake
 			END AS WinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm, blc.comm)
 				ELSE blc.comm
 			END AS Comm,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, blc.playercomm)
 				ELSE blc.playercomm
 			END AS PlayerComm,
 			blc.ip,
 			blc.transdesc,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, blc.TranId3rd)
 				ELSE blc.TranId3rd
 			END AS BetCheck,
 			blc.GameId3rd AS MatchCode,
@@ -293,22 +294,22 @@ BEGIN
 		INSERT INTO @tmpBettransLC
 		SELECT
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transid, blc.transid)
 				ELSE blc.transid
 			END AS TransId,
 			blc.productID AS SportType,
 			blc.gameID AS BetType,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.transdate, blc.transdate)
 				ELSE blc.transdate
 			END AS TransDate,
 			blc.winlostdate,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.status, blc.status)
 				ELSE blc.status
 			END AS Status,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.statusID, blc.statusID)
 				ELSE blc.statusID
 			END AS StatusId,
 			CASE
@@ -316,29 +317,29 @@ BEGIN
 				ELSE blc.odds
 			END AS Odds,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, blc.stake)
 				ELSE blc.stake
 			END AS Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.actual_stake, blc.actual_stake)
 				ELSE blc.actual_stake
 			END AS Actual_Stake,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, blc.winlost - blc.actual_stake)
 				ELSE blc.winlost - blc.actual_stake
 			END AS WinLost,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm, blc.comm)
 				ELSE blc.comm
 			END AS Comm,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, 0)
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, blc.playercomm)
 				ELSE blc.playercomm
 			END AS PlayerComm,
 			dp.IP,
 			blc.transdesc,
 			CASE
-				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, '')
+				WHEN sbt.ProductID = 39 THEN ISNULL(bg.TransDesc, blc.TranId3rd)
 				ELSE blc.TranId3rd
 			END AS BetCheck,
 			blc.GameId3rd AS MatchCode,
