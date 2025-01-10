@@ -104,6 +104,7 @@ AS
 		- 20241226@Kos: Allow to search multiple days [RedmineID: #212395]
 					- Remove input params @Product, @SportType, @BetType
 					- Add new input params @ProductList VARCHAR(300), @SportTypeList VARCHAR(MAX), @BetTypeList VARCHAR(MAX), @CashOutMode TINYINT
+		- 20250110@Kos: Hotfix - VS6 [RedmineID: #216711]
 */
 
 BEGIN
@@ -1856,7 +1857,7 @@ BEGIN
 				FROM #PagingData AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.EventType = 1 AND m.matchid = b.matchid
 					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
-					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
+					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product = 'Outright' AND o.orid = b.matchid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND l.leagueid = o.leagueid
 					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
@@ -2069,7 +2070,7 @@ BEGIN
 				FROM #Data AS b
 					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON b.EventType = 1 AND m.matchid = b.matchid
 					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
-					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
+					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.Product = 'Outright' AND o.orid = b.matchid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND l.leagueid = o.leagueid
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
@@ -2199,7 +2200,7 @@ BEGIN
 				FROM #Data AS b
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON b.EventType = 1 AND m.matchid = b.matchid
 					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
-					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.Product = 'BTC' AND m3rd.Match3rdId = b.matchid
+					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND m3rd.Match3rdId = b.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.Product = 'Outright' AND o.orid = b.matchid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON b.Product = 'Outright' AND l.leagueid = o.leagueid
 					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
