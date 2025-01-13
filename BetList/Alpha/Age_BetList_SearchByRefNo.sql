@@ -41,6 +41,7 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 202411202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20241231@Razor: Support PLAY STAR [Redmine: #208023]
+		- 20250106@Razor: SA Gaming support Saba Plus [Redmine: #215645]
 
 */
 
@@ -1423,6 +1424,7 @@ BEGIN
 
 	SET @Product = CASE
 						WHEN @ProductId = 21 THEN 'AllBet'
+						WHEN @ProductId = 39 THEN 'SAG'
 						WHEN @ProductId = 45 THEN 'SXG'
 						WHEN @ProductId = 46 THEN 'IBCLC'		-- IBCBet Live Casino
 						WHEN @ProductId = 51 THEN 'WM'
