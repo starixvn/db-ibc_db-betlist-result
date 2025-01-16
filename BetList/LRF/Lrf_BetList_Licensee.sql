@@ -105,6 +105,7 @@ AS
 					- Remove input params @Product, @SportType, @BetType
 					- Add new input params @ProductList VARCHAR(300), @SportTypeList VARCHAR(MAX), @BetTypeList VARCHAR(MAX), @CashOutMode TINYINT
 		- 20250110@Kos: Hotfix - VS6 [RedmineID: #216711]
+		- 20250116@Kos: VS6 - Fix group bet type [RedmineID: #212446]
 */
 
 BEGIN
@@ -375,7 +376,7 @@ BEGIN
 			DELETE sbt
 			FROM #SportBettype AS sbt
 				LEFT JOIN dbo.Lrf_f_GroupProduct() AS gp ON gp.ProductPrefix = sbt.ProductPrefix
-				LEFT JOIN dbo.f_GroupBettype() AS gbt ON gbt.bettype = sbt.BetType
+				LEFT JOIN dbo.Lrf_f_GroupBettype() AS gbt ON gbt.bettype = sbt.BetType
 			WHERE NOT EXISTS (SELECT 1 FROM #TempBetType AS tbt
 							WHERE (',' + tbt.BetTypeList + ',' LIKE '%,' + CONVERT(VARCHAR(6), sbt.BetType) + ',%'
 									OR ',' + tbt.BetTypeList + ',' LIKE '%,' + CONVERT(VARCHAR(6), gbt.GroupTypeId) + ',%')
