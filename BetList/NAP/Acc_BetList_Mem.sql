@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[Acc_BetList_Mem]
 	@CustId				INT,
+	@ShadowIds			NVARCHAR(MAX) = NULL,
 	@BetType			INT				= 0,
 	@StatusIdList		VARCHAR(100)	= '',
 	@FromDate			SMALLDATETIME,
@@ -126,6 +127,7 @@ AS
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250418@Benji: Support RichGaming [Redmine: #224687]
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
+		- 20250513@Razor: Support SabaCoins multiple wallets [Redmine: #215807]
 
 */
 
@@ -295,7 +297,16 @@ BEGIN
 		@TempFromDate	SMALLDATETIME
 
 	DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
-
+	
+	DECLARE @TmpShadow TABLE (CustId INT)	
+	INSERT INTO @TmpShadow (CustId)
+	SELECT value
+	FROM STRING_SPLIT(@ShadowIds, ',')
+	WHERE value IS NOT NULL AND value != ''
+	
+	INSERT INTO @TmpShadow (CustId)
+	SELECT @CustId
+	
 	-- bettrans range
 	IF @ToDate > @MoveBetsDay AND @ExcludeBettrans = 0
 	BEGIN
@@ -417,8 +428,9 @@ BEGIN
 			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_custid)
 			INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-		WHERE b.custid = @CustId
-			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
+			INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
+		WHERE
+			b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND (',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 				OR (s.ProductID IN (6, 21, 22, 32, 34, 36, 39, 42, 45, 46, 50, 51, 52, 55, 56, 57, 60, 61, 62, 65, 66, 67, 68, 69, 70, 72, 73, 75, 76, 78, 79, 80, 86)
 					AND b.winlostdate >= @Yesterday)		-- Don't care status of yesterday and today summary casino rows
@@ -660,8 +672,8 @@ BEGIN
 			b.betdaqid,
 			b.DeviceType
 		FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_memberStatement14)
-		WHERE b.custid = @CustId
-			AND b.winlostdate BETWEEN @TempFromDate AND @TempToDate
+			INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
+		WHERE b.winlostdate BETWEEN @TempFromDate AND @TempToDate
 			AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 
 		-- Get more info for CashOut tickets
@@ -817,8 +829,8 @@ BEGIN
 			b.betdaqid,
 			b.DeviceType
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
-		WHERE b.custid = @CustId
-			AND b.winlostdate BETWEEN @FromDate AND @TempToDate
+			INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
+		WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 			AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 
 		-- Get more info for BetTrade tickets
@@ -2352,14 +2364,9 @@ BEGIN
 	END
 
 	-- Get currency name
-	DECLARE @UGroup		VARCHAR(3),
-		@CurrencyName	NVARCHAR(50),
-		@Username		NVARCHAR(50)
+	DECLARE @CurrencyName	NVARCHAR(50)
 
-	SELECT
-		@Username = c.username,
-		@UGroup = c.ugroup,
-		@CurrencyName = ex.currency
+	SELECT @CurrencyName = ex.currency
 	FROM dbo.Customer AS c WITH (NOLOCK)
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
 	WHERE c.custid = @CustId
@@ -2436,12 +2443,13 @@ BEGIN
 		b.WalletType,
 		b.RefCode,
 		@CurrencyName AS Currency,
-		@Username AS Username,
-		@UGroup AS UGroup,
+		c.Username,
+		c.UGroup,
 		b.CurrencyId,
 		b.SiteId,
 		b.DeviceType
 	FROM @Data AS b
+		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 	ORDER BY b.TransId ASC	
 END
 GO

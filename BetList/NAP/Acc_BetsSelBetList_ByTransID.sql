@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[Acc_BetsSelBetList_ByTransID]
 	@CustId				INT,
+	@ShadowIds			NVARCHAR(MAX) = NULL,
 	@RefNo				BIGINT,
 	@MoveBetsDay		SMALLDATETIME,
 	@BalanceUpDay		SMALLDATETIME,
@@ -207,6 +208,7 @@ AS
 		- 20250410@Benji: Remove Unnecessary Returned Data (Microgaming Live Casino, Playtech Live Casino, VS7) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
+		- 20250513@Razor: Support SabaCoins multiple wallets [Redmine: #215807]
 */
 
 BEGIN
@@ -310,6 +312,14 @@ BEGIN
 	WHERE BetType NOT IN (903, 904, 913, 914, 999)
 		AND ProductID NOT IN (2, 4, 7, 9, 13, 17, 19, 24, 26, 30, 31, 33)
 
+	DECLARE @TmpShadow TABLE (CustId INT)	
+	INSERT INTO @TmpShadow (CustId)
+	SELECT value
+	FROM STRING_SPLIT(@ShadowIds, ',')
+	WHERE value IS NOT NULL AND value != ''
+	
+	INSERT INTO @TmpShadow (CustId)
+	SELECT @CustId
 	IF @ExcludeBettrans = 0
 	BEGIN
 		-- FROM translog
@@ -337,8 +347,8 @@ BEGIN
 				@RefNo = b.refno
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
-			WHERE b.custid = @CustId
-				AND ( b.transid = @RefNo
+				INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
+			WHERE (b.transid = @RefNo
 					OR ( b.refno = @RefNo
 						AND (sp.productid IN (8, 28, 38, 40, 43, 49, 63)
 							OR sp.bettype BETWEEN 801 AND 899
@@ -359,12 +369,12 @@ BEGIN
 			@RefNo = b.refno
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
-		WHERE b.custid = @CustId
-			AND ( b.transid = @RefNo
+			INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
+		WHERE b.transid = @RefNo
 				OR ( b.refno = @RefNo
 					AND (sp.productid IN (8, 28, 38, 40, 43, 49, 63)
 						OR sp.bettype BETWEEN 801 AND 899
-						OR (sp.productid = 3 AND sp.EventType = 0))))
+						OR (sp.productid = 3 AND sp.EventType = 0)))
 	END
 
 	-- FROM bettrans_bk
@@ -377,7 +387,8 @@ BEGIN
 			@RefNo = b.refno
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_transid)
 			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
-		WHERE b.custid = @CustId AND b.transid = @RefNo
+			INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
+		WHERE b.transid = @RefNo
 
 		IF @WinLostDate IS NULL
 		BEGIN
@@ -388,8 +399,8 @@ BEGIN
 				@RefNo = b.refno
 			FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
 				INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
-			WHERE b.custid = @CustId
-				AND b.refno = @RefNo
+				INNER JOIN @TmpShadow AS tmp ON tmp.CustId = b.custid
+			WHERE b.refno = @RefNo
 				AND (sp.productid IN (8, 28, 38, 40, 43, 49, 63)
 					OR sp.bettype BETWEEN 801 AND 899
 					OR (sp.productid = 3 AND sp.EventType = 0))
