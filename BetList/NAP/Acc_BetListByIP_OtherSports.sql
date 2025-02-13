@@ -186,6 +186,7 @@ AS
 		- 20241202@Razor: HF - Missing Sport type today settled tickets [Redmine: #215430]
 		- 20241219@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
 		- 20241231@Razor: Support PLAY STAR [Redmine: #208023]
+		- 20220213@Razor: Support ASKMESLOT [Redmine: #216976]
 		
 */
 
@@ -727,6 +728,7 @@ BEGIN
 						WHEN s.ProductID = 91 THEN 'PS'								-- PLAY STAR
 						WHEN s.ProductID = 96 THEN 'ON'								-- ON Casino
 						WHEN s.ProductID = 100 THEN 'PTRNG'							-- Playtech
+						WHEN s.ProductID = 103 THEN 'ASK'							-- ASKMESLOT
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -1186,7 +1188,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'GPILC', 'PS')
+							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'GPILC', 'PS', 'ASK')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips

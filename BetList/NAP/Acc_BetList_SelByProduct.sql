@@ -116,6 +116,7 @@ AS
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20241231@Razor: Support PLAY STAR [Redmine: #208023]
 		- 20250106@Razor: SA Gaming support Saba Plus [Redmine: #215645]
+		- 20220213@Razor: Support ASKMESLOT [Redmine: #216976]
 */
 
 BEGIN
@@ -548,8 +549,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86, 87, 89, 85, 100, 48, 91)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, ASKMESLOT
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86, 87, 89, 85, 100, 48, 91, 103)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -927,8 +928,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86, 87, 89, 85, 100, 48, 91)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, ASKMESLOT
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86, 87, 89, 85, 100, 48, 91, 103)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
