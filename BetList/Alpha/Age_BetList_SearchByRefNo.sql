@@ -42,6 +42,7 @@ AS
 		- 202411202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20241231@Razor: Support PLAY STAR [Redmine: #208023]
 		- 20250106@Razor: SA Gaming support Saba Plus [Redmine: #215645]
+		- 20220213@Razor: Support ASKMESLOT [Redmine: #216976]
 
 */
 
@@ -283,6 +284,7 @@ BEGIN
 						WHEN @ProductID = 91 THEN 'PS'			-- PLAY STAR
 						WHEN @ProductID = 96 THEN 'ON'			-- ON Casino
 						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
+						WHEN @ProductID = 103 THEN 'ASK'		-- ASKMESLOT
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1183,6 +1185,7 @@ BEGIN
 						WHEN @ProductId = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @ProductId = 48 THEN 'GPIRNG'		-- GPI
 						WHEN @ProductId = 91 THEN 'PS'			-- PLAY STAR
+						WHEN @ProductId = 103 THEN 'ASK'			-- ASKMESLOT
 						ELSE 'Unknown'
 					END
 

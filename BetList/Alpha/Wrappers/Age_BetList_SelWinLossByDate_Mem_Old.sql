@@ -179,6 +179,7 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241128@Razor: Fix bug, show unknown bettype[Redmine: #207589]
 		- 20241224@Razor: HF - Output MatchId to result page [Redmine: #215774]
+		- 20220213@Razor: Support ASKMESLOT [Redmine: #216976]
 	Param's Explanation:
 		@ProductDetails:
 			<ROOT>
@@ -459,6 +460,7 @@ BEGIN
 						WHEN s.ProductID = 85 THEN 'NS'		-- Nextspin
 						WHEN s.ProductID = 96 THEN 'ON'		-- ON Casino
 						WHEN s.ProductID = 100 THEN 'PTRNG'	-- Playtech
+						WHEN s.ProductID = 103 THEN 'ASK'	-- ASKMESLOT
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 83 THEN 'ParlayVS4' --Virtual Sports 4 Parlay
@@ -699,8 +701,8 @@ BEGIN
 	WHERE c.custid = @CustId
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI
-	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS', 'VGA', 'FAC'))
+	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT
+	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS', 'VGA', 'FAC', 'ASK'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
@@ -902,6 +904,22 @@ BEGIN
 							WHERE ProductId = 89 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 89 AND BetType = b.BetType)
+							
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'ASK'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 103 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 103 AND BetType = b.BetType)
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'ASK'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 103 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 103 AND BetType = b.BetType)
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
