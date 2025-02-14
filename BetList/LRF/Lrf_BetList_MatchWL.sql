@@ -5,7 +5,6 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_MatchWL]
 	@Date			SMALLDATETIME	= NULL,
 	@MoveBetsDay	SMALLDATETIME,
 	@ProductList	VARCHAR(500),
-	@ShowBA			BIT				= 0,
 	@MatchId		INT,
 	@EventType		TINYINT			= 1,
 	@BetType		INT				= 0,
@@ -35,6 +34,8 @@ AS
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 					- Add new input params @EventType TINYINT
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
+					- Remove input param @ShowBA
 */
 
 BEGIN
@@ -70,14 +71,6 @@ BEGIN
 		bettype,
 		GroupTypeId
 	FROM dbo.Lrf_f_GroupBettype()
-
-	DECLARE @ShowSB	BIT = 0
-
-	IF ',' + @ProductList + ',' LIKE '%,SB,%'
-		SET @ShowSB = 1
-
-	IF @ShowBA = 1
-		SET @ProductList = @ProductList + ',SB'
 
 	-- Get child product list
 	IF EXISTS (SELECT 1 FROM dbo.Lrf_f_GroupProduct() WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%')
@@ -167,7 +160,6 @@ BEGIN
 	CREATE TABLE #Data (
 		TransId				BIGINT,
 		RefNo				BIGINT,
-		BATransId			BIGINT,
 		CustId				INT,
 		Username			NVARCHAR(50),
 		Nickname			VARCHAR(50),
@@ -229,7 +221,6 @@ BEGIN
 		RowNum				INT,
 		TransId				BIGINT,
 		RefNo				BIGINT,
-		BATransId			BIGINT,
 		CustId				INT,
 		Username			NVARCHAR(50),
 		Nickname			VARCHAR(50),
@@ -349,8 +340,7 @@ BEGIN
 				WalletType,
 				RefCode,
 				Product,
-				EventType,
-				BATransId)
+				EventType)
 			SELECT
 				b.transid,
 				b.refno,
@@ -398,12 +388,10 @@ BEGIN
 								WHEN s.EventType = 2 AND s.ProductID = 1 THEN 'Outright'
 								ELSE 'Unknown'
 							END,
-				s.EventType,
-				ba.TransID
+				s.EventType
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 				INNER JOIN #TempAg AS ta ON ta.CustId = b.recommend
 				INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID
 			WHERE b.winlostdate = @_Date
 				AND b.statusID IN (111, 112, 113)
 				AND (@LiveIndicator = -1 OR b.Liveindicator = @LiveIndicator)
@@ -451,8 +439,7 @@ BEGIN
 				WalletType,
 				RefCode,
 				Product,
-				EventType,
-				BATransId)
+				EventType)
 			SELECT
 				b.transid,
 				b.refno,
@@ -501,26 +488,16 @@ BEGIN
 								WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'			-- Virtual Sports Racing
 								ELSE 'Unknown'
 							END,
-				s.EventType,
-				ba.TransID
+				s.EventType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 				INNER JOIN #TempAg AS ta ON ta.CustId = b.recommend
 				INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.TransID
 			WHERE b.winlostdate = @_Date
 				AND b.statusID IN (111, 112, 113)
 				AND (@LiveIndicator = -1 OR b.Liveindicator = @LiveIndicator)
 				AND (b.matchid IN (SELECT MatchId FROM @Match)
 					OR EventType NOT IN (1, 3, 5))
 		END
-
-		DELETE #Data
-		WHERE (@ShowSB = 0
-				AND Product IN ('SB', 'Parlay', 'Outright')
-				AND BATransId IS NULL)
-			OR (@ShowBA = 0
-				AND Product IN ('SB', 'Parlay', 'Outright')
-				AND BATransId IS NOT NULL)
 
 		UPDATE b
 		SET
@@ -534,10 +511,7 @@ BEGIN
 			UPDATE #Data
 			SET
 				WinLost = WinLost - Actual_Stake,
-				LicenseeWL = CASE
-								WHEN BATransId IS NOT NULL THEN 0
-								ELSE - (WinLost - Actual_Stake)
-							END
+				LicenseeWL = - (WinLost - Actual_Stake)
 
 			-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 			IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)

@@ -47,6 +47,7 @@ AS
 		- 20241018@Kos: Enhance match info for Player Tips [Redmine: 210279]
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
 */
 
 BEGIN
@@ -445,13 +446,6 @@ BEGIN
 		END
 	END
 
-	DECLARE @IsBA BIT = 0
-
-	IF EXISTS (SELECT TOP(1) 1 FROM dbo.LicenseeBATransaction_active WITH (NOLOCK) WHERE transid = @TransId)
-	BEGIN
-		SET @IsBA = 1
-	END
-
 	DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
 
 	IF @WhTicket = 1	-- translog
@@ -669,7 +663,6 @@ BEGIN
 			END AS WinLost,
 			CASE
 				WHEN @RefTable IN (1, 2) AND x.LicenseeWL IS NOT NULL THEN x.LicenseeWL
-				WHEN @IsBA = 1 THEN 0
 				ELSE - (b.winlost - b.actual_stake)
 			END AS LicenseeWL,
 			CASE

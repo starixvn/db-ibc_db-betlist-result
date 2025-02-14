@@ -38,6 +38,7 @@ AS
 		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -92,7 +93,6 @@ BEGIN
 	CREATE TABLE #Data (
 		TransId				BIGINT,
 		RefNo				BIGINT,
-		BATransId			BIGINT,
 		CustId				INT,
 		Currency			SMALLINT,
 		Recommend			INT,
@@ -148,7 +148,6 @@ BEGIN
 		RowNum				INT,
 		TransId				BIGINT,
 		RefNo				BIGINT,
-		BATransId			BIGINT,
 		CustId				INT,
 		Currency			SMALLINT,
 		Recommend			INT,
@@ -554,10 +553,6 @@ BEGIN
 			-- Get Sport/Bettype info
 			UPDATE b
 			SET
-				BATransId = CASE
-								WHEN b.TableID = 1 THEN ba.TransID
-								WHEN b.TableID IN (2, 3) THEN babk.TransID
-							END,
 				Product = CASE
 							WHEN s.ProductID = 25 THEN 'CO'								-- Cash Out
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
@@ -566,8 +561,6 @@ BEGIN
 						END
 			FROM #Data AS b
 				INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID AND b.TableID = 1
-				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS babk WITH (NOLOCK) ON b.transid = babk.TransID AND b.TableID IN (2, 3)
 
 			DECLARE @SabaVirtualSportLeague TABLE (LeagueId INT)
 
@@ -655,10 +648,7 @@ BEGIN
 			UPDATE #Data
 			SET
 				WinLost = WinLost - Actual_Stake,
-				LicenseeWL = CASE
-								WHEN BATransId IS NOT NULL THEN 0
-								ELSE - (WinLost - Actual_Stake)
-							END
+				LicenseeWL = - (WinLost - Actual_Stake)
 
 			-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 			IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)

@@ -4,8 +4,6 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossOutright]
 	@AgentList		VARCHAR(MAX),
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
-	@ShowBA			BIT				= 0,
-	@ShowSB			BIT				= 0,
 	@MoveBetsDay	SMALLDATETIME,
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 0,
@@ -47,6 +45,8 @@ AS
 		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
 				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
+					- Remove input param @ShowBA, @ShowSB
 */
 
 BEGIN
@@ -113,93 +113,45 @@ BEGIN
 		ELSE
 			SET @TempFromDate = @FromDate
 
-		IF @ShowBA = 1
-		BEGIN
-			INSERT INTO #AgWinlossOutright
-			SELECT
-				l.sporttype,
-				b.custid,
-				b.bettype,
-				b.transid,
-				m.matchcode,
-				m.teamid,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.oddstype,
-				b.status,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				0 AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				l.leagueid,
-				b.matchid,
-				b.ip,
-				b.winlostdate,
-				b.currency,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo
-			FROM
-				dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
-			WHERE
-				b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND b.bettype = 10
-				AND b.tpositiontaking = 0
-				AND b.statusID IN (111, 112, 113)
-		END
-
-		IF @ShowSB = 1
-		BEGIN
-			INSERT INTO #AgWinlossOutright
-			SELECT
-				l.sporttype,
-				b.custid,
-				b.bettype,
-				b.transid,
-				m.matchcode,
-				m.teamid,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.oddstype,
-				b.status,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				-(b.winlost - b.actual_stake) AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				l.leagueID,
-				b.matchid, 
-				b.ip,
-				b.winlostdate,
-				b.currency,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo
-			FROM
-				dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
-			WHERE
-				b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-				AND b.bettype = 10
-				AND b.statusID IN (111, 112, 113)
-				AND b.tpositiontaking <> 0
-		END
+		INSERT INTO #AgWinlossOutright
+		SELECT
+			l.sporttype,
+			b.custid,
+			b.bettype,
+			b.transid,
+			m.matchcode,
+			m.teamid,
+			b.hdp1,
+			b.hdp2,
+			b.odds,
+			b.oddstype,
+			b.status,
+			b.stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			-(b.winlost - b.actual_stake) AS LicenseeWL,
+			b.comm,
+			b.playercomm,
+			b.transdate,
+			b.betteam,
+			b.liveindicator,
+			b.livehomescore,
+			b.liveawayscore,
+			l.leagueID,
+			b.matchid, 
+			b.ip,
+			b.winlostdate,
+			b.currency,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
+		FROM
+			dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN dbo.outright AS m WITH (NOLOCK) ON b.matchid = m.orid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueid = l.leagueid
+		WHERE
+			b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
+			AND b.bettype = 10
+			AND b.statusID IN (111, 112, 113)
 	END
 
 	IF @Fromdate <= @MoveBetsDay
@@ -209,93 +161,45 @@ BEGIN
 		ELSE
 			SET @TempToDate = @ToDate
 
-		IF @ShowBA = 1
-		BEGIN
-			INSERT INTO #AgWinlossOutright
-			SELECT
-				l.sporttype,
-				b.custid,
-				b.bettype,
-				b.transid,
-				m.matchcode,
-				m.teamid,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.oddstype,
-				b.status,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				0 AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				l.leagueid,
-				b.matchid,
-				b.ip,
-				b.winlostdate,
-				b.currency,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo
-			FROM
-				dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
-			WHERE
-				b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
-				AND b.bettype = 10
-				AND b.statusID IN (111, 112, 113)
-				AND b.tpositiontaking = 0
-		END
-
-		IF @ShowSB = 1
-		BEGIN
-			INSERT INTO #AgWinlossOutright
-			SELECT
-				l.sporttype,
-				b.custid,
-				b.bettype,
-				b.transid,
-				m.matchcode,
-				m.teamid,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.oddstype,
-				b.status,
-				b.stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				-(b.winlost - b.actual_stake)AS LicenseeWL,
-				b.comm,
-				b.playercomm,
-				b.transdate,
-				b.betteam,
-				b.liveindicator,
-				b.livehomescore,
-				b.liveawayscore,
-				l.leagueID,
-				b.matchid,
-				b.ip,
-				b.winlostdate,
-				b.currency,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo
-			FROM
-				dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
-				INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
-			WHERE
-				b.recommend IN (SELECT CustId FROM @TempAg)
-				AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
-				AND b.winlostdate BETWEEN @FromDate AND @TempToDate
-				AND b.bettype = 10
-				AND b.tpositiontaking <> 0
-				AND b.statusID IN (111, 112, 113)
-		END
+		INSERT INTO #AgWinlossOutright
+		SELECT
+			l.sporttype,
+			b.custid,
+			b.bettype,
+			b.transid,
+			m.matchcode,
+			m.teamid,
+			b.hdp1,
+			b.hdp2,
+			b.odds,
+			b.oddstype,
+			b.status,
+			b.stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			-(b.winlost - b.actual_stake)AS LicenseeWL,
+			b.comm,
+			b.playercomm,
+			b.transdate,
+			b.betteam,
+			b.liveindicator,
+			b.livehomescore,
+			b.liveawayscore,
+			l.leagueID,
+			b.matchid,
+			b.ip,
+			b.winlostdate,
+			b.currency,
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo
+		FROM
+			dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN dbo.outright14 AS m WITH (NOLOCK) ON b.matchid = m.orid
+			INNER JOIN dbo.League AS l WITH (NOLOCK) ON m.leagueID = l.leagueID
+		WHERE
+			b.recommend IN (SELECT CustId FROM @TempAg)
+			AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
+			AND b.winlostdate BETWEEN @FromDate AND @TempToDate
+			AND b.bettype = 10
+			AND b.statusID IN (111, 112, 113)
 	END
 
 	CREATE TABLE #ExchangeRate (

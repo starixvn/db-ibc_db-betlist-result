@@ -3,7 +3,6 @@
 ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossByMatch]
 	@AgentList		VARCHAR(MAX),
 	@ProductList	VARCHAR(500),
-	@ShowBA			BIT				= 0,
 	@MatchId		INT,
 	@EventType		TINYINT			= 1,
 	@FromDate		SMALLDATETIME,
@@ -87,6 +86,8 @@ AS
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 					- Add new input params @EventType TINYINT
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
+					- Remove input param @ShowBA
 
 	Param's Explanation: 
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -120,14 +121,6 @@ BEGIN
 
 		RETURN
 	END CATCH
-
-	DECLARE @ShowSB	BIT = 0
-
-	IF ',' + @ProductList + ',' LIKE '%,SB,%'
-		SET @ShowSB = 1
-
-	IF @ShowBA = 1
-		SET @ProductList = @ProductList + ',SB'
 
 	-- Get child product list
 	IF EXISTS (SELECT 1 FROM dbo.Lrf_f_GroupProduct() WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%')
@@ -170,7 +163,6 @@ BEGIN
 		LeagueId			INT,
 		LeagueGroupId		SMALLINT,
 		TransId				BIGINT,
-		BATransId			BIGINT,
 		MatchCode			VARCHAR(50),
 		EventDate			DATETIME,
 		HomeId				INT,
@@ -287,7 +279,6 @@ BEGIN
 			END AS LeagueId,
 			l.LeagueGroupID,
 			b.transid,
-			ba.TransID AS BATransId,
 			m.matchcode,
 			m.GlobalShowTime AS EventDate,
 			CASE
@@ -307,10 +298,7 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
-			CASE
-				WHEN ba.TransID IS NULL THEN - (b.winlost - b.actual_stake)
-				ELSE 0
-			END AS LicenseeWL,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.transdate,
@@ -356,7 +344,6 @@ BEGIN
 			LEFT JOIN dbo.match AS m ON sbt.EventType = 1 AND m.matchid = tm.MatchId
 			LEFT JOIN dbo.League AS l ON sbt.EventType = 1 AND l.leagueid = m.leagueid
 			LEFT JOIN dbo.Match3rd AS m3rd ON sbt.EventType = 5 AND m3rd.Match3rdId = b.matchid
-			LEFT JOIN bodb_licensee.dbo.LicenseeBATransaction_active AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE b.statusID IN (111, 112, 113)
 			AND @LiveIndicator IN (2, b.liveindicator)
 			AND b.winlostdate > @MoveBetsDay
@@ -384,7 +371,6 @@ BEGIN
 			END AS LeagueId,
 			l.LeagueGroupID,
 			b.transid,
-			ba.TransID AS BATransId,
 			m.matchcode,
 			m.GlobalShowTime AS EventDate,
 			CASE
@@ -404,10 +390,7 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
-			CASE
-				WHEN ba.TransID IS NULL THEN - (b.winlost - b.actual_stake)
-				ELSE 0
-			END AS LicenseeWL,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.transdate,
@@ -453,18 +436,9 @@ BEGIN
 			LEFT JOIN dbo.match14 AS m ON sbt.EventType = 1 AND m.matchid = tm.MatchId
 			LEFT JOIN dbo.League AS l ON sbt.EventType = 1 AND l.leagueid = m.leagueid
 			LEFT JOIN dbo.Match3rd14 AS m3rd ON sbt.EventType = 5 AND m3rd.Match3rdId = b.matchid
-			LEFT JOIN bodb_licensee.dbo.LicenseeBATransaction_bk AS BA WITH (NOLOCK) ON b.transid = BA.transid
 		WHERE b.statusID IN (111, 112, 113)
 			AND @LiveIndicator IN (2, b.liveindicator)
 	END
-
-	DELETE #Data
-	WHERE (@ShowSB = 0
-			AND ProductId = 1
-			AND BATransId IS NULL)
-		OR (@ShowBA = 0
-			AND ProductId = 1
-			AND BATransId IS NOT NULL)
 
 	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)

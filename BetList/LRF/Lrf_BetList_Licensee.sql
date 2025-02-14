@@ -108,6 +108,7 @@ AS
 		- 20250116@Kos: VS6 - Fix group bet type [RedmineID: #212446]
 		- 20250306@Kos: Hotfix - Missing ExtraInfo for some products [RedmineID: #219311]
 		- 20250307@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
 */
 
 BEGIN
@@ -320,16 +321,6 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		DECLARE @ShowSB BIT = 0
-
-		IF ',' + @ProductList + ',' LIKE '%,SB,%'
-			SET @ShowSB = 1
-
-		IF ',' + @ProductList + ',' LIKE '%,BA,%'
-		BEGIN
-			SET @ProductList = @ProductList + ',SB'
-		END
-
 		IF ',' + @ProductList + ',' NOT LIKE '%,SB,%'
 		BEGIN
 			SET @CashoutMode = 1	-- Exclude Cash Out tickets
@@ -569,10 +560,7 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					(b.winlost - b.actual_stake) AS WinLost,
-					CASE
-						WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-						ELSE - (b.winlost - b.actual_stake)
-					END AS LiceseeWL,
+					- (b.winlost - b.actual_stake) AS LiceseeWL,
 					b.comm,
 					b.playercomm,
 					b.status,
@@ -631,14 +619,8 @@ BEGIN
 					AND 1 = CASE
 								WHEN s.ProductID = 1 THEN
 									CASE
-										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-											AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-											AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-										WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-											AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-										WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-											AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+										WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+										WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 										ELSE 0
 									END
 								WHEN @CashOutMode = 2 THEN 0
@@ -711,10 +693,7 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					(b.winlost - b.actual_stake) AS WinLost,
-					CASE
-						WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-						ELSE - (b.winlost - b.actual_stake)
-					END AS LiceseeWL,
+					- (b.winlost - b.actual_stake) AS LiceseeWL,
 					b.comm,
 					b.playercomm,
 					b.status,
@@ -773,14 +752,8 @@ BEGIN
 					AND 1 = CASE
 								WHEN s.ProductID = 1 THEN
 									CASE
-										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-											AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-											AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-										WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-											AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-										WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-											AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+										WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+										WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 										ELSE 0
 									END
 								WHEN @CashOutMode = 2 THEN 0
@@ -855,10 +828,7 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					(b.winlost - b.actual_stake) AS WinLost,
-					CASE
-						WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-						ELSE - (b.winlost - b.actual_stake)
-					END AS LiceseeWL,
+					- (b.winlost - b.actual_stake) AS LiceseeWL,
 					b.comm,
 					b.playercomm,
 					b.status,
@@ -917,14 +887,8 @@ BEGIN
 					AND 1 = CASE
 								WHEN s.ProductID = 1 THEN
 									CASE
-										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-											AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-											AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-										WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-											AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-										WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-											AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+										WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+										WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 										ELSE 0
 									END
 								WHEN @CashOutMode = 2 THEN 0
@@ -997,10 +961,7 @@ BEGIN
 					b.stake,
 					b.actual_stake,
 					(b.winlost - b.actual_stake) AS WinLost,
-					CASE
-						WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-						ELSE - (b.winlost - b.actual_stake)
-					END AS LiceseeWL,
+					- (b.winlost - b.actual_stake) AS LiceseeWL,
 					b.comm,
 					b.playercomm,
 					b.status,
@@ -1059,14 +1020,8 @@ BEGIN
 					AND 1 = CASE
 								WHEN s.ProductID = 1 THEN
 									CASE
-										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-											AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-											AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-										WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-											AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-										WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-											AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+										WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+										WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 										ELSE 0
 									END
 								WHEN @CashOutMode = 2 THEN 0

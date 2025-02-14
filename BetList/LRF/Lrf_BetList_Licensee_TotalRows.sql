@@ -103,6 +103,7 @@ AS
 		- 20241226@Kos: Allow to search multiple days [RedmineID: #212395]
 					- Remove input params @Product, @SportType, @BetType
 					- Add new input params @ProductList VARCHAR(300), @SportTypeList VARCHAR(MAX), @BetTypeList VARCHAR(MAX), @CashOutMode TINYINT, @MaxTotalRows INT
+		- 20250212@Kos: Remove BA [RedmineID: #216882]
 */
 
 BEGIN
@@ -150,16 +151,6 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		DECLARE @ShowSB BIT = 0
-
-		IF ',' + @ProductList + ',' LIKE '%,SB,%'
-			SET @ShowSB = 1
-
-		IF ',' + @ProductList + ',' LIKE '%,BA,%'
-		BEGIN
-			SET @ProductList = @ProductList + ',SB'
-		END
-
 		IF ',' + @ProductList + ',' NOT LIKE '%,SB,%'
 		BEGIN
 			SET @CashoutMode = 1	-- Exclude Cash Out tickets
@@ -393,14 +384,8 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-													AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-													AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-												WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-													AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-												WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-													AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+												WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+												WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 												ELSE 0
 											END
 										WHEN @CashOutMode = 2 THEN 0
@@ -457,14 +442,8 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-													AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-													AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-												WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-													AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-												WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-													AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+												WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+												WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 												ELSE 0
 											END
 										WHEN @CashOutMode = 2 THEN 0
@@ -525,14 +504,8 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
-											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-												AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-												AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-											WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-												AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-											WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-												AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+											WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+											WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 											ELSE 0
 										END
 									WHEN @CashOutMode = 2 THEN 0
@@ -613,14 +586,8 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-													AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-													AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-												WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-													AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-												WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-													AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+												WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+												WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 												ELSE 0
 											END
 										WHEN @CashOutMode = 2 THEN 0
@@ -681,14 +648,8 @@ BEGIN
 							AND 1 = CASE
 										WHEN s.ProductID = 1 THEN
 											CASE
-												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-													AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-												WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-													AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-												WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-													AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-												WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-													AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+												WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+												WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 												ELSE 0
 											END
 										WHEN @CashOutMode = 2 THEN 0
@@ -768,14 +729,8 @@ BEGIN
 					AND 1 = CASE
 								WHEN s.ProductID = 1 THEN
 									CASE
-										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-											AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-										WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-											AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-										WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-											AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-										WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-											AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+										WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+										WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 										ELSE 0
 									END
 								WHEN @CashOutMode = 2 THEN 0
@@ -843,14 +798,8 @@ BEGIN
 						AND 1 = CASE
 									WHEN s.ProductID = 1 THEN
 										CASE
-											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-												AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-											WHEN @ShowSB = 1 AND b.tpositiontaking <> 0
-												AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-											WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-												AND @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1		-- BA Cash Out tickets
-											WHEN ',' + @ProductList + ',' LIKE '%,BA,%' AND b.tpositiontaking = 0
-												AND @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- BA normal tickets
+											WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+											WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
 											ELSE 0
 										END
 									WHEN @CashOutMode = 2 THEN 0

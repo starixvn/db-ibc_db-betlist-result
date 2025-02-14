@@ -31,6 +31,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20220301@Kos: Support archive process [Redmine: 167823]
+		- 20250212@Kos: Remove BA [RedmineID: #216882]
 
 */
 
@@ -164,7 +165,6 @@ BEGIN
 	CREATE TABLE #Data (
 		TransId				BIGINT,
 		RefNo				BIGINT,
-		BATransId			BIGINT,
 		CustId				INT,
 		Currency			SMALLINT,
 		Recommend			INT,
@@ -219,7 +219,6 @@ BEGIN
 		RowNum				INT,
 		TransId				BIGINT,
 		RefNo				BIGINT,
-		BATransId			BIGINT,
 		CustId				INT,
 		Currency			SMALLINT,
 		Recommend			INT,
@@ -543,10 +542,6 @@ BEGIN
 		-- Get Sport/Bettype info
 		UPDATE b
 		SET
-			BATransId = CASE
-							WHEN b.TableID = 1 THEN ba.TransID
-							WHEN b.TableID IN (2, 3) THEN babk.TransID
-						END,
 			Product = CASE
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
@@ -555,8 +550,6 @@ BEGIN
 					END
 		FROM #Data AS b
 			INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID AND b.TableID = 1
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS babk WITH (NOLOCK) ON b.transid = babk.TransID AND b.TableID IN (2, 3)
 
 		DELETE #Data
 		WHERE Product = 'Unknown'
@@ -567,10 +560,7 @@ BEGIN
 		UPDATE #Data
 		SET
 			WinLost = WinLost - Actual_Stake,
-			LicenseeWL = CASE
-							WHEN BATransId IS NOT NULL THEN 0
-							ELSE - (WinLost - Actual_Stake)
-						END
+			LicenseeWL = - (WinLost - Actual_Stake)
 
 		-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 		IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)

@@ -16,7 +16,6 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Mem]
 	@PageIndex		INT				= 1,
 	@Sort			NVARCHAR(50)	= N'TransDate ASC',
 	@ProductList	VARCHAR(200)	= '',
-	@ShowBA			BIT				= 0,	-- BA
 	@SportTypeList	VARCHAR(MAX)	= 'All',
 	@BetTypeList	VARCHAR(MAX)	= 'All',
 	@CashoutMode	TINYINT			= 0,
@@ -171,6 +170,8 @@ AS
 		- 20241115@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
+					- Remove input param @ShowBA
 */
 
 BEGIN
@@ -196,18 +197,6 @@ BEGIN
 		SET @HasError = 1
 	END CATCH
 
-	DECLARE @ShowSB BIT = 0
-
-	IF ',' + @ProductList + ',' LIKE '%,SB,%'
-	BEGIN
-		SET @ShowSB = 1
-	END
-
-	IF @ShowBA = 1
-	BEGIN
-		SET @ProductList = 'SB,' + @ProductList
-	END
-	
 	IF ',' + @ProductList + ',' NOT LIKE '%,SB,%'
 	BEGIN
 		SET @CashoutMode = 1	-- Exclude Cash Out tickets
@@ -341,7 +330,6 @@ BEGIN
 	CREATE TABLE #Data (
 		TransId				BIGINT,
 		RefNo				BIGINT,
-		BATransId			BIGINT,
 		CustId				INT,
 		Currency			SMALLINT,
 		Recommend			INT,
@@ -405,7 +393,6 @@ BEGIN
 		RowNum				INT,
 		TransId				BIGINT,
 		RefNo				BIGINT,
-		BATransId			BIGINT,
 		CustId				INT,
 		Currency			SMALLINT,
 		Recommend			INT,
@@ -1233,10 +1220,6 @@ BEGIN
 			-- Get Sport/Bettype info
 			UPDATE b
 			SET
-				BATransId = CASE
-								WHEN b.TableID = 1 THEN ba.TransID
-								WHEN b.TableID IN (2, 3) THEN babk.TransID
-							END,
 				Product = CASE
 							WHEN s.ProductID = 6 THEN 'OneRNG'							-- RNG Casino
 							WHEN s.ProductID = 8 THEN 'Keno'
@@ -1285,26 +1268,14 @@ BEGIN
 				EventType = s.EventType
 			FROM #Data AS b
 				INNER JOIN @SportBetType AS s ON b.bettype = s.bettype
-				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID AND b.TableID = 1
-				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS babk WITH (NOLOCK) ON b.transid = babk.TransID AND b.TableID IN (2, 3)
 
 			DELETE #Data
 			WHERE Product IS NULL
-				OR ((@ShowSB = 0 OR @CashoutMode = 1)	-- Cash Out tickets
+				OR (@CashoutMode = 1	-- Cash Out tickets
 					AND Product IN ('SB', 'Parlay', 'Outright')
-					AND BATransId IS NULL
 					AND BetdaqId = -2)
-				OR ((@ShowSB = 0 OR @CashoutMode = 2)	-- Normal SB tickets
+				OR (@CashoutMode = 2	-- Normal SB tickets
 					AND Product IN ('SB', 'Parlay', 'Outright')
-					AND BATransId IS NULL
-					AND ISNULL(BetdaqId, 0) <> -2)
-				OR ((@ShowBA = 0 OR @CashoutMode = 1)			-- BA Cash Out tickets
-					AND Product IN ('SB', 'Parlay', 'Outright')
-					AND BATransId IS NOT NULL
-					AND BetdaqId = -2)
-				OR ((@ShowBA = 0 OR @CashoutMode = 2)			-- BA tickets
-					AND Product IN ('SB', 'Parlay', 'Outright')
-					AND BATransId IS NOT NULL
 					AND ISNULL(BetdaqId, 0) <> -2)
 				OR (Product NOT IN ('SB', 'Parlay')
 					AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
@@ -1434,10 +1405,7 @@ BEGIN
 			UPDATE #Data
 			SET
 				WinLost = WinLost - Actual_Stake,
-				LicenseeWL = CASE
-								WHEN BATransId IS NOT NULL THEN 0
-								ELSE - (WinLost - Actual_Stake)
-							END
+				LicenseeWL = - (WinLost - Actual_Stake)
 
 			-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 			IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)

@@ -12,10 +12,12 @@ AS
 	Created: Kos@20240725
 	Task: API - Search By RefNo
 	DB: DBACC.bodb02
+
 	Revisions:
 		- 20240725@Kos: Created [#Redmine: 207623]
 		- 20240725@Kos: Return additional column [#Redmine: 207623]
 		- 20241004@Kos: Return additional column PlayerSiteId [#Redmine: 207623]
+		- 20250212@Kos: Remove BA [RedmineID: #216882]
 */
 
 BEGIN
@@ -221,14 +223,6 @@ BEGIN
 						ELSE 'Unknown'
 					END
 
-	DECLARE @IsBA BIT = 0
-
-	IF EXISTS (SELECT TOP(1) 1 FROM bodb_Licensee.dbo.LicenseeBATransaction_active WITH (NOLOCK) WHERE transid = @TransId)
-		OR EXISTS (SELECT TOP(1) 1 FROM bodb_Licensee.dbo.LicenseeBATransaction_bk WITH (NOLOCK) WHERE transid = @TransId)
-	BEGIN
-		SET @IsBA = 1
-	END
-
 	IF @WhTicket = 2	-- Bettrans
 	BEGIN
 		INSERT INTO @Data
@@ -258,10 +252,7 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			b.winlost - b.actual_stake AS WinLost,
-			CASE
-				WHEN @IsBA = 1 THEN 0
-				ELSE - (b.winlost - b.actual_stake)
-			END AS LicenseeWL,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.PlayerComm,
 			b.Comm,
 			CASE
@@ -403,10 +394,7 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
-			CASE
-				WHEN @IsBA = 1 THEN 0
-				ELSE - (b.winlost - b.actual_stake)
-			END AS LicenseeWL,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.playercomm,
 			b.comm,
 			b.status,
@@ -531,10 +519,7 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
-			CASE
-				WHEN @IsBA = 1 THEN 0
-				ELSE - (b.winlost - b.actual_stake)
-			END AS LicenseeWL,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.playercomm,
 			b.comm,
 			b.status,

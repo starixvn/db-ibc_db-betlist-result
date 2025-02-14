@@ -100,6 +100,7 @@ AS
 		- 20241018@Kos: Enhance match info for Player Tips [Redmine: 210279]
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
 */
 
 BEGIN
@@ -404,10 +405,7 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				CASE
-					WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-					ELSE - (b.winlost - b.actual_stake)
-				END AS LicenseeWL,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.status,
@@ -569,10 +567,7 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				CASE
-					WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-					ELSE - (b.winlost - b.actual_stake)
-				END AS LicenseeWL,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.status,
@@ -668,10 +663,7 @@ BEGIN
 				b.stake,
 				b.actual_stake,
 				(b.winlost - b.actual_stake) AS WinLost,
-				CASE
-					WHEN s.ProductID = 1 AND b.tpositiontaking = 0 THEN 0
-					ELSE - (b.winlost - b.actual_stake)
-				END AS LicenseeWL,
+				- (b.winlost - b.actual_stake) AS LicenseeWL,
 				b.playercomm,
 				b.comm,
 				b.status,

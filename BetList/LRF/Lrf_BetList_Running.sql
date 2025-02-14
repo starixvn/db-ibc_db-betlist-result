@@ -11,7 +11,6 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Running]
 	@PageIndex			INT				= 1,
 	@Sort				NVARCHAR(50)	= N'TransDate DESC',
 	@ProductList		VARCHAR(200)	= '',
-	@ShowBA				BIT				= 0,	-- BA
 	@SportTypeList		VARCHAR(MAX)	= 'All',
 	@BetTypeList		VARCHAR(MAX)	= 'All',
 	@LeagueList			VARCHAR(MAX)	= 'All',
@@ -135,6 +134,8 @@ AS
 		- 20241115@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
+					- Remove input param @ShowBA
 */
 
 BEGIN
@@ -180,7 +181,6 @@ BEGIN
 	CREATE TABLE #Data (
 		TransId				BIGINT,
 		RefNo				BIGINT,
-		BATransId			BIGINT,
 		CustId				INT,
 		Currency			SMALLINT,
 		Recommend			INT,
@@ -245,7 +245,6 @@ BEGIN
 		RowNum				INT,
 		TransId				BIGINT,
 		RefNo				BIGINT,
-		BATransId			BIGINT,
 		CustId				INT,
 		Currency			SMALLINT,
 		Recommend			INT,
@@ -352,23 +351,6 @@ BEGIN
 
 	IF @HasError = 0
 	BEGIN
-		DECLARE @ShowSB BIT = 0
-
-		IF ',' + @ProductList + ',' LIKE '%,SB,%'
-		BEGIN
-			SET @ShowSB = 1
-		END
-
-		IF @ShowBA = 1
-		BEGIN
-			SET @ProductList = 'SB,' + @ProductList
-		END
-
-		IF ',' + @ProductList + ',' LIKE '%,CO,%'
-		BEGIN
-			SET @ProductList = 'SB,' + @ProductList
-		END
-
 		-- Get child product list
 		IF EXISTS (SELECT 1 FROM dbo.Lrf_f_GroupProduct() WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%')
 		BEGIN
@@ -905,7 +887,6 @@ BEGIN
 			-- Get Sport/Bettype info
 			UPDATE b
 			SET
-				BATransId = ba.TransID,
 				Product = CASE
 							WHEN s.ProductID = 6 THEN 'OneRNG'							-- RNG Casino
 							WHEN s.ProductID = 8 THEN 'Keno'
@@ -954,7 +935,6 @@ BEGIN
 				EventType = s.EventType
 			FROM #Data AS b
 				INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-				LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID
 
 			IF @StatusFilter <> '1,2,3'
 			BEGIN
@@ -998,12 +978,6 @@ BEGIN
 			WHERE Product IS NULL
 				OR BetType IN (901, 902, 903, 904, 911, 912, 913, 914)
 				OR BetType BETWEEN 801 AND 899
-				OR (@ShowSB = 0
-					AND Product IN ('SB', 'Parlay', 'Outright')
-					AND BATransId IS NULL)
-				OR (@ShowBA = 0
-					AND Product IN ('SB', 'Parlay', 'Outright')
-					 AND BATransId IS NOT NULL)
 
 			-- Check Saba Virtual Sports
 			IF @SportTypeList <> 'All'

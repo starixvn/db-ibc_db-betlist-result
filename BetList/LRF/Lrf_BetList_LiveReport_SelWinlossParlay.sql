@@ -3,7 +3,6 @@
 ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossParlay]
 	@AgentList		VARCHAR(MAX),
 	@ProductList	VARCHAR(500),
-	@ShowBA			BIT				= 0,
 	@BetType		INT				= 9,
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
@@ -60,6 +59,8 @@ AS
 		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
 				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
+					- Remove input param @ShowBA
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -103,14 +104,6 @@ BEGIN
 		GroupTypeId
 	FROM dbo.Lrf_f_GroupBettype()
 
-	DECLARE @ShowSB	BIT = 0
-
-	IF ',' + @ProductList + ',' LIKE '%,SB,%'
-		SET @ShowSB = 1
-
-	IF @ShowBA = 1
-		SET @ProductList = @ProductList + ',SB'
-
 	-- Get child product list
 	IF EXISTS (SELECT 1 FROM dbo.Lrf_f_GroupProduct() WHERE ',' + @ProductList + ',' LIKE '%,' + GroupProductPrefix + ',%')
 	BEGIN
@@ -144,7 +137,6 @@ BEGIN
 		BetType			SMALLINT,
 		RefNo			BIGINT,
 		TransId			BIGINT,
-		BATransId		BIGINT,
 		BetId			BIGINT,
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,
@@ -196,7 +188,6 @@ BEGIN
 				WHEN b.bettype <> 29 THEN b.transid
 				ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
 			END AS transid,
-			ba.TransID,
 			ISNULL(b.betid, 0),
 			b.hdp1,
 			b.hdp2,
@@ -206,10 +197,7 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
-			CASE
-				WHEN ba.TransID IS NULL THEN - (b.winlost - b.actual_stake)
-				ELSE 0
-			END AS LicenseeWL,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.transdate,
@@ -225,7 +213,6 @@ BEGIN
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
 			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_active AS ba WITH (NOLOCK) ON b.transid = ba.TransID
 		WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 			AND b.statusID IN (111, 112, 113)
 			AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
@@ -250,7 +237,6 @@ BEGIN
 				WHEN b.bettype <> 29 THEN b.transid
 				ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
 			END AS transid,
-			ba.TransID,
 			ISNULL(b.betid, 0),
 			b.hdp1,
 			b.hdp2,
@@ -260,10 +246,7 @@ BEGIN
 			b.stake,
 			b.actual_stake,
 			(b.winlost - b.actual_stake) AS WinLost,
-			CASE
-				WHEN ba.TransID IS NULL THEN - (b.winlost - b.actual_stake)
-				ELSE 0
-			END AS LicenseeWL,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
 			b.comm,
 			b.playercomm,
 			b.transdate,
@@ -279,21 +262,12 @@ BEGIN
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
 			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-			LEFT JOIN bodb_Licensee.dbo.LicenseeBATransaction_bk AS ba WITH (NOLOCK) ON b.transid = ba.TransID
 		WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 			AND b.statusID IN (111, 112, 113)
 			AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
 				OR (@LiveIndicator = 1 AND b.livehomescore = 1)
 				OR (@LiveIndicator = 2))
 	END
-
-	DELETE #AgWinlossMP
-	WHERE (@ShowSB = 0
-			AND BetType IN (9, 29)
-			AND BATransId IS NULL)
-		OR (@ShowBA = 0
-			AND BetType IN (9, 29)
-			AND BATransId IS NOT NULL)
 
 	-- Get exchange rate
 	DECLARE @Today SMALLDATETIME
@@ -338,7 +312,6 @@ BEGIN
 		BetType			SMALLINT,
 		RefNo			BIGINT,
 		TransId			BIGINT,
-		BATransId		BIGINT,
 		BetId			BIGINT,
 		Hdp1			SMALLMONEY,
 		Hdp2			SMALLMONEY,

@@ -43,6 +43,7 @@ AS
 		- 20241018@Kos: Enhance match info for Player Tips [Redmine: 210279]
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250313@Kos: Remove BA [RedmineID: #216882]
 */
 
 BEGIN
@@ -386,14 +387,6 @@ BEGIN
 				AND b.RefCode = @RefCode
 				AND b.transid <> @TransId
 		END
-	END
-
-	DECLARE @IsBA BIT = 0
-
-	IF EXISTS (SELECT TOP(1) 1 FROM bodb_Licensee.dbo.LicenseeBATransaction_active WITH (NOLOCK) WHERE transid = @TransId)
-		OR EXISTS (SELECT TOP(1) 1 FROM bodb_Licensee.dbo.LicenseeBATransaction_bk WITH (NOLOCK) WHERE transid = @TransId)
-	BEGIN
-		SET @IsBA = 1
 	END
 
 	DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
