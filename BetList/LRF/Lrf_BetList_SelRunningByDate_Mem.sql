@@ -141,6 +141,7 @@ AS
 		- 20240605@Kos: Support Virtual Sports 4 [Redmine: 199347]
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -983,8 +984,8 @@ BEGIN
 		a.Odds,
 		a.MOdds,
 		a.OddsSpread,
-		a.Stake * ISNULL(e.Rate, 1) AS Stake,
-		a.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
+		CAST(a.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+		CAST(a.Actual_Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Actual_Stake,
 		a.Status,
 		a.SettlementStatus,
 		a.SecAcceptFlag,

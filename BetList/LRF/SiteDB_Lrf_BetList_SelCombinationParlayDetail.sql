@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20220727@Kos: Created [Redmine: #175297]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -450,13 +451,13 @@ BEGIN
 			ELSE ''
 		END AS Status,
 		b.Modds,
-		b.Stake * ISNULL(e.Rate, 1) AS Stake,
-		CASE
+		CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+		CAST(CASE
 			WHEN @Discount > 0 THEN @WinLost - @Actual_Stake
 			ELSE b.WinLost - b.Stake
-		END * ISNULL(e.Rate, 1) AS WinLost,
-		b.Comm * ISNULL(e.Rate, 1) AS Comm,
-		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm
+		END * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+		CAST(b.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
+		CAST(b.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm
 	FROM @tmpResults AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	WHERE b.StatusId NOT IN (0, 1)

@@ -16,6 +16,7 @@ AS
 		- 20220727@Kos: Scale out DBTRANS [Redmine: #175297]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -155,12 +156,12 @@ BEGIN
 		b.BetType,
 		b.Status,
 		b.StatusId,
-		b.Stake * ISNULL(e.Rate, 1) AS Stake,
+		CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
 		b.Actual_Stake,
-		b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-		b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-		b.Comm * ISNULL(e.Rate, 1) AS Comm,
-		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		CAST(b.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+		CAST(b.LicenseeWL * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS LicenseeWL,
+		CAST(b.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
+		CAST(b.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm,
 		b.ip,
 		b.BetCheck,
 		b.TransDesc,

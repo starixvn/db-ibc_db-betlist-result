@@ -28,6 +28,7 @@ AS
 		- 20231006@Kos: Support view resettled ticket only [Redmine: 193954]
 		- 20231213@Kos: Hotfix - inconsistent odds [Redmine: 198327]
 		- 20240618@Kos: Exclude non-settled tickets [Redmine: 206505]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -219,8 +220,8 @@ BEGIN
 		b.MarketName,
 		b.SettledDate,
 		b.WinLostDate,
-		b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-		b.Commission * ISNULL(e.Rate, 1) AS Commission,
+		CAST(b.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+		CAST(b.Commission * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Commission,
 		b.Currency,
 		b.ExVirtualRate
 	FROM @Data AS b
@@ -246,8 +247,8 @@ BEGIN
 		b.Currency,
 		b.OddsAvg,
 		b.FancyBetRuns,
-		b.Stake * ISNULL(e.Rate, 1) AS Stake,
-		b.WinLost * ISNULL(e.Rate, 1) AS WinLost
+		CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+		CAST(b.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost
 	FROM @Detail AS b
 		LEFT JOIN @ExchangeRate AS e ON b.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 END

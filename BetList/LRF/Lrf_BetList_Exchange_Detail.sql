@@ -19,6 +19,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 		- 20240821@Kos: Support BTC Exchange Running [#Redmine: 208108]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -116,7 +117,7 @@ BEGIN
 		b.BetTaken,
 		b.WinLostDate,
 		@Currency AS Currency,
-		b.Stake * ISNULL(e.Rate, 1) AS Stake,
+		CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
 		b.OddsRequest,
 		b.OddsMatched,
 		b.FancyBetRuns

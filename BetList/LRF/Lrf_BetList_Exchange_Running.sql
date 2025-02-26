@@ -19,6 +19,7 @@ AS
 
 	Revisions:
 		- 20240821@Kos: Support BTC Exchange Running [#Redmine: 208108]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -250,7 +251,7 @@ BEGIN
 		b.Currency,
 		b.OddsAvg,
 		b.FancyBetRuns,
-		b.Stake * ISNULL(e.Rate, 1) AS Stake
+		CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake
 	FROM #PagingData AS b
 		INNER JOIN bodb02.dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
 		LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = b.Currency

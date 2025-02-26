@@ -22,6 +22,7 @@ AS
 		- 20231019@Kos: Adjust due to new column ExtraInfo [Redmine: 195780]
 					- Return new JackpotInfo column
 		- 20240102@Kos: Extend data type [Redmine: 198966]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 
 	Parameters:
 		- @TransType
@@ -240,12 +241,12 @@ BEGIN
 		b.Status,
 		b.StatusId,
 		b.Odds,
-		b.Stake * ISNULL(e.Rate, 1) AS Stake,
+		CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
 		b.Actual_Stake,
-		b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-		b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-		b.Comm * ISNULL(e.Rate, 1) AS Comm,
-		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		CAST(b.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+		CAST(b.LicenseeWL * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS LicenseeWL,
+		CAST(b.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
+		CAST(b.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm,
 		b.Ip,
 		b.TransDesc,
 		b.BetCheck,

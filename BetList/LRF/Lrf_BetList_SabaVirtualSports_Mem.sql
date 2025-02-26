@@ -37,6 +37,7 @@ AS
 		- 20240307@Kos: Support Saba Ice Hockey [RedmineID: #201283]
 		- 20240425@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -1216,12 +1217,12 @@ BEGIN
 		a.IsNeutral,
 		a.BetStatus,
 		a.Currency,
-		a.Stake * ISNULL(e.Rate, 1) AS Stake,
-		a.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
-		a.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-		a.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-		a.Comm * ISNULL(e.Rate, 1) AS Comm,
-		a.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		CAST(a.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+		CAST(a.Actual_Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Actual_Stake,
+		CAST(a.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+		CAST(a.LicenseeWL * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS LicenseeWL,
+		CAST(a.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
+		CAST(a.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm,
 		a.Ip,
 		a.BetCheck,
 		a.TransDesc,

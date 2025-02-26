@@ -134,6 +134,7 @@ AS
 		- 20241113@Kos: Hotfix - wrong VS tickets [Redmine: #213614]
 		- 20241115@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -1608,8 +1609,8 @@ BEGIN
 		a.BetStatus,
 		a.ShowTime,
 		a.Currency,
-		a.Stake * ISNULL(e.Rate, 1) AS Stake,
-		a.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
+		CAST(a.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+		CAST(a.Actual_Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Actual_Stake,
 		a.Ip,
 		a.BetFrom,
 		a.BetCheck,

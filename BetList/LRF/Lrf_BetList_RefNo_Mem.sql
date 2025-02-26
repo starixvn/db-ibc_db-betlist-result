@@ -104,6 +104,7 @@ AS
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241018@Kos: Enhance match info for Player Tips [Redmine: 210279]
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -2639,12 +2640,12 @@ BEGIN
 		a.Placing,
 		a.ShowTime,
 		a.Currency,
-		a.Stake * ISNULL(e.Rate, 1) AS Stake,
-		a.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
-		a.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-		a.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-		a.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
-		a.Comm * ISNULL(e.Rate, 1) AS Comm,
+		CAST(a.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+		CAST(a.Actual_Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Actual_Stake,
+		CAST(a.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+		CAST(a.LicenseeWL * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS LicenseeWL,
+		CAST(a.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm,
+		CAST(a.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
 		a.Ip,
 		a.BetFrom,
 		a.BetCheck,

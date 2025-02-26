@@ -46,6 +46,7 @@ AS
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
 				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -361,11 +362,11 @@ BEGIN
 		a.Odds,
 		a.OddsType,
 		a.Status,
-		a.Stake * ISNULL(e.Rate, 1) AS Stake,
-		a.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-		a.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-		a.Comm * ISNULL(e.Rate, 1) AS Comm,
-		a.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		CAST(a.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+		CAST(a.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+		CAST(a.LicenseeWL * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS LicenseeWL,
+		CAST(a.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
+		CAST(a.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm,
 		a.TransDate,
 		a.BetTeam,
 		a.LiveIndicator,

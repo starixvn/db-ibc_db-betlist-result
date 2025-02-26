@@ -42,6 +42,7 @@ AS
 		- 20240412@Kos: Support Gaming API [Redmine: 203734]
 		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
 		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -725,8 +726,8 @@ BEGIN
 			b.Hdp1,
 			b.Hdp2,
 			b.Odds,
-			b.Actual_Stake * ISNULL(b.Rate, 1) AS Actual_Stake,
-			b.Stake * ISNULL(b.Rate, 1) AS Stake,
+			CAST(b.Actual_Stake * ISNULL(b.Rate, 1) AS DECIMAL(19, 8)) AS Actual_Stake,
+			CAST(b.Stake * ISNULL(b.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
 			b.BetFrom,
 			b.Status,
 			b.BetTeam,
@@ -738,7 +739,7 @@ BEGIN
 			b.TransDesc,
 			b.BetdaqId,
 			b.ExtraInfo,
-			b.OriginalStake * ISNULL(b.Rate, 1) AS OriginalStake,
+			CAST(b.OriginalStake * ISNULL(b.Rate, 1) AS DECIMAL(19, 8)) AS OriginalStake,
 			b.OriginalBetType,
 			b.WalletType,
 			b.RefCode,

@@ -107,6 +107,7 @@ AS
 		- 20250110@Kos: Hotfix - VS6 [RedmineID: #216711]
 		- 20250116@Kos: VS6 - Fix group bet type [RedmineID: #212446]
 		- 20250306@Kos: Hotfix - Missing ExtraInfo for some products [RedmineID: #219311]
+		- 20250307@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -1910,12 +1911,12 @@ BEGIN
 				a.BetStatus,
 				a.ShowTime,
 				a.Currency,
-				a.Stake * ISNULL(e.Rate, 1) AS Stake,
-				a.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
-				a.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-				a.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-				a.Comm * ISNULL(e.Rate, 1) AS Comm,
-				a.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+				CAST(a.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+				CAST(a.Actual_Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Actual_Stake,
+				CAST(a.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+				CAST(a.LicenseeWL * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS LicenseeWL,
+				CAST(a.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
+				CAST(a.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm,
 				a.Ip,
 				a.BetFrom,
 				a.BetCheck,
@@ -2243,12 +2244,12 @@ BEGIN
 					a.BetStatus,
 					a.ShowTime,
 					a.Currency,
-					a.Stake * ISNULL(e.Rate, 1) AS Stake,
-					a.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
-					a.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-					a.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-					a.Comm * ISNULL(e.Rate, 1) AS Comm,
-					a.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+					CAST(a.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+					CAST(a.Actual_Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Actual_Stake,
+					CAST(a.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+					CAST(a.LicenseeWL * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS LicenseeWL,
+					CAST(a.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
+					CAST(a.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm,
 					a.Ip,
 					a.BetFrom,
 					a.BetCheck,

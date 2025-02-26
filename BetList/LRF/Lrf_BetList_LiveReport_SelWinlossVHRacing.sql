@@ -37,6 +37,7 @@ AS
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20220110@Kos: Support TxId for 3rd products [Redmine: #166706]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -344,11 +345,11 @@ BEGIN
 		b.Modds,
 		b.Odds,
 		b.Status,
-		b.Stake * ISNULL(e.Rate, 1) AS Stake,
-		b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-		b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-		b.Comm * ISNULL(e.Rate, 1) AS Comm,
-		b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+		CAST(b.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+		CAST(b.LicenseeWL * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS LicenseeWL,
+		CAST(b.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
+		CAST(b.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm,
 		b.TransDate,
 		b.WinLostDate,
 		b.LiveHomeScore,

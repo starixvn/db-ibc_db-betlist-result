@@ -53,6 +53,7 @@ AS
 	Revisions:
 		- 20240321@Kos: Support Booked Bets [#Redmine: 202341]
 		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 */
 
 BEGIN
@@ -535,7 +536,7 @@ BEGIN
 		a.OddsType,
 		a.OddsLower,
 		a.OddsUpper,
-		a.Stake * ISNULL(e.Rate, 1) AS Stake,
+		CAST(a.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
 		a.StatusId,
 		a.TransDate,
 		a.WinLostDate,

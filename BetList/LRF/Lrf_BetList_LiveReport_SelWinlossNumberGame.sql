@@ -52,6 +52,7 @@ AS
 		- 20230515@Kos: Hotfix - extend dynamic SQL length [Redmine: #188202]
 		- 20240527@Kos: Hotfix - support paging [Redmine: #204955]
 				- Add new params @TotalRows INT, @SumWinLost MONEY, @SumLicenseeWL MONEY, @SumComm MONEY, @SumPlayerComm MONEY
+		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 
 	Param's Explanation:
 		@LiveIndicator : indicate that whether the report will get live data or not
@@ -446,12 +447,12 @@ BEGIN
 			b.OddsType,
 			b.Odds,
 			b.MOdds,
-			b.Stake * ISNULL(e.Rate, 1) AS Stake,
-			b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
-			b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-			b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-			b.Comm * ISNULL(e.Rate, 1) AS Comm,
-			b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+			CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+			CAST(b.Actual_Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Actual_Stake,
+			CAST(b.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+			CAST(b.LicenseeWL * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS LicenseeWL,
+			CAST(b.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
+			CAST(b.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm,
 			b.Status,
 			b.TransDate,
 			b.WinLostDate,
@@ -528,12 +529,12 @@ BEGIN
 				b.OddsType,
 				b.Odds,
 				b.MOdds,
-				b.Stake * ISNULL(e.Rate, 1) AS Stake,
-				b.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
-				b.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-				b.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-				b.Comm * ISNULL(e.Rate, 1) AS Comm,
-				b.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+				CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
+				CAST(b.Actual_Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Actual_Stake,
+				CAST(b.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
+				CAST(b.LicenseeWL * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS LicenseeWL,
+				CAST(b.Comm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Comm,
+				CAST(b.PlayerComm * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS PlayerComm,
 				b.Status,
 				b.TransDate,
 				b.WinLostDate,
