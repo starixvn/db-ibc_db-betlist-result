@@ -106,6 +106,7 @@ AS
 					- Add new input params @ProductList VARCHAR(300), @SportTypeList VARCHAR(MAX), @BetTypeList VARCHAR(MAX), @CashOutMode TINYINT
 		- 20250110@Kos: Hotfix - VS6 [RedmineID: #216711]
 		- 20250116@Kos: VS6 - Fix group bet type [RedmineID: #212446]
+		- 20250306@Kos: Hotfix - Missing ExtraInfo for some products [RedmineID: #219311]
 */
 
 BEGIN
@@ -1704,10 +1705,6 @@ BEGIN
 									WHEN b.Product IN ('SB') THEN ISNULL(b.BetdaqId, -1)
 									ELSE -1
 								END,
-					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
-									ELSE ''
-								END,
 					OriginalStake = 0,
 					OriginalBetType = CASE
 										WHEN b.Product = 'SB' AND b.stake <> 0 THEN -1
@@ -1833,10 +1830,6 @@ BEGIN
 					BetdaqId = CASE
 									WHEN b.Product IN ('SB') THEN ISNULL(b.BetdaqId, -1)
 									ELSE -1
-								END,
-					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
-									ELSE ''
 								END,
 					OriginalStake = 0,
 					OriginalBetType = CASE
@@ -2047,10 +2040,6 @@ BEGIN
 									WHEN b.Product IN ('SB') THEN ISNULL(b.BetdaqId, -1)
 									ELSE -1
 								END,
-					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
-									ELSE ''
-								END,
 					OriginalStake = 0,
 					OriginalBetType = CASE
 										WHEN b.Product = 'SB' AND b.stake <> 0 THEN -1
@@ -2176,10 +2165,6 @@ BEGIN
 					BetdaqId = CASE
 									WHEN b.Product IN ('SB') THEN ISNULL(b.BetdaqId, -1)
 									ELSE -1
-								END,
-					ExtraInfo = CASE
-									WHEN b.Product IN ('SB', 'Parlay', 'Outright', 'SLT', 'BTC') THEN ISNULL(b.ExtraInfo, '')
-									ELSE ''
 								END,
 					OriginalStake = 0,
 					OriginalBetType = CASE
