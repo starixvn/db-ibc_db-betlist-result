@@ -188,6 +188,7 @@ AS
 		- 20241231@Razor: Support PLAY STAR [Redmine: #208023]
 		- 20250213@Razor: Support ASKMESLOT [Redmine: #216976]
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
+		- 20250312@Benji: Support Funky Games [Redmine: #218176]
 
 		
 */
@@ -732,6 +733,7 @@ BEGIN
 						WHEN s.ProductID = 100 THEN 'PTRNG'							-- Playtech
 						WHEN s.ProductID = 102 THEN 'SBK'							-- Saba Keno
 						WHEN s.ProductID = 103 THEN 'ASK'							-- ASKMESLOT
+						WHEN s.ProductID = 104 THEN 'FG'							-- Funky Games
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -1191,7 +1193,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'GPILC', 'PS', 'ASK', 'SBK')
+							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'GPILC', 'PS', 'ASK', 'SBK', 'FG')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips
