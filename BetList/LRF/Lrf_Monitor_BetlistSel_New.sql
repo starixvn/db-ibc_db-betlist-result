@@ -94,6 +94,7 @@ AS
 		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
 		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250321@Kos: Support basketball 6 new bettypes [#Redmine: 217687]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -406,8 +407,8 @@ BEGIN
 				OR (b.bettype NOT IN (9, 29) AND @LiveIndicator IN (0, 1) AND b.liveindicator = @LiveIndicator))
 			AND (@BetType = ''
 				OR (@BetType = 'HDP' AND b.bettype IN (1, 7, 1303, 17, 183, 609, 229))
-				OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 228, 9604, 7901))
-				OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 9604, 7901)))
+				OR (@BetType = 'OU' AND b.bettype IN (3, 18, 8, 178, 1306, 401, 402, 403, 404, 461, 462, 463, 464, 610, 615, 616, 651, 652, 228, 9604, 7901))
+				OR (@BetType = 'Others' AND b.bettype NOT IN (1, 3, 7, 8, 17, 18, 178, 183, 1303, 1306, 228, 401, 402, 403, 404, 461, 462, 463, 464, 609, 610, 615, 616, 651, 652, 9604, 7901)))
 			AND 1 = CASE
 						WHEN @BetFrom = 'All' THEN 1
 						WHEN pl.BetFrom IS NOT NULL THEN 1
