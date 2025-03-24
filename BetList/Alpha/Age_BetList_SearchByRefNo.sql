@@ -44,6 +44,7 @@ AS
 		- 20250106@Razor: SA Gaming support Saba Plus [Redmine: #215645]
 		- 20250213@Razor: Support ASKMESLOT [Redmine: #216976]
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
+		- 20250312@Benji: Support Funky Games [Redmine: #218176]
 */
 
 BEGIN
@@ -286,6 +287,7 @@ BEGIN
 						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @ProductID = 102 THEN 'SBK'		-- SABA Keno
 						WHEN @ProductID = 103 THEN 'ASK'		-- ASKMESLOT
+						WHEN @ProductID = 104 THEN 'FG'		-- Funky Games
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1188,6 +1190,7 @@ BEGIN
 						WHEN @ProductId = 91 THEN 'PS'			-- PLAY STAR
 						WHEN @ProductId = 102 THEN 'SBK'		-- SABA Keno
 						WHEN @ProductId = 103 THEN 'ASK'		-- ASKMESLOT
+						WHEN @ProductId = 104 THEN 'FG'			-- Funky Games
 						ELSE 'Unknown'
 					END
 

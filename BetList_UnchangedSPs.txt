@@ -1,2 +1,5 @@
-BetList/LRF/Lrf_BetList_LiveReport_SelWinlossByMatch.sql
-BetList/LRF/Lrf_BetList_LiveReport_SelWinlossParlay.sql
+BetList/Alpha/Age_BetList_SelRunning_Mem.sql
+BetList/Alpha/Wrappers/Age_BetList_SelAllByDate_Mem.sql 
+BetList/Alpha/Wrappers/Age_BetList_SelDeleted.sql
+BetList/Alpha/Wrappers/Age_BetList_SelWinLossByDate_Mem.sql
+BetList/Alpha/Wrappers/Age_BetList_SelWinLossByDate_Mem_Old.sql
