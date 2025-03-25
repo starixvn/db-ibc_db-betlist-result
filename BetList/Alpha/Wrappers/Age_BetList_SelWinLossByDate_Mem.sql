@@ -177,6 +177,7 @@ AS
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20220213@Razor: Support ASKMESLOT [Redmine: #216976]
+		- 20250312@Benji: Support Funky Games [Redmine: #218176]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -400,9 +401,11 @@ BEGIN
 							WHEN s.ProductID = 86						THEN 'SNG'	-- Saba xD
 							WHEN s.ProductID = 87						THEN 'FS'	-- FastSpin
 							WHEN s.ProductID = 89						THEN 'FAC'	-- FA CHAI
+							WHEN s.ProductID = 95						THEN 'HOT'	-- HOTDOG
 							WHEN s.ProductID = 96						THEN 'ON'	-- ON Casino
 							WHEN s.ProductID = 100						THEN 'PTRNG'-- Playtech
 							WHEN s.ProductID = 103						THEN 'ASK'	-- ASKMESLOT
+							WHEN s.ProductID = 105						THEN 'ODG'	-- Funky Games
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
@@ -886,9 +889,11 @@ BEGIN
 							WHEN s.ProductID = 86					THEN 'SNG'		-- Saba xD
 							WHEN s.ProductID = 87					THEN 'FS'		-- FastSpin
 							WHEN s.ProductID = 89					THEN 'FAC'		-- FA CHAI
+							WHEN s.ProductID = 95					THEN 'HOT'		-- HOTDOG
 							WHEN s.ProductID = 96					THEN 'ON'		-- ON Casino
 							WHEN s.ProductID = 100					THEN 'PTRNG'	-- Playtech
-							WHEN s.ProductID = 103					THEN 'ASK'	-- ASKMESLOT
+							WHEN s.ProductID = 103					THEN 'ASK'		-- ASKMESLOT
+							WHEN s.ProductID = 105					THEN 'ODG'		-- ODIN GAMING
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
@@ -1147,8 +1152,8 @@ BEGIN
 	END -- end: bettrans14
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT
-	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'FS', 'VGA', 'FAC', 'ASK'))
+	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING
+	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId		TINYINT,
@@ -1363,6 +1368,38 @@ BEGIN
 							WHERE ProductId = 103 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 103 AND BetType = b.BetType)
+							
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'HOT'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 95 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 95 AND BetType = b.BetType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'HOT'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 95 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 95 AND BetType = b.BetType)		
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'ODG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 106 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 106 AND BetType = b.BetType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'ODG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 106 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 106 AND BetType = b.BetType)						
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus

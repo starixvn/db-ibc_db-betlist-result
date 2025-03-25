@@ -45,6 +45,7 @@ AS
 		- 20250213@Razor: Support ASKMESLOT [Redmine: #216976]
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
+		- 20250325@Benji: Support Upcomming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
 */
 
 BEGIN
@@ -283,11 +284,13 @@ BEGIN
 						WHEN @ProductID = 89 THEN 'FAC'			-- FA CHAI
 						WHEN @ProductID = 90 THEN 'GPILC'		-- GPI Live Casino
 						WHEN @ProductID = 91 THEN 'PS'			-- PLAY STAR
+						WHEN @ProductID = 95 THEN 'HOT'			-- HOTDOG
 						WHEN @ProductID = 96 THEN 'ON'			-- ON Casino
 						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @ProductID = 102 THEN 'SBK'		-- SABA Keno
 						WHEN @ProductID = 103 THEN 'ASK'		-- ASKMESLOT
-						WHEN @ProductID = 104 THEN 'FG'		-- Funky Games
+						WHEN @ProductID = 104 THEN 'FG'			-- Funky Games
+						WHEN @ProductID = 105 THEN 'ODG'		-- ODIN GAMING
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1188,9 +1191,11 @@ BEGIN
 						WHEN @ProductId = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @ProductId = 48 THEN 'GPIRNG'		-- GPI
 						WHEN @ProductId = 91 THEN 'PS'			-- PLAY STAR
+						WHEN @ProductId = 95 THEN 'HOT'			-- HOTDOG
 						WHEN @ProductId = 102 THEN 'SBK'		-- SABA Keno
 						WHEN @ProductId = 103 THEN 'ASK'		-- ASKMESLOT
 						WHEN @ProductId = 104 THEN 'FG'			-- Funky Games
+						WHEN @ProductId = 105 THEN 'ODG'		-- ODIN GAMING
 						ELSE 'Unknown'
 					END
 
