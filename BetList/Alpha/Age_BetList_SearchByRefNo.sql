@@ -278,6 +278,7 @@ BEGIN
 						WHEN @ProductID = 78 THEN 'UUSL'		-- UU Slots
 						WHEN @ProductID = 79 THEN 'L22'			-- Live22
 						WHEN @ProductID = 80 THEN 'WE'			-- WE
+						WHEN @ProductID = 84 THEN 'GPILT'		-- GPI Lottery
 						WHEN @ProductID = 85 THEN 'NS'			-- Nextspin
 						WHEN @ProductID = 86 THEN 'SNG'			-- Saba xD
 						WHEN @ProductID = 87 THEN 'FS'			-- FastSpin
@@ -1186,6 +1187,7 @@ BEGIN
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
 						WHEN @ProductID = 78 THEN 'UUSL'		-- UU Slots
 						WHEN @ProductId = 79 THEN 'L22'			-- Live22
+						WHEN @ProductId = 84 THEN 'GPILT'		-- GPI Lottery
 						WHEN @ProductId = 85 THEN 'NS'			-- Nextspin
 						WHEN @ProductId = 86 THEN 'SNG'			-- Saba xD
 						WHEN @ProductId = 87 THEN 'FS'			-- FastSpin
