@@ -464,8 +464,10 @@ BEGIN
 						WHEN s.ProductID = 95 THEN 'HOT'	-- HOTDOG
 						WHEN s.ProductID = 96 THEN 'ON'		-- ON Casino
 						WHEN s.ProductID = 100 THEN 'PTRNG'	-- Playtech
+						WHEN s.ProductID = 101 THEN 'PTLC'	-- Playtech Live Casino
 						WHEN s.ProductID = 103 THEN 'ASK'	-- ASKMESLOT
 						WHEN s.ProductID = 105 THEN 'ODG'	-- ODIN GAMING
+						WHEN s.ProductID = 107 THEN 'MGLC'	-- Microgaming Live
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 83 THEN 'ParlayVS4' --Virtual Sports 4 Parlay
@@ -706,8 +708,8 @@ BEGIN
 	WHERE c.custid = @CustId
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING
-	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG'))
+	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING, Playtech Live Casino
+	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG', 'MGLC', 'PTLC'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
@@ -956,7 +958,39 @@ BEGIN
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 105 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 105 AND BetType = b.BetType)					
+							WHERE ProductId = 105 AND BetType = b.BetType)		
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'MGLC'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 107 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 107 AND BetType = b.BetType)
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'MGLC'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 107 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 107 AND BetType = b.BetType)	
+							
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'PTLC'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 101 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 101 AND BetType = b.BetType)
+
+		DELETE b
+		FROM @Data AS b
+		WHERE b.Product = 'PTLC'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 101 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 101 AND BetType = b.BetType)						
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus

@@ -287,10 +287,12 @@ BEGIN
 						WHEN @ProductID = 95 THEN 'HOT'			-- HOTDOG
 						WHEN @ProductID = 96 THEN 'ON'			-- ON Casino
 						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
+						WHEN @ProductID = 101 THEN 'PTLC'		-- Playtech Live Casino
 						WHEN @ProductID = 102 THEN 'SBK'		-- SABA Keno
 						WHEN @ProductID = 103 THEN 'ASK'		-- ASKMESLOT
 						WHEN @ProductID = 104 THEN 'FG'			-- Funky Games
 						WHEN @ProductID = 105 THEN 'ODG'		-- ODIN GAMING
+						WHEN @ProductID = 107 THEN 'MGLC'		-- Microgaming Live
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1449,6 +1451,8 @@ BEGIN
 						WHEN @ProductId = 80 THEN 'WE'
 						WHEN @ProductId = 96 THEN 'ON'
 						WHEN @ProductId = 90 THEN 'GPILC'
+						WHEN @ProductID = 101 THEN 'PTLC'		-- Playtech Live Casino
+						WHEN @ProductId = 107 THEN 'MGLC' 		-- Microgaming Live						
 						ELSE 'Unknown'
 					END
 
