@@ -508,16 +508,19 @@ BEGIN
 						WHEN s.ProductID = 81 THEN 'SAC'							-- Saba Coins
 						WHEN s.ProductID = 87 THEN 'FS'								-- FastSpin
 						WHEN s.ProductID = 89 THEN 'FAC'							-- FA CHAI
+						WHEN s.ProductID = 84 THEN 'GPILT'							-- GPI Lottery
 						WHEN s.ProductID = 85 THEN 'NS'								-- Nextspin
 						WHEN s.ProductID = 90 THEN 'GPILC'							-- GPI Live Casino
 						WHEN s.ProductID = 91 THEN 'PS'								-- PLAY STAR
 						WHEN s.ProductID = 95 THEN 'HOT'							-- HOTDOG
 						WHEN s.ProductID = 96 THEN 'ON'								-- ON Casino
 						WHEN s.ProductID = 100 THEN 'PTRNG'							-- Playtech
+						WHEN s.ProductID = 101 THEN 'PTLC'							-- Playtech Live Casino
 						WHEN s.ProductID = 102 THEN 'SBK'							-- SABA Keno
 						WHEN s.ProductID = 103 THEN 'ASK'							-- ASKMESLOT
 						WHEN s.ProductID = 104 THEN 'FG'							-- Funky Games
-						WHEN s.ProductID = 105 THEN 'FG'							-- ODIN GAMING
+						WHEN s.ProductID = 105 THEN 'ODG'							-- ODIN GAMING
+						WHEN s.ProductID = 107 THEN 'MGLC'							-- Microgaming Live
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -547,7 +550,7 @@ BEGIN
 			OR (Product NOT IN ('SB', 'Parlay')
 				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'BG', 'MXG', 
 							'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON', 
-							'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG')
+							'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT')
 					OR WinLostDate < @Yesterday)
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'		-- Abnormal Bets
@@ -1087,7 +1090,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG')
+							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips

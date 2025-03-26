@@ -403,8 +403,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90)
+			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino, Playtech Live Casino, Microgaming Live
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -423,7 +423,7 @@ BEGIN
 						END AS RefNo,
 						b.GameId3rd AS MatchCode,
 						CASE
-							WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
+							WHEN s.ProductID IN (70, 90, 101, 107) THEN b.TransDate3rd
 							ELSE ''
 						END AS EventDate,
 						CASE
@@ -546,14 +546,14 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90) AND t3rd.val = @BetId)
+							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107) AND t3rd.val = @BetId)
 							OR (s.ProductID = 39 AND b3rd.val = @BetId))
 				END
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, SABA Keno, ASKMESLOT, Funky Games, HOTDOG, ODIN GAMING
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86, 87, 89, 85, 100, 48, 91, 102, 103, 104, 95, 105)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, SABA Keno, ASKMESLOT, Funky Games, HOTDOG, ODIN GAMING, GPI Lottery
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 84, 86, 87, 89, 85, 100, 48, 91, 102, 103, 104, 95, 105)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -782,8 +782,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90)
+			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino, Playtech Live Casino, Microgaming Live
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -802,7 +802,7 @@ BEGIN
 						END AS RefNo,
 						b.GameId3rd AS MatchCode,
 						CASE
-							WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
+							WHEN s.ProductID IN (70, 90, 101, 107) THEN b.TransDate3rd
 							ELSE ''
 						END AS EventDate,
 						CASE
@@ -925,14 +925,14 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90) AND t3rd.val = @BetId)
+							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107) AND t3rd.val = @BetId)
 							OR (s.ProductID = 39 AND b3rd.val = @BetId))
 				END
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, SABA Keno, ASKMESLOT, Funky Games, HOTDOG, ODIN GAMING
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86, 87, 89, 85, 100, 48, 91, 102, 103, 104, 95, 105)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, SABA Keno, ASKMESLOT, Funky Games, HOTDOG, ODIN GAMING, GPI Lottery
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 84, 86, 87, 89, 85, 100, 48, 91, 102, 103, 104, 95, 105)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
