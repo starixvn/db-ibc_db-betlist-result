@@ -323,7 +323,7 @@ BEGIN
 				b.mwinlost,
 				b.swinlost,
 				CASE
-					WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					WHEN s.ProductID IN (5, 27, 106) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE m.showtime
 				END AS ShowTime,
 				b.winlostdate,
@@ -830,7 +830,7 @@ BEGIN
 		END
 
 		-- Virtual Horse Racing, VS2 Racing
-		IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (5, 27) AND EventType = 3 AND BetType = @BetType)
+		IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (5, 27, 106) AND EventType = 3 AND BetType = @BetType)
 		BEGIN
 			INSERT INTO @Data
 			SELECT

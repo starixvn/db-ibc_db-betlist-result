@@ -531,6 +531,7 @@ BEGIN
 						WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'			-- Virtual Sports Racing
 						WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games
 						WHEN s.EventType = 3 AND s.ProductID = 27 THEN 'VS2Racing'	-- VS2 Racing
+						WHEN s.EventType = 3 AND s.ProductID = 106 THEN 'VS7'		-- Virtual Sports 7
 						WHEN s.EventType = 5 AND s.ProductID = 71 THEN 'VS6'		-- VS6 Virtual Sports
 						ELSE 'Unknown'
 					END,
@@ -1061,7 +1062,7 @@ BEGIN
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 
-										'PP', 'TG', 'VRG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG', 'VS4', 'VS2Racing', 'VS5') THEN ISNULL(b.transdesc, '')
+										'PP', 'TG', 'VRG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG', 'VS4', 'VS2Racing', 'VS5', 'VS7') THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,

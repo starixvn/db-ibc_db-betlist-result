@@ -953,6 +953,7 @@ BEGIN
 						WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games
 						WHEN s.EventType = 1 AND s.ProductID = 83 THEN 'VS4'		-- Virtual Sports 4
 						WHEN s.EventType = 3 AND s.ProductID = 27 THEN 'VS2Racing'	-- VS2 Racing
+						WHEN s.EventType = 3 AND s.ProductID = 106 THEN 'VS7'		-- Virtual Sports 7 
 						WHEN s.EventType = 5 AND s.ProductID = 88 THEN 'VS5'		-- Virtual Sports 5
 						WHEN s.EventType = 5 AND s.ProductID = 71 THEN 'VS6'		-- VS6 Virtual Sports
 						ELSE 'Unknown'

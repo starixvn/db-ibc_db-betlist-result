@@ -392,7 +392,7 @@ BEGIN
 				b.Username,
 				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				CASE
-					WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					WHEN s.ProductID IN (5, 27, 106) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE m.showtime
 				END AS ShowTime,
 				0 spositiontaking, -- unuse in this report
@@ -767,7 +767,7 @@ BEGIN
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND s.ProductID IN (5, 27)
+				AND s.ProductID IN (5, 27, 106)
 				AND s.EventType = 3
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
 
@@ -1195,7 +1195,7 @@ BEGIN
 				b.Username,
 				ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral, --phuong.nguyen, get isneutral from Match
 				CASE
-					WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					WHEN s.ProductID IN (5, 27, 106) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE m.showtime
 				END AS ShowTime,
 				0 spositiontaking, -- unuse in this report

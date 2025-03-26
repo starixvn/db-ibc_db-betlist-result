@@ -1049,8 +1049,8 @@ BEGIN
 				END
 			END
 
-			-- Virtual Horse Racing, VS 2 Racing
-			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (5, 27) AND EventType = 3 AND BetType = @BetType)
+			-- Virtual Horse Racing, VS 2 Racing, VS7
+			IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (5, 27, 106) AND EventType = 3 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -2350,8 +2350,8 @@ BEGIN
 					AND b.transid = @TransId
 			END
 
-			-- Virtual Horse Racing, VS2 Racing
-			IF EXISTS(SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (5, 27) AND EventType = 3 AND BetType = @BetType)
+			-- Virtual Horse Racing, VS2 Racing, VS7
+			IF EXISTS(SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (5, 27, 106) AND EventType = 3 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT 
@@ -3101,8 +3101,8 @@ BEGIN
 					AND b.transid = @TransId
 			END
 
-			-- Virtual Horse Racing, VS2 Racing
-			IF EXISTS(SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (5, 27) AND EventType = 3 AND BetType = @BetType)
+			-- Virtual Horse Racing, VS2 Racing, VS7
+			IF EXISTS(SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (5, 27, 106) AND EventType = 3 AND BetType = @BetType)
 			BEGIN
 				INSERT INTO @Data
 				SELECT 
