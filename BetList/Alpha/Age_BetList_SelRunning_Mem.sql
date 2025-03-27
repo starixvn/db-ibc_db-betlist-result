@@ -168,6 +168,7 @@ AS
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241016@Razor: Provide Risk Amount [Redmine: #202427]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Red
+		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
 */
 
 BEGIN
@@ -745,25 +746,23 @@ BEGIN
 			UPDATE b
 			SET SportType = r.SportType
 				,LeagueId = r.LeagueID
-				,MatchCode = o.RacerNum
+				,MatchCode = ''
 				,Race = b.oddsid
 				,EventDate = ''
-				,HomeId = o.RacerID
-				,AwayId = 0
-				,BetTeam = ''
+				,HomeId = 0
+				,AwayId = 0				
 				,SettlementStatus = 0
 				,ComStatus = CASE WHEN b.ComStatus = '1' THEN '1' ELSE '0' END
 				,OddsType = 0
-				,ShowTime = r.EventTime
+				,ShowTime = ''
 				,BetCheck = ''
-				,TransDesc = ''
+				,TransDesc = ISNULL(b.TransDesc, '')
 				,OddsSpread = 0
 				,ExtraInfo = ''
 			FROM @BetListSelRunningByDateMem AS b
 				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.oddsid = o.Orid
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
-			WHERE b.TableID = 1 -- bettrans
-				AND b.ProductID = 5
+			WHERE b.TableID = 1 -- bettrans				
 				AND b.EventType = 3
 
 			-- Betradar Virtual Sports, Virtual Sports 4, VS 5 (EventType = 0) -- Mix Parlay

@@ -86,6 +86,7 @@ AS
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240723@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
 */
 
 BEGIN
@@ -687,7 +688,7 @@ BEGIN
 
 		DELETE #Data
 		WHERE ProductID IS NULL
-			OR ProductID NOT IN (1, 3, 5, 8, 23, 27, 28, 38, 40, 47, 49, 63, 69, 77, 83, 88)	-- Only support these products
+			OR ProductID NOT IN (1, 3, 5, 8, 23, 27, 28, 38, 40, 47, 49, 63, 69, 77, 83, 88, 106)	-- Only support these products
 			OR BetType IN (901, 902, 903, 904)
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
@@ -809,7 +810,7 @@ BEGIN
 					IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0)),
 					Placing = '',
 					ShowTime = CASE
-									WHEN b.ProductId IN (5, 27, 77, 83) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.ProductId IN (5, 27, 77, 83, 106) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									ELSE ISNULL(m.showtime, '')
 								END,
 					BetCheck = b.BetCheck,
@@ -999,33 +1000,30 @@ BEGIN
 					AND b.EventType = 0
 					AND b.ProductId NOT IN (69)
 
-				-- Virtual Sports (EventType = 3)
+				-- Virtual Sports, Virtual Sports 7 (EventType = 3)
 				UPDATE b
 				SET
 					SportType = r.SportType,
-					BetTeam = '',
-					OddsType = 0,
 					LiveIndicator = 0,
 					LeagueId = r.LeagueID,
-					MatchCode = CONVERT(NVARCHAR(50), o.RacerNum),
+					MatchCode = '',
 					Race = CONVERT(NVARCHAR(50), b.OddsId),
-					EventDate = o.EventDate,
-					HomeId = o.RacerID,
+					EventDate = '',
+					HomeId = 0,
 					AwayId = 0,
 					BetStatus = '',
 					IsNeutral = 0,
-					Placing = o.Placing,
+					Placing = '',
 					ShowTime = CONVERT(VARCHAR(20), r.EventTime, 113),
-					BetCheck = '',
+					BetCheck = b.betcheck,
 					ComStatus = '',
-					TransDesc = '',
+					TransDesc = b.transdesc,
 					OddsSpread = 0,
 					ExtraInfo = ''
-				FROM #PagingData AS b
-					INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON b.OddsId = o.Orid
-					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+				FROM #PagingData AS b					
+					INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON r.EventID = b.matchid
 				WHERE b.WhTicket = 1
-					AND b.ProductID = 5
+					AND b.ProductID in (5, 106)
 					AND b.EventType = 3
 
 				-- Bitcoin
@@ -1062,7 +1060,7 @@ BEGIN
 					IsNeutral = ISNULL(m.IsNeutral, CONVERT(BIT,0)),
 					Placing = '',
 					ShowTime = CASE
-									WHEN b.ProductId IN (5, 27, 77, 83) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+									WHEN b.ProductId IN (5, 27, 77, 83, 106) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 									ELSE ISNULL(m.showtime, '')
 								END,
 					BetCheck = b.BetCheck,
@@ -1252,33 +1250,33 @@ BEGIN
 					AND b.EventType = 0
 					AND b.ProductId NOT IN (69)
 
-				-- Virtual Sports (EventType = 3)
+				-- Virtual Sports, Virtual Sports 7 (EventType = 3)
 				UPDATE b
 				SET
 					SportType = r.SportType,
-					BetTeam = '',
-					OddsType = 0,
+					BetTeam = b.BetTeam,
+					OddsType = b.oddstype,
 					LiveIndicator = 0,
 					LeagueId = r.LeagueID,
-					MatchCode = CONVERT(NVARCHAR(50), o.RacerNum),
+					MatchCode = '',
 					Race = CONVERT(NVARCHAR(50), b.OddsId),
-					EventDate = o.EventDate,
-					HomeId = o.RacerID,
+					EventDate = '',
+					HomeId = 0,
 					AwayId = 0,
 					BetStatus = '',
 					IsNeutral = 0,
-					Placing = o.Placing,
-					ShowTime = CONVERT(VARCHAR(20), r.EventTime, 113),
-					BetCheck = '',
+					Placing ='',
+					ShowTime = '',
+					BetCheck = b.BetCheck,
 					ComStatus = '',
-					TransDesc = '',
+					TransDesc = b.TransDesc,
 					OddsSpread = 0,
 					ExtraInfo = ''
 				FROM #PagingData AS b
-					INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON b.OddsId = o.Orid
-					INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
+			
+					INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = b.matchid
 				WHERE b.WhTicket = 2
-					AND b.ProductID = 5
+					AND b.ProductID in (5, 106)
 					AND b.EventType = 3
 
 				-- Bitcoin
