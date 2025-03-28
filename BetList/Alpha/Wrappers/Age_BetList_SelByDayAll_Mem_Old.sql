@@ -577,7 +577,7 @@ BEGIN
 					Ip = dp.IP,
 					CurrencyId = CASE
 									WHEN b.Product IN ('H5LG', 'SLT') THEN b.CurrencyId
-									WHEN b.EventType = 3 THEN b.currency
+									WHEN b.EventType = 3 THEN b.CurrencyId
 									ELSE 0
 								END,
 					SiteId = CASE
