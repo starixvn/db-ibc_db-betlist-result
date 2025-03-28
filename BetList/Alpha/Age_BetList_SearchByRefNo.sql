@@ -1040,7 +1040,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 'VRG', 
 					'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'NG2', 'SEA', 'LG', 'VS4', 'VS5') THEN ISNULL(b.transdesc, '')
-				WHEN @EventType = 3 THEN THEN ISNULL(b.transdesc, '')
+				WHEN @EventType = 3 THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
