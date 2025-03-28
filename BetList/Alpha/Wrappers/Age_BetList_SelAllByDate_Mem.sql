@@ -731,7 +731,7 @@ BEGIN
 							ELSE '' END
 			,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 			,TransDesc = CASE
-							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', ) THEN b.transdesc
+							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA' ) THEN b.transdesc
 							WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG', 'LG', 'VS4', 'VS5') THEN ISNULL(b.transdesc, '')
 							WHEN c.EventType =  3 THEN ISNULL(b.transdesc, '')
 							ELSE '' END

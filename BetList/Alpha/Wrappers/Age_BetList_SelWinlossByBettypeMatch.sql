@@ -195,10 +195,12 @@ BEGIN
 		MatchId				INT,
 		MatchCode			NVARCHAR(50),
 		EventDate			DATETIME,
+		Race				NVARCHAR(50),
 		HomeId				INT,
 		AwayId				INT,
 		BetStatus			NVARCHAR(50),
 		IsNeutral			BIT,
+		Placing				NVARCHAR(50),
 		ShowTime			NVARCHAR(50),
 		BetCheck			NVARCHAR(50),
 		ComStatus			NVARCHAR(20),
@@ -333,7 +335,9 @@ BEGIN
 			BEGIN
 				INSERT INTO @Tickets (
 					TransId,
-					Product)
+					Product,
+					EventType
+					)
 				SELECT
 					b.transid,
 					CASE
@@ -359,7 +363,9 @@ BEGIN
 			BEGIN
 				INSERT INTO @Tickets (
 					TransId,
-					Product)
+					Product,
+					EventType
+					)
 				SELECT
 					b.transid,
 					CASE
@@ -635,7 +641,7 @@ BEGIN
 				INSERT INTO @Tickets (
 					TransId,
 					Product,
-					EventTypeype
+					EventType
 					)
 				SELECT
 					b.transid,
@@ -841,10 +847,12 @@ BEGIN
 			MatchId,
 			MatchCode,
 			EventDate,
+			Race,
 			HomeId,
 			AwayId,
 			BetStatus,
 			IsNeutral,
+			Placing,
 			ShowTime,
 			BetCheck,
 			ComStatus,
@@ -992,7 +1000,7 @@ BEGIN
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS ComStatus,
 			CASE
 				WHEN c.Product IN ('SB', 'VS2', 'LG', 'VS4', 'VS5') THEN ISNULL(b.transdesc, '')
-				WHEN c.EventType= 3 WHEN c.EventType= 3 THEN
+				WHEN c.EventType= 3 THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE

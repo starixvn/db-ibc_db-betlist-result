@@ -1336,7 +1336,7 @@ BEGIN
 								ELSE 0 END
 					,Stake = b.stake
 					,Actual_Stake = b.actual_stake
-					,Status = CASEhttps://files.slack.com/files-pri/T08ACMHMMFS-F08KN3W0T50/image.png
+					,Status = CASE
 								WHEN c.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 								WHEN c.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
 								ELSE b.status
@@ -1481,7 +1481,7 @@ BEGIN
 					LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') AND b.matchid = m.matchid
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON c.Product IN ('Outright') AND b.matchid = o.orid
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON c.Product IN ('Outright') AND o.leagueID = l.leagueID
-					LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON c.Product IN ('VR',) AND b.oddsid = vo.Orid
+					LEFT JOIN dbo.VSOutright14 AS vo WITH (NOLOCK) ON c.Product IN ('VR') AND b.oddsid = vo.Orid
 					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON c.Product IN ('VR') AND vr.EventID = vo.EventID
 					LEFT JOIN dbo.VSRaceInfo14 AS vrc WITH (NOLOCK) ON c.EventType = 3 AND vrc.EventID = b.matchid
 					LEFT JOIN dbo.match3rd14 AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid

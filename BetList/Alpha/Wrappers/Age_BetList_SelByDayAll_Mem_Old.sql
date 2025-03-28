@@ -399,7 +399,7 @@ BEGIN
 							WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'		-- Virtual sports:: racing							
 							ELSE 'Unknown'
 						END,
-						RefTable = s.RefTable
+						RefTable = s.RefTable,
 						EventType = s.EventType
 			FROM @Data AS b
 				INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
