@@ -60,6 +60,7 @@ AS
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20250401@Razor: Support VS7 [Redmine: #221173]
 */
 
 BEGIN
@@ -71,7 +72,7 @@ BEGIN
 
 	SELECT @ToDate = DATEADD(s, -1, DATEADD(d, 1, @EventDate))
 
-	IF @SportType NOT IN (147, 175, 181, 182, 184, 183, 185, 193)
+	IF @SportType NOT IN (147, 175, 181, 182, 184, 183, 185, 193, 125, 126, 127)
 	BEGIN
 		SELECT DISTINCT
 			l.leaguename,
@@ -215,6 +216,39 @@ BEGIN
 				r.sporttype
 			FROM dbo.League AS l WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON l.leagueid = r.LeagueID
+				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON r.EventID = o.EventID
+			WHERE o.EventDate >= @EventDate AND o.EventDate <= @ToDate
+				AND r.EventStatus ='completed'
+				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND r.SportType = @SportType
+		END
+	END
+	ELSE IF @SportType IN (125, 126, 127)
+	BEGIN
+		IF @EventDate > @MoveBetsDay
+		BEGIN
+			SELECT DISTINCT
+				l.leaguename,
+				r.LeagueID,
+				o.EventDate,
+				r.sporttype
+			FROM dbo.League3rd AS l WITH (NOLOCK)
+				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON l.League3rdId = r.LeagueID
+				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON r.EventID = o.EventID
+			WHERE o.EventDate >= @EventDate AND o.EventDate <= @ToDate
+				AND r.EventStatus ='completed'
+				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
+				AND r.SportType = @SportType
+		END
+		ELSE
+		BEGIN
+			SELECT DISTINCT
+				l.leaguename,
+				r.LeagueID,
+				o.EventDate,
+				r.sporttype
+			FROM dbo.League3rd AS l WITH (NOLOCK)
+				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON l.League3rdId = r.LeagueID
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE o.EventDate >= @EventDate AND o.EventDate <= @ToDate
 				AND r.EventStatus ='completed'

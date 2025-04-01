@@ -56,6 +56,7 @@ AS
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20250401@Razor: Support VS7 [Redmine: #221173]
 */
 
 BEGIN
@@ -183,6 +184,19 @@ BEGIN
 										AND (m.hthomescore IS NOT NULL OR m.htawayscore IS NOT NULL) THEN 1
 									ELSE 0
 								END
+					UNION ALL
+					-- #4. From outright table & 3rd table
+					SELECT l.sporttype
+					FROM dbo.League3rd AS l WITH (NOLOCK)
+					WHERE EXISTS (	SELECT 1
+									FROM dbo.VSOutright AS o WITH (NOLOCK)
+										INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
+									WHERE o.EventDate = @EventDate
+										AND r.EventStatus = 'completed'
+										AND r.LeagueID = l.League3rdId
+									)
+						AND l.sporttype IN (125, 126, 127)
+						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
 			) AS t
 			ON s.SportType = t.sporttype
 		ORDER BY s.SportType ASC,
@@ -306,6 +320,19 @@ BEGIN
 										AND (m.hthomescore IS NOT NULL OR m.htawayscore IS NOT NULL) THEN 1
 									ELSE 0
 								END
+					UNION ALL
+					-- #4. From outright table & 3rd table
+					SELECT l.sporttype
+					FROM dbo.League3rd AS l WITH (NOLOCK)
+					WHERE EXISTS (	SELECT 1
+									FROM dbo.VSOutright14 AS o WITH (NOLOCK)
+										INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
+									WHERE o.EventDate = @EventDate
+										AND r.EventStatus = 'completed'
+										AND r.LeagueID = l.League3rdId
+									)
+						AND l.sporttype IN (125, 126, 127)
+						AND l.isTest = CASE WHEN @IsShowAll = 1 THEN l.isTest ELSE @IsShowAll END
 			) t
 			ON s.SportType = t.sporttype
 		ORDER BY s.SportType ASC,
