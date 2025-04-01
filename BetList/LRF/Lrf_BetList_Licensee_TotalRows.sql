@@ -105,6 +105,7 @@ AS
 					- Add new input params @ProductList VARCHAR(300), @SportTypeList VARCHAR(MAX), @BetTypeList VARCHAR(MAX), @CashOutMode TINYINT, @MaxTotalRows INT
 		- 20250212@Kos: Remove BA [RedmineID: #216882]
 		- 20250415@Kos: Hotfix - VS racing range bettrans14 [Redmine: 224163]
+		- 20250415@Kos: Support Virtual Sports 7 [Redmine: 219083]
 */
 
 BEGIN
@@ -201,7 +202,7 @@ BEGIN
 			DELETE sbt
 			FROM #SportBettype AS sbt
 				LEFT JOIN dbo.Lrf_f_GroupProduct() AS gp ON gp.ProductPrefix = sbt.ProductPrefix
-				LEFT JOIN dbo.f_GroupBettype() AS gbt ON gbt.bettype = sbt.BetType
+				LEFT JOIN dbo.Lrf_f_GroupBettype() AS gbt ON gbt.bettype = sbt.BetType
 			WHERE NOT EXISTS (SELECT 1 FROM #TempBetType AS tbt
 							WHERE (',' + tbt.BetTypeList + ',' LIKE '%,' + CONVERT(VARCHAR(6), sbt.BetType) + ',%'
 									OR ',' + tbt.BetTypeList + ',' LIKE '%,' + CONVERT(VARCHAR(6), gbt.GroupTypeId) + ',%')

@@ -15,7 +15,7 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Mem]
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
 	@Sort			NVARCHAR(50)	= N'TransDate ASC',
-	@ProductList	VARCHAR(200)	= '',
+	@ProductList	VARCHAR(MAX)	= '',
 	@SportTypeList	VARCHAR(MAX)	= 'All',
 	@BetTypeList	VARCHAR(MAX)	= 'All',
 	@CashoutMode	TINYINT			= 0,
@@ -174,6 +174,7 @@ AS
 					- Remove input param @ShowBA
 		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 		- 20250415@Kos: Hotfix - VS racing range bettrans14 [Redmine: 224163]
+		- 20250416@Kos: Extend input param length [Redmine: 219083]
 */
 
 BEGIN

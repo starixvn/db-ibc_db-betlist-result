@@ -6,7 +6,7 @@ ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_SelRunningByDate_Mem]
 	@Username		VARCHAR(30)	= NULL, -- for API
 	@FromDate		DATETIME	= '',
 	@ToDate			DATETIME	= '',
-	@ProductList	VARCHAR(200)	= '',
+	@ProductList	VARCHAR(MAX)	= '',
 	@ShowBA			BIT				= 0,	-- BA
 	@ExcludeFreeBet	BIT				= 0,	-- Exclude free tickets
 	@BaseCurrency	VARCHAR(12),
@@ -42,6 +42,7 @@ AS
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20241216@Kos: Support Virtual Sports 5 [Redmine: 207582]
+		- 20250416@Kos: Extend input param length [Redmine: 219083]
 */
 
 BEGIN
