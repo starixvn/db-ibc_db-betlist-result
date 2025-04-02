@@ -59,6 +59,7 @@ AS
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241028@Kos: Support Betby Virtual Sports 6 [Redmine: #212446]
 		- 20241216@Kos: Support Virtual Sports 5 [Redmine: 207582]
+		- 20250402@Kos: Support Virtual Sports 7 [Redmine: 219083]
 */
 
 BEGIN
@@ -66,7 +67,7 @@ BEGIN
 
 	IF @EventDate > @MoveBetsDay
 	BEGIN
-		IF @SportType NOT IN (134, 147, 175, 177, 193, 198)
+		IF @SportType NOT IN (125, 126, 127, 134, 147, 175, 177, 193, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -252,7 +253,7 @@ BEGIN
 			WHERE l.sporttype = @SportType
 				AND @IsShowAll IN (1, l.isTest)
 		END
-		ELSE IF @SportType IN (177, 198)
+		ELSE IF @SportType IN (125, 126, 127, 177, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.LeagueName,
@@ -274,7 +275,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		IF @SportType NOT IN (134, 147, 175, 177, 193, 198)
+		IF @SportType NOT IN (125, 126, 127, 134, 147, 175, 177, 193, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -455,7 +456,7 @@ BEGIN
 			WHERE l.sporttype = @SportType
 				AND @IsShowAll IN (1, l.isTest)
 		END
-		ELSE IF @SportType IN (177, 198)
+		ELSE IF @SportType IN (125, 126, 127, 177, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.LeagueName,

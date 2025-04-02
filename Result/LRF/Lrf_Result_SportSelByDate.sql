@@ -65,6 +65,7 @@ AS
 		- 20241002@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241028@Kos: Support Betby Virtual Sports 6 [Redmine: #212446]
 		- 20241216@Kos: Support Virtual Sports 5 [Redmine: 207582]
+		- 20250402@Kos: Support Virtual Sports 7 [Redmine: 219083]
 */
 
 BEGIN
@@ -232,7 +233,7 @@ BEGIN
 				) AS o
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON o.EventID = r.EventID
 				INNER JOIN dbo.League3rd AS l WITH (NOLOCK) ON l.League3rdId = r.LeagueID
-			WHERE r.sporttype IN (177, 198)
+			WHERE r.sporttype IN (125, 126, 127, 177, 198)
 				AND r.EventStatus = 'completed'
 				AND @IsShowAll IN (1, l.IsTest)
 		END
@@ -406,7 +407,7 @@ BEGIN
 			FROM dbo.VSOutright14 AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
 				INNER JOIN dbo.League3rd AS l WITH (NOLOCK) ON l.League3rdId = r.LeagueID
-			WHERE r.sporttype IN (177, 198)
+			WHERE r.sporttype IN (125, 126, 127, 177, 198)
 				AND r.EventStatus = 'completed'
 				AND o.EventDate = @EventDate
 				AND @IsShowAll IN (1, l.IsTest)
