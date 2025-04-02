@@ -178,6 +178,7 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20220213@Razor: Support ASKMESLOT [Redmine: #216976]
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
+		- 20250325@Benji: Support Upcomming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
 
 	Param's Explanation:
 		@ProductDetails:
@@ -1123,7 +1124,7 @@ BEGIN
 				,BetCheck = CASE 
 								WHEN c.Product IN ('SB', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT', 'ParlayVS4', 'ParlayVS5') THEN ISNULL(b.betcheck, '')
 								WHEN c.Product IN ('Keno') THEN ISNULL(b.comstatus, '')
-								WHEN c.EventType = 3 THEN ISNULL(m.IsNeutral, 0)
+								WHEN c.EventType = 3 THEN ISNULL(b.BetCheck, '')
 								ELSE '' END
 				,ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END
 				,TransDesc = CASE
