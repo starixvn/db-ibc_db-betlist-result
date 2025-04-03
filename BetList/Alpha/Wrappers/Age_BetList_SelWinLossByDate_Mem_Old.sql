@@ -691,7 +691,7 @@ BEGIN
 				LEFT JOIN bodb02.dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND m.leagueID = le.leagueID
 				LEFT JOIN dbo.VSOutright_bk AS vo WITH (NOLOCK) ON b.Product IN ('VR') AND b.oddsid = vo.Orid
 				LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON b.Product IN ('VR') AND vr.EventID = vo.EventID
-				LEFT JOIN dbo.VSRaceInfo_bk AS vrc WITH (NOLOCK) ON b.EventType =3 AND vrc.EventID = m.matchid
+				LEFT JOIN dbo.VSRaceInfo_bk AS vrc WITH (NOLOCK) ON b.EventType =3 AND vrc.EventID = b.matchid
 				LEFT JOIN dbo.match3rd_bk AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 				
 			-- Get ticket detail
