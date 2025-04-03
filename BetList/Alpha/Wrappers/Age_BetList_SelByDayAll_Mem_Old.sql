@@ -437,7 +437,7 @@ BEGIN
 								END,
 					BetTeam = CASE
 									WHEN b.Product IN ('SB', 'NG', 'VS', 'VS2', 'Parlay', 'ParlayVS2', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.betteam
-									WHEN b.EventType = 3 THEN b.SportType
+									WHEN b.EventType = 3 THEN b.betteam
 									ELSE ''
 								END,
 					Hdp1 = CASE
