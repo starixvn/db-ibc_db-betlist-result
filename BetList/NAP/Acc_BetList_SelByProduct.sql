@@ -547,7 +547,9 @@ BEGIN
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
 							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107) AND t3rd.val = @BetId)
-							OR (s.ProductID = 39 AND b3rd.val = @BetId))
+							OR (s.ProductID = 39 AND b3rd.val = @BetId)
+							OR (s.productID = 107 AND b.Transdesc)
+							)
 				END
 			END
 
@@ -926,7 +928,9 @@ BEGIN
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
 							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107) AND t3rd.val = @BetId)
-							OR (s.ProductID = 39 AND b3rd.val = @BetId))
+							OR (s.ProductID = 39 AND b3rd.val = @BetId)
+							OR (s.productID = 107 AND b.Transdesc)
+							)
 				END
 			END
 
