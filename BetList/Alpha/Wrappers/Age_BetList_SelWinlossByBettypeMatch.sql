@@ -91,6 +91,26 @@ BEGIN
 			WHERE match3rdid = @MatchId
 		END
 	END
+	ELSE IF @EventType = 3
+	BEGIN
+		SELECT
+			@EventDate = o.eventdate
+		FROM dbo.VSRaceInfo r WITH (NOLOCK)
+		INNER JOIN dbo.VSOutright o WITH (NOLOCK) ON r.EventID = o.EventID
+		WHERE r.EventID = @MatchId AND o.eventdate > @MoveBetsDay
+
+		IF @EventDate IS NULL
+		BEGIN
+			SET @IsBet14 = 1
+
+			SELECT
+				@EventDate = o.eventdate
+			FROM dbo.VSRaceInfo r WITH (NOLOCK)
+			INNER JOIN dbo.VSOutright o WITH (NOLOCK) ON r.EventID = o.EventID
+			WHERE r.EventID = @MatchId
+		END
+	END
+	
 	ELSE
 	BEGIN
 		SELECT
