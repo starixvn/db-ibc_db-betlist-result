@@ -105,8 +105,8 @@ BEGIN
 
 			SELECT
 				@EventDate = o.eventdate
-			FROM dbo.VSRaceInfo r WITH (NOLOCK)
-			INNER JOIN dbo.VSOutright o WITH (NOLOCK) ON r.EventID = o.EventID
+			FROM dbo.VSRaceInfo14 r WITH (NOLOCK)
+			INNER JOIN dbo.VSOutright14 o WITH (NOLOCK) ON r.EventID = o.EventID
 			WHERE r.EventID = @MatchId
 		END
 	END
