@@ -1974,7 +1974,7 @@ BEGIN
 				END AS matchcode,
 				'' AS Race,
 				CASE
-					WHEN s.ProductID IN (70, 90, 101, 107) THEN b.TransDate3rd
+					WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 					ELSE '' 
 				END AS eventdate,
 				0 AS virtualrate,
@@ -2069,7 +2069,7 @@ BEGIN
 			END AS matchcode,
 			'' AS Race,
 			CASE
-				WHEN s.ProductID IN (70, 90, 101, 107) THEN b.TransDate3rd
+				WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 				ELSE '' 
 			END AS eventdate,
 			0 AS virtualrate,

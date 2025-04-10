@@ -119,7 +119,7 @@ AS
 		- 20250213@Razor: Support ASKMESLOT [Redmine: #216976]
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
-		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
+		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [Redmine: #221188]
 */
 
 BEGIN
@@ -423,7 +423,7 @@ BEGIN
 						END AS RefNo,
 						b.GameId3rd AS MatchCode,
 						CASE
-							WHEN s.ProductID IN (70, 90, 101, 107) THEN b.TransDate3rd
+							WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 							ELSE ''
 						END AS EventDate,
 						CASE
@@ -546,7 +546,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107) AND t3rd.val = @BetId)
+							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101) AND t3rd.val = @BetId)
 							OR (s.ProductID = 39 AND b3rd.val = @BetId)
 							OR (s.productID = 107 AND b.Transdesc = @BetId)
 							)
@@ -804,7 +804,7 @@ BEGIN
 						END AS RefNo,
 						b.GameId3rd AS MatchCode,
 						CASE
-							WHEN s.ProductID IN (70, 90, 101, 107) THEN b.TransDate3rd
+							WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 							ELSE ''
 						END AS EventDate,
 						CASE
@@ -927,7 +927,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107) AND t3rd.val = @BetId)
+							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101) AND t3rd.val = @BetId)
 							OR (s.ProductID = 39 AND b3rd.val = @BetId)
 							OR (s.productID = 107 AND b.Transdesc = @BetId)
 							)
