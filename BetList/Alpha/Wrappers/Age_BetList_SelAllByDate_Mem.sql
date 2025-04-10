@@ -765,8 +765,6 @@ BEGIN
 			LEFT JOIN dbo.VSRaceInfo AS vrc WITH (NOLOCK) ON c.EventType = 3  AND vrc.EventID = b.matchid
 			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
-		--WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 
-		--				'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON', 'PTRNG', 'Unknown')
 			WHERE c.RefTable NOT IN (1,2)
 			OR c.WinLostDate < @Yesterday
 
