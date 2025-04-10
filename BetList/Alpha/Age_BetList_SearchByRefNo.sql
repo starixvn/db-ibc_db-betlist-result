@@ -45,7 +45,7 @@ AS
 		- 20250213@Razor: Support ASKMESLOT [Redmine: #216976]
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
-		- 20250325@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
+		- 20250325@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [Redmine: #221188]
 */
 
 BEGIN
@@ -581,13 +581,11 @@ BEGIN
 				ELSE ''
 			END AS BetTeam,
 			CASE
-				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'BTC', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp1
-				WHEN @EventType = 3 THEN b.hdp1
+				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'BTC', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp1				
 				ELSE 0
 			END AS Hdp1,
 			CASE
 				WHEN @Product IN ('SB', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp2
-				WHEN @EventType = 3 THEN b.hdp2
 				ELSE 0
 			END AS Hdp2,
 			CASE
@@ -765,13 +763,11 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Outright') THEN o.groupmatch
 				WHEN @Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
-				WHEN @EventType = 3 THEN CONVERT(NVARCHAR(50),b.oddsid)
 				ELSE ''
 			END AS Race,
 			CASE
 				WHEN @Product IN ('SB') THEN m.GlobalShowTime
 				WHEN @Product IN ('BTC') THEN m3rd.EndTime
-				WHEN @EventType = 3 THEN ''
 				ELSE b.WinLostDate
 			END AS EventDate,
 			CASE
@@ -806,7 +802,6 @@ BEGIN
 			CASE
 				WHEN @Product IN ('SB', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT', 'ParlayVS4', 'ParlayVS5') THEN ISNULL(b.betcheck, '')
 				WHEN @Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-				WHEN @EventType = 3 THEN b.BetCheck
 				ELSE ''
 			END AS BetCheck,
 			CASE
@@ -879,12 +874,10 @@ BEGIN
 			END AS BetTeam,
 			CASE
 				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'BTC', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp1
-				WHEN @EventType = 3 THEN b.hdp1
 				ELSE 0
 			END AS Hdp1,
 			CASE
 				WHEN @Product IN ('SB', 'VS', 'VS2', 'VR', 'Parlay', 'ParlayVS2', 'NG2', 'LG', 'ParlayVS4', 'VS5', 'ParlayVS5') THEN b.hdp2
-				WHEN @EventType = 3 THEN b.hdp2
 				ELSE 0
 			END AS Hdp2,
 			CASE
@@ -993,7 +986,6 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Outright') THEN o.groupmatch
 				WHEN @Product IN ('VR') THEN CONVERT(NVARCHAR(50), b.oddsid)
-				WHEN @EventType = 3 THEN CONVERT(NVARCHAR(50), b.oddsid)
 				ELSE ''
 			END AS Race,
 			CASE
@@ -1019,7 +1011,6 @@ BEGIN
 			END AS BetStatus,
 			CASE
 				WHEN @Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
-				WHEN @EventType = 3 THEN CONVERT (BIT,0) 
 				ELSE 0
 			END AS IsNeutral,
 			CASE
@@ -1034,7 +1025,6 @@ BEGIN
 			CASE
 				WHEN @Product IN ('SB', 'Parlay', 'ParlayVS2', 'VRG', 'H5LG', 'SLT', 'ParlayVS4', 'ParlayVS5') THEN ISNULL(b.betcheck, '')
 				WHEN @Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-				WHEN @EventType = 3 THEN b.betcheck
 				ELSE ''
 			END AS BetCheck,
 			CASE
@@ -2053,7 +2043,7 @@ BEGIN
 				INNER JOIN @Data AS b ON bm.refno = b.RefNo AND bm.custid = @CustId
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 			WHERE b.TransId = @TransId
-				AND sbt.ProductID in (5)
+				AND sbt.ProductID IN (5)
 				AND sbt.EventType = 3
 		END
 
@@ -2074,7 +2064,7 @@ BEGIN
 				INNER JOIN @Data AS b ON bm.refno = b.RefNo AND bm.custid = @CustId
 				INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 			WHERE b.TransId = @TransId
-				AND sbt.ProductID  in (5,106)
+				AND sbt.ProductID  IN (5)
 				AND sbt.EventType = 3
 		END
 	END
