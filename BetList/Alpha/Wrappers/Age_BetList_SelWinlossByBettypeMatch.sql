@@ -462,7 +462,7 @@ BEGIN
 			Ip,
 			LeagueId,
 			MatchId,
-			MatchCode,			
+			MatchCode,
 			EventDate,
 			HomeId,
 			AwayId,
@@ -494,7 +494,7 @@ BEGIN
 			b.betteam,
 			b.hdp1,
 			CASE
-				WHEN c.Product IN ('SB', 'VS', 'VS2', 'LG', 'VS5') THEN b.hdp2				
+				WHEN c.Product IN ('SB', 'VS', 'VS2', 'LG', 'VS5') THEN b.hdp2
 				ELSE 0
 			END AS Hdp2,
 			b.oddstype,
@@ -572,7 +572,7 @@ BEGIN
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchcode
 				WHEN c.Product IN ('VS5') THEN m3rd.matchcode			
 				ELSE ''
-			END AS MatchCode,									
+			END AS MatchCode,
 			CASE
 				WHEN c.Product = 'SB' THEN m.GlobalShowTime
 				WHEN c.Product IN ('NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.eventdate
@@ -982,7 +982,6 @@ BEGIN
 				WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG') THEN ISNULL(m.IsNeutral, 0)
 				ELSE 0
 			END AS IsNeutral,
-					
 			CASE
 				WHEN c.Product IN ('VS', 'VS2', 'LG', 'VS4') THEN CONVERT(NVARCHAR(50), m.kickofftime)
 				WHEN c.Product IN ('SB', 'NG') THEN ISNULL(m.showtime, '')
