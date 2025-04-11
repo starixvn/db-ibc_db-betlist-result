@@ -155,7 +155,7 @@ AS
 		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: #221188]
-		- 20250410@Benji: Remove productID 101,107 (Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
+		- 20250410@Benji: Remove Unnecessary Returned Data (Kiron VS7, Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 */
 
 BEGIN
