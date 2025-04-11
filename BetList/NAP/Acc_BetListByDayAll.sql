@@ -196,7 +196,7 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241210@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
 		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino ) [Redmine: #221188]
-		- 20250410@Benji: Remove productID 106 (VS7: Not Return Showtime) [Redmine: #221188]
+		- 20250410@Benji: Remove Unnecessary Returned Data (VS7) [Redmine: #221188]
 
 	Param's Explanation:
 		+ @TransType:
