@@ -39,6 +39,7 @@ AS
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: #221188]
+		- 20250410@Benji: Remove Unnecessary Returned Data (Kiron VS7) [Redmine: #221188]
 */
 
 BEGIN

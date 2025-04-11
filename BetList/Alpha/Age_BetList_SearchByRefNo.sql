@@ -46,6 +46,7 @@ AS
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
 		- 20250325@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [Redmine: #221188]
+		- 20250410@Benji: Remove Unnecessary Returned Data (Kiron VS7, Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 */
 
 BEGIN
