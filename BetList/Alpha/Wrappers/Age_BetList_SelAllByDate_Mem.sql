@@ -154,7 +154,8 @@ AS
 		- 20241023@Razor: Support Playtech [Redmine: #210553]
 		- 20241023@Razor: Remove checking product is Unknown [Redmine: #207173]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
-		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
+		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: #221188]
+		- 20250410@Benji: Remove Unnecessary Returned Data (Kiron VS7, Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 */
 
@@ -772,8 +773,6 @@ BEGIN
 			LEFT JOIN dbo.VSRaceInfo AS vrc WITH (NOLOCK) ON c.EventType = 3  AND vrc.EventID = b.matchid
 			LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueid = le.leagueid
-		--WHERE c.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 
-		--				'L22', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 'ON', 'PTRNG', 'Unknown')
 			WHERE c.RefTable NOT IN (1,2)
 			OR c.WinLostDate < @Yesterday
 
