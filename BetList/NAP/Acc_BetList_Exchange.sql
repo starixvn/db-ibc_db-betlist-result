@@ -20,6 +20,7 @@ AS
 		- 20180313@Kos: Exclude tickets which don't have ticket detail [#Redmine: 102898]
 		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
 		- 20231213@Kos: Hotfix - inconsistent odds [Redmine: 198327]
+		- 20250410@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 */
 
 BEGIN
@@ -36,7 +37,7 @@ BEGIN
 		WinLostDate		DATETIME,
 		WinLost			MONEY,
 		Commission		MONEY,
-		Currency		TINYINT,
+		Currency		INT,
 		ExVirtualRate	FLOAT
 	)
 
@@ -54,7 +55,7 @@ BEGIN
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,
 		WinLostDate		DATETIME,
-		Currency		TINYINT,
+		Currency		INT,
 		OddsAvg			SMALLMONEY,
 		FancyBetRuns	MONEY,
 		Stake			MONEY,
@@ -111,7 +112,7 @@ BEGIN
 		WinLostDate		DATETIME,
 		WinLost			MONEY,
 		Commission		MONEY,
-		Currency		TINYINT,
+		Currency		INT,
 		ExVirtualRate	FLOAT
 	)
 

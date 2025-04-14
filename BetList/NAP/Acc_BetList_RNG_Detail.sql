@@ -75,6 +75,7 @@ AS
 		- 20240327@Kos: Support UU Slots [Redmine: #192600]
 		- 20240403@Razor: Support Saba xD [Redmine: #203371]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
+		- 20250410@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 
 	Parameters:
 		- @TransType
@@ -176,7 +177,7 @@ BEGIN
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		JackpotInfo		VARCHAR(50),
-		CurrencyId		TINYINT,
+		CurrencyId		INT,
 		SiteId			VARCHAR(7),
 		DeviceType		TINYINT
 	)

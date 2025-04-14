@@ -52,7 +52,8 @@ AS
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20250106@Razor: SA Gaming support Saba Plus [Redmine: #215645]
-		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino )
+		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino ) [RedmineID: #221188]
+		- 20250410@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -148,7 +149,7 @@ BEGIN
 		MatchCode		VARCHAR(50),
 		BetTeam			NVARCHAR(200),
 		LeagueId		INT,
-		CurrencyId		TINYINT,
+		CurrencyId		INT,
 		SiteId			VARCHAR(7),
 		EventDate		DATETIME,
 		ExtraInfo		VARCHAR(1000),

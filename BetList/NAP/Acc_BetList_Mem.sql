@@ -122,7 +122,8 @@ AS
 		- 20250213@Razor: Support ASKMESLOT [Redmine: #216976]
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
 		- 20250312@Benji: Support FunkyGames [Redmine: #218176]
-		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
+		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [RedmineID: #221188]
+		- 20250410@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 
 */
 
@@ -166,7 +167,7 @@ BEGIN
 		RefNo				BIGINT,
 		CustId				INT,
 		Creator				INT,
-		Currency			SMALLINT,
+		Currency			INT,
 		SportType			SMALLINT,
 		BetType				SMALLINT,
 		BetId				BIGINT,
@@ -233,7 +234,7 @@ BEGIN
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		IsCashOut			TINYINT,
-		CurrencyId			TINYINT,
+		CurrencyId			INT,
 		SiteId				VARCHAR(20),
 		DeviceType			TINYINT,
 		RefTable			TINYINT,
@@ -1631,7 +1632,7 @@ BEGIN
 					RefNo				BIGINT,
 					CustId				INT,
 					Creator				INT,
-					Currency			SMALLINT,
+					Currency			INT,
 					SportType			SMALLINT,
 					BetType				SMALLINT,
 					BetId				BIGINT,
@@ -1698,7 +1699,7 @@ BEGIN
 					TableID				TINYINT,
 					Product				VARCHAR(30),
 					ISCashOut			TINYINT,
-					CurrencyId			TINYINT,
+					CurrencyId			INT,
 					SiteId				VARCHAR(20),
 					DeviceType			TINYINT,
 					RefTable			TINYINT,

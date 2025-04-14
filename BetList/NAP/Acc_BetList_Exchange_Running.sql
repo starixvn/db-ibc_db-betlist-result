@@ -14,6 +14,7 @@ AS
 
 	Revisions:
 		- 20240826@Kos: Support Exchange Running [#Redmine: 209743]
+		- 20250410@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 */
 
 BEGIN
@@ -32,7 +33,7 @@ BEGIN
 		SelectionName	VARCHAR(100),
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,
-		Currency		TINYINT,
+		Currency		INT,
 		OddsAvg			SMALLMONEY,
 		FancyBetRuns	MONEY,
 		Stake			MONEY
@@ -87,7 +88,7 @@ BEGIN
 		SelectionName	VARCHAR(100),
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,
-		Currency		TINYINT,
+		Currency		INT,
 		OddsAvg			SMALLMONEY,
 		FancyBetRuns	MONEY,
 		Stake			MONEY

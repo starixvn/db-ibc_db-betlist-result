@@ -24,6 +24,7 @@ AS
 		- 20211222@Razor: BBIN Support Third Party Result API [Redmine: #165158]
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
+		- 20250410@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 	Parameters:
 		- @TransType
 			+ 0 : All (DRAW/WON/LOSE/Reject/Void/Refund/Running/Waiting)
@@ -117,7 +118,7 @@ BEGIN
 		BetCheck		NVARCHAR(200),
 		MatchCode		VARCHAR(50),
 		BetTeam			NVARCHAR(50),
-		CurrencyId		TINYINT,
+		CurrencyId		INT,
 		SiteId			VARCHAR(7),
 		DeviceType		TINYINT
 	)

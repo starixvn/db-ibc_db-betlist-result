@@ -66,6 +66,7 @@ AS
 					- Don't support Cash Out bettype 911, 912, 913 in range bettrans and bettrans14 anymore
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20240920@Razor: Support VS2 - Racing sports [Redmine: #211092]
+		- 20250410@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 */
 
 BEGIN
@@ -76,7 +77,7 @@ BEGIN
 		RefNo				BIGINT,
 		CustId				INT,
 		Creator				INT,
-		Currency			SMALLINT,
+		Currency			INT,
 		SportType			SMALLINT,
 		BetType				SMALLINT,
 		BetId				BIGINT,
