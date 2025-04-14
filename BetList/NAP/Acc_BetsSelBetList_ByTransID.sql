@@ -203,7 +203,8 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20241219@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
-		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino )
+		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino ) [Redmine: #221188]
+		- 20250410@Benji: Remove Unnecessary Returned Data (Microgaming Live Casino, Playtech Live Casino, VS7) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 */
 
@@ -479,7 +480,7 @@ BEGIN
 					b.mwinlost,
 					b.swinlost,
 					CASE
-						WHEN s.ProductID IN (5, 27, 106) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 						ELSE m.showtime
 					END AS ShowTime,
 					b.winlostdate,
@@ -2236,7 +2237,7 @@ BEGIN
 					b.mwinlost,
 					b.swinlost,
 					CASE
-						WHEN s.ProductID IN (5, 27, 106) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 						ELSE m.showtime
 					END AS ShowTime,
 					b.winlostdate,
@@ -3044,7 +3045,7 @@ BEGIN
 					b.mwinlost,
 					b.swinlost,
 					CASE
-						WHEN s.ProductID IN (5, 27, 106) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+						WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 						ELSE m.showtime
 					END AS ShowTime,
 					b.winlostdate,
@@ -4333,7 +4334,7 @@ BEGIN
 					END AS matchcode,
 					'' AS race,
 					CASE
-						WHEN s.ProductID IN (70, 90, 101, 107) THEN b.TransDate3rd
+						WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 						ELSE '' 
 					END AS eventdate,
 					0 AS virtualrate,
@@ -4433,7 +4434,7 @@ BEGIN
 					END AS matchcode,
 					'' AS race,
 					CASE
-						WHEN s.ProductID IN (70, 90, 101, 107) THEN b.TransDate3rd
+						WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 						ELSE '' 
 					END AS eventdate,
 					0 AS virtualrate,
@@ -4533,7 +4534,7 @@ BEGIN
 					END AS matchcode,
 					'' AS race,
 					CASE
-						WHEN s.ProductID IN (70, 90, 101, 107) THEN b.TransDate3rd
+						WHEN s.ProductID IN (70, 90) THEN b.TransDate3rd
 						ELSE '' 
 					END AS eventdate,
 					0 AS virtualrate,

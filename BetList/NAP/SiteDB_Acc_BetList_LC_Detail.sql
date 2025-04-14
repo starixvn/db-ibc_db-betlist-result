@@ -26,7 +26,8 @@ AS
 		- 20240912@Razor: Support ON Casino [Redmine: #210026]
 		- 20241202@Razor: Support GPI Live Casino [Redmine: #213486]
 		- 20250106@Razor: SA Gaming support Saba Plus [Redmine: #215645]
-		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino )
+		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino ) [Redmine: #221188]
+		- 20250410@Benji: Remove productID 101,107 (Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 
 	Parameters:
@@ -257,7 +258,7 @@ BEGIN
 			blc.currency,
 			blc.SiteId,
 			CASE
-				WHEN sbt.ProductID IN (70, 90, 101, 107) THEN blc.TransDate3rd
+				WHEN sbt.ProductID IN (70, 90) THEN blc.TransDate3rd
 				ELSE ''
 			END AS EventDate,
 			CASE

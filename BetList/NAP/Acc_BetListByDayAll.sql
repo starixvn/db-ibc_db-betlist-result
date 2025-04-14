@@ -195,7 +195,9 @@ AS
 		- 20240920@Razor: Support VS2 Racing sports [Redmine: #211092]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241210@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
-		- 20250116@Razor: Support Direct Member [Redmine: #211969]
+		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino ) [Redmine: #221188]
+		- 20250410@Benji: Remove Unnecessary Returned Data (VS7) [Redmine: #221188]
+		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 
 	Param's Explanation:
 		+ @TransType:
@@ -399,7 +401,7 @@ BEGIN
 				b.Username,
 				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				CASE
-					WHEN s.ProductID IN (5, 27, 106) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE m.showtime
 				END AS ShowTime,
 				0 spositiontaking, -- unuse in this report
@@ -1244,7 +1246,7 @@ BEGIN
 				b.Username,
 				ISNULL(m.isNeutral, CONVERT(BIT, 0)) AS IsNeutral, --phuong.nguyen, get isneutral from Match
 				CASE
-					WHEN s.ProductID IN (5, 27, 106) THEN CONVERT(NVARCHAR(50), m.kickofftime)
+					WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
 					ELSE m.showtime
 				END AS ShowTime,
 				0 spositiontaking, -- unuse in this report
