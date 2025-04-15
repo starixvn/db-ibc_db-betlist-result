@@ -104,6 +104,7 @@ AS
 					- Remove input params @Product, @SportType, @BetType
 					- Add new input params @ProductList VARCHAR(300), @SportTypeList VARCHAR(MAX), @BetTypeList VARCHAR(MAX), @CashOutMode TINYINT, @MaxTotalRows INT
 		- 20250212@Kos: Remove BA [RedmineID: #216882]
+		- 20250415@Kos: Hotfix - VS racing range bettrans14 [Redmine: 224163]
 */
 
 BEGIN
@@ -555,7 +556,7 @@ BEGIN
 							LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
 							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-							LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+							LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
@@ -617,7 +618,7 @@ BEGIN
 							LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
 							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-							LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+							LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
 						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
@@ -767,7 +768,7 @@ BEGIN
 						LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
 					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE

@@ -173,6 +173,7 @@ AS
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
 					- Remove input param @ShowBA
 		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
+		- 20250415@Kos: Hotfix - VS racing range bettrans14 [Redmine: 224163]
 */
 
 BEGIN
@@ -950,7 +951,7 @@ BEGIN
 					LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 					LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+					LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
 				WHERE b.custid = @CustId
 					AND b.winlostdate BETWEEN @TempFromDate AND @TempToDate
 					AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
@@ -1176,7 +1177,7 @@ BEGIN
 					LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
 					LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
 					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+					LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
 					CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 				WHERE b.custid = @CustId
 					AND b.winlostdate BETWEEN @FromDate AND @TempToDate
