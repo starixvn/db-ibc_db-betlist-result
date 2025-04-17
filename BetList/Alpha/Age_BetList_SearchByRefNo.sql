@@ -48,6 +48,7 @@ AS
 		- 20250325@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [Redmine: #221188]
 		- 20250410@Benji: Remove Unnecessary Returned Data (Kiron VS7, Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
+		- 20250416@Dave: change datatype for ExchangeID [RedmineID: #221098]
 */
 
 BEGIN
@@ -73,7 +74,7 @@ BEGIN
 		CustId				INT,
 		Username			NVARCHAR(50),
 		Currency			NVARCHAR(50),
-		CurrencyId			TINYINT,
+		CurrencyId			INT,
 		SportType			SMALLINT,
 		BetType				SMALLINT,
 		BetId				BIGINT,

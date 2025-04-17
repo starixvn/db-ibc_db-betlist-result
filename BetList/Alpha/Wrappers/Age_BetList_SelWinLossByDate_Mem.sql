@@ -178,8 +178,9 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20220213@Razor: Support ASKMESLOT [Redmine: #216976]
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
-		- 20250325@Benji: Support Upcomming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )
+		- 20250325@Benji: Support Upcomming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino )[Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
+		- 20250416@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -285,7 +286,7 @@ BEGIN
 		, ExtraInfo			VARCHAR(1000)
 		, Currency			NVARCHAR(50)
 		, Product			VARCHAR(30)
-		, CurrencyId		TINYINT
+		, CurrencyId		INT
 		, SiteId			VARCHAR(20)
 		, LeagueGroupID		SMALLINT
 		, TicketType		TINYINT
