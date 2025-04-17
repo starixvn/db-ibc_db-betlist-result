@@ -22,6 +22,7 @@ AS
 		- 20211223@Razor: Support Third Party Result API [Redmine: #165815]
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
 		- 20241218@Razor: Support Direct Member [Redmine: #211969]
+		- 20250410@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 
 */
 
@@ -56,7 +57,7 @@ BEGIN
 		RefNo			BIGINT,
 		CustId			INT,
 		Username		NVARCHAR(50),
-		SportType		SMALLINT,
+		SportType		INT,
 		BetType			SMALLINT,
 		BetId			BIGINT,
 		Odds			MONEY,
@@ -87,7 +88,7 @@ BEGIN
 		ExtraInfo		VARCHAR(1000),
 		Currency		NVARCHAR(50),
 		Product			VARCHAR(30),
-		CurrencyId		TINYINT,
+		CurrencyId		INT,
 		SiteId			VARCHAR(20),
 		DeviceType		TINYINT
 	);

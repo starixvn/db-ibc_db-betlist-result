@@ -157,6 +157,7 @@ AS
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: #221188]
 		- 20250410@Benji: Remove Unnecessary Returned Data (Kiron VS7, Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
+		- 20250416@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 */
 
 BEGIN
@@ -233,7 +234,7 @@ BEGIN
 		, BetdaqId			BIGINT
 		, ExtraInfo			VARCHAR(1000)
 		, Currency			NVARCHAR(50)
-		, CurrencyId		TINYINT
+		, CurrencyId		INT
 		, SiteId			VARCHAR(20)
 		, DeviceType		TINYINT
 		, LeagueGroupId		SMALLINT

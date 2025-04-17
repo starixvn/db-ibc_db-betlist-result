@@ -87,6 +87,7 @@ AS
 		- 20240304@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240723@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
+		- 20250410@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 */
 
 BEGIN
@@ -136,7 +137,7 @@ BEGIN
 		SubProduct		VARCHAR(500),
 		WhTicket		TINYINT,
 		BetdaqId		BIGINT,
-		CurrencyId		TINYINT,
+		CurrencyId		INT,
 		SiteId			VARCHAR(20),
 		DeviceType		TINYINT
 	);
@@ -185,7 +186,7 @@ BEGIN
 		SubProduct		VARCHAR(500),
 		WhTicket		TINYINT,
 		BetdaqId		BIGINT,
-		CurrencyId		TINYINT,
+		CurrencyId		INT,
 		SiteId			VARCHAR(20),
 		DeviceType		TINYINT,
 		LeagueGroupId	SMALLINT

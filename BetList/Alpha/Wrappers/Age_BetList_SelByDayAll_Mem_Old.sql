@@ -126,6 +126,7 @@ AS
 		- 20241209@Razor: Insert default value for SiteId, CurrencyId [Redmine: #215005]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
+		- 20250416@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 
 	Param's Explanation:
 		+ @TransType:
@@ -192,7 +193,7 @@ BEGIN
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		Product			VARCHAR(30),
-		CurrencyId		TINYINT,
+		CurrencyId		INT,
 		SiteId			VARCHAR(20),
 		DeviceType		TINYINT,
 		LeagueGroupId	SMALLINT,
