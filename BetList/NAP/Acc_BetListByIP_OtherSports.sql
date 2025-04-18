@@ -190,6 +190,7 @@ AS
 		- 20250218@Razor: Support SABA Keno [Redmine: #214757]
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
 		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [Redmine: #221188]
+		- 20250418@Benji: Support RichGaming [Redmine: #224687]
 
 		
 */
@@ -740,6 +741,7 @@ BEGIN
 						WHEN s.ProductID = 104 THEN 'FG'							-- Funky Games
 						WHEN s.ProductID = 105 THEN 'ODG'							-- ODIN GAMING
 						WHEN s.ProductID = 107 THEN 'MGLC'							-- Microgaming Live
+						WHEN s.ProductID = 108 THEN 'RGRNG'							-- Rich Gaming
 						WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 						WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
 						WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports Sportsbook
@@ -1200,7 +1202,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT')
+							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT', 'RGRNG')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips

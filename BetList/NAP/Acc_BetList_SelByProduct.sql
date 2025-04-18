@@ -122,6 +122,7 @@ AS
 		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [Redmine: #221188]
 		- 20250410@Benji: Remove Unnecessary Returned Data (Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
+		- 20250418@Benji: Support RichGaming [Redmine: #224687]
 */
 
 BEGIN
@@ -570,8 +571,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, SABA Keno, ASKMESLOT, Funky Games, HOTDOG, ODIN GAMING, GPI Lottery
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 84, 86, 87, 89, 85, 100, 48, 91, 102, 103, 104, 95, 105)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, SABA Keno, ASKMESLOT, Funky Games, HOTDOG, ODIN GAMING, GPI Lottery, Rich Gaming
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 84, 86, 87, 89, 85, 100, 48, 91, 102, 103, 104, 95, 105, 108)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -971,8 +972,8 @@ BEGIN
 			END
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
-			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, SABA Keno, ASKMESLOT, Funky Games, HOTDOG, ODIN GAMING, GPI Lottery
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 84, 86, 87, 89, 85, 100, 48, 91, 102, 103, 104, 95, 105)
+			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, SABA Keno, ASKMESLOT, Funky Games, HOTDOG, ODIN GAMING, GPI Lottery, Rich Gaming
+			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 84, 86, 87, 89, 85, 100, 48, 91, 102, 103, 104, 95, 105, 108)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
