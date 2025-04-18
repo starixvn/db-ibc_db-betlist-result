@@ -49,6 +49,7 @@ AS
 		- 20250410@Benji: Remove Unnecessary Returned Data (Kiron VS7, Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250416@Dave: change datatype for ExchangeID [RedmineID: #221098]
+		- 20250418@Benji: Support Rich Gaming [Redmine: #224687]
 */
 
 BEGIN
@@ -297,6 +298,7 @@ BEGIN
 						WHEN @ProductID = 104 THEN 'FG'			-- Funky Games
 						WHEN @ProductID = 105 THEN 'ODG'		-- ODIN GAMING
 						WHEN @ProductID = 107 THEN 'MGLC'		-- Microgaming Live
+						WHEN @ProductID = 108 THEN 'RGRNG'		-- Rich Gaming
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1235,6 +1237,7 @@ BEGIN
 						WHEN @ProductId = 103 THEN 'ASK'		-- ASKMESLOT
 						WHEN @ProductId = 104 THEN 'FG'			-- Funky Games
 						WHEN @ProductId = 105 THEN 'ODG'		-- ODIN GAMING
+						WHEN @ProductId = 108 THEN 'RGRNG'		-- Rich Gaming
 						ELSE 'Unknown'
 					END
 
