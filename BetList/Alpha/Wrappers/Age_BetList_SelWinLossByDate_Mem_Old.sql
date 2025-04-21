@@ -183,6 +183,7 @@ AS
 		- 20250325@Benji: Support Upcomming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250416@Dave: Change datatype for ExchangeID [RedmineID: #221098]
+		- 20250421@Benji: Remove product detail for Playtech Live Casino [Redmine:#224687]
 
 		
 	Param's Explanation:
@@ -738,8 +739,8 @@ BEGIN
 	WHERE c.custid = @CustId
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING, Playtech Live Casino
-	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG', 'MGLC', 'PTLC'))
+	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING
+	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG', 'MGLC'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
@@ -1005,22 +1006,7 @@ BEGIN
 							WHERE ProductId = 107 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 107 AND BetType = b.BetType)	
-							
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'PTLC'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 101 AND BetType = b.BetType)
-			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 101 AND BetType = b.BetType)
-
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'PTLC'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 101 AND BetType = 0)
-			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 101 AND BetType = b.BetType)						
+														
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
