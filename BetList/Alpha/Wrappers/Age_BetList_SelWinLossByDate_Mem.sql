@@ -182,6 +182,7 @@ AS
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250416@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 		- 20250421@Benji: Remove product detail for Playtech Live Casino [Redmine:#224687]
+		- 20250422@Benji: Support RichGaming [Redmine: #222365]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -414,6 +415,7 @@ BEGIN
 							WHEN s.ProductID = 103						THEN 'ASK'	-- ASKMESLOT
 							WHEN s.ProductID = 105						THEN 'ODG'	-- ODIN GAMING
 							WHEN s.ProductID = 107						THEN 'MGLC'	-- Microgaming Live
+							WHEN s.ProductID = 108						THEN 'RGRNG'	-- Rich Gaming
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
@@ -925,6 +927,7 @@ BEGIN
 							WHEN s.ProductID = 103					THEN 'ASK'		-- ASKMESLOT
 							WHEN s.ProductID = 105					THEN 'ODG'		-- ODIN GAMING
 							WHEN s.ProductID = 107					THEN 'MGLC'		-- Microgaming Live
+							WHEN s.ProductID = 108					THEN 'RGRNG'		-- Rich Gaming
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
@@ -1207,8 +1210,8 @@ BEGIN
 	END -- end: bettrans14
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING, Microgaming Live
-	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG', 'MGLC'))
+	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING, Microgaming Live, Rich Gaming
+	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG', 'MGLC', 'RGRNG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId		TINYINT,
@@ -1471,6 +1474,22 @@ BEGIN
 							WHERE ProductId = 107 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 107 AND BetType = b.BetType)
+		
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'RGRNG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 108 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 108 AND BetType = b.BetType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'RGRNG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 108 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 108 AND BetType = b.BetType)
 		
 	END
 

@@ -184,6 +184,7 @@ AS
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250416@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 		- 20250421@Benji: Remove product detail for Playtech Live Casino [Redmine:#224687]
+		- 20250422@Benji: Support RichGaming [Redmine: #222365]
 
 		
 	Param's Explanation:
@@ -472,6 +473,7 @@ BEGIN
 						WHEN s.ProductID = 103 THEN 'ASK'	-- ASKMESLOT
 						WHEN s.ProductID = 105 THEN 'ODG'	-- ODIN GAMING
 						WHEN s.ProductID = 107 THEN 'MGLC'	-- Microgaming Live
+						WHEN s.ProductID = 108 THEN 'RGRNG'	-- RichGaming
 						WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'	-- Sportsbook Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2' --Betradar Virtual Sports Parlay
 						WHEN s.EventType = 0 AND s.ProductID = 83 THEN 'ParlayVS4' --Virtual Sports 4 Parlay
@@ -739,8 +741,8 @@ BEGIN
 	WHERE c.custid = @CustId
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING
-	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG', 'MGLC'))
+	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING, RichGaming
+	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG', 'MGLC', 'RGRNG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
@@ -1005,7 +1007,23 @@ BEGIN
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 107 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 107 AND BetType = b.BetType)	
+							WHERE ProductId = 107 AND BetType = b.BetType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'RGRNG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 108 AND BetType = b.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 108 AND BetType = b.BetType)
+
+		DELETE b
+		FROM #MemBetTicket AS b
+		WHERE b.Product = 'RGRNG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 108 AND BetType = 0)
+			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 108 AND BetType = b.BetType)					
 														
 	END
 
