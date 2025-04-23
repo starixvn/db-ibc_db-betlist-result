@@ -191,6 +191,7 @@ AS
 		- 20250312@Benji: Support Funky Games [Redmine: #218176]
 		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [Redmine: #221188]
 		- 20250418@Benji: Support RichGaming [Redmine: #224687]
+		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
 
 		
 */
@@ -255,7 +256,7 @@ BEGIN
 		Tranid3rd			NVARCHAR(200),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
-		CurrencyId			TINYINT,
+		CurrencyId			SMALLINT,
 		SiteId				VARCHAR(20),
 		DeviceType			TINYINT,
 		RefTable			TINYINT,
@@ -1338,7 +1339,7 @@ BEGIN
 					Tranid3rd			NVARCHAR(200),
 					TableID				TINYINT,
 					Product				VARCHAR(30),
-					CurrencyId			TINYINT,
+					CurrencyId			SMALLINT,
 					SiteId				VARCHAR(20),
 					DeviceType			TINYINT,
 					RefTable			TINYINT,
