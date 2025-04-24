@@ -1010,7 +1010,7 @@ BEGIN
 							WHERE ProductId = 107 AND BetType = b.BetType)
 
 		DELETE b
-		FROM #MemBetTicket AS b
+		FROM @Data AS b
 		WHERE b.Product = 'RGRNG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 108 AND BetType = b.BetType)
@@ -1018,7 +1018,7 @@ BEGIN
 							WHERE ProductId = 108 AND BetType = b.BetType)
 
 		DELETE b
-		FROM #MemBetTicket AS b
+		FROM @Data AS b
 		WHERE b.Product = 'RGRNG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 108 AND BetType = 0)
