@@ -74,6 +74,7 @@ AS
 		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250418@Benji: Support RichGaming [Redmine: #224687]
+		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
 */
 
 BEGIN
@@ -183,7 +184,7 @@ BEGIN
 		TableID				TINYINT,
 		Product				VARCHAR(30),
 		IsCashOut			TINYINT,
-		CurrencyId			TINYINT,
+		CurrencyId			SMALLINT,
 		SiteId				VARCHAR(20),
 		DeviceType			TINYINT,
 		RefTable			TINYINT,
@@ -1327,7 +1328,7 @@ BEGIN
 					TableID				TINYINT,
 					Product				VARCHAR(30),
 					ISCashOut			TINYINT,
-					CurrencyId			TINYINT,
+					CurrencyId			SMALLINT,
 					SiteId				VARCHAR(20),
 					DeviceType			TINYINT,
 					RefTable			TINYINT,
