@@ -183,6 +183,7 @@ AS
 		- 20250416@Dave: Change datatype for ExchangeID [RedmineID: #221098]
 		- 20250421@Benji: Remove product detail for Playtech Live Casino [Redmine:#224687]
 		- 20250422@Benji: Support RichGaming [Redmine: #222365]
+		- 20250505@Benji:  HF - VS7 - Alpha - Cannot show data Result on Result pop up of ticket on range bettrans that drilldown from report Winloss [Redmine: #226050]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -725,7 +726,7 @@ BEGIN
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchid
 									WHEN c.Product IN ('Outright') THEN o.orid
 									WHEN c.Product IN ('VR', 'BTC', 'VS5') THEN b.matchid
-									WHEN c.EventType = 3 THEN m.matchid
+									WHEN c.EventType = 3 THEN b.matchid
 									ELSE 0 END
 					,MatchCode = CASE
 									WHEN c.Product IN ('SB', 'NG', 'VS', 'VS2', 'LG', 'VS4') THEN m.matchcode
