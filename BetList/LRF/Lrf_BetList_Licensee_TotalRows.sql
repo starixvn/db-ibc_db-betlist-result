@@ -54,6 +54,7 @@ AS
 				+ Sports Lottery: <Sport SportType="169" LeagueGroupIds="0"/>
 				+ Saba Soccer: <Sport SportType="1" LeagueGroupIds="42,74"/>
 				+ Saba Soccer PinGoal: <Sport SportType="1" LeagueGroupIds="113"/>
+				+ Saba Soccer Marble: <Sport SportType="1" LeagueGroupIds="252"/>
 				+ Saba Basketball: <Sport SportType="2" LeagueGroupIds="42"/>
 				+ Saba Basketball PinGoal: <Sport SportType="2" LeagueGroupIds="122"/>
 				+ Saba Cricket: <Sport SportType="50" LeagueGroupIds="42"/>
@@ -106,6 +107,7 @@ AS
 		- 20250212@Kos: Remove BA [RedmineID: #216882]
 		- 20250415@Kos: Hotfix - VS racing range bettrans14 [Redmine: 224163]
 		- 20250415@Kos: Support Virtual Sports 7 [Redmine: 219083]
+		- 20250506@Kos: Support Saba Soccer Marble [#Redmine: 225015]
 */
 
 BEGIN

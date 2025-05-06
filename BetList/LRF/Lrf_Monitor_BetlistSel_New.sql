@@ -95,6 +95,7 @@ AS
 		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250321@Kos: Support basketball 6 new bettypes [#Redmine: 217687]
+		- 20250506@Kos: Support Saba Soccer Marble [#Redmine: 225015]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -117,6 +118,7 @@ AS
 				+ Sports Lottery: <Sport SportType="169" LeagueGroupIds="0"/>
 				+ Saba Soccer: <Sport SportType="1" LeagueGroupIds="42,74"/>
 				+ Saba Soccer PinGoal: <Sport SportType="1" LeagueGroupIds="113"/>
+				+ Saba Soccer Marble: <Sport SportType="1" LeagueGroupIds="252"/>
 				+ Saba Basketball: <Sport SportType="2" LeagueGroupIds="42"/>
 				+ Saba Basketball PinGoal: <Sport SportType="2" LeagueGroupIds="122"/>
 				+ Saba Cricket: <Sport SportType="50" LeagueGroupIds="42"/>
@@ -215,6 +217,7 @@ BEGIN
 	INSERT INTO @FullSportType
 	SELECT 1, '42,74'		-- Saba Soccer
 	UNION SELECT 1, '113'	-- Saba Soccer PinGoal
+	UNION SELECT 1, '252'	-- Saba Soccer Marble
 	UNION SELECT 2, '42'	-- Saba Basketball
 	UNION SELECT 2, '122'	-- Saba Basketball PinGoal
 	UNION SELECT 50, '42'	-- Saba Cricket

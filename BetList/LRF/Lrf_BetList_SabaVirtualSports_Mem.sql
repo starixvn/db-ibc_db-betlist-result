@@ -39,6 +39,7 @@ AS
 		- 20240509@Kos: Support Saba Kabaddi [RedmineID: #203612]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
+		- 20250506@Kos: Support Saba Soccer Marble [#Redmine: 225015]
 
 	Param's Explanation:
 		+ @DrawFilter:
@@ -46,9 +47,16 @@ AS
 			- 2: No Draw,
 			- 3: No Draw for Turnover only
 		+ @SportType: sport type
-			- -1: Saba Soccer PinGoal
-			- -2: Saba Basketball PinGoal
-			- -43: Saba E-Sports PinGoal
+			- -2: Saba Soccer (sporttype: 1, LeagueGroupID: 42, 74) + Saba Futsal (sporttype: 1, LeagueGroupID: 108)
+			- -4: Saba Soccer PinGoal (sporttype: 1, LeagueGroupID: 113)
+			- -5: Saba Basketball (sporttype: 2, LeagueGroupID: 42)
+			- -6: Saba Basketball PinGoal (sporttype: 2, LeagueGroupID: 122)
+			- -7: Saba E-Sports PinGoal (sporttype: 43, LeagueGroupID: 151)
+			- -8: Saba Cricket (sporttype: 50, LeagueGroupID: 42)
+			- -9: Saba Tennis (sporttype: 5, LeagueGroupID: 42)
+			- -10: Saba Ice Hockey (sporttype: 4, LeagueGroupID: 42)
+			- -11: Saba Kabaddi (sporttype: 47, LeagueGroupID: 42)
+			- -12: Saba Soccer Marble (sporttype: 1, LeagueGroupID: 252)
 */
 
 BEGIN
@@ -570,23 +578,25 @@ BEGIN
 			WHERE (@LeagueId = 0 OR leagueid = @LeagueId)
 				AND (@SportType = 0
 					OR sporttype = CASE
-									WHEN @SportType = -1 THEN 1
-									WHEN @SportType = -2 THEN 2
-									WHEN @SportType = -4 THEN 4
-									WHEN @SportType = -5 THEN 5
-									WHEN @SportType = -43 THEN 43
-									WHEN @SportType = -47 THEN 47
+									WHEN @SportType IN (-2, -4, -12) THEN 1
+									WHEN @SportType IN (-5, -6) THEN 2
+									WHEN @SportType = -10 THEN 4
+									WHEN @SportType = -9 THEN 5
+									WHEN @SportType = -7 THEN 43
+									WHEN @SportType = -11 THEN 47
+									WHEN @SportType = -8 THEN 50
 									ELSE @SportType
 								END)
-				AND ((@SportType IN (0, 1) AND sporttype = 1 AND LeagueGroupID IN (42, 74, 108))
-					OR (@SportType IN (0, -1) AND sporttype = 1 AND LeagueGroupID IN (113))
-					OR (@SportType IN (0, 2) AND sporttype = 2 AND LeagueGroupID IN (42))
-					OR (@SportType IN (0, -2) AND sporttype = 2 AND LeagueGroupID IN (122))
-					OR (@SportType IN (0, 4) AND sporttype = 4 AND LeagueGroupID IN (42))
-					OR (@SportType IN (0, 5) AND sporttype = 5 AND LeagueGroupID IN (42))
-					OR (@SportType IN (0, -43) AND sporttype = 43 AND LeagueGroupID IN (151))
-					OR (@SportType IN (0, 47) AND sporttype = 47 AND LeagueGroupID IN (42))
-					OR (sporttype = 50 AND LeagueGroupID IN (42)))
+				AND ((@SportType IN (0, -2) AND sporttype = 1 AND LeagueGroupID IN (42, 74, 108))
+					OR (@SportType IN (0, -4) AND sporttype = 1 AND LeagueGroupID IN (113))
+					OR (@SportType IN (0, -5) AND sporttype = 2 AND LeagueGroupID IN (42))
+					OR (@SportType IN (0, -6) AND sporttype = 2 AND LeagueGroupID IN (122))
+					OR (@SportType IN (0, -10) AND sporttype = 4 AND LeagueGroupID IN (42))
+					OR (@SportType IN (0, -9) AND sporttype = 5 AND LeagueGroupID IN (42))
+					OR (@SportType IN (0, -7) AND sporttype = 43 AND LeagueGroupID IN (151))
+					OR (@SportType IN (0, -11) AND sporttype = 47 AND LeagueGroupID IN (42))
+					OR (@SportType IN (0, -8) AND sporttype = 50 AND LeagueGroupID IN (42))
+					OR (@SportType IN (0, -12) AND sporttype = 1 AND LeagueGroupID IN (252)))
 
 			DELETE b
 			FROM #Data AS b
@@ -1232,4 +1242,3 @@ BEGIN
 	DROP TABLE #PagingData
 	DROP TABLE #ExchangeRate
 END
-GO

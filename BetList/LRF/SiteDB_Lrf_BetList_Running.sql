@@ -47,6 +47,7 @@ AS
 				+ Sports Lottery: <Sport SportType="169" LeagueGroupIds="0"/>
 				+ Saba Soccer: <Sport SportType="1" LeagueGroupIds="42,74"/>
 				+ Saba Soccer PinGoal: <Sport SportType="1" LeagueGroupIds="113"/>
+				+ Saba Soccer Marble: <Sport SportType="1" LeagueGroupIds="252"/>
 				+ Saba Basketball: <Sport SportType="2" LeagueGroupIds="42"/>
 				+ Saba Basketball PinGoal: <Sport SportType="2" LeagueGroupIds="122"/>
 				+ Saba Cricket: <Sport SportType="50" LeagueGroupIds="42"/>
@@ -103,6 +104,7 @@ AS
 					- Remove input param @ShowBA
 		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 		- 20250416@Kos: Extend input param length [Redmine: 219083]
+		- 20250506@Kos: Support Saba Soccer Marble [#Redmine: 225015]
 */
 
 BEGIN
@@ -136,6 +138,7 @@ BEGIN
 	INSERT INTO @SabaSportType
 	SELECT 1, '42,74'		-- Saba Soccer
 	UNION SELECT 1, '113'	-- Saba Soccer PinGoal
+	UNION SELECT 1, '252'	-- Saba Soccer Marble
 	UNION SELECT 2, '42'	-- Saba Basketball
 	UNION SELECT 2, '122'	-- Saba Basketball PinGoal
 	UNION SELECT 50, '42'	-- Saba Cricket
