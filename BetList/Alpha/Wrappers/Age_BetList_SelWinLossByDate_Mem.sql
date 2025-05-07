@@ -184,6 +184,7 @@ AS
 		- 20250421@Benji: Remove product detail for Playtech Live Casino [Redmine:#224687]
 		- 20250422@Benji: Support RichGaming [Redmine: #222365]
 		- 20250505@Benji:  HF - VS7 - Alpha - Cannot show data Result on Result pop up of ticket on range bettrans that drilldown from report Winloss [Redmine: #226050]
+		- 20250507@Benji: Support Saba Soccer Marble [Redmine:#223130]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -805,7 +806,7 @@ BEGIN
 							END
 					,LeagueGroupID = CASE 
 										WHEN ( 
-												(le.LeagueGroupID IN (42,74,108,113) AND m.sporttype = 1 ) 
+												(le.LeagueGroupID IN (42,74,108,113,252) AND m.sporttype = 1 ) 
 												OR (le.LeagueGroupID IN (122, 42) AND m.sporttype = 2 )
 												OR (le.LeagueGroupID = 42 AND m.sporttype IN (4, 5, 47, 50))
 												OR (le.LeagueGroupID = 151 AND m.sporttype = 43)
@@ -1168,7 +1169,7 @@ BEGIN
 						END
 				,LeagueGroupID = CASE 
 									WHEN ( 
-											(le.LeagueGroupID IN (42,74,108,113) AND m.sporttype = 1 ) 
+											(le.LeagueGroupID IN (42,74,108,113,252) AND m.sporttype = 1 ) 
 											OR (le.LeagueGroupID IN (122, 42) AND m.sporttype = 2 )
 											OR (le.LeagueGroupID = 42 AND m.sporttype IN (4, 5, 47, 50))
 											OR (le.LeagueGroupID = 151 AND m.sporttype = 43)
