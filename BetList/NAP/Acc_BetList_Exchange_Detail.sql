@@ -14,6 +14,7 @@ AS
 		- 20180313@Kos: First revision [#Redmine: 91808]
 		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
 		- 20240826@Kos: Support Exchange Running [#Redmine: 209743]
+		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
 */
 
 BEGIN
@@ -25,7 +26,7 @@ BEGIN
 		CategoryType	SMALLINT,
 		BetTaken		DATETIME,
 		WinLostDate		DATETIME,
-		Currency		TINYINT,
+		Currency		SMALLINT,
 		Stake			MONEY,
 		OddsRequest		SMALLMONEY,
 		OddsMatched		SMALLMONEY,

@@ -123,6 +123,7 @@ AS
 		- 20250410@Benji: Remove Unnecessary Returned Data (Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250418@Benji: Support RichGaming [Redmine: #224687]
+		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
 */
 
 BEGIN
@@ -195,7 +196,7 @@ BEGIN
 		ExtraInfo		VARCHAR(1000),
 		JackpotInfo		VARCHAR(50),
 		BetdaqId		BIGINT,
-		CurrencyId		TINYINT,
+		CurrencyId		SMALLINT,
 		SiteId			VARCHAR(7),
 		DeviceType		TINYINT
 	)
