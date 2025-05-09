@@ -29,6 +29,7 @@ AS
 		- 20250326@Benji: Support Upcoming Product (Microgaming Live Casino, Playtech Live Casino ) [Redmine: #221188]
 		- 20250410@Benji: Remove productID 101,107 (Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
+		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
 
 	Parameters:
 		- @TransType
@@ -125,7 +126,7 @@ BEGIN
 		MatchCode		VARCHAR(50),
 		BetTeam			NVARCHAR(200),
 		LeagueId		INT,
-		CurrencyId		TINYINT,
+		CurrencyId		SMALLINT,
 		SiteId			VARCHAR(7),
 		EventDate		DATETIME,
 		ExtraInfo		VARCHAR(1000),

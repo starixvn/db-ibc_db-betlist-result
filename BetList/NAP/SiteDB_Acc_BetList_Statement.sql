@@ -41,6 +41,7 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241210@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
 		- 20250116@Razor: Support Direct Member [Redmine: #211969]
+		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
 
 	Param's Explanation:
 		+ @TransType:
@@ -170,7 +171,7 @@ BEGIN
 		ExtraInfo			VARCHAR(1000),
 		WalletType			TINYINT,
 		RefCode				BIGINT,
-		CurrencyId			TINYINT,
+		CurrencyId			SMALLINT,
 		SiteId				VARCHAR(20),
 		DeviceType			TINYINT
 	);

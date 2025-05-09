@@ -33,6 +33,7 @@ AS
 		- 20240403@Razor: Support Saba xD [Redmine: #203371]
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20241218@Razor: Support Direct Member [Redmine: #211969]
+		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
 
 	Parameters:
 		- @TransType
@@ -136,7 +137,7 @@ BEGIN
 		BetdaqId		BIGINT,
 		ExtraInfo		VARCHAR(1000),
 		JackpotInfo		VARCHAR(50),
-		CurrencyId		TINYINT,
+		CurrencyId		SMALLINT,
 		SiteId			VARCHAR(7),
 		DeviceType		TINYINT
 	)
