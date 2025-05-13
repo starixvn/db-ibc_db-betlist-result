@@ -61,6 +61,7 @@ AS
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20250401@Razor: Support VS7 [Redmine: #221173]
+		- 202505009@Razor: HF - Timeout VS7 [Redmine: #226907]
 */
 
 BEGIN
@@ -235,7 +236,7 @@ BEGIN
 			FROM dbo.League3rd AS l WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo AS r WITH (NOLOCK) ON l.League3rdId = r.LeagueID
 				INNER JOIN dbo.VSOutright AS o WITH (NOLOCK) ON r.EventID = o.EventID
-			WHERE o.EventDate >= @EventDate AND o.EventDate <= @ToDate
+			WHERE o.EventDate = @EventDate
 				AND r.EventStatus ='completed'
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 				AND r.SportType = @SportType
@@ -250,7 +251,7 @@ BEGIN
 			FROM dbo.League3rd AS l WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON l.League3rdId = r.LeagueID
 				INNER JOIN dbo.VSOutright14 AS o WITH (NOLOCK) ON r.EventID = o.EventID
-			WHERE o.EventDate >= @EventDate AND o.EventDate <= @ToDate
+			WHERE o.EventDate = @EventDate
 				AND r.EventStatus ='completed'
 				AND l.isTest = ISNULL(@IsShowAll, l.isTest)
 				AND r.SportType = @SportType
