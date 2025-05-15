@@ -124,6 +124,7 @@ AS
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250418@Benji: Support RichGaming [Redmine: #224687]
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
+		- 20250515@Benji: Support W Casino [Redmine: #227510]
 */
 
 BEGIN
@@ -419,8 +420,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino, Playtech Live Casino, Microgaming Live
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107)
+			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino, Playtech Live Casino, Microgaming Live, W Casino
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107, 98)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -564,7 +565,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101) AND t3rd.val = @BetId)
+							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 98) AND t3rd.val = @BetId)
 							OR (s.ProductID = 39 AND b3rd.val = @BetId)
 							OR (s.productID = 107 AND b.Transdesc = @BetId)
 							)
@@ -820,8 +821,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino, Playtech Live Casino, Microgaming Live
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107)
+			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino, Playtech Live Casino, Microgaming Live, W Casino
+			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107, 98)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -965,7 +966,7 @@ BEGIN
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101) AND t3rd.val = @BetId)
+							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 98) AND t3rd.val = @BetId)
 							OR (s.ProductID = 39 AND b3rd.val = @BetId)
 							OR (s.productID = 107 AND b.Transdesc = @BetId)
 							)
