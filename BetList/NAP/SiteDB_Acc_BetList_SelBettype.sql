@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[SiteDB_Acc_BetList_SelBettype]
 	@CustId			INT,
+	@ShadowIds		NVARCHAR(MAX) = NULL,
 	@FromDate		SMALLDATETIME,
 	@ToDate			SMALLDATETIME,
 	@MoveBetsDay	SMALLDATETIME
@@ -16,6 +17,7 @@ AS
 		- 20220729@Kos: Scale out DBTRANS [Redmine: #175253]
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
+		- 20250207@Razor: Support SabaCoins multiple wallets [Redmine: 215807]
 */
 
 BEGIN
@@ -26,6 +28,14 @@ BEGIN
 	DECLARE @TempFromDate SMALLDATETIME
 	DECLARE @TempToDate SMALLDATETIME
 
+	DECLARE @TmpShadow TABLE (CustId INT)	
+	INSERT INTO @TmpShadow (CustId)
+	SELECT value
+	FROM STRING_SPLIT(@ShadowIds, ',')
+	WHERE value IS NOT NULL AND value != ''
+	
+	INSERT INTO @TmpShadow (CustId)
+	SELECT @CustId
 	-- bettrans range
 	IF @ToDate > @MoveBetsDay
 	BEGIN
@@ -36,10 +46,10 @@ BEGIN
 
 		INSERT INTO @BetTypeTable
 		SELECT DISTINCT bettype
-		FROM dbo.bettrans WITH (NOLOCK)
+		FROM dbo.bettrans AS b WITH (NOLOCK)
+			INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
 		WHERE bettype < 19001
 			AND bettype NOT IN (903, 904, 913, 914)
-			AND custid = @CustId
 			AND winlostdate BETWEEN @TempFromDate AND @ToDate
 			--exclude metric gaming running ticket
 			AND (bettype NOT BETWEEN 801 AND 806

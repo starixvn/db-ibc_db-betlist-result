@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[SiteDB_Acc_BetList_SelByRefNo_Mem]
 	@CustId			INT,
+	@ShadowIds		NVARCHAR(MAX) = NULL,
 	@RefNo			BIGINT,
 	@MoveBetsDay	SMALLDATETIME,
 	@BalanceUpDay	SMALLDATETIME,
@@ -49,6 +50,7 @@ AS
 		- 20250410@Benji: Remove Unnecessary Returned Data (Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
+		- 20250513@Razor: Support SabaCoins multiple wallets [Redmine: #215807]
 */
 
 BEGIN
@@ -152,6 +154,14 @@ BEGIN
 	WHERE BetType NOT IN (903, 904, 913, 914, 999)
 		AND ProductID NOT IN (2, 4, 7, 9, 13, 17, 19, 24, 26, 30, 31, 33)
 
+	DECLARE @TmpShadow TABLE (CustId INT)	
+	INSERT INTO @TmpShadow (CustId)
+	SELECT value
+	FROM STRING_SPLIT(@ShadowIds, ',')
+	WHERE value IS NOT NULL AND value != ''
+	
+	INSERT INTO @TmpShadow (CustId)
+	SELECT @CustId
 	-- FROM translog
 	SELECT TOP(1)
 		@TransId = b.translogid,
@@ -177,8 +187,8 @@ BEGIN
 			@RefNo = b.refno
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sp ON b.bettype = sp.bettype
-		WHERE b.custid = @CustId
-			AND ( b.transid = @RefNo
+			INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
+		WHERE( b.transid = @RefNo
 				OR ( b.refno = @RefNo
 					AND (sp.productid IN (8, 28, 38, 40, 43, 49, 63)
 						OR sp.bettype BETWEEN 801 AND 899
