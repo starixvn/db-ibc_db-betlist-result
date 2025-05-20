@@ -125,20 +125,21 @@ AS
 		- 20250418@Benji: Support RichGaming [Redmine: #224687]
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
 		- 20250515@Benji: Support W Casino [Redmine: #227510]
+		- 20250515@Benji: Support Automate Integration for Betlist [Redmineid: #227997]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix --
-	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
+	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500), Reftable TINYINT)
 
 	DECLARE @IsTest BIT = 0
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
-	SELECT ProductID, BetType, EventType, SubProduct
+	SELECT ProductID, BetType, EventType, SubProduct, Reftable
 	FROM dbo.f_SportBettypeMatrix_Sel (@ProductId, 0, 0, 2, '', '', @IsTest)
 
 	-- Get CustId if @CustId IS NULL
@@ -420,8 +421,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino, Playtech Live Casino, Microgaming Live, W Casino
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107, 98)
+			-- AllBet, SA Gaming, Sexy Gaming, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino, Playtech Live Casino, Microgaming Live	(Live Casino Products)	 			
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE Reftable = 2)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -562,19 +563,21 @@ BEGIN
 						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
 						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(ISNULL(bg.BetID3rd, ''), '|$|') ORDER BY id DESC) AS b3rd
 					WHERE b.custid = @CustId
+						AND s.Reftable = 2
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 98) AND t3rd.val = @BetId)
+							OR (s.ProductID NOT IN (107) AND t3rd.val = @BetId)
 							OR (s.ProductID = 39 AND b3rd.val = @BetId)
 							OR (s.productID = 107 AND b.Transdesc = @BetId)
 							)
-				END
-			END
+				END	
+			END				
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNGCasino
 			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, SABA Keno, ASKMESLOT, Funky Games, HOTDOG, ODIN GAMING, GPI Lottery, Rich Gaming
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 84, 86, 87, 89, 85, 100, 48, 91, 102, 103, 104, 95, 105, 108)
+			-- RNG Products
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE Reftable = 1)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -658,6 +661,7 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
 					WHERE b.custid = @CustId
+						AND s.Reftable = 1
 						AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND t3rd.val = @BetId
 				END
@@ -821,8 +825,8 @@ BEGIN
 				END
 			END
 
-			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino, Playtech Live Casino, Microgaming Live, W Casino
-			IF @ProductId IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 107, 98)
+			-- AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, PP Live Casino, FGG, YeeBet, WE, ON Casino, GPI Live Casino, Playtech Live Casino, Microgaming Live (Live Casino Products)
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE Reftable = 2)
 			BEGIN
 				IF (@GameId <> '' AND @ProductId <> 52)
 					OR @BetId <> ''
@@ -963,19 +967,20 @@ BEGIN
 						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
 						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(ISNULL(bg.BetID3rd, ''), '|$|')ORDER BY id DESC) AS b3rd
 					WHERE b.custid = @CustId
+						AND s.Reftable = 2
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND (@GameId = '' OR b.GameId3rd = @GameId)
 						AND (@BetId = ''
-							OR (s.ProductID IN (21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80, 96, 90, 101, 98) AND t3rd.val = @BetId)
+							OR (s.ProductID NOT IN (107) AND t3rd.val = @BetId)
 							OR (s.ProductID = 39 AND b3rd.val = @BetId)
 							OR (s.productID = 107 AND b.Transdesc = @BetId)
 							)
-				END
-			END
+				END	
+			END			
 
 			-- Macau Games, Pragmatic Casino, Card Club, Spadegaming, Saba.club, PG Soft, Joker, MaxGame, Habanero, CG, VGaming, AdvantPlay, AdvantPlay Mini, MG RNG Casino
 			-- SEAL Entertainment, MG RNGCasino, Jili, Live22, UU Slots, Saba xD, FastSpin, FA CHAI, Nextspin, Playtech, GPI, PLAY STAR, SABA Keno, ASKMESLOT, Funky Games, HOTDOG, ODIN GAMING, GPI Lottery, Rich Gaming
-			IF @ProductId IN (22, 32, 34, 36, 42, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 84, 86, 87, 89, 85, 100, 48, 91, 102, 103, 104, 95, 105, 108)
+		IF EXISTS (SELECT 1 FROM @SportBettype WHERE Reftable = 1)
 			BEGIN
 				IF @BetId <> ''
 				BEGIN
@@ -1059,6 +1064,7 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
 					WHERE b.custid = @CustId
+						AND s.Reftable = 1
 						AND b.winlostdate BETWEEN @BalanceUpDay AND @TempToDate
 						AND t3rd.val = @BetId
 				END
