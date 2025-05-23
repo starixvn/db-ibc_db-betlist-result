@@ -24,6 +24,7 @@ AS
 		- 20241212@Kos: Support GPI Live Casino [Redmine: 214458]
 		- 20250107@Kos: Support new ticket flow of SA Gaming [Redmine: 215645]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250523@Kos: Fix Grand Total value [RedmineID: #213933]
 
 	Parameters:
 		- @TransType
@@ -166,14 +167,17 @@ BEGIN
 				ELSE blc.actual_stake
 			END AS Actual_Stake,
 			CASE
+				WHEN blc.statusID IN (0, 1) THEN 0
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.winlost - bg.actual_stake, blc.winlost - blc.actual_stake)
 				ELSE blc.winlost - blc.actual_stake
 			END AS WinLost,
 			CASE
+				WHEN blc.statusID IN (0, 1) THEN 0
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.comm, blc.comm)
 				ELSE blc.comm
 			END AS Comm,
 			CASE
+				WHEN blc.statusID IN (0, 1) THEN 0
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.playercomm, blc.playercomm)
 				ELSE blc.playercomm
 			END AS PlayerComm,
