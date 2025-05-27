@@ -128,6 +128,7 @@ AS
 		- 20250418@Benji: Support RichGaming [Redmine: #224687]
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
 		- 20250513@Razor: Support SabaCoins multiple wallets [Redmine: #215807]
+		- 20250515@Benji: Support W Casino [RedmineID: 227510]
 
 */
 
@@ -953,6 +954,7 @@ BEGIN
 						WHEN s.ProductID = 91 THEN 'PS'								-- PLAY STAR
 						WHEN s.ProductID = 95 THEN 'HOT'							-- HOTDOG
 						WHEN s.ProductID = 96 THEN 'ON'								-- ON Casino
+						WHEN s.ProductID = 98 THEN 'WLC'							-- W Casino
 						WHEN s.ProductID = 100 THEN 'PTRNG'							-- Playtech
 						WHEN s.ProductID = 101 THEN 'PTLC'							-- Playtech Live Casino 
 						WHEN s.ProductID = 102 THEN 'SBK'							-- SABA Keno
@@ -990,7 +992,7 @@ BEGIN
 			OR (Product NOT IN ('SB', 'Parlay')
 				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'BG', 'MXG', 
 									'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 
-									'ON', 'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT', 'RGRNG')
+									'ON', 'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT', 'RGRNG', 'WLC')
 					OR WinLostDate < @Yesterday)
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'		-- Abnormal Bets
@@ -1572,7 +1574,7 @@ BEGIN
 					LEFT JOIN dbo.bettrans AS bt WITH(NOLOCK) ON bt.TransId = b.TransId
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 
-							'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'FS', 'FAC', 'NS', 'ON', 'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT', 'RGRNG')
+							'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'FS', 'FAC', 'NS', 'ON', 'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT', 'RGRNG', 'WLC')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips

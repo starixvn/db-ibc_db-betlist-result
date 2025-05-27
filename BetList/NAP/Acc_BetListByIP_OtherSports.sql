@@ -192,6 +192,7 @@ AS
 		- 20250326@Benji: Support Upcoming Product (HOTDOG, Kiron VS7, Microgaming Live Casino, GPI Lottery, ODIN GAMING, Playtech Live Casino ) [Redmine: #221188]
 		- 20250418@Benji: Support RichGaming [Redmine: #224687]
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
+		- 20250515@Benji: Support W Casino [Redmine: #227510]
 
 		
 */
@@ -735,6 +736,7 @@ BEGIN
 						WHEN s.ProductID = 91 THEN 'PS'								-- PLAY STAR
 						WHEN s.ProductID = 95 THEN 'HOT'							-- HOTDOG
 						WHEN s.ProductID = 96 THEN 'ON'								-- ON Casino
+						WHEN s.ProductID = 98 THEN 'WLC'							-- W Casino
 						WHEN s.ProductID = 100 THEN 'PTRNG'							-- Playtech
 						WHEN s.ProductID = 101 THEN 'PTLC'							-- Playtech Live Casino
 						WHEN s.ProductID = 102 THEN 'SBK'							-- Saba Keno
@@ -1203,7 +1205,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
 					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT', 'RGRNG')
+							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT', 'RGRNG', 'WLC')
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips
