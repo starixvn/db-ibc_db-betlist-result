@@ -50,6 +50,7 @@ AS
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250416@Dave: change datatype for ExchangeID [RedmineID: #221098]
 		- 20250418@Benji: Support Rich Gaming [Redmine: #224687]
+		- 20250515@Benji: Support W Casino [Redmine: #227510]
 */
 
 BEGIN
@@ -291,6 +292,7 @@ BEGIN
 						WHEN @ProductID = 91 THEN 'PS'			-- PLAY STAR
 						WHEN @ProductID = 95 THEN 'HOT'			-- HOTDOG
 						WHEN @ProductID = 96 THEN 'ON'			-- ON Casino
+						WHEN @ProductID = 98 THEN 'WLC'			-- W Casino
 						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @ProductID = 101 THEN 'PTLC'		-- Playtech Live Casino
 						WHEN @ProductID = 102 THEN 'SBK'		-- SABA Keno
@@ -1502,6 +1504,7 @@ BEGIN
 						WHEN @ProductId = 76 THEN 'YB'
 						WHEN @ProductId = 80 THEN 'WE'
 						WHEN @ProductId = 96 THEN 'ON'
+						WHEN @ProductID = 98 THEN 'WLC'			-- W Casino
 						WHEN @ProductId = 90 THEN 'GPILC'
 						WHEN @ProductID = 101 THEN 'PTLC'		-- Playtech Live Casino
 						WHEN @ProductId = 107 THEN 'MGLC' 		-- Microgaming Live						
