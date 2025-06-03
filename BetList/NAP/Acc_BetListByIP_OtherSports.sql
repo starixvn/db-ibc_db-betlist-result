@@ -193,6 +193,7 @@ AS
 		- 20250418@Benji: Support RichGaming [Redmine: #224687]
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
 		- 20250515@Benji: Support W Casino [Redmine: #227510]
+		- 20250515@Benji: Support Automate Integration for Betlist [Redmineid: #227997]
 
 		
 */
@@ -765,8 +766,8 @@ BEGIN
 			INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
 		DELETE @Data
-		WHERE Product = 'Unknown'
-			OR Product IS NULL
+		WHERE 
+			Product IS NULL
 			OR BetType IN (903, 904, 913, 914)
 
 		-- Delete Soccer tickets
@@ -1204,8 +1205,7 @@ BEGIN
 					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
 				WHERE b.TableID = 1
-					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'FS', 'FAC', 'NS',
-							'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'VGA', 'FGGL', 'YB', 'WE', 'UUSL', 'ON', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT', 'RGRNG', 'WLC')
+					AND (b.RefTable NOT IN (1,2)
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips

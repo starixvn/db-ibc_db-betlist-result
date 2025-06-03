@@ -129,6 +129,7 @@ AS
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
 		- 20250513@Razor: Support SabaCoins multiple wallets [Redmine: #215807]
 		- 20250515@Benji: Support W Casino [RedmineID: 227510]
+		- 20250515@Benji: Support Automate Integration for Betlist [Redmineid: #227997]
 
 */
 
@@ -986,13 +987,11 @@ BEGIN
 			INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
 		DELETE @Data
-		WHERE Product = 'Unknown'
-			OR Product IS NULL
+		WHERE 
+			Product IS NULL
 			OR BetType IN (903, 904, 913, 914)
 			OR (Product NOT IN ('SB', 'Parlay')
-				AND (Product NOT IN ('OneRNG', 'AllBet', 'VB', 'PP', 'CC', 'SG', 'SAG', 'SBC', 'RNGW', 'SXG', 'IBCLC', 'ION', 'PGS', 'JK', 'WM', 'BG', 'MXG', 
-									'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'WE', 'L22', 'UUSL', 'SNG', 'FS', 'FAC', 'NS', 
-									'ON', 'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT', 'RGRNG', 'WLC')
+				AND (RefTable NOT IN (1,2)								
 					OR WinLostDate < @Yesterday)
 				AND ',' + @OriginalStatusIdList + ',' NOT LIKE '%,' + CONVERT(VARCHAR(3), StatusId) + ',%')
 			OR (',' + @OriginalStatusIdList + ',' NOT LIKE '%,99,%'		-- Abnormal Bets
@@ -1573,8 +1572,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND b.matchid = m3rd.match3rdid
 					LEFT JOIN dbo.bettrans AS bt WITH(NOLOCK) ON bt.TransId = b.TransId
 				WHERE b.TableID = 1
-					AND (b.Product NOT IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'PGS', 'JK', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 
-							'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE', 'UUSL', 'FS', 'FAC', 'NS', 'ON', 'PTRNG', 'GPIRNG', 'GPILC', 'PS', 'ASK', 'SBK', 'FG', 'HOT', 'ODG', 'PTLC', 'MGLC', 'GPILT', 'RGRNG', 'WLC')
+					AND (b.RefTable NOT IN (1,2)
 						OR b.WinLostDate < @Yesterday)
 
 				-- Get match info for Player Tips
