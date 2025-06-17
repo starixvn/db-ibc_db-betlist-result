@@ -51,6 +51,7 @@ AS
 		- 20250416@Dave: change datatype for ExchangeID [RedmineID: #221098]
 		- 20250418@Benji: Support Rich Gaming [Redmine: #224687]
 		- 20250515@Benji: Support W Casino [Redmine: #227510]
+		- 20250617@Benji: Support ClotPlay, AI Gaming [Redmine: #229171]
 */
 
 BEGIN
@@ -301,6 +302,8 @@ BEGIN
 						WHEN @ProductID = 105 THEN 'ODG'		-- ODIN GAMING
 						WHEN @ProductID = 107 THEN 'MGLC'		-- Microgaming Live
 						WHEN @ProductID = 108 THEN 'RGRNG'		-- Rich Gaming
+						WHEN @ProductID = 109 THEN 'CPRNG'		-- ClotPlay
+						WHEN @ProductID = 110 THEN 'AIG'		-- AI Gaming
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1240,6 +1243,8 @@ BEGIN
 						WHEN @ProductId = 104 THEN 'FG'			-- Funky Games
 						WHEN @ProductId = 105 THEN 'ODG'		-- ODIN GAMING
 						WHEN @ProductId = 108 THEN 'RGRNG'		-- Rich Gaming
+						WHEN @ProductID = 109 THEN 'CPRNG'		-- ClotPlay
+						WHEN @ProductID = 110 THEN 'AIG'		-- AI Gaming
 						ELSE 'Unknown'
 					END
 
