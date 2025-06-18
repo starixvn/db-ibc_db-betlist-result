@@ -43,6 +43,7 @@ AS
 		- 20250116@Razor: Support Direct Member [Redmine: #211969]
 		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
+		- 20250623@Benji: Support Playtech Live Jackpot[Redmine: #230127]
 		- 20250819@Razor: Support VS 2 - VS Tournament [Redmine: #235084]
 
 
@@ -2143,7 +2144,10 @@ BEGIN
 					b.winlostdate,
 					'' AS BetCheck,
 					'' AS transdesc,
-					0 AS OddsSpread,
+					CASE
+						WHEN s.SubProduct LIKE 'Jackpot%' THEN ISNULL(b.oddsspread, 0)
+						ELSE 0
+					END AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					'' AS ExtraInfo,
@@ -2243,7 +2247,10 @@ BEGIN
 					b.winlostdate,
 					'' AS BetCheck,
 					'' AS transdesc,
-					0 AS OddsSpread,
+					CASE
+						WHEN s.SubProduct LIKE 'Jackpot%' THEN ISNULL(SUM(blc.BetStake), 0)
+						ELSE 0
+					END AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					'' AS ExtraInfo,
@@ -2275,7 +2282,8 @@ BEGIN
 					b.matchid,
 					b.DeviceType,
 					blc.recommend,
-					blc.mrecommend
+					blc.mrecommend,
+					s.SubProduct
 				OPTION (RECOMPILE)
 			END
 

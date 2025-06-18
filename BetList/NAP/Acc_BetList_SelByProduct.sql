@@ -127,6 +127,7 @@ AS
 		- 20250515@Benji: Support W Casino [Redmine: #227510]
 		- 20250515@Benji: Support Automate Integration for Betlist [Redmineid: #227997]
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
+		- 20250618@Benji: Support Playtech Live Jackpot [Redmine: #230127]
 */
 
 BEGIN
@@ -472,6 +473,7 @@ BEGIN
 						0 AS Hdp2,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.odds, b.odds)
+							WHEN s.SubProduct LIKE 'Jackpot%' THEN b.ContributionRate
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -554,13 +556,22 @@ BEGIN
 							ELSE b.TranId3rd
 						END AS BetCheck,
 						b.transdesc,
-						0 AS OddsSpread,
+						CASE
+							WHEN s.SubProduct LIKE 'Jackpot%' AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							ELSE 0
+						END AS OddsSpread,
 						CASE
 							WHEN s.ProductID IN (39) THEN bg.ExtraInfo
 							ELSE b.ExtraInfo
 						END AS ExtraInfo,
-						'' AS JackpotInfo,
-						-1 AS BetdaqId,
+						CASE
+							WHEN s.SubProduct LIKE 'Jackpot%' THEN ISNULL(b.JackpotInfo, '')
+							ELSE ''
+						END AS JackpotInfo,
+						CASE
+							WHEN  s.SubProduct LIKE 'Jackpot%' THEN ISNULL(b.RefNo2, -1)
+							ELSE -1
+						END AS BetdaqId,
 						b.currency,
 						b.SiteId,
 						b.DeviceType
@@ -877,6 +888,7 @@ BEGIN
 						0 AS Hdp2,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.odds, b.odds)
+							WHEN s.SubProduct LIKE 'Jackpot%' THEN b.ContributionRate
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -959,13 +971,22 @@ BEGIN
 							ELSE b.TranId3rd
 						END AS BetCheck,
 						b.transdesc,
-						0 AS OddsSpread,
+						CASE
+							WHEN s.SubProduct LIKE 'Jackpot%' AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							ELSE 0
+						END AS OddsSpread,
 						CASE
 							WHEN s.ProductID IN (39) THEN ISNULL(bg.ExtraInfo, b.ExtraInfo)
 							ELSE b.ExtraInfo
 						END AS ExtraInfo,
-						'' AS JackpotInfo,
-						-1 AS BetdaqId,
+						CASE
+							WHEN s.SubProduct LIKE 'Jackpot%' THEN ISNULL(b.JackpotInfo, '')
+							ELSE ''
+						END AS JackpotInfo,
+						CASE
+							WHEN s.SubProduct LIKE 'Jackpot%' THEN ISNULL(b.RefNo2, -1)
+							ELSE -1
+						END AS BetdaqId,
 						b.currency,
 						b.SiteId,
 						b.DeviceType

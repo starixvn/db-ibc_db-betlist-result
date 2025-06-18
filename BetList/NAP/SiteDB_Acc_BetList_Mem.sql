@@ -80,6 +80,7 @@ AS
 		- 20250515@Benji: Support W Casino [Redmine: #227510]
 		- 20250515@Benji: Support Automate Integration for Betlist [Redmineid: #227997]
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
+		- 20250618@Benji: Support Playtech Live Jackpot [Redmine: #230127]
 */
 
 BEGIN
@@ -930,7 +931,10 @@ BEGIN
 							ELSE AVG(blc.adiscount) 
 						END AS adiscount,
 						AVG(blc.sdiscount) AS sdiscount,
-						0 AS OddsSpread
+						CASE
+							WHEN c.SubProduct LIKE 'Jackpot%' THEN ISNULL(SUM(blc.BetStake), 0)
+							ELSE 0
+						END AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
 					WHERE (c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR c.RefTable = 2)
@@ -940,7 +944,8 @@ BEGIN
 						c.TransId,
 						c.Product,
 						blc.recommend,
-						blc.mrecommend
+						blc.mrecommend,
+						c.SubProduct
 				END
 			END
 
