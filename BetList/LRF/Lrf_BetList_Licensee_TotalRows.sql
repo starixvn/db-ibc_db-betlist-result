@@ -334,301 +334,156 @@ BEGIN
 		DECLARE @TempToDate	SMALLDATETIME,
 			@TempFromDate	SMALLDATETIME
 
-		IF @Username IS NULL OR @Username = '' OR @NumOfMem > 5000		-- Licensee level (not input username or number of searched member > 5000)
+		IF ',' + @StatusIdList + ',' LIKE '%,111,%'
+			OR ',' + @StatusIdList + ',' LIKE '%,112,%'
+			OR ',' + @StatusIdList + ',' LIKE '%,113,%'
 		BEGIN
-			-- Bettrans range
-			IF @ToDate > @MoveBetsDay
+			IF @Username IS NULL OR @Username = '' OR @NumOfMem > 5000		-- Licensee level (not input username or number of searched member > 5000)
 			BEGIN
-				SET @TempFromDate = CASE
-										WHEN @FromDate <= @MoveBetsDay THEN DATEADD(DAY, 1, @MoveBetsDay)
-										ELSE @FromDate
-									END
-
-				IF @OddsGroup = 'All' AND @CustomerClass = 'All'	-- don't need table Customer, custinfo
-				BEGIN
-					IF @Ip IS NULL OR @Ip = ''		-- don't need key lookup
-					BEGIN
-						SELECT @TotalRowsBettrans = COUNT(1)
-						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
-							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
-							LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
-							LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
-							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
-							LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
-							LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
-							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-							LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
-						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
-																								WHEN b.bettype IN (9, 29) THEN b.livehomescore
-																								ELSE b.liveindicator
-																							END) + ',%'
-							AND (@SportTypeList = 'All'
-								OR EXISTS (	SELECT 1 FROM #TempSportType
-											WHERE SportType = CASE
-																WHEN s.EventType = 1 THEN m.sporttype
-																WHEN b.bettype = 10 THEN l.sporttype
-																WHEN b.bettype IN (9, 29) THEN 999
-																WHEN s.ProductId IN (63) THEN b.matchid
-																WHEN s.EventType = 5 THEN m3rd.SportType
-																WHEN s.EventType = 3 THEN vr.sporttype
-																WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-																WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
-																WHEN s.RefTable IN (1, 2) THEN b.matchid
-																ELSE 0
-															END))
-							AND @LeagueId IN (0, CASE
-													WHEN s.EventType = 1 THEN m.leagueid
-													WHEN b.bettype = 10 THEN o.leagueid
-													ELSE -1
-												END)
-							AND (@MatchId IN (0, b.matchid)
-								OR b.matchid IN (SELECT MatchId FROM @Match))
-							AND 1 = CASE
-										WHEN s.ProductID = 1 THEN
-											CASE
-												WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-												WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-												ELSE 0
-											END
-										WHEN @CashOutMode = 2 THEN 0
-										ELSE 1
-									END
-							AND 1 = CASE
-										WHEN @PlatformType = 'All' THEN 1
-										WHEN pl.BetFrom IS NOT NULL THEN 1
-										WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
-										WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
-										ELSE 0
-									END
-					END
-					ELSE
-					BEGIN
-						SELECT @TotalRowsBettrans = COUNT(1)
-						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
-							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
-							LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
-							LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
-							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
-							LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
-							LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
-							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-							LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
-						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
-																								WHEN b.bettype IN (9, 29) THEN b.livehomescore
-																								ELSE b.liveindicator
-																							END) + ',%'
-							AND (@SportTypeList = 'All'
-								OR EXISTS (	SELECT 1 FROM #TempSportType
-											WHERE SportType = CASE
-																WHEN s.EventType = 1 THEN m.sporttype
-																WHEN b.bettype = 10 THEN l.sporttype
-																WHEN b.bettype IN (9, 29) THEN 999
-																WHEN s.ProductId IN (63) THEN b.matchid
-																WHEN s.EventType = 5 THEN m3rd.SportType
-																WHEN s.EventType = 3 THEN vr.sporttype
-																WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-																WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
-																WHEN s.RefTable IN (1, 2) THEN b.matchid
-																ELSE 0
-															END))
-							AND @LeagueId IN (0, CASE
-													WHEN s.EventType = 1 THEN m.leagueid
-													WHEN b.bettype = 10 THEN o.leagueid
-													ELSE -1
-												END)
-							AND (@MatchId IN (0, b.matchid)
-								OR b.matchid IN (SELECT MatchId FROM @Match))
-							AND 1 = CASE
-										WHEN s.ProductID = 1 THEN
-											CASE
-												WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-												WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-												ELSE 0
-											END
-										WHEN @CashOutMode = 2 THEN 0
-										ELSE 1
-									END
-							AND b.ip = @Ip
-							AND 1 = CASE
-										WHEN @PlatformType = 'All' THEN 1
-										WHEN pl.BetFrom IS NOT NULL THEN 1
-										WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
-										WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
-										ELSE 0
-									END
-						END
-				END
-				ELSE
-				BEGIN
-					SELECT @TotalRowsBettrans = COUNT(1)
-					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
-						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
-						INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
-						INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = b.custid
-						LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
-						LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
-						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
-						LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
-						LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
-						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
-					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
-																							WHEN b.bettype IN (9, 29) THEN b.livehomescore
-																							ELSE b.liveindicator
-																						END) + ',%'
-						AND (@SportTypeList = 'All'
-							OR EXISTS (	SELECT 1 FROM #TempSportType
-										WHERE SportType = CASE
-															WHEN s.EventType = 1 THEN m.sporttype
-															WHEN b.bettype = 10 THEN l.sporttype
-															WHEN b.bettype IN (9, 29) THEN 999
-															WHEN s.ProductId IN (63) THEN b.matchid
-															WHEN s.EventType = 5 THEN m3rd.SportType
-															WHEN s.EventType = 3 THEN vr.sporttype
-															WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-															WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
-															WHEN s.RefTable IN (1, 2) THEN b.matchid
-															ELSE 0
-														END))
-						AND @LeagueId IN (0, CASE
-												WHEN s.EventType = 1 THEN m.leagueid
-												WHEN b.bettype = 10 THEN o.leagueid
-												ELSE -1
-											END)
-						AND (@MatchId IN (0, b.matchid)
-							OR b.matchid IN (SELECT MatchId FROM @Match))
-						AND 1 = CASE
-									WHEN s.ProductID = 1 THEN
-										CASE
-											WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-											WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-											ELSE 0
-										END
-									WHEN @CashOutMode = 2 THEN 0
-									ELSE 1
-								END
-						AND (@Ip IS NULL
-							OR @Ip IN (b.ip, ''))
-						AND 1 = CASE
-									WHEN @PlatformType = 'All' THEN 1
-									WHEN pl.BetFrom IS NOT NULL THEN 1
-									WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
-									WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
-									ELSE 0
-								END
-						AND (@OddsGroup = 'All'
-							OR ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%')
-						AND 1 = CASE
-									WHEN @CustomerClass = 'All' THEN 1
-									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND ci.CustomerClass IS NULL THEN 1
-									WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
-										AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), ci.CustomerClass) + ',%' THEN 1
-									WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), ci.CustomerClass) + ',%' THEN 1
-									ELSE 0
-								END
-				END
-			END
-
-			-- Bettrans14 range
-			IF @TotalRowsBettrans <= @MaxTotalRows
-			BEGIN
-				IF @FromDate <= @MoveBetsDay AND @ToDate >= @BalanceUpDay
+				-- Bettrans range
+				IF @ToDate > @MoveBetsDay
 				BEGIN
 					SET @TempFromDate = CASE
-											WHEN @FromDate < @BalanceUpDay THEN @BalanceUpDay
+											WHEN @FromDate <= @MoveBetsDay THEN DATEADD(DAY, 1, @MoveBetsDay)
 											ELSE @FromDate
 										END
 
-					SET @TempToDate = CASE
-										WHEN @ToDate > @MoveBetsDay THEN @MoveBetsDay
-										ELSE @ToDate
-									END
-
 					IF @OddsGroup = 'All' AND @CustomerClass = 'All'	-- don't need table Customer, custinfo
 					BEGIN
-						SELECT @TotalRowsBettrans14 = COUNT(1)
-						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_bettrans3)
-							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
-							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
-							LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
-							LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
-							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
-							LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
-							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
-							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-							LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
-						WHERE b.winlostdate BETWEEN @TempFromDate AND @TempToDate
-							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
-																								WHEN b.bettype IN (9, 29) THEN b.livehomescore
-																								ELSE b.liveindicator
-																							END) + ',%'
-							AND (@SportTypeList = 'All'
-								OR EXISTS (	SELECT 1 FROM #TempSportType
-											WHERE SportType = CASE
-																WHEN s.EventType = 1 THEN m.sporttype
-																WHEN b.bettype = 10 THEN l.sporttype
-																WHEN b.bettype IN (9, 29) THEN 999
-																WHEN s.ProductId IN (63) THEN b.matchid
-																WHEN s.EventType = 5 THEN m3rd.SportType
-																WHEN s.EventType = 3 THEN vr.sporttype
-																WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-																WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
-																WHEN s.RefTable IN (1, 2) THEN b.matchid
-																ELSE 0
-															END))
-							AND @LeagueId IN (0, CASE
-													WHEN s.EventType = 1 THEN m.leagueid
-													WHEN b.bettype = 10 THEN o.leagueid
-													ELSE -1
-												END)
-							AND (@MatchId IN (0, b.matchid)
-								OR b.matchid IN (SELECT MatchId FROM @Match))
-							AND 1 = CASE
-										WHEN s.ProductID = 1 THEN
-											CASE
-												WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-												WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-												ELSE 0
-											END
-										WHEN @CashOutMode = 2 THEN 0
-										ELSE 1
-									END
-							AND (@Ip IS NULL
-								OR @Ip IN (b.ip, ''))
-							AND 1 = CASE
-										WHEN @PlatformType = 'All' THEN 1
-										WHEN pl.BetFrom IS NOT NULL THEN 1
-										WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
-										WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
-										ELSE 0
-									END
+						IF @Ip IS NULL OR @Ip = ''		-- don't need key lookup
+						BEGIN
+							SELECT @TotalRowsBettrans = COUNT(1)
+							FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
+								INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+								INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+								LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+								LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
+								LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+								LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+								LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+								LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+								LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+							WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+								AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+								AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
+																									WHEN b.bettype IN (9, 29) THEN b.livehomescore
+																									ELSE b.liveindicator
+																								END) + ',%'
+								AND (@SportTypeList = 'All'
+									OR EXISTS (	SELECT 1 FROM #TempSportType
+												WHERE SportType = CASE
+																	WHEN s.EventType = 1 THEN m.sporttype
+																	WHEN b.bettype = 10 THEN l.sporttype
+																	WHEN b.bettype IN (9, 29) THEN 999
+																	WHEN s.ProductId IN (63) THEN b.matchid
+																	WHEN s.EventType = 5 THEN m3rd.SportType
+																	WHEN s.EventType = 3 THEN vr.sporttype
+																	WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
+																	WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+																	WHEN s.RefTable IN (1, 2) THEN b.matchid
+																	ELSE 0
+																END))
+								AND @LeagueId IN (0, CASE
+														WHEN s.EventType = 1 THEN m.leagueid
+														WHEN b.bettype = 10 THEN o.leagueid
+														ELSE -1
+													END)
+								AND (@MatchId IN (0, b.matchid)
+									OR b.matchid IN (SELECT MatchId FROM @Match))
+								AND 1 = CASE
+											WHEN s.ProductID = 1 THEN
+												CASE
+													WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+													WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
+													ELSE 0
+												END
+											WHEN @CashOutMode = 2 THEN 0
+											ELSE 1
+										END
+								AND 1 = CASE
+											WHEN @PlatformType = 'All' THEN 1
+											WHEN pl.BetFrom IS NOT NULL THEN 1
+											WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
+											WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
+											ELSE 0
+										END
+						END
+						ELSE
+						BEGIN
+							SELECT @TotalRowsBettrans = COUNT(1)
+							FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
+								INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+								INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+								LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+								LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
+								LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+								LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+								LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+								LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+								LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+							WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
+								AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+								AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
+																									WHEN b.bettype IN (9, 29) THEN b.livehomescore
+																									ELSE b.liveindicator
+																								END) + ',%'
+								AND (@SportTypeList = 'All'
+									OR EXISTS (	SELECT 1 FROM #TempSportType
+												WHERE SportType = CASE
+																	WHEN s.EventType = 1 THEN m.sporttype
+																	WHEN b.bettype = 10 THEN l.sporttype
+																	WHEN b.bettype IN (9, 29) THEN 999
+																	WHEN s.ProductId IN (63) THEN b.matchid
+																	WHEN s.EventType = 5 THEN m3rd.SportType
+																	WHEN s.EventType = 3 THEN vr.sporttype
+																	WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
+																	WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+																	WHEN s.RefTable IN (1, 2) THEN b.matchid
+																	ELSE 0
+																END))
+								AND @LeagueId IN (0, CASE
+														WHEN s.EventType = 1 THEN m.leagueid
+														WHEN b.bettype = 10 THEN o.leagueid
+														ELSE -1
+													END)
+								AND (@MatchId IN (0, b.matchid)
+									OR b.matchid IN (SELECT MatchId FROM @Match))
+								AND 1 = CASE
+											WHEN s.ProductID = 1 THEN
+												CASE
+													WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+													WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
+													ELSE 0
+												END
+											WHEN @CashOutMode = 2 THEN 0
+											ELSE 1
+										END
+								AND b.ip = @Ip
+								AND 1 = CASE
+											WHEN @PlatformType = 'All' THEN 1
+											WHEN pl.BetFrom IS NOT NULL THEN 1
+											WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
+											WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
+											ELSE 0
+										END
+							END
 					END
 					ELSE
 					BEGIN
-						SELECT @TotalRowsBettrans14 = COUNT(1)
-						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_bettrans3)
+						SELECT @TotalRowsBettrans = COUNT(1)
+						FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_Recommend)
 							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 							INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 							INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = b.custid
 							LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 							LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
-							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
-							LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
-							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+							LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+							LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+							LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
 							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-							LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
-						WHERE b.winlostdate BETWEEN @TempFromDate AND @TempToDate
+							LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+						WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
 																								WHEN b.bettype IN (9, 29) THEN b.livehomescore
@@ -686,58 +541,35 @@ BEGIN
 									END
 					END
 				END
-			END
 
-			-- Bettrans_bk range
-			IF @TotalRowsBettrans + @TotalRowsBettrans14 <= @MaxTotalRows
-			BEGIN
-				IF @FromDate < @BalanceUpDay
+				-- Bettrans14 range
+				IF @TotalRowsBettrans <= @MaxTotalRows
 				BEGIN
-					SET @TempToDate = CASE
-										WHEN @ToDate >= DATEADD(DD, -1, @BalanceUpDay) THEN DATEADD(DD, -1, @BalanceUpDay)
-										ELSE @ToDate
-									END
-
-					SET @TempFromDate = @TempToDate
-
-					DECLARE
-						@TmpTotalRowsBettransBk	INT	= 0,
-						@TotalRowsPerDay		INT	= 0,
-						@DayRange				INT	= 0
-
-					SELECT @TotalRowsPerDay = COUNT(1)
-					FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_Recommend)
-						INNER JOIN #TempAg AS a ON b.recommend = a.CustId
-						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
-					WHERE b.winlostdate = @TempToDate
-
-					SELECT @DayRange = CASE
-											WHEN @TotalRowsPerDay = 0 THEN 31
-											WHEN 2000000 / @TotalRowsPerDay <= 31 THEN 2000000 / @TotalRowsPerDay
-											ELSE 31
-										END
-
-					SET @TempFromDate = CASE
-											WHEN @FromDate < DATEADD(DD, -@DayRange, @TempToDate) THEN DATEADD(DD, -@DayRange, @TempToDate)
-											ELSE @FromDate
-										END
-
-					WHILE @TotalRowsBettrans + @TotalRowsBettrans14 + @TotalRowsBettransBk <= @MaxTotalRows
-						AND @TempFromDate >= @FromDate
+					IF @FromDate <= @MoveBetsDay AND @ToDate >= @BalanceUpDay
 					BEGIN
+						SET @TempFromDate = CASE
+												WHEN @FromDate < @BalanceUpDay THEN @BalanceUpDay
+												ELSE @FromDate
+											END
+
+						SET @TempToDate = CASE
+											WHEN @ToDate > @MoveBetsDay THEN @MoveBetsDay
+											ELSE @ToDate
+										END
+
 						IF @OddsGroup = 'All' AND @CustomerClass = 'All'	-- don't need table Customer, custinfo
 						BEGIN
-							SELECT @TmpTotalRowsBettransBk = COUNT(1)
-							FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_Recommend)
+							SELECT @TotalRowsBettrans14 = COUNT(1)
+							FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_bettrans3)
 								INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 								INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 								LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 								LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
-								LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
-								LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
-								LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+								LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+								LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+								LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
 								LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-								LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+								LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
 							WHERE b.winlostdate BETWEEN @TempFromDate AND @TempToDate
 								AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 								AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
@@ -787,19 +619,19 @@ BEGIN
 						END
 						ELSE
 						BEGIN
-							SELECT @TmpTotalRowsBettransBk = COUNT(1)
-							FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_Recommend)
+							SELECT @TotalRowsBettrans14 = COUNT(1)
+							FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_bettrans3)
 								INNER JOIN #TempAg AS a ON b.recommend = a.CustId
 								INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 								INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 								INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = b.custid
 								LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 								LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
-								LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
-								LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
-								LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+								LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+								LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+								LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
 								LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-								LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+								LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
 							WHERE b.winlostdate BETWEEN @TempFromDate AND @TempToDate
 								AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 								AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
@@ -857,124 +689,303 @@ BEGIN
 											ELSE 0
 										END
 						END
+					END
+				END
 
-						SELECT @TotalRowsBettransBk = @TotalRowsBettransBk + @TmpTotalRowsBettransBk
+				-- Bettrans_bk range
+				IF @TotalRowsBettrans + @TotalRowsBettrans14 <= @MaxTotalRows
+				BEGIN
+					IF @FromDate < @BalanceUpDay
+					BEGIN
+						SET @TempToDate = CASE
+											WHEN @ToDate >= DATEADD(DD, -1, @BalanceUpDay) THEN DATEADD(DD, -1, @BalanceUpDay)
+											ELSE @ToDate
+										END
 
-						IF @TempFromDate = @FromDate
-						BEGIN
-							SET @TempFromDate = DATEADD(DD, -1, @TempFromDate)
-						END
-						ELSE
-						BEGIN
-							SET @TempToDate = CASE
-												WHEN @ToDate >= DATEADD(DD, -1, @TempFromDate) THEN DATEADD(DD, -1, @TempFromDate)
-												ELSE @ToDate
+						SET @TempFromDate = @TempToDate
+
+						DECLARE
+							@TmpTotalRowsBettransBk	INT	= 0,
+							@TotalRowsPerDay		INT	= 0,
+							@DayRange				INT	= 0
+
+						SELECT @TotalRowsPerDay = COUNT(1)
+						FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_Recommend)
+							INNER JOIN #TempAg AS a ON b.recommend = a.CustId
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+						WHERE b.winlostdate = @TempToDate
+
+						SELECT @DayRange = CASE
+												WHEN @TotalRowsPerDay = 0 THEN 31
+												WHEN 2000000 / @TotalRowsPerDay <= 31 THEN 2000000 / @TotalRowsPerDay
+												ELSE 31
 											END
-							SET @TempFromDate = CASE
+
+						SET @TempFromDate = CASE
 												WHEN @FromDate < DATEADD(DD, -@DayRange, @TempToDate) THEN DATEADD(DD, -@DayRange, @TempToDate)
 												ELSE @FromDate
 											END
+
+						WHILE @TotalRowsBettrans + @TotalRowsBettrans14 + @TotalRowsBettransBk <= @MaxTotalRows
+							AND @TempFromDate >= @FromDate
+						BEGIN
+							DECLARE @TmpDate TABLE (Date SMALLDATETIME)
+
+							DECLARE @TmpAgDate TABLE (
+								CustId	INT,
+								Date	SMALLDATETIME
+							)
+
+							;WITH X AS 
+							(
+								SELECT @TempFromDate AS VAL
+								UNION ALL
+								SELECT DATEADD(DD, 1, VAL) FROM X
+								WHERE VAL < @TempToDate
+							)
+							INSERT INTO @TmpDate
+							SELECT *
+							FROM X
+							OPTION(MAXRECURSION 0)
+
+							INSERT INTO @TmpAgDate
+							SELECT
+								a.CustId,
+								d.Date
+							FROM #TempAg AS a
+								CROSS JOIN @TmpDate AS d
+
+							IF @OddsGroup = 'All' AND @CustomerClass = 'All'	-- don't need table Customer, custinfo
+							BEGIN
+								IF @SportTypeList = 'All' AND @LeagueId = 0
+								BEGIN
+									IF ',' + @StatusIdList + ',' LIKE '%,111,%'
+										AND ',' + @StatusIdList + ',' LIKE '%,112,%'
+										AND ',' + @StatusIdList + ',' LIKE '%,113,%'
+										AND ',' + @LiveIndicator + ',' LIKE '%,0,%'
+										AND ',' + @LiveIndicator + ',' LIKE '%,1,%'
+										AND ',' + @LiveIndicator + ',' LIKE '%,2,%'
+										AND @MatchId = 0
+										AND @CashOutMode = 0
+										AND (@Ip IS NULL OR @Ip = '')
+										AND @PlatformType = 'All'
+									BEGIN
+										SELECT @TmpTotalRowsBettransBk = COUNT(1)
+										FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+											INNER JOIN @TmpAgDate AS a ON a.CustId = b.recommend AND a.Date = b.winlostdate
+											INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+									END
+									ELSE
+									BEGIN
+										SELECT @TmpTotalRowsBettransBk = COUNT(1)
+										FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+											INNER JOIN @TmpAgDate AS a ON a.CustId = b.recommend AND a.Date = b.winlostdate
+											INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+											LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+											LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
+										WHERE ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+											AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
+																												WHEN b.bettype IN (9, 29) THEN b.livehomescore
+																												ELSE b.liveindicator
+																											END) + ',%'
+											AND (@MatchId IN (0, b.matchid)
+												OR b.matchid IN (SELECT MatchId FROM @Match))
+											AND 1 = CASE
+														WHEN s.ProductID = 1 THEN
+															CASE
+																WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+																WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
+																ELSE 0
+															END
+														WHEN @CashOutMode = 2 THEN 0
+														ELSE 1
+													END
+											AND (@Ip IS NULL
+												OR @Ip IN (b.ip, ''))
+											AND 1 = CASE
+														WHEN @PlatformType = 'All' THEN 1
+														WHEN pl.BetFrom IS NOT NULL THEN 1
+														WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
+														WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
+														ELSE 0
+													END
+									END
+								END
+								ELSE
+								BEGIN
+									SELECT @TmpTotalRowsBettransBk = COUNT(1)
+									FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+										INNER JOIN @TmpAgDate AS a ON a.CustId = b.recommend AND a.Date = b.winlostdate
+										INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+										LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+										LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
+										LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+										LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+										LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+										LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+										LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+									WHERE ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+										AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
+																											WHEN b.bettype IN (9, 29) THEN b.livehomescore
+																											ELSE b.liveindicator
+																										END) + ',%'
+										AND (@SportTypeList = 'All'
+											OR EXISTS (	SELECT 1 FROM #TempSportType
+														WHERE SportType = CASE
+																			WHEN s.EventType = 1 THEN m.sporttype
+																			WHEN b.bettype = 10 THEN l.sporttype
+																			WHEN b.bettype IN (9, 29) THEN 999
+																			WHEN s.ProductId IN (63) THEN b.matchid
+																			WHEN s.EventType = 5 THEN m3rd.SportType
+																			WHEN s.EventType = 3 THEN vr.sporttype
+																			WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
+																			WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+																			WHEN s.RefTable IN (1, 2) THEN b.matchid
+																			ELSE 0
+																		END))
+										AND @LeagueId IN (0, CASE
+																WHEN s.EventType = 1 THEN m.leagueid
+																WHEN b.bettype = 10 THEN o.leagueid
+																ELSE -1
+															END)
+										AND (@MatchId IN (0, b.matchid)
+											OR b.matchid IN (SELECT MatchId FROM @Match))
+										AND 1 = CASE
+													WHEN s.ProductID = 1 THEN
+														CASE
+															WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+															WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
+															ELSE 0
+														END
+													WHEN @CashOutMode = 2 THEN 0
+													ELSE 1
+												END
+										AND (@Ip IS NULL
+											OR @Ip IN (b.ip, ''))
+										AND 1 = CASE
+													WHEN @PlatformType = 'All' THEN 1
+													WHEN pl.BetFrom IS NOT NULL THEN 1
+													WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
+													WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
+													ELSE 0
+												END
+								END
+							END
+							ELSE
+							BEGIN
+								SELECT @TmpTotalRowsBettransBk = COUNT(1)
+								FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
+									INNER JOIN @TmpAgDate AS a ON a.CustId = b.recommend AND a.Date = b.winlostdate
+									INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+									INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
+									INNER JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = b.custid
+									LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+									LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
+									LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+									LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+									LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+									LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+									LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+								WHERE ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+									AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
+																										WHEN b.bettype IN (9, 29) THEN b.livehomescore
+																										ELSE b.liveindicator
+																									END) + ',%'
+									AND (@SportTypeList = 'All'
+										OR EXISTS (	SELECT 1 FROM #TempSportType
+													WHERE SportType = CASE
+																		WHEN s.EventType = 1 THEN m.sporttype
+																		WHEN b.bettype = 10 THEN l.sporttype
+																		WHEN b.bettype IN (9, 29) THEN 999
+																		WHEN s.ProductId IN (63) THEN b.matchid
+																		WHEN s.EventType = 5 THEN m3rd.SportType
+																		WHEN s.EventType = 3 THEN vr.sporttype
+																		WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
+																		WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+																		WHEN s.RefTable IN (1, 2) THEN b.matchid
+																		ELSE 0
+																	END))
+									AND @LeagueId IN (0, CASE
+															WHEN s.EventType = 1 THEN m.leagueid
+															WHEN b.bettype = 10 THEN o.leagueid
+															ELSE -1
+														END)
+									AND (@MatchId IN (0, b.matchid)
+										OR b.matchid IN (SELECT MatchId FROM @Match))
+									AND 1 = CASE
+												WHEN s.ProductID = 1 THEN
+													CASE
+														WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+														WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
+														ELSE 0
+													END
+												WHEN @CashOutMode = 2 THEN 0
+												ELSE 1
+											END
+									AND (@Ip IS NULL
+										OR @Ip IN (b.ip, ''))
+									AND 1 = CASE
+												WHEN @PlatformType = 'All' THEN 1
+												WHEN pl.BetFrom IS NOT NULL THEN 1
+												WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
+												WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
+												ELSE 0
+											END
+									AND (@OddsGroup = 'All'
+										OR ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%')
+									AND 1 = CASE
+												WHEN @CustomerClass = 'All' THEN 1
+												WHEN ',' + @CustomerClass + ',' LIKE '%,0,%' AND ci.CustomerClass IS NULL THEN 1
+												WHEN ',' + @CustomerClass + ',' LIKE '%,0,%'
+													AND ',' + @FullCustomerClass + ',' NOT LIKE '%,' + CONVERT(VARCHAR(6), ci.CustomerClass) + ',%' THEN 1
+												WHEN ',' + @CustomerClass + ',' LIKE '%,' + CONVERT(VARCHAR(6), ci.CustomerClass) + ',%' THEN 1
+												ELSE 0
+											END
+							END
+
+							SELECT @TotalRowsBettransBk = @TotalRowsBettransBk + @TmpTotalRowsBettransBk
+
+							IF @TempFromDate = @FromDate
+							BEGIN
+								SET @TempFromDate = DATEADD(DD, -1, @TempFromDate)
+							END
+							ELSE
+							BEGIN
+								SET @TempToDate = CASE
+													WHEN @ToDate >= DATEADD(DD, -1, @TempFromDate) THEN DATEADD(DD, -1, @TempFromDate)
+													ELSE @ToDate
+												END
+								SET @TempFromDate = CASE
+													WHEN @FromDate < DATEADD(DD, -@DayRange, @TempToDate) THEN DATEADD(DD, -@DayRange, @TempToDate)
+													ELSE @FromDate
+												END
+							END
 						END
 					END
 				END
 			END
-		END
-		ELSE
-		BEGIN
-			-- Bettrans range
-			IF @ToDate > @MoveBetsDay
+			ELSE
 			BEGIN
-				SET @TempFromDate = CASE
-										WHEN @FromDate <= @MoveBetsDay THEN DATEADD(DAY, 1, @MoveBetsDay)
-										ELSE @FromDate
-									END
-
-				SELECT @TotalRowsBettrans = COUNT(1)
-				FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
-					INNER JOIN #TempCust AS c ON b.custid = c.CustId
-					INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
-					LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
-					LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
-					LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
-					LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
-					LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
-					LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-					LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
-				WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
-					AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-					AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
-																						WHEN b.bettype IN (9, 29) THEN b.livehomescore
-																						ELSE b.liveindicator
-																					END) + ',%'
-					AND (@SportTypeList = 'All'
-						OR EXISTS (	SELECT 1 FROM #TempSportType
-									WHERE SportType = CASE
-														WHEN s.EventType = 1 THEN m.sporttype
-														WHEN b.bettype = 10 THEN l.sporttype
-														WHEN b.bettype IN (9, 29) THEN 999
-														WHEN s.ProductId IN (63) THEN b.matchid
-														WHEN s.EventType = 5 THEN m3rd.SportType
-														WHEN s.EventType = 3 THEN vr.sporttype
-														WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-														WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
-														WHEN s.RefTable IN (1, 2) THEN b.matchid
-														ELSE 0
-													END))
-					AND @LeagueId IN (0, CASE
-											WHEN s.EventType = 1 THEN m.leagueid
-											WHEN b.bettype = 10 THEN o.leagueid
-											ELSE -1
-										END)
-					AND (@MatchId IN (0, b.matchid)
-						OR b.matchid IN (SELECT MatchId FROM @Match))
-					AND 1 = CASE
-								WHEN s.ProductID = 1 THEN
-									CASE
-										WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-										WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-										ELSE 0
-									END
-								WHEN @CashOutMode = 2 THEN 0
-								ELSE 1
-							END
-					AND (@Ip IS NULL
-						OR @Ip IN (b.ip, ''))
-					AND 1 = CASE
-								WHEN @PlatformType = 'All' THEN 1
-								WHEN pl.BetFrom IS NOT NULL THEN 1
-								WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
-								WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
-								ELSE 0
-							END
-			END
-
-			-- Bettrans14 range
-			IF @TotalRowsBettrans <= @MaxTotalRows
-			BEGIN
-				IF @FromDate <= @MoveBetsDay
+				-- Bettrans range
+				IF @ToDate > @MoveBetsDay
 				BEGIN
 					SET @TempFromDate = CASE
-										WHEN @FromDate < @BalanceUpDay THEN @BalanceUpDay
-										ELSE @FromDate
-									END
+											WHEN @FromDate <= @MoveBetsDay THEN DATEADD(DAY, 1, @MoveBetsDay)
+											ELSE @FromDate
+										END
 
-					SET @TempToDate = CASE
-										WHEN @ToDate > @MoveBetsDay THEN @MoveBetsDay
-										ELSE @ToDate
-									END
-
-					SELECT @TotalRowsBettrans14 = COUNT(1)
-					FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_bettrans3)
+					SELECT @TotalRowsBettrans = COUNT(1)
+					FROM dbo.bettrans AS b WITH (NOLOCK, INDEX = IX_CustId)
 						INNER JOIN #TempCust AS c ON b.custid = c.CustId
 						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
 						LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
 						LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
-						LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
-						LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
-						LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+						LEFT JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+						LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+						LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
 						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-						LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
-					WHERE b.winlostdate BETWEEN @TempFromDate AND @TempToDate
+						LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+					WHERE b.winlostdate BETWEEN @TempFromDate AND @ToDate
 						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
 						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
 																							WHEN b.bettype IN (9, 29) THEN b.livehomescore
@@ -1021,75 +1032,150 @@ BEGIN
 									ELSE 0
 								END
 				END
-			END
 
-			-- Bettrans_bk range
-			IF @TotalRowsBettrans + @TotalRowsBettrans14 <= @MaxTotalRows
-			BEGIN
-				IF @FromDate < @BalanceUpDay
+				-- Bettrans14 range
+				IF @TotalRowsBettrans <= @MaxTotalRows
 				BEGIN
-					SET @TempToDate = CASE
-									WHEN @ToDate >= DATEADD(DD, -1, @BalanceUpDay) THEN DATEADD(DD, -1, @BalanceUpDay)
-									ELSE @ToDate
-								END
-
-					SELECT @TotalRowsBettransBk = COUNT(1)
-					FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
-						INNER JOIN #TempCust AS c ON b.custid = c.CustId
-						INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
-						LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
-						LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
-						LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
-						LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
-						LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
-						LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
-						LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
-					WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
-						AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
-						AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
-																							WHEN b.bettype IN (9, 29) THEN b.livehomescore
-																							ELSE b.liveindicator
-																						END) + ',%'
-						AND (@SportTypeList = 'All'
-							OR EXISTS (	SELECT 1 FROM #TempSportType
-										WHERE SportType = CASE
-															WHEN s.EventType = 1 THEN m.sporttype
-															WHEN b.bettype = 10 THEN l.sporttype
-															WHEN b.bettype IN (9, 29) THEN 999
-															WHEN s.ProductId IN (63) THEN b.matchid
-															WHEN s.EventType = 5 THEN m3rd.SportType
-															WHEN s.EventType = 3 THEN vr.sporttype
-															WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
-															WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
-															WHEN s.RefTable IN (1, 2) THEN b.matchid
-															ELSE 0
-														END))
-						AND @LeagueId IN (0, CASE
-												WHEN s.EventType = 1 THEN m.leagueid
-												WHEN b.bettype = 10 THEN o.leagueid
-												ELSE -1
-											END)
-						AND (@MatchId IN (0, b.matchid)
-							OR b.matchid IN (SELECT MatchId FROM @Match))
-						AND 1 = CASE
-									WHEN s.ProductID = 1 THEN
-										CASE
-											WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
-											WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
-											ELSE 0
+					IF @FromDate <= @MoveBetsDay
+					BEGIN
+						SET @TempFromDate = CASE
+											WHEN @FromDate < @BalanceUpDay THEN @BalanceUpDay
+											ELSE @FromDate
 										END
-									WHEN @CashOutMode = 2 THEN 0
-									ELSE 1
-								END
-						AND (@Ip IS NULL
-							OR @Ip IN (b.ip, ''))
-						AND 1 = CASE
-									WHEN @PlatformType = 'All' THEN 1
-									WHEN pl.BetFrom IS NOT NULL THEN 1
-									WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
-									WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
-									ELSE 0
-								END
+
+						SET @TempToDate = CASE
+											WHEN @ToDate > @MoveBetsDay THEN @MoveBetsDay
+											ELSE @ToDate
+										END
+
+						SELECT @TotalRowsBettrans14 = COUNT(1)
+						FROM dbo.bettrans14 AS b WITH (NOLOCK, INDEX = IX_bettrans3)
+							INNER JOIN #TempCust AS c ON b.custid = c.CustId
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+							LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
+							LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+							LEFT JOIN dbo.Match3rd14 AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+							LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+							LEFT JOIN dbo.VSRaceInfo14 AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+						WHERE b.winlostdate BETWEEN @TempFromDate AND @TempToDate
+							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
+																								WHEN b.bettype IN (9, 29) THEN b.livehomescore
+																								ELSE b.liveindicator
+																							END) + ',%'
+							AND (@SportTypeList = 'All'
+								OR EXISTS (	SELECT 1 FROM #TempSportType
+											WHERE SportType = CASE
+																WHEN s.EventType = 1 THEN m.sporttype
+																WHEN b.bettype = 10 THEN l.sporttype
+																WHEN b.bettype IN (9, 29) THEN 999
+																WHEN s.ProductId IN (63) THEN b.matchid
+																WHEN s.EventType = 5 THEN m3rd.SportType
+																WHEN s.EventType = 3 THEN vr.sporttype
+																WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
+																WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+																WHEN s.RefTable IN (1, 2) THEN b.matchid
+																ELSE 0
+															END))
+							AND @LeagueId IN (0, CASE
+													WHEN s.EventType = 1 THEN m.leagueid
+													WHEN b.bettype = 10 THEN o.leagueid
+													ELSE -1
+												END)
+							AND (@MatchId IN (0, b.matchid)
+								OR b.matchid IN (SELECT MatchId FROM @Match))
+							AND 1 = CASE
+										WHEN s.ProductID = 1 THEN
+											CASE
+												WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+												WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
+												ELSE 0
+											END
+										WHEN @CashOutMode = 2 THEN 0
+										ELSE 1
+									END
+							AND (@Ip IS NULL
+								OR @Ip IN (b.ip, ''))
+							AND 1 = CASE
+										WHEN @PlatformType = 'All' THEN 1
+										WHEN pl.BetFrom IS NOT NULL THEN 1
+										WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
+										WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
+										ELSE 0
+									END
+					END
+				END
+
+				-- Bettrans_bk range
+				IF @TotalRowsBettrans + @TotalRowsBettrans14 <= @MaxTotalRows
+				BEGIN
+					IF @FromDate < @BalanceUpDay
+					BEGIN
+						SET @TempToDate = CASE
+										WHEN @ToDate >= DATEADD(DD, -1, @BalanceUpDay) THEN DATEADD(DD, -1, @BalanceUpDay)
+										ELSE @ToDate
+									END
+
+						SELECT @TotalRowsBettransBk = COUNT(1)
+						FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+							INNER JOIN #TempCust AS c ON b.custid = c.CustId
+							INNER JOIN #SportBettype AS s ON b.bettype = s.bettype
+							LEFT JOIN #PlatformList AS pl ON pl.BetFrom = b.betfrom
+							LEFT JOIN #AllPlatformList AS apl ON apl.BetFrom = b.betfrom
+							LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON m.matchid = b.MatchId AND s.EventType = 1
+							LEFT JOIN bodb_Archive.dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON m3rd.Match3rdId = b.MatchId AND s.EventType = 5
+							LEFT JOIN bodb_Archive.dbo.outright_bk AS o WITH (NOLOCK) ON b.matchid = o.orid AND b.bettype = 10
+							LEFT JOIN dbo.League AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+							LEFT JOIN bodb_Archive.dbo.VSRaceInfo_bk AS vr WITH (NOLOCK) ON vr.EventID = b.matchid AND s.EventType = 3
+						WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
+							AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+							AND ',' + @LiveIndicator + ',' LIKE '%,' + CONVERT(VARCHAR(3), CASE
+																								WHEN b.bettype IN (9, 29) THEN b.livehomescore
+																								ELSE b.liveindicator
+																							END) + ',%'
+							AND (@SportTypeList = 'All'
+								OR EXISTS (	SELECT 1 FROM #TempSportType
+											WHERE SportType = CASE
+																WHEN s.EventType = 1 THEN m.sporttype
+																WHEN b.bettype = 10 THEN l.sporttype
+																WHEN b.bettype IN (9, 29) THEN 999
+																WHEN s.ProductId IN (63) THEN b.matchid
+																WHEN s.EventType = 5 THEN m3rd.SportType
+																WHEN s.EventType = 3 THEN vr.sporttype
+																WHEN s.EventType = 0 AND s.RefTable = 3 THEN b.matchid
+																WHEN s.EventType = 0 AND s.ProductID IN (27, 83) THEN b.oddsid
+																WHEN s.RefTable IN (1, 2) THEN b.matchid
+																ELSE 0
+															END))
+							AND @LeagueId IN (0, CASE
+													WHEN s.EventType = 1 THEN m.leagueid
+													WHEN b.bettype = 10 THEN o.leagueid
+													ELSE -1
+												END)
+							AND (@MatchId IN (0, b.matchid)
+								OR b.matchid IN (SELECT MatchId FROM @Match))
+							AND 1 = CASE
+										WHEN s.ProductID = 1 THEN
+											CASE
+												WHEN @CashOutMode IN (0, 2) AND b.betdaqid = -2 THEN 1	-- Cash Out tickets
+												WHEN @CashOutMode IN (0, 1) AND b.betdaqid <> -2 THEN 1	-- Normal SB tickets
+												ELSE 0
+											END
+										WHEN @CashOutMode = 2 THEN 0
+										ELSE 1
+									END
+							AND (@Ip IS NULL
+								OR @Ip IN (b.ip, ''))
+							AND 1 = CASE
+										WHEN @PlatformType = 'All' THEN 1
+										WHEN pl.BetFrom IS NOT NULL THEN 1
+										WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,88,%' THEN 1
+										WHEN apl.BetFrom IS NULL AND ',' + @PlatformType + ',' LIKE '%,99,%' THEN 1
+										ELSE 0
+									END
+					END
 				END
 			END
 		END
