@@ -21,6 +21,7 @@ AS
 		- 20200827@Kos: Support Fancy Bet [#Redmine: 138524]
 		- 20231213@Kos: Hotfix - inconsistent odds [Redmine: 198327]
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
+		- 20250627@Razor: Remove SelectionId [RedmineID: #231714]
 */
 
 BEGIN
@@ -50,7 +51,6 @@ BEGIN
 		EventName		VARCHAR(500),
 		MarketId		VARCHAR(50),
 		MarketName		VARCHAR(500),
-		SelectionId		INT,
 		SelectionName	VARCHAR(100),
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,
@@ -148,7 +148,6 @@ BEGIN
 		b.eventName,
 		b.marketID,
 		b.marketName,
-		b.selectionID,
 		b.selectionName,
 		b.matchType AS Type,
 		b.betPlaced,
