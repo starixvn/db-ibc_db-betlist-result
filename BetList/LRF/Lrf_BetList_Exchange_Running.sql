@@ -20,6 +20,7 @@ AS
 	Revisions:
 		- 20240821@Kos: Support BTC Exchange Running [#Redmine: 208108]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250627@Kos: Extend SelectionId data type from INT to BIGINT [#Redmine: 231714]
 */
 
 BEGIN
@@ -82,7 +83,7 @@ BEGIN
 		EventName		VARCHAR(500),
 		MarketId		VARCHAR(50),
 		MarketName		VARCHAR(500),
-		SelectionId		INT,
+		SelectionId		BIGINT,
 		SelectionName	VARCHAR(100),
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,
@@ -103,7 +104,7 @@ BEGIN
 		EventName		VARCHAR(500),
 		MarketId		VARCHAR(50),
 		MarketName		VARCHAR(500),
-		SelectionId		INT,
+		SelectionId		BIGINT,
 		SelectionName	VARCHAR(100),
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,

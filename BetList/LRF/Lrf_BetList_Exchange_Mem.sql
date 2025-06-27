@@ -29,6 +29,7 @@ AS
 		- 20231213@Kos: Hotfix - inconsistent odds [Redmine: 198327]
 		- 20240618@Kos: Exclude non-settled tickets [Redmine: 206505]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250627@Kos: Extend SelectionId data type from INT to BIGINT [#Redmine: 231714]
 */
 
 BEGIN
@@ -79,7 +80,7 @@ BEGIN
 		EventName		VARCHAR(500),
 		MarketId		VARCHAR(50),
 		MarketName		VARCHAR(500),
-		SelectionId		INT,
+		SelectionId		BIGINT,
 		SelectionName	VARCHAR(100),
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,
