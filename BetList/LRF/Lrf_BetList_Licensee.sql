@@ -25,7 +25,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Licensee]
 	@Ip					VARCHAR(45)		= '',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
-	@Sort				NVARCHAR(50)	= N'TransDate ASC',
+	@SortType			TINYINT			= 0,		-- TransDate
+	@SortOrder			TINYINT			= 1,		-- ASC
 	@TotalRows			INT				= 0 OUTPUT,
 	@SumStake			MONEY			= 0 OUTPUT,
 	@SumWinLost			MONEY			= 0 OUTPUT,
@@ -85,6 +86,14 @@ AS
 			+ 0: Include
 			+ 1: Exclude
 			+ 2: View CO only
+		- @SortType:
+			- 0: TransDate
+			- 1: Stake
+			- 2: WinLoss
+			- 3: LicenseeWL
+		- @SortOrder
+			- 1: ASC
+			- 2: DESC
 
 	Revisions:
 		- 20180711@Kos: Created [#Redmine: 80941]
@@ -120,6 +129,9 @@ AS
 		- 20250724@Kos: Enhance performance when search username [#Redmine: 234062]
 		- 20250725@Kos: Hotfix - Parlay sport [#Redmine: 234256]
 		- 20250801@Kos: Support Playtech Jackpot [#Redmine: 233781]
+		- 20250806@Kos: Fix security issue in dynamic query [#Redmine: 227496]
+					- Remove input param @Sort
+					- Add new input params @SortType TINYINT, @SortOrder TINYINT
 */
 
 BEGIN
@@ -2344,16 +2356,27 @@ BEGIN
 				DELETE FROM #ExchangeRate
 			END
 
+			DECLARE @SortText VARCHAR(100)
+
 			-- Get sort text
-			IF @ConvertToBaseCur = 1
-				AND (@Sort LIKE '%Stake%' OR @Sort LIKE '%WinLost%' OR @Sort LIKE '%LicenseeWL%')
+			SET @SortText = CASE
+								WHEN @SortType = 0 THEN 'TransDate'
+								WHEN @SortType = 1 THEN 'Stake'
+								WHEN @SortType = 2 THEN 'WinLost'
+								WHEN @SortType = 3 THEN 'LicenseeWL'
+								ELSE ''
+							END
+
+			IF @BaseCurrency <> '' AND @SortType IN (1, 2, 3)
 			BEGIN
-				DECLARE @CharIndex TINYINT
-
-				SELECT @CharIndex = CHARINDEX(' ', @Sort, 1)
-
-				SELECT @Sort = SUBSTRING(@Sort, 0, @CharIndex) + ' * ISNULL(e.Rate, 1)' + SUBSTRING(@Sort, @CharIndex, LEN(@Sort))
+				SET @SortText = @SortText + ' * ISNULL(e.Rate, 1)'
 			END
+
+			SET @SortText = @SortText + ' ' + CASE
+												WHEN @SortOrder = 1 THEN 'ASC'
+												WHEN @SortOrder = 2 THEN 'DESC'
+												ELSE ''
+											END
 		END
 
 		IF @PageSize < @TotalRows
@@ -2373,11 +2396,11 @@ BEGIN
 				FROM
 					(
 						SELECT
-							ROW_NUMBER() OVER (ORDER BY ' + @Sort + N') AS RowNum,
+							ROW_NUMBER() OVER (ORDER BY ' + @SortText + N') AS RowNum,
 							d.*
 						FROM #Data AS d' +
 						CASE
-							WHEN @Sort LIKE '%e.Rate%' THEN N'
+							WHEN @SortText LIKE '%e.Rate%' THEN N'
 							LEFT JOIN #ExchangeRate AS e
 								ON e.ExchangeId = d.Currency
 									AND d.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth'
@@ -3306,7 +3329,7 @@ BEGIN
 					LEFT JOIN #ExchangeRate AS e
 						ON e.ExchangeId = a.Currency
 							AND a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
-				ORDER BY ' + @Sort
+				ORDER BY ' + @SortText
 
 			EXEC sp_executesql @Sql
 		END

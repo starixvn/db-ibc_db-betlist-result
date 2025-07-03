@@ -12,7 +12,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_BookedBets]
 	@Platform			VARCHAR(100)	= 'All',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
-	@Sort				NVARCHAR(50)	= N'TransDate ASC',
+	@SortType			TINYINT			= 0,		-- TransDate
+	@SortOrder			TINYINT			= 1,		-- ASC
 	@TotalRows			INT				= 0 OUTPUT,
 	@SumStake			MONEY			= 0 OUTPUT
 AS
@@ -49,11 +50,20 @@ AS
 			- 14 - Deep Link: t (Licensee-Deeplink)
 			- 15 - WAP: m (dep-wap)
 			- 88 - Others: v (Licensee Odds Feed), d (mobile), g (MG Download only), e (Europe), u (dep-Euro)
+		- @SortType:
+			- 0: TransDate
+			- 1: Stake
+		- @SortOrder
+			- 1: ASC
+			- 2: DESC
 
 	Revisions:
 		- 20240321@Kos: Support Booked Bets [#Redmine: 202341]
 		- 20241210@Kos: Add unknown betfroms into group Others [#Redmine: 214849]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250702@Kos: Fix security issue in dynamic query [#Redmine: 227496]
+					- Remove input param @Sort
+					- Add new input params @SortType TINYINT, @SortOrder TINYINT
 */
 
 BEGIN
@@ -477,15 +487,25 @@ BEGIN
 				DELETE FROM #ExchangeRate
 			END
 
+			DECLARE @SortText VARCHAR(100)
+
 			-- Get sort text
-			IF @BaseCurrency <> '' AND @Sort LIKE '%Stake%'
+			SET @SortText = CASE
+								WHEN @SortType = 0 THEN 'TransDate'
+								WHEN @SortType = 1 THEN 'Stake'
+								ELSE ''
+							END
+
+			IF @BaseCurrency <> '' AND @SortType = 1
 			BEGIN
-				DECLARE @CharIndex TINYINT
-
-				SELECT @CharIndex = CHARINDEX(' ', @Sort, 1)
-
-				SELECT @Sort = SUBSTRING(@Sort, 0, @CharIndex) + ' * ISNULL(e.Rate, 1)' + SUBSTRING(@Sort, @CharIndex, LEN(@Sort))
+				SET @SortText = @SortText + ' * ISNULL(e.Rate, 1)'
 			END
+
+			SET @SortText = @SortText + ' ' + CASE
+												WHEN @SortOrder = 1 THEN 'ASC'
+												WHEN @SortOrder = 2 THEN 'DESC'
+												ELSE ''
+											END
 
 			DECLARE @RowStart INT,
 				@RowEnd INT
@@ -501,11 +521,11 @@ BEGIN
 				FROM
 					(
 						SELECT
-							ROW_NUMBER() OVER (ORDER BY ' + @Sort + N') AS RowNum,
+							ROW_NUMBER() OVER (ORDER BY ' + @SortText + N') AS RowNum,
 							d.*
 						FROM #Data AS d' +
 						CASE
-							WHEN @Sort LIKE '%e.Rate%' THEN N'
+							WHEN @SortText LIKE '%e.Rate%' THEN N'
 							LEFT JOIN #ExchangeRate AS e
 								ON e.ExchangeId = d.Currency
 									AND d.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth'

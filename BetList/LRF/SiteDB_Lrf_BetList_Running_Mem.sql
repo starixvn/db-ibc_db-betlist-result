@@ -3,17 +3,25 @@
 ALTER PROCEDURE [dbo].[SiteDB_Lrf_BetList_Running_Mem]
 	@AgentList	VARCHAR(MAX),
 	@CustId		INT,
-	@PageSize	INT				= 1000,
-	@PageIndex	INT				= 1,
-	@Sort		NVARCHAR(50)	= N'TransDate DESC',
-	@TotalRows	INT				= 0 OUTPUT,
-	@SumStake	MONEY			= 0 OUTPUT
+	@PageSize	INT		= 1000,
+	@PageIndex	INT		= 1,
+	@SortType	TINYINT	= 0,		-- TransDate
+	@SortOrder	TINYINT	= 1,		-- ASC
+	@TotalRows	INT		= 0 OUTPUT,
+	@SumStake	MONEY	= 0 OUTPUT
 AS
 
 /*
 	Created: 20220727@Kos
 	Task: Player Admin - Running Bet List - SiteDB
 	DB: DBSID.bodb02
+	Param's Explanation:
+		- @SortType:
+			- 0: TransDate
+			- 1: Stake
+		- @SortOrder
+			- 1: ASC
+			- 2: DESC
 
 	Revisions:
 		- 20220727@Kos: Created [Redmine: #175297]
@@ -33,6 +41,9 @@ AS
 		- 20240919@Kos: Support BetRadar Horse Racing [Redmine: #210808]
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20241216@Kos: Support Virtual Sports 5 [Redmine: 207582]
+		- 20250702@Kos: Fix security issue in dynamic query [#Redmine: 227496]
+					- Remove input param @Sort
+					- Add new input params @SortType TINYINT, @SortOrder TINYINT
 */
 
 BEGIN
@@ -617,6 +628,22 @@ BEGIN
 				@SumStake = SUM(b.Stake)
 			FROM #Data AS b
 
+			-- Get sort text
+			DECLARE @SortText VARCHAR(100)
+
+			-- Get sort text
+			SET @SortText = CASE
+								WHEN @SortType = 0 THEN 'TransDate'
+								WHEN @SortType = 1 THEN 'Stake'
+								ELSE ''
+							END
+
+			SET @SortText = @SortText + ' ' + CASE
+												WHEN @SortOrder = 1 THEN 'ASC'
+												WHEN @SortOrder = 2 THEN 'DESC'
+												ELSE ''
+											END
+
 			DECLARE @RowStart INT,
 				@RowEnd INT
 
@@ -631,7 +658,7 @@ BEGIN
 				FROM
 					(
 						SELECT
-							ROW_NUMBER() OVER (ORDER BY ' + @Sort + N') AS RowNum,
+							ROW_NUMBER() OVER (ORDER BY ' + @SortText + N') AS RowNum,
 							d.*
 						FROM #Data AS d
 					) AS a

@@ -9,7 +9,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_Running]
 	@StatusFilter		VARCHAR(10)		= '1,2,3',
 	@PageSize			INT				= 1000,
 	@PageIndex			INT				= 1,
-	@Sort				NVARCHAR(50)	= N'TransDate DESC',
+	@SortType			TINYINT			= 0,		-- TransDate
+	@SortOrder			TINYINT			= 1,		-- ASC
 	@ProductList		VARCHAR(MAX)	= '',
 	@SportTypeList		VARCHAR(MAX)	= 'All',
 	@BetTypeList		VARCHAR(MAX)	= 'All',
@@ -73,6 +74,12 @@ AS
 		- @FullCustomerClass: list of all customer class seperated by commas (All: all customer classes)
 		- @Platform: list of platform seperated by commas (All: all platforms)
 		- @OddsGroup: list of odds group seperated by commas (All: all odds group)
+		- @SortType:
+			- 0: TransDate
+			- 1: Stake
+		- @SortOrder
+			- 1: ASC
+			- 2: DESC
 
 	Revisions:
 		- 20180613@Kos: Created [#Redmine: 80941]
@@ -142,6 +149,9 @@ AS
 		- 20250506@Kos: Support Saba Soccer Marble [#Redmine: 225015]
 		- 20250725@Kos: Hotfix - Parlay sport [#Redmine: 234256]
 		- 20250801@Kos: Support Playtech Jackpot [#Redmine: 233781]
+		- 20250806@Kos: Fix security issue in dynamic query [#Redmine: 227496]
+					- Remove input param @Sort
+					- Add new input params @SortType TINYINT, @SortOrder TINYINT
 */
 
 BEGIN
@@ -1353,15 +1363,25 @@ BEGIN
 			FROM dbo.Lrf_f_GetExchangeRate(DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), @BaseCurrency, '') AS e
 			WHERE EXISTS (SELECT 1 FROM #Data WHERE Currency = e.ExchangeId)
 
+			DECLARE @SortText VARCHAR(100)
+
 			-- Get sort text
-			IF @ConvertToBaseCur = 1 AND @Sort LIKE '%Stake%'
+			SET @SortText = CASE
+								WHEN @SortType = 0 THEN 'TransDate'
+								WHEN @SortType = 1 THEN 'Stake'
+								ELSE ''
+							END
+
+			IF @BaseCurrency <> '' AND @SortType = 1
 			BEGIN
-				DECLARE @CharIndex TINYINT
-
-				SELECT @CharIndex = CHARINDEX(' ', @Sort, 1)
-
-				SELECT @Sort = SUBSTRING(@Sort, 0, @CharIndex) + ' * ISNULL(e.Rate, 1)' + SUBSTRING(@Sort, @CharIndex, LEN(@Sort))
+				SET @SortText = @SortText + ' * ISNULL(e.Rate, 1)'
 			END
+
+			SET @SortText = @SortText + ' ' + CASE
+												WHEN @SortOrder = 1 THEN 'ASC'
+												WHEN @SortOrder = 2 THEN 'DESC'
+												ELSE ''
+											END
 
 			-- Return data
 			SELECT
@@ -1389,11 +1409,11 @@ BEGIN
 				FROM
 					(
 						SELECT
-							ROW_NUMBER() OVER (ORDER BY ' + @Sort +') AS RowNum,
+							ROW_NUMBER() OVER (ORDER BY ' + @SortText +') AS RowNum,
 							d.*
 						FROM #Data AS d' +
 						CASE
-							WHEN @Sort LIKE '%e.Rate%' THEN N'
+							WHEN @SortText LIKE '%e.Rate%' THEN N'
 							LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = d.Currency'
 							ELSE N' '
 						END + N'

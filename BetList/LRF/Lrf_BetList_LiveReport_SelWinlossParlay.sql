@@ -11,7 +11,8 @@ ALTER PROCEDURE [dbo].[Lrf_BetList_LiveReport_SelWinlossParlay]
 	@BaseCurrency	VARCHAR(12),
 	@PageSize		INT				= 1000,
 	@PageIndex		INT				= 1,
-	@Sort			NVARCHAR(50)	= 'TransDate ASC',
+	@SortType		TINYINT			= 0,		-- TransDate
+	@SortOrder		TINYINT			= 1,		-- ASC
 	@TotalRows		INT				= 0 OUTPUT,
 	@SumWinLost		MONEY			= 0 OUTPUT,
 	@SumLicenseeWL	MONEY			= 0 OUTPUT,
@@ -21,8 +22,21 @@ AS
 
 /*
 	Created: Henry@20120111
-	Task: Betlist for Parlay
+	Task: LAP - Live Report - Betlist for Parlay
 	DB: DBEXT.bodb02
+	Param's Explanation:
+		- @LiveIndicator:
+			- 0: Non-Live ticket only
+			- 1: Live ticket only
+			- 2: All
+		- @SortType:
+			- 0: TransDate
+			- 1: Stake
+			- 2: WinLoss
+			- 3: LicenseeWL
+		- @SortOrder
+			- 1: ASC
+			- 2: DESC
 
 	Revisions:
 		- 20120214@Jim: change table ExchangeDaily by function Lrf_f_GetExchangeDaily
@@ -61,12 +75,9 @@ AS
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
 					- Remove input param @ShowBA
-
-	Param's Explanation:
-		@LiveIndicator : indicate that whether the report will get live data or not
-			+ 0: Non - Live data only
-			+ 1: Live data only
-			+ 2: All
+		- 20250702@Kos: Fix security issue in dynamic query [#Redmine: 227496]
+					- Remove input param @Sort
+					- Add new input params @SortType TINYINT, @SortOrder TINYINT
 */
 
 BEGIN
@@ -336,20 +347,27 @@ BEGIN
 		ExtraInfo		VARCHAR(1000)
 	)
 
-	-- Exchange rate is different for each day => Stake order may be different from StakeUSD order
-	IF @Sort LIKE '%Stake%' OR @Sort LIKE '%WinLost%' OR @Sort LIKE '%LicenseeWL%'
+	DECLARE @SortText VARCHAR(100)
+
+	-- Get sort text
+	SET @SortText = CASE
+						WHEN @SortType = 0 THEN 'TransDate'
+						WHEN @SortType = 1 THEN 'Stake'
+						WHEN @SortType = 2 THEN 'WinLost'
+						WHEN @SortType = 3 THEN 'LicenseeWL'
+						ELSE ''
+					END
+
+	IF @BaseCurrency <> '' AND @SortType IN (1, 2, 3)
 	BEGIN
-		DECLARE @CharIndex TINYINT
-
-		SELECT @CharIndex = CHARINDEX(' ', @Sort, 1)
-
-		SELECT @Sort = SUBSTRING(@Sort, 0, @CharIndex) + ' * ISNULL(e.Rate, 1)' + SUBSTRING(@Sort, @CharIndex, LEN(@Sort))
+		SET @SortText = @SortText + ' * ISNULL(e.Rate, 1)'
 	END
 
-	IF @Sort NOT LIKE '%TransId%'
-	BEGIN
-		SELECT @Sort = @Sort + ', TransId ASC'
-	END
+	SET @SortText = @SortText + ' ' + CASE
+										WHEN @SortOrder = 1 THEN 'ASC'
+										WHEN @SortOrder = 2 THEN 'DESC'
+										ELSE ''
+									END
 
 	DECLARE @RowStart INT,
 		@RowEnd INT
@@ -369,11 +387,11 @@ BEGIN
 		FROM
 			(
 				SELECT
-					ROW_NUMBER() OVER (ORDER BY ' + @Sort + ') AS RowNum,
+					ROW_NUMBER() OVER (ORDER BY ' + @SortText + ') AS RowNum,
 					b.*
 				FROM #AgWinlossMP AS b' +
 				CASE
-					WHEN @Sort LIKE '%e.Rate%' THEN N'
+					WHEN @SortText LIKE '%e.Rate%' THEN N'
 					LEFT JOIN #ExchangeRate AS e
 						ON e.ExchangeId = b.Currency
 							AND CASE
