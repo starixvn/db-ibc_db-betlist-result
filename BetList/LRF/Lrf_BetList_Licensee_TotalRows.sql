@@ -112,7 +112,7 @@ AS
 		- 20250523@Kos: Support bk range [RedmineID: #213933]
 					- Add new input param @BalanceUpDay SMALLDATETIME
 					- Move SP to DBACC
-
+		- 20250724@Kos: Enhance performance when search username [#Redmine: 234062]
 */
 
 BEGIN
@@ -252,18 +252,53 @@ BEGIN
 			FROM dbo.Customer WITH (NOLOCK)
 			WHERE custid IN (SELECT TOP(1) CustId FROM #TempAg)
 
-			INSERT INTO #TempCust (CustId, CustomerClass)
-			SELECT
-				c.custid,
-				ci.CustomerClass
-			FROM dbo.Customer AS c WITH (NOLOCK)
-				INNER JOIN #TempAg AS a ON c.recommend = a.CustId
+			IF @OddsGroup = 'All'
+			BEGIN
+				INSERT INTO #TempCust (CustId)
+				SELECT c.custid
+				FROM (
+					SELECT c.custid
+					FROM dbo.Customer AS c WITH (NOLOCK)
+						INNER JOIN #TempAg AS a ON c.recommend = a.CustId
+					WHERE c.roleid = 1
+						AND CHARINDEX(@Username, c.username) > 0
+
+					UNION
+
+					SELECT c.custid
+					FROM dbo.Customer AS c WITH (NOLOCK, INDEX = IX_agent)
+						INNER JOIN #TempAg AS a ON c.recommend = a.CustId
+					WHERE c.roleid = 1
+						AND c.username2 LIKE @Site + '$%' + @Username + '%'
+					) AS c
+			END
+			ELSE
+			BEGIN
+				INSERT INTO #TempCust (CustId)
+				SELECT c.custid
+				FROM (
+					SELECT c.custid
+					FROM dbo.Customer AS c WITH (NOLOCK)
+						INNER JOIN #TempAg AS a ON c.recommend = a.CustId
+					WHERE c.roleid = 1
+						AND CHARINDEX(@Username, c.username) > 0
+						AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+
+					UNION
+
+					SELECT c.custid
+					FROM dbo.Customer AS c WITH (NOLOCK, INDEX = IX_agent)
+						INNER JOIN #TempAg AS a ON c.recommend = a.CustId
+					WHERE c.roleid = 1
+						AND c.username2 LIKE @Site + '$%' + @Username + '%'
+						AND ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%'
+					) AS c
+			END
+
+			UPDATE c
+			SET c.CustomerClass = ci.CustomerClass
+			FROM #TempCust AS c
 				LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = c.custid
-			WHERE c.roleid = 1
-				AND (c.username LIKE '%' + @Username + '%'
-					OR c.username2 LIKE @Site + '$%' + @Username + '%')
-				AND (@OddsGroup = 'All'
-					OR ',' + @OddsGroup + ',' LIKE + '%,' + c.ugroup + ',%')
 
 			IF @CustomerClass <> 'All'
 			BEGIN
