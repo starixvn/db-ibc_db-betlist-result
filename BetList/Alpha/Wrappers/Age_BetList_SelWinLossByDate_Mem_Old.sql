@@ -978,7 +978,6 @@ BEGIN
 							WHERE ProductId = 95 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 95 AND BetType = b.BetType)
-
 		DELETE b
 		FROM @Data AS b
 		WHERE b.Product = 'MGLC'

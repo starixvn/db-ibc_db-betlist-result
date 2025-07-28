@@ -930,7 +930,7 @@ BEGIN
 							WHEN s.ProductID = 103					THEN 'ASK'		-- ASKMESLOT
 							WHEN s.ProductID = 105					THEN 'ODG'		-- ODIN GAMING
 							WHEN s.ProductID = 107					THEN 'MGLC'		-- Microgaming Live
-							WHEN s.ProductID = 108					THEN 'RGRNG'		-- Rich Gaming
+							WHEN s.ProductID = 108					THEN 'RGRNG'	-- Rich Gaming
 							WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'		-- Sportsbook
 							WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'		-- Number Game
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'	-- Number Game - Happy 5 Linked Games
