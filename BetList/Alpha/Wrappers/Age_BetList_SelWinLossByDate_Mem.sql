@@ -185,6 +185,7 @@ AS
 		- 20250422@Benji: Support RichGaming [Redmine: #222365]
 		- 20250505@Benji:  HF - VS7 - Alpha - Cannot show data Result on Result pop up of ticket on range bettrans that drilldown from report Winloss [Redmine: #226050]
 		- 20250507@Benji: Support Saba Soccer Marble [Redmine:#223130]
+		- 20250728@Razor: ODIN GAMING dont support Product Detail[Redmine:#233933]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -1212,8 +1213,8 @@ BEGIN
 	END -- end: bettrans14
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING, Microgaming Live, Rich Gaming
-	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG', 'MGLC', 'RGRNG'))
+	-- Sportsbook(saba Sports), AllBet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, Microgaming Live, Rich Gaming
+	IF EXISTS (SELECT 1 FROM #MemBetTicket WHERE Product IN ('SB', 'Parlay', 'Outright', 'AllBet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'MGLC', 'RGRNG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId		TINYINT,
@@ -1443,23 +1444,7 @@ BEGIN
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 95 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 95 AND BetType = b.BetType)		
-
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'ODG'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 105 AND BetType = b.BetType)
-			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 105 AND BetType = b.BetType)
-
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'ODG'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 105 AND BetType = 0)
-			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 105 AND BetType = b.BetType)	
+							WHERE ProductId = 95 AND BetType = b.BetType)
 
 		DELETE b
 		FROM #MemBetTicket AS b

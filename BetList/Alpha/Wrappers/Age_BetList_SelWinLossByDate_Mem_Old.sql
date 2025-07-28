@@ -186,6 +186,7 @@ AS
 		- 20250421@Benji: Remove product detail for Playtech Live Casino [Redmine:#224687]
 		- 20250422@Benji: Support RichGaming [Redmine: #222365]
 		- 20250507@Benji: Support Saba Soccer Marble [Redmine:#223130]
+		- 20250728@Razor: ODIN GAMING dont support Product Detail[Redmine:#233933]
 
 		
 	Param's Explanation:
@@ -742,8 +743,8 @@ BEGIN
 	WHERE c.custid = @CustId
 
 	-- Filter due to product detail
-	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, ODIN GAMING, RichGaming
-	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'ODG', 'MGLC', 'RGRNG'))
+	-- Sportsbook(saba Sports), Allbet, Pragmatic, Spadegaming, Sexy Gaming, Microgaming RNG Casino, Live22, VGaming, FA CHAI, ASKMESLOT, HOTDOG, RichGaming
+	IF EXISTS (SELECT 1 FROM @Data WHERE Product IN ('SB', 'Parlay', 'Outright', 'Allbet', 'PP', 'SG', 'SXG', 'MGRNG', 'L22', 'SNG', 'FS', 'VGA', 'FAC', 'ASK', 'HOT', 'MGLC', 'RGRNG'))
 	BEGIN
 		DECLARE @ProductDetail TABLE (
 			ProductId	TINYINT,
@@ -977,22 +978,6 @@ BEGIN
 							WHERE ProductId = 95 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
 							WHERE ProductId = 95 AND BetType = b.BetType)
-
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'ODG'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 105 AND BetType = b.BetType)
-			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 105 AND BetType = b.BetType)
-
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'ODG'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 105 AND BetType = 0)
-			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 105 AND BetType = b.BetType)		
 
 		DELETE b
 		FROM @Data AS b
