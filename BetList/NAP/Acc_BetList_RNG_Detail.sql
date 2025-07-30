@@ -77,6 +77,7 @@ AS
 		- 20240626@Razor: Support FastSpin [Redmine: #205742]
 		- 20241218@Razor: Support Direct Member [Redmine: #211969]
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
+		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
 
 	Parameters:
 		- @TransType
@@ -102,6 +103,13 @@ BEGIN
 	WHERE ProductID IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
 		OR (ProductID = 6 AND SubProduct <> '')
 		OR (RefTable = 1 AND ProductID NOT IN (17, 24))
+	
+	DECLARE @ProductJackpot TABLE(ProductId TINYINT)
+
+	INSERT INTO @ProductJackpot
+    SELECT DISTINCT ProductId
+    FROM @SportBettype
+    WHERE SubProduct LIKE 'Jackpot%'	
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
 
@@ -230,7 +238,7 @@ BEGIN
 			brng.status,
 			brng.statusID,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				WHEN pj.ProductId IS NOT NULL AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
 				ELSE brng.odds
 			END AS Odds,
 			@CurrencyName AS Currency,
@@ -269,16 +277,16 @@ BEGIN
 				ELSE ''
 			END AS EventDate,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				WHEN pj.ProductId IS NOT NULL AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
 			END AS OddsSpread,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(brng.RefNo2, -1)
+				WHEN pj.ProductId IS NOT NULL THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
 			brng.ExtraInfo,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
+				WHEN pj.ProductId IS NOT NULL THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
 			END AS JackpotInfo,
 			brng.currency,
@@ -286,6 +294,7 @@ BEGIN
 			brng.DeviceType
 		FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
+			LEFT JOIN @ProductJackpot AS pj ON sbt.ProductId = pj.ProductId
 		WHERE brng.RefNo = @RefNo
 			AND brng.statusID IN (SELECT statusId FROM @tmpStatus)
 	END
@@ -302,7 +311,7 @@ BEGIN
 			brng.status,
 			brng.statusID,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				WHEN pj.ProductId IS NOT NULL AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
 				ELSE brng.odds
 			END AS Odds,
 			@CurrencyName AS Currency,
@@ -341,16 +350,16 @@ BEGIN
 				ELSE ''
 			END AS EventDate,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				WHEN pj.ProductId IS NOT NULL AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
 			END AS OddsSpread,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(brng.RefNo2, -1)
+				WHEN pj.ProductId IS NOT NULL THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
 			brng.ExtraInfo,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
+				WHEN pj.ProductId IS NOT NULL THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
 			END AS JackpotInfo,
 			brng.currency,
@@ -358,6 +367,7 @@ BEGIN
 			brng.DeviceType
 		FROM dbo.bettransRnG14 AS brng WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
+			LEFT JOIN @ProductJackpot AS pj ON sbt.ProductId = pj.ProductId
 		WHERE brng.RefNo = @RefNo
 	END
 	ELSE IF @WhTicket = 3
@@ -373,7 +383,7 @@ BEGIN
 			brng.status,
 			brng.statusID,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				WHEN pj.ProductId IS NOT NULL AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
 				ELSE brng.odds
 			END AS Odds,
 			@CurrencyName AS Currency,
@@ -412,16 +422,16 @@ BEGIN
 				ELSE ''
 			END AS EventDate,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				WHEN pj.ProductId IS NOT NULL AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
 			END AS OddsSpread,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(brng.RefNo2, -1)
+				WHEN pj.ProductId IS NOT NULL THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
 			brng.ExtraInfo,
 			CASE
-				WHEN sbt.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
+				WHEN pj.ProductId IS NOT NULL THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
 			END AS JackpotInfo,
 			brng.currency,
@@ -430,6 +440,7 @@ BEGIN
 		FROM bodb_Archive.dbo.bettransRnG_bk AS brng WITH (NOLOCK)
 			CROSS APPLY dbo.f_IP_Decompress(brng.Ip) AS dp
 			INNER JOIN @SportBettype AS sbt ON brng.gameID = sbt.Bettype
+			LEFT JOIN @ProductJackpot AS pj ON sbt.ProductId = pj.ProductId
 		WHERE brng.RefNo = @RefNo
 	END
 

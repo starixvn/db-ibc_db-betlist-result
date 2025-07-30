@@ -130,21 +130,21 @@ AS
 		- 20250513@Razor: Support SabaCoins multiple wallets [Redmine: #215807]
 		- 20250515@Benji: Support W Casino [RedmineID: 227510]
 		- 20250515@Benji: Support Automate Integration for Betlist [Redmineid: #227997]
-
+		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix
-	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT)
+	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT,  SubProduct NVARCHAR (50))
 
 	DECLARE @IsTest BIT = 0
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
-	SELECT ProductID, BetType, EventType, RefTable
+	SELECT ProductID, BetType, EventType, RefTable, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID NOT IN (2, 4, 7, 9, 13, 17, 19, 24, 26, 30, 31, 33)
 		AND (ProductID <> 6 OR SubProduct <> '')
@@ -162,7 +162,8 @@ BEGIN
 			s.ProductID,
 			f.BetType,
 			s.EventType,
-			s.RefTable
+			s.RefTable,
+			s.SubProduct
 		FROM @SportBettype AS s
 			INNER JOIN (SELECT * FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f ON s.Bettype = f.GroupTypeId
 		WHERE NOT EXISTS ( SELECT 1 FROM @SportBettype AS sbt WHERE sbt.Bettype = f.Bettype )
@@ -244,7 +245,8 @@ BEGIN
 		SiteId				VARCHAR(20),
 		DeviceType			TINYINT,
 		RefTable			TINYINT,
-		EventType			TINYINT
+		EventType			TINYINT,
+		SubProduct			VARCHAR(50)
 	)
 
 	DECLARE @TmpData TABLE (
@@ -268,7 +270,7 @@ BEGIN
 		Discount		SMALLMONEY,
 		ADiscount		SMALLMONEY,
 		SDiscount		SMALLMONEY,
-		OddsSpread		MONEY
+		OddsSpread		MONEY		
 	)
 
 	DECLARE @OriginalStatusIdList	VARCHAR(50)
@@ -982,7 +984,8 @@ BEGIN
 							ELSE 0
 						END,
 			RefTable = s.RefTable,
-			EventType = s.EventType
+			EventType = s.EventType,
+			SubProduct = s.SubProduct
 		FROM @Data AS b
 			INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
@@ -1219,7 +1222,7 @@ BEGIN
 						SELECT
 							c.TransId AS RefNo,
 							CASE
-								WHEN Product IN ('OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+								WHEN c.SubProduct LIKE 'Jackpot%' THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 								ELSE 0
 							END AS Odds,
 							SUM(brng.stake) AS Stake,
@@ -1251,7 +1254,7 @@ BEGIN
 							END AS adiscount,
 							AVG(brng.sdiscount) AS sdiscount,
 							CASE
-								WHEN c.Product IN ('OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN ISNULL(SUM(brng.BetStake), 0)
+								WHEN c.SubProduct LIKE 'Jackpot%' THEN ISNULL(SUM(brng.BetStake), 0)
 								ELSE 0
 							END AS OddsSpread
 						FROM @Data AS c
@@ -1263,6 +1266,7 @@ BEGIN
 						GROUP BY
 							c.TransId,
 							c.Product,
+							c.SubProduct,
 							brng.recommend,
 							brng.mrecommend
 					END
@@ -1430,6 +1434,7 @@ BEGIN
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'OneRNG', 'Keno', 'NG2', 'ParlayVS2', 
 									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'SG', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA', 'BTC', 'LG', 'ParlayVS4', 'VS4', 'VS6') THEN b.odds
+								WHEN b.SubProduct LIKE 'Jackpot%' THEN b.odds
 								WHEN b.EventType IN (3, 5) THEN b.odds
 								ELSE 0
 							END,
@@ -1541,7 +1546,8 @@ BEGIN
 								END,
 					OddsSpread = CASE
 									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP', 'SG', 'SBC', 'VGA', 'Parlay') THEN ISNULL(b.oddsspread, 0)
-									ELSE 0
+									WHEN b.SubProduct LIKE 'Jackpot%' THEN ISNULL(b.oddsspread, 0)
+									ElSE 0
 								END,
 					BetdaqId = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betdaqid, -1)
@@ -1768,7 +1774,8 @@ BEGIN
 					SiteId				VARCHAR(20),
 					DeviceType			TINYINT,
 					RefTable			TINYINT,
-					EventType			TINYINT
+					EventType			TINYINT,
+					Subproduct			NVARCHAR(50)
 				)
 
 				INSERT INTO @TmpCasinoData
@@ -1797,6 +1804,7 @@ BEGIN
 					0 AS MOdds,
 					CASE
 						WHEN b.Product IN ('OneRNG', 'PP', 'SG', 'SBC', 'VGA') THEN x.OddsSpread
+						WHEN b.SubProduct LIKE 'Jackpot%' THEN x.OddsSpread
 						ELSE 0
 					END AS OddsSpread,
 					x.Stake,
@@ -1861,7 +1869,8 @@ BEGIN
 					b.SiteId,
 					b.DeviceType,
 					b.RefTable,
-					b.EventType
+					b.EventType,
+					b.Subproduct
 				FROM @Data AS b
 					INNER JOIN @TmpData AS x ON x.RefNo = b.TransId
 				WHERE (b.Product IN ('VB', 'PP', 'OneRNG', 'CC', 'SG', 'SBC', 'RNGW', 'MXG', 'HB', 'CG', 'VGA', 'AP', 'APM', 'SEA', 'MGRNG', 'JIG', 'L22', 'SNG', 'Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 
@@ -1930,6 +1939,7 @@ BEGIN
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'OneRNG', 'Keno', 'NG2', 'ParlayVS2', 
 									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'SG', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS6') THEN b.odds
+								WHEN b.SubProduct LIKE 'Jackpot%' THEN b.odds
 								WHEN b.EventType IN (3, 5) THEN b.odds
 								ELSE 0
 							END,
@@ -2025,6 +2035,7 @@ BEGIN
 								END,
 					OddsSpread = CASE
 									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP', 'SG',  'SBC', 'VGA', 'Parlay') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.SubProduct LIKE 'Jackpot%' THEN  ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					BetdaqId = CASE
@@ -2124,6 +2135,7 @@ BEGIN
 					Odds = CASE
 								WHEN b.Product IN ('SB', 'CO', 'NG', 'VS', 'VS2', 'Outright', 'Parlay', 'OneRNG', 'Keno', 'NG2', 'ParlayVS2', 
 									'Lottery', 'VRG', 'TG', 'I4D', 'PP', 'SG', 'VS3', 'SBC', 'H5LG', 'SLT', 'VGA', 'BTC', 'LG', 'VS4', 'ParlayVS4', 'VS6') THEN b.odds
+								WHEN b.SubProduct LIKE 'Jackpot%' THEN b.odds
 								WHEN b.EventType IN (3, 5) THEN b.odds
 								ELSE 0
 							END,
@@ -2219,6 +2231,7 @@ BEGIN
 								END,
 					OddsSpread = CASE
 									WHEN b.Product IN ('SB', 'CO', 'OneRNG', 'PP', 'SG', 'SBC', 'VGA', 'Parlay') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.SubProduct LIKE 'Jackpot%' THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					BetdaqId = CASE

@@ -17,6 +17,7 @@ AS
 		- 20230927@Razor: Support show max payout [Redmine: #194491]
 		- 20240105@Razor: Extend data type [Redmine: #199259]
 		- 20241218@Razor: Support Direct Member [Redmine: #211969]
+		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
 */
 
 BEGIN
@@ -33,8 +34,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE (ProductID IN (32, 36, 42, 66))
-		OR (ProductID = 6 AND SubProduct <> '')
+	WHERE SubProduct like 'Jackpot%'
 
 	-- Create temp table
 	DECLARE @Data TABLE (
