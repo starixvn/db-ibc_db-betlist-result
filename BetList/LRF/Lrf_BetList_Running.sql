@@ -141,6 +141,7 @@ AS
 		- 20250416@Kos: Extend input param length [Redmine: 219083]
 		- 20250506@Kos: Support Saba Soccer Marble [#Redmine: 225015]
 		- 20250725@Kos: Hotfix - Parlay sport [#Redmine: 234256]
+		- 20250801@Kos: Support Playtech Jackpot [#Redmine: 233781]
 */
 
 BEGIN
@@ -1042,11 +1043,11 @@ BEGIN
 						b.RefNo,
 						b.gameID AS BetType,
 						CASE
-							WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
+							WHEN s.ProductID IN (6, 32, 42, 66, 100) THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
 							ELSE 0
 						END AS Odds,
 						CASE
-							WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(SUM(BetStake), 0)
+							WHEN s.ProductID IN (6, 32, 42, 66, 100) THEN ISNULL(SUM(BetStake), 0)
 							ELSE 0
 						END AS OddsSpread,
 						SUM(b.stake) AS Stake,
@@ -1085,11 +1086,11 @@ BEGIN
 						b.RefNo,
 						b.gameID AS BetType,
 						CASE
-							WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
+							WHEN s.ProductID IN (6, 32, 42, 66, 100) THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
 							ELSE 0
 						END AS Odds,
 						CASE
-							WHEN s.ProductID IN (6, 32, 42, 66) THEN ISNULL(SUM(BetStake), 0)
+							WHEN s.ProductID IN (6, 32, 42, 66, 100) THEN ISNULL(SUM(BetStake), 0)
 							ELSE 0
 						END AS OddsSpread,
 						SUM(b.stake) AS Stake,

@@ -178,6 +178,7 @@ AS
 		- 20250416@Kos: Extend input param length [Redmine: 219083]
 		- 20250506@Kos: Support Saba Soccer Marble [#Redmine: 225015]
 		- 20250725@Kos: Hotfix - Parlay sport [#Redmine: 234256]
+		- 20250801@Kos: Support Playtech Jackpot [#Redmine: 233781]
 */
 
 BEGIN
@@ -1487,7 +1488,7 @@ BEGIN
 					SELECT
 						c.TransId AS RefNo,
 						CASE
-							WHEN Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
+							WHEN Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'PTRNG') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 							ELSE 0
 						END AS Odds,
 						SUM(brng.stake) AS Stake,
@@ -1503,7 +1504,7 @@ BEGIN
 						SUM(brng.playercomm) AS Commission,
 						SUM(brng.comm) AS Comm,
 						CASE
-							WHEN c.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN SUM(ISNULL(brng.BetStake, 0))
+							WHEN c.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'PTRNG') THEN SUM(ISNULL(brng.BetStake, 0))
 							ELSE 0
 						END AS OddsSpread
 					FROM #Data AS c

@@ -26,6 +26,7 @@ AS
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250801@Kos: Support Playtech Jackpot [#Redmine: 233781]
 */
 
 BEGIN
@@ -53,7 +54,7 @@ BEGIN
 	END CATCH
 
 	-- Get Sport Bettype Matrix
-	-- Support PP, Saba.club, Vgaming
+	-- Support PP, Saba.club, Vgaming, Playtech
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -63,7 +64,7 @@ BEGIN
 	INSERT INTO @SportBettype
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
-	WHERE ProductID IN (32, 36, 42, 66)
+	WHERE SubProduct = 'Jackpot Prize'
 
 	-- Create temp table
 	DECLARE @Data TABLE (

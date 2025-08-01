@@ -23,6 +23,7 @@ AS
 					- Return new JackpotInfo column
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
+		- 20250801@Kos: Support Playtech Jackpot [#Redmine: 233781]
 
 	Parameters:
 		- @TransType
@@ -145,7 +146,7 @@ BEGIN
 			brng.status,
 			brng.statusID,
 			CASE
-				WHEN sbt.ProductID IN (32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
+				WHEN sbt.ProductID IN (32, 36, 42, 66, 100) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.ContributionRate, 0)
 				ELSE brng.odds
 			END AS Odds,
 			brng.stake,
@@ -172,16 +173,16 @@ BEGIN
 			END AS MatchCode,
 			brng.GameId3rd AS BetTeam,
 			CASE
-				WHEN sbt.ProductID IN (32, 36, 42, 66) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
+				WHEN sbt.ProductID IN (32, 36, 42, 66, 100) AND brng.statusID IN (111, 112, 113) THEN ISNULL(brng.BetStake, 0)
 				ELSE 0
 			END AS OddsSpread,
 			CASE
-				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.RefNo2, -1)
+				WHEN sbt.ProductID IN (32, 36, 42, 66, 100) THEN ISNULL(brng.RefNo2, -1)
 				ELSE -1
 			END AS BetdaqId,
 			brng.ExtraInfo,
 			CASE
-				WHEN sbt.ProductID IN (32, 36, 42, 66) THEN ISNULL(brng.JackpotInfo, '')
+				WHEN sbt.ProductID IN (32, 36, 42, 66, 100) THEN ISNULL(brng.JackpotInfo, '')
 				ELSE ''
 			END AS JackpotInfo,
 			ISNULL(brng.SiteID, '') AS SiteId,
