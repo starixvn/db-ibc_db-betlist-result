@@ -264,7 +264,7 @@ BEGIN
 		DeviceType			TINYINT,
 		RefTable			TINYINT,
 		EventType			TINYINT,
-		SubProduct			NVARCHAR(50)
+		SubProduct			VARCHAR(500)
 	)
 
 	DECLARE @TmpData TABLE (
@@ -663,7 +663,7 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM @Data)
 	BEGIN
 		-- Get Sport Bettype Matrix
-		DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT, SubProduct NVARCHAR(50))
+		DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT, SubProduct VARCHAR(500))
 
 		DECLARE @IsTest BIT = 0
 
@@ -1352,7 +1352,7 @@ BEGIN
 					DeviceType			TINYINT,
 					RefTable			TINYINT,
 					EventType			TINYINT,
-					SubProduct			NVARCHAR (50)
+					SubProduct			VARCHAR (500)
 				)
 
 				INSERT INTO @TmpCasinoData
