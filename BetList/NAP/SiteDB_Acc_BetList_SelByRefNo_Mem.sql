@@ -51,6 +51,7 @@ AS
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
 		- 20250513@Razor: Support SabaCoins multiple wallets [Redmine: #215807]
+		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
 */
 
 BEGIN
@@ -162,6 +163,14 @@ BEGIN
 	
 	INSERT INTO @TmpShadow (CustId)
 	SELECT @CustId
+	
+	DECLARE @ProductJackpot TABLE(ProductId TINYINT)
+
+	INSERT INTO @ProductJackpot
+    SELECT DISTINCT ProductId
+    FROM @SportBettype
+    WHERE SubProduct LIKE 'Jackpot%'	
+	
 	-- FROM translog
 	SELECT TOP(1)
 		@TransId = b.translogid,
@@ -1351,7 +1360,7 @@ BEGIN
 						0 AS hdp1,
 						0 AS hdp2,
 						CASE
-							WHEN s.ProductID IN (6, 32, 36, 42, 66)
+							WHEN pj.ProductId IS NOT NULL
 								THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 							ELSE 0
 						END AS Odds,
@@ -1408,7 +1417,7 @@ BEGIN
 							ELSE ''
 						END AS transdesc,
 						CASE
-							WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(SUM(brng.BetStake), 0)
+							WHEN pj.ProductId IS NOT NULL THEN ISNULL(SUM(brng.BetStake), 0)
 							ELSE 0
 						END AS OddsSpread,
 						0 AS OriginalBetType,
@@ -1423,6 +1432,7 @@ BEGIN
 					FROM dbo.bettransRnG AS brng WITH (NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON brng.RefNo = b.transid
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+						LEFT JOIN @ProductJackpot AS pj ON s.ProductId = pj.ProductId
 					WHERE
 						b.transid = @TransId
 						AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
@@ -1431,6 +1441,7 @@ BEGIN
 						AND brng.statusid NOT IN (0, 1)
 					GROUP BY
 						b.transid,
+						pj.ProductId,
 						ISNULL(b.betid, 0),
 						b.bettype,
 						b.refno,
@@ -1477,7 +1488,7 @@ BEGIN
 						0 AS hdp1,
 						0 AS hdp2,
 						CASE
-							WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN b.odds
+							WHEN pj.ProductId IS NOT NULL THEN b.odds
 							ELSE 0
 						END AS Odds,
 						0 AS finalodds,
@@ -1529,7 +1540,7 @@ BEGIN
 							ELSE ''
 						END AS transdesc,
 						CASE
-							WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(b.oddsspread, 0)
+							WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.oddsspread, 0)
 							ELSE 0
 						END AS OddsSpread,
 						0 AS OriginalBetType,
@@ -1543,6 +1554,7 @@ BEGIN
 						b.DeviceType
 					FROM dbo.bettrans AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+						LEFT JOIN @ProductJackpot AS pj ON s.ProductId = pj.ProductId
 					WHERE b.transid = @TransId
 						AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
 							OR (s.ProductId = 6 AND s.SubProduct <> '')
@@ -2103,7 +2115,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (6, 32, 36, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+						WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 						ELSE b.odds
 					END AS Odds,
 					0 AS finalodds,
@@ -2148,17 +2160,17 @@ BEGIN
 					b.TranId3rd AS BetCheck,
 					b.transdesc,
 					CASE
-						WHEN s.ProductID IN (6, 32, 36, 42, 66) AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+						WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,
 					CASE
-						WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(b.RefNo2, -1)
+						WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.RefNo2, -1)
 						ELSE -1
 					END AS BetdaqId,
 					b.ExtraInfo,
 					CASE
-						WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(b.JackpotInfo, '')
+						WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.JackpotInfo, '')
 						ELSE ''
 					END AS JackpotInfo,
 					0 AS WalletType,
@@ -2168,6 +2180,7 @@ BEGIN
 					b.DeviceType
 				FROM dbo.bettransRnG AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
+					LEFT JOIN @ProductJackpot AS pj ON s.ProductId = pj.ProductId
 				WHERE b.transid = @TransId
 					AND (s.ProductId IN (22, 32, 34, 36, 42, 50, 55, 56, 60, 61, 62, 66, 67, 68, 72, 73, 75, 78, 79, 86)
 						OR (s.ProductId = 6 AND s.SubProduct <> '')

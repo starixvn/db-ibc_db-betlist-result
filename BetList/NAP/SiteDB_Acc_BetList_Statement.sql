@@ -42,6 +42,8 @@ AS
 		- 20241210@Razor: Support VS6 - Betby Virtual Sports [Redmine: #212546]
 		- 20250116@Razor: Support Direct Member [Redmine: #211969]
 		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
+		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
+
 
 	Param's Explanation:
 		+ @TransType:
@@ -678,7 +680,7 @@ BEGIN
 					ELSE ''
 				END AS transdesc,
 				CASE
-					WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(b.oddsspread, 0)
+					WHEN s.SubProduct LIKE 'Jackpot%' THEN ISNULL(b.oddsspread, 0)
 					ELSE 0
 				END AS OddsSpread,
 				0 AS OriginalBetType,
@@ -1745,7 +1747,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN b.odds
+						WHEN s.SubProduct LIKE 'Jackpot%' THEN b.odds
 						ELSE 0
 					END AS Odds,
 					0 AS modds,
@@ -1792,7 +1794,7 @@ BEGIN
 						ELSE ''
 					END AS transdesc,
 					CASE
-						WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(b.oddsspread, 0)
+						WHEN s.SubProduct LIKE 'Jackpot%' THEN ISNULL(b.oddsspread, 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,
@@ -1851,7 +1853,7 @@ BEGIN
 					0 AS hdp1,
 					0 AS hdp2,
 					CASE
-						WHEN s.ProductID IN (6, 32, 36, 42, 66)
+						WHEN s.SubProduct LIKE 'Jackpot%'
 							THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
 						ELSE 0
 					END AS Odds,
@@ -1903,7 +1905,7 @@ BEGIN
 						ELSE ''
 					END AS transdesc,
 					CASE
-						WHEN s.ProductID IN (6, 32, 36, 42, 66) THEN ISNULL(SUM(brng.BetStake), 0)
+						WHEN s.SubProduct LIKE 'Jackpot%' THEN ISNULL(SUM(brng.BetStake), 0)
 						ELSE 0
 					END AS OddsSpread,
 					0 AS OriginalBetType,
@@ -1924,6 +1926,7 @@ BEGIN
 					AND brng.statusID NOT IN (0, 1)
 				GROUP BY
 					b.transid,
+					s.SubProduct,
 					ISNULL(b.betid, 0),
 					b.bettype,
 					b.refno,
