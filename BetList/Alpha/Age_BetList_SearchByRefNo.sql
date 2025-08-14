@@ -52,6 +52,7 @@ AS
 		- 20250418@Benji: Support Rich Gaming [Redmine: #224687]
 		- 20250515@Benji: Support W Casino [Redmine: #227510]
 		- 20250617@Benji: Support ClotPlay, AI Gaming [Redmine: #229171]
+		- 20250814@Benji: Support Smartsoft [Redmine: #210944]
 */
 
 BEGIN
@@ -294,6 +295,7 @@ BEGIN
 						WHEN @ProductID = 95 THEN 'HOT'			-- HOTDOG
 						WHEN @ProductID = 96 THEN 'ON'			-- ON Casino
 						WHEN @ProductID = 98 THEN 'WLC'			-- W Casino
+						WHEN @ProductID = 99 THEN 'SS'			-- Smartsoft
 						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @ProductID = 101 THEN 'PTLC'		-- Playtech Live Casino
 						WHEN @ProductID = 102 THEN 'SBK'		-- SABA Keno
@@ -1238,6 +1240,7 @@ BEGIN
 						WHEN @ProductId = 48 THEN 'GPIRNG'		-- GPI
 						WHEN @ProductId = 91 THEN 'PS'			-- PLAY STAR
 						WHEN @ProductId = 95 THEN 'HOT'			-- HOTDOG
+						WHEN @ProductId = 99 THEN 'SS'			-- Smartsoft
 						WHEN @ProductId = 102 THEN 'SBK'		-- SABA Keno
 						WHEN @ProductId = 103 THEN 'ASK'		-- ASKMESLOT
 						WHEN @ProductId = 104 THEN 'FG'			-- Funky Games
