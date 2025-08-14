@@ -51,6 +51,7 @@ AS
 		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 		- 20250401@Kos: Support Virtual Sports 7 [Redmine: 219083]
 		- 20250801@Kos: Support Playtech Jackpot [#Redmine: 233781]
+		- 20250814@Kos: Hotfix -  Playtech Jackpot [#Redmine: 236105]
 */
 
 BEGIN
@@ -648,12 +649,12 @@ BEGIN
 			b.hdp2,
 			b.oddstype,
 			CASE
-				WHEN @Product IN ('VB', 'PP', 'OneRNG', 'Allbet', 'SBC', 'VGA', 'SG') AND x.Odds IS NOT NULL THEN x.Odds
+				WHEN @Product IN ('VB', 'PP', 'OneRNG', 'Allbet', 'SBC', 'VGA', 'SG', 'PTRNG') AND x.Odds IS NOT NULL THEN x.Odds
 				ELSE b.odds
 			END AS Odds,
 			b.modds,
 			CASE
-				WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+				WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG', 'PTRNG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
 				ELSE ISNULL(b.oddsspread, 0)
 			END AS OddsSpread,
 			CASE
@@ -954,8 +955,9 @@ BEGIN
 						WHEN @ProductId = 67 THEN 'AP'		-- AdvantPlay
 						WHEN @ProductId = 68 THEN 'APM'		-- AdvantPlay Mini
 						WHEN @ProductId = 72 THEN 'SEA'		-- SEAL Entertainment
-						WHEN @ProductId = 73 THEN 'MGRNG'		-- MG-RNG
-						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
+						WHEN @ProductId = 73 THEN 'MGRNG'	-- MG-RNG
+						WHEN @ProductId = 75 THEN 'JIG'		-- Jili
+						WHEN @ProductId = 100 THEN 'PTRNG'	-- Playtech RNG
 						ELSE 'Unknown'
 					END
 

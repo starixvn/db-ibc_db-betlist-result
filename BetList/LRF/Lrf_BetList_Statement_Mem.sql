@@ -116,6 +116,7 @@ AS
 		- 20250806@Kos: Fix security issue in dynamic query [#Redmine: 227496]
 					- Remove input param @Sort
 					- Add new input params @SortType TINYINT, @SortOrder TINYINT
+		- 20250814@Kos: Hotfix -  Playtech Jackpot [#Redmine: 236105]
 */
 
 BEGIN
@@ -1154,6 +1155,7 @@ BEGIN
 							WHEN s.ProductID = 75 THEN 'JIG'							-- Jili
 							WHEN s.ProductID = 76 THEN 'YB'								-- YeeBet
 							WHEN s.ProductID = 77 THEN 'LG'								-- Virtual Sports 3
+							WHEN s.ProductID = 100 THEN 'PTRNG'							-- Playtech RNG
 							WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 							WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Happy 5 Linked Games (Number Game)
 							WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -1456,7 +1458,7 @@ BEGIN
 										ELSE b.MatchId
 									END,
 						Odds = CASE
-									WHEN b.Product IN ('VB', 'PP', 'OneRNG', 'Allbet', 'SBC', 'VGA', 'SG') AND x.Odds IS NOT NULL THEN x.Odds
+									WHEN b.Product IN ('VB', 'PP', 'OneRNG', 'Allbet', 'SBC', 'VGA', 'SG', 'PTRNG') AND x.Odds IS NOT NULL THEN x.Odds
 									ELSE b.odds
 								END,
 						Stake = CASE
@@ -1575,8 +1577,8 @@ BEGIN
 										ELSE ''
 									END,
 						OddsSpread = CASE
-										WHEN b.Product IN ('PP', 'SBC', 'VGA', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
+										WHEN b.Product IN ('PP', 'SBC', 'VGA', 'SG', 'PTRNG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'PTRNG') THEN ISNULL(b.oddsspread, 0)
 										ELSE 0
 									END,
 						BetdaqId = CASE
@@ -1773,7 +1775,7 @@ BEGIN
 										ELSE ''
 									END,
 						OddsSpread = CASE
-										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
+										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'PTRNG') THEN ISNULL(b.oddsspread, 0)
 										ELSE 0
 									END,
 						BetdaqId = CASE
@@ -1922,7 +1924,7 @@ BEGIN
 										ELSE ''
 									END,
 						OddsSpread = CASE
-										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
+										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'PTRNG') THEN ISNULL(b.oddsspread, 0)
 										ELSE 0
 									END,
 						BetdaqId = CASE
