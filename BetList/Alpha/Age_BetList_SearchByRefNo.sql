@@ -53,6 +53,7 @@ AS
 		- 20250515@Benji: Support W Casino [Redmine: #227510]
 		- 20250617@Benji: Support ClotPlay, AI Gaming [Redmine: #229171]
 		- 20250814@Benji: Support Smartsoft [Redmine: #210944]
+		- 20250815@Benji: Support 3rd Products - Automate [Redmine: #210944]
 */
 
 BEGIN
@@ -295,7 +296,6 @@ BEGIN
 						WHEN @ProductID = 95 THEN 'HOT'			-- HOTDOG
 						WHEN @ProductID = 96 THEN 'ON'			-- ON Casino
 						WHEN @ProductID = 98 THEN 'WLC'			-- W Casino
-						WHEN @ProductID = 99 THEN 'SS'			-- Smartsoft
 						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @ProductID = 101 THEN 'PTLC'		-- Playtech Live Casino
 						WHEN @ProductID = 102 THEN 'SBK'		-- SABA Keno
@@ -1180,8 +1180,11 @@ BEGIN
 			@EventType = s.EventType,
 			@WhTicket = 5		-- BettransRnG
 		FROM dbo.bettransRnG AS b WITH (NOLOCK)
-			INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
-		WHERE b.transid = @RefNo AND b.winlostdate > @MoveBetsDay
+			INNER JOIN @SportBettype AS s ON 
+			s.bettype = b.gameID
+		WHERE b.transid = @RefNo 
+		AND s.RefTable = 1
+		AND b.winlostdate > @MoveBetsDay
 	END
 
 	-- BettransRnG14 range
@@ -1203,6 +1206,7 @@ BEGIN
 		FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
 		WHERE b.transid = @RefNo
+			AND s.RefTable = 1
 			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 	END
 
@@ -1239,8 +1243,7 @@ BEGIN
 						WHEN @ProductId = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @ProductId = 48 THEN 'GPIRNG'		-- GPI
 						WHEN @ProductId = 91 THEN 'PS'			-- PLAY STAR
-						WHEN @ProductId = 95 THEN 'HOT'			-- HOTDOG
-						WHEN @ProductId = 99 THEN 'SS'			-- Smartsoft
+						WHEN @ProductId = 95 THEN 'HOT'			-- HOTDOG						
 						WHEN @ProductId = 102 THEN 'SBK'		-- SABA Keno
 						WHEN @ProductId = 103 THEN 'ASK'		-- ASKMESLOT
 						WHEN @ProductId = 104 THEN 'FG'			-- Funky Games
@@ -1251,8 +1254,7 @@ BEGIN
 						ELSE 'Unknown'
 					END
 
-	IF @Product <> 'Unknown'
-	BEGIN
+	
 		-- BettransRnG
 		IF @WhTicket = 5
 		BEGIN
@@ -1446,7 +1448,7 @@ BEGIN
 			FROM dbo.bettransRnG14 WITH (NOLOCK)
 			WHERE transid = @TransId
 		END
-	END
+	
 
 	-- BettransLC tables
 	SET @ProductId = 0
@@ -1470,7 +1472,7 @@ BEGIN
 			@WhTicket = 8		-- bettransLC
 		FROM dbo.bettransLC AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
-		WHERE b.transid = @RefNo AND b.winlostdate > @MoveBetsDay
+		WHERE b.transid = @RefNo AND s.RefTable = 2 AND b.winlostdate > @MoveBetsDay
 	END
 
 	-- BettransLC14 range
@@ -1492,6 +1494,7 @@ BEGIN
 		FROM dbo.bettransLC14 AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
 		WHERE b.transid = @RefNo
+			AND s.RefTable = 2
 			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 	END
 
@@ -1519,8 +1522,8 @@ BEGIN
 						ELSE 'Unknown'
 					END
 
-	IF @Product <> 'Unknown'
-	BEGIN
+	
+
 		-- BettransLC
 		IF @WhTicket = 8
 		BEGIN
@@ -1682,7 +1685,7 @@ BEGIN
 			FROM dbo.bettransLC14 WITH (NOLOCK)
 			WHERE transid = @TransId
 		END
-	END
+	
 
 	-- Bettransg tables
 	SET @ProductId = 0
