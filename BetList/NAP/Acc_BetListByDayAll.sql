@@ -200,6 +200,7 @@ AS
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
+		- 20250819@Razor: Support VS 2 - VS Tournament [Redmine: #235084]
 
 
 	Param's Explanation:
@@ -624,8 +625,7 @@ BEGIN
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND b.matchid IN (9, 29, 2799, 10449, 11099)
-				AND b.bettype IN (9, 29, 2799, 10449, 11099)
+				AND b.bettype IN (9, 29, 2798, 2799, 10449, 11099)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Outright
@@ -1577,8 +1577,7 @@ BEGIN
 			FROM dbo.bettrans AS b WITH (NOLOCK)
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
-				AND b.matchid IN (9, 29, 2799, 10449, 11099)
-				AND b.bettype IN (9, 29, 2799, 10449, 11099)
+				AND b.bettype IN (9, 29, 2798, 2799, 10449, 11099)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
 
 			-- Outright
