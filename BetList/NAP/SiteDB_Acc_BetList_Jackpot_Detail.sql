@@ -69,7 +69,8 @@ BEGIN
         BetCheck		NVARCHAR(200),
         TransDesc		NVARCHAR(300),
         BetdaqId		BIGINT,
-        ExtraInfo		VARCHAR(1000)
+        ExtraInfo		VARCHAR(1000),
+		MatchCode		VARCHAR(50)
     )
 
     -- Get ticket from bettransRnG
@@ -115,7 +116,8 @@ BEGIN
             b.TranId3rd AS BetCheck,
             b.transdesc,
             ISNULL(b.RefNo2, -1) AS BetdaqId,
-            b.ExtraInfo
+            b.ExtraInfo,
+			'' as MatchCode
         FROM dbo.bettransRnG AS b WITH (NOLOCK)
             INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.BetType
         WHERE b.custid = @CustId AND b.transid = @TransId
@@ -164,7 +166,8 @@ BEGIN
             b.TranId3rd AS BetCheck,
             b.transdesc,
             ISNULL(b.RefNo2, -1) AS BetdaqId,
-            b.ExtraInfo
+            b.ExtraInfo,
+			b.GameId3rd as MatchCode
         FROM dbo.bettransLC AS b WITH (NOLOCK)
             INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.BetType
         WHERE b.custid = @CustId AND b.transid = @TransId

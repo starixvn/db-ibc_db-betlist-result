@@ -43,8 +43,8 @@ AS
 		- 20250116@Razor: Support Direct Member [Redmine: #211969]
 		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
-		- 20250623@Benji: Support Playtech Live Jackpot[Redmine: #230127]
 		- 20250819@Razor: Support VS 2 - VS Tournament [Redmine: #235084]
+		- 20250820@Benji: Support Playtech Live Jackpot[Redmine: #230127]
 
 
 	Param's Explanation:
@@ -2202,7 +2202,11 @@ BEGIN
 					b.bettype,
 					0 AS hdp1,
 					0 AS hdp2,
-					0 AS odds,
+					CASE
+						WHEN s.SubProduct LIKE 'Jackpot%'
+							THEN ISNULL(AVG(CASE WHEN blc.statusID IN (111, 112, 113) THEN blc.ContributionRate END), 0)
+						ELSE 0
+					END AS Odds,
 					0 AS modds,
 					0 AS finalodds,
 					0 AS finalodds2,

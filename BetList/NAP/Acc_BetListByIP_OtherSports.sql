@@ -194,7 +194,7 @@ AS
 		- 20250423@Dave: Change datatype for ExchangeID [RedmineID: #225169]
 		- 20250515@Benji: Support W Casino [Redmine: #227510]
 		- 20250515@Benji: Support Automate Integration for Betlist [Redmineid: #227997]
-		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
+		- 20250820@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
 
 		
 */
@@ -992,7 +992,10 @@ BEGIN
 					INSERT INTO @TmpData
 					SELECT
 						c.TransId AS RefNo,
-						0 AS Odds,
+						CASE
+							WHEN c.SubProduct LIKE 'Jackpot%' THEN ISNULL(AVG(CASE WHEN blc.statusID IN (111, 112, 113) THEN blc.ContributionRate END), 0)
+							ELSE 0
+						END AS Odds,
 						SUM(blc.stake) AS Stake,
 						SUM(blc.actual_stake) AS Actual_Stake,
 						CASE
@@ -1002,14 +1005,18 @@ BEGIN
 						END AS Status,
 						SUM(blc.winlost - blc.actual_stake) AS WinLost,
 						SUM(blc.playercomm) AS Commission,
-						0 AS OddsSpread
+						CASE
+							WHEN c.SubProduct LIKE 'Jackpot%' THEN ISNULL(SUM(blc.BetStake), 0)
+							ELSE 0
+						END AS OddsSpread
 					FROM @Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
 					WHERE (c.Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR c.RefTable = 2)
 						AND blc.statusID NOT IN (0, 1)
 					GROUP BY
 						c.TransId,
-						c.Product
+						c.Product,
+						c.SubProduct
 				END
 
 				DELETE b

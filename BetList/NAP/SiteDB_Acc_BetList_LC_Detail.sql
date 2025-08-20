@@ -30,6 +30,7 @@ AS
 		- 20250410@Benji: Remove productID 101,107 (Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
+		- 20250820@Benji: Support LC jackpot [RedmineID: #230127]
 
 	Parameters:
 		- @TransType
@@ -43,17 +44,25 @@ BEGIN
 	SET NOCOUNT ON
 
 	-- Get Sport Bettype Matrix --
-	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT)
+	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
-	SELECT ProductID, BetType, EventType
+	SELECT ProductID, BetType, EventType, SubProduct
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR RefTable = 2
 	-- Support AG Casino, AllBet, SA Gaming, Sexy Gaming, IBCBet Live Casino, ION, WM, Big Gaming only, PP Live Casino, FGG, YeeBet, WE
+
+	DECLARE @ProductJackpot TABLE(ProductId TINYINT)
+
+	INSERT INTO @ProductJackpot
+    SELECT DISTINCT ProductId
+    FROM @SportBettype
+    WHERE SubProduct LIKE 'Jackpot%'
+
 
 	DECLARE @tmpStatus TABLE (statusId TINYINT)
 
@@ -130,7 +139,10 @@ BEGIN
 		SiteId			VARCHAR(7),
 		EventDate		DATETIME,
 		ExtraInfo		VARCHAR(1000),
-		DeviceType		TINYINT
+		DeviceType		TINYINT,
+		JackpotInfo		VARCHAR(50),
+		OddsSpread		MONEY,
+		BetdaqId		BIGINT,
 	)
 
 	-- Get currency name
@@ -171,6 +183,7 @@ BEGIN
 			END AS StatusId,
 			CASE
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.odds, blc.odds)
+				WHEN pj.ProductId IS NOT NULL AND blc.statusID IN (111, 112, 113) THEN ISNULL(blc.ContributionRate, 0)
 				ELSE blc.odds
 			END AS Odds,
 			@CurrencyName AS Currency,
@@ -266,13 +279,26 @@ BEGIN
 				WHEN sbt.ProductID IN (39) THEN ISNULL(bg.ExtraInfo, blc.ExtraInfo)
 				ELSE blc.ExtraInfo
 			END,
-			blc.DeviceType
+			blc.DeviceType,
+			CASE				
+				WHEN pj.ProductId IS NOT NULL THEN ISNULL(blc.JackpotInfo, '')
+				ELSE ''
+			END AS JackpotInfo,
+			CASE			
+				WHEN pj.ProductId IS NOT NULL AND blc.statusID IN (111, 112, 113) THEN ISNULL(blc.BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
+			CASE
+				WHEN pj.ProductId IS NOT NULL THEN ISNULL(blc.RefNo2, -1)
+				ELSE -1
+			END AS BetdaqId
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON blc.gameID = sbt.Bettype
 			LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
 				ON bg.refno = blc.transid
 				AND bg.custid = blc.custid
 				AND sbt.ProductID = 39
+			LEFT JOIN @ProductJackpot AS pj ON sbt.ProductId = pj.ProductId
 		WHERE blc.RefNo = @RefNo
 			AND blc.statusID IN (SELECT statusId FROM @tmpStatus)
 	END
