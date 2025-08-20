@@ -52,6 +52,7 @@ AS
 		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
 		- 20250513@Razor: Support SabaCoins multiple wallets [Redmine: #215807]
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
+		- 20250819@Razor: Support VS 2 - VS Tournament [Redmine: #235084]
 */
 
 BEGIN
@@ -578,7 +579,7 @@ BEGIN
 			END
 
 			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)
-			IF @BetType IN (9, 29, 2799, 10449, 11099)
+			IF @BetType IN (9, 29, 2798, 2799, 10449, 11099)
 			BEGIN
 				INSERT INTO @Data
 				SELECT
@@ -675,8 +676,7 @@ BEGIN
 					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 				WHERE
-					b.matchid IN (9, 29, 2799, 10449, 11099)
-					AND b.bettype IN (9, 29, 2799, 10449, 11099)
+					b.bettype IN (9, 29, 2798, 2799, 10449, 11099)
 					AND b.transid = @TransId
 			END
 
