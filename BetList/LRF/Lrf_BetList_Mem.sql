@@ -191,6 +191,7 @@ AS
 		- 20250806@Kos: Fix security issue in dynamic query [#Redmine: 227496]
 					- Remove input param @Sort
 					- Add new input params @SortType TINYINT, @SortOrder TINYINT
+		- 20250820@Kos: Support Playtech Live Jackpot [#Redmine: 230078]
 */
 
 BEGIN
@@ -236,14 +237,14 @@ BEGIN
 	CREATE TABLE #TempBetType (ProductPrefix VARCHAR(10), BetTypeList VARCHAR(MAX))
 
 	-- Get Sport Bettype Matrix
-	DECLARE @SportBettype TABLE(ProductID TINYINT, ProductPrefix VARCHAR(500), BetType SMALLINT, EventType TINYINT, RefTable TINYINT)
+	DECLARE @SportBettype TABLE(ProductID TINYINT, ProductPrefix VARCHAR(500), BetType SMALLINT, EventType TINYINT, RefTable TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 	INSERT INTO @SportBettype
-	SELECT ProductID, ProductPrefix, BetType, EventType, RefTable
+	SELECT ProductID, ProductPrefix, BetType, EventType, RefTable, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
 	WHERE BetType NOT IN (71, 73, 901, 902, 903, 904, 911, 912, 913, 914)
 		AND BetType NOT BETWEEN 801 AND 899
@@ -405,6 +406,7 @@ BEGIN
 		SiteId				VARCHAR(20),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
+		SubProduct			VARCHAR(500),
 		RefTable			TINYINT,
 		EventType			TINYINT
 	)
@@ -468,6 +470,7 @@ BEGIN
 		SiteId				VARCHAR(20),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
+		SubProduct			VARCHAR(500),
 		RefTable			TINYINT,
 		EventType			TINYINT
 	)
@@ -1285,7 +1288,8 @@ BEGIN
 							ELSE 'Unknown'
 						END,
 				RefTable = s.RefTable,
-				EventType = s.EventType
+				EventType = s.EventType,
+				SubProduct = s.SubProduct
 			FROM #Data AS b
 				INNER JOIN @SportBetType AS s ON b.bettype = s.bettype
 
@@ -1534,7 +1538,10 @@ BEGIN
 					INSERT INTO @TmpData
 					SELECT
 						c.TransId AS RefNo,
-						0 AS Odds,
+						CASE
+							WHEN c.SubProduct LIKE '%Jackpot%' THEN ISNULL(AVG(CASE WHEN blc.statusID IN (111, 112, 113) THEN blc.ContributionRate END), 0)
+							ELSE 0
+						END AS Odds,
 						SUM(blc.stake) AS Stake,
 						SUM(blc.actual_stake) AS Actual_Stake,
 						CASE
@@ -1547,7 +1554,10 @@ BEGIN
 						- SUM(blc.winlost - blc.actual_stake) AS LicenseeWL,
 						SUM(blc.playercomm) AS Commission,
 						SUM(blc.comm) AS Comm,
-						0 AS OddsSpread
+						CASE
+							WHEN c.SubProduct LIKE '%Jackpot%' THEN SUM(ISNULL(blc.BetStake, 0))
+							ELSE 0
+						END AS OddsSpread
 					FROM #Data AS c
 						INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
 					WHERE c.RefTable = 2
@@ -1555,7 +1565,8 @@ BEGIN
 						AND blc.statusID NOT IN (0, 1)
 					GROUP BY
 						c.TransId,
-						c.Product
+						c.Product,
+						c.SubProduct
 				END
 
 				DELETE FROM @TmpData
@@ -1574,10 +1585,12 @@ BEGIN
 			SET
 				Odds = CASE
 							WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.Odds IS NOT NULL THEN x.Odds
+							WHEN b.SubProduct LIKE '%Jackpot%' AND x.Odds IS NOT NULL THEN x.Odds
 							ELSE b.Odds
 						END,
 				OddsSpread = CASE
 								WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+								WHEN b.SubProduct LIKE '%Jackpot%' AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
 								ELSE b.oddsspread
 							END,
 				Stake = CASE
@@ -1745,10 +1758,6 @@ BEGIN
 									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									ELSE 0
 								END,
-					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
-									ELSE 0
-								END,
 					Status = CASE
 								WHEN b.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 								WHEN b.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
@@ -1886,10 +1895,6 @@ BEGIN
 									WHEN b.RefTable IN (1, 2) THEN b.MatchId
 									ELSE 0
 								END,
-					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
-									ELSE 0
-								END,
 					Status = CASE
 								WHEN b.Product = 'TG' AND b.status = 'Won' AND b.modds = 0.25 THEN 'Half Won'
 								WHEN b.Product = 'TG' AND b.status = 'Lose' AND b.modds = -0.25 THEN 'Half Lose'
@@ -2022,10 +2027,6 @@ BEGIN
 									WHEN b.EventType = 3 THEN vr.SportType
 									WHEN b.EventType = 5 THEN m3rd.SportType
 									WHEN b.RefTable IN (1, 2) THEN b.MatchId
-									ELSE 0
-								END,
-					OddsSpread = CASE
-									WHEN b.Product IN ('SB', 'OneRNG', 'PP', 'SBC', 'VGA', 'SG') THEN ISNULL(b.oddsspread, 0)
 									ELSE 0
 								END,
 					Status = CASE

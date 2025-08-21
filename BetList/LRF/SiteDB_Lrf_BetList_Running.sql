@@ -117,6 +117,7 @@ AS
 					- Remove input param @Sort
 					- Add new input params @SortType TINYINT, @SortOrder TINYINT
 		- 20250905@Kos: Hotfix - Parlay sport [#Redmine: 234256]
+		- 20250908@Kos: Support Playtech Live Jackpot [#Redmine: 230078]
 */
 
 BEGIN
@@ -219,6 +220,7 @@ BEGIN
 		Tranid3rd			NVARCHAR(200),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
+		SubProduct			VARCHAR(500),
 		RefTable			TINYINT,
 		EventType			TINYINT
 	)
@@ -283,6 +285,7 @@ BEGIN
 		Tranid3rd			NVARCHAR(200),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
+		SubProduct			VARCHAR(500),
 		RefTable			TINYINT,
 		EventType			TINYINT
 	)
@@ -346,14 +349,14 @@ BEGIN
 		END
 
 		-- Get Sport Bettype Matrix
-		DECLARE @SportBettype TABLE(ProductID TINYINT, ProductPrefix VARCHAR(500), BetType SMALLINT, EventType TINYINT, RefTable TINYINT)
+		DECLARE @SportBettype TABLE(ProductID TINYINT, ProductPrefix VARCHAR(500), BetType SMALLINT, EventType TINYINT, RefTable TINYINT, SubProduct VARCHAR(500))
 
 		DECLARE @IsTest BIT = 0
 
 		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 		INSERT INTO @SportBettype
-		SELECT ProductID, ProductPrefix, BetType, EventType, RefTable
+		SELECT ProductID, ProductPrefix, BetType, EventType, RefTable, SubProduct
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
 		WHERE BetType NOT IN (71, 73, 901, 902, 903, 904, 911, 912, 913, 914, 997, 999)
 			AND BetType NOT BETWEEN 801 AND 899
@@ -914,7 +917,8 @@ BEGIN
 							ELSE 'Unknown'
 						END,
 				RefTable = s.RefTable,
-				EventType = s.EventType
+				EventType = s.EventType,
+				SubProduct = s.SubProduct
 			FROM #Data AS b
 				INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
 
@@ -1041,8 +1045,14 @@ BEGIN
 					SELECT
 						b.RefNo,
 						b.gameID AS BetType,
-						0 AS Odds,
-						0 AS OddsSpread,
+						CASE
+							WHEN s.SubProduct LIKE '%Jackpot%' THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
+							ELSE 0
+						END AS Odds,
+						CASE
+							WHEN s.SubProduct LIKE '%Jackpot%' THEN ISNULL(SUM(BetStake), 0)
+							ELSE 0
+						END AS OddsSpread,
 						SUM(b.stake) AS Stake,
 						SUM(b.actual_stake) AS Actual_Stake,
 						1 AS IsNew
@@ -1051,7 +1061,8 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON b.gameID = s.bettype
 					WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
 					GROUP BY b.RefNo,
-						b.gameID
+						b.gameID,
+						s.SubProduct
 				END
 				ELSE
 				BEGIN
@@ -1084,8 +1095,14 @@ BEGIN
 					SELECT
 						b.RefNo,
 						b.gameID AS BetType,
-						0 AS Odds,
-						0 AS OddsSpread,
+						CASE
+							WHEN s.SubProduct LIKE '%Jackpot%' THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
+							ELSE 0
+						END AS Odds,
+						CASE
+							WHEN s.SubProduct LIKE '%Jackpot%' THEN ISNULL(SUM(BetStake), 0)
+							ELSE 0
+						END AS OddsSpread,
 						SUM(b.stake) AS Stake,
 						SUM(b.actual_stake) AS Actual_Stake,
 						1 AS IsNew
@@ -1094,7 +1111,8 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON b.gameID = s.bettype
 					WHERE b.winlostdate >= @Yesterday AND b.statusID IN (0, 1)
 					GROUP BY b.RefNo,
-						b.gameID
+						b.gameID,
+						s.SubProduct
 				END
 
 				-- Delete settled only summary ticket
@@ -1408,10 +1426,12 @@ BEGIN
 							END,
 				Odds = CASE
 							WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') AND x.Odds IS NOT NULL THEN x.Odds
+							WHEN b.SubProduct LIKE '%Jackpot%' AND x.Odds IS NOT NULL THEN x.Odds
 							ELSE b.Odds
 						END,
 				OddsSpread = CASE
 								WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+								WHEN b.SubProduct LIKE '%Jackpot%' AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
 								WHEN b.Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
 								ELSE 0
 							END,

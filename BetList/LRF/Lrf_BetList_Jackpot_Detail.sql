@@ -27,6 +27,7 @@ AS
 		- 20240102@Kos: Extend data type [Redmine: 198966]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250801@Kos: Support Playtech Jackpot [#Redmine: 233781]
+		- 20250820@Kos: Support Playtech Live Jackpot [#Redmine: 230078]
 */
 
 BEGIN
@@ -54,7 +55,7 @@ BEGIN
 	END CATCH
 
 	-- Get Sport Bettype Matrix
-	-- Support PP, Saba.club, Vgaming, Playtech
+	-- Support PP, Saba.club, Vgaming, Playtech, Playtech Live
 	DECLARE @SportBettype TABLE (ProductID TINYINT, BetType SMALLINT, EventType TINYINT)
 
 	DECLARE @IsTest BIT = 0
@@ -182,6 +183,101 @@ BEGIN
 			b.transdesc,
 			ISNULL(b.RefNo2, -1) AS BetdaqId
 		FROM bodb_Archive.dbo.bettransRnG_bk AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
+		WHERE b.custid = @CustId AND b.transid = @TransId
+	END
+	ELSE IF @ExcludeBettrans = 0
+		AND EXISTS ( SELECT TOP(1) 1
+				FROM dbo.bettransLC AS b WITH (NOLOCK)
+					INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.BetType
+				WHERE b.transid = @TransId AND b.custid = @CustId )
+	BEGIN
+		INSERT INTO @Data
+		SELECT
+			b.transid,
+			b.RefNo,
+			b.currency,
+			b.recommend,
+			b.transdate,
+			b.winlostdate,
+			b.productID AS SportType,
+			b.gameID AS BetType,
+			b.status,
+			b.statusID,
+			b.stake,
+			b.actual_stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			b.comm AS Comm,
+			b.playercomm AS PlayerComm,
+			b.ip,
+			b.TranId3rd AS BetCheck,
+			b.transdesc,
+			ISNULL(b.RefNo2, -1) AS BetdaqId
+		FROM dbo.bettransLC AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
+		WHERE b.custid = @CustId AND b.transid = @TransId
+	END
+	ELSE IF EXISTS ( SELECT TOP(1) 1
+					FROM dbo.bettransLC14 AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.BetType
+					WHERE b.transid = @TransId AND b.custid = @CustId )
+	BEGIN
+		INSERT INTO @Data
+		SELECT
+			b.transid,
+			b.RefNo,
+			b.currency,
+			b.recommend,
+			b.transdate,
+			b.winlostdate,
+			b.productID AS SportType,
+			b.gameID AS BetType,
+			b.status,
+			b.statusID,
+			b.stake,
+			b.actual_stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			b.comm AS Comm,
+			b.playercomm AS PlayerComm,
+			b.ip,
+			b.TranId3rd AS BetCheck,
+			b.transdesc,
+			ISNULL(b.RefNo2, -1) AS BetdaqId
+		FROM dbo.bettransLC14 AS b WITH (NOLOCK)
+			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
+		WHERE b.custid = @CustId AND b.transid = @TransId
+	END
+	ELSE IF EXISTS ( SELECT TOP(1) 1
+					FROM bodb_Archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
+						INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.BetType
+					WHERE b.transid = @TransId AND b.custid = @CustId )
+	BEGIN
+		INSERT INTO @Data
+		SELECT
+			b.transid,
+			b.RefNo,
+			b.currency,
+			b.recommend,
+			b.transdate,
+			b.winlostdate,
+			b.productID AS SportType,
+			b.gameID AS BetType,
+			b.status,
+			b.statusID,
+			b.stake,
+			b.actual_stake,
+			(b.winlost - b.actual_stake) AS WinLost,
+			- (b.winlost - b.actual_stake) AS LicenseeWL,
+			b.comm AS Comm,
+			b.playercomm AS PlayerComm,
+			dp.IP,
+			b.TranId3rd AS BetCheck,
+			b.transdesc,
+			ISNULL(b.RefNo2, -1) AS BetdaqId
+		FROM bodb_Archive.dbo.bettransLC_bk AS b WITH (NOLOCK)
 			INNER JOIN @SportBettype AS sbt ON b.gameID = sbt.Bettype
 			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE b.custid = @CustId AND b.transid = @TransId

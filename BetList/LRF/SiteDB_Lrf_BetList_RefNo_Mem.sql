@@ -52,6 +52,7 @@ AS
 		- 20250401@Kos: Support Virtual Sports 7 [Redmine: 219083]
 		- 20250801@Kos: Support Playtech Jackpot [#Redmine: 233781]
 		- 20250814@Kos: Hotfix -  Playtech Jackpot [#Redmine: 236105]
+		- 20250820@Kos: Support Playtech Live Jackpot [#Redmine: 230078]
 */
 
 BEGIN
@@ -79,7 +80,7 @@ BEGIN
 	END CATCH
 
 	-- Get SportBetTypeMatrix
-	DECLARE @SportBettype TABLE ( ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT)
+	DECLARE @SportBettype TABLE ( ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
 
@@ -88,7 +89,7 @@ BEGIN
 	IF @RefNo <> 0		-- Search by refno
 	BEGIN
 		INSERT INTO @SportBettype
-		SELECT ProductID, BetType, EventType, RefTable
+		SELECT ProductID, BetType, EventType, RefTable, SubProduct
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 		WHERE ProductID NOT IN (2, 4, 7, 9, 11, 12, 13, 14, 15, 17, 19, 23, 24, 26, 30, 31, 33, 46, 47, 50, 52, 59, 65)
 			AND BetType NOT IN (71, 72, 901, 902, 903, 904, 911, 912, 913, 914, 999)
@@ -97,7 +98,7 @@ BEGIN
 	ELSE IF ISNULL(@TxId, '') <> ''		-- Search by licensee TxId
 	BEGIN
 		INSERT INTO @SportBettype
-		SELECT ProductID, BetType, EventType, RefTable
+		SELECT ProductID, BetType, EventType, RefTable, SubProduct
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 		WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 60, 63, 66, 69, 71, 74, 77, 83, 88, 106)
 			AND BetType NOT IN (901, 902, 903, 904, 999)
@@ -213,6 +214,7 @@ BEGIN
 		@EventType		TINYINT,
 		@RefTable		TINYINT,
 		@Product		VARCHAR(30),
+		@SubProduct		VARCHAR(500),
 		@WhTicket		TINYINT		= 0,
 		@BonusTransId	BIGINT		= 0,
 		@MainCustId		INT			= 0
@@ -238,6 +240,7 @@ BEGIN
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
 					@RefTable = s.RefTable,
+					@SubProduct = s.SubProduct,
 					@WhTicket = 1		-- translog
 				FROM dbo.translog AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON b.gameID = s.bettype
@@ -262,6 +265,7 @@ BEGIN
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
 					@RefTable = s.RefTable,
+					@SubProduct = s.SubProduct,
 					@WhTicket = 2		-- bettrans
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
@@ -283,6 +287,7 @@ BEGIN
 						@ProductId = s.ProductID,
 						@EventType = s.EventType,
 						@RefTable = s.RefTable,
+						@SubProduct = s.SubProduct,
 						@WhTicket = 2		-- bettrans
 					FROM dbo.bettrans AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
@@ -309,6 +314,7 @@ BEGIN
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
 					@RefTable = s.RefTable,
+					@SubProduct = s.SubProduct,
 					@WhTicket = 2		-- bettrans
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @TempAg AS ta ON ta.CustId = b.recommend
@@ -415,6 +421,7 @@ BEGIN
 						WHEN @ProductId = 75 THEN 'JIG'			-- Jili
 						WHEN @ProductID = 76 THEN 'YB'			-- YeeBet
 						WHEN @ProductID = 77 THEN 'LG'			-- Virtual Sports 3
+						WHEN @ProductID = 100 THEN 'PTRNG'		-- Playtech
 						WHEN @EventType = 0 AND @ProductId = 1 THEN 'Parlay'		-- Sportsbook Parlay
 						WHEN @EventType = 0 AND @ProductId = 3 THEN 'H5LG'			-- Happy 5 Linked Games (Number Game)
 						WHEN @EventType = 0 AND @ProductId = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
@@ -587,7 +594,10 @@ BEGIN
 			BEGIN
 				INSERT INTO @TmpData
 				SELECT
-					0 AS Odds,
+					CASE
+						WHEN @SubProduct LIKE '%Jackpot%' THEN ISNULL(AVG(CASE WHEN statusID IN (111, 112, 113) THEN ContributionRate END), 0)
+						ELSE 0
+					END AS Odds,
 					SUM(stake) AS Stake,
 					SUM(actual_stake) AS Actual_Stake,
 					CASE
@@ -599,7 +609,10 @@ BEGIN
 					- SUM(winlost - actual_stake) AS LicenseeWL,
 					SUM(playercomm) AS Commission,
 					SUM(comm) AS Comm,
-					0 AS OddsSpread
+					CASE
+						WHEN @SubProduct LIKE '%Jackpot%' THEN ISNULL(SUM(BetStake), 0)
+						ELSE 0
+					END AS OddsSpread
 				FROM dbo.bettransLC WITH (NOLOCK)
 				WHERE RefNo = @TransId AND statusID NOT IN (0, 1)
 				GROUP BY RefNo
@@ -650,11 +663,13 @@ BEGIN
 			b.oddstype,
 			CASE
 				WHEN @Product IN ('VB', 'PP', 'OneRNG', 'Allbet', 'SBC', 'VGA', 'SG', 'PTRNG') AND x.Odds IS NOT NULL THEN x.Odds
+				WHEN @SubProduct LIKE '%Jackpot%' AND x.Odds IS NOT NULL THEN x.Odds
 				ELSE b.odds
 			END AS Odds,
 			b.modds,
 			CASE
 				WHEN @Product IN ('PP', 'SBC', 'VGA', 'SG', 'PTRNG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+				WHEN @SubProduct LIKE '%Jackpot%' AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
 				ELSE ISNULL(b.oddsspread, 0)
 			END AS OddsSpread,
 			CASE
@@ -878,6 +893,7 @@ BEGIN
 						@ProductId = s.ProductID,
 						@EventType = s.EventType,
 						@RefTable = s.RefTable,
+						@SubProduct = s.SubProduct,
 						@WhTicket = 5		-- BettransRnG
 					FROM dbo.bettransRnG AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -901,6 +917,7 @@ BEGIN
 						@ProductId = s.ProductID,
 						@EventType = s.EventType,
 						@RefTable = s.RefTable,
+						@SubProduct = s.SubProduct,
 						@WhTicket = 5		-- BettransRnG
 					FROM dbo.bettransRnG AS b WITH (NOLOCK)
 						INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -1073,6 +1090,7 @@ BEGIN
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
 					@RefTable = s.RefTable,
+					@SubProduct = s.SubProduct,
 					@WhTicket = 8		-- bettransLC
 				FROM dbo.bettransLC AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.bettype = b.gameID
@@ -1139,9 +1157,15 @@ BEGIN
 				0 AS Hdp1,
 				0 AS Hdp2,
 				0 AS OddsType,
-				odds,
+				CASE
+					WHEN @SubProduct LIKE '%Jackpot%' AND statusID IN (111, 112, 113) THEN ISNULL(ContributionRate, 0)
+					ELSE odds
+				END AS Odds,
 				0 AS MOdds,
-				0 AS OddsSpread,
+				CASE
+					WHEN @SubProduct LIKE '%Jackpot%' AND statusID IN (111, 112, 113) THEN ISNULL(BetStake, 0)
+					ELSE 0
+				END AS OddsSpread,
 				stake,
 				actual_stake,
 				CASE
@@ -1177,9 +1201,9 @@ BEGIN
 				'' AS ShowTime,
 				TranId3rd AS BetCheck,
 				transdesc,
-				-1 AS BetdaqId,
+				ISNULL(RefNo2, -1) AS BetdaqId,
 				ExtraInfo,
-				'' AS JackpotInfo,
+				ISNULL(JackpotInfo, '') AS JackpotInfo,
 				0 AS OriginalStake,
 				0 AS OriginalBetType,
 				0 AS WalletType,
@@ -1212,6 +1236,7 @@ BEGIN
 					@BetType = b.bettype,
 					@ProductId = s.ProductID,
 					@EventType = s.EventType,
+					@SubProduct = s.SubProduct,
 					@WhTicket = 11		-- bettransg
 				FROM dbo.bettransg AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.bettype = b.bettype

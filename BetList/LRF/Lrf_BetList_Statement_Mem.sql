@@ -117,6 +117,7 @@ AS
 					- Remove input param @Sort
 					- Add new input params @SortType TINYINT, @SortOrder TINYINT
 		- 20250814@Kos: Hotfix -  Playtech Jackpot [#Redmine: 236105]
+		- 20250820@Kos: Support Playtech Live Jackpot [#Redmine: 230078]
 */
 
 BEGIN
@@ -231,6 +232,7 @@ BEGIN
 		Tranid3rd			NVARCHAR(200),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
+		SubProduct			VARCHAR(500),
 		RefTable			TINYINT,
 		EventType			TINYINT
 	)
@@ -300,6 +302,7 @@ BEGIN
 		Tranid3rd			NVARCHAR(200),
 		TableID				TINYINT,
 		Product				VARCHAR(30),
+		SubProduct			VARCHAR(500),
 		RefTable			TINYINT,
 		EventType			TINYINT
 	)
@@ -1167,7 +1170,8 @@ BEGIN
 							ELSE 'Unknown'
 						END,
 				RefTable = s.RefTable,
-				EventType = s.EventType
+				EventType = s.EventType,
+				SubProduct = s.SubProduct
 			FROM #Data AS b
 				INNER JOIN @SportBettype AS s ON b.BetType = s.BetType
 
@@ -1309,7 +1313,10 @@ BEGIN
 							INSERT INTO @TmpData
 							SELECT
 								c.TransId AS RefNo,
-								0 AS Odds,
+								CASE
+									WHEN c.SubProduct LIKE '%Jackpot%' THEN ISNULL(AVG(CASE WHEN blc.statusID IN (111, 112, 113) THEN blc.ContributionRate END), 0)
+									ELSE 0
+								END AS Odds,
 								SUM(blc.stake) AS Stake,
 								SUM(blc.actual_stake) AS Actual_Stake,
 								CASE
@@ -1321,13 +1328,17 @@ BEGIN
 								- SUM(blc.winlost - blc.actual_stake) AS LicenseeWL,
 								SUM(blc.playercomm) AS Commission,
 								SUM(blc.comm) AS Comm,
-								0 AS OddsSpread
+								CASE
+									WHEN c.SubProduct LIKE '%Jackpot%' THEN ISNULL(SUM(blc.BetStake), 0)
+									ELSE 0
+								END AS OddsSpread
 							FROM #Data AS c
 								INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
 							WHERE c.RefTable = 2 AND blc.statusID NOT IN (0, 1)
 							GROUP BY
 								c.TransId,
-								c.Product
+								c.Product,
+								c.SubProduct
 						END
 						ELSE IF @TransType = 3		-- Running
 						BEGIN
@@ -1459,6 +1470,7 @@ BEGIN
 									END,
 						Odds = CASE
 									WHEN b.Product IN ('VB', 'PP', 'OneRNG', 'Allbet', 'SBC', 'VGA', 'SG', 'PTRNG') AND x.Odds IS NOT NULL THEN x.Odds
+									WHEN b.SubProduct LIKE '%Jackpot%' AND x.Odds IS NOT NULL THEN x.Odds
 									ELSE b.odds
 								END,
 						Stake = CASE
@@ -1578,8 +1590,8 @@ BEGIN
 									END,
 						OddsSpread = CASE
 										WHEN b.Product IN ('PP', 'SBC', 'VGA', 'SG', 'PTRNG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
-										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'PTRNG') THEN ISNULL(b.oddsspread, 0)
-										ELSE 0
+										WHEN b.SubProduct LIKE '%Jackpot%' AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+										ELSE ISNULL(b.oddsspread, 0)
 									END,
 						BetdaqId = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betdaqid, -1)
@@ -1774,10 +1786,6 @@ BEGIN
 										WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 										ELSE ''
 									END,
-						OddsSpread = CASE
-										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'PTRNG') THEN ISNULL(b.oddsspread, 0)
-										ELSE 0
-									END,
 						BetdaqId = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betdaqid, -1)
 									ELSE -1
@@ -1922,10 +1930,6 @@ BEGIN
 											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 										WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 										ELSE ''
-									END,
-						OddsSpread = CASE
-										WHEN b.Product IN ('SB', 'CO', 'PP', 'SBC', 'VGA', 'SG', 'PTRNG') THEN ISNULL(b.oddsspread, 0)
-										ELSE 0
 									END,
 						BetdaqId = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.betdaqid, -1)

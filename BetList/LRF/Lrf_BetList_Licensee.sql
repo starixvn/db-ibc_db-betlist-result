@@ -132,6 +132,7 @@ AS
 		- 20250806@Kos: Fix security issue in dynamic query [#Redmine: 227496]
 					- Remove input param @Sort
 					- Add new input params @SortType TINYINT, @SortOrder TINYINT
+		- 20250820@Kos: Support Playtech Live Jackpot [#Redmine: 230078]
 */
 
 BEGIN
@@ -230,6 +231,7 @@ BEGIN
 		RefCode				BIGINT,
 		SiteId				VARCHAR(20),
 		Product				VARCHAR(30),
+		SubProduct			VARCHAR(500),
 		RefTable			TINYINT,
 		EventType			TINYINT,
 		WhTicket			TINYINT
@@ -291,6 +293,7 @@ BEGIN
 		RefCode				BIGINT,
 		SiteId				VARCHAR(20),
 		Product				VARCHAR(30),
+		SubProduct			VARCHAR(500),
 		RefTable			TINYINT,
 		EventType			TINYINT,
 		WhTicket			TINYINT
@@ -335,7 +338,7 @@ BEGIN
 
 	DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
 
-	CREATE TABLE #SportBettype (ProductId TINYINT, ProductPrefix VARCHAR(500), BetType SMALLINT, EventType TINYINT, RefTable TINYINT)
+	CREATE TABLE #SportBettype (ProductId TINYINT, ProductPrefix VARCHAR(500), BetType SMALLINT, EventType TINYINT, RefTable TINYINT, SubProduct VARCHAR(500))
 
 	CREATE CLUSTERED INDEX IX_BetType ON #SportBettype (BetType)
 
@@ -370,7 +373,7 @@ BEGIN
 		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 		INSERT INTO #SportBettype
-		SELECT ProductID, ProductPrefix, BetType, EventType, RefTable
+		SELECT ProductID, ProductPrefix, BetType, EventType, RefTable, SubProduct
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
 		WHERE BetType NOT IN (71, 73, 901, 902, 903, 904, 911, 912, 913, 914)
 			AND BetType NOT BETWEEN 801 AND 899
@@ -1935,7 +1938,8 @@ BEGIN
 							ELSE 'Unknown'
 						END,
 			b.RefTable = s.RefTable,
-			b.EventType = s.EventType
+			b.EventType = s.EventType,
+			b.SubProduct = s.SubProduct
 		FROM #Data AS b
 			INNER JOIN #SportBettype AS s ON s.BetType = b.BetType
 
@@ -2155,7 +2159,11 @@ BEGIN
 				INSERT INTO @TmpData
 				SELECT
 					c.TransId AS RefNo,
-					0 AS Odds,
+					CASE
+						WHEN c.SubProduct LIKE '%Jackpot%' THEN ISNULL(AVG(CASE WHEN blc.statusID IN (111, 112, 113)
+							THEN blc.ContributionRate END), 0)
+						ELSE 0
+					END AS Odds,
 					SUM(blc.stake) AS Stake,
 					SUM(blc.actual_stake) AS Actual_Stake,
 					CASE
@@ -2167,7 +2175,10 @@ BEGIN
 					- SUM(blc.winlost - blc.actual_stake) AS LicenseeWL,
 					SUM(blc.playercomm) AS Commission,
 					SUM(blc.comm) AS Comm,
-					0 AS OddsSpread
+					CASE
+						WHEN SubProduct LIKE '%Jackpot%' THEN SUM(ISNULL(blc.BetStake, 0))
+						ELSE 0
+					END AS OddsSpread
 				FROM #Data AS c
 					INNER JOIN dbo.bettransLC AS blc WITH (NOLOCK) ON blc.RefNo = c.TransId
 				WHERE c.RefTable = 2
@@ -2175,7 +2186,8 @@ BEGIN
 					AND blc.statusID NOT IN (0, 1)
 				GROUP BY
 					c.TransId,
-					c.Product
+					c.Product,
+					c.SubProduct
 			END
 
 			DELETE FROM @TmpData
@@ -2194,10 +2206,12 @@ BEGIN
 		SET
 			Odds = CASE
 						WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.Odds IS NOT NULL THEN x.Odds
+						WHEN b.SubProduct LIKE '%Jackpot%' AND x.Odds IS NOT NULL THEN x.Odds
 						ELSE b.Odds
 					END,
 			OddsSpread = CASE
 							WHEN b.Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
+							WHEN b.SubProduct LIKE '%Jackpot%' AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
 							ELSE b.OddsSpread
 						END,
 			Stake = CASE

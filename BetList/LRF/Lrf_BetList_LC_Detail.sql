@@ -46,6 +46,7 @@ AS
 		- 20250107@Kos: Support new ticket flow of SA Gaming [Redmine: 215645]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250523@Kos: Fix Grand Total value [RedmineID: #213933]
+		- 20250820@Kos: Support Playtech Live Jackpot [#Redmine: 230078]
 
 	Parameters:
 		- @TransType
@@ -80,7 +81,7 @@ BEGIN
 	END CATCH
 
 	-- Get SportBetTypeMatrix
-	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT)
+	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
 	DECLARE @IsTest BIT = 0
 
@@ -88,7 +89,7 @@ BEGIN
 
 	-- Support AG Casino Single Wallet, AllBet
 	INSERT INTO @SportBettype
-	SELECT ProductID, BetType, EventType
+	SELECT ProductID, BetType, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE RefTable = 2 AND ProductID NOT IN (46, 52, 59, 65)
 
@@ -138,6 +139,7 @@ BEGIN
 		Status			VARCHAR(10),
 		StatusId		TINYINT,
 		Odds			MONEY,
+		OddsSpread		MONEY,
 		Stake			MONEY,
 		Actual_Stake	MONEY,
 		WinLost			MONEY,
@@ -148,6 +150,8 @@ BEGIN
 		BetCheck		NVARCHAR(2000),
 		MatchCode		VARCHAR(50),
 		BetTeam			NVARCHAR(200),
+		BetdaqId		BIGINT,
+		JackpotInfo		VARCHAR(50),
 		SiteId			VARCHAR(7),
 		EventDate		DATETIME
 	)
@@ -178,8 +182,13 @@ BEGIN
 			END AS StatusId,
 			CASE
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.odds, 0)
+				WHEN sbt.SubProduct LIKE '%Jackpot%' AND blc.statusID IN (111, 112, 113) THEN ISNULL(blc.ContributionRate, 0)
 				ELSE blc.odds
 			END AS Odds,
+			CASE
+				WHEN sbt.SubProduct LIKE '%Jackpot%' AND blc.statusID IN (111, 112, 113) THEN ISNULL(blc.BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
 			CASE
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, blc.stake)
 				ELSE blc.stake
@@ -214,6 +223,8 @@ BEGIN
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
 				ELSE ''
 			END AS BetTeam,
+			ISNULL(blc.RefNo2, -1) AS BetdaqId,
+			ISNULL(blc.JackpotInfo, '') AS JackpotInfo,
 			blc.SiteId,
 			blc.TransDate3rd AS EventDate
 		FROM dbo.bettransLC AS blc WITH (NOLOCK)
@@ -251,8 +262,13 @@ BEGIN
 			END AS StatusId,
 			CASE
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.odds, 0)
+				WHEN sbt.SubProduct LIKE '%Jackpot%' AND blc.statusID IN (111, 112, 113) THEN ISNULL(blc.ContributionRate, 0)
 				ELSE blc.odds
 			END AS Odds,
+			CASE
+				WHEN sbt.SubProduct LIKE '%Jackpot%' AND blc.statusID IN (111, 112, 113) THEN ISNULL(blc.BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
 			CASE
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, blc.stake)
 				ELSE blc.stake
@@ -284,6 +300,8 @@ BEGIN
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
 				ELSE ''
 			END AS BetTeam,
+			ISNULL(blc.RefNo2, -1) AS BetdaqId,
+			ISNULL(blc.JackpotInfo, '') AS JackpotInfo,
 			blc.SiteId,
 			blc.TransDate3rd AS EventDate
 		FROM dbo.bettransLC14 AS blc WITH (NOLOCK)
@@ -319,8 +337,13 @@ BEGIN
 			END AS StatusId,
 			CASE
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.odds, 0)
+				WHEN sbt.SubProduct LIKE '%Jackpot%' AND blc.statusID IN (111, 112, 113) THEN ISNULL(blc.ContributionRate, 0)
 				ELSE blc.odds
 			END AS Odds,
+			CASE
+				WHEN sbt.SubProduct LIKE '%Jackpot%' AND blc.statusID IN (111, 112, 113) THEN ISNULL(blc.BetStake, 0)
+				ELSE 0
+			END AS OddsSpread,
 			CASE
 				WHEN sbt.ProductID = 39 THEN ISNULL(bg.stake, blc.stake)
 				ELSE blc.stake
@@ -352,6 +375,8 @@ BEGIN
 				WHEN sbt.productID = 39 THEN ISNULL(bg.BetID3rd, '')
 				ELSE ''
 			END AS BetTeam,
+			ISNULL(blc.RefNo2, -1) AS BetdaqId,
+			ISNULL(blc.JackpotInfo, '') AS JackpotInfo,
 			blc.SiteId,
 			blc.TransDate3rd AS EventDate
 		FROM bodb_Archive.dbo.bettransLC_bk AS blc WITH (NOLOCK)
@@ -409,6 +434,7 @@ BEGIN
 		b.Status,
 		b.StatusId,
 		b.Odds,
+		b.OddsSpread,
 		CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
 		b.Actual_Stake,
 		CAST(b.WinLost * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS WinLost,
@@ -421,6 +447,8 @@ BEGIN
 		b.BetTeam,
 		@Currency AS Currency,
 		@Currency AS LeagueId,
+		b.BetdaqId,
+		b.JackpotInfo,
 		b.SiteId,
 		b.EventDate
 	FROM @tmpBettransLC AS b
