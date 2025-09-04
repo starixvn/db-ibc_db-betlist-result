@@ -1,3 +1,3 @@
-Result\LRF\Lrf_Result_LeagueSelByDate.sql
-Result\LRF\Lrf_Result_MatchSelByLeague.sql
-Result\LRF\Lrf_Result_SportSelByDate.sql
+Result\Alpha\Age_BetList_SelMatchResultParlay.sql
+Result\Alpha\Age_BetList_SelMatchResult.sql
+Result\NAP\Acc_BetList_SelMatchResult.sql
