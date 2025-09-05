@@ -42,9 +42,9 @@ AS
 					<Sport SportType="1" LeagueGroupIds="0"/>
 					<Sport SportType="1" LeagueGroupIds="42,74"/>
 					<Sport SportType="5" LeagueGroupIds="0"/>
-					<Sport SportType="999" LeagueGroupIds="0"/>
+					<Sport SportType="-1" LeagueGroupIds="0"/>
 				</ROOT>
-				+ Parlay: <Sport SportType="999" LeagueGroupIds="0"/>
+				+ Parlay: <Sport SportType="-1" LeagueGroupIds="0"/>
 				+ Sports Lottery: <Sport SportType="169" LeagueGroupIds="0"/>
 				+ Saba Soccer: <Sport SportType="1" LeagueGroupIds="42,74"/>
 				+ Saba Soccer PinGoal: <Sport SportType="1" LeagueGroupIds="113"/>
@@ -116,6 +116,7 @@ AS
 		- 20250806@Kos: Fix security issue in dynamic query [#Redmine: 227496]
 					- Remove input param @Sort
 					- Add new input params @SortType TINYINT, @SortOrder TINYINT
+		- 20250905@Kos: Hotfix - Parlay sport [#Redmine: 234256]
 */
 
 BEGIN
@@ -398,7 +399,7 @@ BEGIN
 									FROM dbo.SportBettypeMatrix AS s WITH (NOLOCK)
 										INNER JOIN #TempSportType AS st
 										ON s.SportType = st.SportType
-											OR (s.ProductID = 1 AND st.SportType = 999))
+											OR (s.ProductID = 1 AND st.SportType = -1))
 		END TRY
 		BEGIN CATCH
 			SET @HasError = 1
@@ -565,7 +566,7 @@ BEGIN
 								WHERE SportType = CASE
 													WHEN s.EventType = 1 THEN m.sporttype
 													WHEN b.bettype = 10 THEN l.sporttype
-													WHEN b.bettype IN (9, 29) THEN 999
+													WHEN b.bettype IN (9, 29) THEN -1
 													WHEN s.ProductId IN (63) THEN b.matchid
 													WHEN s.EventType = 5 THEN m3rd.SportType
 													WHEN s.EventType = 3 THEN vr.sporttype
@@ -734,7 +735,7 @@ BEGIN
 								WHERE SportType = CASE
 													WHEN s.EventType = 1 THEN m.sporttype
 													WHEN b.bettype = 10 THEN l.sporttype
-													WHEN b.bettype IN (9, 29) THEN 999
+													WHEN b.bettype IN (9, 29) THEN -1
 													WHEN s.ProductId IN (63) THEN b.matchid
 													WHEN s.EventType = 5 THEN m3rd.SportType
 													WHEN s.EventType = 3 THEN vr.sporttype
