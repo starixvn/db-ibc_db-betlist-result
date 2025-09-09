@@ -1,3 +1,2 @@
-Result\LRF\Lrf_Result_LeagueSelByDate.sql
-Result\LRF\Lrf_Result_MatchSelByLeague.sql
-Result\LRF\Lrf_Result_SportSelByDate.sql
+Result\LRF\Lrf_BetList_SelMatchResult.sql
+Result\LRF\Lrf_BetList_SelMatchResultParlay.sql
