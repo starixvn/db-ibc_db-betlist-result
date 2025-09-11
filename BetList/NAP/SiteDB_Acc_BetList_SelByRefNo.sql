@@ -64,6 +64,7 @@ AS
 		- 20250428@Dave: change datatype for ExchangeID [RedmineID: #225676]
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
 		- 20250819@Razor: Support VS 2 - VS Tournament [Redmine: #235084]
+		- 20250820@Benji: Support Playtech Live Jackpot [Redmine: #230127]
 */
 
 BEGIN
@@ -1566,7 +1567,11 @@ BEGIN
 					'' AS settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					0 AS odds,
+					CASE
+						WHEN pj.ProductId IS NOT NULL 
+							THEN ISNULL(AVG(CASE WHEN blc.statusID IN (111, 112, 113) THEN blc.ContributionRate END), 0)
+						ELSE 0
+					END AS Odds,
 					0 AS finalodds,
 					0 AS finalodds2,
 					0 AS OddsType,
@@ -1615,7 +1620,10 @@ BEGIN
 					b.winlostdate,
 					'' AS BetCheck,
 					'' AS TransDesc,
-					0 AS OddsSpread,
+					CASE
+						WHEN pj.ProductId IS NOT NULL  THEN ISNULL(SUM(blc.BetStake), 0)
+						ELSE 0
+					END AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					'' AS ExtraInfo,
@@ -1629,11 +1637,13 @@ BEGIN
 				FROM dbo.bettransLC AS blc WITH (NOLOCK)
 					INNER JOIN dbo.bettrans AS b WITH (NOLOCK) ON blc.RefNo = b.transid
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+					LEFT JOIN @ProductJackpot AS pj ON s.ProductId = pj.ProductId
 				WHERE b.transid = @TransId
 					AND (s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR s.RefTable = 2)
 					AND blc.statusID <> 0
 				GROUP BY
 					b.transid,
+					pj.ProductID,
 					ISNULL(b.betid, 0),
 					b.bettype,
 					b.refno,
@@ -1646,7 +1656,8 @@ BEGIN
 					b.matchid,
 					b.DeviceType,
 					blc.recommend,
-					blc.mrecommend
+					blc.mrecommend,
+					s.SubProduct
 			END
 			ELSE
 			BEGIN
@@ -1676,7 +1687,10 @@ BEGIN
 					'' AS settleTime,
 					0 AS hdp1,
 					0 AS hdp2,
-					0 AS odds,
+					CASE
+						WHEN pj.ProductId IS NOT NULL THEN b.odds
+						ELSE 0
+					END AS Odds,
 					0 AS finalodds,
 					0 AS finalodds2,
 					0 AS OddsType,
@@ -1722,7 +1736,10 @@ BEGIN
 					b.winlostdate,
 					'' AS BetCheck,
 					'' AS TransDesc,
-					0 AS OddsSpread,
+					CASE
+						WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.oddsspread, 0)
+						ELSE 0
+					END AS OddsSpread,
 					0 AS OriginalBetType,
 					-1 AS BetdaqId,
 					'' AS ExtraInfo,
@@ -1735,6 +1752,7 @@ BEGIN
 					b.DeviceType
 				FROM dbo.bettrans AS b WITH (NOLOCK)
 					INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
+					LEFT JOIN @ProductJackpot AS pj ON s.ProductId = pj.ProductId
 				WHERE b.transid = @TransId
 					AND (s.ProductID IN (11, 21, 39, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR s.RefTable = 2)
 			END
@@ -2115,6 +2133,7 @@ BEGIN
 				0 AS hdp2,
 				CASE
 					WHEN s.ProductID IN (21, 45, 46, 51, 52, 57, 76, 80, 96) THEN b.odds
+					WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 					ELSE 0
 				END AS odds,
 				0 AS finalodds,
@@ -2157,11 +2176,20 @@ BEGIN
 				b.winlostdate,
 				b.TranId3rd AS BetCheck,
 				b.transdesc,
-				0 AS OddsSpread,
+				CASE
+					WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+					ELSE 0
+				END AS OddsSpread,
 				0 AS OriginalBetType,
-				-1 AS BetdaqId,
+				CASE
+					WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.RefNo2, -1)
+					ELSE -1
+				END AS BetdaqId,
 				b.ExtraInfo,
-				'' AS JackpotInfo,
+				CASE
+					WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.JackpotInfo, '')
+					ELSE ''
+				END AS JackpotInfo,
 				0 AS WalletType,
 				0 AS RefCode,
 				b.currency,
@@ -2170,6 +2198,7 @@ BEGIN
 				b.DeviceType
 			FROM dbo.bettransLC AS b WITH (NOLOCK)
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
+				LEFT JOIN @ProductJackpot AS pj ON s.ProductId = pj.ProductId
 			WHERE b.transid = @TransId
 				AND (s.ProductID IN (11, 21, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR s.RefTable = 2)
 		END
@@ -2216,6 +2245,7 @@ BEGIN
 			0 AS hdp2,
 			CASE
 				WHEN s.ProductID IN (21, 45, 46, 51, 57, 76, 80, 96) THEN b.odds
+				WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 				ELSE 0
 			END AS odds,
 			0 AS finalodds,
@@ -2258,11 +2288,20 @@ BEGIN
 			b.winlostdate,
 			b.TranId3rd AS BetCheck,
 			b.transdesc,
-			0 AS OddsSpread,
+			CASE
+					WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+					ELSE 0
+				END AS OddsSpread,
 			0 AS OriginalBetType,
-			-1 AS BetdaqId,
+			CASE
+					WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.RefNo2, -1)
+					ELSE -1
+				END AS BetdaqId,
 			b.ExtraInfo,
-			'' AS JackpotInfo,
+			CASE
+					WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.JackpotInfo, '')
+					ELSE ''
+				END AS JackpotInfo,
 			0 AS WalletType,
 			0 AS RefCode,
 			b.currency,
@@ -2272,6 +2311,7 @@ BEGIN
 		FROM dbo.bettransLC AS b WITH (NOLOCK)
 			INNER JOIN @Data AS b1 ON b.custid = b1.CustId AND b.gameID = b1.BetType AND b.GameId3rd = b1.MatchCode
 			INNER JOIN @SportBettype AS s ON s.Bettype = b1.bettype
+			LEFT JOIN @ProductJackpot AS pj ON s.ProductId = pj.ProductId
 		WHERE (s.ProductID IN (21, 45, 46, 51, 57, 65, 70, 76, 80) OR s.RefTable = 2)
 			AND b1.MatchCode <> ''
 			AND b.transid <> @TransId

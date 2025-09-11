@@ -127,6 +127,7 @@ AS
 		- 20250515@Benji: Support W Casino [Redmine: #227510]
 		- 20250515@Benji: Support Automate Integration for Betlist [Redmineid: #227997]
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
+		- 20250820@Benji: Support Playtech Live Jackpot [Redmine: #230127]
 */
 
 BEGIN
@@ -472,6 +473,7 @@ BEGIN
 						0 AS Hdp2,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.odds, b.odds)
+							WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -554,13 +556,22 @@ BEGIN
 							ELSE b.TranId3rd
 						END AS BetCheck,
 						b.transdesc,
-						0 AS OddsSpread,
+						CASE
+							WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							ELSE 0
+						END AS OddsSpread,
 						CASE
 							WHEN s.ProductID IN (39) THEN bg.ExtraInfo
 							ELSE b.ExtraInfo
 						END AS ExtraInfo,
-						'' AS JackpotInfo,
-						-1 AS BetdaqId,
+						CASE
+							WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.JackpotInfo, '')
+							ELSE ''
+						END AS JackpotInfo,
+						CASE
+							WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.RefNo2, -1)
+							ELSE -1
+						END AS BetdaqId,
 						b.currency,
 						b.SiteId,
 						b.DeviceType
@@ -568,6 +579,7 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 						LEFT JOIN dbo.bettransg AS bg WITH (NOLOCK)
 							ON bg.refno = b.transid AND bg.custid = b.custid AND s.ProductID = 39
+						LEFT JOIN @ProductJackpot AS pj ON s.ProductId = pj.ProductId
 						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
 						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(ISNULL(bg.BetID3rd, ''), '|$|') ORDER BY id DESC) AS b3rd
 					WHERE b.custid = @CustId
@@ -617,7 +629,7 @@ BEGIN
 						0 AS Hdp1,
 						0 AS Hdp2,
 						CASE
-							WHEN s.SubProduct LIKE 'Jackpot%' AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
+							WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -877,6 +889,7 @@ BEGIN
 						0 AS Hdp2,
 						CASE
 							WHEN s.ProductID = 39 THEN ISNULL(bg.odds, b.odds)
+							WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.ContributionRate, 0)
 							ELSE b.odds
 						END AS Odds,
 						0 AS OddsType,
@@ -959,13 +972,22 @@ BEGIN
 							ELSE b.TranId3rd
 						END AS BetCheck,
 						b.transdesc,
-						0 AS OddsSpread,
+						CASE
+							WHEN pj.ProductId IS NOT NULL AND b.statusID IN (111, 112, 113) THEN ISNULL(b.BetStake, 0)
+							ELSE 0
+						END AS OddsSpread,
 						CASE
 							WHEN s.ProductID IN (39) THEN ISNULL(bg.ExtraInfo, b.ExtraInfo)
 							ELSE b.ExtraInfo
 						END AS ExtraInfo,
-						'' AS JackpotInfo,
-						-1 AS BetdaqId,
+						CASE
+							WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.JackpotInfo, '')
+							ELSE ''
+						END AS JackpotInfo,
+						CASE
+							WHEN pj.ProductId IS NOT NULL THEN ISNULL(b.RefNo2, -1)
+							ELSE -1
+						END AS BetdaqId,
 						b.currency,
 						b.SiteId,
 						b.DeviceType
@@ -973,6 +995,7 @@ BEGIN
 						INNER JOIN @SportBettype AS s ON s.BetType = b.gameID
 						LEFT JOIN dbo.bettransg14 AS bg WITH (NOLOCK)
 							ON bg.refno = b.transid AND bg.custid = b.custid AND s.ProductID = 39
+						LEFT JOIN @ProductJackpot AS pj ON s.ProductId = pj.ProductId
 						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(b.TranId3rd, '|$|') ORDER BY id DESC) AS t3rd
 						CROSS APPLY (SELECT TOP 1 val FROM dbo.f_StringSplit(ISNULL(bg.BetID3rd, ''), '|$|')ORDER BY id DESC) AS b3rd
 					WHERE b.custid = @CustId
