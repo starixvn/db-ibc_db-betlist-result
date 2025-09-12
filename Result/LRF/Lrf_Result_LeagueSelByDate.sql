@@ -97,38 +97,39 @@ BEGIN
 						m.sporttype
 					FROM dbo.match AS m WITH (NOLOCK)
 						LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid + 1 = mr.matchid + 1
-						OUTER APPLY (
-							SELECT TOP 1 r.MatchID
-							FROM dbo.ResultDetail r WITH (NOLOCK)
-							WHERE SettlementStatusID > 0
-								AND m.matchid + 1 = r.MatchID + 1
-								AND 1 = CASE WHEN @SportType = 1
+						LEFT JOIN (
+								SELECT DISTINCT MatchID
+								FROM dbo.ResultDetail r WITH (NOLOCK) 
+								WHERE SettlementStatusID > 0
+									AND (
+											(@SportType = 1
 												AND (ResourceID NOT IN ('08', '09')
 													OR HomeValue LIKE '%a%'
 													OR HomeValue LIKE '%h%')
-												AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID) THEN 1
-											WHEN @SportType = 2 
-												AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID) THEN 1
-											WHEN @SportType = 5 THEN 1
-											ELSE 0
-										END
-							) AS r
+												AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID)
+											)
+											OR (@SportType = 2
+												AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID)
+												)
+											OR @SportType = 5
+										)
+							) AS r ON m.matchid + 1 = r.MatchID + 1
 						LEFT JOIN (
 								SELECT DISTINCT MatchID
 								FROM dbo.ResultDetailES WITH (NOLOCK)
 								WHERE SettlementStatusID > 0 AND @SportType = 43
 							) AS e ON m.matchid + 1 = e.MatchID + 1
-						OUTER APPLY (
-								SELECT TOP 1 r.MatchID
+						LEFT JOIN (
+								SELECT DISTINCT MatchID
 								FROM dbo.ResultDetailOS r WITH (NOLOCK)
 								WHERE SettlementStatusID > 0
-									AND m.matchid + 1 = r.MatchID + 1
-									AND 1 = CASE WHEN @SportType IN (6, 8, 9, 45, 58) THEN 1
-												 WHEN @SportType = 50
-													AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID) THEN 1
-												 ELSE 0
-											END
-							) AS o
+									AND (
+											@SportType IN (6, 8, 9, 45, 58)
+											OR (@SportType = 50
+												AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID)
+												)
+										)
+							) AS o ON o.MatchID + 1 = m.matchid + 1
 					WHERE m.eventdate = @EventDate
 						AND m.sporttype NOT IN (162, 201)
 						AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match
@@ -241,38 +242,39 @@ BEGIN
 						m.sporttype
 					FROM dbo.match14 AS m WITH (NOLOCK)
 						LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
-						OUTER APPLY (
-							SELECT TOP 1 r.MatchID
-							FROM dbo.ResultDetail14 r WITH (NOLOCK)
-							WHERE SettlementStatusID > 0
-								AND m.matchid + 1 = r.MatchID + 1
-								AND 1 = CASE WHEN @SportType = 1
+						LEFT JOIN (
+								SELECT DISTINCT MatchID
+								FROM dbo.ResultDetail14 r WITH (NOLOCK) 
+								WHERE SettlementStatusID > 0
+									AND (
+											(@SportType = 1
 												AND (ResourceID NOT IN ('08', '09')
 													OR HomeValue LIKE '%a%'
 													OR HomeValue LIKE '%h%')
-												AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID) THEN 1
-											WHEN @SportType = 2 
-												AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID) THEN 1
-											WHEN @SportType = 5 THEN 1
-											ELSE 0
-										END
-							) AS r
+												AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID)
+											)
+											OR (@SportType = 2
+												AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID)
+												)
+											OR @SportType = 5
+										)
+							) AS r ON m.matchid = r.MatchID
 						LEFT JOIN (
 								SELECT DISTINCT MatchID
 								FROM dbo.ResultDetailES14 WITH (NOLOCK)
 								WHERE SettlementStatusID > 0 AND @SportType = 43
 							) AS e ON m.matchid + 1 = e.MatchID + 1
-						OUTER APPLY (
-								SELECT TOP 1 r.MatchID
+						LEFT JOIN (
+								SELECT DISTINCT MatchID
 								FROM dbo.ResultDetailOS14 r WITH (NOLOCK)
 								WHERE SettlementStatusID > 0
-									AND m.matchid + 1 = r.MatchID + 1
-									AND 1 = CASE WHEN @SportType IN (6, 8, 9, 45, 58) THEN 1
-												 WHEN @SportType = 50
-													AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID) THEN 1
-												 ELSE 0
-											END
-							) AS o
+									AND (
+											@SportType IN (6, 8, 9, 45, 58)
+											OR (@SportType = 50
+												AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID)
+												)
+										)
+							) AS o ON o.MatchID + 1 = m.matchid + 1
 					WHERE m.eventdate = @EventDate
 						AND m.sporttype NOT IN (162, 201)
 						AND (m.sporttype NOT IN (8, 50) OR ISNULL(ChildMatchType, 0) <> 200)		-- exclude Baseball, Cricket child match

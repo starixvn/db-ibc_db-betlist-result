@@ -37,6 +37,7 @@ AS
 		- 20220622@Razor: Support More map for eSports [Redmine: #174251]
 		- 20220711@Razor: Support Volleyball AIO [Redmine: #173861]
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
+		- 20250815@Benji: Support Basketball Player Props AIO [Redmine: #235372]
 */
 
 BEGIN
@@ -794,6 +795,104 @@ BEGIN
 	SELECT 8, 15, 'Baseball AIO', 8823, '88230%'	UNION ALL
 	SELECT 8, 15, 'Baseball AIO', 8824, '88230%'	UNION ALL
 	SELECT 8, 15, 'Baseball AIO', 8827, '8827'
+
+	-- 15. Basketball Player Props AIO
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID)
+	-- Points
+	SELECT 2, 1, 'Basketball AIO', 653, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 654, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 655, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 685, '653%'		UNION ALL
+	-- Associated - Points
+	SELECT 2, 1, 'Basketball AIO', 669, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 670, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 673, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 675, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 676, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 677, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 678, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 679, '653%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 680, '653%'		UNION ALL
+	-- Assists
+	SELECT 2, 1, 'Basketball AIO', 656, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 657, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 658, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 686, '656%'		UNION ALL
+	-- Associated - Assists
+	SELECT 2, 1, 'Basketball AIO', 669, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 670, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 671, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 672, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 675, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 676, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 677, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 678, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 679, '656%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 683, '656%'		UNION ALL
+	-- Rebounds
+	SELECT 2, 1, 'Basketball AIO', 659, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 660, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 661, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 687, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 673, '659%'		UNION ALL
+	-- Associated - Rebounds
+	SELECT 2, 1, 'Basketball AIO', 669, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 670, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 671, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 672, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 675, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 676, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 677, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 678, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 679, '659%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 681, '659%'		UNION ALL
+
+	-- 3PT FG Made	
+	SELECT 2, 1, 'Basketball AIO', 662, '662%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 663, '662%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 664, '662%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 688, '662%'		UNION ALL
+	-- Associated - 3PT FG Made	
+	SELECT 2, 1, 'Basketball AIO', 675, '662%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 676, '662%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 678, '662%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 684, '662%'		UNION ALL
+	-- Blocks
+	SELECT 2, 1, 'Basketball AIO', 665, '665%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 666, '665%'		UNION ALL
+	-- Associated - Blocks
+	SELECT 2, 1, 'Basketball AIO', 674, '665%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 677, '665%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 679, '665%'		UNION ALL
+
+
+	-- Steals
+	SELECT 2, 1, 'Basketball AIO', 667, '667%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 668, '667%'		UNION ALL	
+	-- Associated - Steals
+	SELECT 2, 1, 'Basketball AIO', 674, '667%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 677, '667%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 679, '667%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 682, '667%'		UNION ALL
+
+	--Others
+	SELECT 2, 1, 'Basketball AIO', 669, '669%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 670, '670%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 671, '671%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 672, '672%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 673, '673%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 674, '674%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 675, '675%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 676, '676%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 677, '677%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 678, '678%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 679, '679%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 680, '680%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 681, '681%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 682, '682%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 683, '683%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 684, '684%'		 
+
 
 	RETURN
 END
