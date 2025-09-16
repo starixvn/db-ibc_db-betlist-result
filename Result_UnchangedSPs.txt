@@ -1,3 +1,2 @@
 Result\Alpha\Age_BetList_SelMatchResultParlay.sql
 Result\Alpha\Age_BetList_SelMatchResult.sql
-Result\NAP\Acc_BetList_SelMatchResult.sql

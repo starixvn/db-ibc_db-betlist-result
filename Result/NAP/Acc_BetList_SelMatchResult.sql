@@ -697,6 +697,16 @@ BEGIN
 		DELETE FROM @ResultDetail
 		WHERE ResourceId = '09'
 	END
+	
+	-- Get Associate data for Basketball Player Props
+	IF @BetType IN (669,670,671,672,673,674,675,676,677,678,679,680,681,682,683,684)
+	BEGIN 
+		DELETE FROM @ResultDetail
+		WHERE OtherInfo  NOT LIKE '%'+Otherinfo+'%' 
+		AND ResourceId NOT LIKE CONVERT (Varchar,@BetType) + '%' 
+			OR ResourceId NOT LIKE '669%'
+			OR ResourceId NOT LIKE '671%'
+	END
 
 	-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
 	DELETE FROM @ResultDetail
