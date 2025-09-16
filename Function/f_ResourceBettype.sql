@@ -879,7 +879,7 @@ BEGIN
 	SELECT 2, 1, 'Basketball AIO', 669, '669%'		UNION ALL
 	SELECT 2, 1, 'Basketball AIO', 670, '669%'		UNION ALL
 	SELECT 2, 1, 'Basketball AIO', 671, '671%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 672, '672%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 672, '671%'		UNION ALL
 	SELECT 2, 1, 'Basketball AIO', 673, '673%'		UNION ALL
 	SELECT 2, 1, 'Basketball AIO', 674, '674%'		UNION ALL
 	SELECT 2, 1, 'Basketball AIO', 675, '675%'		UNION ALL
