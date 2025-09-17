@@ -62,6 +62,7 @@ AS
 		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
+		- 20250916@Benji: Support Basketball Player Props [Redmine: #236235]
 */
 
 BEGIN
@@ -217,7 +218,9 @@ BEGIN
 							OR (d.SettlementStatusID > 0
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
-									OR d.ResourceId LIKE '%' + @ResourceId)))))
+									OR d.ResourceId LIKE '%' + @ResourceId)
+								AND (@BetType BETWEEN 653 AND 688
+									AND d.ResourceId LIKE '%' + @ResourceId )))))
 		END
 		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
@@ -403,7 +406,9 @@ BEGIN
 							OR (d.SettlementStatusID > 0
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
-									OR d.ResourceId LIKE '%' + @ResourceId)))))
+									OR d.ResourceId LIKE '%' + @ResourceId)
+								AND (@BetType BETWEEN 653 AND 688
+									AND d.ResourceId LIKE '%' + @ResourceId )))))
 		END
 		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
@@ -590,7 +595,9 @@ BEGIN
 							OR (d.SettlementStatusID > 0
 								AND d.ResourceId LIKE f.ResourceID
 								AND (@BetType NOT IN (606, 607, 613, 617)
-									OR d.ResourceId LIKE '%' + @ResourceId)))))
+									OR d.ResourceId LIKE '%' + @ResourceId)
+								AND (@BetType BETWEEN 653 AND 688
+									AND d.ResourceId LIKE '%' + @ResourceId )))))
 		END
 		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
@@ -698,21 +705,62 @@ BEGIN
 		WHERE ResourceId = '09'
 	END
 	
-	-- Get Associate data for Basketball Player Props
-	IF @BetType IN (669,670,671,672,673,674,675,676,677,678,679,680,681,682,683,684)
-	BEGIN 
-		DELETE FROM @ResultDetail
-		WHERE OtherInfo  NOT LIKE '%'+Otherinfo+'%' 
-		AND ResourceId NOT LIKE CONVERT (Varchar,@BetType) + '%' 
-			OR ResourceId NOT LIKE '669%'
-			OR ResourceId NOT LIKE '671%'
-	END
-
 	-- Return '08' FT Sequence, '09' 1H Sequence only if at least a goal/corner scored
 	DELETE FROM @ResultDetail
 	WHERE ResourceId IN ('08', '09')
 		AND HomeValue NOT LIKE '%a%'
 		AND HomeValue NOT LIKE '%h%'
+
+	---
+	DECLARE @otherinfo 	VARCHAR(2000)
+	-- Get Associate data for Basketball Player Props 
+	
+
+
+-- Xác định BetType và ResourceId tương ứng
+IF @BetType IN (669, 670, 671, 672)
+BEGIN
+    DECLARE @BaseBetType NVARCHAR(3) = 
+        CASE 
+            WHEN @BetType IN (669, 670) THEN '669'
+            WHEN @BetType IN (671, 672) THEN '671'
+			ELSE CONVERT (NVARCHAR,@Bettype) 
+        END
+
+    SELECT @otherinfo = otherinfo 
+    FROM @ResultDetail 
+    WHERE ResourceId LIKE @BaseBetType + @ResourceId
+    INSERT INTO @ResultDetail
+    SELECT 
+        d.MatchId,
+        d.ResourceId,
+        d.HomeValue,
+        d.AwayValue,
+        d.ResultStatusID,
+        d.SettlementStatusID,
+        d.OtherInfo
+    FROM dbo.ResultDetail d 
+    WHERE 
+        d.OtherInfo = @otherinfo
+        AND d.MatchId = @MatchId
+        AND (
+            (@BetType IN (669, 670) AND d.ResourceId LIKE '653%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '656%') OR  --Points | Assists| Rebounds
+            (@BetType IN (671, 672) AND d.ResourceId LIKE '659%' OR d.ResourceId LIKE '656%') OR -- Assists| Rebounds	
+			(@BetType IN (673) AND d.ResourceId LIKE '653%' OR d.ResourceId LIKE '659%') OR -- Points | Rebounds
+			(@BetType IN (674) AND d.ResourceId LIKE '665%' OR d.ResourceId LIKE '667%') OR --Blocks | Steals
+			(@BetType IN (675,676,678) AND d.ResourceId LIKE '653%' OR d.ResourceId LIKE '656%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '662%') OR --Player Performance and Others
+			(@BetType IN (677,679) AND d.ResourceId LIKE '653%' OR d.ResourceId LIKE '656%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '665%' OR d.ResourceId LIKE '667%') OR -- Double
+			(@BetType IN (680) AND d.ResourceId LIKE '653%') OR
+			(@BetType IN (681) AND d.ResourceId LIKE '659%') OR
+			(@BetType IN (682) AND d.ResourceId LIKE '667%') OR
+			(@BetType IN (683) AND d.ResourceId LIKE '656%') OR
+			(@BetType IN (684) AND d.ResourceId LIKE '662%') 
+
+        )
+END
+
+
+
 
 	SELECT
 		MatchId,
