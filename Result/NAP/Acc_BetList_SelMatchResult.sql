@@ -714,50 +714,104 @@ BEGIN
 	---
 	DECLARE @otherinfo 	VARCHAR(2000)
 	-- Get Associate data for Basketball Player Props 
-	
 
+IF @BetType BETWEEN 653 AND 684
+	BEGIN
+		DECLARE @BaseBetType NVARCHAR(3) = 
+			CASE 
+				WHEN @BetType IN (669, 670) THEN '669'
+				WHEN @BetType IN (671, 672) THEN '671'
+				ELSE CONVERT (NVARCHAR,@Bettype) 
+			END
 
--- Xác định BetType và ResourceId tương ứng
-IF @BetType IN (669, 670, 671, 672)
-BEGIN
-    DECLARE @BaseBetType NVARCHAR(3) = 
-        CASE 
-            WHEN @BetType IN (669, 670) THEN '669'
-            WHEN @BetType IN (671, 672) THEN '671'
-			ELSE CONVERT (NVARCHAR,@Bettype) 
-        END
+		SELECT 
+		 @otherinfo = otherinfo
+		FROM @ResultDetail 
+		WHERE ResourceId LIKE @BaseBetType + @ResourceId
+	 -- Current
+		 INSERT INTO @ResultDetail
+			SELECT 
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetail d 
+			WHERE 
+				( d.Otherinfo  = @otherinfo OR d.OtherInfo IN (   SELECT s.val    FROM dbo.strSplit(@otherinfo, ';')s ))
+				AND d.MatchId = @MatchId
+				AND (
+					 (@BetType IN (669, 670) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '656%')) OR  --Points | Assists| Rebounds  
+					 (@BetType IN (671, 672) AND (d.ResourceId LIKE '659%' OR d.ResourceId LIKE '656%')) OR -- Assists| Rebounds   
+					 (@BetType IN (673) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '659%')) OR -- Points | Rebounds  
+					 (@BetType IN (674) AND (d.ResourceId LIKE '665%' OR d.ResourceId LIKE '667%')) OR --Blocks | Steals  
+					 (@BetType IN (675,676,678) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '656%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '662%')) OR --Player Performance and Others  
+					 (@BetType IN (677,679) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '656%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '665%' OR d.ResourceId LIKE '667%')) OR -- Double  
+					 (@BetType IN (680) AND d.ResourceId LIKE '653%') OR  
+					 (@BetType IN (681) AND d.ResourceId LIKE '659%') OR  
+					 (@BetType IN (682) AND d.ResourceId LIKE '667%') OR  
+					 (@BetType IN (683) AND d.ResourceId LIKE '656%') OR  
+					 (@BetType IN (684) AND d.ResourceId LIKE '662%') 
+			)
+	-- range14
+		 INSERT INTO @ResultDetail
+			SELECT 
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM dbo.ResultDetail14 d 
+			WHERE 
+				( d.Otherinfo  = @otherinfo OR d.OtherInfo IN (   SELECT s.val    FROM dbo.strSplit(@otherinfo, ';')s ))
+				AND d.MatchId = @MatchId
+				AND (
+					 (@BetType IN (669, 670) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '656%')) OR  --Points | Assists| Rebounds  
+					 (@BetType IN (671, 672) AND (d.ResourceId LIKE '659%' OR d.ResourceId LIKE '656%')) OR -- Assists| Rebounds   
+					 (@BetType IN (673) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '659%')) OR -- Points | Rebounds  
+					 (@BetType IN (674) AND (d.ResourceId LIKE '665%' OR d.ResourceId LIKE '667%')) OR --Blocks | Steals  
+					 (@BetType IN (675,676,678) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '656%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '662%')) OR --Player Performance and Others  
+					 (@BetType IN (677,679) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '656%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '665%' OR d.ResourceId LIKE '667%')) OR -- Double  
+					 (@BetType IN (680) AND d.ResourceId LIKE '653%') OR  
+					 (@BetType IN (681) AND d.ResourceId LIKE '659%') OR  
+					 (@BetType IN (682) AND d.ResourceId LIKE '667%') OR  
+					 (@BetType IN (683) AND d.ResourceId LIKE '656%') OR  
+					 (@BetType IN (684) AND d.ResourceId LIKE '662%')  
 
-    SELECT @otherinfo = otherinfo 
-    FROM @ResultDetail 
-    WHERE ResourceId LIKE @BaseBetType + @ResourceId
-    INSERT INTO @ResultDetail
-    SELECT 
-        d.MatchId,
-        d.ResourceId,
-        d.HomeValue,
-        d.AwayValue,
-        d.ResultStatusID,
-        d.SettlementStatusID,
-        d.OtherInfo
-    FROM dbo.ResultDetail d 
-    WHERE 
-        d.OtherInfo = @otherinfo
-        AND d.MatchId = @MatchId
-        AND (
-            (@BetType IN (669, 670) AND d.ResourceId LIKE '653%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '656%') OR  --Points | Assists| Rebounds
-            (@BetType IN (671, 672) AND d.ResourceId LIKE '659%' OR d.ResourceId LIKE '656%') OR -- Assists| Rebounds	
-			(@BetType IN (673) AND d.ResourceId LIKE '653%' OR d.ResourceId LIKE '659%') OR -- Points | Rebounds
-			(@BetType IN (674) AND d.ResourceId LIKE '665%' OR d.ResourceId LIKE '667%') OR --Blocks | Steals
-			(@BetType IN (675,676,678) AND d.ResourceId LIKE '653%' OR d.ResourceId LIKE '656%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '662%') OR --Player Performance and Others
-			(@BetType IN (677,679) AND d.ResourceId LIKE '653%' OR d.ResourceId LIKE '656%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '665%' OR d.ResourceId LIKE '667%') OR -- Double
-			(@BetType IN (680) AND d.ResourceId LIKE '653%') OR
-			(@BetType IN (681) AND d.ResourceId LIKE '659%') OR
-			(@BetType IN (682) AND d.ResourceId LIKE '667%') OR
-			(@BetType IN (683) AND d.ResourceId LIKE '656%') OR
-			(@BetType IN (684) AND d.ResourceId LIKE '662%') 
+				)
+	-- BK
+		 INSERT INTO @ResultDetail
+			SELECT 
+				d.MatchId,
+				d.ResourceId,
+				d.HomeValue,
+				d.AwayValue,
+				d.ResultStatusID,
+				d.SettlementStatusID,
+				d.OtherInfo
+			FROM DBARC.bodb_Archive.dbo.ResultDetail_bk d 
+			WHERE 
+				( d.Otherinfo  = @otherinfo OR d.OtherInfo IN (   SELECT s.val    FROM dbo.strSplit(@otherinfo, ';')s ))
+				AND d.MatchId = @MatchId
+				AND (
+					 (@BetType IN (669, 670) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '656%')) OR  --Points | Assists| Rebounds  
+					 (@BetType IN (671, 672) AND (d.ResourceId LIKE '659%' OR d.ResourceId LIKE '656%')) OR -- Assists| Rebounds   
+					 (@BetType IN (673) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '659%')) OR -- Points | Rebounds  
+					 (@BetType IN (674) AND (d.ResourceId LIKE '665%' OR d.ResourceId LIKE '667%')) OR --Blocks | Steals  
+					 (@BetType IN (675,676,678) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '656%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '662%')) OR --Player Performance and Others  
+					 (@BetType IN (677,679) AND (d.ResourceId LIKE '653%' OR d.ResourceId LIKE '656%' OR d.ResourceId LIKE '659%' OR d.ResourceId LIKE '665%' OR d.ResourceId LIKE '667%')) OR -- Double  
+					 (@BetType IN (680) AND d.ResourceId LIKE '653%') OR  
+					 (@BetType IN (681) AND d.ResourceId LIKE '659%') OR  
+					 (@BetType IN (682) AND d.ResourceId LIKE '667%') OR  
+					 (@BetType IN (683) AND d.ResourceId LIKE '656%') OR  
+					 (@BetType IN (684) AND d.ResourceId LIKE '662%') 
 
-        )
-END
+				)
+		END
 
 
 
