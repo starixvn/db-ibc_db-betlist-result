@@ -89,22 +89,22 @@ BEGIN
 
 	CREATE TABLE #tbl_ResourceID
 	(
-		ResourceID			VARCHAR(20),
-		ResultGroupDesc		VARCHAR(500),
-		IsMainResourceID	BIT
-		--AssociateResourceID	VARCHAR(20)
+		ResourceID					VARCHAR(20),
+		ResultGroupDesc				VARCHAR(500),
+		IsMainResourceID			BIT,
+		IsBasketballPlayerProps		BIT
 	)
 
-	INSERT INTO #tbl_ResourceID (ResourceID, ResultGroupDesc, IsMainResourceID)
-	SELECT DISTINCT LTRIM(RTRIM(x.ResourceID)) AS ResourceID, t.ResultGroupDesc, x.IsMainResourceID
-	FROM dbo.f_ResourceBettype() t
+	INSERT INTO #tbl_ResourceID (ResourceID, ResultGroupDesc, IsMainResourceID, IsBasketballPlayerProps)
+	SELECT DISTINCT LTRIM(RTRIM(x.ResourceID)) AS ResourceID, f.ResultGroupDesc, x.IsMainResourceID, IIF(f.ResultGroupDesc = 'Basketball Player Props AIO',1,0)
+	FROM dbo.f_ResourceBettype() f
 	CROSS APPLY (
-		SELECT t.ResourceID, 1 AS IsMainResourceID
+		SELECT f.ResourceID, 1 AS IsMainResourceID
 		UNION ALL
 		SELECT LTRIM(RTRIM(s.value)), 0
-		FROM STRING_SPLIT(t.AssociateResourceID, ',') s
+		FROM STRING_SPLIT(f.AssociateResourceID, ',') s
 	) x
-	WHERE t.BetType = @BetType
+	WHERE f.BetType = @BetType
 	--------------------------------------------------------------------------------------------------------------
 
 	IF @RaceNo IS NULL
@@ -252,12 +252,12 @@ BEGIN
 							AND (LEN(d.ResourceId) = 2
 								OR (d.SettlementStatusID > 0
 									AND f.ResourceID IS NOT NULL
-									AND 1 = CASE WHEN @BetType BETWEEN 653 AND 684 AND
-														(
-																f.IsMainResourceID = 0 OR
-																(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
-														) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
-												 WHEN @BetType NOT BETWEEN 653 AND 684 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+									AND 1 = CASE WHEN f.IsBasketballPlayerProps = 1 AND
+													(
+														f.IsMainResourceID = 0 OR
+														(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
+													) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
+												 WHEN f.IsBasketballPlayerProps = 0 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
 												 ELSE 0
 											END))))
 			END
@@ -449,12 +449,12 @@ BEGIN
 							AND (LEN(d.ResourceId) = 2
 								OR (d.SettlementStatusID > 0
 									AND f.ResourceID IS NOT NULL
-									AND 1 = CASE WHEN @BetType BETWEEN 653 AND 684 AND
-														(
-																f.IsMainResourceID = 0 OR
-																(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
-														) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
-												 WHEN @BetType NOT BETWEEN 653 AND 684 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+									AND 1 = CASE WHEN f.IsBasketballPlayerProps = 1 AND
+													(
+														f.IsMainResourceID = 0 OR
+														(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
+													) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
+												 WHEN f.IsBasketballPlayerProps = 0 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
 												 ELSE 0
 											END))))
 			END
@@ -646,12 +646,12 @@ BEGIN
 							AND (LEN(d.ResourceId) = 2
 								OR (d.SettlementStatusID > 0
 									AND f.ResourceID IS NOT NULL
-									AND 1 = CASE WHEN @BetType BETWEEN 653 AND 684 AND
-														(
-																f.IsMainResourceID = 0 OR
-																(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
-														) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
-												 WHEN @BetType NOT BETWEEN 653 AND 684 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+									AND 1 = CASE WHEN f.IsBasketballPlayerProps = 1 AND
+													(
+														f.IsMainResourceID = 0 OR
+														(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
+													) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
+												 WHEN f.IsBasketballPlayerProps = 0 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
 												 ELSE 0
 											END))))
 			END
@@ -770,20 +770,23 @@ BEGIN
 			AND HomeValue NOT LIKE '%h%'
 
 		-- Delete redundant data, keep only OtherInfo match with main ResourceID - Associate data for Basketball Player Props
-		IF @SportType = 2 AND EXISTS (SELECT 1 FROM #tbl_ResourceID WHERE IsMainResourceID = 0)
+		IF @SportType = 2 AND EXISTS (SELECT 1 FROM @ResultDetail r
+										INNER JOIN #tbl_ResourceID t ON t.IsBasketballPlayerProps = 1 AND r.ResourceID LIKE t.ResourceID AND t.IsMainResourceID = 0
+									)
 		BEGIN
 			DECLARE @Otherinfo 	VARCHAR(100)
 
 			SELECT @Otherinfo = OtherInfo
 			FROM @ResultDetail r
 			INNER JOIN #tbl_ResourceID t
-				ON r.ResourceId LIKE t.ResourceID
+				ON IsBasketballPlayerProps = 1 
+					AND r.ResourceId LIKE t.ResourceID
 					AND r.ResourceId LIKE '%' + @ResourceId
 					AND t.IsMainResourceID = 1
 
 			DELETE r
 			FROM @ResultDetail r
-			INNER JOIN #tbl_ResourceID t ON r.ResourceID LIKE t.ResourceID AND t.IsMainResourceID = 0
+			INNER JOIN #tbl_ResourceID t ON IsBasketballPlayerProps = 1 AND r.ResourceID LIKE t.ResourceID AND t.IsMainResourceID = 0
 			WHERE OtherInfo NOT IN (SELECT val FROM dbo.strSplit(@Otherinfo, ';'))
 		END
 
