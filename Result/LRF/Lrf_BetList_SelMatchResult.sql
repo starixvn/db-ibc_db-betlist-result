@@ -252,12 +252,12 @@ BEGIN
 							AND (LEN(d.ResourceId) = 2
 								OR (d.SettlementStatusID > 0
 									AND f.ResourceID IS NOT NULL
-									AND 1 = CASE WHEN f.ResultGroupDesc = 'Basketball AIO' AND
+									AND 1 = CASE WHEN @BetType BETWEEN 653 AND 684 AND
 														(
 																f.IsMainResourceID = 0 OR
 																(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
 														) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
-												 WHEN f.ResultGroupDesc <> 'Basketball AIO' AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+												 WHEN @BetType NOT BETWEEN 653 AND 684 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
 												 ELSE 0
 											END))))
 			END
@@ -449,12 +449,12 @@ BEGIN
 							AND (LEN(d.ResourceId) = 2
 								OR (d.SettlementStatusID > 0
 									AND f.ResourceID IS NOT NULL
-									AND 1 = CASE WHEN f.ResultGroupDesc = 'Basketball AIO' AND
+									AND 1 = CASE WHEN @BetType BETWEEN 653 AND 684 AND
 														(
 																f.IsMainResourceID = 0 OR
 																(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
 														) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
-												 WHEN f.ResultGroupDesc <> 'Basketball AIO' AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+												 WHEN @BetType NOT BETWEEN 653 AND 684 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
 												 ELSE 0
 											END))))
 			END
@@ -646,12 +646,12 @@ BEGIN
 							AND (LEN(d.ResourceId) = 2
 								OR (d.SettlementStatusID > 0
 									AND f.ResourceID IS NOT NULL
-									AND 1 = CASE WHEN f.ResultGroupDesc = 'Basketball AIO' AND
+									AND 1 = CASE WHEN @BetType BETWEEN 653 AND 684 AND
 														(
 																f.IsMainResourceID = 0 OR
 																(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
 														) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
-												 WHEN f.ResultGroupDesc <> 'Basketball AIO' AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+												 WHEN @BetType NOT BETWEEN 653 AND 684 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
 												 ELSE 0
 											END))))
 			END
