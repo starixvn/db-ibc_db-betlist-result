@@ -228,14 +228,12 @@ BEGIN
 				FROM dbo.ResultDetail AS d WITH (NOLOCK)
 					LEFT JOIN #tbl_ResourceID f ON d.ResourceId LIKE f.ResourceID
 				WHERE d.MatchId = @MatchId
-					AND ((
-							@SportType = 5						-- Tennis
+					AND ((@SportType = 5						-- Tennis
 							AND d.SettlementStatusID > 0
 							AND CASE WHEN @BetType NOT IN (1324) THEN 2 ELSE
 									CASE WHEN @BetType IN (1324) AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
 										ELSE 0 END END = LEN(d.ResourceId))
-						OR (
-							@SportType = 1						-- Soccer
+						OR (@SportType = 1						-- Soccer
 							AND (d.SettlementStatusID > 0
 								OR d.ResourceID LIKE '221%'
 								OR d.ResourceID LIKE '222%'
