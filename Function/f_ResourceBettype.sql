@@ -3,7 +3,7 @@
 ALTER FUNCTION [dbo].[f_ResourceBettype]
 (
 )
-RETURNS @ResourceBettype TABLE (SportType SMALLINT, ResultGroup TINYINT, ResultGroupDesc VARCHAR(500), BetType SMALLINT, ResourceID VARCHAR(20))
+RETURNS @ResourceBettype TABLE (SportType SMALLINT, ResultGroup TINYINT, ResultGroupDesc VARCHAR(500), BetType SMALLINT, ResourceID VARCHAR(20), AssociateResourceID VARCHAR(500))
 AS
 
 /*
@@ -829,25 +829,26 @@ BEGIN
 
 	-- Steals
 	SELECT 2, 1, 'Basketball AIO', 667, '667%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 668, '667%'		UNION ALL	
+	SELECT 2, 1, 'Basketball AIO', 668, '667%'		
 
+	INSERT INTO @ResourceBettype (Sporttype, ResultGroup, ResultGroupDesc, Bettype, ResourceID, AssociateResourceID)
 	--Others
-	SELECT 2, 1, 'Basketball AIO', 669, '669%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 670, '669%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 671, '671%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 672, '671%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 673, '673%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 674, '674%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 675, '675%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 676, '676%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 677, '677%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 678, '678%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 679, '679%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 680, '680%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 681, '681%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 682, '682%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 683, '683%'		UNION ALL
-	SELECT 2, 1, 'Basketball AIO', 684, '684%'		 
+	SELECT 2, 1, 'Basketball AIO', 669, '669%','653%,656%,659%'				UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 670, '669%','653%,656%,659%'				UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 671, '671%','656%,659%'					UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 672, '671%','656%,659%'					UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 673, '673%','653%,659%'					UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 674, '674%','665%,667%'					UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 675, '675%','653%,656%,659%,662%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 676, '676%','653%,656%,659%,662%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 677, '677%','653%,656%,659%,665%,667%'	UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 678, '678%','653%,656%,659%,662%'		UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 679, '679%','653%,656%,659%,665%,667%'	UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 680, '680%','653%'						UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 681, '681%','659%'						UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 682, '682%','667%'						UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 683, '683%','656%'						UNION ALL
+	SELECT 2, 1, 'Basketball AIO', 684, '684%','662%'		 
 
 
 	RETURN

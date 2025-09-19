@@ -64,6 +64,7 @@ AS
 		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
 		- 20240906@Kos: Support Baseball AIO phase 2 [Redmine: #209584]
+		- 20250905@Kelvin: Basketball - Offer 32 new bettypes [Redmine: 235299]
 
 		*******************
 		sample test case:
@@ -81,6 +82,30 @@ BEGIN
 		ResultStatusId		TINYINT,
 		SettlementStatusId	TINYINT,
 		OtherInfo			VARCHAR(2000))
+
+	/* Get ResourceID and AssociateResourceID */
+	--------------------------------------------------------------------------------------------------------------
+	DROP TABLE IF EXISTS #tbl_ResourceID
+
+	CREATE TABLE #tbl_ResourceID
+	(
+		ResourceID			VARCHAR(20),
+		ResultGroupDesc		VARCHAR(500),
+		IsMainResourceID	BIT
+		--AssociateResourceID	VARCHAR(20)
+	)
+
+	INSERT INTO #tbl_ResourceID (ResourceID, ResultGroupDesc, IsMainResourceID)
+	SELECT DISTINCT LTRIM(RTRIM(x.ResourceID)) AS ResourceID, t.ResultGroupDesc, x.IsMainResourceID
+	FROM dbo.f_ResourceBettype() t
+	CROSS APPLY (
+		SELECT t.ResourceID, 1 AS IsMainResourceID
+		UNION ALL
+		SELECT LTRIM(RTRIM(s.value)), 0
+		FROM STRING_SPLIT(t.AssociateResourceID, ',') s
+	) x
+	WHERE t.BetType = @BetType
+	--------------------------------------------------------------------------------------------------------------
 
 	IF @RaceNo IS NULL
 	BEGIN
@@ -201,15 +226,16 @@ BEGIN
 					d.SettlementStatusID,
 					d.OtherInfo
 				FROM dbo.ResultDetail AS d WITH (NOLOCK)
-					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f
-						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+					LEFT JOIN #tbl_ResourceID f ON d.ResourceId LIKE f.ResourceID
 				WHERE d.MatchId = @MatchId
-					AND ((@SportType = 5						-- Tennis
+					AND ((
+							@SportType = 5						-- Tennis
 							AND d.SettlementStatusID > 0
 							AND CASE WHEN @BetType NOT IN (1324) THEN 2 ELSE
 									CASE WHEN @BetType IN (1324) AND LEFT(d.ResourceId, 2) = @ResourceId THEN 4
 										ELSE 0 END END = LEN(d.ResourceId))
-						OR (@SportType = 1						-- Soccer
+						OR (
+							@SportType = 1						-- Soccer
 							AND (d.SettlementStatusID > 0
 								OR d.ResourceID LIKE '221%'
 								OR d.ResourceID LIKE '222%'
@@ -220,16 +246,22 @@ BEGIN
 								OR d.ResourceID LIKE '227%'
 								OR d.ResourceID LIKE '228%'
 								OR d.ResourceID LIKE '229%')
-							AND d.ResourceId LIKE f.ResourceID
+							AND f.ResourceID IS NOT NULL
 							AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 								OR d.ResourceId IN ('08', '09')
 								OR d.ResourceId LIKE '%' + @ResourceId))
 						OR (@SportType = 2						-- Basketball
 							AND (LEN(d.ResourceId) = 2
 								OR (d.SettlementStatusID > 0
-									AND d.ResourceId LIKE f.ResourceID
-									AND (@BetType NOT IN (606, 607, 613, 617)
-										OR d.ResourceId LIKE '%' + @ResourceId)))))
+									AND f.ResourceID IS NOT NULL
+									AND 1 = CASE WHEN f.ResultGroupDesc = 'Basketball AIO' AND
+														(
+																f.IsMainResourceID = 0 OR
+																(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
+														) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
+												 WHEN f.ResultGroupDesc <> 'Basketball AIO' AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+												 ELSE 0
+											END))))
 			END
 			ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Badminton, Cricket, Beach Volleyball, Bandy, Baseball
 			BEGIN
@@ -393,8 +425,7 @@ BEGIN
 					d.SettlementStatusID,
 					d.OtherInfo
 				FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
-					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) f
-						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+					LEFT JOIN #tbl_ResourceID f ON d.ResourceId LIKE f.ResourceID
 				WHERE d.MatchId = @MatchId
 					AND ((@SportType = 5						-- Tennis
 							AND d.SettlementStatusID > 0
@@ -412,16 +443,22 @@ BEGIN
 								OR d.ResourceID LIKE '227%'
 								OR d.ResourceID LIKE '228%'
 								OR d.ResourceID LIKE '229%')
-							AND d.ResourceId LIKE f.ResourceID
+							AND f.ResourceID IS NOT NULL
 							AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 								OR d.ResourceId IN ('08', '09')
 								OR d.ResourceId LIKE '%' + @ResourceId))
 						OR (@SportType = 2						-- Basketball
 							AND (LEN(d.ResourceId) = 2
 								OR (d.SettlementStatusID > 0
-									AND d.ResourceId LIKE f.ResourceID
-									AND (@BetType NOT IN (606, 607, 613, 617)
-										OR d.ResourceId LIKE '%' + @ResourceId)))))
+									AND f.ResourceID IS NOT NULL
+									AND 1 = CASE WHEN f.ResultGroupDesc = 'Basketball AIO' AND
+														(
+																f.IsMainResourceID = 0 OR
+																(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
+														) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
+												 WHEN f.ResultGroupDesc <> 'Basketball AIO' AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+												 ELSE 0
+											END))))
 			END
 			ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Badminton, Cricket, Beach Volleyball, Bandy, Baseball
 			BEGIN
@@ -585,8 +622,7 @@ BEGIN
 					d.SettlementStatusID,
 					d.OtherInfo
 				FROM DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
-					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) F
-						ON F.Bettype = @BetType AND d.ResourceId LIKE F.ResourceID
+					LEFT JOIN #tbl_ResourceID f ON d.ResourceId LIKE f.ResourceID
 				WHERE d.MatchId = @MatchId
 					AND ((@SportType = 5						-- Tennis
 							AND d.SettlementStatusID > 0
@@ -604,16 +640,22 @@ BEGIN
 								OR d.ResourceID LIKE '227%'
 								OR d.ResourceID LIKE '228%'
 								OR d.ResourceID LIKE '229%')
-							AND d.ResourceId LIKE f.ResourceID
+							AND f.ResourceID IS NOT NULL
 							AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 								OR d.ResourceId IN ('08', '09')
 								OR d.ResourceId LIKE '%' + @ResourceId))
 						OR (@SportType = 2						-- Basketball
 							AND (LEN(d.ResourceId) = 2
 								OR (d.SettlementStatusID > 0
-									AND d.ResourceId LIKE f.ResourceID
-									AND (@BetType NOT IN (606, 607, 613, 617)
-										OR d.ResourceId LIKE '%' + @ResourceId)))))
+									AND f.ResourceID IS NOT NULL
+									AND 1 = CASE WHEN f.ResultGroupDesc = 'Basketball AIO' AND
+														(
+																f.IsMainResourceID = 0 OR
+																(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
+														) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
+												 WHEN f.ResultGroupDesc <> 'Basketball AIO' AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+												 ELSE 0
+											END))))
 			END
 			ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Badminton, Cricket, Beach Volleyball, Bandy, Baseball
 			BEGIN
@@ -728,6 +770,24 @@ BEGIN
 		WHERE ResourceId IN ('08', '09')
 			AND HomeValue NOT LIKE '%a%'
 			AND HomeValue NOT LIKE '%h%'
+
+		-- Delete redundant data, keep only OtherInfo match with main ResourceID - Associate data for Basketball Player Props
+		IF @SportType = 2 AND EXISTS (SELECT 1 FROM #tbl_ResourceID WHERE IsMainResourceID = 0)
+		BEGIN
+			DECLARE @Otherinfo 	VARCHAR(100)
+
+			SELECT @Otherinfo = OtherInfo
+			FROM @ResultDetail r
+			INNER JOIN #tbl_ResourceID t
+				ON r.ResourceId LIKE t.ResourceID
+					AND r.ResourceId LIKE '%' + @ResourceId
+					AND t.IsMainResourceID = 1
+
+			DELETE r
+			FROM @ResultDetail r
+			INNER JOIN #tbl_ResourceID t ON r.ResourceID LIKE t.ResourceID AND t.IsMainResourceID = 0
+			WHERE OtherInfo NOT IN (SELECT val FROM dbo.strSplit(@Otherinfo, ';'))
+		END
 
 		SELECT
 			MatchId,
