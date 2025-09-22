@@ -343,7 +343,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetailOS AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
@@ -374,7 +376,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetailES AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
@@ -415,7 +419,9 @@ BEGIN
 				d.Custom2 AS AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetail3rd AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
@@ -554,7 +560,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetailOS14 AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
@@ -585,7 +593,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetailES14 AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
@@ -626,7 +636,9 @@ BEGIN
 				d.Custom2 AS AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetail3rd14 AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
@@ -765,7 +777,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM bodb_Archive.dbo.ResultDetailOS_bk AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
@@ -795,7 +809,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM bodb_Archive.dbo.ResultDetailES_bk AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
@@ -836,7 +852,9 @@ BEGIN
 				d.Custom2 AS AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM bodb_Archive.dbo.ResultDetail3rd_BK AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f

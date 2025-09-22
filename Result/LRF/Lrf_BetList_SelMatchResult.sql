@@ -1,6 +1,6 @@
 ﻿/*<info serverAlias="DBEXT-bodb02" executers="wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResult]
+ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResult_xpre]
 	@MatchId	INT,
 	@RaceNo		VARCHAR(50)		= NULL,
 	@BetType	SMALLINT		= NULL,
@@ -92,14 +92,15 @@ BEGIN
 
 	CREATE TABLE #tbl_ResourceID
 	(
+		BetType						SMALLINT,
 		ResourceID					VARCHAR(20),
 		ResultGroupDesc				VARCHAR(500),
 		IsMainResourceID			BIT,
 		IsBasketballPlayerProps		BIT
 	)
 
-	INSERT INTO #tbl_ResourceID (ResourceID, ResultGroupDesc, IsMainResourceID, IsBasketballPlayerProps)
-	SELECT DISTINCT LTRIM(RTRIM(x.ResourceID)) AS ResourceID, f.ResultGroupDesc, x.IsMainResourceID, IIF(f.ResultGroupDesc = 'Basketball Player Props AIO',1,0)
+	INSERT INTO #tbl_ResourceID (BetType, ResourceID, ResultGroupDesc, IsMainResourceID, IsBasketballPlayerProps)
+	SELECT DISTINCT BetType, LTRIM(RTRIM(x.ResourceID)) AS ResourceID, f.ResultGroupDesc, x.IsMainResourceID, IIF(f.ResultGroupDesc = 'Basketball Player Props AIO',1,0)
 	FROM dbo.f_ResourceBettype() f
 	CROSS APPLY (
 		SELECT f.ResourceID, 1 AS IsMainResourceID
@@ -280,7 +281,9 @@ BEGIN
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					0 AS IsMainResourceID,
+					0 AS IsBasketballPlayerProps
 				FROM dbo.ResultDetailOS AS d WITH (NOLOCK)
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -305,7 +308,9 @@ BEGIN
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					0 AS IsMainResourceID,
+					0 AS IsBasketballPlayerProps
 				FROM dbo.ResultDetailES AS d WITH (NOLOCK)
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -339,7 +344,9 @@ BEGIN
 					d.Custom2 AS AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					0 AS IsMainResourceID,
+					0 AS IsBasketballPlayerProps
 				FROM dbo.ResultDetail3rd AS d WITH (NOLOCK)
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -479,7 +486,9 @@ BEGIN
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					0 AS IsMainResourceID,
+					0 AS IsBasketballPlayerProps
 				FROM dbo.ResultDetailOS14 AS d WITH (NOLOCK)
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -504,7 +513,9 @@ BEGIN
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					0 AS IsMainResourceID,
+					0 AS IsBasketballPlayerProps
 				FROM dbo.ResultDetailES14 AS d WITH (NOLOCK)
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -538,7 +549,9 @@ BEGIN
 					d.Custom2 AS AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					0 AS IsMainResourceID,
+					0 AS IsBasketballPlayerProps
 				FROM dbo.ResultDetail3rd14 AS d WITH (NOLOCK)
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -678,7 +691,9 @@ BEGIN
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					0 AS IsMainResourceID,
+					0 AS IsBasketballPlayerProps
 				FROM DBARC.bodb_Archive.dbo.ResultDetailOS_bk AS d WITH (NOLOCK)
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -703,7 +718,9 @@ BEGIN
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					0 AS IsMainResourceID,
+					0 AS IsBasketballPlayerProps
 				FROM DBARC.bodb_Archive.dbo.ResultDetailES_bk AS d WITH (NOLOCK)
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -737,7 +754,9 @@ BEGIN
 					d.Custom2 AS AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					0 AS IsMainResourceID,
+					0 AS IsBasketballPlayerProps
 				FROM DBARC.bodb_Archive.dbo.ResultDetail3rd_BK AS d WITH (NOLOCK)
 					LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 						ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
