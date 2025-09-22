@@ -75,13 +75,16 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @ResultDetail TABLE (
-		MatchId				INT,
-		ResourceId			VARCHAR(20),
-		HomeValue			VARCHAR(50),
-		AwayValue			VARCHAR(50),
-		ResultStatusId		TINYINT,
-		SettlementStatusId	TINYINT,
-		OtherInfo			VARCHAR(2000))
+		MatchId						INT,
+		ResourceId					VARCHAR(20),
+		HomeValue					VARCHAR(50),
+		AwayValue					VARCHAR(50),
+		ResultStatusId				TINYINT,
+		SettlementStatusId			TINYINT,
+		OtherInfo					VARCHAR(2000),
+		IsMainResourceID			BIT DEFAULT 0,
+		IsBasketballPlayerProps		BIT DEFAULT 0
+		)
 
 	/* Get ResourceID and AssociateResourceID */
 	--------------------------------------------------------------------------------------------------------------
@@ -224,7 +227,9 @@ BEGIN
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					ISNULL(f.IsMainResourceID, 0),
+					ISNULL(f.IsBasketballPlayerProps, 0)
 				FROM dbo.ResultDetail AS d WITH (NOLOCK)
 					LEFT JOIN #tbl_ResourceID f ON d.ResourceId LIKE f.ResourceID
 				WHERE d.MatchId = @MatchId
@@ -421,7 +426,9 @@ BEGIN
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					ISNULL(f.IsMainResourceID, 0),
+					ISNULL(f.IsBasketballPlayerProps, 0)
 				FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
 					LEFT JOIN #tbl_ResourceID f ON d.ResourceId LIKE f.ResourceID
 				WHERE d.MatchId = @MatchId
@@ -618,7 +625,9 @@ BEGIN
 					d.AwayValue,
 					d.ResultStatusID,
 					d.SettlementStatusID,
-					d.OtherInfo
+					d.OtherInfo,
+					ISNULL(f.IsMainResourceID, 0),
+					ISNULL(f.IsBasketballPlayerProps, 0)
 				FROM DBARC.bodb_archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 					LEFT JOIN #tbl_ResourceID f ON d.ResourceId LIKE f.ResourceID
 				WHERE d.MatchId = @MatchId
@@ -770,24 +779,18 @@ BEGIN
 			AND HomeValue NOT LIKE '%h%'
 
 		-- Delete redundant data, keep only OtherInfo match with main ResourceID - Associate data for Basketball Player Props
-		IF @SportType = 2 AND EXISTS (SELECT 1 FROM @ResultDetail r
-										INNER JOIN #tbl_ResourceID t ON t.IsBasketballPlayerProps = 1 AND r.ResourceID LIKE t.ResourceID AND t.IsMainResourceID = 0
-									)
+		IF EXISTS (SELECT 1 FROM @ResultDetail r WHERE r.IsBasketballPlayerProps = 1 AND r.IsMainResourceID = 0)
 		BEGIN
-			DECLARE @Otherinfo 	VARCHAR(100)
+			DECLARE @Otherinfo 	VARCHAR(2000)
 
 			SELECT @Otherinfo = OtherInfo
 			FROM @ResultDetail r
-			INNER JOIN #tbl_ResourceID t
-				ON IsBasketballPlayerProps = 1 
-					AND r.ResourceId LIKE t.ResourceID
-					AND r.ResourceId LIKE '%' + @ResourceId
-					AND t.IsMainResourceID = 1
+			WHERE r.IsBasketballPlayerProps = 1 AND r.IsMainResourceID = 1
 
 			DELETE r
 			FROM @ResultDetail r
-			INNER JOIN #tbl_ResourceID t ON IsBasketballPlayerProps = 1 AND r.ResourceID LIKE t.ResourceID AND t.IsMainResourceID = 0
-			WHERE OtherInfo NOT IN (SELECT val FROM dbo.strSplit(@Otherinfo, ';'))
+			WHERE r.IsBasketballPlayerProps = 1 AND r.IsMainResourceID = 0
+				AND OtherInfo NOT IN (SELECT val FROM dbo.strSplit(@Otherinfo, ';'))
 		END
 
 		SELECT

@@ -79,8 +79,8 @@ BEGIN
 		IsBasketballPlayerProps		BIT
 	)
 
-	INSERT INTO #tbl_ResourceID (ResourceID, ResultGroupDesc, IsMainResourceID, IsBasketballPlayerProps)
-	SELECT DISTINCT LTRIM(RTRIM(x.ResourceID)) AS ResourceID, f.ResultGroupDesc, x.IsMainResourceID, IIF(f.ResultGroupDesc = 'Basketball Player Props AIO',1,0)
+	INSERT INTO #tbl_ResourceID (BetType, ResourceID, ResultGroupDesc, IsMainResourceID, IsBasketballPlayerProps)
+	SELECT DISTINCT BetType, LTRIM(RTRIM(x.ResourceID)) AS ResourceID, f.ResultGroupDesc, x.IsMainResourceID, IIF(f.ResultGroupDesc = 'Basketball Player Props AIO',1,0)
 	FROM dbo.f_ResourceBettype() f
 	CROSS APPLY (
 		SELECT f.ResourceID, 1 AS IsMainResourceID
@@ -125,14 +125,16 @@ BEGIN
 	)
 
 	DECLARE @tmpResultDetail TABLE (
-		MatchId				INT,
-		BetType				SMALLINT,
-		ResourceId			VARCHAR(20),
-		HomeValue			VARCHAR(20),
-		AwayValue			VARCHAR(20),
-		ResultStatusId		TINYINT,
-		SettlementStatusId	TINYINT,
-		OtherInfo			VARCHAR(2000)
+		MatchId						INT,
+		BetType						SMALLINT,
+		ResourceId					VARCHAR(20),
+		HomeValue					VARCHAR(20),
+		AwayValue					VARCHAR(20),
+		ResultStatusId				TINYINT,
+		SettlementStatusId			TINYINT,
+		OtherInfo					VARCHAR(2000),
+		IsMainResourceID			BIT DEFAULT 0,
+		IsBasketballPlayerProps		BIT DEFAULT 0
 	)
 
 	DECLARE @SubTicket AS TABLE (
@@ -284,7 +286,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				ISNULL(f.IsMainResourceID, 0),
+				ISNULL(f.IsBasketballPlayerProps, 0)
 			FROM dbo.ResultDetail AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchID = p.MatchId
 				LEFT JOIN #tbl_ResourceID f ON f.BetType = p.BetType AND d.ResourceId LIKE f.ResourceID
@@ -493,7 +497,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				ISNULL(f.IsMainResourceID, 0),
+				ISNULL(f.IsBasketballPlayerProps, 0)
 			FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN #tbl_ResourceID f ON f.BetType = p.BetType AND d.ResourceId LIKE f.ResourceID
@@ -702,7 +708,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				ISNULL(f.IsMainResourceID, 0),
+				ISNULL(f.IsBasketballPlayerProps, 0)
 			FROM bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
 				INNER JOIN @tmpParlay AS p ON d.MatchId = p.MatchId
 				LEFT JOIN #tbl_ResourceID f ON f.BetType = p.BetType AND d.ResourceId LIKE f.ResourceID
@@ -843,26 +851,20 @@ BEGIN
 	END
 
 	-- Delete redundant data, keep only OtherInfo match with main ResourceID - Associate data for Basketball Player Props
-	IF EXISTS (SELECT 1 FROM @tmpResultDetail r 
-				WHERE EXISTS (SELECT 1 FROM #tbl_ResourceID t
-								WHERE t.IsBasketballPlayerProps = 1
-								AND r.BetType = t.BetType AND r.ResourceId LIKE t.ResourceID AND t.IsMainResourceID = 0))
+	IF EXISTS (SELECT 1 FROM @tmpResultDetail r WHERE r.IsBasketballPlayerProps = 1 AND r.IsMainResourceID = 0)
 	BEGIN
 		;WITH CTE_OtherInfo AS
 		(
-			SELECT DISTINCT r.MatchId, r.BetType, r.OtherInfo
+			SELECT r.MatchId, r.BetType, STRING_AGG(CONVERT(VARCHAR(MAX), r.OtherInfo),';') AS OtherInfo
 			FROM @tmpResultDetail r
-			INNER JOIN #tbl_ResourceID t
-				ON t.IsBasketballPlayerProps = 1
-				AND r.BetType = t.BetType AND r.ResourceID LIKE t.ResourceID AND t.IsMainResourceID = 1
+			WHERE r.IsBasketballPlayerProps = 1 AND r.IsMainResourceID = 1
+			GROUP BY r.MatchId, r.BetType
 		)
 		DELETE r
 		FROM @tmpResultDetail r
-		INNER JOIN #tbl_ResourceID t
-			ON t.IsBasketballPlayerProps = 1
-			AND r.BetType = t.BetType AND r.ResourceID LIKE t.ResourceID AND t.IsMainResourceID = 0
 		INNER JOIN CTE_OtherInfo m ON m.MatchId = r.MatchId AND m.BetType = r.BetType
-		WHERE r.OtherInfo NOT IN (SELECT val FROM dbo.strSplit(m.OtherInfo, ';'))
+		WHERE r.IsBasketballPlayerProps = 1 AND r.IsMainResourceID = 0
+			AND r.OtherInfo NOT IN (SELECT val FROM dbo.strSplit(m.OtherInfo, ';'))
 	END
 
 	-- Get data
