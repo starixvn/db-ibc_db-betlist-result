@@ -1,6 +1,6 @@
 ﻿/*<info serverAlias="DBEXT-bodb02" executers="wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResult_xpre]
+ALTER PROCEDURE [dbo].[Lrf_BetList_SelMatchResult]
 	@MatchId	INT,
 	@RaceNo		VARCHAR(50)		= NULL,
 	@BetType	SMALLINT		= NULL,
