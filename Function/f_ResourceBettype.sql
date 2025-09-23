@@ -815,7 +815,6 @@ BEGIN
 	SELECT 2, 1, 'Basketball Player Props AIO', 660, '659%'		UNION ALL
 	SELECT 2, 1, 'Basketball Player Props AIO', 661, '659%'		UNION ALL
 	SELECT 2, 1, 'Basketball Player Props AIO', 687, '659%'		UNION ALL
-	SELECT 2, 1, 'Basketball Player Props AIO', 673, '659%'		UNION ALL
 
 	-- 3PT FG Made	
 	SELECT 2, 1, 'Basketball Player Props AIO', 662, '662%'		UNION ALL
