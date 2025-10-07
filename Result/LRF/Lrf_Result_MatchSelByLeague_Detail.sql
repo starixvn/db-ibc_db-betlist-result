@@ -41,6 +41,7 @@ AS
 		- 20240412@Kos: Change display for Last Series child match [Redmine: #202484]
 		- 20240429@Kos: Return LeagueGroupId to support Jollysports [Redmine: #203258]
 		- 20240717@Kos: Support Baseball AIO [Redmine: #207510]
+		- 20250905@Kelvin: Basketball - Offer 32 new bettypes [Redmine: 235299]
 */
 
 BEGIN
@@ -57,6 +58,21 @@ BEGIN
 		SettlementStatusId	TINYINT,
 		OtherInfo			VARCHAR(2000)
 	)
+
+	/* Get list ResourceID excluded */
+	------------------------------------------------------------------------------------------------------------------
+	DROP TABLE IF EXISTS #tmpExcludeResourceID
+
+	CREATE TABLE #tmpExcludeResourceID (
+		SportType INT,
+		ResourceID VARCHAR(20),
+		PRIMARY KEY (SportType, ResourceID)
+	)
+
+	INSERT INTO #tmpExcludeResourceID (SportType, ResourceID)
+	SELECT SportType, ResourceID
+	FROM dbo.f_ExcludeResourceID()
+	------------------------------------------------------------------------------------------------------------------
 
 	IF EXISTS (SELECT 1 FROM dbo.match WITH (NOLOCK) WHERE matchid = @MatchId)
 	BEGIN
@@ -121,37 +137,31 @@ BEGIN
 				ResultStatusID,
 				SettlementStatusID,
 				OtherInfo
-			FROM dbo.ResultDetail WITH (NOLOCK)
+			FROM dbo.ResultDetail r WITH (NOLOCK)
 			WHERE MatchID = @MatchId
-				AND ((@SportType = 1							-- Soccer
-						AND SettlementStatusID > 0
-						AND (ResourceID NOT IN ('08', '09')
-							OR HomeValue LIKE '%a%'
-							OR HomeValue LIKE '%h%')
-						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490', '376')
-						AND ResourceID NOT LIKE '160%'
-						AND ResourceID NOT LIKE '164%'
-						AND ResourceID NOT LIKE '169%'
-						AND ResourceID NOT LIKE '180%'
-						AND ResourceID NOT LIKE '216%'
-						AND ResourceID NOT LIKE '217%'
-						AND ResourceID NOT LIKE '221%'
-						AND ResourceID NOT LIKE '222%'
-						AND ResourceID NOT LIKE '223%'
-						AND ResourceID NOT LIKE '224%'
-						AND ResourceID NOT LIKE '225%'
-						AND ResourceID NOT LIKE '226%'
-						AND ResourceID NOT LIKE '227%'
-						AND ResourceID NOT LIKE '228%'
-						AND ResourceID NOT LIKE '229%'
-						AND ResourceID NOT LIKE '486%'
-						AND ResourceID NOT LIKE '487%')
-					OR (@SportType = 5							-- Tennis
-						AND SettlementStatusID > 0)
-					OR (@SportType = 2							-- Basketball
-						AND (LEN(ResourceID) = 2
-							OR SettlementStatusID > 0)))
+				AND (
+						(
+							@SportType = 1							-- Soccer
+							AND SettlementStatusID > 0
+							AND (ResourceID NOT IN ('08', '09')
+								OR HomeValue LIKE '%a%'
+								OR HomeValue LIKE '%h%')
+							AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID)
+						)
+						OR (
+								@SportType = 5							-- Tennis
+								AND SettlementStatusID > 0
+							)
+						OR (
+								@SportType = 2							-- Basketball
+								AND (
+										LEN(ResourceID) = 2
+										OR (SettlementStatusID > 0
+											AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID)
+											)
+									)
+							)
+					)
 		END
 		ELSE IF @SportType IN (6, 8, 9, 50)		-- Volleyball, Badminton, Cricket, Baseball
 		BEGIN
@@ -266,37 +276,31 @@ BEGIN
 				ResultStatusID,
 				SettlementStatusID,
 				OtherInfo
-			FROM dbo.ResultDetail14 WITH (NOLOCK)
+			FROM dbo.ResultDetail14 r WITH (NOLOCK)
 			WHERE MatchID = @MatchId
-				AND ((@SportType = 1							-- Soccer
+			AND (
+					(
+						@SportType = 1							-- Soccer
 						AND SettlementStatusID > 0
 						AND (ResourceID NOT IN ('08', '09')
 							OR HomeValue LIKE '%a%'
 							OR HomeValue LIKE '%h%')
-						AND ResourceID NOT IN ('00', '01', '04', '05', '14F', '14L', '127F', '127L', '135', '168', '173', '174', '175', '176', 
-							'192', '193', '206', '207', '208', '209', '210', '211', '212', '213', '214', '215', '488', '489', '490', '376')
-						AND ResourceID NOT LIKE '160%'
-						AND ResourceID NOT LIKE '164%'
-						AND ResourceID NOT LIKE '169%'
-						AND ResourceID NOT LIKE '180%'
-						AND ResourceID NOT LIKE '216%'
-						AND ResourceID NOT LIKE '217%'
-						AND ResourceID NOT LIKE '221%'
-						AND ResourceID NOT LIKE '222%'
-						AND ResourceID NOT LIKE '223%'
-						AND ResourceID NOT LIKE '224%'
-						AND ResourceID NOT LIKE '225%'
-						AND ResourceID NOT LIKE '226%'
-						AND ResourceID NOT LIKE '227%'
-						AND ResourceID NOT LIKE '228%'
-						AND ResourceID NOT LIKE '229%'
-						AND ResourceID NOT LIKE '486%'
-						AND ResourceID NOT LIKE '487%')
-					OR (@SportType = 5							-- Tennis
-						AND SettlementStatusID > 0)
-					OR (@SportType = 2							-- Basketball
-						AND (LEN(ResourceID) = 2
-							OR SettlementStatusID > 0)))
+						AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID)
+					)
+					OR (
+							@SportType = 5							-- Tennis
+							AND SettlementStatusID > 0
+						)
+					OR (
+							@SportType = 2							-- Basketball
+							AND (
+									LEN(ResourceID) = 2
+									OR (SettlementStatusID > 0
+										AND NOT EXISTS (SELECT 1 FROM #tmpExcludeResourceID t WHERE t.SportType = @SportType AND r.ResourceID LIKE t.ResourceID)
+										)
+								)
+						)
+				)
 		END
 		ELSE IF @SportType IN (6, 8, 9, 50)		-- Volleyball, Badminton, Cricket, Baseball
 		BEGIN
