@@ -60,7 +60,8 @@ AS
 		- 20241028@Kos: Support Betby Virtual Sports 6 [Redmine: #212446]
 		- 20241216@Kos: Support Virtual Sports 5 [Redmine: 207582]
 		- 20250402@Kos: Support Virtual Sports 7 [Redmine: 219083]
-		- 20250905@Kelvin: Basketball - Offer 32 new bettypes [Redmine: 235299]
+		- 20250905@Kelvin: Basketball - Offer 32 new bettypes [Redmine: #235299]
+		- 20251008@Kelvin: Virtual Sports 6 - Betby - Add new eSoccer sport and new bet types [Redmine: #240929]
 
 */
 
@@ -84,7 +85,7 @@ BEGIN
 
 	IF @EventDate > @MoveBetsDay
 	BEGIN
-		IF @SportType NOT IN (125, 126, 127, 134, 147, 175, 177, 193, 198)
+		IF @SportType NOT IN (116, 125, 126, 127, 134, 147, 175, 177, 193, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -152,7 +153,7 @@ BEGIN
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
-		ELSE IF @SportType IN (134, 147, 175)	-- Bitcoin, Virtual Sports 6, VS5
+		ELSE IF @SportType IN (116, 134, 147, 175)	-- Bitcoin, Virtual Sports 6, VS5
 		BEGIN
 			SELECT DISTINCT
 				l.LeagueName,
@@ -164,13 +165,13 @@ BEGIN
 				INNER JOIN dbo.Match3rd AS m WITH (NOLOCK) ON m.League3rdId = l.League3rdId
 				LEFT JOIN dbo.ResultDetail3rd AS r WITH (NOLOCK)
 					ON r.MatchID = m.Match3rdId
-					AND m.SportType IN (134)
+					AND m.SportType IN (116, 134)
 					AND r.SettlementStatusID > 0
 			WHERE m.EventDate = @EventDate
 				AND l.sporttype = @SportType
 				AND 1 = CASE
 							WHEN m.EventStatus = 'completed' THEN 1
-							WHEN m.SportType = 134
+							WHEN m.SportType IN (116, 134)
 								AND m.EventStatus IN ('Running', 'Ended')
 								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
 							WHEN m.SportType = 147
@@ -229,7 +230,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		IF @SportType NOT IN (125, 126, 127, 134, 147, 175, 177, 193, 198)
+		IF @SportType NOT IN (116, 125, 126, 127, 134, 147, 175, 177, 193, 198)
 		BEGIN
 			SELECT DISTINCT
 				l.leaguename,
@@ -296,7 +297,7 @@ BEGIN
 			ORDER BY m.sporttype ASC,
 				l.leaguename ASC
 		END
-		ELSE IF @SportType IN (134, 147, 175)	-- Bitcoin, Virtual Sports 6, VS5
+		ELSE IF @SportType IN (116, 134, 147, 175)	-- Bitcoin, Virtual Sports 6, VS5
 		BEGIN
 			SELECT DISTINCT
 				l.LeagueName,
@@ -308,13 +309,13 @@ BEGIN
 				INNER JOIN dbo.Match3rd14 AS m WITH (NOLOCK) ON m.League3rdId = l.League3rdId
 				LEFT JOIN dbo.ResultDetail3rd14 AS r WITH (NOLOCK)
 					ON r.MatchID = m.Match3rdId
-					AND m.SportType IN (134)
+					AND m.SportType IN (116, 134)
 					AND r.SettlementStatusID > 0
 			WHERE m.EventDate = @EventDate
 				AND l.sporttype = @SportType
 				AND 1 = CASE
 							WHEN m.EventStatus = 'completed' THEN 1
-							WHEN m.SportType = 134
+							WHEN m.SportType IN (116, 134)
 								AND m.EventStatus IN ('Running', 'Ended')
 								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
 							ELSE 0
