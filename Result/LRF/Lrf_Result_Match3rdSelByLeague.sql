@@ -15,6 +15,7 @@ AS
 		- 20210914@Kos: Support Bitcoin [Redmine: #160160]
 		- 20241028@Kos: Support Betby Virtual Sports 6 [Redmine: #212446]
 		- 20241216@Kos: Support Virtual Sports 5 [Redmine: #207582]
+		- 20251008@Kelvin: Virtual Sports 6 - Betby - Add new eSoccer sport and new bet types [Redmine: #240929]
 
 */
 
@@ -49,6 +50,21 @@ BEGIN
 	IF @Date > @MoveBetsDay
 	BEGIN
 		INSERT INTO @Match
+		(
+			Match3rdId,
+			MatchCode,
+			League3rdId,
+			SportType,
+			EventDate,
+			BetStatus,
+			EventStatus,
+			HomeId,
+			AwayId,
+			HtHomeScore,
+			HtAwayScore,
+			FinalHomeScore,
+			FinalAwayScore
+		)
 		SELECT
 			m.Match3rdId,
 			m.matchcode,
@@ -69,13 +85,13 @@ BEGIN
 		FROM dbo.Match3rd AS m WITH (NOLOCK)
 			LEFT JOIN dbo.ResultDetail3rd AS r WITH (NOLOCK)
 				ON r.MatchID = m.Match3rdId
-				AND m.SportType IN (134)
+				AND m.SportType IN (116, 134)
 				AND r.SettlementStatusID > 0
 		WHERE m.League3rdId = @LeagueId
 			AND m.EventDate = @Date
 			AND 1 = CASE
 						WHEN m.EventStatus = 'completed' THEN 1
-						WHEN m.SportType = 134
+						WHEN m.SportType IN (116, 134)
 							AND m.EventStatus IN ('Running', 'Ended')
 							AND ISNULL(r.MatchID, 0) <> 0 THEN 1
 						WHEN m.SportType = 147
@@ -85,6 +101,14 @@ BEGIN
 					END
 
 		INSERT INTO @Detail
+		(
+			Match3rdId,
+			Custom1,
+			Custom2,
+			GameResult,
+			SettlementStatusID,
+			ResourceId
+		)
 		SELECT
 			MatchId,
 			Custom1,
@@ -99,6 +123,21 @@ BEGIN
 	ELSE
 	BEGIN
 		INSERT INTO @Match
+		(
+			Match3rdId,
+			MatchCode,
+			League3rdId,
+			SportType,
+			EventDate,
+			BetStatus,
+			EventStatus,
+			HomeId,
+			AwayId,
+			HtHomeScore,
+			HtAwayScore,
+			FinalHomeScore,
+			FinalAwayScore
+		)
 		SELECT
 			m.Match3rdId,
 			m.matchcode,
@@ -119,19 +158,27 @@ BEGIN
 		FROM dbo.Match3rd14 AS m WITH (NOLOCK)
 			LEFT JOIN dbo.ResultDetail3rd14 AS r WITH (NOLOCK)
 				ON r.MatchID = m.Match3rdId
-				AND m.SportType IN (134)
+				AND m.SportType IN (116, 134)
 				AND r.SettlementStatusID > 0
 		WHERE m.League3rdId = @LeagueId
 			AND m.EventDate = @Date
 			AND 1 = CASE
 						WHEN m.EventStatus = 'completed' THEN 1
-						WHEN m.SportType = 134
+						WHEN m.SportType IN (116, 134)
 								AND m.EventStatus IN ('Running', 'Ended')
 								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
 						ELSE 0
 					END
 
 		INSERT INTO @Detail
+		(
+			Match3rdId,
+			Custom1,
+			Custom2,
+			GameResult,
+			SettlementStatusID,
+			ResourceId
+		)
 		SELECT
 			MatchId,
 			Custom1,
@@ -145,10 +192,30 @@ BEGIN
 	END
 
 	-- Return result
-	SELECT *
-	FROM (SELECT DISTINCT * FROM @Match) AS m
+	SELECT DISTINCT 
+			Match3rdId,
+			MatchCode,
+			League3rdId,
+			SportType,
+			EventDate,
+			BetStatus,
+			EventStatus,
+			HomeId,
+			AwayId,
+			HtHomeScore,
+			HtAwayScore,
+			FinalHomeScore,
+			FinalAwayScore
+	FROM @Match
 	ORDER BY EventDate ASC
 
-	SELECT * FROM @Detail
+	SELECT 
+		Match3rdId,
+		Custom1,
+		Custom2,
+		GameResult,
+		SettlementStatusID,
+		ResourceId 
+	FROM @Detail
 END
 GO

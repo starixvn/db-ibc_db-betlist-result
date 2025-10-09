@@ -67,6 +67,7 @@ AS
 		- 20241216@Kos: Support Virtual Sports 5 [Redmine: 207582]
 		- 20250402@Kos: Support Virtual Sports 7 [Redmine: 219083]
 		- 20250904@Kelvin: Basketball - Offer 32 new bettypes [Redmine: 235299]
+		- 20251008@Kelvin: Virtual Sports 6 - Betby - Add new eSoccer sport and new bet types [Redmine: #240929]
 */
 
 BEGIN
@@ -92,7 +93,7 @@ BEGIN
 	FROM bodb_licensee.dbo.LicenseeProduct3rd WITH (NOLOCK)
 	WHERE LicenseeID = @LicenseeId
 
-	INSERT INTO #LicenseeProduct
+	INSERT INTO #LicenseeProduct(ProductID)
 	SELECT g.ProductId
 	FROM dbo.Lrf_f_GroupProduct() AS g
 	WHERE EXISTS (SELECT 1 FROM #LicenseeProduct WHERE ProductID = g.GroupProductId)
@@ -103,7 +104,7 @@ BEGIN
 	IF @EventDate > @MoveBetsDay
 	BEGIN
 		-- Sportsbook, Number Game, Virtual Sports
-		INSERT INTO @Sport
+		INSERT INTO @Sport(SportType)
 		SELECT DISTINCT m.sporttype
 		FROM dbo.match AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
@@ -169,7 +170,7 @@ BEGIN
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
 		BEGIN
-			INSERT INTO @Sport
+			INSERT INTO @Sport(SportType)
 			SELECT DISTINCT r.sporttype
 			FROM (
 					SELECT DISTINCT EventID
@@ -186,19 +187,19 @@ BEGIN
 		-- Bitcoin, Virtual Sports 6, Virtual Sports 5
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID IN (69, 71, 88))
 		BEGIN
-			INSERT INTO @Sport
+			INSERT INTO @Sport(SportType)
 			SELECT DISTINCT m.SportType
 			FROM dbo.Match3rd AS m WITH (NOLOCK)
 				INNER JOIN dbo.League3rd AS l WITH (NOLOCK) ON l.League3rdId = m.League3rdId
 				LEFT JOIN dbo.ResultDetail3rd AS r WITH (NOLOCK)
 					ON r.MatchID = m.Match3rdId
-					AND m.SportType IN (134)
+					AND m.SportType IN (116, 134)
 					AND r.SettlementStatusID > 0
 			WHERE m.EventDate = @EventDate
 				AND @IsShowAll IN (1, l.IsTest)
 				AND 1 = CASE
-							WHEN m.SportType IN (134, 147, 175) AND m.EventStatus = 'completed' THEN 1
-							WHEN m.SportType = 134
+							WHEN m.SportType IN (116, 134, 147, 175) AND m.EventStatus = 'completed' THEN 1
+							WHEN m.SportType IN (116, 134)
 								AND m.EventStatus IN ('Running', 'Ended')
 								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
 							WHEN m.SportType = 147
@@ -211,7 +212,7 @@ BEGIN
 	ELSE
 	BEGIN
 		-- Sportsbook, Number Game, Virtual Sports
-		INSERT INTO @Sport
+		INSERT INTO @Sport(SportType)
 		SELECT DISTINCT m.sporttype
 		FROM dbo.match14 AS m WITH (NOLOCK)
 			LEFT JOIN dbo.match_remark AS mr WITH (NOLOCK) ON m.matchid = mr.matchid
@@ -276,7 +277,7 @@ BEGIN
 		-- Virtual Sports
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID = 5)
 		BEGIN
-			INSERT INTO @Sport
+			INSERT INTO @Sport(SportType)
 			SELECT DISTINCT r.sporttype
 			FROM dbo.VSOutright14 AS o WITH (NOLOCK)
 				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON o.EventID = r.EventID
@@ -290,19 +291,19 @@ BEGIN
 		-- Bitcoin, Virtual Sports 6, Virtual Sports 5
 		IF EXISTS (SELECT TOP(1) 1 FROM #LicenseeProduct WHERE ProductID IN (69, 71, 88))
 		BEGIN
-			INSERT INTO @Sport
+			INSERT INTO @Sport(SportType)
 			SELECT DISTINCT m.SportType
 			FROM dbo.Match3rd14 AS m WITH (NOLOCK)
 				INNER JOIN dbo.League3rd AS l WITH (NOLOCK) ON l.League3rdId = m.League3rdId
 				LEFT JOIN dbo.ResultDetail3rd14 AS r WITH (NOLOCK)
 					ON r.MatchID = m.Match3rdId
-					AND m.SportType IN (134)
+					AND m.SportType IN (116, 134)
 					AND r.SettlementStatusID > 0
 			WHERE m.EventDate = @EventDate
 				AND @IsShowAll IN (1, l.IsTest)
 				AND 1 = CASE
-							WHEN m.SportType IN (134, 147, 175) AND m.EventStatus = 'completed' THEN 1
-							WHEN m.SportType = 134
+							WHEN m.SportType IN (116, 134, 147, 175) AND m.EventStatus = 'completed' THEN 1
+							WHEN m.SportType IN (116, 134)
 								AND m.EventStatus IN ('Running', 'Ended')
 								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
 							ELSE 0
