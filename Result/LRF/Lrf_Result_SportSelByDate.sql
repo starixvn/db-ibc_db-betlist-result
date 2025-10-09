@@ -68,6 +68,7 @@ AS
 		- 20250402@Kos: Support Virtual Sports 7 [Redmine: 219083]
 		- 20250904@Kelvin: Basketball - Offer 32 new bettypes [Redmine: 235299]
 		- 20251008@Kelvin: Virtual Sports 6 - Betby - Add new eSoccer sport and new bet types [Redmine: #240929]
+		- 20251008@Kelvin: Virtual Sports 6 - Betby - Add new E-Volleyball sport and new bet types [Redmine: #241527]
 */
 
 BEGIN
@@ -193,13 +194,13 @@ BEGIN
 				INNER JOIN dbo.League3rd AS l WITH (NOLOCK) ON l.League3rdId = m.League3rdId
 				LEFT JOIN dbo.ResultDetail3rd AS r WITH (NOLOCK)
 					ON r.MatchID = m.Match3rdId
-					AND m.SportType IN (116, 134)
+					AND m.SportType IN (114, 116, 134)
 					AND r.SettlementStatusID > 0
 			WHERE m.EventDate = @EventDate
 				AND @IsShowAll IN (1, l.IsTest)
 				AND 1 = CASE
-							WHEN m.SportType IN (116, 134, 147, 175) AND m.EventStatus = 'completed' THEN 1
-							WHEN m.SportType IN (116, 134)
+							WHEN m.SportType IN (114, 116, 134, 147, 175) AND m.EventStatus = 'completed' THEN 1
+							WHEN m.SportType IN (114, 116, 134)
 								AND m.EventStatus IN ('Running', 'Ended')
 								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
 							WHEN m.SportType = 147
@@ -297,13 +298,13 @@ BEGIN
 				INNER JOIN dbo.League3rd AS l WITH (NOLOCK) ON l.League3rdId = m.League3rdId
 				LEFT JOIN dbo.ResultDetail3rd14 AS r WITH (NOLOCK)
 					ON r.MatchID = m.Match3rdId
-					AND m.SportType IN (116, 134)
+					AND m.SportType IN (114, 116, 134)
 					AND r.SettlementStatusID > 0
 			WHERE m.EventDate = @EventDate
 				AND @IsShowAll IN (1, l.IsTest)
 				AND 1 = CASE
-							WHEN m.SportType IN (116, 134, 147, 175) AND m.EventStatus = 'completed' THEN 1
-							WHEN m.SportType IN (116, 134)
+							WHEN m.SportType IN (114, 116, 134, 147, 175) AND m.EventStatus = 'completed' THEN 1
+							WHEN m.SportType IN (114, 116, 134)
 								AND m.EventStatus IN ('Running', 'Ended')
 								AND ISNULL(r.MatchID, 0) <> 0 THEN 1
 							ELSE 0
