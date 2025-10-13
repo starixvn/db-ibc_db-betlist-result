@@ -66,7 +66,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype (ProductId, Bettype, EventType)
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 27, 83)
@@ -160,6 +160,15 @@ BEGIN
 				WHERE bm.refno = @RefNo)
 	BEGIN
 		INSERT INTO @SubTicket
+			(
+			MatchId,
+			SportType,
+			ChildMatchType,
+			ParentId,
+			BetType,
+			BetCheck,
+			Transdesc
+			)
 		SELECT
 			bm.matchid,
 			m.sporttype,
@@ -181,6 +190,15 @@ BEGIN
 				WHERE bm.refno = @RefNo)
 	BEGIN
 		INSERT INTO @SubTicket
+			(
+			MatchId,
+			SportType,
+			ChildMatchType,
+			ParentId,
+			BetType,
+			BetCheck,
+			Transdesc
+			)
 		SELECT
 			bm.matchid,
 			m.sporttype,
@@ -203,6 +221,15 @@ BEGIN
 				WHERE bm.refno = @RefNo)
 	BEGIN
 		INSERT INTO @SubTicket
+			(
+			MatchId,
+			SportType,
+			ChildMatchType,
+			ParentId,
+			BetType,
+			BetCheck,
+			Transdesc
+			)
 		SELECT
 			bm.matchid,
 			m.sporttype,
@@ -229,6 +256,38 @@ BEGIN
 					INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = bm.MatchId)
 	BEGIN
 		INSERT INTO @tmpParlay
+			(SportType,
+			LeagueId,
+			MatchId,
+			HomeId,
+			AwayId,
+			HtHomeScore,
+			HtAwayScore,
+			FinalHomeScore,
+			FinalAwayScore,
+			LiveHomeScore,
+			LiveAwayScore,
+			KickOffTime,
+			EventDate,
+			IsNeutral,
+			BetStatus,
+			EventStatus,
+			IsRefund,
+			IsCalRefund,
+			GoalRecord,
+			MatchCode,
+			IsHTCal,
+			Calculate,
+			SettlementStatus,
+			NoHTScore,
+			BetType,
+			BetCheck,
+			Transdesc,
+			LeagueGroupId,
+			MainType,
+			SubType,
+			SessionTime				
+			)
 		SELECT
 			m.sporttype,
 			m.leagueid,
@@ -281,6 +340,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (1, 2, 5))
 		BEGIN
 			INSERT INTO @tmpResultDetail
+				(
+					MatchId,
+					BetType,
+					ResourceId,
+					HomeValue,
+					AwayValue,
+					ResultStatusId,
+					SettlementStatusId,
+					OtherInfo,
+					IsMainResourceID,
+					IsBasketballPlayerProps
+				)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -334,6 +405,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 8, 9, 45, 50, 58))
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps			
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -372,6 +455,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -415,6 +510,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -495,6 +602,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (1, 2, 5))
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -548,6 +667,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 8, 9, 45, 50, 58))
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -586,6 +717,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -629,6 +772,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps			
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -712,6 +867,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (1, 2, 5))
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -765,6 +932,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType IN (6, 8, 9, 45, 50, 58))
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -803,6 +982,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 43)
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,
@@ -846,6 +1037,18 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @tmpParlay WHERE SportType = 193)
 		BEGIN
 			INSERT INTO @tmpResultDetail
+			(
+				MatchId,
+				BetType,
+				ResourceId,
+				HomeValue,
+				AwayValue,
+				ResultStatusId,
+				SettlementStatusId,
+				OtherInfo,
+				IsMainResourceID,
+				IsBasketballPlayerProps
+			)
 			SELECT
 				d.MatchId,
 				p.BetType,

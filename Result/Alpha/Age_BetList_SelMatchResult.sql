@@ -208,6 +208,15 @@ BEGIN
 		IF @SportType NOT IN (6, 8, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -257,6 +266,15 @@ BEGIN
 		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -286,6 +304,15 @@ BEGIN
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -322,6 +349,15 @@ BEGIN
 		ELSE
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchID,
 				d.ResourceId,
@@ -403,6 +439,15 @@ BEGIN
 		IF @SportType NOT IN (6, 8, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -452,6 +497,15 @@ BEGIN
 		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -481,6 +535,15 @@ BEGIN
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -517,6 +580,15 @@ BEGIN
 		ELSE
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchID,
 				d.ResourceId,
@@ -601,6 +673,15 @@ BEGIN
 		IF @SportType NOT IN (6, 8, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -650,6 +731,15 @@ BEGIN
 		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -679,6 +769,15 @@ BEGIN
 		ELSE IF @SportType = 43	-- E-Sports
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -715,6 +814,15 @@ BEGIN
 		ELSE
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchID,
 				d.ResourceId,
