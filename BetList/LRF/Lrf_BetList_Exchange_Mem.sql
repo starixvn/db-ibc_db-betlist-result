@@ -30,6 +30,7 @@ AS
 		- 20240618@Kos: Exclude non-settled tickets [Redmine: 206505]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250627@Kos: Extend SelectionId data type from INT to BIGINT [#Redmine: 231714]
+		- 20251014@Kelvin: Upgrade ExchangeId Datatype [Redmine: #222339]
 */
 
 BEGIN
@@ -67,7 +68,7 @@ BEGIN
 		WinLostDate		DATETIME,
 		WinLost			MONEY,
 		Commission		MONEY,
-		Currency		TINYINT,
+		Currency		SMALLINT,
 		ExVirtualRate	FLOAT
 	)
 
@@ -85,7 +86,7 @@ BEGIN
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,
 		WinLostDate		DATETIME,
-		Currency		TINYINT,
+		Currency		SMALLINT,
 		OddsAvg			SMALLMONEY,
 		FancyBetRuns	MONEY,
 		Stake			MONEY,

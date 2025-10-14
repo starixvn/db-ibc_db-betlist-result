@@ -18,6 +18,7 @@ AS
 		- 20231225@Kos: Hide Saba text for Jollysports licensees [Redmine: 198697]
 		- 20240305@Kos: Support Virtual Sports 4 [Redmine: 199347]
 		- 20240801@Kos: Support Virtual Sports 5 [Redmine: 207582]
+		- 20251014@Kelvin: Upgrade ExchangeId Datatype [Redmine: #222339]
 */
 
 BEGIN
@@ -65,7 +66,7 @@ BEGIN
 		TransDesc			NVARCHAR(1000))
 
 	DECLARE @RefNo			BIGINT,
-		@CurrencyId			TINYINT,
+		@CurrencyId			SMALLINT,
 		@Status				NVARCHAR(10),
 		@IsMainTicketMarked	BIT				= 0
 
