@@ -31,7 +31,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype(ProductId, Bettype, EventType)
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 27, 83, 88)
@@ -98,6 +98,35 @@ BEGIN
 				WHERE b.refno = @RefNo AND b.custid = @CustId )
 	BEGIN
 		INSERT INTO @tmpParlay
+		(
+			TransId,
+			BetId,
+			BetCheck,
+			SportType,
+			LeagueId,
+			LeagueGroupId,
+			BetType,
+			Stake,
+			Currency,
+			MatchId,
+			EventDate,
+			ShowTime,
+			HomeId,
+			AwayId,
+			Hdp1,
+			Hdp2,
+			Odds,
+			BetTeam,
+			LiveHomeScore,
+			LiveAwayScore,
+			LiveIndicator,
+			BetStatus,
+			IsNeutral,
+			Status,
+			SettlementStatus,
+			TransDate,
+			TransDesc
+		)
 		SELECT
 			b.transid,
 			NULL,
@@ -165,7 +194,35 @@ BEGIN
 			AND (b.winlostdate > @MoveBetsDay OR b.winlostdate IS NULL)
 	END
 
-	SELECT DISTINCT * FROM @tmpParlay
+	SELECT DISTINCT
+		TransId,
+		BetId,
+		BetCheck,
+		SportType,
+		LeagueId,
+		LeagueGroupId,
+		BetType,
+		Stake,
+		Currency,
+		MatchId,
+		EventDate,
+		ShowTime,
+		HomeId,
+		AwayId,
+		Hdp1,
+		Hdp2,
+		Odds,
+		BetTeam,
+		LiveHomeScore,
+		LiveAwayScore,
+		LiveIndicator,
+		BetStatus,
+		IsNeutral,
+		Status,
+		SettlementStatus,
+		TransDate,
+		TransDesc
+	FROM @tmpParlay
 	ORDER BY TransId DESC
 END
 GO

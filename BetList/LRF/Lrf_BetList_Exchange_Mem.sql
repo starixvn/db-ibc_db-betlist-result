@@ -100,6 +100,20 @@ BEGIN
 	IF @DateOption = 1		-- Filter by settled date
 	BEGIN
 		INSERT INTO @Data
+		(
+			UserId,
+			EventTypeName,
+			EventId,
+			EventName,
+			MarketId,
+			MarketName,
+			SettledDate,
+			WinLostDate,
+			WinLost,
+			Commission,
+			Currency,
+			ExVirtualRate
+		)
 		SELECT
 			b.userId,
 			b.eventTypeName,
@@ -125,6 +139,20 @@ BEGIN
 	ELSE		-- Filter by resettled date
 	BEGIN
 		INSERT INTO @Data
+		(
+			UserId,
+			EventTypeName,
+			EventId,
+			EventName,
+			MarketId,
+			MarketName,
+			SettledDate,
+			WinLostDate,
+			WinLost,
+			Commission,
+			Currency,
+			ExVirtualRate
+		)
 		SELECT
 			b.userId,
 			b.eventTypeName,
@@ -152,6 +180,26 @@ BEGIN
 	WHERE Currency NOT IN (SELECT DISTINCT Currency FROM @TempAg)
 
 	INSERT INTO @Detail
+	(
+		BetId,
+		UserId,
+		CategoryType,
+		EventTypeName,
+		EventId,
+		EventName,
+		MarketId,
+		MarketName,
+		SelectionId,
+		SelectionName,
+		Type,
+		BetPlaced,
+		WinLostDate,
+		Currency,
+		OddsAvg,
+		FancyBetRuns,
+		Stake,
+		WinLost
+	)
 	SELECT
 		b.betID,
 		b.userId,
@@ -201,6 +249,11 @@ BEGIN
 
 	-- Get exchange rate
 	INSERT INTO @ExchangeRate
+	(
+		FirstExchangeDateByMonth,
+		LastExchangeDateByMonth,
+		Rate
+	)
 	SELECT
 		e.FromDate,
 		e.ToDate,
