@@ -1,3 +1,0 @@
-Result\LRF\Lrf_Result_LeagueSelByDate.sql
-Result\LRF\Lrf_Result_MatchSelByLeague.sql
-Result\LRF\Lrf_Result_SportSelByDate.sql

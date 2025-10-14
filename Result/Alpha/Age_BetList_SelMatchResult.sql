@@ -65,6 +65,7 @@ AS
 		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
+		- 20250922@Benji: Support Basketball Player Props AIO [Redmine: #235372]
 */
 
 BEGIN
@@ -77,12 +78,40 @@ BEGIN
 		AwayValue			VARCHAR(50),
 		ResultStatusID		TINYINT,
 		SettlementStatusID	TINYINT,
-		OtherInfo			VARCHAR(2000))
+		OtherInfo			VARCHAR(2000),
+		IsMainResourceID			BIT DEFAULT 0,
+		IsBasketballPlayerProps		BIT DEFAULT 0
+		)
 
 	DECLARE @ResourceId	VARCHAR(20),
 		@SportType		SMALLINT,
 		@ChildMatchType	TINYINT,
 		@ParentId		INT
+
+	/* Get ResourceID and AssociateResourceID */
+	--------------------------------------------------------------------------------------------------------------
+	DROP TABLE IF EXISTS #tbl_ResourceID
+
+	CREATE TABLE #tbl_ResourceID
+	(
+		BetType						SMALLINT,
+		ResourceID					VARCHAR(20),
+		ResultGroupDesc				VARCHAR(500),
+		IsMainResourceID			BIT,
+		IsBasketballPlayerProps		BIT
+	)
+
+	INSERT INTO #tbl_ResourceID (BetType,ResourceID, ResultGroupDesc, IsMainResourceID, IsBasketballPlayerProps)
+	SELECT DISTINCT BetType,LTRIM(RTRIM(x.ResourceID)) AS ResourceID, f.ResultGroupDesc, x.IsMainResourceID, IIF(f.ResultGroupDesc = 'Basketball Player Props AIO',1,0)
+	FROM dbo.f_ResourceBettype() f
+	CROSS APPLY (
+		SELECT f.ResourceID, 1 AS IsMainResourceID
+		UNION ALL
+		SELECT LTRIM(RTRIM(s.value)), 0
+		FROM STRING_SPLIT(f.AssociateResourceID, ',') s
+	) x
+	WHERE f.BetType = @BetType
+	--------------------------------------------------------------------------------------------------------------
 
 	-- Get result detail of bet type 221 in case of 225
 	IF @BetType = 225
@@ -179,6 +208,15 @@ BEGIN
 		IF @SportType NOT IN (6, 8, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -186,10 +224,11 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				ISNULL(f.IsMainResourceID, 0),
+				ISNULL(f.IsBasketballPlayerProps, 0)
 			FROM dbo.ResultDetail AS d WITH (NOLOCK)
-				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
-					ON f.Bettype = @BetType AND d.ResourceID LIKE f.ResourceID
+				LEFT JOIN #tbl_ResourceID f ON d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
 				AND ((@SportType = 5		-- Tennis
 						AND d.SettlementStatusID > 0
@@ -211,16 +250,31 @@ BEGIN
 						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
 							OR d.ResourceId LIKE '%' + @ResourceId))
-					OR (@SportType = 2		-- Basketball
-						AND (LEN(d.ResourceId) = 2
-							OR (d.SettlementStatusID > 0
-								AND d.ResourceId LIKE f.ResourceID
-								AND (@BetType NOT IN (606, 607, 613, 617)
-									OR d.ResourceID LIKE '%' + @ResourceId)))))
+					OR (@SportType = 2						-- Basketball
+							AND (LEN(d.ResourceId) = 2
+								OR (d.SettlementStatusID > 0
+									AND f.ResourceID IS NOT NULL
+									AND 1 = CASE WHEN f.IsBasketballPlayerProps = 1 AND
+													(
+														f.IsMainResourceID = 0 OR
+														(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
+													) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
+												 WHEN f.IsBasketballPlayerProps = 0 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+												 ELSE 0
+											END))))
 		END
 		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -232,7 +286,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetailOS AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -248,6 +304,15 @@ BEGIN
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -255,7 +320,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetailES AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -282,6 +349,15 @@ BEGIN
 		ELSE
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchID,
 				d.ResourceId,
@@ -289,7 +365,9 @@ BEGIN
 				d.Custom2 AS AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetail3rd AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT BetType, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.BetType = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -361,6 +439,15 @@ BEGIN
 		IF @SportType NOT IN (6, 8, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -368,10 +455,11 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				ISNULL(f.IsMainResourceID, 0),
+				ISNULL(f.IsBasketballPlayerProps, 0)
 			FROM dbo.ResultDetail14 AS d WITH (NOLOCK)
-				LEFT JOIN (SELECT BetType, ResourceId FROM dbo.f_ResourceBettype()) AS f
-					ON f.BetType = @BetType AND d.ResourceID LIKE f.ResourceID
+				LEFT JOIN #tbl_ResourceID f ON d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
 				AND ((@SportType = 5		-- Tennis
 						AND d.SettlementStatusID > 0
@@ -393,16 +481,31 @@ BEGIN
 						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
 							OR d.ResourceId LIKE '%' + @ResourceId))
-					OR (@SportType = 2		-- Basketball
-						AND (LEN(d.ResourceId) = 2
-							OR (d.SettlementStatusID > 0
-								AND d.ResourceID LIKE f.ResourceID
-								AND (@BetType NOT IN (606, 607, 613, 617)
-									OR d.ResourceID LIKE '%' + @ResourceId)))))
+					OR (@SportType = 2						-- Basketball
+							AND (LEN(d.ResourceId) = 2
+								OR (d.SettlementStatusID > 0
+									AND f.ResourceID IS NOT NULL
+									AND 1 = CASE WHEN f.IsBasketballPlayerProps = 1 AND
+													(
+														f.IsMainResourceID = 0 OR
+														(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
+													) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
+												 WHEN f.IsBasketballPlayerProps = 0 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+												 ELSE 0
+											END))))
 		END
 		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -414,7 +517,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetailOS14 AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -430,6 +535,15 @@ BEGIN
 		ELSE IF @SportType = 43		-- E-Sports
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -437,7 +551,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetailES14 AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -464,6 +580,15 @@ BEGIN
 		ELSE
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchID,
 				d.ResourceId,
@@ -471,7 +596,9 @@ BEGIN
 				d.Custom2 AS AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM dbo.ResultDetail3rd14 AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT BetType, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.BetType = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -546,6 +673,15 @@ BEGIN
 		IF @SportType NOT IN (6, 8, 9, 43, 45, 50, 58, 193)
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -553,10 +689,11 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				ISNULL(f.IsMainResourceID, 0),
+				ISNULL(f.IsBasketballPlayerProps, 0)
 			FROM DBARC.bodb_Archive.dbo.ResultDetail_BK AS d WITH (NOLOCK)
-				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
-					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
+				LEFT JOIN #tbl_ResourceID f ON d.ResourceId LIKE f.ResourceID
 			WHERE d.MatchId = @MatchId
 				AND ((@SportType = 5		-- Tennis
 						AND d.SettlementStatusID > 0
@@ -578,16 +715,31 @@ BEGIN
 						AND (@BetType NOT IN (486, 487, 395, 385, 384, 383, 382, 381)
 							OR d.ResourceId IN ('08', '09')
 							OR d.ResourceId LIKE '%' + @ResourceId))
-					OR (@SportType = 2		-- Basketball
-						AND (LEN(d.ResourceId) = 2
-							OR (d.SettlementStatusID > 0
-								AND d.ResourceId LIKE f.ResourceID
-								AND (@BetType NOT IN (606, 607, 613, 617)
-									OR d.ResourceId LIKE '%' + @ResourceId)))))
+					OR (@SportType = 2						-- Basketball
+							AND (LEN(d.ResourceId) = 2
+								OR (d.SettlementStatusID > 0
+									AND f.ResourceID IS NOT NULL
+									AND 1 = CASE WHEN f.IsBasketballPlayerProps = 1 AND
+													(
+														f.IsMainResourceID = 0 OR
+														(f.IsMainResourceID = 1 AND d.ResourceID LIKE '%' + @ResourceId)
+													) THEN 1  --Get main ResourceID and Associate ResourceID first, then delete redundant Associate ResourceID if not match OtherInfo later
+												 WHEN f.IsBasketballPlayerProps = 0 AND (@BetType NOT IN (606, 607, 613, 617) OR d.ResourceId LIKE '%' + @ResourceId) THEN 1
+												 ELSE 0
+											END))))
 		END
 		ELSE IF @SportType IN (6, 8, 9, 45, 50, 58)		-- Volleyball, Baseball, Badminton, Beach Volleyball, Cricket, Bandy
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -599,7 +751,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM DBARC.bodb_Archive.dbo.ResultDetailOS_bk AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -615,6 +769,15 @@ BEGIN
 		ELSE IF @SportType = 43	-- E-Sports
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchId,
 				d.ResourceId,
@@ -622,7 +785,9 @@ BEGIN
 				d.AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM DBARC.bodb_Archive.dbo.ResultDetailES_bk AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT Bettype, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.Bettype = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -649,6 +814,15 @@ BEGIN
 		ELSE
 		BEGIN
 			INSERT INTO @ResultDetail
+				(MatchId,		
+				ResourceId,			
+				HomeValue,			
+				AwayValue,			
+				ResultStatusID,		
+				SettlementStatusID,	
+				OtherInfo,			
+				IsMainResourceID,			
+				IsBasketballPlayerProps	)
 			SELECT
 				d.MatchID,
 				d.ResourceId,
@@ -656,7 +830,9 @@ BEGIN
 				d.Custom2 AS AwayValue,
 				d.ResultStatusID,
 				d.SettlementStatusID,
-				d.OtherInfo
+				d.OtherInfo,
+				0 AS IsMainResourceID,
+				0 AS IsBasketballPlayerProps
 			FROM DBARC.bodb_Archive.dbo.ResultDetail3rd_BK AS d WITH (NOLOCK)
 				LEFT JOIN (SELECT BetType, ResourceId FROM dbo.f_ResourceBettype()) AS f
 					ON f.BetType = @BetType AND d.ResourceId LIKE f.ResourceID
@@ -696,6 +872,21 @@ BEGIN
 	WHERE ResourceId IN ('08', '09')
 		AND HomeValue NOT LIKE '%a%'
 		AND HomeValue NOT LIKE '%h%'
+
+	-- Delete redundant data, keep only OtherInfo match with main ResourceID - Associate data for Basketball Player Props
+		IF EXISTS (SELECT 1 FROM @ResultDetail r WHERE r.IsBasketballPlayerProps = 1 AND r.IsMainResourceID = 0)
+		BEGIN
+			DECLARE @Otherinfo 	VARCHAR(2000)
+
+			SELECT @Otherinfo = OtherInfo
+			FROM @ResultDetail r
+			WHERE r.IsBasketballPlayerProps = 1 AND r.IsMainResourceID = 1
+
+			DELETE r
+			FROM @ResultDetail r
+			WHERE r.IsBasketballPlayerProps = 1 AND r.IsMainResourceID = 0
+			AND OtherInfo NOT IN (SELECT val FROM dbo.strSplit(@Otherinfo, ';'))
+		END
 
 	SELECT
 		MatchId,
