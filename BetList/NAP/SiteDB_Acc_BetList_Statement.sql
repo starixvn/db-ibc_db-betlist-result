@@ -45,7 +45,7 @@ AS
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
 		- 20250819@Razor: Support VS 2 - VS Tournament [Redmine: #235084]
 		- 20250820@Benji: Support Playtech Live Jackpot[Redmine: #230127]
-
+		- 20251017@Johnson:  Virtual Sports 6 - Betby - Add new eSoccer, eVolleyball [Redmine: #240845]
 
 	Param's Explanation:
 		+ @TransType:
@@ -65,7 +65,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype(ProductID, Bettype, EventType, SubProduct, RefTable)
 	SELECT ProductID, BetType, EventType, SubProduct, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE Bettype NOT IN (904, 914)
@@ -190,67 +190,140 @@ BEGIN
 				- Virtual Sports	: ProductID = 5
 				- Cash Out			: ProductID = 25
 			*/
-			INSERT INTO @Data
+			INSERT INTO @Data(
+				SportType,
+				LeagueId,
+				HomeId,
+				AwayId,
+				MatchCode,
+				Race,
+				EventDate,
+				VirtualRate,
+				IsShowOTExRate,
+				SDiscount,
+				ADiscount,
+				Discount,
+				SettleTime,
+				MatchId,
+				TransId,
+				BetId,
+				RefNo,
+				TransDate,
+				OddsId,
+				BetType,
+				Hdp1,
+				Hdp2,
+				Odds,
+				MOdds,
+				FinalOdds,
+				FinalOdds2,
+				OddsType,
+				BetTeam,
+				Status,
+				SettlementStatus,
+				BetStatus,
+				ComStatus,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				Commission,
+				LiveHomeScore,
+				LiveAwayScore,
+				LiveIndicator,
+				FinalHomeScore,
+				FinalAwayScore,
+				HtHomeScore,
+				HtAwayScore,
+				Creator,
+				Ip,
+				Username,
+				IsNeutral,
+				ShowTime,
+				SPositionTaking,
+				MPositionTaking,
+				APositionTaking,
+				SPositionTaking2,
+				MPositionTaking2,
+				APositionTaking2,
+				SComm,
+				AComm,
+				Comm,
+				AWinLost,
+				MWinLost,
+				SWinLost,
+				WinLostDate,
+				BetCheck,
+				TransDesc,
+				OddsSpread,
+				OriginalBetType,
+				BetdaqId,
+				ExtraInfo,
+				WalletType,
+				RefCode,
+				CurrencyId,
+				SiteId,
+				DeviceType
+				)
 			SELECT
-				m.sporttype,
-				m.leagueid,
-				m.homeid,
-				m.awayid,
-				m.matchcode,
+				m14.sporttype,
+				m14.leagueid,
+				m14.homeid,
+				m14.awayid,
+				m14.matchcode,
 				'' AS race,
 				CASE
-					WHEN s.ProductID IN (1, 25) THEN m.GlobalShowTime
-					ELSE m.eventdate
+					WHEN s.ProductID IN (1, 25) THEN m14.GlobalShowTime
+					ELSE m14.eventdate
 				END AS EventDate,
 				0,
 				0,
-				b.sdiscount,
+				b14.sdiscount,
 				CASE
-					WHEN b.mrecommend = -4 THEN 0
-					ELSE b.adiscount
+					WHEN b14.mrecommend = -4 THEN 0
+					ELSE b14.adiscount
 				END,
 				CASE
-					WHEN b.recommend IN (-3, -4) THEN 0
-					ELSE b.discount
+					WHEN b14.recommend IN (-3, -4) THEN 0
+					ELSE b14.discount
 				END,
-				ISNULL(b.checktime, '') AS settletime,
-				m.matchid,
-				b.transid,
-				ISNULL(b.BetID, 0),
-				b.refno,
-				b.transdate,
-				b.oddsid,
-				b.bettype,
-				b.hdp1,
-				b.hdp2,
-				b.odds,
-				b.modds,
+				ISNULL(b14.checktime, '') AS settletime,
+				m14.matchid,
+				b14.transid,
+				ISNULL(b14.BetID, 0),
+				b14.refno,
+				b14.transdate,
+				b14.oddsid,
+				b14.bettype,
+				b14.hdp1,
+				b14.hdp2,
+				b14.odds,
+				b14.modds,
 				0 AS finalodds,
 				0 AS finalodds2,
-				b.oddstype,
-				b.betteam,
-				b.status,
+				b14.oddstype,
+				b14.betteam,
+				b14.status,
 				0 AS SettlementStatus,
-				m.betstatus,
-				CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-				b.stake,
-				b.actual_stake,
-				(b.winlost - b.actual_stake) AS WinLost,
-				b.playercomm,
-				b.livehomescore,
-				b.liveawayscore,
-				b.liveindicator,
-				m.finalhomescore,
-				m.finalawayscore,
-				m.hthomescore,
-				m.htawayscore,
-				b.creator,
-				b.ip,
-				b.Username,
-				ISNULL(m.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
+				m14.betstatus,
+				CASE WHEN b14.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+				b14.stake,
+				b14.actual_stake,
+				(b14.winlost - b14.actual_stake) AS WinLost,
+				b14.playercomm,
+				b14.livehomescore,
+				b14.liveawayscore,
+				b14.liveindicator,
+				m14.finalhomescore,
+				m14.finalawayscore,
+				m14.hthomescore,
+				m14.htawayscore,
+				b14.creator,
+				b14.ip,
+				b14.Username,
+				ISNULL(m14.IsNeutral, CONVERT(BIT, 0)) AS IsNeutral,
 				CASE
-					WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m.kickofftime)
-					ELSE m.showtime
+					WHEN s.ProductID IN (5, 27) THEN CONVERT(NVARCHAR(50), m14.kickofftime)
+					ELSE m14.showtime
 				END AS ShowTime,
 				0 spositiontaking, -- unuse in this report
 				0 mpositiontaking, -- unuse in this report
@@ -261,40 +334,40 @@ BEGIN
 				0 scomm, -- unuse in this report
 				0 acomm, -- unuse in this report
 				0 comm,	-- unuse in this report
-				b.awinlost,
-				b.mwinlost,
-				b.swinlost,
-				b.winlostdate,
-				b.betcheck,
-				ISNULL(b.transdesc, '') AS transdesc,
-				ISNULL(b.oddsspread, 0) AS OddsSpread,
+				b14.awinlost,
+				b14.mwinlost,
+				b14.swinlost,
+				b14.winlostdate,
+				b14.betcheck,
+				ISNULL(b14.transdesc, '') AS transdesc,
+				ISNULL(b14.oddsspread, 0) AS OddsSpread,
 				0 AS OriginalBetType,
 				CASE
-					WHEN s.ProductID = 1 THEN ISNULL(b.betdaqid, -1)
+					WHEN s.ProductID = 1 THEN ISNULL(b14.betdaqid, -1)
 					ELSE -1
 				END AS BetdaqId,
-				ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+				ISNULL(b14.ExtraInfo, '') AS ExtraInfo,
 				CASE
-					WHEN s.ProductID = 1 THEN ISNULL(b.WalletType, 0)
+					WHEN s.ProductID = 1 THEN ISNULL(b14.WalletType, 0)
 					ELSE 0
 				END AS WalletType,
 				CASE
-					WHEN s.ProductID = 1 THEN ISNULL(b.RefCode, 0)
+					WHEN s.ProductID = 1 THEN ISNULL(b14.RefCode, 0)
 					ELSE 0
 				END AS RefCode,
 				0 AS CurrencyId,
 				'' AS SiteId,
-				b.DeviceType
-			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
-				INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
-			WHERE b.custid = @CustId
-				AND b.winlostdate = @FromDate
+				b14.DeviceType
+			FROM dbo.bettrans14 AS b14 WITH (NOLOCK)
+				INNER JOIN @SportBettype AS s ON s.Bettype = b14.bettype
+				INNER JOIN dbo.match14 AS m14 WITH (NOLOCK) ON b14.matchid = m14.matchid
+			WHERE b14.custid = @CustId
+				AND b14.winlostdate = @FromDate
 				AND s.EventType = 1
-				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
-
-			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)
-			INSERT INTO @Data
+				AND b14.statusID IN (SELECT statusID FROM @tmpStatus)
+						
+			UNION ALL
+			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)			
 			SELECT
 				0,
 				0,
@@ -381,18 +454,17 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
 				AND b.bettype IN (9, 29, 2798, 2799, 10449, 11099)
-				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
-
-			-- Outright
-			INSERT INTO @Data
+				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+			UNION ALL
+			-- Outright			
 			SELECT
 				l.sporttype,
-				o.leagueid,
-				o.teamid,
+				o14.leagueid,
+				o14.teamid,
 				0,
-				o.matchcode,
-				o.groupmatch AS race,
-				o.eventdate,
+				o14.matchcode,
+				o14.groupmatch AS race,
+				o14.eventdate,
 				b.virtualrate,
 				CASE WHEN b.currency2 IS NULL THEN CONVERT(BIT,0) ELSE CONVERT(BIT,1) END AS isShowOTExRate,
 				b.sdiscount,
@@ -410,7 +482,7 @@ BEGIN
 				ISNULL(b.betid, 0),
 				b.refno,
 				b.transdate,
-				o.orid,
+				o14.orid,
 				b.bettype,
 				b.hdp1,
 				b.hdp2,
@@ -465,18 +537,18 @@ BEGIN
 				'' AS SiteId,
 				b.DeviceType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN dbo.outright14 AS o WITH (NOLOCK) ON b.matchid = o.orid
-				INNER JOIN dbo.league AS l WITH (NOLOCK) ON o.leagueid = l.leagueid
+				INNER JOIN dbo.outright14 AS o14 WITH (NOLOCK) ON b.matchid = o14.orid
+				INNER JOIN dbo.league AS l WITH (NOLOCK) ON o14.leagueid = l.leagueid
 			WHERE b.custid = @CustId
 				AND b.bettype = 10
 				AND b.winlostdate = @FromDate
-				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
-
-			-- Virtual Horse Racing, VS2 Racing
-			INSERT INTO @Data
+				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)					
+				
+			UNION ALL
+			-- Virtual Horse Racing, VS2 Racing			
 			SELECT
-				r.SportType,
-				r.LeagueID,
+				r14.SportType,
+				r14.LeagueID,
 				0 AS homeid,
 				0 AS awayid,
 				0 AS matchcode,
@@ -554,19 +626,19 @@ BEGIN
 				'' AS SiteId,
 				b.DeviceType
 			FROM dbo.bettrans14 AS b WITH (NOLOCK)				
-				INNER JOIN dbo.VSRaceInfo14 AS r WITH (NOLOCK) ON r.EventID = b.matchid
+				INNER JOIN dbo.VSRaceInfo14 AS r14 WITH (NOLOCK) ON r14.EventID = b.matchid
 				INNER JOIN @SportBettype AS s ON s.Bettype = b.bettype
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
 				AND s.EventType = 3
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
-
+				
+			UNION ALL
 			-- RNG Casino, Keno, AG Casino, AllBet, Voidbridge, NG2, Lottery, Pragmatic Casino
 			-- Card Club, NPH Promotion, Spadegaming, Virtual Games, SA Gaming, Indo 4D, Sexy Gaming, Saba.club, Table Game, BBIN
 			-- IBCBet Live Casino, RNG War, ION, PG Soft, Joker, WM, Leap Gaming Virtual Sports, Big Gaming, Happy 5 Linked Games (Number Game)
 			-- MaxGame, Habanero, CG, Sports Lottery, PP Live Casino, VGaming, AdvantPlay, AdvantPlay Mini, FGG, SEAL, MG RNGCasino, Player Tips, Jili, YeeBet, WE, Live22, UU Slots
-			-- Saba xD, Saba coins
-			INSERT INTO @Data
+			-- Saba xD, Saba coins			
 			SELECT
 				CASE
 					WHEN s.ProductID = 6 THEN b.matchid
@@ -722,7 +794,80 @@ BEGIN
 			END
 
 			-- Bitcoin, VS 5, VS 6
-			INSERT INTO @Data
+			INSERT INTO @Data(
+				SportType,
+				LeagueId,
+				HomeId,
+				AwayId,
+				MatchCode,
+				Race,
+				EventDate,
+				VirtualRate,
+				IsShowOTExRate,
+				SDiscount,
+				ADiscount,
+				Discount,
+				SettleTime,
+				MatchId,
+				TransId,
+				BetId,
+				RefNo,
+				TransDate,
+				OddsId,
+				BetType,
+				Hdp1,
+				Hdp2,
+				Odds,
+				MOdds,
+				FinalOdds,
+				FinalOdds2,
+				OddsType,
+				BetTeam,
+				Status,
+				SettlementStatus,
+				BetStatus,
+				ComStatus,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				Commission,
+				LiveHomeScore,
+				LiveAwayScore,
+				LiveIndicator,
+				FinalHomeScore,
+				FinalAwayScore,
+				HtHomeScore,
+				HtAwayScore,
+				Creator,
+				Ip,
+				Username,
+				IsNeutral,
+				ShowTime,
+				SPositionTaking,
+				MPositionTaking,
+				APositionTaking,
+				SPositionTaking2,
+				MPositionTaking2,
+				APositionTaking2,
+				SComm,
+				AComm,
+				Comm,
+				AWinLost,
+				MWinLost,
+				SWinLost,
+				WinLostDate,
+				BetCheck,
+				TransDesc,
+				OddsSpread,
+				OriginalBetType,
+				BetdaqId,
+				ExtraInfo,
+				WalletType,
+				RefCode,
+				CurrencyId,
+				SiteId,
+				DeviceType
+				)
 			SELECT
 				m.sporttype,
 				CASE
@@ -796,7 +941,7 @@ BEGIN
 					ELSE 0
 				END AS liveawayscore,
 				CASE 
-					WHEN s.ProductId = 88 THEN b.liveindicator
+					WHEN s.ProductId IN (71, 88) THEN b.liveindicator
 					ELSE 0
 				END AS liveindicator,
 				CASE 
@@ -835,7 +980,7 @@ BEGIN
 					ELSE 0
 				END AS betcheck,
 				CASE 
-					WHEN s.ProductId = 88 THEN b.transdesc
+					WHEN s.ProductId IN (71, 88) THEN ISNULL(b.transdesc, '')
 					ELSE ''
 				END AS transdesc,
 				0 AS OddsSpread,
@@ -865,7 +1010,80 @@ BEGIN
 				- Virtual Sports	: ProductID = 5
 				- Cash Out			: ProductID = 25
 			*/
-			INSERT INTO @Data
+			INSERT INTO @Data(
+				SportType,
+				LeagueId,
+				HomeId,
+				AwayId,
+				MatchCode,
+				Race,
+				EventDate,
+				VirtualRate,
+				IsShowOTExRate,
+				SDiscount,
+				ADiscount,
+				Discount,
+				SettleTime,
+				MatchId,
+				TransId,
+				BetId,
+				RefNo,
+				TransDate,
+				OddsId,
+				BetType,
+				Hdp1,
+				Hdp2,
+				Odds,
+				MOdds,
+				FinalOdds,
+				FinalOdds2,
+				OddsType,
+				BetTeam,
+				Status,
+				SettlementStatus,
+				BetStatus,
+				ComStatus,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				Commission,
+				LiveHomeScore,
+				LiveAwayScore,
+				LiveIndicator,
+				FinalHomeScore,
+				FinalAwayScore,
+				HtHomeScore,
+				HtAwayScore,
+				Creator,
+				Ip,
+				Username,
+				IsNeutral,
+				ShowTime,
+				SPositionTaking,
+				MPositionTaking,
+				APositionTaking,
+				SPositionTaking2,
+				MPositionTaking2,
+				APositionTaking2,
+				SComm,
+				AComm,
+				Comm,
+				AWinLost,
+				MWinLost,
+				SWinLost,
+				WinLostDate,
+				BetCheck,
+				TransDesc,
+				OddsSpread,
+				OriginalBetType,
+				BetdaqId,
+				ExtraInfo,
+				WalletType,
+				RefCode,
+				CurrencyId,
+				SiteId,
+				DeviceType
+				)
 			SELECT
 				m.sporttype,
 				m.leagueid,
@@ -1066,9 +1284,8 @@ BEGIN
 				AND b.gameID BETWEEN 801 AND 899
 				AND b.statusID IN (0,1)
 				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus WHERE statusID IN (0, 1))
-
+			UNION ALL
 			-- Mix Parlay, System Parlay, Mix Parlay (Betradar Virtual Sports), Mix Parlay (VS4), Mix Parlay (VS5)
-			INSERT INTO @Data
 			SELECT 
 				0,
 				0,
@@ -1167,10 +1384,9 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.winlostdate = @FromDate
 				AND b.bettype IN (9, 29, 2798, 2799, 10449, 11099)
-				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
-
-			-- Outright
-			INSERT INTO @Data
+				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+		UNION ALL
+			-- Outright			
 			SELECT 
 				l.sporttype,
 				o.leagueid,
@@ -1256,10 +1472,9 @@ BEGIN
 			WHERE b.custid = @CustId
 				AND b.bettype = 10
 				AND b.winlostdate = @FromDate
-				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus);
-
-			-- Virtual Horse Racing, VS2 Racing
-			INSERT INTO @Data
+				AND b.statusID IN (SELECT [statusID] FROM @tmpStatus)
+		UNION ALL
+			-- Virtual Horse Racing, VS2 Racing			
 			SELECT 
 				r.SportType,
 				r.LeagueID,
@@ -1346,9 +1561,8 @@ BEGIN
 				AND b.winlostdate = @FromDate
 				AND s.EventType = 3
 				AND b.statusID IN (SELECT statusID FROM @tmpStatus)
-
-			-- NG2, BBIN
-			INSERT INTO @Data
+			UNION ALL
+			-- NG2, BBIN			
 			SELECT
 				CASE
 					WHEN s.ProductID = 23 AND s.Bettype BETWEEN 2501 AND 2539 THEN 213
@@ -1461,7 +1675,80 @@ BEGIN
 			-- Keno, Lottery, Virtual Games, Table Games, Indo 4D, Leap Gaming Virtual Sports, Happy 5 Linked Games(Number Game), Sports Lottery (translog)
 			IF EXISTS (SELECT TOP(1) 1 FROM @tmpStatus WHERE statusID IN (0, 1))
 			BEGIN
-				INSERT INTO @Data
+				INSERT INTO @Data(
+					SportType,
+					LeagueId,
+					HomeId,
+					AwayId,
+					MatchCode,
+					Race,
+					EventDate,
+					VirtualRate,
+					IsShowOTExRate,
+					SDiscount,
+					ADiscount,
+					Discount,
+					SettleTime,
+					MatchId,
+					TransId,
+					BetId,
+					RefNo,
+					TransDate,
+					OddsId,
+					BetType,
+					Hdp1,
+					Hdp2,
+					Odds,
+					MOdds,
+					FinalOdds,
+					FinalOdds2,
+					OddsType,
+					BetTeam,
+					Status,
+					SettlementStatus,
+					BetStatus,
+					ComStatus,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					Commission,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					FinalHomeScore,
+					FinalAwayScore,
+					HtHomeScore,
+					HtAwayScore,
+					Creator,
+					Ip,
+					Username,
+					IsNeutral,
+					ShowTime,
+					SPositionTaking,
+					MPositionTaking,
+					APositionTaking,
+					SPositionTaking2,
+					MPositionTaking2,
+					APositionTaking2,
+					SComm,
+					AComm,
+					Comm,
+					AWinLost,
+					MWinLost,
+					SWinLost,
+					WinLostDate,
+					BetCheck,
+					TransDesc,
+					OddsSpread,
+					OriginalBetType,
+					BetdaqId,
+					ExtraInfo,
+					WalletType,
+					RefCode,
+					CurrencyId,
+					SiteId,
+					DeviceType
+					)
 				SELECT 
 					CASE
 						WHEN s.ProductId = 8 THEN 202
@@ -1576,7 +1863,80 @@ BEGIN
 			-- Keno, Lottery, NPH Promotion, Virtual Games, Table Games, Indo 4D, Leap Gaming Virtual Sports, Happy 5 Linked Games(Number Game), Sports Lottery, Player Tips, Saba Coin (bettrans)
 			IF EXISTS (SELECT TOP(1) 1 FROM @tmpStatus WHERE statusID NOT IN (0, 1))
 			BEGIN
-				INSERT INTO @Data
+				INSERT INTO @Data(
+					SportType,
+					LeagueId,
+					HomeId,
+					AwayId,
+					MatchCode,
+					Race,
+					EventDate,
+					VirtualRate,
+					IsShowOTExRate,
+					SDiscount,
+					ADiscount,
+					Discount,
+					SettleTime,
+					MatchId,
+					TransId,
+					BetId,
+					RefNo,
+					TransDate,
+					OddsId,
+					BetType,
+					Hdp1,
+					Hdp2,
+					Odds,
+					MOdds,
+					FinalOdds,
+					FinalOdds2,
+					OddsType,
+					BetTeam,
+					Status,
+					SettlementStatus,
+					BetStatus,
+					ComStatus,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					Commission,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					FinalHomeScore,
+					FinalAwayScore,
+					HtHomeScore,
+					HtAwayScore,
+					Creator,
+					Ip,
+					Username,
+					IsNeutral,
+					ShowTime,
+					SPositionTaking,
+					MPositionTaking,
+					APositionTaking,
+					SPositionTaking2,
+					MPositionTaking2,
+					APositionTaking2,
+					SComm,
+					AComm,
+					Comm,
+					AWinLost,
+					MWinLost,
+					SWinLost,
+					WinLostDate,
+					BetCheck,
+					TransDesc,
+					OddsSpread,
+					OriginalBetType,
+					BetdaqId,
+					ExtraInfo,
+					WalletType,
+					RefCode,
+					CurrencyId,
+					SiteId,
+					DeviceType
+					)
 				SELECT
 					CASE
 						WHEN s.ProductId = 8 THEN 202
@@ -1712,7 +2072,80 @@ BEGIN
 			IF @TransType = 1	-- before yesterday settled ticket
 				AND @FromDate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 			BEGIN
-				INSERT INTO @Data
+				INSERT INTO @Data(
+					SportType,
+					LeagueId,
+					HomeId,
+					AwayId,
+					MatchCode,
+					Race,
+					EventDate,
+					VirtualRate,
+					IsShowOTExRate,
+					SDiscount,
+					ADiscount,
+					Discount,
+					SettleTime,
+					MatchId,
+					TransId,
+					BetId,
+					RefNo,
+					TransDate,
+					OddsId,
+					BetType,
+					Hdp1,
+					Hdp2,
+					Odds,
+					MOdds,
+					FinalOdds,
+					FinalOdds2,
+					OddsType,
+					BetTeam,
+					Status,
+					SettlementStatus,
+					BetStatus,
+					ComStatus,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					Commission,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					FinalHomeScore,
+					FinalAwayScore,
+					HtHomeScore,
+					HtAwayScore,
+					Creator,
+					Ip,
+					Username,
+					IsNeutral,
+					ShowTime,
+					SPositionTaking,
+					MPositionTaking,
+					APositionTaking,
+					SPositionTaking2,
+					MPositionTaking2,
+					APositionTaking2,
+					SComm,
+					AComm,
+					Comm,
+					AWinLost,
+					MWinLost,
+					SWinLost,
+					WinLostDate,
+					BetCheck,
+					TransDesc,
+					OddsSpread,
+					OriginalBetType,
+					BetdaqId,
+					ExtraInfo,
+					WalletType,
+					RefCode,
+					CurrencyId,
+					SiteId,
+					DeviceType
+					)
 				SELECT
 					CASE
 						WHEN s.ProductID = 22 THEN 212
@@ -1818,7 +2251,80 @@ BEGIN
 				AND @FromDate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
 			BEGIN
-				INSERT INTO @Data
+				INSERT INTO @Data(
+					SportType,
+					LeagueId,
+					HomeId,
+					AwayId,
+					MatchCode,
+					Race,
+					EventDate,
+					VirtualRate,
+					IsShowOTExRate,
+					SDiscount,
+					ADiscount,
+					Discount,
+					SettleTime,
+					MatchId,
+					TransId,
+					BetId,
+					RefNo,
+					TransDate,
+					OddsId,
+					BetType,
+					Hdp1,
+					Hdp2,
+					Odds,
+					MOdds,
+					FinalOdds,
+					FinalOdds2,
+					OddsType,
+					BetTeam,
+					Status,
+					SettlementStatus,
+					BetStatus,
+					ComStatus,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					Commission,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					FinalHomeScore,
+					FinalAwayScore,
+					HtHomeScore,
+					HtAwayScore,
+					Creator,
+					Ip,
+					Username,
+					IsNeutral,
+					ShowTime,
+					SPositionTaking,
+					MPositionTaking,
+					APositionTaking,
+					SPositionTaking2,
+					MPositionTaking2,
+					APositionTaking2,
+					SComm,
+					AComm,
+					Comm,
+					AWinLost,
+					MWinLost,
+					SWinLost,
+					WinLostDate,
+					BetCheck,
+					TransDesc,
+					OddsSpread,
+					OriginalBetType,
+					BetdaqId,
+					ExtraInfo,
+					WalletType,
+					RefCode,
+					CurrencyId,
+					SiteId,
+					DeviceType
+					)
 				SELECT
 					CASE
 						WHEN s.ProductID = 22 THEN 212
@@ -1949,7 +2455,80 @@ BEGIN
 			IF EXISTS (SELECT TOP(1) 1 FROM @tmpStatus WHERE [statusID] IN (0, 1))	-- yesterday and later running ticket
 				AND @FromDate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 			BEGIN
-				INSERT INTO @Data
+				INSERT INTO @Data(
+					SportType,
+					LeagueId,
+					HomeId,
+					AwayId,
+					MatchCode,
+					Race,
+					EventDate,
+					VirtualRate,
+					IsShowOTExRate,
+					SDiscount,
+					ADiscount,
+					Discount,
+					SettleTime,
+					MatchId,
+					TransId,
+					BetId,
+					RefNo,
+					TransDate,
+					OddsId,
+					BetType,
+					Hdp1,
+					Hdp2,
+					Odds,
+					MOdds,
+					FinalOdds,
+					FinalOdds2,
+					OddsType,
+					BetTeam,
+					Status,
+					SettlementStatus,
+					BetStatus,
+					ComStatus,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					Commission,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					FinalHomeScore,
+					FinalAwayScore,
+					HtHomeScore,
+					HtAwayScore,
+					Creator,
+					Ip,
+					Username,
+					IsNeutral,
+					ShowTime,
+					SPositionTaking,
+					MPositionTaking,
+					APositionTaking,
+					SPositionTaking2,
+					MPositionTaking2,
+					APositionTaking2,
+					SComm,
+					AComm,
+					Comm,
+					AWinLost,
+					MWinLost,
+					SWinLost,
+					WinLostDate,
+					BetCheck,
+					TransDesc,
+					OddsSpread,
+					OriginalBetType,
+					BetdaqId,
+					ExtraInfo,
+					WalletType,
+					RefCode,
+					CurrencyId,
+					SiteId,
+					DeviceType
+					)
 				SELECT
 					CASE
 						WHEN s.ProductID = 22 THEN 212
@@ -2069,7 +2648,80 @@ BEGIN
 			IF @TransType = 1	-- before yesterday settled ticket
 				AND @FromDate < DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 			BEGIN
-				INSERT INTO @Data
+				INSERT INTO @Data(
+					SportType,
+					LeagueId,
+					HomeId,
+					AwayId,
+					MatchCode,
+					Race,
+					EventDate,
+					VirtualRate,
+					IsShowOTExRate,
+					SDiscount,
+					ADiscount,
+					Discount,
+					SettleTime,
+					MatchId,
+					TransId,
+					BetId,
+					RefNo,
+					TransDate,
+					OddsId,
+					BetType,
+					Hdp1,
+					Hdp2,
+					Odds,
+					MOdds,
+					FinalOdds,
+					FinalOdds2,
+					OddsType,
+					BetTeam,
+					Status,
+					SettlementStatus,
+					BetStatus,
+					ComStatus,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					Commission,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					FinalHomeScore,
+					FinalAwayScore,
+					HtHomeScore,
+					HtAwayScore,
+					Creator,
+					Ip,
+					Username,
+					IsNeutral,
+					ShowTime,
+					SPositionTaking,
+					MPositionTaking,
+					APositionTaking,
+					SPositionTaking2,
+					MPositionTaking2,
+					APositionTaking2,
+					SComm,
+					AComm,
+					Comm,
+					AWinLost,
+					MWinLost,
+					SWinLost,
+					WinLostDate,
+					BetCheck,
+					TransDesc,
+					OddsSpread,
+					OriginalBetType,
+					BetdaqId,
+					ExtraInfo,
+					WalletType,
+					RefCode,
+					CurrencyId,
+					SiteId,
+					DeviceType
+					)
 				SELECT
 					CASE
 						WHEN s.ProductID = 11 THEN 250
@@ -2168,7 +2820,80 @@ BEGIN
 				AND @FromDate BETWEEN DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 					AND DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
 			BEGIN
-				INSERT INTO @Data
+				INSERT INTO @Data(
+					SportType,
+					LeagueId,
+					HomeId,
+					AwayId,
+					MatchCode,
+					Race,
+					EventDate,
+					VirtualRate,
+					IsShowOTExRate,
+					SDiscount,
+					ADiscount,
+					Discount,
+					SettleTime,
+					MatchId,
+					TransId,
+					BetId,
+					RefNo,
+					TransDate,
+					OddsId,
+					BetType,
+					Hdp1,
+					Hdp2,
+					Odds,
+					MOdds,
+					FinalOdds,
+					FinalOdds2,
+					OddsType,
+					BetTeam,
+					Status,
+					SettlementStatus,
+					BetStatus,
+					ComStatus,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					Commission,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					FinalHomeScore,
+					FinalAwayScore,
+					HtHomeScore,
+					HtAwayScore,
+					Creator,
+					Ip,
+					Username,
+					IsNeutral,
+					ShowTime,
+					SPositionTaking,
+					MPositionTaking,
+					APositionTaking,
+					SPositionTaking2,
+					MPositionTaking2,
+					APositionTaking2,
+					SComm,
+					AComm,
+					Comm,
+					AWinLost,
+					MWinLost,
+					SWinLost,
+					WinLostDate,
+					BetCheck,
+					TransDesc,
+					OddsSpread,
+					OriginalBetType,
+					BetdaqId,
+					ExtraInfo,
+					WalletType,
+					RefCode,
+					CurrencyId,
+					SiteId,
+					DeviceType
+					)
 				SELECT
 					CASE
 						WHEN s.ProductID = 11 THEN 250
@@ -2294,7 +3019,80 @@ BEGIN
 			IF EXISTS (SELECT TOP(1) 1 FROM @tmpStatus WHERE [statusID] IN (0, 1))	-- yesterday and later running ticket
 				AND @FromDate >= DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()), 0)
 			BEGIN
-				INSERT INTO @Data
+				INSERT INTO @Data(
+					SportType,
+					LeagueId,
+					HomeId,
+					AwayId,
+					MatchCode,
+					Race,
+					EventDate,
+					VirtualRate,
+					IsShowOTExRate,
+					SDiscount,
+					ADiscount,
+					Discount,
+					SettleTime,
+					MatchId,
+					TransId,
+					BetId,
+					RefNo,
+					TransDate,
+					OddsId,
+					BetType,
+					Hdp1,
+					Hdp2,
+					Odds,
+					MOdds,
+					FinalOdds,
+					FinalOdds2,
+					OddsType,
+					BetTeam,
+					Status,
+					SettlementStatus,
+					BetStatus,
+					ComStatus,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					Commission,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					FinalHomeScore,
+					FinalAwayScore,
+					HtHomeScore,
+					HtAwayScore,
+					Creator,
+					Ip,
+					Username,
+					IsNeutral,
+					ShowTime,
+					SPositionTaking,
+					MPositionTaking,
+					APositionTaking,
+					SPositionTaking2,
+					MPositionTaking2,
+					APositionTaking2,
+					SComm,
+					AComm,
+					Comm,
+					AWinLost,
+					MWinLost,
+					SWinLost,
+					WinLostDate,
+					BetCheck,
+					TransDesc,
+					OddsSpread,
+					OriginalBetType,
+					BetdaqId,
+					ExtraInfo,
+					WalletType,
+					RefCode,
+					CurrencyId,
+					SiteId,
+					DeviceType
+					)
 				SELECT
 					CASE
 						WHEN s.ProductID = 11 THEN 250
@@ -2406,7 +3204,80 @@ BEGIN
 			END
 
 			-- Bitcoin, VS 5, VS 6
-			INSERT INTO @Data
+			INSERT INTO @Data(
+					SportType,
+					LeagueId,
+					HomeId,
+					AwayId,
+					MatchCode,
+					Race,
+					EventDate,
+					VirtualRate,
+					IsShowOTExRate,
+					SDiscount,
+					ADiscount,
+					Discount,
+					SettleTime,
+					MatchId,
+					TransId,
+					BetId,
+					RefNo,
+					TransDate,
+					OddsId,
+					BetType,
+					Hdp1,
+					Hdp2,
+					Odds,
+					MOdds,
+					FinalOdds,
+					FinalOdds2,
+					OddsType,
+					BetTeam,
+					Status,
+					SettlementStatus,
+					BetStatus,
+					ComStatus,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					Commission,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					FinalHomeScore,
+					FinalAwayScore,
+					HtHomeScore,
+					HtAwayScore,
+					Creator,
+					Ip,
+					Username,
+					IsNeutral,
+					ShowTime,
+					SPositionTaking,
+					MPositionTaking,
+					APositionTaking,
+					SPositionTaking2,
+					MPositionTaking2,
+					APositionTaking2,
+					SComm,
+					AComm,
+					Comm,
+					AWinLost,
+					MWinLost,
+					SWinLost,
+					WinLostDate,
+					BetCheck,
+					TransDesc,
+					OddsSpread,
+					OriginalBetType,
+					BetdaqId,
+					ExtraInfo,
+					WalletType,
+					RefCode,
+					CurrencyId,
+					SiteId,
+					DeviceType
+					)
 			SELECT
 				m.sporttype,
 				CASE
@@ -2480,7 +3351,7 @@ BEGIN
 					ELSE 0
 				END AS liveawayscore,
 				CASE 
-					WHEN s.ProductId = 88 THEN b.liveindicator
+					WHEN s.ProductId IN (71, 88) THEN b.liveindicator
 					ELSE 0
 				END AS liveindicator,
 				CASE 
@@ -2519,7 +3390,7 @@ BEGIN
 					ELSE 0
 				END AS betcheck,
 				CASE 
-					WHEN s.ProductId = 88 THEN b.transdesc
+					WHEN s.ProductId IN (71, 88) THEN ISNULL(b.transdesc,'')
 					ELSE ''
 				END AS transdesc,
 				0 AS OddsSpread,
@@ -2549,7 +3420,7 @@ BEGIN
 			RefNo		BIGINT,
 			BoostRate	MONEY)
 
-		INSERT INTO @ParlayData
+		INSERT INTO @ParlayData(RefNo, BoostRate)
 		SELECT
 			b.refno,
 			CASE
@@ -2568,7 +3439,7 @@ BEGIN
 			MOdds	MONEY)
 
 		-- Mix Parlay which having at least 1 settled sub ticket
-		INSERT INTO @TmpParlayData
+		INSERT INTO @TmpParlayData(RefNo, Odds, MOdds)
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bpd.odds) AS Odds,
@@ -2580,7 +3451,7 @@ BEGIN
 			b.BoostRate
 
 		-- Mix Parlay which having no settled sub ticket
-		INSERT INTO @TmpParlayData
+		INSERT INTO @TmpParlayData(RefNo, Odds, MOdds)
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bm.odds) AS Odds,
@@ -2644,7 +3515,20 @@ BEGIN
 		)
 
 		-- Prepare temp table
-		INSERT INTO @RefCodeTmp
+		INSERT INTO @RefCodeTmp(
+			RefCode,
+			TransId,
+			Stake,
+			Actual_Stake,
+			WinLost,
+			Commission,
+			SWinLost,
+			MWinLost,
+			AWinLost,
+			SComm,
+			AComm,
+			Comm
+			)
 		SELECT
 			RefCode,
 			MIN(TransId) AS TransId,
@@ -2699,7 +3583,78 @@ BEGIN
 	SET WalletType = 0
 	WHERE WalletType = 2 AND RefCode = 0
 
-	SELECT *,
+	SELECT SportType,
+			LeagueId,
+			HomeId,
+			AwayId,
+			MatchCode,
+			Race,
+			EventDate,
+			VirtualRate,
+			IsShowOTExRate,
+			SDiscount,
+			ADiscount,
+			Discount,
+			SettleTime,
+			MatchId,
+			TransId,
+			BetId,
+			RefNo,
+			TransDate,
+			OddsId,
+			BetType,
+			Hdp1,
+			Hdp2,
+			Odds,
+			MOdds,
+			FinalOdds,
+			FinalOdds2,
+			OddsType,
+			BetTeam,
+			Status,
+			SettlementStatus,
+			BetStatus,
+			ComStatus,
+			Stake,
+			Actual_Stake,
+			WinLost,
+			Commission,
+			LiveHomeScore,
+			LiveAwayScore,
+			LiveIndicator,
+			FinalHomeScore,
+			FinalAwayScore,
+			HtHomeScore,
+			HtAwayScore,
+			Creator,
+			Ip,
+			Username,
+			IsNeutral,
+			ShowTime,
+			SPositionTaking,
+			MPositionTaking,
+			APositionTaking,
+			SPositionTaking2,
+			MPositionTaking2,
+			APositionTaking2,
+			SComm,
+			AComm,
+			Comm,
+			AWinLost,
+			MWinLost,
+			SWinLost,
+			WinLostDate,
+			BetCheck,
+			TransDesc,
+			OddsSpread,
+			OriginalBetType,
+			BetdaqId,
+			ExtraInfo,
+			WalletType,
+			RefCode,
+			CurrencyId,
+			SiteId,
+			DeviceType,
 		@CurrencyName AS Currency
 	FROM @Data
 	ORDER BY TransId ASC
