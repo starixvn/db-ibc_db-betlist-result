@@ -65,7 +65,7 @@ AS
 		- 20230412@Razor: Support display for The Last Series Of Child Match [Redmine: #202484]
 		- 20240712@Razor: Support Baseball AIO [Redmine: #207707]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
-		- 20250922@Benji: Support Basketball Player Props AIO [Redmine: #235372]
+		- 20250922@Benji: Support Basketball Player Props AIO [Redmine: #235372] 
 */
 
 BEGIN
