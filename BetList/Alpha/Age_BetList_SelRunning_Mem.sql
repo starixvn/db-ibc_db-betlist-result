@@ -170,6 +170,7 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
+		- 20251027@Bobby: Support BetBuilder Hybrid Parlay [Redmine: #242255]
 */
 
 BEGIN
@@ -701,7 +702,7 @@ BEGIN
 				,IsNeutral = 0
 				,OddsType = 0
 				,ShowTime = ''
-				,TransDesc = ''
+				,TransDesc = IIF(b.bettype = 29 AND b.OddsSpread = 3, ISNULL(b.transdesc, ''),'')
 				,ExtraInfo = ISNULL(b.ExtraInfo, '')
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.bettype IN (9, 29)
@@ -1009,8 +1010,8 @@ BEGIN
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
 		WHERE c.custid = @CustId
 
-		-- Get original odds for Mix Parlay
-		IF EXISTS (SELECT 1 FROM @BetListSelRunningByDateMem WHERE BetType = 29 AND BetTeam = '1')
+		-- Get original odds for Mix Parlay / Exclude Hybrid Parlay (BetType 29, OddsSpread = 3)
+		IF EXISTS (SELECT 1 FROM @BetListSelRunningByDateMem WHERE BetType = 29 AND BetTeam = '1' AND OddsSpread <> 3)
 		BEGIN
 			DECLARE @TmpData TABLE (
 				RefNo		BIGINT,

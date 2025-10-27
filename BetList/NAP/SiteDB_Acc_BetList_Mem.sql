@@ -81,6 +81,7 @@ AS
 		- 20250515@Benji: Support Automate Integration for Betlist [Redmineid: #227997]
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
 		- 20250820@Benji: Support Playtech Live Jackpot [Redmine: #230127]
+		- 20251027@Bobby: Support BetBuilder Hybrid Parlay [Redmine: #242255]
 */
 
 BEGIN
@@ -1124,6 +1125,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 
 										'PP', 'TG', 'VRG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG', 'VS4', 'VS2Racing', 'VS5', 'VS7') THEN ISNULL(b.transdesc, '')
+									WHEN b.Product = 'Parlay'  AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -1472,8 +1474,8 @@ BEGIN
 		END
 	END
 
-	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
-	IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = '1')
+	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus/ exclude Hybrid Parlay oddsSpread=3
+	IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = '1' AND oddsSpread <> 3)
 	BEGIN
 		-- Running/Waiting
 		DECLARE @ParlayData TABLE (

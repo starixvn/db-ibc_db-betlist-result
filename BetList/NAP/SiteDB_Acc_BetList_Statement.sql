@@ -45,7 +45,7 @@ AS
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
 		- 20250819@Razor: Support VS 2 - VS Tournament [Redmine: #235084]
 		- 20250820@Benji: Support Playtech Live Jackpot[Redmine: #230127]
-
+		- 20251027@Bobby: Support BetBuilder Hybrid Parlay [Redmine: #242255]
 
 	Param's Explanation:
 		+ @TransType:
@@ -367,7 +367,7 @@ BEGIN
 				b.swinlost,
 				b.winlostdate,
 				ISNULL(b.betcheck, '') AS BetCheck,
-				'' AS transdesc,
+				IIF(b.bettype = 29 AND b.OddsSpread = 3, ISNULL(b.transdesc, ''), '') AS transdesc,
 				ISNULL(b.oddsspread, 0) AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
@@ -1153,7 +1153,7 @@ BEGIN
 				b.swinlost,
 				b.winlostdate,
 				 ISNULL(b.betcheck, '') AS BetCheck,
-				'' AS transdesc,
+				IIF(b.bettype = 29 AND b.OddsSpread = 3, ISNULL(b.transdesc, ''), '') AS transdesc,
 				ISNULL(b.oddsspread, 0) AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
@@ -2542,7 +2542,7 @@ BEGIN
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
-	IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = '1')
+	IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = '1' AND OddsSpread <> 3)
 	BEGIN
 		-- Running/Waiting
 		DECLARE @ParlayData TABLE (
