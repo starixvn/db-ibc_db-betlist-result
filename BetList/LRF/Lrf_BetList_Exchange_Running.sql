@@ -32,6 +32,7 @@ AS
 		- 20250702@Kos: Fix security issue in dynamic query [#Redmine: 227496]
 					- Remove input param @Sort
 					- Add new input params @SortType TINYINT, @SortOrder TINYINT
+		- 20251014@Kelvin: Upgrade ExchangeId Datatype [Redmine: #222339]
 */
 
 BEGIN
@@ -98,7 +99,7 @@ BEGIN
 		SelectionName	VARCHAR(100),
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,
-		Currency		TINYINT,
+		Currency		SMALLINT,
 		OddsAvg			SMALLMONEY,
 		FancyBetRuns	MONEY,
 		Stake			MONEY
@@ -119,7 +120,7 @@ BEGIN
 		SelectionName	VARCHAR(100),
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,
-		Currency		TINYINT,
+		Currency		SMALLINT,
 		OddsAvg			SMALLMONEY,
 		FancyBetRuns	MONEY,
 		Stake			MONEY
@@ -128,6 +129,25 @@ BEGIN
 	IF @Username = ''
 	BEGIN
 		INSERT INTO #Data
+		(
+			BetId,
+			CustId,
+			UserId,
+			CategoryType,
+			EventTypeName,
+			EventId,
+			EventName,
+			MarketId,
+			MarketName,
+			SelectionId,
+			SelectionName,
+			Type,
+			BetPlaced,
+			Currency,
+			OddsAvg,
+			FancyBetRuns,
+			Stake
+		)
 		SELECT
 			b.betID,
 			b.CustID,
@@ -156,6 +176,25 @@ BEGIN
 	ELSE
 	BEGIN
 		INSERT INTO #Data
+		(
+			BetId,
+			CustId,
+			UserId,
+			CategoryType,
+			EventTypeName,
+			EventId,
+			EventName,
+			MarketId,
+			MarketName,
+			SelectionId,
+			SelectionName,
+			Type,
+			BetPlaced,
+			Currency,
+			OddsAvg,
+			FancyBetRuns,
+			Stake
+		)
 		SELECT
 			b.betID,
 			b.CustID,
@@ -187,7 +226,7 @@ BEGIN
 	)
 
 	-- Get exchange rate
-	INSERT INTO #ExchangeRate
+	INSERT INTO #ExchangeRate(ExchangeId, Rate)
 	SELECT
 		e.ExchangeId,
 		e.Rate
@@ -252,6 +291,26 @@ BEGIN
 		ORDER BY a.RowNum'
 
 	INSERT INTO #PagingData
+	(
+		RowNum,
+		BetId,
+		CustId,
+		UserId,
+		CategoryType,
+		EventTypeName,
+		EventId,
+		EventName,
+		MarketId,
+		MarketName,
+		SelectionId,
+		SelectionName,
+		Type,
+		BetPlaced,
+		Currency,
+		OddsAvg,
+		FancyBetRuns,
+		Stake
+	)
 	EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
 	SELECT

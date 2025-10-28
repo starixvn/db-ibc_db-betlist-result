@@ -30,6 +30,7 @@ AS
 		- 20240618@Kos: Exclude non-settled tickets [Redmine: 206505]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250627@Kos: Extend SelectionId data type from INT to BIGINT [#Redmine: 231714]
+		- 20251014@Kelvin: Upgrade ExchangeId Datatype [Redmine: #222339]
 */
 
 BEGIN
@@ -67,7 +68,7 @@ BEGIN
 		WinLostDate		DATETIME,
 		WinLost			MONEY,
 		Commission		MONEY,
-		Currency		TINYINT,
+		Currency		SMALLINT,
 		ExVirtualRate	FLOAT
 	)
 
@@ -85,7 +86,7 @@ BEGIN
 		Type			VARCHAR(10),
 		BetPlaced		DATETIME,
 		WinLostDate		DATETIME,
-		Currency		TINYINT,
+		Currency		SMALLINT,
 		OddsAvg			SMALLMONEY,
 		FancyBetRuns	MONEY,
 		Stake			MONEY,
@@ -99,6 +100,20 @@ BEGIN
 	IF @DateOption = 1		-- Filter by settled date
 	BEGIN
 		INSERT INTO @Data
+		(
+			UserId,
+			EventTypeName,
+			EventId,
+			EventName,
+			MarketId,
+			MarketName,
+			SettledDate,
+			WinLostDate,
+			WinLost,
+			Commission,
+			Currency,
+			ExVirtualRate
+		)
 		SELECT
 			b.userId,
 			b.eventTypeName,
@@ -124,6 +139,20 @@ BEGIN
 	ELSE		-- Filter by resettled date
 	BEGIN
 		INSERT INTO @Data
+		(
+			UserId,
+			EventTypeName,
+			EventId,
+			EventName,
+			MarketId,
+			MarketName,
+			SettledDate,
+			WinLostDate,
+			WinLost,
+			Commission,
+			Currency,
+			ExVirtualRate
+		)
 		SELECT
 			b.userId,
 			b.eventTypeName,
@@ -151,6 +180,26 @@ BEGIN
 	WHERE Currency NOT IN (SELECT DISTINCT Currency FROM @TempAg)
 
 	INSERT INTO @Detail
+	(
+		BetId,
+		UserId,
+		CategoryType,
+		EventTypeName,
+		EventId,
+		EventName,
+		MarketId,
+		MarketName,
+		SelectionId,
+		SelectionName,
+		Type,
+		BetPlaced,
+		WinLostDate,
+		Currency,
+		OddsAvg,
+		FancyBetRuns,
+		Stake,
+		WinLost
+	)
 	SELECT
 		b.betID,
 		b.userId,
@@ -200,6 +249,11 @@ BEGIN
 
 	-- Get exchange rate
 	INSERT INTO @ExchangeRate
+	(
+		FirstExchangeDateByMonth,
+		LastExchangeDateByMonth,
+		Rate
+	)
 	SELECT
 		e.FromDate,
 		e.ToDate,
