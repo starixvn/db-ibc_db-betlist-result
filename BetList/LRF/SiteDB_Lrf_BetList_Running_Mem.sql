@@ -44,6 +44,7 @@ AS
 		- 20250702@Kos: Fix security issue in dynamic query [#Redmine: 227496]
 					- Remove input param @Sort
 					- Add new input params @SortType TINYINT, @SortOrder TINYINT
+		- 20251028@Kelvin: Integrate - Jacktime - Basketball Main Bettype Hybrid Parlay [#Redmine: 242357]
 */
 
 BEGIN
@@ -414,6 +415,13 @@ BEGIN
 
 		-- bettransRnG
 		INSERT INTO @TmpData
+		(
+			RefNo,
+			BetType,
+			Stake,
+			Actual_Stake,
+			IsNew
+		)
 		SELECT
 			b.RefNo,
 			b.gameID AS BetType,
@@ -431,6 +439,13 @@ BEGIN
 
 		-- bettransLC
 		INSERT INTO @TmpData
+		(
+			RefNo,
+			BetType,
+			Stake,
+			Actual_Stake,
+			IsNew
+		)
 		SELECT
 			b.RefNo,
 			b.gameID AS BetType,
@@ -585,7 +600,7 @@ BEGIN
 				)
 
 				-- Prepare temp table
-				INSERT INTO @RefCodeTmp
+				INSERT INTO @RefCodeTmp (RefCode, TransId, Stake)
 				SELECT
 					RefCode,
 					MIN(TransId) AS TransId,
@@ -654,18 +669,200 @@ BEGIN
 			DECLARE @Sql NVARCHAR(2000)
 
 			SET @Sql = 
-				N'SELECT a.*
+				N'SELECT a.RowNum,
+						a.TransId,
+						a.RefNo,
+						a.CustId,
+						a.Currency,
+						a.Recommend,
+						a.SportType,
+						a.BetType,
+						a.BetId,
+						a.BetTeam,
+						a.Hdp1,
+						a.Hdp2,
+						a.OddsId,
+						a.OddsType,
+						a.Odds,
+						a.MOdds,
+						a.OddsSpread,
+						a.Stake,
+						a.Actual_Stake,
+						a.Status,
+						a.SettlementStatus,
+						a.SecAcceptFlag,
+						a.CheckTime,
+						a.TransDate,
+						a.WinLostDate,
+						a.LiveIndicator,
+						a.LiveHomeScore,
+						a.LiveAwayScore,
+						a.Ip,
+						a.BetFrom,
+						a.LeagueId,
+						a.LeagueGroupId,
+						a.MatchId,
+						a.MatchCode,
+						a.Race,
+						a.EventDate,
+						a.HomeId,
+						a.AwayId,
+						a.BetStatus,
+						a.IsNeutral,
+						a.Placing,
+						a.ShowTime,
+						a.BetCheck,
+						a.ComStatus,
+						a.TransDesc,
+						a.BetdaqId,
+						a.ExtraInfo,
+						a.OriginalStake,
+						a.OriginalBetType,
+						a.WalletType,
+						a.RefCode,
+						a.ProductId,
+						a.Custom1,
+						a.Custom2,
+						a.Custom3,
+						a.Gameid3rd,
+						a.Tranid3rd,
+						a.TableID,
+						a.Product,
+						a.RefTable,
+						a.EventType
 				FROM
 					(
 						SELECT
 							ROW_NUMBER() OVER (ORDER BY ' + @SortText + N') AS RowNum,
-							d.*
+							d.TransId,
+							d.RefNo,
+							d.CustId,
+							d.Currency,
+							d.Recommend,
+							d.SportType,
+							d.BetType,
+							d.BetId,
+							d.BetTeam,
+							d.Hdp1,
+							d.Hdp2,
+							d.OddsId,
+							d.OddsType,
+							d.Odds,
+							d.MOdds,
+							d.OddsSpread,
+							d.Stake,
+							d.Actual_Stake,
+							d.Status,
+							d.SettlementStatus,
+							d.SecAcceptFlag,
+							d.CheckTime,
+							d.TransDate,
+							d.WinLostDate,
+							d.LiveIndicator,
+							d.LiveHomeScore,
+							d.LiveAwayScore,
+							d.Ip,
+							d.BetFrom,
+							d.LeagueId,
+							d.LeagueGroupId,
+							d.MatchId,
+							d.MatchCode,
+							d.Race,
+							d.EventDate,
+							d.HomeId,
+							d.AwayId,
+							d.BetStatus,
+							d.IsNeutral,
+							d.Placing,
+							d.ShowTime,
+							d.BetCheck,
+							d.ComStatus,
+							d.TransDesc,
+							d.BetdaqId,
+							d.ExtraInfo,
+							d.OriginalStake,
+							d.OriginalBetType,
+							d.WalletType,
+							d.RefCode,
+							d.ProductId,
+							d.Custom1,
+							d.Custom2,
+							d.Custom3,
+							d.Gameid3rd,
+							d.Tranid3rd,
+							d.TableID,
+							d.Product,
+							d.RefTable,
+							d.EventType
 						FROM #Data AS d
 					) AS a
 				WHERE a.RowNum BETWEEN @RowStart AND @RowEnd
-				ORDER BY a.RowNum'
+				ORDER BY a.RowNum ASC'
 
 			INSERT INTO #PagingData
+			(
+				RowNum,
+				TransId,
+				RefNo,
+				CustId,
+				Currency,
+				Recommend,
+				SportType,
+				BetType,
+				BetId,
+				BetTeam,
+				Hdp1,
+				Hdp2,
+				OddsId,
+				OddsType,
+				Odds,
+				MOdds,
+				OddsSpread,
+				Stake,
+				Actual_Stake,
+				Status,
+				SettlementStatus,
+				SecAcceptFlag,
+				CheckTime,
+				TransDate,
+				WinLostDate,
+				LiveIndicator,
+				LiveHomeScore,
+				LiveAwayScore,
+				Ip,
+				BetFrom,
+				LeagueId,
+				LeagueGroupId,
+				MatchId,
+				MatchCode,
+				Race,
+				EventDate,
+				HomeId,
+				AwayId,
+				BetStatus,
+				IsNeutral,
+				Placing,
+				ShowTime,
+				BetCheck,
+				ComStatus,
+				TransDesc,
+				BetdaqId,
+				ExtraInfo,
+				OriginalStake,
+				OriginalBetType,
+				WalletType,
+				RefCode,
+				ProductId,
+				Custom1,
+				Custom2,
+				Custom3,
+				Gameid3rd,
+				Tranid3rd,
+				TableID,
+				Product,
+				RefTable,
+				EventType
+			)
 			EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
 			UPDATE b
@@ -775,6 +972,7 @@ BEGIN
 				TransDesc = CASE
 								WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'VB', 'PP', 
 									'CC', 'SG', 'VRG', 'TG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product = 'Parlay' AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 								WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
@@ -870,7 +1068,14 @@ BEGIN
 	FROM #PagingData
 	ORDER BY RowNum ASC
 
-	SELECT DISTINCT * FROM @Detail
+	SELECT DISTINCT
+		RefNo,
+		Odds,
+		Stake,
+		Status,
+		BetType,
+		BetTeam
+	FROM @Detail
 
 	DROP TABLE #Data
 	DROP TABLE #PagingData

@@ -78,6 +78,7 @@ AS
 		- 20250702@Kos: Fix security issue in dynamic query [#Redmine: 227496]
 					- Remove input param @Sort
 					- Add new input params @SortType TINYINT, @SortOrder TINYINT
+		- 20251028@Kelvin: Integrate - Jacktime - Basketball Main Bettype Hybrid Parlay [#Redmine: 242357]
 */
 
 BEGIN
@@ -109,7 +110,7 @@ BEGIN
 	-- Get group bettype
 	DECLARE @GroupBetType TABLE (BetType INT, GroupTypeId INT)
 
-	INSERT INTO @GroupBetType
+	INSERT INTO @GroupBetType (BetType, GroupTypeId)
 	SELECT
 		bettype,
 		GroupTypeId
@@ -134,7 +135,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype (ProductId, BetType, EventType)
 	SELECT s.ProductID, s.BetType, s.EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest) AS s
 	WHERE (s.BetType = @BetType
@@ -169,7 +170,8 @@ BEGIN
 		Ip				VARCHAR(45),
 		Currency		SMALLINT,
 		BetCheck		NVARCHAR(50),
-		ExtraInfo		VARCHAR(1000)
+		ExtraInfo		VARCHAR(1000),
+		TransDesc		NVARCHAR(1000)
 	)
 
 	CREATE TABLE #ExchangeRate (
@@ -190,6 +192,36 @@ BEGIN
 			SET @TempFromDate = @FromDate
 
 		INSERT INTO #AgWinlossMP
+		(
+			Username,
+			CustId,
+			BetType,
+			RefNo,
+			TransId,
+			BetId,
+			Hdp1,
+			Hdp2,
+			Odds,
+			MOdds,
+			Status,
+			Stake,
+			Actual_Stake,
+			WinLost,
+			LicenseeWL,
+			Comm,
+			PlayerComm,
+			TransDate,
+			WinLostDate,
+			BetTeam,
+			LiveIndicator,
+			LiveHomeScore,
+			LiveAwayScore,
+			Ip,
+			Currency,
+			BetCheck,
+			ExtraInfo,
+			TransDesc
+		)
 		SELECT
 			b.username,
 			b.custid,
@@ -220,7 +252,8 @@ BEGIN
 			b.ip,
 			b.currency,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			ISNULL(b.transdesc, '') AS TransDesc
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
 			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
@@ -239,6 +272,36 @@ BEGIN
 			SET @TempToDate = @ToDate
 
 		INSERT INTO #AgWinlossMP
+		(
+			Username,
+			CustId,
+			BetType,
+			RefNo,
+			TransId,
+			BetId,
+			Hdp1,
+			Hdp2,
+			Odds,
+			MOdds,
+			Status,
+			Stake,
+			Actual_Stake,
+			WinLost,
+			LicenseeWL,
+			Comm,
+			PlayerComm,
+			TransDate,
+			WinLostDate,
+			BetTeam,
+			LiveIndicator,
+			LiveHomeScore,
+			LiveAwayScore,
+			Ip,
+			Currency,
+			BetCheck,
+			ExtraInfo,
+			TransDesc
+		)
 		SELECT
 			b.username,
 			b.custid,
@@ -269,7 +332,8 @@ BEGIN
 			b.ip,
 			b.currency,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo
+			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			ISNULL(b.transdesc, '') AS TransDesc
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
 			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
@@ -293,7 +357,7 @@ BEGIN
 		@ExToDate = MAX(WinLostDate)
 	FROM #AgWinlossMP
 
-	INSERT INTO #ExchangeRate
+	INSERT INTO #ExchangeRate (ExchangeId, FirstExchangeDateByMonth, LastExchangeDateByMonth, Rate)
 	SELECT
 		e.ExchangeId,
 		e.FromDate,
@@ -344,7 +408,8 @@ BEGIN
 		Ip				VARCHAR(45),
 		Currency		SMALLINT,
 		BetCheck		NVARCHAR(50),
-		ExtraInfo		VARCHAR(1000)
+		ExtraInfo		VARCHAR(1000),
+		TransDesc		NVARCHAR(1000)
 	)
 
 	DECLARE @SortText VARCHAR(100)
@@ -383,12 +448,67 @@ BEGIN
 
 		SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 
-		SELECT a.*
+		SELECT	a.RowNum,
+				a.Username,
+				a.CustId,
+				a.BetType,
+				a.RefNo,
+				a.TransId,
+				a.BetId,
+				a.Hdp1,
+				a.Hdp2,
+				a.Odds,
+				a.MOdds,
+				a.Status,
+				a.Stake,
+				a.Actual_Stake,
+				a.WinLost,
+				a.LicenseeWL,
+				a.Comm,
+				a.PlayerComm,
+				a.TransDate,
+				a.WinLostDate,
+				a.BetTeam,
+				a.LiveIndicator,
+				a.LiveHomeScore,
+				a.LiveAwayScore,
+				a.Ip,
+				a.Currency,
+				a.BetCheck,
+				a.ExtraInfo,
+				a.TransDesc
 		FROM
 			(
 				SELECT
 					ROW_NUMBER() OVER (ORDER BY ' + @SortText + ') AS RowNum,
-					b.*
+					b.Username,
+					b.CustId,
+					b.BetType,
+					b.RefNo,
+					b.TransId,
+					b.BetId,
+					b.Hdp1,
+					b.Hdp2,
+					b.Odds,
+					b.MOdds,
+					b.Status,
+					b.Stake,
+					b.Actual_Stake,
+					b.WinLost,
+					b.LicenseeWL,
+					b.Comm,
+					b.PlayerComm,
+					b.TransDate,
+					b.WinLostDate,
+					b.BetTeam,
+					b.LiveIndicator,
+					b.LiveHomeScore,
+					b.LiveAwayScore,
+					b.Ip,
+					b.Currency,
+					b.BetCheck,
+					b.ExtraInfo,
+					b.TransDesc
 				FROM #AgWinlossMP AS b' +
 				CASE
 					WHEN @SortText LIKE '%e.Rate%' THEN N'
@@ -402,7 +522,7 @@ BEGIN
 				END + N'
 			) AS a
 		WHERE a.RowNum BETWEEN @RowStart AND @RowEnd
-		ORDER BY a.RowNum'
+		ORDER BY a.RowNum ASC'
 
 	INSERT INTO #PagingData
 	EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
@@ -438,7 +558,8 @@ BEGIN
 		b.Ip,
 		b.Currency,
 		b.BetCheck,
-		b.ExtraInfo
+		b.ExtraInfo,
+		b.TransDesc
 	FROM #PagingData AS b
 		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
 		LEFT JOIN #ExchangeRate AS e

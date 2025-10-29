@@ -40,6 +40,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20251028@Kelvin: Integrate - Jacktime - Basketball Main Bettype Hybrid Parlay [#Redmine: 242357]
 */
 
 BEGIN
@@ -107,10 +108,52 @@ BEGIN
 		OriginalStake		MONEY,
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
-		RefCode				BIGINT
+		RefCode				BIGINT,
+		TransDesc			NVARCHAR(1000)
 	)
 
 	INSERT INTO #Data
+	(
+		CustId,
+		SportType,
+		Username,
+		BetType,
+		TransId,
+		BetId,
+		RefNo,
+		MatchCode,
+		EventDate,
+		HomeId,
+		AwayId,
+		Hdp1,
+		Hdp2,
+		Odds,
+		MOdds,
+		Status,
+		SettlementStatus,
+		Stake,
+		Actual_Stake,
+		TransDate,
+		BetTeam,
+		LiveHomeScore,
+		LiveAwayScore,
+		LiveIndicator,
+		Discount,
+		LeagueId,
+		Ip,
+		IsNeutral,
+		OddsType,
+		Currency,
+		ShowTime,
+		BetCheck,
+		BetdaqId,
+		ExtraInfo,
+		OriginalStake,
+		OriginalBetType,
+		WalletType,
+		RefCode,
+		TransDesc
+	)
 	SELECT
 		b.custid,
 		0 AS SportType,
@@ -164,7 +207,8 @@ BEGIN
 		0 AS OriginalStake,
 		0 AS OriginalBetType,
 		0 AS WalletType,
-		0 AS RefCode
+		0 AS RefCode,
+		IIF(b.bettype = 29 AND b.oddsspread = 3, ISNULL(b.transdesc, ''), '') AS TransDesc
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE
 		b.recommend IN (SELECT CustId FROM @TempAg)
@@ -175,6 +219,47 @@ BEGIN
 		AND b.statusID IN (0, 1)
 
 	INSERT INTO #Data
+	(
+		CustId,
+		SportType,
+		Username,
+		BetType,
+		TransId,
+		BetId,
+		RefNo,
+		MatchCode,
+		EventDate,
+		HomeId,
+		AwayId,
+		Hdp1,
+		Hdp2,
+		Odds,
+		MOdds,
+		Status,
+		SettlementStatus,
+		Stake,
+		Actual_Stake,
+		TransDate,
+		BetTeam,
+		LiveHomeScore,
+		LiveAwayScore,
+		LiveIndicator,
+		Discount,
+		LeagueId,
+		Ip,
+		IsNeutral,
+		OddsType,
+		Currency,
+		ShowTime,
+		BetCheck,
+		BetdaqId,
+		ExtraInfo,
+		OriginalStake,
+		OriginalBetType,
+		WalletType,
+		RefCode,
+		TransDesc
+	)
 	SELECT
 		b.custid,
 		m.sporttype,
@@ -223,7 +308,8 @@ BEGIN
 			ELSE 0
 		END AS OriginalBetType,
 		ISNULL(b.WalletType, 0) AS WalletType,
-		ISNULL(b.RefCode, 0) AS RefCode
+		ISNULL(b.RefCode, 0) AS RefCode,
+		'' AS TransDesc
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -244,7 +330,7 @@ BEGIN
 		)
 
 		-- Prepare temp table
-		INSERT INTO @RefCodeTmp
+		INSERT INTO @RefCodeTmp (RefCode, TransId, Stake, Actual_Stake)
 		SELECT
 			RefCode,
 			MIN(TransId) AS TransId,
@@ -295,7 +381,7 @@ BEGIN
 
 	IF @TotalRows > 0
 	BEGIN
-		INSERT INTO #ExchangeRate
+		INSERT INTO #ExchangeRate (ExchangeId, Rate)
 		SELECT
 			e.ExchangeId,
 			e.Rate
@@ -310,7 +396,48 @@ BEGIN
 		@RowStart = @PageSize * @PageIndex + 1,
 		@RowEnd = @RowStart + @PageSize - 1
 
-	SELECT A.*
+	SELECT
+		a.RowNum,
+		a.Nickname,
+		a.CustId,
+		a.SportType,
+		a.Username,
+		a.BetType,
+		a.TransId,
+		a.BetId,
+		a.RefNo,
+		a.MatchCode,
+		a.EventDate,
+		a.HomeId,
+		a.AwayId,
+		a.Hdp1,
+		a.Hdp2,
+		a.Odds,
+		a.MOdds,
+		a.Status,
+		a.SettlementStatus,
+		a.Stake,
+		a.Actual_Stake,
+		a.TransDate,
+		a.BetTeam,
+		a.LiveHomeScore,
+		a.LiveAwayScore,
+		a.LiveIndicator,
+		a.Discount,
+		a.LeagueId,
+		a.Ip,
+		a.IsNeutral,
+		a.OddsType,
+		a.Currency,
+		a.ShowTime,
+		a.BetCheck,
+		a.BetdaqId,
+		a.ExtraInfo,
+		a.OriginalStake,
+		a.OriginalBetType,
+		a.WalletType,
+		a.RefCode,
+		a.TransDesc
 	FROM
 		(
 			SELECT
@@ -353,12 +480,13 @@ BEGIN
 				b.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
 				b.OriginalBetType,
 				b.WalletType,
-				b.RefCode
+				b.RefCode,
+				b.TransDesc
 			FROM #Data AS b
 				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
 				LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = b.currency
-		) A
-	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
+		) a
+	WHERE a.RowNum BETWEEN @RowStart AND @RowEnd
 
 	DROP TABLE #Data
 	DROP TABLE #ExchangeRate

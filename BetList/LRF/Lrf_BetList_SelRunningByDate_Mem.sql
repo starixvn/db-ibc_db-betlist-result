@@ -143,6 +143,7 @@ AS
 		- 20241028@Kos: Support Virtual Sports 6 [Redmine: 212446]
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250313@Kos: Support Virtual Sports 5 [Redmine: 207582]
+		- 20251028@Kelvin: Integrate - Jacktime - Basketball Main Bettype Hybrid Parlay [#Redmine: 242357]
 */
 
 BEGIN
@@ -199,7 +200,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype (ProductId, BetType, EventType, RefTable)
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
 	WHERE BetType NOT IN (71, 72, 73, 801, 802, 803, 804, 805, 806, 901, 902, 903, 904)
@@ -575,6 +576,13 @@ BEGIN
 
 		-- bettransRnG
 		INSERT INTO @TmpData
+		(
+			RefNo,
+			BetType,
+			Stake,
+			Actual_Stake,
+			IsNew
+		)
 		SELECT
 			b.RefNo,
 			b.gameID AS BetType,
@@ -592,6 +600,13 @@ BEGIN
 
 		-- bettransLC
 		INSERT INTO @TmpData
+		(
+			RefNo,
+			BetType,
+			Stake,
+			Actual_Stake,
+			IsNew
+		)
 		SELECT
 			b.RefNo,
 			b.gameID AS BetType,
@@ -750,7 +765,7 @@ BEGIN
 				)
 
 				-- Prepare temp table
-				INSERT INTO @RefCodeTmp
+				INSERT INTO @RefCodeTmp (RefCode, TransId, Stake)
 				SELECT
 					RefCode,
 					MIN(TransId) AS TransId,
@@ -792,9 +807,131 @@ BEGIN
 			FROM #Data AS b
 
 			INSERT INTO #PagingData
+			(
+				RowNum,
+				TransId,
+				RefNo,
+				CustId,
+				Currency,
+				Recommend,
+				SportType,
+				BetType,
+				BetId,
+				BetTeam,
+				Hdp1,
+				Hdp2,
+				OddsId,
+				OddsType,
+				Odds,
+				MOdds,
+				OddsSpread,
+				Stake,
+				Actual_Stake,
+				Status,
+				SettlementStatus,
+				SecAcceptFlag,
+				CheckTime,
+				TransDate,
+				WinLostDate,
+				LiveIndicator,
+				LiveHomeScore,
+				LiveAwayScore,
+				Ip,
+				BetFrom,
+				LeagueId,
+				LeagueGroupId,
+				MatchId,
+				MatchCode,
+				Race,
+				EventDate,
+				HomeId,
+				AwayId,
+				BetStatus,
+				IsNeutral,
+				Placing,
+				ShowTime,
+				BetCheck,
+				ComStatus,
+				TransDesc,
+				BetdaqId,
+				ExtraInfo,
+				OriginalStake,
+				OriginalBetType,
+				WalletType,
+				RefCode,
+				ProductId,
+				Custom1,
+				Custom2,
+				Custom3,
+				Gameid3rd,
+				Tranid3rd,
+				TableID,
+				Product,
+				RefTable,
+				EventType
+			)
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY TransDate DESC) AS RowNum,
-				*
+				TransId,
+				RefNo,
+				CustId,
+				Currency,
+				Recommend,
+				SportType,
+				BetType,
+				BetId,
+				BetTeam,
+				Hdp1,
+				Hdp2,
+				OddsId,
+				OddsType,
+				Odds,
+				MOdds,
+				OddsSpread,
+				Stake,
+				Actual_Stake,
+				Status,
+				SettlementStatus,
+				SecAcceptFlag,
+				CheckTime,
+				TransDate,
+				WinLostDate,
+				LiveIndicator,
+				LiveHomeScore,
+				LiveAwayScore,
+				Ip,
+				BetFrom,
+				LeagueId,
+				LeagueGroupId,
+				MatchId,
+				MatchCode,
+				Race,
+				EventDate,
+				HomeId,
+				AwayId,
+				BetStatus,
+				IsNeutral,
+				Placing,
+				ShowTime,
+				BetCheck,
+				ComStatus,
+				TransDesc,
+				BetdaqId,
+				ExtraInfo,
+				OriginalStake,
+				OriginalBetType,
+				WalletType,
+				RefCode,
+				ProductId,
+				Custom1,
+				Custom2,
+				Custom3,
+				Gameid3rd,
+				Tranid3rd,
+				TableID,
+				Product,
+				RefTable,
+				EventType
 			FROM #Data
 			ORDER BY TransDate DESC
 			OFFSET @PageSize * (@PageIndex - 1) ROWS
@@ -912,6 +1049,7 @@ BEGIN
 				TransDesc = CASE
 								WHEN b.Product IN ('Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 
 									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product = 'Parlay' AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 								WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
@@ -1023,7 +1161,14 @@ BEGIN
 		LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = a.Currency
 	ORDER BY RowNum ASC
 
-	SELECT DISTINCT * FROM @Detail
+	SELECT DISTINCT
+		RefNo,
+		Odds,
+		Stake,
+		Status,
+		BetType,
+		BetTeam
+	FROM @Detail
 
 	DROP TABLE #Data
 	DROP TABLE #PagingData

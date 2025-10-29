@@ -46,6 +46,7 @@ AS
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
 		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 		- 20250401@Kos: Support Virtual Sports 7 [Redmine: 219083]
+		- 20251028@Kelvin: Integrate - Jacktime - Basketball Main Bettype Hybrid Parlay [#Redmine: 242357]
 */
 
 BEGIN
@@ -79,7 +80,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype (ProductID, Bettype, EventType, RefTable)
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 60, 63, 66, 69, 71, 74, 77, 83, 88, 106)
@@ -408,6 +409,61 @@ BEGIN
 	IF @WhTicket = 2	-- Bettrans
 	BEGIN
 		INSERT INTO @Data
+		(
+			TransId,
+			RefNo,
+			CustId,
+			Currency,
+			Recommend,
+			SportType,
+			BetType,
+			BetId,
+			BetTeam,
+			Hdp1,
+			Hdp2,
+			OddsType,
+			Odds,
+			MOdds,
+			OddsSpread,
+			Stake,
+			Actual_Stake,
+			WinLost,
+			LicenseeWL,
+			PlayerComm,
+			Comm,
+			Status,
+			SettlementStatus,
+			TransDate,
+			WinLostDate,
+			LiveIndicator,
+			LiveHomeScore,
+			LiveAwayScore,
+			Ip,
+			BetFrom,
+			LeagueId,
+			LeagueGroupId,
+			MatchId,
+			MatchCode,
+			Race,
+			EventDate,
+			HomeId,
+			AwayId,
+			BetStatus,
+			IsNeutral,
+			Placing,
+			ShowTime,
+			BetCheck,
+			TransDesc,
+			BetdaqId,
+			ExtraInfo,
+			JackpotInfo,
+			OriginalStake,
+			OriginalBetType,
+			WalletType,
+			RefCode,
+			SiteId,
+			WhTicket
+		)
 		SELECT
 			CASE
 				WHEN @Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
@@ -531,6 +587,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
+				WHEN @Product = 'Parlay' AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
@@ -570,6 +627,61 @@ BEGIN
 	ELSE IF @WhTicket = 3		-- Bettrans14 range
 	BEGIN
 		INSERT INTO @Data
+		(
+			TransId,
+			RefNo,
+			CustId,
+			Currency,
+			Recommend,
+			SportType,
+			BetType,
+			BetId,
+			BetTeam,
+			Hdp1,
+			Hdp2,
+			OddsType,
+			Odds,
+			MOdds,
+			OddsSpread,
+			Stake,
+			Actual_Stake,
+			WinLost,
+			LicenseeWL,
+			PlayerComm,
+			Comm,
+			Status,
+			SettlementStatus,
+			TransDate,
+			WinLostDate,
+			LiveIndicator,
+			LiveHomeScore,
+			LiveAwayScore,
+			Ip,
+			BetFrom,
+			LeagueId,
+			LeagueGroupId,
+			MatchId,
+			MatchCode,
+			Race,
+			EventDate,
+			HomeId,
+			AwayId,
+			BetStatus,
+			IsNeutral,
+			Placing,
+			ShowTime,
+			BetCheck,
+			TransDesc,
+			BetdaqId,
+			ExtraInfo,
+			JackpotInfo,
+			OriginalStake,
+			OriginalBetType,
+			WalletType,
+			RefCode,
+			SiteId,
+			WhTicket
+		)
 		SELECT
 			CASE
 				WHEN @Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
@@ -676,6 +788,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
+				WHEN @Product = 'Parlay' AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
@@ -715,6 +828,61 @@ BEGIN
 	ELSE IF @WhTicket = 4		-- Bettrans_bk range
 	BEGIN
 		INSERT INTO @Data
+		(
+			TransId,
+			RefNo,
+			CustId,
+			Currency,
+			Recommend,
+			SportType,
+			BetType,
+			BetId,
+			BetTeam,
+			Hdp1,
+			Hdp2,
+			OddsType,
+			Odds,
+			MOdds,
+			OddsSpread,
+			Stake,
+			Actual_Stake,
+			WinLost,
+			LicenseeWL,
+			PlayerComm,
+			Comm,
+			Status,
+			SettlementStatus,
+			TransDate,
+			WinLostDate,
+			LiveIndicator,
+			LiveHomeScore,
+			LiveAwayScore,
+			Ip,
+			BetFrom,
+			LeagueId,
+			LeagueGroupId,
+			MatchId,
+			MatchCode,
+			Race,
+			EventDate,
+			HomeId,
+			AwayId,
+			BetStatus,
+			IsNeutral,
+			Placing,
+			ShowTime,
+			BetCheck,
+			TransDesc,
+			BetdaqId,
+			ExtraInfo,
+			JackpotInfo,
+			OriginalStake,
+			OriginalBetType,
+			WalletType,
+			RefCode,
+			SiteId,
+			WhTicket
+		)
 		SELECT
 			CASE
 				WHEN @Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
@@ -821,6 +989,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
+				WHEN @Product = 'Parlay' AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
@@ -991,6 +1160,61 @@ BEGIN
 		IF @WhTicket = 5
 		BEGIN
 			INSERT INTO @Data
+			(
+				TransId,
+				RefNo,
+				CustId,
+				Currency,
+				Recommend,
+				SportType,
+				BetType,
+				BetId,
+				BetTeam,
+				Hdp1,
+				Hdp2,
+				OddsType,
+				Odds,
+				MOdds,
+				OddsSpread,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				LicenseeWL,
+				PlayerComm,
+				Comm,
+				Status,
+				SettlementStatus,
+				TransDate,
+				WinLostDate,
+				LiveIndicator,
+				LiveHomeScore,
+				LiveAwayScore,
+				Ip,
+				BetFrom,
+				LeagueId,
+				LeagueGroupId,
+				MatchId,
+				MatchCode,
+				Race,
+				EventDate,
+				HomeId,
+				AwayId,
+				BetStatus,
+				IsNeutral,
+				Placing,
+				ShowTime,
+				BetCheck,
+				TransDesc,
+				BetdaqId,
+				ExtraInfo,
+				JackpotInfo,
+				OriginalStake,
+				OriginalBetType,
+				WalletType,
+				RefCode,
+				SiteId,
+				WhTicket
+			)
 			SELECT
 				transid,
 				transid AS RefNo,
@@ -1077,6 +1301,61 @@ BEGIN
 		IF @WhTicket = 6
 		BEGIN
 			INSERT INTO @Data
+			(
+				TransId,
+				RefNo,
+				CustId,
+				Currency,
+				Recommend,
+				SportType,
+				BetType,
+				BetId,
+				BetTeam,
+				Hdp1,
+				Hdp2,
+				OddsType,
+				Odds,
+				MOdds,
+				OddsSpread,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				LicenseeWL,
+				PlayerComm,
+				Comm,
+				Status,
+				SettlementStatus,
+				TransDate,
+				WinLostDate,
+				LiveIndicator,
+				LiveHomeScore,
+				LiveAwayScore,
+				Ip,
+				BetFrom,
+				LeagueId,
+				LeagueGroupId,
+				MatchId,
+				MatchCode,
+				Race,
+				EventDate,
+				HomeId,
+				AwayId,
+				BetStatus,
+				IsNeutral,
+				Placing,
+				ShowTime,
+				BetCheck,
+				TransDesc,
+				BetdaqId,
+				ExtraInfo,
+				JackpotInfo,
+				OriginalStake,
+				OriginalBetType,
+				WalletType,
+				RefCode,
+				SiteId,
+				WhTicket
+			)
 			SELECT
 				transid,
 				transid AS RefNo,
@@ -1163,6 +1442,61 @@ BEGIN
 		IF @WhTicket = 7
 		BEGIN
 			INSERT INTO @Data
+			(
+				TransId,
+				RefNo,
+				CustId,
+				Currency,
+				Recommend,
+				SportType,
+				BetType,
+				BetId,
+				BetTeam,
+				Hdp1,
+				Hdp2,
+				OddsType,
+				Odds,
+				MOdds,
+				OddsSpread,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				LicenseeWL,
+				PlayerComm,
+				Comm,
+				Status,
+				SettlementStatus,
+				TransDate,
+				WinLostDate,
+				LiveIndicator,
+				LiveHomeScore,
+				LiveAwayScore,
+				Ip,
+				BetFrom,
+				LeagueId,
+				LeagueGroupId,
+				MatchId,
+				MatchCode,
+				Race,
+				EventDate,
+				HomeId,
+				AwayId,
+				BetStatus,
+				IsNeutral,
+				Placing,
+				ShowTime,
+				BetCheck,
+				TransDesc,
+				BetdaqId,
+				ExtraInfo,
+				JackpotInfo,
+				OriginalStake,
+				OriginalBetType,
+				WalletType,
+				RefCode,
+				SiteId,
+				WhTicket
+			)
 			SELECT
 				b.transid,
 				b.transid AS RefNo,
@@ -1270,7 +1604,7 @@ BEGIN
 
 	IF @BaseCurrency <> ''
 	BEGIN
-		INSERT INTO @ExchangeRate
+		INSERT INTO @ExchangeRate (ExchangeId, FromDate, ToDate, Rate)
 		SELECT
 			e.ExchangeId,
 			e.FromDate,
@@ -1340,6 +1674,14 @@ BEGIN
 		LEFT JOIN @ExchangeRate AS e ON e.ExchangeId = a.Currency AND a.WinLostDate BETWEEN e.FromDate AND e.ToDate
 	ORDER BY a.TransDate ASC
 
-	SELECT DISTINCT * FROM @Detail
+	SELECT DISTINCT
+		RefNo,
+		Odds,
+		Stake,
+		Status,
+		APositionTaking,
+		BetType,
+		BetTeam
+	FROM @Detail
 END
 GO

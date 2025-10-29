@@ -32,7 +32,7 @@ AS
 		- 20211029@Kos: Decompress IP in bk range [Redmine: 162342]
 		- 20220301@Kos: Support archive process [Redmine: 167823]
 		- 20250212@Kos: Remove BA [RedmineID: #216882]
-
+		- 20251028@Kelvin: Integrate - Jacktime - Basketball Main Bettype Hybrid Parlay [#Redmine: 242357]
 */
 
 BEGIN
@@ -158,7 +158,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype (ProductID, BetType, EventType)
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
@@ -578,6 +578,16 @@ BEGIN
 
 			-- Prepare temp table
 			INSERT INTO @RefCodeTmp
+			(
+				RefCode,
+				TransId,
+				Stake,
+				Actual_Stake,
+				WinLost,
+				LicenseeWL,
+				Comm,
+				PlayerComm
+			)
 			SELECT
 				RefCode,
 				MIN(TransId) AS TransId,
@@ -635,7 +645,7 @@ BEGIN
 		-- Get exchange rate
 		IF @BaseCurrency <> ''
 		BEGIN
-			INSERT INTO #ExchangeRate
+			INSERT INTO #ExchangeRate (FirstExchangeDateByMonth, LastExchangeDateByMonth, Rate)
 			SELECT
 				e.FirstExchangeDateByMonth,
 				e.LastExchangeDateByMonth,
@@ -678,18 +688,170 @@ BEGIN
 		DECLARE @Sql NVARCHAR(2000)
 
 		SET @Sql = 
-			N'SELECT a.*
+			N'SELECT a.RowNum,
+					a.TransId,
+					a.RefNo,
+					a.CustId,
+					a.Currency,
+					a.Recommend,
+					a.SportType,
+					a.BetType,
+					a.BetId,
+					a.BetTeam,
+					a.Hdp1,
+					a.Hdp2,
+					a.OddsId,
+					a.OddsType,
+					a.Odds,
+					a.MOdds,
+					a.OddsSpread,
+					a.Stake,
+					a.Actual_Stake,
+					a.AWinLost,
+					a.WinLost,
+					a.LicenseeWL,
+					a.PlayerComm,
+					a.Comm,
+					a.Status,
+					a.SettlementStatus,
+					a.TransDate,
+					a.WinLostDate,
+					a.LiveIndicator,
+					a.LiveHomeScore,
+					a.LiveAwayScore,
+					a.Ip,
+					a.LeagueId,
+					a.MatchId,
+					a.MatchCode,
+					a.EventDate,
+					a.HomeId,
+					a.AwayId,
+					a.BetStatus,
+					a.IsNeutral,
+					a.BetCheck,
+					a.ComStatus,
+					a.TransDesc,
+					a.BetdaqId,
+					a.ExtraInfo,
+					a.OriginalStake,
+					a.OriginalBetType,
+					a.WalletType,
+					a.RefCode,
+					a.TableID,
+					a.Product
 			FROM
 				(
 					SELECT
 						ROW_NUMBER() OVER (ORDER BY TransDate ASC) AS RowNum,
-						*
+						TransId,
+						RefNo,
+						CustId,
+						Currency,
+						Recommend,
+						SportType,
+						BetType,
+						BetId,
+						BetTeam,
+						Hdp1,
+						Hdp2,
+						OddsId,
+						OddsType,
+						Odds,
+						MOdds,
+						OddsSpread,
+						Stake,
+						Actual_Stake,
+						AWinLost,
+						WinLost,
+						LicenseeWL,
+						PlayerComm,
+						Comm,
+						Status,
+						SettlementStatus,
+						TransDate,
+						WinLostDate,
+						LiveIndicator,
+						LiveHomeScore,
+						LiveAwayScore,
+						Ip,
+						LeagueId,
+						MatchId,
+						MatchCode,
+						EventDate,
+						HomeId,
+						AwayId,
+						BetStatus,
+						IsNeutral,
+						BetCheck,
+						ComStatus,
+						TransDesc,
+						BetdaqId,
+						ExtraInfo,
+						OriginalStake,
+						OriginalBetType,
+						WalletType,
+						RefCode,
+						TableID,
+						Product
 					FROM #Data
 				) AS a
 			WHERE a.RowNum BETWEEN @RowStart AND @RowEnd
-			ORDER BY a.RowNum'
+			ORDER BY a.RowNum ASC'
 
 		INSERT INTO #PagingData
+		(
+			RowNum,
+			TransId,
+			RefNo,
+			CustId,
+			Currency,
+			Recommend,
+			SportType,
+			BetType,
+			BetId,
+			BetTeam,
+			Hdp1,
+			Hdp2,
+			OddsId,
+			OddsType,
+			Odds,
+			MOdds,
+			OddsSpread,
+			Stake,
+			Actual_Stake,
+			AWinLost,
+			WinLost,
+			LicenseeWL,
+			PlayerComm,
+			Comm,
+			Status,
+			SettlementStatus,
+			TransDate,
+			WinLostDate,
+			LiveIndicator,
+			LiveHomeScore,
+			LiveAwayScore,
+			Ip,
+			LeagueId,
+			MatchId,
+			MatchCode,
+			EventDate,
+			HomeId,
+			AwayId,
+			BetStatus,
+			IsNeutral,
+			BetCheck,
+			ComStatus,
+			TransDesc,
+			BetdaqId,
+			ExtraInfo,
+			OriginalStake,
+			OriginalBetType,
+			WalletType,
+			RefCode,
+			TableID,
+			Product
+		)
 		EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
 		-- bettrans
@@ -785,7 +947,7 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product IN ('SB','Parlay') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
@@ -914,7 +1076,7 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product IN ('SB','Parlay') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
@@ -1043,7 +1205,7 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.transdesc, '')
+								WHEN b.Product IN ('SB', 'Parlay') THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
