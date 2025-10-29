@@ -54,7 +54,6 @@ AS
 		- 20250617@Benji: Support ClotPlay, AI Gaming [Redmine: #229171]
 		- 20250814@Benji: Support Smartsoft [Redmine: #210944]
 		- 20250815@Benji: Support 3rd Products - Automate [Redmine: #210944]
-		- 20251027@Bobby: Support BetBuilder Hybrid Parlay [Redmine: #242255]
 */
 
 BEGIN
@@ -828,7 +827,6 @@ BEGIN
 			CASE
 				WHEN @Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 'VRG', 
 					'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'NG2', 'SEA', 'LG', 'VS4', 'VS5') THEN ISNULL(b.transdesc, '')
-				WHEN @Product = 'Parlay'  AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 				WHEN @EventType = 3 THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
@@ -1058,7 +1056,6 @@ BEGIN
 			CASE
 				WHEN @Product IN ('SB', 'VS2', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 'VRG', 
 					'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'VS3', 'NG2', 'SEA', 'LG', 'VS4', 'VS5') THEN ISNULL(b.transdesc, '')
-				WHEN @Product = 'Parlay'  AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 				WHEN @EventType = 3 THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
@@ -1087,10 +1084,10 @@ BEGIN
 		WHERE b.transid = @TransId
 	END
 
-	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus / Exclude Hybrid Parlay oddsSpread=3
+	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
 	IF EXISTS (SELECT 1 FROM @Data
 				WHERE BetType = 29
-					AND BetTeam = '1' AND OddsSpread <> 3
+					AND BetTeam = '1'
 					AND WhTicket IN (2, 3))
 	BEGIN
 		-- Running/Waiting

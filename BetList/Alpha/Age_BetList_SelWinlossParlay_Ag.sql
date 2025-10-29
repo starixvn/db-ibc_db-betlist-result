@@ -41,7 +41,6 @@ AS
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240723@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
-		- 20251027@Bobby: Support BetBuilder Hybrid Parlay [Redmine: #242255]
 */
 
 BEGIN
@@ -88,8 +87,7 @@ BEGIN
 		BetCheck		NVARCHAR(50),
 		transdesc		NVARCHAR(1000),
 		ExtraInfo		VARCHAR(1000),
-		DeviceType		TINYINT,
-		OddsSpread		MONEY
+		DeviceType		TINYINT
 	)
 
 	IF @Todate > @MoveBetsDay
@@ -134,10 +132,9 @@ BEGIN
 			b.betID,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			IIF(b.bettype = 29 AND b.OddsSpread = 3, ISNULL(b.transdesc, ''),'') AS transdesc,
+			'' AS transdesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-			b.DeviceType,
-			b.OddsSpread
+			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE
 			b.Recommend = @CustID AND
@@ -193,10 +190,9 @@ BEGIN
 			b.betID,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			IIF(b.bettype = 29 AND b.oddsSpread = 3, ISNULL(b.transdesc, ''),'') AS transdesc,
+			'' AS transdesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-			b.DeviceType,
-			b.OddsSpread
+			b.DeviceType
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 		WHERE
 			b.Recommend = @CustID AND
@@ -211,7 +207,7 @@ BEGIN
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
-	IF EXISTS (SELECT 1 FROM @AgWinlossMP WHERE BetType = 29 AND BetTeam = '1' AND OddsSpread <> 3)
+	IF EXISTS (SELECT 1 FROM @AgWinlossMP WHERE BetType = 29 AND BetTeam = '1')
 	BEGIN
 		UPDATE b
 		SET

@@ -65,6 +65,7 @@ AS
 		- 20250730@Benji: Support Playtech RNG Jackpot - Support Automate Integration for Jackpot Betlist [Redmine: #234576]
 		- 20250819@Razor: Support VS 2 - VS Tournament [Redmine: #235084]
 		- 20250820@Benji: Support Playtech Live Jackpot [Redmine: #230127]
+		- 20251015@Bobby: Support BetBuilder Hybrid Parlay [Redmine: #242255]
 */
 
 BEGIN
@@ -77,7 +78,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype(ProductID, BetType, EventType, SubProduct, RefTable)
 	SELECT ProductID, BetType, EventType, SubProduct, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE BetType NOT IN (903, 904, 913, 914)
@@ -91,7 +92,7 @@ BEGIN
 	
 	DECLARE @ProductJackpot TABLE(ProductId TINYINT)
 	
-	INSERT INTO @ProductJackpot
+	INSERT INTO @ProductJackpot(ProductId)
     SELECT DISTINCT ProductId
     FROM @SportBettype
     WHERE SubProduct LIKE 'Jackpot%'
@@ -275,6 +276,14 @@ BEGIN
 		IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 1 AND BetType = @BetType)
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.bettype,
 				b.transid,
@@ -467,6 +476,14 @@ BEGIN
 		IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE EventType = 5 AND BetType = @BetType)
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.bettype,
 				b.transid,
@@ -553,6 +570,14 @@ BEGIN
 		IF @BetType IN (9, 29, 2798, 2799, 10449, 11099)
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.bettype,
 				CASE
@@ -632,7 +657,7 @@ BEGIN
 				'' AS ShowTime,
 				b.winlostdate,
 				b.betcheck,
-				'' AS TransDesc,
+				IIF(b.bettype = 29 AND OddsSpread = 3, ISNULL(b.transdesc, ''), '') AS TransDesc,
 				ISNULL(b.oddsspread, 0) AS OddsSpread,
 				0 AS OriginalBetType,
 				-1 AS BetdaqId,
@@ -652,6 +677,14 @@ BEGIN
 		IF @BetType = 10
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.bettype,
 				b.transid,
@@ -741,6 +774,14 @@ BEGIN
 						AND (ProductID IN (8, 23, 28, 37, 38, 40, 43, 47, 49, 63, 74, 81) OR (ProductID = 3 AND EventType = 0)))
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.bettype,
 				b.transid,
@@ -883,6 +924,14 @@ BEGIN
 		IF EXISTS (SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (5, 27, 106) AND EventType = 3 AND BetType = @BetType)
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.bettype,
 				b.transid,
@@ -985,6 +1034,14 @@ BEGIN
 						AND Bettype = @BetType)
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.gameid AS BetType,
 				b.translogid AS TransId,
@@ -1098,6 +1155,14 @@ BEGIN
 			BEGIN
 				-- Yesterday and later running ticket
 				INSERT INTO @Data
+				(
+					BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+					, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+					, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+					, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+					, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+					, LeagueGroupId, DeviceType
+				)
 				SELECT
 					b.bettype,
 					b.transid,
@@ -1207,7 +1272,7 @@ BEGIN
 					brng.mrecommend
 
 				-- Yesterday and later settled ticket
-				INSERT INTO @Data
+				UNION ALL
 				SELECT
 					b.bettype,
 					b.transid,
@@ -1333,6 +1398,14 @@ BEGIN
 			BEGIN
 				-- Before yesterday settled ticket
 				INSERT INTO @Data
+				(
+					BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+					, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+					, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+					, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+					, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+					, LeagueGroupId, DeviceType
+				)
 				SELECT
 					b.bettype,
 					b.transid,
@@ -1439,6 +1512,14 @@ BEGIN
 			BEGIN
 				-- Yesterday and later running ticket
 				INSERT INTO @Data
+				(
+					BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+					, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+					, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+					, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+					, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+					, LeagueGroupId, DeviceType
+				)
 				SELECT
 					b.bettype,
 					b.transid,
@@ -1542,7 +1623,7 @@ BEGIN
 					blc.mrecommend
 
 				-- Yesterday and later settled ticket
-				INSERT INTO @Data
+				UNION ALL
 				SELECT
 					b.bettype,
 					b.transid,
@@ -1663,6 +1744,14 @@ BEGIN
 			BEGIN
 				-- Before yesterday settled ticket
 				INSERT INTO @Data
+				(
+					BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+					, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+					, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+					, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+					, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+					, LeagueGroupId, DeviceType
+				)
 				SELECT
 					b.bettype,
 					b.transid,
@@ -1761,6 +1850,14 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @Data WHERE RefCode <> 0)
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.bettype,
 				b.transid,
@@ -1852,14 +1949,14 @@ BEGIN
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
-	IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = '1')
+	IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = '1' AND OddsSpread <> 3)
 	BEGIN
 		-- Running/Waiting
 		DECLARE @ParlayData TABLE (
 			RefNo		BIGINT,
 			BoostRate	MONEY)
 
-		INSERT INTO @ParlayData
+		INSERT INTO @ParlayData(RefNo, BoostRate)
 		SELECT
 			b.refno,
 			CASE
@@ -1878,7 +1975,7 @@ BEGIN
 			MOdds	MONEY)
 
 		-- Mix Parlay which having at least 1 settled sub ticket
-		INSERT INTO @TmpParlayData
+		INSERT INTO @TmpParlayData (RefNo, Odds, MOdds)
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bpd.odds) AS Odds,
@@ -1888,9 +1985,8 @@ BEGIN
 		GROUP BY
 			b.RefNo,
 			b.BoostRate
-
 		-- Mix Parlay which having no settled sub ticket
-		INSERT INTO @TmpParlayData
+		UNION ALL
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bm.odds) AS Odds,
@@ -1914,7 +2010,7 @@ BEGIN
 		SET
 			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			b.TransDesc = IIF(b.OddsSpread = 3,b.TransDesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 		FROM @Data AS b
 			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		WHERE b.BetType = 29
@@ -1967,6 +2063,14 @@ BEGIN
 								OR RefTable = 1))
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.gameID AS BetType,
 				b.transid,
@@ -2101,6 +2205,14 @@ BEGIN
 		IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE (ProductID IN (11, 21, 45, 46, 51, 52, 57, 65, 70, 76, 80) OR RefTable = 2) AND Bettype = @BetType )
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.gameID AS BetType,
 				b.transid,
@@ -2213,6 +2325,14 @@ BEGIN
 					WHERE (s.ProductID IN (21, 45, 46, 51, 57, 65, 70, 76, 80) OR s.RefTable = 2) AND b.MatchCode <> '')
 	BEGIN
 		INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 		SELECT
 			b.gameID AS BetType,
 			b.transid,
@@ -2347,6 +2467,14 @@ BEGIN
 		IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (39) AND Bettype = @BetType )
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.bettype,
 				b.transid,
@@ -2434,6 +2562,14 @@ BEGIN
 		IF EXISTS ( SELECT TOP(1) 1 FROM @SportBettype WHERE ProductID IN (47) AND Bettype = @BetType )
 		BEGIN
 			INSERT INTO @Data
+			(
+				BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+				, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+				, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+				, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+				, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+				, LeagueGroupId, DeviceType
+			)
 			SELECT
 				b.bettype,
 				b.transid,
@@ -2528,6 +2664,14 @@ BEGIN
 	BEGIN
 		-- SA Gaming
 		INSERT INTO @Data
+		(
+			BetType, TransId, BetId, RefNo, MatchCode, Race, EventDate, VirtualRate, IsShowOTExRate, SDiscount, ADiscount, Discount, HomeId, AwayId, SettleTime
+			, Hdp1, Hdp2, Odds, FinalOdds, FinalOdds2, OddsType, Status, SettlementStatus, ComStatus, Stake, Actual_Stake, TransDate, BetTeam, SPositionTaking
+			, MPositionTaking, APositionTaking, SPositionTaking2, MPositionTaking2, APositionTaking2, LiveIndicator, Modds, CustId, LiveHomeScore, LiveAwayScore
+			, FinalHomeScore, FinalAwayScore, LeagueId, SportType, Ip, MatchId, IsNeutral, WinLost, Commission, SComm, AComm, Comm, AWinLost, MWinLost, SWinLost
+			, ShowTime, WinLostDate, BetCheck, TransDesc, OddsSpread, OriginalBetType, BetdaqId, ExtraInfo, JackpotInfo, WalletType, RefCode, CurrencyId, SiteId
+			, LeagueGroupId, DeviceType
+		)
 		SELECT
 			b.bettype,
 			b.transid,
@@ -2615,7 +2759,7 @@ BEGIN
 			AND b.betteam = b1.MatchCode
 
 		-- BBIN
-		INSERT INTO @Data
+		UNION ALL
 		SELECT
 			b.bettype,
 			b.transid,
@@ -2702,7 +2846,76 @@ BEGIN
 			AND b.betteam = b1.BetTeam
 	END
 
-	SELECT b.*,
+	SELECT 
+		b.BetType,
+		b.TransId,
+		b.BetId,
+		b.RefNo,
+		b.MatchCode,
+		b.Race,
+		b.EventDate,
+		b.VirtualRate,
+		b.IsShowOTExRate,
+		b.SDiscount,
+		b.ADiscount,
+		b.Discount,
+		b.HomeId,
+		b.AwayId,
+		b.SettleTime,
+		b.Hdp1,
+		b.Hdp2,
+		b.Odds,
+		b.FinalOdds,
+		b.FinalOdds2,
+		b.OddsType,
+		b.Status,
+		b.SettlementStatus,
+		b.ComStatus,
+		b.Stake,
+		b.Actual_Stake,
+		b.TransDate,
+		b.BetTeam,
+		b.SPositionTaking,
+		b.MPositionTaking,
+		b.APositionTaking,
+		b.SPositionTaking2,
+		b.MPositionTaking2,
+		b.APositionTaking2,
+		b.LiveIndicator,
+		b.Modds,
+		b.CustId,
+		b.LiveHomeScore,
+		b.LiveAwayScore,
+		b.FinalHomeScore,
+		b.FinalAwayScore,
+		b.LeagueId,
+		b.SportType,
+		b.Ip,
+		b.MatchId,
+		b.IsNeutral,
+		b.WinLost,
+		b.Commission,
+		b.SComm,
+		b.AComm,
+		b.Comm,
+		b.AWinLost,
+		b.MWinLost,
+		b.SWinLost,
+		b.ShowTime,
+		b.WinLostDate,
+		b.BetCheck,
+		b.TransDesc,
+		b.OddsSpread,
+		b.OriginalBetType,
+		b.BetdaqId,
+		b.ExtraInfo,
+		b.JackpotInfo,
+		b.WalletType,
+		b.RefCode,
+		b.CurrencyId,
+		b.SiteId,
+		b.LeagueGroupId,
+		b.DeviceType,
 		c.username,
 		ex.currency,
 		s.IsChinaView,

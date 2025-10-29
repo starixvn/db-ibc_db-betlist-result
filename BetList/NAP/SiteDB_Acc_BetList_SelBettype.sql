@@ -65,7 +65,7 @@ BEGIN
 	-- Replace multiple bettypes which have the same name by group bet type ID
 	INSERT INTO @BetTypeTable
 	SELECT f.GroupTypeId
-	FROM (SELECT * FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f
+	FROM (SELECT GroupTypeId FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f
 	WHERE f.BetType IN (SELECT DISTINCT BetType FROM @BetTypeTable)
 		AND f.GroupTypeId NOT IN (SELECT DISTINCT BetType FROM @BetTypeTable)
 

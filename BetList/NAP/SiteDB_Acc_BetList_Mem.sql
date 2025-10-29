@@ -94,7 +94,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype(ProductID, Bettype, EventType, RefTable, SubProduct)
 	SELECT ProductID, BetType, EventType, RefTable, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID NOT IN (2, 4, 7, 9, 13, 17, 19, 24, 26, 30, 31, 33)
@@ -108,7 +108,7 @@ BEGIN
 	-- Add bettypes which have the same name
 	IF EXISTS (SELECT 1 FROM @SportBettype WHERE Bettype IN (SELECT DISTINCT GroupTypeId FROM f_GroupBetType3rd()))
 	BEGIN
-		INSERT INTO @SportBettype
+		INSERT INTO @SportBettype(ProductID, Bettype, EventType, RefTable, SubProduct)
 		SELECT
 			s.ProductID,
 			f.BetType,
@@ -116,7 +116,7 @@ BEGIN
 			s.RefTable,
 			s.SubProduct
 		FROM @SportBettype AS s
-			INNER JOIN (SELECT * FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f ON s.Bettype = f.GroupTypeId
+			INNER JOIN (SELECT BetType FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f ON s.Bettype = f.GroupTypeId
 		WHERE NOT EXISTS ( SELECT 1 FROM @SportBettype AS sbt WHERE sbt.Bettype = f.Bettype )
 	END
 
@@ -271,60 +271,10 @@ BEGIN
 
 		-- bettrans
 		INSERT INTO @Data (
-			TransId,
-			RefNo,
-			CustId,
-			Creator,
-			Currency,
-			BetType,
-			BetId,
-			BetTeam,
-			Hdp1,
-			Hdp2,
-			OddsId,
-			OddsType,
-			Odds,
-			MOdds,
-			OddsSpread,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			AWinLost,
-			MWinLost,
-			SWinLost,
-			Commission,
-			Comm,
-			AComm,
-			SComm,
-			APositionTaking,
-			MPositionTaking,
-			SPositionTaking,
-			PlayerDiscount,
-			Discount,
-			ADiscount,
-			SDiscount,
-			Status,
-			StatusId,
-			SecAcceptFlag,
-			CheckTime,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			LiveHomeScore,
-			LiveAwayScore,
-			Ip,
-			MatchId,
-			BetCheck,
-			ComStatus,
-			TransDesc,
-			BetdaqId,
-			ExtraInfo,
-			WalletType,
-			RefCode,
-			TableID,
-			CurrencyId,
-			SiteId,
-			DeviceType)
+			TransId, RefNo, CustId, Creator, Currency, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake, WinLost, AWinLost, MWinLost, SWinLost,
+			Commission, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, PlayerDiscount, Discount, ADiscount, SDiscount, Status, StatusId, SecAcceptFlag, CheckTime,
+			TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, MatchId, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, WalletType, RefCode, TableID, CurrencyId, SiteId, DeviceType
+		)
 		SELECT
 			b.transid,
 			b.refno,
@@ -390,42 +340,7 @@ BEGIN
 				OR (s.RefTable IN (1, 2) AND b.winlostdate >= @Yesterday))
 
 		-- translog
-		INSERT INTO @Data (
-			TransId,
-			RefNo,
-			CustId,
-			Creator,
-			Currency,
-			BetType,
-			Odds,
-			Stake,
-			Actual_Stake,
-			APositionTaking,
-			MPositionTaking,
-			SPositionTaking,
-			PlayerDiscount,
-			Discount,
-			ADiscount,
-			SDiscount,
-			Status,
-			StatusId,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			Ip,
-			TransDesc,
-			ProductId,
-			EventId,
-			Custom1,
-			Custom2,
-			Custom3,
-			Gameid3rd,
-			Tranid3rd,
-			TableID,
-			CurrencyId,
-			SiteId,
-			DeviceType
-		)
+		UNION ALL
 		SELECT
 			b.translogid AS TransId,
 			b.translogid AS RefNo,
@@ -684,7 +599,9 @@ BEGIN
 				)
 
 				-- Prepare temp table
-				INSERT INTO @RefCodeTmp
+				INSERT INTO @RefCodeTmp (
+					RefCode, TransId, Stake, Actual_Stake, WinLost, AWinLost, MWinLost, SWinLost, Commission, Comm, AComm, SComm
+				)
 				SELECT
 					RefCode,
 					MIN(TransId) AS TransId,
@@ -748,7 +665,13 @@ BEGIN
 				-- Running
 				IF ',' + @OriginalStatusIdList + ',' LIKE '%,0,%'
 				BEGIN
-					INSERT INTO @TmpData
+					INSERT INTO @TmpData (
+						RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost,
+						Commission, Comm, AComm, SComm,
+						APositionTaking, MPositionTaking, SPositionTaking,
+						PlayerDiscount, Discount, ADiscount, SDiscount,
+						OddsSpread
+					)
 					SELECT
 						c.TransId AS RefNo,
 						0 AS Odds,
@@ -795,7 +718,13 @@ BEGIN
 					OR ',' + @OriginalStatusIdList + ',' LIKE '%,112,%'
 					OR ',' + @OriginalStatusIdList + ',' LIKE '%,113,%'
 				BEGIN
-					INSERT INTO @TmpData
+					INSERT INTO @TmpData(
+						RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost,
+						Commission, Comm, AComm, SComm,
+						APositionTaking, MPositionTaking, SPositionTaking,
+						PlayerDiscount, Discount, ADiscount, SDiscount,
+						OddsSpread
+					)
 					SELECT
 						c.TransId AS RefNo,
 						CASE
@@ -854,7 +783,13 @@ BEGIN
 				-- Running
 				IF ',' + @OriginalStatusIdList + ',' LIKE '%,0,%'
 				BEGIN
-					INSERT INTO @TmpData
+					INSERT INTO @TmpData (
+						RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost,
+						Commission, Comm, AComm, SComm,
+						APositionTaking, MPositionTaking, SPositionTaking,
+						PlayerDiscount, Discount, ADiscount, SDiscount,
+						OddsSpread
+					)
 					SELECT
 						c.TransId AS RefNo,
 						0 AS Odds,
@@ -900,7 +835,13 @@ BEGIN
 					OR ',' + @OriginalStatusIdList + ',' LIKE '%,112,%'
 					OR ',' + @OriginalStatusIdList + ',' LIKE '%,113,%'
 				BEGIN
-					INSERT INTO @TmpData
+					INSERT INTO @TmpData (
+						RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost,
+						Commission, Comm, AComm, SComm,
+						APositionTaking, MPositionTaking, SPositionTaking,
+						PlayerDiscount, Discount, ADiscount, SDiscount,
+						OddsSpread
+					)
 					SELECT
 						c.TransId AS RefNo,
 						CASE
@@ -1125,7 +1066,7 @@ BEGIN
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 
 										'PP', 'TG', 'VRG', 'I4D', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG', 'VS4', 'VS2Racing', 'VS5', 'VS7') THEN ISNULL(b.transdesc, '')
-									WHEN b.Product = 'Parlay'  AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -1363,7 +1304,14 @@ BEGIN
 					SubProduct			VARCHAR(500)
 				)
 
-				INSERT INTO @TmpCasinoData
+				INSERT INTO @TmpCasinoData (
+					TransId, RefNo, CustId, Creator, Currency, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake
+					, WinLost, AWinLost, MWinLost, SWinLost, Commission, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, PlayerDiscount, Discount, ADiscount
+					, SDiscount, Status, StatusId, SettlementStatus, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip
+					, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, IsNeutral, ShowTime, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, OriginalBetType
+					, WalletType, RefCode, ProductId, EventId, Custom1, Custom2, Custom3, Gameid3rd, Tranid3rd, TableID, Product, IsCashOut, CurrencyId, SiteId, DeviceType
+					, RefTable, EventType, SubProduct
+				)
 				SELECT
 					b.TransId,
 					b.RefNo,
@@ -1468,21 +1416,34 @@ BEGIN
 							OR RefTable IN (1, 2))
 					AND WinLostDate >= @Yesterday
 
-				INSERT INTO @Data
-				SELECT * FROM @TmpCasinoData				
+				INSERT INTO @Data (
+					TransId, RefNo, CustId, Creator, Currency, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake
+					, WinLost, AWinLost, MWinLost, SWinLost, Commission, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, PlayerDiscount, Discount, ADiscount
+					, SDiscount, Status, StatusId, SettlementStatus, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip
+					, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, IsNeutral, ShowTime, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, OriginalBetType
+					, WalletType, RefCode, ProductId, EventId, Custom1, Custom2, Custom3, Gameid3rd, Tranid3rd, TableID, Product, IsCashOut, CurrencyId, SiteId, DeviceType
+					, RefTable, EventType, SubProduct	
+				)
+				SELECT TransId, RefNo, CustId, Creator, Currency, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake
+					, WinLost, AWinLost, MWinLost, SWinLost, Commission, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, PlayerDiscount, Discount, ADiscount
+					, SDiscount, Status, StatusId, SettlementStatus, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip
+					, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, IsNeutral, ShowTime, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, OriginalBetType
+					, WalletType, RefCode, ProductId, EventId, Custom1, Custom2, Custom3, Gameid3rd, Tranid3rd, TableID, Product, IsCashOut, CurrencyId, SiteId, DeviceType
+					, RefTable, EventType, SubProduct
+				FROM @TmpCasinoData				
 			END
 		END
 	END
 
 	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus/ exclude Hybrid Parlay oddsSpread=3
-	IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = '1' AND oddsSpread <> 3)
+	IF EXISTS (SELECT 1 FROM @Data WHERE BetType = 29 AND BetTeam = '1' OR oddsSpread <> 3)
 	BEGIN
 		-- Running/Waiting
 		DECLARE @ParlayData TABLE (
 			RefNo		BIGINT,
 			BoostRate	MONEY)
 
-		INSERT INTO @ParlayData
+		INSERT INTO @ParlayData (RefNo, BoostRate)
 		SELECT
 			b.refno,
 			CASE
@@ -1501,7 +1462,7 @@ BEGIN
 			MOdds	MONEY)
 
 		-- Mix Parlay which having at least 1 settled sub ticket
-		INSERT INTO @TmpParlayData
+		INSERT INTO @TmpParlayData(RefNo, Odds, MOdds)
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bpd.odds) AS Odds,
@@ -1513,7 +1474,7 @@ BEGIN
 			b.BoostRate
 
 		-- Mix Parlay which having no settled sub ticket
-		INSERT INTO @TmpParlayData
+		UNION ALL
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bm.odds) AS Odds,
@@ -1537,7 +1498,7 @@ BEGIN
 		SET
 			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			b.TransDesc = IIF(OddsSpread = 3, b.transdesc ,CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 		FROM @Data AS b
 			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		WHERE b.BetType = 29

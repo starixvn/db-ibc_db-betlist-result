@@ -66,6 +66,7 @@ AS
 					- Don't support Cash Out bettype 911, 912, 913 in range bettrans and bettrans14 anymore
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20240920@Razor: Support VS2 - Racing sports [Redmine: #211092]
+		- 20251027@Bobby: Support BetBuilder Hybrid Parlay [Redmine: #242255]
 */
 
 BEGIN
@@ -138,44 +139,10 @@ BEGIN
 	BEGIN
 		-- bettrans
 		INSERT INTO @Data (
-			TransId,
-			RefNo,
-			CustId,
-			Creator,
-			Currency,
-			BetType,
-			BetId,
-			BetTeam,
-			Hdp1,
-			Hdp2,
-			OddsId,
-			OddsType,
-			Odds,
-			MOdds,
-			OddsSpread,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			Commission,
-			Status,
-			SecAcceptFlag,
-			CheckTime,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			LiveHomeScore,
-			LiveAwayScore,
-			Ip,
-			MatchId,
-			BetCheck,
-			ComStatus,
-			TransDesc,
-			BetdaqId,
-			ExtraInfo,
-			WalletType,
-			RefCode,
-			TableID,
-			DeviceType)
+			TransId, RefNo, CustId, Creator, Currency, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake
+			, WinLost, Commission, Status, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, MatchId
+			, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, WalletType, RefCode, TableID, DeviceType
+		)
 		SELECT
 			b.transid,
 			b.refno,
@@ -221,27 +188,7 @@ BEGIN
 			AND b.ip = @Ip
 
 		-- translog
-		INSERT INTO @Data (
-			TransId,
-			RefNo,
-			CustId,
-			Creator,
-			Currency,
-			BetType,
-			Odds,
-			Stake,
-			Actual_Stake,
-			Status,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			Ip,
-			TransDesc,
-			EventId,
-			Custom1,
-			TableID,
-			DeviceType
-		)
+		UNION ALL
 		SELECT
 			b.translogid AS TransId,
 			b.translogid AS RefNo,
@@ -273,44 +220,10 @@ BEGIN
 	BEGIN
 		-- bettrans14
 		INSERT INTO @Data (
-			TransId,
-			RefNo,
-			CustId,
-			Creator,
-			Currency,
-			BetType,
-			BetId,
-			BetTeam,
-			Hdp1,
-			Hdp2,
-			OddsId,
-			OddsType,
-			Odds,
-			MOdds,
-			OddsSpread,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			Commission,
-			Status,
-			SecAcceptFlag,
-			CheckTime,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			LiveHomeScore,
-			LiveAwayScore,
-			Ip,
-			MatchId,
-			BetCheck,
-			ComStatus,
-			TransDesc,
-			BetdaqId,
-			ExtraInfo,
-			WalletType,
-			RefCode,
-			TableID,
-			DeviceType)
+			TransId, RefNo, CustId, Creator, Currency, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake
+			, WinLost, Commission, Status, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, MatchId
+			, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, WalletType, RefCode, TableID, DeviceType
+		)
 		SELECT
 			b.transid,
 			b.refno,
@@ -362,44 +275,10 @@ BEGIN
 		
 		-- bettrans_bk
 		INSERT INTO @Data (
-			TransId,
-			RefNo,
-			CustId,
-			Creator,
-			Currency,
-			BetType,
-			BetId,
-			BetTeam,
-			Hdp1,
-			Hdp2,
-			OddsId,
-			OddsType,
-			Odds,
-			MOdds,
-			OddsSpread,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			Commission,
-			Status,
-			SecAcceptFlag,
-			CheckTime,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			LiveHomeScore,
-			LiveAwayScore,
-			Ip,
-			MatchId,
-			BetCheck,
-			ComStatus,
-			TransDesc,
-			BetdaqId,
-			ExtraInfo,
-			WalletType,
-			RefCode,
-			TableID,
-			DeviceType)
+			TransId, RefNo, CustId, Creator, Currency, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake
+			, WinLost, Commission, Status, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, MatchId
+			, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, WalletType, RefCode, TableID, DeviceType
+		)
 		SELECT
 			b.transid,
 			b.refno,
@@ -491,7 +370,7 @@ BEGIN
 
 		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-		INSERT INTO @SportBettype
+		INSERT INTO @SportBettype(ProductID, Bettype, EventType)
 		SELECT ProductID, BetType, EventType
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 		WHERE ProductID IN (1, 25)
@@ -603,7 +482,7 @@ BEGIN
 				)
 
 				-- Prepare temp table
-				INSERT INTO @RefCodeTmp
+				INSERT INTO @RefCodeTmp (RefCode, TransId, Stake, Actual_Stake, WinLost, Commission)
 				SELECT
 					RefCode,
 					MIN(TransId) AS TransId,
@@ -614,7 +493,7 @@ BEGIN
 				FROM @Data
 				WHERE RefCode <> 0
 				GROUP BY RefCode
-				HAVING COUNT(*) > 1
+				HAVING COUNT(1) > 1
 
 				IF EXISTS (SELECT 1 FROM @RefCodeTmp)
 				BEGIN
@@ -764,6 +643,7 @@ BEGIN
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -927,6 +807,7 @@ BEGIN
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1054,6 +935,7 @@ BEGIN
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1098,7 +980,7 @@ BEGIN
 			RefNo		BIGINT,
 			BoostRate	MONEY)
 
-		INSERT INTO @ParlayData
+		INSERT INTO @ParlayData(RefNo, BoostRate)
 		SELECT
 			b.refno,
 			CASE
@@ -1117,7 +999,7 @@ BEGIN
 			MOdds	MONEY)
 
 		-- Mix Parlay which having at least 1 settled sub ticket
-		INSERT INTO @TmpParlayData
+		INSERT INTO @TmpParlayData (RefNo, Odds, MOdds)
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bpd.odds) AS Odds,
@@ -1129,7 +1011,7 @@ BEGIN
 			b.BoostRate
 
 		-- Mix Parlay which having no settled sub ticket
-		INSERT INTO @TmpParlayData
+		UNION ALL
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bm.odds) AS Odds,
