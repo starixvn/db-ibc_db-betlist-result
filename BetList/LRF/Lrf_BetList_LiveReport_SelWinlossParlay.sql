@@ -191,36 +191,10 @@ BEGIN
 		ELSE
 			SET @TempFromDate = @FromDate
 
-		INSERT INTO #AgWinlossMP
-		(
-			Username,
-			CustId,
-			BetType,
-			RefNo,
-			TransId,
-			BetId,
-			Hdp1,
-			Hdp2,
-			Odds,
-			MOdds,
-			Status,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			LicenseeWL,
-			Comm,
-			PlayerComm,
-			TransDate,
-			WinLostDate,
-			BetTeam,
-			LiveIndicator,
-			LiveHomeScore,
-			LiveAwayScore,
-			Ip,
-			Currency,
-			BetCheck,
-			ExtraInfo,
-			TransDesc
+		INSERT INTO #AgWinlossMP (
+			Username, CustId, BetType, RefNo, TransId, BetId, Hdp1, Hdp2, Odds, MOdds,
+			Status, Stake, Actual_Stake, WinLost, LicenseeWL, Comm, PlayerComm, TransDate, WinLostDate, BetTeam,
+			LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, Currency, BetCheck, ExtraInfo, TransDesc
 		)
 		SELECT
 			b.username,
@@ -271,36 +245,10 @@ BEGIN
 		ELSE
 			SET @TempToDate = @ToDate
 
-		INSERT INTO #AgWinlossMP
-		(
-			Username,
-			CustId,
-			BetType,
-			RefNo,
-			TransId,
-			BetId,
-			Hdp1,
-			Hdp2,
-			Odds,
-			MOdds,
-			Status,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			LicenseeWL,
-			Comm,
-			PlayerComm,
-			TransDate,
-			WinLostDate,
-			BetTeam,
-			LiveIndicator,
-			LiveHomeScore,
-			LiveAwayScore,
-			Ip,
-			Currency,
-			BetCheck,
-			ExtraInfo,
-			TransDesc
+		INSERT INTO #AgWinlossMP (
+			Username, CustId, BetType, RefNo, TransId, BetId, Hdp1, Hdp2, Odds, MOdds,
+			Status, Stake, Actual_Stake, WinLost, LicenseeWL, Comm, PlayerComm, TransDate, WinLostDate, BetTeam,
+			LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, Currency, BetCheck, ExtraInfo, TransDesc
 		)
 		SELECT
 			b.username,
