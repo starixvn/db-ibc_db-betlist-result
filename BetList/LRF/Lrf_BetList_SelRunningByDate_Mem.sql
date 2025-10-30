@@ -1016,7 +1016,7 @@ BEGIN
 	)
 
 	-- Get exchange rate
-	INSERT INTO #ExchangeRate
+	INSERT INTO #ExchangeRate (ExchangeId, Rate)
 	SELECT
 		e.ExchangeId,
 		e.Rate

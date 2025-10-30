@@ -164,7 +164,7 @@ BEGIN
 	-- Get Saba sport type list
 	DECLARE @SabaSportType TABLE (SportType SMALLINT, LeagueGroupIdList VARCHAR(200))
 
-	INSERT INTO @SabaSportType
+	INSERT INTO @SabaSportType (SportType, LeagueGroupIdList)
 	SELECT 1, '42,74'		-- Saba Soccer
 	UNION SELECT 1, '113'	-- Saba Soccer PinGoal
 	UNION SELECT 1, '252'	-- Saba Soccer Marble
@@ -1196,11 +1196,49 @@ BEGIN
 						3 AS WhTicket
 					FROM @TmpAgDate AS t
 						CROSS APPLY (
-							SELECT b.*
-							FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-							WHERE b.recommend = t.CustId
-								AND b.winlostdate = t.Date
-								AND CHARINDEX(',' + CONVERT(VARCHAR(10), b.bettype) + ',', ',' + @str + ',', 1) > 0
+							SELECT 
+								bk.transid,
+								bk.refno,
+								bk.custid,
+								bk.recommend,
+								bk.currency,
+								bk.bettype,
+								bk.betid,
+								bk.betteam,
+								bk.hdp1,
+								bk.hdp2,
+								bk.oddstype,
+								bk.oddsid,
+								bk.odds,
+								bk.modds,
+								bk.oddsspread,
+								bk.stake,
+								bk.actual_stake,
+								bk.winlost,
+								bk.tpositiontaking,
+								bk.comm,
+								bk.playercomm,
+								bk.status,
+								bk.statusID,
+								bk.transdate,
+								bk.winlostdate,
+								bk.liveindicator,
+								bk.livehomescore,
+								bk.liveawayscore,
+								bk.ip,
+								bk.betfrom,
+								bk.matchid,
+								bk.comstatus,
+								bk.betcheck,
+								bk.transdesc,
+								bk.betdaqid,
+								bk.ExtraInfo,
+								bk.WalletType,
+								bk.RefCode
+							FROM bodb_Archive.dbo.bettrans_bk AS bk WITH (NOLOCK)
+							WHERE bk.recommend = t.CustId
+								AND bk.winlostdate = t.Date
+								AND CHARINDEX(',' + CONVERT(VARCHAR(10), bk.bettype) + ',', ',' + @str + ',', 1) > 0
 						) b
 						CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 					OPTION (MAXDOP 8)

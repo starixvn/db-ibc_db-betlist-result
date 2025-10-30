@@ -475,7 +475,16 @@ BEGIN
 				)
 
 				-- Prepare temp table
-				INSERT INTO @RefCodeTmp
+				INSERT INTO @RefCodeTmp(
+					RefCode,
+					TransId,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					LicenseeWL,
+					Comm,
+					PlayerComm
+				)
 				SELECT
 					RefCode,
 					MIN(TransId) AS TransId,
