@@ -34,6 +34,7 @@ AS
 		- 20230909@Razor: Remove GDG, Fishing World products [Redmine: #174511]
 		- 20230909@Razor: Remove GD, Colossusbet products [Redmine: #179132]
 		- 20250207@Razor: Support SabaCoins multiple wallets [Redmine: 215807]
+		- 20251027@Bobby: Fix sonar [Redmine: #242255]
 */
 
 BEGIN
@@ -60,7 +61,7 @@ BEGIN
 		ELSE
 			SET @TempFromDate = @FromDate
 
-		INSERT INTO @BetTypeTable
+		INSERT INTO @BetTypeTable(BetType)
 		SELECT DISTINCT bettype
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
@@ -91,7 +92,7 @@ BEGIN
 		ELSE
 			SET @TempFromDate = @FromDate
 
-		INSERT INTO @BetTypeTable
+		INSERT INTO @BetTypeTable(BetType)
 		SELECT DISTINCT bettype
 		FROM dbo.bettrans14 AS b WITH (NOLOCK)
 			INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
@@ -108,7 +109,7 @@ BEGIN
 		ELSE
 			SET @TempToDate = @ToDate
 
-		INSERT INTO @BetTypeTable
+		INSERT INTO @BetTypeTable(BetType)
 		SELECT DISTINCT bettype
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
 			INNER JOIN @TmpShadow AS t ON t.CustId = b.CustId
@@ -118,7 +119,7 @@ BEGIN
 	END
 
 	-- Replace multiple bettypes which have the same name by group bet type ID
-	INSERT INTO @BetTypeTable
+	INSERT INTO @BetTypeTable(BetType)
 	SELECT f.GroupTypeId
 	FROM (SELECT GroupTypeId FROM f_GroupBetType3rd() WHERE BetType <> GroupTypeId) AS f
 	WHERE f.BetType IN (SELECT DISTINCT BetType FROM @BetTypeTable)

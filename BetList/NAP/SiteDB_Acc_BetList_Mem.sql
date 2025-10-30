@@ -342,45 +342,45 @@ BEGIN
 		-- translog
 		UNION ALL
 		SELECT
-			b.translogid AS TransId,
-			b.translogid AS RefNo,
-			b.custid,
-			b.creator,
-			b.currency,
-			b.gameID AS BetType,
-			b.odds,
-			b.stake,
-			b.actual_stake,
-			b.apositiontaking,
-			b.mpositiontaking,
-			b.spositiontaking,
-			b.playerdiscount,
-			b.discount,
-			b.adiscount,
-			b.sdiscount,
-			b.status,
-			b.statusID,
-			b.transdate,
-			b.transdate AS WinLostDate,
-			b.LiveIndicator,
-			b.ip,
-			b.transdesc,
-			b.productID,
-			b.eventID,
-			b.custom1,
-			b.custom2,
-			b.custom3,
-			b.GameId3rd,
-			b.TranId3rd,
+			tl.translogid AS TransId,
+			tl.translogid AS RefNo,
+			tl.custid,
+			tl.creator,
+			tl.currency,
+			tl.gameID AS BetType,
+			tl.odds,
+			tl.stake,
+			tl.actual_stake,
+			tl.apositiontaking,
+			tl.mpositiontaking,
+			tl.spositiontaking,
+			tl.playerdiscount,
+			tl.discount,
+			tl.adiscount,
+			tl.sdiscount,
+			tl.status,
+			tl.statusID,
+			tl.transdate,
+			tl.transdate AS WinLostDate,
+			tl.LiveIndicator,
+			tl.ip,
+			tl.transdesc,
+			tl.productID,
+			tl.eventID,
+			tl.custom1,
+			tl.custom2,
+			tl.custom3,
+			tl.GameId3rd,
+			tl.TranId3rd,
 			4 AS TableID,
-			b.currency,
-			b.SiteId,
-			b.DeviceType
-		FROM dbo.translog AS b WITH (NOLOCK)
-		WHERE b.custid = @CustId
-			AND b.winlostdate BETWEEN @TempFromDate AND @ToDate
-			AND b.statusID IN (0, 1)
-			AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), b.statusID) + ',%'
+			tl.currency,
+			tl.SiteId,
+			tl.DeviceType
+		FROM dbo.translog AS tl WITH (NOLOCK)
+		WHERE tl.custid = @CustId
+			AND tl.winlostdate BETWEEN @TempFromDate AND @ToDate
+			AND tl.statusID IN (0, 1)
+			AND ',' + @StatusIdList + ',' LIKE '%,' + CONVERT(VARCHAR(3), tl.statusID) + ',%'
 	END
 
 	IF EXISTS (SELECT 1 FROM @Data)
