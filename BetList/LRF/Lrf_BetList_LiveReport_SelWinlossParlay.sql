@@ -481,34 +481,7 @@ BEGIN
 			(
 				SELECT
 					ROW_NUMBER() OVER (ORDER BY ' + @SortText + ') AS RowNum,
-					b.Username,
-					b.CustId,
-					b.BetType,
-					b.RefNo,
-					b.TransId,
-					b.BetId,
-					b.Hdp1,
-					b.Hdp2,
-					b.Odds,
-					b.MOdds,
-					b.Status,
-					b.Stake,
-					b.Actual_Stake,
-					b.WinLost,
-					b.LicenseeWL,
-					b.Comm,
-					b.PlayerComm,
-					b.TransDate,
-					b.WinLostDate,
-					b.BetTeam,
-					b.LiveIndicator,
-					b.LiveHomeScore,
-					b.LiveAwayScore,
-					b.Ip,
-					b.Currency,
-					b.BetCheck,
-					b.ExtraInfo,
-					b.TransDesc
+					b.*
 				FROM #AgWinlossMP AS b' +
 				CASE
 					WHEN @SortText LIKE '%e.Rate%' THEN N'
@@ -525,6 +498,37 @@ BEGIN
 		ORDER BY a.RowNum ASC'
 
 	INSERT INTO #PagingData
+	(
+		RowNum,
+		Username,
+		CustId,
+		BetType,
+		RefNo,
+		TransId,
+		BetId,
+		Hdp1,
+		Hdp2,
+		Odds,
+		MOdds,
+		Status,
+		Stake,
+		Actual_Stake,
+		WinLost,
+		LicenseeWL,
+		Comm,
+		PlayerComm,
+		TransDate,
+		WinLostDate,
+		BetTeam,
+		LiveIndicator,
+		LiveHomeScore,
+		LiveAwayScore,
+		Ip,
+		Currency,
+		BetCheck,
+		ExtraInfo,
+		TransDesc
+	)
 	EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
 	DROP TABLE #AgWinlossMP
