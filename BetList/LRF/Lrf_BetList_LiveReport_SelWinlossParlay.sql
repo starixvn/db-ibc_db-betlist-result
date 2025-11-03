@@ -396,35 +396,7 @@ BEGIN
 
 		SET @Today = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 
-		SELECT	a.RowNum,
-				a.Username,
-				a.CustId,
-				a.BetType,
-				a.RefNo,
-				a.TransId,
-				a.BetId,
-				a.Hdp1,
-				a.Hdp2,
-				a.Odds,
-				a.MOdds,
-				a.Status,
-				a.Stake,
-				a.Actual_Stake,
-				a.WinLost,
-				a.LicenseeWL,
-				a.Comm,
-				a.PlayerComm,
-				a.TransDate,
-				a.WinLostDate,
-				a.BetTeam,
-				a.LiveIndicator,
-				a.LiveHomeScore,
-				a.LiveAwayScore,
-				a.Ip,
-				a.Currency,
-				a.BetCheck,
-				a.ExtraInfo,
-				a.TransDesc
+		SELECT	a.*
 		FROM
 			(
 				SELECT
@@ -447,35 +419,9 @@ BEGIN
 
 	INSERT INTO #PagingData
 	(
-		RowNum,
-		Username,
-		CustId,
-		BetType,
-		RefNo,
-		TransId,
-		BetId,
-		Hdp1,
-		Hdp2,
-		Odds,
-		MOdds,
-		Status,
-		Stake,
-		Actual_Stake,
-		WinLost,
-		LicenseeWL,
-		Comm,
-		PlayerComm,
-		TransDate,
-		WinLostDate,
-		BetTeam,
-		LiveIndicator,
-		LiveHomeScore,
-		LiveAwayScore,
-		Ip,
-		Currency,
-		BetCheck,
-		ExtraInfo,
-		TransDesc
+		RowNum, Username, CustId, BetType, RefNo, TransId, BetId, Hdp1, Hdp2, Odds,
+		MOdds, Status, Stake, Actual_Stake, WinLost, LicenseeWL, Comm, PlayerComm, TransDate, WinLostDate,
+		BetTeam, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, Currency, BetCheck, ExtraInfo, TransDesc
 	)
 	EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
