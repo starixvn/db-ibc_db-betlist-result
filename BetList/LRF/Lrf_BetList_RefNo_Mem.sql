@@ -440,7 +440,7 @@ BEGIN
 								@RefTable = s.RefTable,
 								@SubProduct = s.SubProduct,
 								@WhTicket = 4		-- bettrans_bk
-							FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
+							FROM bodb_Archive.dbo.bettrans_bk AS bk WITH (NOLOCK, INDEX = IX_custid)
 								INNER JOIN @SportBettype AS s ON bk.bettype = s.bettype
 							WHERE bk.custid = @CustId
 								AND bk.refno = @RefNo

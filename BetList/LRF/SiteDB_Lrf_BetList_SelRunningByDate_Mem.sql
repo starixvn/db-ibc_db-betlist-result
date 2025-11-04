@@ -492,41 +492,41 @@ BEGIN
 			TransDesc, BetdaqId, ExtraInfo, WalletType, RefCode, TableID, Product, RefTable
 		)
 		SELECT
-			b.transid,
-			b.refno,
-			b.custid,
-			b.currency,
-			b.recommend,
-			b.bettype,
-			ISNULL(b.betid, 0) AS BetId,
-			b.betteam,
-			b.hdp1,
-			b.hdp2,
-			b.oddsid,
-			b.oddstype,
-			b.odds,
-			b.modds,
-			b.oddsspread,
-			b.stake,
-			b.actual_stake,
-			b.status,
-			b.SecAcceptFlag,
-			b.checktime,
-			b.transdate,
-			b.winlostdate,
-			b.liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.ip,
-			b.betfrom,
-			b.matchid,
-			b.betcheck,
-			b.comstatus,
-			b.transdesc,
-			b.betdaqid,
-			b.ExtraInfo,
-			b.WalletType,
-			ISNULL(b.RefCode, 0),
+			bt.transid,
+			bt.refno,
+			bt.custid,
+			bt.currency,
+			bt.recommend,
+			bt.bettype,
+			ISNULL(bt.betid, 0) AS BetId,
+			bt.betteam,
+			bt.hdp1,
+			bt.hdp2,
+			bt.oddsid,
+			bt.oddstype,
+			bt.odds,
+			bt.modds,
+			bt.oddsspread,
+			bt.stake,
+			bt.actual_stake,
+			bt.status,
+			bt.SecAcceptFlag,
+			bt.checktime,
+			bt.transdate,
+			bt.winlostdate,
+			bt.liveindicator,
+			bt.livehomescore,
+			bt.liveawayscore,
+			bt.ip,
+			bt.betfrom,
+			bt.matchid,
+			bt.betcheck,
+			bt.comstatus,
+			bt.transdesc,
+			bt.betdaqid,
+			bt.ExtraInfo,
+			bt.WalletType,
+			ISNULL(bt.RefCode, 0),
 			1 AS TableID,
 			CASE
 				WHEN s.ProductID = 6 THEN 'OneRNG'	-- RNG Casino
@@ -556,10 +556,10 @@ BEGIN
 				ELSE 'Unknown'
 			END AS Product,
 			s.RefTable
-		FROM dbo.bettrans AS b WITH (NOLOCK)
-			INNER JOIN @TmpData AS t ON t.RefNo = b.transid AND t.BetType = b.BetType
-			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-		WHERE b.custid = @CustId
+		FROM dbo.bettrans AS bt WITH (NOLOCK)
+			INNER JOIN @TmpData AS t ON t.RefNo = bt.transid AND t.BetType = bt.BetType
+			INNER JOIN @SportBettype AS s ON s.BetType = bt.bettype
+		WHERE bt.custid = @CustId
 			AND t.IsNew = 1
 
 		IF @ExcludeFreeBet = 1
