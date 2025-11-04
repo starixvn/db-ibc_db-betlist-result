@@ -529,126 +529,126 @@ BEGIN
 			)
 			EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
-			UPDATE b
+			UPDATE p
 			SET
 				TransId = CASE
-							WHEN b.Product = 'Parlay' AND b.BetType = 29 AND ISNULL(b.BetId, 0) > 0 THEN b.BetId
-							ELSE b.TransId
+							WHEN p.Product = 'Parlay' AND p.BetType = 29 AND ISNULL(p.BetId, 0) > 0 THEN p.BetId
+							ELSE p.TransId
 						END,
 				SportType = CASE
-								WHEN b.EventType = 1 THEN m.sporttype
-								WHEN b.EventType = 5 THEN m3rd.SportType
-								WHEN b.Product IN ('H5LG') THEN b.MatchId
-								WHEN b.Product IN ('Outright') THEN l.sporttype
-								WHEN b.EventType = 3 THEN vr.SportType
+								WHEN p.EventType = 1 THEN m.sporttype
+								WHEN p.EventType = 5 THEN m3rd.SportType
+								WHEN p.Product IN ('H5LG') THEN p.MatchId
+								WHEN p.Product IN ('Outright') THEN l.sporttype
+								WHEN p.EventType = 3 THEN vr.SportType
 								ELSE 0
 							END,
 				LiveIndicator = CASE
-									WHEN b.EventType IN (1, 5) THEN b.liveindicator
+									WHEN p.EventType IN (1, 5) THEN p.liveindicator
 									ELSE 0
 								END,
 				LiveAwayScore = CASE
-									WHEN b.EventType IN (1, 5) THEN b.liveawayscore
-									WHEN b.Product IN ('Outright') THEN b.liveawayscore
+									WHEN p.EventType IN (1, 5) THEN p.liveawayscore
+									WHEN p.Product IN ('Outright') THEN p.liveawayscore
 									ELSE 0
 								END,
 				LeagueId = CASE
-								WHEN b.EventType = 1 THEN m.leagueid
-								WHEN b.EventType = 5 THEN m3rd.League3rdId
-								WHEN b.Product IN ('Outright') THEN o.leagueid
-								WHEN b.EventType = 3 THEN vr.LeagueID
+								WHEN p.EventType = 1 THEN m.leagueid
+								WHEN p.EventType = 5 THEN m3rd.League3rdId
+								WHEN p.Product IN ('Outright') THEN o.leagueid
+								WHEN p.EventType = 3 THEN vr.LeagueID
 								ELSE 0
 							END,
 				LeagueGroupId = CASE
-									WHEN b.Product IN ('SB') THEN le.LeagueGroupID
+									WHEN p.Product IN ('SB') THEN le.LeagueGroupID
 									ELSE 0
 								END,
 				MatchId = CASE
-								WHEN b.EventType IN (1, 3, 5) THEN b.matchid
+								WHEN p.EventType IN (1, 3, 5) THEN p.matchid
 								ELSE 0
 							END,
 				MatchCode = CASE
-								WHEN b.EventType = 1 THEN m.matchcode
-								WHEN b.Product IN ('Outright') THEN o.matchcode
+								WHEN p.EventType = 1 THEN m.matchcode
+								WHEN p.Product IN ('Outright') THEN o.matchcode
 								ELSE ''
 							END,
 				Race = CASE
-							WHEN b.Product IN ('Outright') THEN o.groupmatch
+							WHEN p.Product IN ('Outright') THEN o.groupmatch
 							ELSE ''
 						END,
 				EventDate = CASE
-							WHEN b.Product IN ('SB') THEN m.GlobalShowTime
-							ELSE b.WinLostDate
+							WHEN p.Product IN ('SB') THEN m.GlobalShowTime
+							ELSE p.WinLostDate
 						END,
 				HomeId = CASE
-							WHEN b.EventType = 1 THEN m.homeid
-							WHEN b.EventType = 5 THEN m3rd.HomeId
-							WHEN b.Product IN ('Outright') THEN o.teamid
+							WHEN p.EventType = 1 THEN m.homeid
+							WHEN p.EventType = 5 THEN m3rd.HomeId
+							WHEN p.Product IN ('Outright') THEN o.teamid
 							ELSE 0
 						END,
 				AwayId = CASE
-							WHEN b.EventType = 1 THEN m.awayid
-							WHEN b.EventType = 5 THEN m3rd.AwayId
+							WHEN p.EventType = 1 THEN m.awayid
+							WHEN p.EventType = 5 THEN m3rd.AwayId
 							ELSE 0
 						END,
 				BetStatus = CASE
-								WHEN b.EventType = 1 THEN m.betstatus
+								WHEN p.EventType = 1 THEN m.betstatus
 								ELSE ''
 							END,
 				IsNeutral = CASE
-								WHEN b.EventType = 1 THEN ISNULL(m.IsNeutral, 0)
+								WHEN p.EventType = 1 THEN ISNULL(m.IsNeutral, 0)
 								ELSE 0
 							END,
 				Placing = '',
 				ShowTime = CASE
-								WHEN b.Product IN ('VS') THEN CONVERT(NVARCHAR(50), m.kickofftime)
-								WHEN b.EventType = 5 THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
+								WHEN p.Product IN ('VS') THEN CONVERT(NVARCHAR(50), m.kickofftime)
+								WHEN p.EventType = 5 THEN CONVERT(NVARCHAR(50), m3rd.StartTime)
 								ELSE ''
 							END,
 				BetCheck = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.betcheck, '')
-								WHEN b.EventType = 0 THEN ISNULL(b.betcheck, '')
+								WHEN p.Product IN ('SB') THEN ISNULL(p.betcheck, '')
+								WHEN p.EventType = 0 THEN ISNULL(p.betcheck, '')
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
-								WHEN b.Product IN ('H5LG') THEN ISNULL(b.transdesc, '')
-								WHEN b.Product = 'Parlay' AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
+								WHEN p.EventType IN (1, 3, 5) THEN ISNULL(p.transdesc, '')
+								WHEN p.Product IN ('H5LG') THEN ISNULL(p.transdesc, '')
+								WHEN p.Product = 'Parlay' AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+								WHEN p.Product IN ('SB') THEN ISNULL(p.oddsspread, 0)
 								ELSE 0
 							END,
 				BetdaqId = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+								WHEN p.Product IN ('SB') THEN ISNULL(p.betdaqid, -1)
 								ELSE -1
 							END,
 				OriginalStake = 0,
 				OriginalBetType = CASE
-									WHEN b.Product IN ('SB') AND b.stake <> 0 THEN -1
-									WHEN b.Product IN ('CO') THEN b.OriginalBetType
+									WHEN p.Product IN ('SB') AND p.stake <> 0 THEN -1
+									WHEN p.Product IN ('CO') THEN p.OriginalBetType
 									ELSE 0
 								END,
 				WalletType = CASE
-								WHEN b.Product IN ('SB') THEN ISNULL(b.WalletType, 0)
+								WHEN p.Product IN ('SB') THEN ISNULL(p.WalletType, 0)
 								ELSE 0
 							END,
 				RefCode = CASE
-								WHEN b.Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
+								WHEN p.Product IN ('SB') AND p.stake <> 0 THEN ISNULL(p.RefCode, 0)
 								ELSE 0
 							END,
 				SiteId = CASE
-								WHEN b.Product IN ('H5LG') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+								WHEN p.Product IN ('H5LG') THEN CONVERT(VARCHAR(20), p.BetdaqId)
 								ELSE ''
 							END
-			FROM #PagingData AS b
-				LEFT JOIN dbo.match_bk AS m WITH (NOLOCK) ON b.EventType = 1 AND b.matchid = m.matchid
-				LEFT JOIN bodb02.dbo.League AS le WITH (NOLOCK) ON b.Product IN ('SB') AND le.leagueid = m.leagueid
-				LEFT JOIN dbo.outright_bk AS o WITH (NOLOCK) ON b.Product IN ('Outright') AND b.matchid = o.orid
-				LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON b.Product IN ('Outright') AND o.leagueID = l.leagueID
-				LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH(NOLOCK) ON b.EventType = 3 AND vr.EventID = b.matchid
-				LEFT JOIN dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON b.EventType = 5 AND m3rd.Match3rdId = b.matchid
+			FROM #PagingData AS p
+				LEFT JOIN dbo.match_bk AS m WITH (NOLOCK) ON p.EventType = 1 AND p.matchid = m.matchid
+				LEFT JOIN bodb02.dbo.League AS le WITH (NOLOCK) ON p.Product IN ('SB') AND le.leagueid = m.leagueid
+				LEFT JOIN dbo.outright_bk AS o WITH (NOLOCK) ON p.Product IN ('Outright') AND p.matchid = o.orid
+				LEFT JOIN bodb02.dbo.League AS l WITH (NOLOCK) ON p.Product IN ('Outright') AND o.leagueID = l.leagueID
+				LEFT JOIN dbo.VSRaceInfo_bk AS vr WITH(NOLOCK) ON p.EventType = 3 AND vr.EventID = p.matchid
+				LEFT JOIN dbo.Match3rd_bk AS m3rd WITH (NOLOCK) ON p.EventType = 5 AND m3rd.Match3rdId = p.matchid
 		END
 	END
 

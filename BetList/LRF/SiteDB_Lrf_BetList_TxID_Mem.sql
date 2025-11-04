@@ -466,12 +466,12 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					LeagueId = m.leagueid,
-					HomeId = m.homeid,
-					AwayId = m.awayid,
-					EventDate = m.GlobalShowTime
+					LeagueId = m14.leagueid,
+					HomeId = m14.homeid,
+					AwayId = m14.awayid,
+					EventDate = m14.GlobalShowTime
 				FROM @Data AS b
-					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+					INNER JOIN dbo.match14 AS m14 WITH (NOLOCK) ON m14.matchid = b.MatchId
 			END
 		END
 	END
@@ -492,20 +492,20 @@ BEGIN
 		IF @WhTicket = 0
 		BEGIN
 			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = b.recommend,
-				@Currency = b.currency,
-				@BetType = b.gameID,
+				@TransId = rng.transid,
+				@CustId = rng.custid,
+				@WinLostDate = rng.winlostdate,
+				@Recommend = rng.recommend,
+				@Currency = rng.currency,
+				@BetType = rng.gameID,
 				@ProductId = s.ProductID,
 				@EventType = s.EventType,
 				@WhTicket = 5		-- BettransRnG
-			FROM dbo.bettransRnG AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
-			WHERE b.custid = @CustId
-				AND b.winlostdate > @MoveBetsDay
-				AND ISNULL(b.Additional, '') LIKE '%lt=' + @TxId + '%'
+			FROM dbo.bettransRnG AS rng WITH (NOLOCK)
+				INNER JOIN @SportBettype AS s ON s.Bettype = rng.gameID
+			WHERE rng.custid = @CustId
+				AND rng.winlostdate > @MoveBetsDay
+				AND ISNULL(rng.Additional, '') LIKE '%lt=' + @TxId + '%'
 		END
 
 		IF @WhTicket > 0

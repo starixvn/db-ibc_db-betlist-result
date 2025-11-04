@@ -145,41 +145,41 @@ BEGIN
 	IF @WhTicket = 0
 	BEGIN
 		SELECT TOP(1)
-			@TransId = b.transid,
-			@CustId = b.custid,
-			@WinLostDate = b.winlostdate,
-			@Recommend = b.recommend,
-			@Currency = b.currency,
-			@BetType = b.bettype,
-			@ExtraInfo = b.ExtraInfo,
+			@TransId = b14.transid,
+			@CustId = b14.custid,
+			@WinLostDate = b14.winlostdate,
+			@Recommend = b14.recommend,
+			@Currency = b14.currency,
+			@BetType = b14.bettype,
+			@ExtraInfo = b14.ExtraInfo,
 			@ProductId = s.ProductID,
 			@EventType = s.EventType,
 			@RefTable = s.RefTable,
 			@WhTicket = 3		-- bettrans14
-		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-			INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-		WHERE b.transid = @RefNo
-			AND b.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
+		FROM dbo.bettrans14 AS b14 WITH (NOLOCK)
+			INNER JOIN @SportBettype AS s ON b14.bettype = s.bettype
+		WHERE b14.transid = @RefNo
+			AND b14.winlostdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 	END
 
 	-- Bettrans_bk range
 	IF @WhTicket = 0
 	BEGIN
 		SELECT TOP(1)
-			@TransId = b.transid,
-			@CustId = b.custid,
-			@WinLostDate = b.winlostdate,
-			@Recommend = b.recommend,
-			@Currency = b.currency,
-			@BetType = b.bettype,
-			@ExtraInfo = b.ExtraInfo,
+			@TransId = bk.transid,
+			@CustId = bk.custid,
+			@WinLostDate = bk.winlostdate,
+			@Recommend = bk.recommend,
+			@Currency = bk.currency,
+			@BetType = bk.bettype,
+			@ExtraInfo = bk.ExtraInfo,
 			@ProductId = s.ProductID,
 			@EventType = s.EventType,
 			@RefTable = s.RefTable,
 			@WhTicket = 4		-- bettrans_bk
-		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-			INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-		WHERE b.transid = @RefNo
+		FROM bodb_Archive.dbo.bettrans_bk AS bk WITH (NOLOCK)
+			INNER JOIN @SportBettype AS s ON bk.bettype = s.bettype
+		WHERE bk.transid = @RefNo
 	END
 
 	IF @WhTicket > 0
@@ -387,42 +387,42 @@ BEGIN
 		)
 		SELECT
 			CASE
-				WHEN @Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-				ELSE b.transid
+				WHEN @Product = 'Parlay' AND b14.bettype = 29 AND ISNULL(b14.betid, 0) > 0 THEN b14.betid
+				ELSE b14.transid
 			END AS TransId,
-			b.refno,
-			b.custid,
-			b.currency,
-			b.recommend,
+			b14.refno,
+			b14.custid,
+			b14.currency,
+			b14.recommend,
 			CASE
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @EventType = 1 THEN m.sporttype
-				ELSE b.matchid
+				ELSE b14.matchid
 			END AS SportType,
-			b.bettype,
-			ISNULL(b.betid, 0) AS BetId,
-			b.betteam,
-			b.hdp1,
-			b.hdp2,
-			b.oddstype,
-			b.odds,
-			b.modds,
-			ISNULL(b.oddsspread, 0) AS OddsSpread,
-			b.stake,
-			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
-			b.playercomm,
-			b.comm,
-			b.status,
+			b14.bettype,
+			ISNULL(b14.betid, 0) AS BetId,
+			b14.betteam,
+			b14.hdp1,
+			b14.hdp2,
+			b14.oddstype,
+			b14.odds,
+			b14.modds,
+			ISNULL(b14.oddsspread, 0) AS OddsSpread,
+			b14.stake,
+			b14.actual_stake,
+			(b14.winlost - b14.actual_stake) AS WinLost,
+			- (b14.winlost - b14.actual_stake) AS LicenseeWL,
+			b14.playercomm,
+			b14.comm,
+			b14.status,
 			0 AS SettlementStatus,
-			b.transdate,
-			b.winlostdate,
-			b.liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.ip,
-			b.betfrom,
+			b14.transdate,
+			b14.winlostdate,
+			b14.liveindicator,
+			b14.livehomescore,
+			b14.liveawayscore,
+			b14.ip,
+			b14.betfrom,
 			CASE
 				WHEN @EventType = 1 THEN m.leagueid
 				WHEN @Product IN ('Outright') THEN o.leagueid
@@ -432,7 +432,7 @@ BEGIN
 				WHEN @Product IN ('SB') THEN le.LeagueGroupID
 				ELSE 0
 			END AS LeagueGroupId,
-			b.matchid,
+			b14.matchid,
 			CASE
 				WHEN @EventType = 1 THEN m.matchcode
 				WHEN @Product IN ('Outright') THEN o.matchcode
@@ -444,7 +444,7 @@ BEGIN
 			END AS Race,
 			CASE
 				WHEN @Product IN ('SB') THEN m.GlobalShowTime
-				ELSE b.WinLostDate
+				ELSE b14.WinLostDate
 			END AS EventDate,
 			CASE
 				WHEN @EventType = 1 THEN m.homeid
@@ -466,46 +466,46 @@ BEGIN
 			'' AS Placing,
 			'' AS ShowTime,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.betcheck, '')
-				WHEN @EventType = 0 AND @RefTable = 0 THEN ISNULL(b.betcheck, '')
+				WHEN @Product IN ('SB') THEN ISNULL(b14.betcheck, '')
+				WHEN @EventType = 0 AND @RefTable = 0 THEN ISNULL(b14.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN @EventType = 1 THEN ISNULL(b.transdesc, '')
-				WHEN @Product = 'Parlay' AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
+				WHEN @EventType = 1 THEN ISNULL(b14.transdesc, '')
+				WHEN @Product = 'Parlay' AND b14.oddsspread = 3 THEN ISNULL(b14.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+				WHEN @Product IN ('SB') THEN ISNULL(b14.betdaqid, -1)
 				ELSE -1
 			END AS BetdaqId,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			ISNULL(b14.ExtraInfo, '') AS ExtraInfo,
 			'' AS JackpotInfo,
 			CASE
-				WHEN @Product IN ('SB') AND b.ExtraInfo LIKE '%p25%' THEN
-					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
+				WHEN @Product IN ('SB') AND b14.ExtraInfo LIKE '%p25%' THEN
+					ISNULL(CAST(('<xml>' + b14.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
 				ELSE 0
 			END AS OriginalStake,
 			CASE
-				WHEN @Product IN ('SB') AND b.stake <> 0 THEN -1
+				WHEN @Product IN ('SB') AND b14.stake <> 0 THEN -1
 				ELSE 0
 			END AS OriginalBetType,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.WalletType, 0)
+				WHEN @Product IN ('SB') THEN ISNULL(b14.WalletType, 0)
 				ELSE 0
 			END AS WalletType,
 			CASE
-				WHEN @Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
+				WHEN @Product IN ('SB') AND b14.stake <> 0 THEN ISNULL(b14.RefCode, 0)
 				ELSE 0
 			END AS RefCode,
 			'' AS SiteId,
 			3 AS WhTicket
-		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON @EventType = 1 AND b.matchid = m.matchid
+		FROM dbo.bettrans14 AS b14 WITH (NOLOCK)
+			LEFT JOIN dbo.match14 AS m WITH (NOLOCK) ON @EventType = 1 AND b14.matchid = m.matchid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON @Product IN ('SB') AND le.leagueid = m.leagueid
-			LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
+			LEFT JOIN dbo.outright14 AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b14.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
-		WHERE b.transid = @TransId
+		WHERE b14.transid = @TransId
 	END
 	
 	IF @WhTicket = 4		-- Bettrans_bk range
@@ -521,42 +521,42 @@ BEGIN
 		)
 		SELECT
 			CASE
-				WHEN @Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-				ELSE b.transid
+				WHEN @Product = 'Parlay' AND bk.bettype = 29 AND ISNULL(bk.betid, 0) > 0 THEN bk.betid
+				ELSE bk.transid
 			END AS TransId,
-			b.refno,
-			b.custid,
-			b.currency,
-			b.recommend,
+			bk.refno,
+			bk.custid,
+			bk.currency,
+			bk.recommend,
 			CASE
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @EventType = 1 THEN m.sporttype
-				ELSE b.matchid
+				ELSE bk.matchid
 			END AS SportType,
-			b.bettype,
-			ISNULL(b.betid, 0) AS BetId,
-			b.betteam,
-			b.hdp1,
-			b.hdp2,
-			b.oddstype,
-			b.odds,
-			b.modds,
-			ISNULL(b.oddsspread, 0) AS OddsSpread,
-			b.stake,
-			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
-			b.playercomm,
-			b.comm,
-			b.status,
+			bk.bettype,
+			ISNULL(bk.betid, 0) AS BetId,
+			bk.betteam,
+			bk.hdp1,
+			bk.hdp2,
+			bk.oddstype,
+			bk.odds,
+			bk.modds,
+			ISNULL(bk.oddsspread, 0) AS OddsSpread,
+			bk.stake,
+			bk.actual_stake,
+			(bk.winlost - bk.actual_stake) AS WinLost,
+			- (bk.winlost - bk.actual_stake) AS LicenseeWL,
+			bk.playercomm,
+			bk.comm,
+			bk.status,
 			0 AS SettlementStatus,
-			b.transdate,
-			b.winlostdate,
-			b.liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.ip,
-			b.betfrom,
+			bk.transdate,
+			bk.winlostdate,
+			bk.liveindicator,
+			bk.livehomescore,
+			bk.liveawayscore,
+			bk.ip,
+			bk.betfrom,
 			CASE
 				WHEN @EventType = 1 THEN m.leagueid
 				WHEN @Product IN ('Outright') THEN o.leagueid
@@ -566,7 +566,7 @@ BEGIN
 				WHEN @Product IN ('SB') THEN le.LeagueGroupID
 				ELSE 0
 			END AS LeagueGroupId,
-			b.matchid,
+			bk.matchid,
 			CASE
 				WHEN @EventType = 1 THEN m.matchcode
 				WHEN @Product IN ('Outright') THEN o.matchcode
@@ -578,7 +578,7 @@ BEGIN
 			END AS Race,
 			CASE
 				WHEN @Product IN ('SB') THEN m.GlobalShowTime
-				ELSE b.WinLostDate
+				ELSE bk.WinLostDate
 			END AS EventDate,
 			CASE
 				WHEN @EventType = 1 THEN m.homeid
@@ -600,47 +600,47 @@ BEGIN
 			'' AS Placing,
 			'' AS ShowTime,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.betcheck, '')
-				WHEN @EventType = 0 AND @RefTable = 0 THEN ISNULL(b.betcheck, '')
+				WHEN @Product IN ('SB') THEN ISNULL(bk.betcheck, '')
+				WHEN @EventType = 0 AND @RefTable = 0 THEN ISNULL(bk.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN @EventType = 1 THEN ISNULL(b.transdesc, '')
-				WHEN @Product = 'Parlay' AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
+				WHEN @EventType = 1 THEN ISNULL(bk.transdesc, '')
+				WHEN @Product = 'Parlay' AND bk.oddsspread = 3 THEN ISNULL(bk.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+				WHEN @Product IN ('SB') THEN ISNULL(bk.betdaqid, -1)
 				ELSE -1
 			END AS BetdaqId,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			ISNULL(bk.ExtraInfo, '') AS ExtraInfo,
 			'' AS JackpotInfo,
 			CASE
-				WHEN @Product IN ('SB') AND b.ExtraInfo LIKE '%p25%' THEN
-					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
+				WHEN @Product IN ('SB') AND bk.ExtraInfo LIKE '%p25%' THEN
+					ISNULL(CAST(('<xml>' + bk.ExtraInfo + '</xml>') AS XML).value('data(/xml/p25/@s)[1]','MONEY'), 0)
 				ELSE 0
 			END AS OriginalStake,
 			CASE
-				WHEN @Product IN ('SB') AND b.stake <> 0 THEN -1
+				WHEN @Product IN ('SB') AND bk.stake <> 0 THEN -1
 				ELSE 0
 			END AS OriginalBetType,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.WalletType, 0)
+				WHEN @Product IN ('SB') THEN ISNULL(bk.WalletType, 0)
 				ELSE 0
 			END AS WalletType,
 			CASE
-				WHEN @Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
+				WHEN @Product IN ('SB') AND bk.stake <> 0 THEN ISNULL(bk.RefCode, 0)
 				ELSE 0
 			END AS RefCode,
 			'' AS SiteId,
 			4 AS WhTicket
-		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-			LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON @EventType = 1 AND b.matchid = m.matchid
+		FROM bodb_Archive.dbo.bettrans_bk AS bk WITH (NOLOCK)
+			LEFT JOIN bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON @EventType = 1 AND bk.matchid = m.matchid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON @Product IN ('SB') AND le.leagueid = m.leagueid
-			LEFT JOIN bodb_Archive.dbo.Outright_bk AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
+			LEFT JOIN bodb_Archive.dbo.Outright_bk AS o WITH (NOLOCK) ON @Product IN ('Outright') AND bk.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
-			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
-		WHERE b.transid = @TransId
+			CROSS APPLY dbo.f_IP_Decompress(bk.ip) AS dp
+		WHERE bk.transid = @TransId
 	END
 
 	IF EXISTS (SELECT 1 FROM @Data)
