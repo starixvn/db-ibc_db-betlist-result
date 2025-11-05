@@ -227,7 +227,7 @@ BEGIN
 			b.currency,
 			ISNULL(b.betcheck, '') AS BetCheck,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-			ISNULL(b.transdesc, '') AS TransDesc
+			IIF(b.bettype = 29 AND b.OddsSpread = 3 , ISNULL(b.transdesc, ''), '') AS TransDesc
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
 			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
@@ -251,44 +251,44 @@ BEGIN
 			LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, Currency, BetCheck, ExtraInfo, TransDesc
 		)
 		SELECT
-			b.username,
-			b.custid,
-			b.bettype,
-			b.refno,
+			b14.username,
+			b14.custid,
+			b14.bettype,
+			b14.refno,
 			CASE
-				WHEN b.bettype <> 29 THEN b.transid
-				ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
+				WHEN b14.bettype <> 29 THEN b14.transid
+				ELSE CASE WHEN ISNULL(b14.betid, 0) = 0 THEN b14.transid ELSE b14.betid END
 			END AS transid,
-			ISNULL(b.betid, 0),
-			b.hdp1,
-			b.hdp2,
-			b.odds,
-			b.modds,
-			b.status,
-			b.stake,
-			b.actual_stake,
-			(b.winlost - b.actual_stake) AS WinLost,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
-			b.comm,
-			b.playercomm,
-			b.transdate,
-			b.winlostdate,
-			b.betteam,
-			b.liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.ip,
-			b.currency,
-			ISNULL(b.betcheck, '') AS BetCheck,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-			ISNULL(b.transdesc, '') AS TransDesc
-		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
-			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
-		WHERE b.winlostdate BETWEEN @FromDate AND @TempToDate
-			AND b.statusID IN (111, 112, 113)
-			AND ((@LiveIndicator = 0 AND b.livehomescore = 0)
-				OR (@LiveIndicator = 1 AND b.livehomescore = 1)
+			ISNULL(b14.betid, 0),
+			b14.hdp1,
+			b14.hdp2,
+			b14.odds,
+			b14.modds,
+			b14.status,
+			b14.stake,
+			b14.actual_stake,
+			(b14.winlost - b14.actual_stake) AS WinLost,
+			- (b14.winlost - b14.actual_stake) AS LicenseeWL,
+			b14.comm,
+			b14.playercomm,
+			b14.transdate,
+			b14.winlostdate,
+			b14.betteam,
+			b14.liveindicator,
+			b14.livehomescore,
+			b14.liveawayscore,
+			b14.ip,
+			b14.currency,
+			ISNULL(b14.betcheck, '') AS BetCheck,
+			ISNULL(b14.ExtraInfo, '') AS ExtraInfo,
+			IIF(b14.bettype = 29 AND b14.OddsSpread = 3 , ISNULL(b14.transdesc, ''), '') AS TransDesc
+		FROM dbo.bettrans14 AS b14 WITH (NOLOCK)
+			INNER JOIN #TempAg AS a ON a.CustId = b14.recommend
+			INNER JOIN @SportBettype AS s ON s.BetType = b14.bettype
+		WHERE b14.winlostdate BETWEEN @FromDate AND @TempToDate
+			AND b14.statusID IN (111, 112, 113)
+			AND ((@LiveIndicator = 0 AND b14.livehomescore = 0)
+				OR (@LiveIndicator = 1 AND b14.livehomescore = 1)
 				OR (@LiveIndicator = 2))
 	END
 
@@ -428,45 +428,45 @@ BEGIN
 	DROP TABLE #AgWinlossMP
 
 	SELECT
-		b.RowNum,
-		b.Username,
+		p.RowNum,
+		p.Username,
 		SUBSTRING(c.username2, CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$',c.username2)) AS Nickname,
-		b.CustId,
-		b.BetType,
-		b.RefNo,
-		b.TransId,
-		b.BetId,
-		b.Hdp1,
-		b.Hdp2,
-		b.Odds,
-		b.MOdds,
-		b.Status,
-		CAST(b.Stake * ISNULL(e.Rate, 1) AS MONEY) AS Stake,
-		CAST(b.Actual_Stake * ISNULL(e.Rate, 1) AS MONEY) AS Actual_Stake,
-		CAST(b.WinLost * ISNULL(e.Rate, 1) AS MONEY) AS WinLost,
-		CAST(b.LicenseeWL * ISNULL(e.Rate, 1) AS MONEY) AS LicenseeWL,
-		CAST(b.Comm * ISNULL(e.Rate, 1) AS MONEY) AS Comm,
-		CAST(b.PlayerComm * ISNULL(e.Rate, 1) AS MONEY) AS PlayerComm,
-		b.TransDate,
-		b.WinLostDate,
-		b.BetTeam,
-		b.LiveIndicator,
-		b.LiveHomeScore,
-		b.LiveAwayScore,
-		b.Ip,
-		b.Currency,
-		b.BetCheck,
-		b.ExtraInfo,
-		b.TransDesc
-	FROM #PagingData AS b
-		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.custid
+		p.CustId,
+		p.BetType,
+		p.RefNo,
+		p.TransId,
+		p.BetId,
+		p.Hdp1,
+		p.Hdp2,
+		p.Odds,
+		p.MOdds,
+		p.Status,
+		CAST(p.Stake * ISNULL(e.Rate, 1) AS MONEY) AS Stake,
+		CAST(p.Actual_Stake * ISNULL(e.Rate, 1) AS MONEY) AS Actual_Stake,
+		CAST(p.WinLost * ISNULL(e.Rate, 1) AS MONEY) AS WinLost,
+		CAST(p.LicenseeWL * ISNULL(e.Rate, 1) AS MONEY) AS LicenseeWL,
+		CAST(p.Comm * ISNULL(e.Rate, 1) AS MONEY) AS Comm,
+		CAST(p.PlayerComm * ISNULL(e.Rate, 1) AS MONEY) AS PlayerComm,
+		p.TransDate,
+		p.WinLostDate,
+		p.BetTeam,
+		p.LiveIndicator,
+		p.LiveHomeScore,
+		p.LiveAwayScore,
+		p.Ip,
+		p.Currency,
+		p.BetCheck,
+		p.ExtraInfo,
+		p.TransDesc
+	FROM #PagingData AS p
+		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = p.custid
 		LEFT JOIN #ExchangeRate AS e
-			ON e.ExchangeId = b.Currency
+			ON e.ExchangeId = p.Currency
 				AND CASE
-						WHEN b.WinLostDate > @Today THEN @Today
-						ELSE b.WinLostDate
+						WHEN p.WinLostDate > @Today THEN @Today
+						ELSE p.WinLostDate
 					END BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
-	ORDER BY b.RowNum ASC
+	ORDER BY p.RowNum ASC
 
 	DROP TABLE #TempAg
 	DROP TABLE #PagingData

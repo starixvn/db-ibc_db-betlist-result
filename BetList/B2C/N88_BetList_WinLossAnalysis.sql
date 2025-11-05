@@ -707,7 +707,8 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN p.Product IN ('SB','Parlay') THEN ISNULL(p.transdesc, '')
+								WHEN p.Product IN ('SB') THEN ISNULL(p.transdesc, '')
+								WHEN p.Product = 'Parlay' AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
@@ -836,7 +837,8 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN p14.Product IN ('SB','Parlay') THEN ISNULL(p14.transdesc, '')
+								WHEN p14.Product IN ('SB') THEN ISNULL(p14.transdesc, '')
+								WHEN p14.Product = 'Parlay' AND p14.OddsSpread = 3 THEN ISNULL(p14.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
@@ -965,7 +967,8 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN pbk.Product IN ('SB', 'Parlay') THEN ISNULL(pbk.transdesc, '')
+								WHEN pbk.Product IN ('SB') THEN ISNULL(pbk.transdesc, '')
+								WHEN pbk.Product = 'Parlay' AND pbk.OddsSpread = 3 THEN ISNULL(pbk.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
@@ -1009,55 +1012,55 @@ BEGIN
 	SELECT
 		c.username,
 		SUBSTRING(c.username2,  CHARINDEX('$', c.username2) + 1, LEN(c.username2) - CHARINDEX('$', c.username2)) AS Nickname,
-		a.TransId,
-		a.RefNo,
-		a.BetId,
-		a.CustId,
-		a.TransDate,
-		a.WinLostDate,
-		a.SportType,
-		a.BetType,
-		a.BetTeam,
-		a.Hdp1,
-		a.Hdp2,
-		a.Odds,
-		a.MOdds,
-		a.OddsType,
-		a.OddsSpread,
-		a.Status,
-		a.SettlementStatus,
-		a.LiveIndicator,
-		a.LiveHomeScore,
-		a.LiveAwayScore,
-		a.LeagueId,
-		a.MatchId,
-		a.MatchCode,
-		a.EventDate,
-		a.HomeId,
-		a.AwayId,
-		a.IsNeutral,
-		a.BetStatus,
-		a.Currency,
-		a.Stake * ISNULL(e.Rate, 1) AS Stake,
-		a.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
-		a.WinLost * ISNULL(e.Rate, 1) AS WinLost,
-		a.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
-		a.Comm * ISNULL(e.Rate, 1) AS Comm,
-		a.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
-		a.Ip,
-		a.BetCheck,
-		a.TransDesc,
-		a.BetdaqId,
-		a.ExtraInfo,
-		a.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
-		a.OriginalBetType,
-		a.WalletType,
-		a.RefCode
+		p.TransId,
+		p.RefNo,
+		p.BetId,
+		p.CustId,
+		p.TransDate,
+		p.WinLostDate,
+		p.SportType,
+		p.BetType,
+		p.BetTeam,
+		p.Hdp1,
+		p.Hdp2,
+		p.Odds,
+		p.MOdds,
+		p.OddsType,
+		p.OddsSpread,
+		p.Status,
+		p.SettlementStatus,
+		p.LiveIndicator,
+		p.LiveHomeScore,
+		p.LiveAwayScore,
+		p.LeagueId,
+		p.MatchId,
+		p.MatchCode,
+		p.EventDate,
+		p.HomeId,
+		p.AwayId,
+		p.IsNeutral,
+		p.BetStatus,
+		p.Currency,
+		p.Stake * ISNULL(e.Rate, 1) AS Stake,
+		p.Actual_Stake * ISNULL(e.Rate, 1) AS Actual_Stake,
+		p.WinLost * ISNULL(e.Rate, 1) AS WinLost,
+		p.LicenseeWL * ISNULL(e.Rate, 1) AS LicenseeWL,
+		p.Comm * ISNULL(e.Rate, 1) AS Comm,
+		p.PlayerComm * ISNULL(e.Rate, 1) AS PlayerComm,
+		p.Ip,
+		p.BetCheck,
+		p.TransDesc,
+		p.BetdaqId,
+		p.ExtraInfo,
+		p.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
+		p.OriginalBetType,
+		p.WalletType,
+		p.RefCode
 	FROM
-		#PagingData AS a
-		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON a.CustId = c.custid
-		LEFT JOIN #ExchangeRate AS e ON a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
-	ORDER BY a.RowNum ASC
+		#PagingData AS p
+		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON p.CustId = c.custid
+		LEFT JOIN #ExchangeRate AS e ON p.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
+	ORDER BY p.RowNum ASC
 
 	DROP TABLE #Data
 	DROP TABLE #PagingData
