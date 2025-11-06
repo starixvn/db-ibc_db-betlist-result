@@ -998,10 +998,7 @@ BEGIN
 			RefCode, SiteId, WhTicket
 		)
 		SELECT
-			CASE
-				WHEN @Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-				ELSE b.transid
-			END AS TransId,
+			b.transid,
 			b.refno,
 			b.custid,
 			b.currency,
@@ -1150,7 +1147,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
 					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-				WHEN @Product = 'Parlay' AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
+				WHEN b.bettype = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
@@ -1202,10 +1199,7 @@ BEGIN
 			RefCode, SiteId, WhTicket
 		)
 		SELECT
-			CASE
-				WHEN @Product = 'Parlay' AND b14.bettype = 29 AND ISNULL(b14.betid, 0) > 0 THEN b14.betid
-				ELSE b14.transid
-			END AS TransId,
+			b14.transid,
 			b14.refno,
 			b14.custid,
 			b14.currency,
@@ -1312,7 +1306,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
 					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b14.transdesc, '')
-				WHEN @Product = 'Parlay' AND b14.OddsSpread = 3 THEN ISNULL(b14.transdesc, '')
+				WHEN b14.bettype = 29 AND b14.OddsSpread = 3 THEN ISNULL(b14.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b14.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
@@ -1363,10 +1357,7 @@ BEGIN
 			RefCode, SiteId, WhTicket
 		)
 		SELECT
-			CASE
-				WHEN @Product = 'Parlay' AND bk.bettype = 29 AND ISNULL(bk.betid, 0) > 0 THEN bk.betid
-				ELSE bk.transid
-			END AS TransId,
+			bk.transid,
 			bk.refno,
 			bk.custid,
 			bk.currency,
@@ -1472,7 +1463,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
 					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(bk.transdesc, '')
-				WHEN @Product = 'Parlay' AND bk.OddsSpread = 3 THEN ISNULL(bk.transdesc, '')
+				WHEN bk.bettype = 29 AND bk.OddsSpread = 3 THEN ISNULL(bk.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(bk.transdesc, '')
 				ELSE ''
 			END AS TransDesc,

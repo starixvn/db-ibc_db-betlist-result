@@ -201,10 +201,7 @@ BEGIN
 			b.custid,
 			b.bettype,
 			b.refno,
-			CASE
-				WHEN b.bettype <> 29 THEN b.transid
-				ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE b.betid END
-			END AS transid,
+			b.transid,
 			ISNULL(b.betid, 0),
 			b.hdp1,
 			b.hdp2,
@@ -255,10 +252,7 @@ BEGIN
 			b14.custid,
 			b14.bettype,
 			b14.refno,
-			CASE
-				WHEN b14.bettype <> 29 THEN b14.transid
-				ELSE CASE WHEN ISNULL(b14.betid, 0) = 0 THEN b14.transid ELSE b14.betid END
-			END AS transid,
+			b14.transid,
 			ISNULL(b14.betid, 0),
 			b14.hdp1,
 			b14.hdp2,

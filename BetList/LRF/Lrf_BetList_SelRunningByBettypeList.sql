@@ -124,10 +124,7 @@ BEGIN
 		0 AS SportType,
 		b.username,
 		b.bettype,
-		CASE
-			WHEN b.bettype <> 29 THEN b.transid
-			ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE betid END
-		END AS transid,
+		b.transid,
 		ISNULL(b.betid, 0),
 		b.refno,
 		'' AS matchcode,

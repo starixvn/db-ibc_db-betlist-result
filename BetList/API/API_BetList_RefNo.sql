@@ -235,10 +235,7 @@ BEGIN
 			WalletType, RefCode, SiteId, WhTicket
 		)
 		SELECT
-			CASE
-				WHEN @Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-				ELSE b.transid
-			END AS TransId,
+			b.transid,
 			b.refno,
 			b.custid,
 			b.currency,
@@ -338,7 +335,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @EventType = 1 THEN ISNULL(b.transdesc, '')
-				WHEN @Product = 'Parlay' AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
+				WHEN b.bettype = 29 AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -386,10 +383,7 @@ BEGIN
 			WalletType, RefCode, SiteId, WhTicket
 		)
 		SELECT
-			CASE
-				WHEN @Product = 'Parlay' AND b14.bettype = 29 AND ISNULL(b14.betid, 0) > 0 THEN b14.betid
-				ELSE b14.transid
-			END AS TransId,
+			b14.transid,
 			b14.refno,
 			b14.custid,
 			b14.currency,
@@ -472,7 +466,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @EventType = 1 THEN ISNULL(b14.transdesc, '')
-				WHEN @Product = 'Parlay' AND b14.oddsspread = 3 THEN ISNULL(b14.transdesc, '')
+				WHEN b14.bettype = 29 AND b14.oddsspread = 3 THEN ISNULL(b14.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -520,10 +514,7 @@ BEGIN
 			WalletType, RefCode, SiteId, WhTicket
 		)
 		SELECT
-			CASE
-				WHEN @Product = 'Parlay' AND bk.bettype = 29 AND ISNULL(bk.betid, 0) > 0 THEN bk.betid
-				ELSE bk.transid
-			END AS TransId,
+			bk.transid,
 			bk.refno,
 			bk.custid,
 			bk.currency,
@@ -606,7 +597,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @EventType = 1 THEN ISNULL(bk.transdesc, '')
-				WHEN @Product = 'Parlay' AND bk.oddsspread = 3 THEN ISNULL(bk.transdesc, '')
+				WHEN bk.bettype = 29 AND bk.oddsspread = 3 THEN ISNULL(bk.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE

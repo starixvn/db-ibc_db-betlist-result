@@ -531,10 +531,6 @@ BEGIN
 
 			UPDATE p
 			SET
-				TransId = CASE
-							WHEN p.Product = 'Parlay' AND p.BetType = 29 AND ISNULL(p.BetId, 0) > 0 THEN p.BetId
-							ELSE p.TransId
-						END,
 				SportType = CASE
 								WHEN p.EventType = 1 THEN m.sporttype
 								WHEN p.EventType = 5 THEN m3rd.SportType
@@ -613,7 +609,7 @@ BEGIN
 				TransDesc = CASE
 								WHEN p.EventType IN (1, 3, 5) THEN ISNULL(p.transdesc, '')
 								WHEN p.Product IN ('H5LG') THEN ISNULL(p.transdesc, '')
-								WHEN p.Product = 'Parlay' AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
+								WHEN p.BetType = 29 AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE

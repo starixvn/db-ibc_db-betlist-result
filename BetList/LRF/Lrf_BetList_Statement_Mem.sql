@@ -1263,10 +1263,6 @@ BEGIN
 				BEGIN
 					UPDATE p
 					SET
-						TransId = CASE
-									WHEN p.Product = 'Parlay' AND p.bettype = 29 AND ISNULL(p.betid, 0) > 0 THEN p.betid
-									ELSE p.transid
-								END,
 						SportType = CASE
 										WHEN p.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 
 											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN p.matchid		-- ONERnG, Card Club, NPH Promotion
@@ -1399,7 +1395,7 @@ BEGIN
 						TransDesc = CASE
 										WHEN p.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
 											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(p.transdesc, '')
-										WHEN p.Product = 'Parlay' AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
+										WHEN p.BetType = 29 AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
 										WHEN p.EventType IN (1, 3, 5) THEN ISNULL(p.transdesc, '')
 										ELSE ''
 									END,
@@ -1515,10 +1511,6 @@ BEGIN
 				BEGIN
 					UPDATE p14
 					SET
-						TransId = CASE
-									WHEN p14.Product = 'Parlay' AND p14.bettype = 29 AND ISNULL(p14.betid, 0) > 0 THEN p14.betid
-									ELSE p14.transid
-								END,
 						SportType = CASE
 										WHEN p14.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 
 											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN p14.matchid		-- ONERnG, Card Club, NPH Promotion
@@ -1607,7 +1599,7 @@ BEGIN
 						TransDesc = CASE
 										WHEN p14.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
 											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(p14.transdesc, '')
-										WHEN p14.Product = 'Parlay' AND p14.OddsSpread = 3 THEN ISNULL(p14.transdesc, '')
+										WHEN p14.BetType = 29 AND p14.OddsSpread = 3 THEN ISNULL(p14.transdesc, '')
 										WHEN p14.EventType IN (1, 3, 5) THEN ISNULL(p14.transdesc, '')
 										ELSE ''
 									END,
@@ -1670,10 +1662,6 @@ BEGIN
 				BEGIN
 					UPDATE pbk
 					SET
-						TransId = CASE
-									WHEN pbk.Product = 'Parlay' AND pbk.bettype = 29 AND ISNULL(pbk.betid, 0) > 0 THEN pbk.betid
-									ELSE pbk.transid
-								END,
 						SportType = CASE
 										WHEN pbk.Product IN ('OneRNG', 'CC', 'SG', 'NPHP', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK', 'H5LG', 'SLT', 
 											'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'TIP', 'JIG', 'YB', 'MGRNG', 'SEA') THEN pbk.matchid		-- ONERnG, Card Club, NPH Promotion
@@ -1762,7 +1750,7 @@ BEGIN
 						TransDesc = CASE
 										WHEN pbk.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
 											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(pbk.transdesc, '')
-										WHEN pbk.Product = 'Parlay' AND pbk.OddsSpread = 3 THEN ISNULL(pbk.transdesc, '')
+										WHEN pbk.BetType = 29 AND pbk.OddsSpread = 3 THEN ISNULL(pbk.transdesc, '')
 										WHEN pbk.EventType IN (1, 3, 5) THEN ISNULL(pbk.transdesc, '')
 										ELSE ''
 									END,

@@ -285,10 +285,7 @@ BEGIN
 			RefCode, SiteId, WhTicket
 		)
 		SELECT
-			CASE
-				WHEN @Product = 'Parlay' AND b2.bettype = 29 AND ISNULL(b2.betid, 0) > 0 THEN b2.betid
-				ELSE b2.transid
-			END AS TransId,
+			b2.transid,
 			b2.refno,
 			b2.custid,
 			b2.currency,
@@ -407,7 +404,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b2.transdesc, '')
-				WHEN @Product = 'Parlay' AND b2.OddsSpread = 3 THEN ISNULL(b2.transdesc, '')
+				WHEN b2.bettype = 29 AND b2.OddsSpread = 3 THEN ISNULL(b2.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b2.transdesc, '')
 				ELSE ''
 			END AS TransDesc,

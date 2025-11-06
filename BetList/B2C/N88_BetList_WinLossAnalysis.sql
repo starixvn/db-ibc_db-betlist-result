@@ -619,10 +619,6 @@ BEGIN
 		BEGIN
 			UPDATE p
 			SET
-				TransId = CASE
-							WHEN p.Product = 'Parlay' AND p.BetType = 29 AND ISNULL(p.BetId, 0) > 0 THEN p.BetId
-							ELSE p.TransId
-						END,
 				SportType = CASE
 								WHEN p.Product IN ('SB') THEN m.sporttype
 								WHEN p.Product IN ('Outright') THEN l.sporttype
@@ -708,7 +704,7 @@ BEGIN
 							END,
 				TransDesc = CASE
 								WHEN p.Product IN ('SB') THEN ISNULL(p.transdesc, '')
-								WHEN p.Product = 'Parlay' AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
+								WHEN p.bettype = 29 AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
@@ -752,10 +748,6 @@ BEGIN
 		BEGIN
 			UPDATE p14
 			SET
-				TransId = CASE
-							WHEN p14.Product = 'Parlay' AND p14.BetType = 29 AND ISNULL(p14.BetId, 0) > 0 THEN p14.BetId
-							ELSE p14.TransId
-						END,
 				SportType = CASE
 								WHEN p14.Product IN ('SB') THEN m.sporttype
 								WHEN p14.Product IN ('Outright') THEN l.sporttype
@@ -838,7 +830,7 @@ BEGIN
 							END,
 				TransDesc = CASE
 								WHEN p14.Product IN ('SB') THEN ISNULL(p14.transdesc, '')
-								WHEN p14.Product = 'Parlay' AND p14.OddsSpread = 3 THEN ISNULL(p14.transdesc, '')
+								WHEN p14.bettype = 29 AND p14.OddsSpread = 3 THEN ISNULL(p14.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
@@ -882,10 +874,6 @@ BEGIN
 		BEGIN
 			UPDATE pbk
 			SET
-				TransId = CASE
-							WHEN pbk.Product = 'Parlay' AND pbk.BetType = 29 AND ISNULL(pbk.BetId, 0) > 0 THEN pbk.BetId
-							ELSE pbk.TransId
-						END,
 				SportType = CASE
 								WHEN pbk.Product IN ('SB') THEN m.sporttype
 								WHEN pbk.Product IN ('Outright') THEN l.sporttype
@@ -968,7 +956,7 @@ BEGIN
 							END,
 				TransDesc = CASE
 								WHEN pbk.Product IN ('SB') THEN ISNULL(pbk.transdesc, '')
-								WHEN pbk.Product = 'Parlay' AND pbk.OddsSpread = 3 THEN ISNULL(pbk.transdesc, '')
+								WHEN pbk.bettype = 29 AND pbk.OddsSpread = 3 THEN ISNULL(pbk.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
