@@ -1374,6 +1374,7 @@ BEGIN
 								WHEN p.Product IN ('OneRNG', 'PP', 'SBC', 'VGA') AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
 								WHEN p.SubProduct LIKE '%Jackpot%' AND x.OddsSpread IS NOT NULL THEN x.OddsSpread
 								WHEN p.Product IN ('SB') THEN ISNULL(p.oddsspread, 0)
+								WHEN p.BetType = 29 AND p.OddsSpread = 3 THEN p.OddsSpread
 								ELSE 0
 							END,
 				Stake = CASE

@@ -171,7 +171,8 @@ BEGIN
 		Currency		SMALLINT,
 		BetCheck		NVARCHAR(50),
 		ExtraInfo		VARCHAR(1000),
-		TransDesc		NVARCHAR(1000)
+		TransDesc		NVARCHAR(1000),
+		OddsSpread		MONEY
 	)
 
 	CREATE TABLE #ExchangeRate (
@@ -194,7 +195,7 @@ BEGIN
 		INSERT INTO #AgWinlossMP (
 			Username, CustId, BetType, RefNo, TransId, BetId, Hdp1, Hdp2, Odds, MOdds,
 			Status, Stake, Actual_Stake, WinLost, LicenseeWL, Comm, PlayerComm, TransDate, WinLostDate, BetTeam,
-			LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, Currency, BetCheck, ExtraInfo, TransDesc
+			LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, Currency, BetCheck, ExtraInfo, TransDesc, OddsSpread
 		)
 		SELECT
 			b.username,
@@ -224,7 +225,8 @@ BEGIN
 			b.currency,
 			ISNULL(b.betcheck, '') AS BetCheck,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-			IIF(b.bettype = 29 AND b.OddsSpread = 3 , ISNULL(b.transdesc, ''), '') AS TransDesc
+			ISNULL(b.transdesc, '') AS TransDesc,
+			ISNULL(b.OddsSpread, 0) AS OddsSpread
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 			INNER JOIN #TempAg AS a ON a.CustId = b.recommend
 			INNER JOIN @SportBettype AS s ON s.BetType = b.bettype
@@ -245,7 +247,7 @@ BEGIN
 		INSERT INTO #AgWinlossMP (
 			Username, CustId, BetType, RefNo, TransId, BetId, Hdp1, Hdp2, Odds, MOdds,
 			Status, Stake, Actual_Stake, WinLost, LicenseeWL, Comm, PlayerComm, TransDate, WinLostDate, BetTeam,
-			LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, Currency, BetCheck, ExtraInfo, TransDesc
+			LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, Currency, BetCheck, ExtraInfo, TransDesc, OddsSpread
 		)
 		SELECT
 			b14.username,
@@ -275,7 +277,8 @@ BEGIN
 			b14.currency,
 			ISNULL(b14.betcheck, '') AS BetCheck,
 			ISNULL(b14.ExtraInfo, '') AS ExtraInfo,
-			IIF(b14.bettype = 29 AND b14.OddsSpread = 3 , ISNULL(b14.transdesc, ''), '') AS TransDesc
+			ISNULL(b14.transdesc, '') AS TransDesc,
+			ISNULL(b14.OddsSpread, 0) AS OddsSpread
 		FROM dbo.bettrans14 AS b14 WITH (NOLOCK)
 			INNER JOIN #TempAg AS a ON a.CustId = b14.recommend
 			INNER JOIN @SportBettype AS s ON s.BetType = b14.bettype
@@ -351,7 +354,8 @@ BEGIN
 		Currency		SMALLINT,
 		BetCheck		NVARCHAR(50),
 		ExtraInfo		VARCHAR(1000),
-		TransDesc		NVARCHAR(1000)
+		TransDesc		NVARCHAR(1000),
+		OddsSpread		MONEY
 	)
 
 	DECLARE @SortText VARCHAR(100)
@@ -415,7 +419,7 @@ BEGIN
 	(
 		RowNum, Username, CustId, BetType, RefNo, TransId, BetId, Hdp1, Hdp2, Odds,
 		MOdds, Status, Stake, Actual_Stake, WinLost, LicenseeWL, Comm, PlayerComm, TransDate, WinLostDate,
-		BetTeam, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, Currency, BetCheck, ExtraInfo, TransDesc
+		BetTeam, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, Currency, BetCheck, ExtraInfo, TransDesc, OddsSpread
 	)
 	EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
@@ -451,7 +455,8 @@ BEGIN
 		p.Currency,
 		p.BetCheck,
 		p.ExtraInfo,
-		p.TransDesc
+		p.TransDesc,
+		p.OddsSpread
 	FROM #PagingData AS p
 		INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = p.custid
 		LEFT JOIN #ExchangeRate AS e

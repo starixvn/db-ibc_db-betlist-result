@@ -308,6 +308,7 @@ BEGIN
 			b2.modds,
 			CASE
 				WHEN @Product IN ('SB') THEN ISNULL(b2.oddsspread, 0)
+				WHEN b2.bettype = 29 AND b2.OddsSpread = 3 THEN b2.OddsSpread
 				ELSE 0
 			END AS OddsSpread,
 			b2.stake,

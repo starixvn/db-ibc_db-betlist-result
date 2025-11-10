@@ -109,7 +109,8 @@ BEGIN
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
 		RefCode				BIGINT,
-		TransDesc			NVARCHAR(1000)
+		TransDesc			NVARCHAR(1000),
+		OddsSpread			MONEY
 	)
 
 	INSERT INTO #Data
@@ -117,7 +118,7 @@ BEGIN
 		CustId, SportType, Username, BetType, TransId, BetId, RefNo, MatchCode, EventDate, HomeId,
 		AwayId, Hdp1, Hdp2, Odds, MOdds, Status, SettlementStatus, Stake, Actual_Stake, TransDate,
 		BetTeam, LiveHomeScore, LiveAwayScore, LiveIndicator, Discount, LeagueId, Ip, IsNeutral, OddsType, Currency,
-		ShowTime, BetCheck, BetdaqId, ExtraInfo, OriginalStake, OriginalBetType, WalletType, RefCode, TransDesc
+		ShowTime, BetCheck, BetdaqId, ExtraInfo, OriginalStake, OriginalBetType, WalletType, RefCode, TransDesc, OddsSpread
 	)
 	SELECT
 		b.custid,
@@ -170,7 +171,8 @@ BEGIN
 		0 AS OriginalBetType,
 		0 AS WalletType,
 		0 AS RefCode,
-		IIF(b.bettype = 29 AND b.oddsspread = 3, ISNULL(b.transdesc, ''), '') AS TransDesc
+		ISNULL(b.transdesc, '') AS TransDesc,
+		ISNULL(b.oddsspread, 0) AS OddsSpread
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE
 		b.recommend IN (SELECT CustId FROM @TempAg)
@@ -185,7 +187,7 @@ BEGIN
 		CustId, SportType, Username, BetType, TransId, BetId, RefNo, MatchCode, EventDate, HomeId,
 		AwayId, Hdp1, Hdp2, Odds, MOdds, Status, SettlementStatus, Stake, Actual_Stake, TransDate,
 		BetTeam, LiveHomeScore, LiveAwayScore, LiveIndicator, Discount, LeagueId, Ip, IsNeutral, OddsType, Currency,
-		ShowTime, BetCheck, BetdaqId, ExtraInfo, OriginalStake, OriginalBetType, WalletType, RefCode, TransDesc
+		ShowTime, BetCheck, BetdaqId, ExtraInfo, OriginalStake, OriginalBetType, WalletType, RefCode, TransDesc, OddsSpread
 	)
 	SELECT
 		b.custid,
@@ -236,7 +238,8 @@ BEGIN
 		END AS OriginalBetType,
 		ISNULL(b.WalletType, 0) AS WalletType,
 		ISNULL(b.RefCode, 0) AS RefCode,
-		'' AS TransDesc
+		ISNULL(b.transdesc, '') AS TransDesc,
+		ISNULL(b.oddsspread, 0) AS OddsSpread
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -364,7 +367,8 @@ BEGIN
 		a.OriginalBetType,
 		a.WalletType,
 		a.RefCode,
-		a.TransDesc
+		a.TransDesc,
+		a.OddsSpread
 	FROM
 		(
 			SELECT
@@ -408,7 +412,8 @@ BEGIN
 				b.OriginalBetType,
 				b.WalletType,
 				b.RefCode,
-				b.TransDesc
+				b.TransDesc,
+				b.OddsSpread
 			FROM #Data AS b
 				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
 				LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = b.currency

@@ -441,6 +441,7 @@ BEGIN
 			b.modds,
 			CASE
 				WHEN @Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+				WHEN b.bettype = 29 AND b.OddsSpread = 3 THEN b.oddsspread
 				ELSE 0
 			END AS OddsSpread,
 			b.stake,
@@ -609,6 +610,7 @@ BEGIN
 			b14.modds,
 			CASE
 				WHEN @Product IN ('SB') THEN ISNULL(b14.oddsspread, 0)
+				WHEN b14.bettype = 29 AND b14.OddsSpread = 3 THEN b14.oddsspread
 				ELSE 0
 			END AS OddsSpread,
 			b14.stake,
@@ -760,6 +762,7 @@ BEGIN
 			bk.modds,
 			CASE
 				WHEN @Product IN ('SB') THEN ISNULL(bk.oddsspread, 0)
+				WHEN bk.bettype = 29 AND bk.OddsSpread = 3 THEN bk.oddsspread
 				ELSE 0
 			END AS OddsSpread,
 			bk.stake,

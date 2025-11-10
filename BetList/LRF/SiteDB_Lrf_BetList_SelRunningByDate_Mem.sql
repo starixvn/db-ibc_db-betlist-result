@@ -813,6 +813,7 @@ BEGIN
 							END,
 				OddsSpread = CASE
 								WHEN p.Product IN ('SB') THEN ISNULL(p.oddsspread, 0)
+								WHEN p.BetType = 29 AND p.OddsSpread = 3 THEN p.oddsspread
 								ELSE 0
 							END,
 				BetdaqId = CASE
