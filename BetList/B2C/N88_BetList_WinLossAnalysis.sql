@@ -703,13 +703,11 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN p.Product IN ('SB') THEN ISNULL(p.transdesc, '')
-								WHEN p.bettype = 29 AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
+								WHEN p.Product IN ('SB', 'Parlay') THEN ISNULL(p.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
-								WHEN p.Product IN ('SB') THEN ISNULL(p.oddsspread, 0)
-								WHEN p.bettype = 29 AND p.OddsSpread = 3 THEN p.OddsSpread
+								WHEN p.Product IN ('SB', 'Parlay') THEN ISNULL(p.oddsspread, 0)
 								ELSE 0
 							END,
 				BetdaqId = CASE
@@ -830,13 +828,11 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN p14.Product IN ('SB') THEN ISNULL(p14.transdesc, '')
-								WHEN p14.bettype = 29 AND p14.OddsSpread = 3 THEN ISNULL(p14.transdesc, '')
+								WHEN p14.Product IN ('SB', 'Parlay') THEN ISNULL(p14.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
-								WHEN p14.Product IN ('SB') THEN ISNULL(p14.oddsspread, 0)
-								WHEN p14.bettype = 29 AND p14.OddsSpread = 3 THEN p14.OddsSpread
+								WHEN p14.Product IN ('SB', 'Parlay') THEN ISNULL(p14.oddsspread, 0)
 								ELSE 0
 							END,
 				BetdaqId = CASE
@@ -957,13 +953,11 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN pbk.Product IN ('SB') THEN ISNULL(pbk.transdesc, '')
-								WHEN pbk.bettype = 29 AND pbk.OddsSpread = 3 THEN ISNULL(pbk.transdesc, '')
+								WHEN pbk.Product IN ('SB', 'Parlay') THEN ISNULL(pbk.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
-								WHEN pbk.Product IN ('SB') THEN ISNULL(pbk.oddsspread, 0)
-								WHEN pbk.bettype = 29 AND pbk.OddsSpread = 3 THEN pbk.OddsSpread
+								WHEN pbk.Product IN ('SB', 'Parlay') THEN ISNULL(pbk.oddsspread, 0)
 								ELSE 0
 							END,
 				BetdaqId = CASE

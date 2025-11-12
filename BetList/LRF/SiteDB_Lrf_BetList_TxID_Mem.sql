@@ -307,8 +307,7 @@ BEGIN
 			b2.odds,
 			b2.modds,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b2.oddsspread, 0)
-				WHEN b2.bettype = 29 AND b2.OddsSpread = 3 THEN b2.OddsSpread
+				WHEN @Product IN ('SB', 'Parlay') THEN ISNULL(b2.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
 			b2.stake,
@@ -404,8 +403,7 @@ BEGIN
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b2.transdesc, '')
-				WHEN b2.bettype = 29 AND b2.OddsSpread = 3 THEN ISNULL(b2.transdesc, '')
+				WHEN @Product IN ('Parlay', 'Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b2.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b2.transdesc, '')
 				ELSE ''
 			END AS TransDesc,

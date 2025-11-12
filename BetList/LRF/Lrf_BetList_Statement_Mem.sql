@@ -1393,9 +1393,8 @@ BEGIN
 									END,
 						ComStatus = CASE WHEN p.comstatus = '1' THEN '1' ELSE '0' END,
 						TransDesc = CASE
-										WHEN p.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
+										WHEN p.Product IN ('Parlay', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
 											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(p.transdesc, '')
-										WHEN p.BetType = 29 AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
 										WHEN p.EventType IN (1, 3, 5) THEN ISNULL(p.transdesc, '')
 										ELSE ''
 									END,
@@ -1597,9 +1596,8 @@ BEGIN
 									END,
 						ComStatus = CASE WHEN p14.comstatus = '1' THEN '1' ELSE '0' END,
 						TransDesc = CASE
-										WHEN p14.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
+										WHEN p14.Product IN ('Parlay', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
 											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(p14.transdesc, '')
-										WHEN p14.BetType = 29 AND p14.OddsSpread = 3 THEN ISNULL(p14.transdesc, '')
 										WHEN p14.EventType IN (1, 3, 5) THEN ISNULL(p14.transdesc, '')
 										ELSE ''
 									END,
@@ -1748,9 +1746,8 @@ BEGIN
 									END,
 						ComStatus = CASE WHEN pbk.comstatus = '1' THEN '1' ELSE '0' END,
 						TransDesc = CASE
-										WHEN pbk.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
+										WHEN pbk.Product IN ('Parlay', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'Lottery', 'PP', 
 											'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(pbk.transdesc, '')
-										WHEN pbk.BetType = 29 AND pbk.OddsSpread = 3 THEN ISNULL(pbk.transdesc, '')
 										WHEN pbk.EventType IN (1, 3, 5) THEN ISNULL(pbk.transdesc, '')
 										ELSE ''
 									END,

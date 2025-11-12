@@ -1145,9 +1145,8 @@ BEGIN
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN @Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
+				WHEN @Product IN ('Parlay', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
 					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-				WHEN b.bettype = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
@@ -1304,9 +1303,8 @@ BEGIN
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN @Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
+				WHEN @Product IN ('Parlay', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
 					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b14.transdesc, '')
-				WHEN b14.bettype = 29 AND b14.OddsSpread = 3 THEN ISNULL(b14.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b14.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
@@ -1461,9 +1459,8 @@ BEGIN
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN @Product IN ('Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
+				WHEN @Product IN ('Parlay', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 
 					'PP', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(bk.transdesc, '')
-				WHEN bk.bettype = 29 AND bk.OddsSpread = 3 THEN ISNULL(bk.transdesc, '')
 				WHEN @EventType IN (1, 3, 5) THEN ISNULL(bk.transdesc, '')
 				ELSE ''
 			END AS TransDesc,

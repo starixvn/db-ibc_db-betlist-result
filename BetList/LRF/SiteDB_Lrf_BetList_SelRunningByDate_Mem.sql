@@ -805,15 +805,13 @@ BEGIN
 								ELSE ''
 							END,
 				TransDesc = CASE
-								WHEN p.Product IN ('Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 
+								WHEN p.Product IN ('Parlay', 'Keno', 'Lottery', 'OneRNG', 'VB', 'FW', 'PP', 
 									'CC', 'SG', 'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(p.transdesc, '')
-								WHEN p.BetType = 29 AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
 								WHEN p.EventType IN (1, 3, 5) THEN ISNULL(p.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
-								WHEN p.Product IN ('SB') THEN ISNULL(p.oddsspread, 0)
-								WHEN p.BetType = 29 AND p.OddsSpread = 3 THEN p.oddsspread
+								WHEN p.Product IN ('SB', 'Parlay') THEN ISNULL(p.oddsspread, 0)
 								ELSE 0
 							END,
 				BetdaqId = CASE

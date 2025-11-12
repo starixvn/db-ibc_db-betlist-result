@@ -2571,9 +2571,8 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -2694,9 +2693,8 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -2817,9 +2815,8 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -3023,9 +3020,8 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -3146,9 +3142,8 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
@@ -3269,9 +3264,8 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
-									WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,

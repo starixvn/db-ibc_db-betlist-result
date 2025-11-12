@@ -608,13 +608,11 @@ BEGIN
 							END,
 				TransDesc = CASE
 								WHEN p.EventType IN (1, 3, 5) THEN ISNULL(p.transdesc, '')
-								WHEN p.Product IN ('H5LG') THEN ISNULL(p.transdesc, '')
-								WHEN p.BetType = 29 AND p.OddsSpread = 3 THEN ISNULL(p.transdesc, '')
+								WHEN p.Product IN ('Parlay', 'H5LG') THEN ISNULL(p.transdesc, '')
 								ELSE ''
 							END,
 				OddsSpread = CASE
-								WHEN p.Product IN ('SB') THEN ISNULL(p.oddsspread, 0)
-								WHEN p.BetType = 29 AND p.OddsSpread = 3 THEN p.OddsSpread
+								WHEN p.Product IN ('SB', 'Parlay') THEN ISNULL(p.oddsspread, 0)
 								ELSE 0
 							END,
 				BetdaqId = CASE

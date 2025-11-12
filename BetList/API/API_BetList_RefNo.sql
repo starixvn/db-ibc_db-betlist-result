@@ -335,7 +335,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @EventType = 1 THEN ISNULL(b.transdesc, '')
-				WHEN b.bettype = 29 AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
+				WHEN @Product IN ('Parlay') THEN ISNULL(b.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -466,7 +466,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @EventType = 1 THEN ISNULL(b14.transdesc, '')
-				WHEN b14.bettype = 29 AND b14.oddsspread = 3 THEN ISNULL(b14.transdesc, '')
+				WHEN @Product IN ('Parlay') THEN ISNULL(b14.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
@@ -597,7 +597,7 @@ BEGIN
 			END AS BetCheck,
 			CASE
 				WHEN @EventType = 1 THEN ISNULL(bk.transdesc, '')
-				WHEN bk.bettype = 29 AND bk.oddsspread = 3 THEN ISNULL(bk.transdesc, '')
+				WHEN @Product IN ('Parlay') THEN ISNULL(bk.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
