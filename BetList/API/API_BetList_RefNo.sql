@@ -634,6 +634,67 @@ BEGIN
 		WHERE bk.transid = @TransId
 	END
 
+	-- Get original odds and final odds for Mix Parlay
+	--============================================================================================================================================
+	IF EXISTS (SELECT 1 FROM @Data b WHERE b.BetType = 29 AND b.BetTeam = '1' AND b.WhTicket IN (2,3))
+	BEGIN
+		-- Running
+		;WITH CTE_Update AS
+		(
+			SELECT b.TransId, TRY_CAST(b.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM @Data b
+			WHERE b.BetType = 29 AND b.BetTeam = '1' AND b.Status IN ('Running', 'Waiting')
+				AND b.WhTicket IN (2,3)
+		)
+		UPDATE b
+		SET
+			b.Odds = ISNULL(t.OriginalOdds, 0),
+			b.Modds = ISNULL(t.OriginalOdds, 0)
+		FROM @Data AS b
+			INNER JOIN CTE_Update t ON t.TransId = b.TransId
+
+		-- Settled
+		;WITH CTE_Update AS
+		(
+			SELECT b.TransId, TRY_CAST(b.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM @Data b
+			WHERE b.BetType = 29 AND b.BetTeam = '1' AND b.Status NOT IN ('Running', 'Waiting')
+				AND WhTicket IN (2,3)
+		)
+		UPDATE b
+		SET
+			b.Odds = ISNULL(t.OriginalOdds, bpr.Odds),
+			b.Modds = CASE 
+						WHEN bpr.statusid = 113 AND bpr.mOdds = 0 THEN ISNULL(t.OriginalOdds, bpr.Odds)
+						ELSE bpr.mOdds 
+					END
+		FROM @Data AS b
+			INNER JOIN CTE_Update t ON t.TransId = b.TransId
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+	END
+
+	IF EXISTS (SELECT 1 FROM @Data bk WHERE bk.BetType = 29 AND bk.BetTeam = '1' AND bk.WhTicket = 4)
+	BEGIN
+		-- Settled bk
+		;WITH CTE_Update AS
+		(
+			SELECT bk.TransId, TRY_CAST(bk.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM @Data bk
+			WHERE bk.BetType = 29 AND bk.BetTeam = '1' AND WhTicket = 4
+		)
+		UPDATE bk
+		SET
+			bk.Odds = ISNULL(t.OriginalOdds, bpr.Odds),
+			bk.Modds = CASE 
+						WHEN bpr.statusid = 113 AND bpr.mOdds = 0 THEN ISNULL(t.OriginalOdds, bpr.Odds)
+						ELSE bpr.mOdds 
+					END
+		FROM @Data AS bk
+			INNER JOIN CTE_Update t ON t.TransId = bk.TransId
+			INNER JOIN bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = bk.RefNo
+	END
+	--============================================================================================================================================
+
 	IF EXISTS (SELECT 1 FROM @Data)
 	BEGIN
 		SELECT

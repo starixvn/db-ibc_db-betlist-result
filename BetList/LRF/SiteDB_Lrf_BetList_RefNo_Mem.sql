@@ -688,6 +688,12 @@ BEGIN
 			END
 		END
 
+		;WITH CTE_TransID AS
+		(
+			SELECT @TransId AS TransID	UNION ALL
+			SELECT @BonusTransId		UNION ALL
+			SELECT TransId FROM @SabaRewardTicket
+		)
 		INSERT INTO @Data
 		(
 			TransId, RefNo, CustId, Currency, Recommend, SportType, BetType, BetId, BetTeam, Hdp1,
@@ -882,8 +888,7 @@ BEGIN
 			LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
 			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON @EventType = 3 AND vr.EventID = b.matchid
-		WHERE b.transid IN (@TransId, @BonusTransId)
-			OR b.transid IN (SELECT TransId FROM @SabaRewardTicket)
+		WHERE b.TransId IN (SELECT TransId FROM CTE_TransID)
 
 		-- Get match info for Player Tips
 		IF @Product = 'TIP'
@@ -916,6 +921,44 @@ BEGIN
 			END
 		END
 	END
+
+	-- Get original odds and final odds for Mix Parlay
+	--============================================================================================================================================
+	IF EXISTS (SELECT 1 FROM @Data b WHERE b.BetType = 29 AND b.BetTeam = '1')
+	BEGIN
+		-- Running
+		;WITH CTE_Update AS
+		(
+			SELECT b.TransId, TRY_CAST(b.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM @Data b
+			WHERE b.BetType = 29 AND b.BetTeam = '1' AND b.Status IN ('Running', 'Waiting')
+		)
+		UPDATE b
+		SET
+			b.Odds = ISNULL(t.OriginalOdds, 0),
+			b.Modds = ISNULL(t.OriginalOdds, 0)
+		FROM @Data AS b
+			INNER JOIN CTE_Update t ON t.TransId = b.TransId
+
+		-- Settled
+		;WITH CTE_Update AS
+		(
+			SELECT b.TransId, TRY_CAST(b.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM @Data b
+			WHERE b.BetType = 29 AND b.BetTeam = '1' AND b.Status NOT IN ('Running', 'Waiting')
+		)
+		UPDATE b
+		SET
+			b.Odds = ISNULL(t.OriginalOdds, bpr.Odds),
+			b.Modds = CASE 
+						WHEN bpr.statusid = 113 AND bpr.mOdds = 0 THEN ISNULL(t.OriginalOdds, bpr.Odds)
+						ELSE bpr.mOdds 
+					END
+		FROM @Data AS b
+			INNER JOIN CTE_Update t ON t.TransId = b.TransId
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+	END
+	--============================================================================================================================================
 
 	-- Don't display Cash text for ticket from Cash Wallet only
 	UPDATE @Data

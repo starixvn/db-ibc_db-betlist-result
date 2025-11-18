@@ -455,6 +455,44 @@ BEGIN
 
 		IF EXISTS (SELECT TOP(1) 1 FROM #Data)
 		BEGIN
+			-- Get original odds and final odds for Mix Parlay
+			--============================================================================================================================================
+			IF EXISTS (SELECT 1 FROM #Data b WHERE b.BetType = 29 AND b.BetTeam = '1')
+			BEGIN
+				-- Running
+				;WITH CTE_Update AS
+				(
+					SELECT b.TransId, TRY_CAST(b.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+					FROM #Data b
+					WHERE b.BetType = 29 AND b.BetTeam = '1' AND b.Status IN ('Running', 'Waiting')
+				)
+				UPDATE b
+				SET
+					b.Odds = ISNULL(t.OriginalOdds, 0),
+					b.Modds = ISNULL(t.OriginalOdds, 0)
+				FROM #Data AS b
+					INNER JOIN CTE_Update t ON t.TransId = b.TransId
+
+				-- Settled
+				;WITH CTE_Update AS
+				(
+					SELECT b.TransId, TRY_CAST(b.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+					FROM #Data b
+					WHERE b.BetType = 29 AND b.BetTeam = '1' AND b.Status NOT IN ('Running', 'Waiting')
+				)
+				UPDATE b
+				SET
+					b.Odds = ISNULL(t.OriginalOdds, bpr.Odds),
+					b.Modds = CASE 
+								WHEN bpr.statusid = 113 AND bpr.mOdds = 0 THEN ISNULL(t.OriginalOdds, bpr.Odds)
+								ELSE bpr.mOdds 
+							END
+				FROM #Data AS b
+					INNER JOIN CTE_Update t ON t.TransId = b.TransId
+					INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+			END
+			--============================================================================================================================================
+
 			UPDATE #Data
 			SET
 				WinLost = WinLost - Actual_Stake,
