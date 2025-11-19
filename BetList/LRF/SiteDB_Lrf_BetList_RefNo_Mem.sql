@@ -929,34 +929,34 @@ BEGIN
 		-- Running
 		;WITH CTE_Update AS
 		(
-			SELECT b.TransId, TRY_CAST(b.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
-			FROM @Data b
-			WHERE b.BetType = 29 AND b.BetTeam = '1' AND b.Status IN ('Running', 'Waiting')
+			SELECT br.TransId, TRY_CAST(br.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM @Data br
+			WHERE br.BetType = 29 AND br.BetTeam = '1' AND br.Status IN ('Running', 'Waiting')
 		)
-		UPDATE b
+		UPDATE br
 		SET
-			b.Odds = ISNULL(t.OriginalOdds, 0),
-			b.Modds = ISNULL(t.OriginalOdds, 0)
-		FROM @Data AS b
-			INNER JOIN CTE_Update t ON t.TransId = b.TransId
+			br.Odds = ISNULL(t.OriginalOdds, 0),
+			br.Modds = ISNULL(t.OriginalOdds, 0)
+		FROM @Data AS br
+			INNER JOIN CTE_Update t ON t.TransId = br.TransId
 
 		-- Settled
 		;WITH CTE_Update AS
 		(
-			SELECT b.TransId, TRY_CAST(b.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
-			FROM @Data b
-			WHERE b.BetType = 29 AND b.BetTeam = '1' AND b.Status NOT IN ('Running', 'Waiting')
+			SELECT bs.TransId, TRY_CAST(bs.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM @Data bs
+			WHERE bs.BetType = 29 AND bs.BetTeam = '1' AND bs.Status NOT IN ('Running', 'Waiting')
 		)
-		UPDATE b
+		UPDATE bs
 		SET
-			b.Odds = ISNULL(t.OriginalOdds, bpr.Odds),
-			b.Modds = CASE 
+			bs.Odds = ISNULL(t.OriginalOdds, bpr.Odds),
+			bs.Modds = CASE 
 						WHEN bpr.statusid = 113 AND bpr.mOdds = 0 THEN ISNULL(t.OriginalOdds, bpr.Odds)
 						ELSE bpr.mOdds 
 					END
-		FROM @Data AS b
-			INNER JOIN CTE_Update t ON t.TransId = b.TransId
-			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
+		FROM @Data AS bs
+			INNER JOIN CTE_Update t ON t.TransId = bs.TransId
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = bs.RefNo
 	END
 	--============================================================================================================================================
 
