@@ -1304,17 +1304,7 @@ BEGIN
 				)
 
 				-- Prepare temp table
-				INSERT INTO @RefCodeTmp
-				(
-					RefCode,
-					TransId,
-					Stake,
-					Actual_Stake,
-					WinLost,
-					LicenseeWL,
-					Comm,
-					PlayerComm
-				)
+				INSERT INTO @RefCodeTmp (RefCode, TransId, Stake, Actual_Stake, WinLost, LicenseeWL, Comm, PlayerComm)
 				SELECT
 					RefCode,
 					MIN(TransId) AS TransId,
@@ -1368,20 +1358,7 @@ BEGIN
 			BEGIN
 				IF EXISTS (SELECT 1 FROM #Data WHERE RefTable = 1 AND WinLostDate >= @Yesterday)		-- bettransRnG
 				BEGIN
-					INSERT INTO @TmpData
-					(
-						RefNo,
-						Odds,
-						Stake,
-						Actual_Stake,
-						Status,
-						WinLost,
-						BetEffective,
-						LicenseeWL,
-						PlayerComm,
-						Comm,
-						OddsSpread
-					)
+					INSERT INTO @TmpData (RefNo, Odds, Stake, Actual_Stake, Status, WinLost, BetEffective, LicenseeWL, PlayerComm, Comm, OddsSpread)
 					SELECT
 						c.TransId AS RefNo,
 						CASE
@@ -1416,20 +1393,7 @@ BEGIN
 
 				IF EXISTS (SELECT 1 FROM #Data WHERE RefTable = 2 AND WinLostDate >= @Yesterday)				-- bettransLC
 				BEGIN
-					INSERT INTO @TmpData
-					(
-						RefNo,
-						Odds,
-						Stake,
-						Actual_Stake,
-						Status,
-						WinLost,
-						BetEffective,
-						LicenseeWL,
-						PlayerComm,
-						Comm,
-						OddsSpread
-					)
+					INSERT INTO @TmpData (RefNo, Odds, Stake, Actual_Stake, Status, WinLost, BetEffective, LicenseeWL, PlayerComm, Comm, OddsSpread)
 					SELECT
 						c.TransId AS RefNo,
 						CASE
@@ -2038,16 +2002,7 @@ BEGIN
 	-- Virtual Sports
 	IF EXISTS (SELECT 1 FROM #PagingData WHERE Product = 'VR' AND TableID = 1)
 	BEGIN
-		INSERT INTO @Detail
-		(
-			RefNo,
-			Odds,
-			Stake,
-			Status,
-			APositionTaking,
-			BetType,
-			BetTeam
-		)
+		INSERT INTO @Detail (RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam)
 		SELECT
 			bm.refno,
 			bm.odds,
@@ -2068,16 +2023,7 @@ BEGIN
 
 	IF EXISTS (SELECT 1 FROM #PagingData WHERE Product = 'VR' AND TableID = 2)
 	BEGIN
-		INSERT INTO @Detail
-		(
-			RefNo,
-			Odds,
-			Stake,
-			Status,
-			APositionTaking,
-			BetType,
-			BetTeam
-		)
+		INSERT INTO @Detail (RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam)
 		SELECT
 			bm.refno,
 			bm.odds,
@@ -2098,16 +2044,7 @@ BEGIN
 
 	IF EXISTS (SELECT 1 FROM #PagingData WHERE Product = 'VR' AND TableID = 3)
 	BEGIN
-		INSERT INTO @Detail
-		(
-			RefNo,
-			Odds,
-			Stake,
-			Status,
-			APositionTaking,
-			BetType,
-			BetTeam
-		)
+		INSERT INTO @Detail (RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam)
 		SELECT
 			bm.refno,
 			bm.odds,
@@ -2185,14 +2122,7 @@ BEGIN
 		LEFT JOIN #ExchangeRate AS e ON a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY a.RowNum ASC
 
-	SELECT DISTINCT
-		RefNo,
-		Odds,
-		Stake,
-		Status,
-		APositionTaking,
-		BetType,
-		BetTeam
+	SELECT DISTINCT RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam
 	FROM @Detail
 
 	DROP TABLE #PlatformList

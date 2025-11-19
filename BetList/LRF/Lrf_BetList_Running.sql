@@ -451,8 +451,7 @@ BEGIN
 		IF @Username IS NOT NULL AND @Username <> ''
 		BEGIN
 			INSERT INTO @TempCust (CustId, CustomerClass)
-			SELECT c.custid,
-				ci.CustomerClass
+			SELECT c.custid, ci.CustomerClass
 			FROM dbo.Customer AS c WITH (NOLOCK)
 				INNER JOIN #TempAg AS a ON c.recommend = a.CustId
 				LEFT JOIN dbo.custInfo AS ci WITH (NOLOCK) ON ci.custid = c.custid
@@ -989,16 +988,7 @@ BEGIN
 				IF @Username IS NULL OR @Username = '' OR @NumOfMem > 5000		-- Licensee level (not input username of number of searched member > 5000)
 				BEGIN
 					-- bettransRnG
-					INSERT INTO @TmpData
-					(
-						RefNo,
-						BetType,
-						Odds,
-						OddsSpread,
-						Stake,
-						Actual_Stake,
-						IsNew
-					)
+					INSERT INTO @TmpData (RefNo, BetType, Odds, OddsSpread, Stake, Actual_Stake, IsNew)
 					SELECT
 						rng.RefNo,
 						rng.gameID AS BetType,
@@ -1022,16 +1012,7 @@ BEGIN
 						s.ProductID
 
 					-- bettransLC
-					INSERT INTO @TmpData
-					(
-						RefNo,
-						BetType,
-						Odds,
-						OddsSpread,
-						Stake,
-						Actual_Stake,
-						IsNew
-					)
+					INSERT INTO @TmpData (RefNo, BetType, Odds, OddsSpread, Stake, Actual_Stake, IsNew)
 					SELECT
 						lc.RefNo,
 						lc.gameID AS BetType,
@@ -1057,16 +1038,7 @@ BEGIN
 				ELSE
 				BEGIN
 					-- bettransRnG
-					INSERT INTO @TmpData
-					(
-						RefNo,
-						BetType,
-						Odds,
-						OddsSpread,
-						Stake,
-						Actual_Stake,
-						IsNew
-					)
+					INSERT INTO @TmpData (RefNo, BetType, Odds, OddsSpread, Stake, Actual_Stake, IsNew)
 					SELECT
 						rng.RefNo,
 						rng.gameID AS BetType,
@@ -1090,16 +1062,7 @@ BEGIN
 						s.ProductID
 
 					-- bettransLC
-					INSERT INTO @TmpData
-					(
-						RefNo,
-						BetType,
-						Odds,
-						OddsSpread,
-						Stake,
-						Actual_Stake,
-						IsNew
-					)
+					INSERT INTO @TmpData (RefNo, BetType, Odds, OddsSpread, Stake, Actual_Stake, IsNew)
 					SELECT
 						lc.RefNo,
 						lc.gameID AS BetType,
@@ -1592,14 +1555,7 @@ BEGIN
 		LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = a.Currency
 	ORDER BY a.RowNum ASC
 
-	SELECT DISTINCT
-		RefNo,
-		Odds,
-		Stake,
-		Status,
-		APositionTaking,
-		BetType,
-		BetTeam
+	SELECT DISTINCT RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam
 	FROM @Detail
 
 	DROP TABLE #TempAg

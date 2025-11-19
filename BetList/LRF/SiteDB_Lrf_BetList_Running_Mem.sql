@@ -363,14 +363,7 @@ BEGIN
 		DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
 
 		-- bettransRnG
-		INSERT INTO @TmpData
-		(
-			RefNo,
-			BetType,
-			Stake,
-			Actual_Stake,
-			IsNew
-		)
+		INSERT INTO @TmpData (RefNo, BetType, Stake, Actual_Stake, IsNew)
 		SELECT
 			rng.RefNo,
 			rng.gameID AS BetType,
@@ -387,14 +380,7 @@ BEGIN
 			rng.gameID
 
 		---- bettransLC
-		INSERT INTO @TmpData
-		(
-			RefNo,
-			BetType,
-			Stake,
-			Actual_Stake,
-			IsNew
-		)
+		INSERT INTO @TmpData (RefNo, BetType, Stake, Actual_Stake, IsNew)
 		SELECT
 			lc.RefNo,
 			lc.gameID AS BetType,
@@ -843,13 +829,7 @@ BEGIN
 	FROM #PagingData r
 	ORDER BY RowNum ASC
 
-	SELECT DISTINCT
-		d.RefNo,
-		d.Odds,
-		d.Stake,
-		d.Status,
-		d.BetType,
-		d.BetTeam
+	SELECT DISTINCT d.RefNo, d.Odds, d.Stake, d.Status, d.BetType, d.BetTeam
 	FROM @Detail d
 
 	DROP TABLE #Data

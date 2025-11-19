@@ -558,18 +558,7 @@ BEGIN
 			-- bettransRnG
 			IF @RefTable = 1
 			BEGIN
-				INSERT INTO @TmpData
-				(
-					Odds,
-					Stake,
-					Actual_Stake,
-					Status,
-					WinLost,
-					LicenseeWL,
-					PlayerComm,
-					Comm,
-					OddsSpread
-				)
+				INSERT INTO @TmpData (Odds, Stake, Actual_Stake, Status, WinLost, LicenseeWL, PlayerComm, Comm, OddsSpread)
 				SELECT
 					CASE
 						WHEN @Product IN ('OneRNG', 'PP', 'SBC', 'VGA', 'SG', 'PTRNG') THEN ISNULL(AVG(CASE WHEN rng.statusID IN (111, 112, 113) THEN rng.ContributionRate END), 0)
@@ -594,18 +583,7 @@ BEGIN
 				WHERE rng.RefNo = @TransId AND rng.statusID NOT IN (0, 1)
 				GROUP BY rng.RefNo
 
-				INSERT INTO @TmpData
-				(
-					Odds,
-					Stake,
-					Actual_Stake,
-					Status,
-					WinLost,
-					LicenseeWL,
-					PlayerComm,
-					Comm,
-					OddsSpread
-				)
+				INSERT INTO @TmpData (Odds, Stake, Actual_Stake, Status, WinLost, LicenseeWL, PlayerComm, Comm, OddsSpread)
 				SELECT
 					0 AS Odds,
 					SUM(rng.stake) AS Stake,
@@ -624,18 +602,7 @@ BEGIN
 			-- bettransLC
 			IF @RefTable = 2
 			BEGIN
-				INSERT INTO @TmpData
-				(
-					Odds,
-					Stake,
-					Actual_Stake,
-					Status,
-					WinLost,
-					LicenseeWL,
-					PlayerComm,
-					Comm,
-					OddsSpread
-				)
+				INSERT INTO @TmpData (Odds, Stake, Actual_Stake, Status, WinLost, LicenseeWL, PlayerComm, Comm, OddsSpread)
 				SELECT
 					CASE
 						WHEN @SubProduct LIKE '%Jackpot%' THEN ISNULL(AVG(CASE WHEN lc.statusID IN (111, 112, 113) THEN lc.ContributionRate END), 0)
@@ -660,18 +627,7 @@ BEGIN
 				WHERE lc.RefNo = @TransId AND lc.statusID NOT IN (0, 1)
 				GROUP BY lc.RefNo
 
-				INSERT INTO @TmpData
-				(
-					Odds,
-					Stake,
-					Actual_Stake,
-					Status,
-					WinLost,
-					LicenseeWL,
-					PlayerComm,
-					Comm,
-					OddsSpread
-				)
+				INSERT INTO @TmpData (Odds, Stake, Actual_Stake, Status, WinLost, LicenseeWL, PlayerComm, Comm, OddsSpread)
 				SELECT
 					0 AS Odds,
 					SUM(lc.stake) AS Stake,
@@ -1527,16 +1483,7 @@ BEGIN
 
 	IF @WhTicket = 2
 	BEGIN
-		INSERT INTO @Detail
-		(
-			RefNo,
-			Odds,
-			Stake,
-			Status,
-			APositionTaking,
-			BetType,
-			BetTeam
-		)
+		INSERT INTO @Detail (RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam)
 		SELECT
 			bm.refno,
 			bm.odds,
@@ -1631,14 +1578,7 @@ BEGIN
 			AND a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
 	ORDER BY a.TransDate ASC
 
-	SELECT DISTINCT
-		RefNo,
-		Odds,
-		Stake,
-		Status,
-		APositionTaking,
-		BetType,
-		BetTeam
+	SELECT DISTINCT RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam
 	FROM @Detail
 END
 GO

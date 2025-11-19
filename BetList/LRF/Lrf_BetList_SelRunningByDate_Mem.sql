@@ -524,14 +524,7 @@ BEGIN
 		DECLARE @Yesterday SMALLDATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, CURRENT_TIMESTAMP), 0)
 
 		-- bettransRnG
-		INSERT INTO @TmpData
-		(
-			RefNo,
-			BetType,
-			Stake,
-			Actual_Stake,
-			IsNew
-		)
+		INSERT INTO @TmpData (RefNo, BetType, Stake, Actual_Stake, IsNew)
 		SELECT
 			rng.RefNo,
 			rng.gameID AS BetType,
@@ -548,14 +541,7 @@ BEGIN
 			rng.gameID
 
 		-- bettransLC
-		INSERT INTO @TmpData
-		(
-			RefNo,
-			BetType,
-			Stake,
-			Actual_Stake,
-			IsNew
-		)
+		INSERT INTO @TmpData (RefNo, BetType, Stake, Actual_Stake, IsNew)
 		SELECT
 			lc.RefNo,
 			lc.gameID AS BetType,
@@ -760,131 +746,23 @@ BEGIN
 			SELECT @TotalRows = COUNT(1)
 			FROM #Data AS b
 
-			INSERT INTO #PagingData
-			(
-				RowNum,
-				TransId,
-				RefNo,
-				CustId,
-				Currency,
-				Recommend,
-				SportType,
-				BetType,
-				BetId,
-				BetTeam,
-				Hdp1,
-				Hdp2,
-				OddsId,
-				OddsType,
-				Odds,
-				MOdds,
-				OddsSpread,
-				Stake,
-				Actual_Stake,
-				Status,
-				SettlementStatus,
-				SecAcceptFlag,
-				CheckTime,
-				TransDate,
-				WinLostDate,
-				LiveIndicator,
-				LiveHomeScore,
-				LiveAwayScore,
-				Ip,
-				BetFrom,
-				LeagueId,
-				LeagueGroupId,
-				MatchId,
-				MatchCode,
-				Race,
-				EventDate,
-				HomeId,
-				AwayId,
-				BetStatus,
-				IsNeutral,
-				Placing,
-				ShowTime,
-				BetCheck,
-				ComStatus,
-				TransDesc,
-				BetdaqId,
-				ExtraInfo,
-				OriginalStake,
-				OriginalBetType,
-				WalletType,
-				RefCode,
-				ProductId,
-				Custom1,
-				Custom2,
-				Custom3,
-				Gameid3rd,
-				Tranid3rd,
-				TableID,
-				Product,
-				RefTable,
+			INSERT INTO #PagingData (
+				RowNum, TransId, RefNo, CustId, Currency, Recommend, SportType, BetType, BetId, BetTeam,
+				Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake, Status,
+				SettlementStatus, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, BetFrom,
+				LeagueId, LeagueGroupId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral,
+				Placing, ShowTime, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, OriginalStake, OriginalBetType, WalletType,
+				RefCode, ProductId, Custom1, Custom2, Custom3, Gameid3rd, Tranid3rd, TableID, Product, RefTable,
 				EventType
 			)
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY TransDate DESC) AS RowNum,
-				TransId,
-				RefNo,
-				CustId,
-				Currency,
-				Recommend,
-				SportType,
-				BetType,
-				BetId,
-				BetTeam,
-				Hdp1,
-				Hdp2,
-				OddsId,
-				OddsType,
-				Odds,
-				MOdds,
-				OddsSpread,
-				Stake,
-				Actual_Stake,
-				Status,
-				SettlementStatus,
-				SecAcceptFlag,
-				CheckTime,
-				TransDate,
-				WinLostDate,
-				LiveIndicator,
-				LiveHomeScore,
-				LiveAwayScore,
-				Ip,
-				BetFrom,
-				LeagueId,
-				LeagueGroupId,
-				MatchId,
-				MatchCode,
-				Race,
-				EventDate,
-				HomeId,
-				AwayId,
-				BetStatus,
-				IsNeutral,
-				Placing,
-				ShowTime,
-				BetCheck,
-				ComStatus,
-				TransDesc,
-				BetdaqId,
-				ExtraInfo,
-				OriginalStake,
-				OriginalBetType,
-				WalletType,
-				RefCode,
-				ProductId,
-				Custom1,
-				Custom2,
-				Custom3,
-				Gameid3rd,
-				Tranid3rd,
-				TableID,
-				Product,
-				RefTable,
+				TransId, RefNo, CustId, Currency, Recommend, SportType, BetType, BetId, BetTeam,
+				Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake, Status,
+				SettlementStatus, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, BetFrom,
+				LeagueId, LeagueGroupId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral,
+				Placing, ShowTime, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, OriginalStake, OriginalBetType, WalletType,
+				RefCode, ProductId, Custom1, Custom2, Custom3, Gameid3rd, Tranid3rd, TableID, Product, RefTable,
 				EventType
 			FROM #Data
 			ORDER BY TransDate DESC
@@ -1111,12 +989,7 @@ BEGIN
 	ORDER BY RowNum ASC
 
 	SELECT DISTINCT
-		RefNo,
-		Odds,
-		Stake,
-		Status,
-		BetType,
-		BetTeam
+		RefNo, Odds, Stake, Status, BetType, BetTeam
 	FROM @Detail
 
 	DROP TABLE #Data

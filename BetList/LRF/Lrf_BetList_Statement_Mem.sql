@@ -1006,17 +1006,7 @@ BEGIN
 					)
 
 					-- Prepare temp table
-					INSERT INTO @RefCodeTmp
-					(
-						RefCode,
-						TransId,
-						Stake,
-						Actual_Stake,
-						WinLost,
-						LicenseeWL,
-						PlayerComm,
-						Comm
-					)
+					INSERT INTO @RefCodeTmp (RefCode, TransId, Stake, Actual_Stake, WinLost, LicenseeWL, PlayerComm, Comm)
 					SELECT
 						RefCode,
 						MIN(TransId) AS TransId,
@@ -1071,19 +1061,7 @@ BEGIN
 					BEGIN
 						IF @TransType = 1		-- Settled
 						BEGIN
-							INSERT INTO @TmpData
-							(
-								RefNo,
-								Odds,
-								Stake,
-								Actual_Stake,
-								Status,
-								WinLost,
-								LicenseeWL,
-								PlayerComm,
-								Comm,
-								OddsSpread
-							)
+							INSERT INTO @TmpData (RefNo, Odds, Stake, Actual_Stake, Status, WinLost, LicenseeWL, PlayerComm, Comm, OddsSpread)
 							SELECT
 								c.TransId AS RefNo,
 								CASE
@@ -1114,19 +1092,7 @@ BEGIN
 						END
 						ELSE IF @TransType = 3		-- Running
 						BEGIN
-							INSERT INTO @TmpData
-							(
-								RefNo,
-								Odds,
-								Stake,
-								Actual_Stake,
-								Status,
-								WinLost,
-								LicenseeWL,
-								PlayerComm,
-								Comm,
-								OddsSpread
-							)
+							INSERT INTO @TmpData (RefNo, Odds, Stake, Actual_Stake, Status, WinLost, LicenseeWL, PlayerComm, Comm, OddsSpread)
 							SELECT
 								c.TransId AS RefNo,
 								0 AS Odds,
@@ -1152,19 +1118,7 @@ BEGIN
 					BEGIN
 						IF @TransType = 1		-- Settled
 						BEGIN
-							INSERT INTO @TmpData
-							(
-								RefNo,
-								Odds,
-								Stake,
-								Actual_Stake,
-								Status,
-								WinLost,
-								LicenseeWL,
-								PlayerComm,
-								Comm,
-								OddsSpread
-							)
+							INSERT INTO @TmpData (RefNo, Odds, Stake, Actual_Stake, Status, WinLost, LicenseeWL, PlayerComm, Comm, OddsSpread)
 							SELECT
 								c.TransId AS RefNo,
 								CASE
@@ -1196,19 +1150,7 @@ BEGIN
 						END
 						ELSE IF @TransType = 3		-- Running
 						BEGIN
-							INSERT INTO @TmpData
-							(
-								RefNo,
-								Odds,
-								Stake,
-								Actual_Stake,
-								Status,
-								WinLost,
-								LicenseeWL,
-								PlayerComm,
-								Comm,
-								OddsSpread
-							)
+							INSERT INTO @TmpData (RefNo, Odds, Stake, Actual_Stake, Status, WinLost, LicenseeWL, PlayerComm, Comm, OddsSpread)
 							SELECT
 								c.TransId AS RefNo,
 								0 AS Odds,
@@ -1545,16 +1487,7 @@ BEGIN
 
 					-- Get ticket detail
 					-- Virtual Sports Racing
-					INSERT INTO @DetailData
-					(
-						RefNo,
-						Odds,
-						Stake,
-						Status,
-						APositionTaking,
-						BetType,
-						BetTeam
-					)
+					INSERT INTO @DetailData (RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam)
 					SELECT
 						bm.refno,
 						bm.odds,
@@ -1695,16 +1628,7 @@ BEGIN
 
 					-- Get ticket detail
 					-- Virtual Sports Racing
-					INSERT INTO @DetailData
-					(
-						RefNo,
-						Odds,
-						Stake,
-						Status,
-						APositionTaking,
-						BetType,
-						BetTeam
-					)
+					INSERT INTO @DetailData (RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam)
 					SELECT
 						bm.refno,
 						bm.odds,
@@ -1845,16 +1769,7 @@ BEGIN
 
 					-- Get ticket detail
 					-- Virtual Sports Racing
-					INSERT INTO @DetailData
-					(
-						RefNo,
-						Odds,
-						Stake,
-						Status,
-						APositionTaking,
-						BetType,
-						BetTeam
-					)
+					INSERT INTO @DetailData (RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam)
 					SELECT
 						bm.refno,
 						bm.odds,
@@ -1982,14 +1897,7 @@ BEGIN
 	FROM #PagingData AS b
 	ORDER BY b.RowNum ASC
 
-	SELECT DISTINCT
-		RefNo,
-		Odds,
-		Stake,
-		Status,
-		APositionTaking,
-		BetType,
-		BetTeam
+	SELECT DISTINCT RefNo, Odds, Stake, Status, APositionTaking, BetType, BetTeam
 	FROM @DetailData
 
 	DROP TABLE #Data

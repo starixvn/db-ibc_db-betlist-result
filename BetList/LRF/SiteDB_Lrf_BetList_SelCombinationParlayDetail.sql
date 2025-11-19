@@ -114,18 +114,8 @@ BEGIN
 			@maxMatchdate SMALLDATETIME
 
 	-- Get bettransm data
-	INSERT INTO @parlay_base (
-		TransId,
-		RefNo,
-		CustId,
-		MatchId,
-		MatchDate )
-	SELECT
-		bm.transid,
-		bm.refno,
-		bm.custid,
-		m.matchid,
-		bm.matchdate
+	INSERT INTO @parlay_base (TransId, RefNo, CustId, MatchId, MatchDate)
+	SELECT bm.transid, bm.refno, bm.custid, m.matchid, bm.matchdate
 	FROM dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
@@ -133,12 +123,7 @@ BEGIN
 
 	UNION
 
-	SELECT
-		bm.transid,
-		bm.refno,
-		bm.custid,
-		m.matchid,
-		bm.matchdate
+	SELECT bm.transid, bm.refno, bm.custid, m.matchid, bm.matchdate
 	FROM dbo.bettransm14 AS bm WITH (NOLOCK)
 		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
@@ -146,12 +131,7 @@ BEGIN
 
 	UNION
 
-	SELECT
-		bm.transid,
-		bm.refno,
-		bm.custid,
-		m.matchid,
-		bm.matchdate
+	SELECT bm.transid, bm.refno, bm.custid, m.matchid, bm.matchdate
 	FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
 		INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
 		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
@@ -172,18 +152,7 @@ BEGIN
 	-- Get bettrans and BetParlayResult data
 	IF @minMatchdate < @BalanceUpDay
 	BEGIN
-		INSERT INTO @tmpBettrans
-		(
-			TransId,
-			RefNo,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			ExtraInfo,
-			BetTeam,
-			N,
-			Bitmap
-		)
+		INSERT INTO @tmpBettrans(TransId, RefNo, Stake, Actual_Stake, WinLost, ExtraInfo, BetTeam, N, Bitmap)
 		SELECT
 			transid,
 			refno,
@@ -207,16 +176,7 @@ BEGIN
 			AND bettype = 29
 			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
 	
-		INSERT INTO @tmpResults (
-			WinLostDate,
-			Serial,
-			Odds,
-			MOdds,
-			Stake,
-			WinLost,
-			StatusId,
-			Comm,
-			PlayerComm)
+		INSERT INTO @tmpResults (WinLostDate, Serial, Odds, MOdds, Stake, WinLost, StatusId, Comm, PlayerComm)
 		SELECT
 			b.winlostdate,
 			b.serial,
@@ -233,18 +193,7 @@ BEGIN
 
 	IF @minMatchdate <= @MoveBetsDay	--- bettrans14 range
 	BEGIN
-		INSERT INTO @tmpBettrans
-		(
-			TransId,
-			RefNo,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			ExtraInfo,
-			BetTeam,
-			N,
-			Bitmap
-		)
+		INSERT INTO @tmpBettrans (TransId, RefNo, Stake, Actual_Stake, WinLost, ExtraInfo, BetTeam, N, Bitmap)
 		SELECT
 			transid,
 			refno,
@@ -271,18 +220,7 @@ BEGIN
 
 	IF @maxMatchdate > @MoveBetsDay  --- get data from bettrans
 	BEGIN
-		INSERT INTO @tmpBettrans
-		(
-			TransId,
-			RefNo,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			ExtraInfo,
-			BetTeam,
-			N,
-			Bitmap
-		)
+		INSERT INTO @tmpBettrans (TransId, RefNo, Stake, Actual_Stake, WinLost, ExtraInfo, BetTeam, N, Bitmap)
 		SELECT
 			transid,
 			refno,
@@ -307,16 +245,7 @@ BEGIN
 			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
 	END
 
-	INSERT INTO @tmpResults (
-		WinLostDate,
-		Serial,
-		Odds,
-		MOdds,
-		Stake,
-		WinLost,
-		StatusId,
-		Comm,
-		PlayerComm)
+	INSERT INTO @tmpResults (WinLostDate, Serial, Odds, MOdds, Stake, WinLost, StatusId, Comm, PlayerComm)
 	SELECT
 		b.winlostdate,
 		b.Serial,
@@ -355,10 +284,7 @@ BEGIN
 		IF NOT EXISTS(SELECT 1 FROM @parlay_base WHERE cnt <> bCnt)
 		BEGIN
 			INSERT INTO @betParlayDetail (RefNo, Serial, MatchId)
-			SELECT
-				pb.RefNo,
-				rc.Serial,
-				pb.MatchId
+			SELECT pb.RefNo, rc.Serial, pb.MatchId
 			FROM
 				@parlay_base AS pb
 				INNER JOIN @tmpBettrans AS tb ON pb.RefNo = tb.RefNo
@@ -369,10 +295,7 @@ BEGIN
 	ELSE
 	BEGIN
 		INSERT INTO @betParlayDetail (RefNo, Serial, MatchId)
-		SELECT
-			refno,
-			serial,
-			matchid
+		SELECT refno, serial, matchid
 		FROM dbo.BetParlayDetail WITH (NOLOCK)
 		WHERE refno = @RefNo
 	END
@@ -381,11 +304,7 @@ BEGIN
 	IF @MinMatchdate < @BalanceUpday
 	BEGIN
 		INSERT INTO @tmpMatch (Serial, HomeId, AwayId, IsNeutral)
-		SELECT
-			p.serial,
-			m.homeid,
-			m.awayid,
-			m.IsNeutral
+		SELECT p.serial, m.homeid, m.awayid, m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.MatchId = m.matchid
@@ -395,11 +314,7 @@ BEGIN
 	IF @MinMatchdate <= @MoveBetsDay
 	BEGIN
 		INSERT INTO @tmpMatch (Serial, HomeId, AwayId, IsNeutral)
-		SELECT
-			p.serial,
-			m.homeid,
-			m.awayid,
-			m.IsNeutral
+		SELECT p.serial, m.homeid, m.awayid, m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -409,11 +324,7 @@ BEGIN
 	IF @MaxMatchdate > @MoveBetsDay
 	BEGIN
 		INSERT INTO @tmpMatch (Serial, HomeId, AwayId, IsNeutral)
-		SELECT
-			p.serial,
-			m.homeid,
-			m.awayid,
-			m.IsNeutral
+		SELECT p.serial, m.homeid, m.awayid, m.IsNeutral
 		FROM @tmpResults AS p
 			INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
 			INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -449,10 +360,7 @@ BEGIN
 	IF @BaseCurrency <> ''
 	BEGIN
 		INSERT INTO @ExchangeRate (FirstExchangeDateByMonth, LastExchangeDateByMonth, Rate)
-		SELECT
-			e.FromDate,
-			e.ToDate,
-			e.Rate
+		SELECT e.FromDate, e.ToDate, e.Rate
 		FROM dbo.SiteDB_Lrf_f_GetExchangeRate(@ExFromDate, @ExToDate, @BaseCurrency, '') AS e
 		WHERE e.ExchangeId = @Currency
 			AND EXISTS (SELECT 1 FROM @tmpResults WHERE WinLostDate BETWEEN e.FromDate AND e.ToDate)
