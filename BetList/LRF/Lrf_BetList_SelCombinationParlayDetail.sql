@@ -438,6 +438,7 @@ BEGIN
 			WHEN @BetTeam = '1' AND b.StatusId = 113 AND b.MOdds = 0 THEN ISNULL(@OriginalOdds, b.Odds)
 			ELSE b.MOdds
 		END AS MOdds,
+		@BetTeam AS BetTeam,
 		CAST(b.Stake * ISNULL(e.Rate, 1) AS DECIMAL(19, 8)) AS Stake,
 		CAST(CASE
 				WHEN @Discount > 0 THEN @WinLost - @Actual_Stake
