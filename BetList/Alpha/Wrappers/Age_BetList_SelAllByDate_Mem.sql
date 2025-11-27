@@ -158,6 +158,7 @@ AS
 		- 20250410@Benji: Remove Unnecessary Returned Data (Kiron VS7, Microgaming Live Casino, Playtech Live Casino) [Redmine: #221188]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250416@Dave: Change datatype for ExchangeID [RedmineID: #221098]
+		- 20251107@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]
 */
 
 BEGIN
@@ -379,7 +380,9 @@ BEGIN
 											AND WinLostDate >= @Yesterday)
 		BEGIN
 			-- Running
-			INSERT INTO @temp_bettransX
+			INSERT INTO @temp_bettransX (
+				RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositiontaking, MPositiontaking, SPositiontaking, TPositiontaking, Discount, ADiscount, SDiscount, OddsSpread
+			)
 			SELECT
 				c.TransId AS RefNo,
 				0 AS Odds,
@@ -413,7 +416,9 @@ BEGIN
 				c.Product
 
 			-- Settled
-			INSERT INTO @temp_bettransX
+			INSERT INTO @temp_bettransX (
+				RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositiontaking, MPositiontaking, SPositiontaking, TPositiontaking, Discount, ADiscount, SDiscount, OddsSpread
+			)
 			SELECT
 				c.TransId AS RefNo,
 				CASE
@@ -461,7 +466,9 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM @Tickets WHERE (Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR RefTable = 2) AND WinLostDate >= @Yesterday)
 		BEGIN
 			-- Running
-			INSERT INTO @temp_bettransX
+			INSERT INTO @temp_bettransX (
+				RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositiontaking, MPositiontaking, SPositiontaking, TPositiontaking, Discount, ADiscount, SDiscount, OddsSpread
+			)
 			SELECT
 				c.TransId AS RefNo,
 				0 AS Odds,
@@ -494,7 +501,9 @@ BEGIN
 				c.Product
 
 			-- Settled
-			INSERT INTO @temp_bettransX
+			INSERT INTO @temp_bettransX (
+				RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositiontaking, MPositiontaking, SPositiontaking, TPositiontaking, Discount, ADiscount, SDiscount, OddsSpread
+			)
 			SELECT
 				c.TransId AS RefNo,
 				0 AS Odds,
@@ -531,11 +540,12 @@ BEGIN
 				c.Product
 		END
 
-		INSERT INTO #MemBetTicket
-		SELECT TransId = CASE
-							WHEN c.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-							ELSE b.transid
-						END 
+		INSERT INTO #MemBetTicket (
+			TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+			SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+			Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, BetdaqId, ExtraInfo, Currency, CurrencyId, SiteId, DeviceType, LeagueGroupId
+		)
+		SELECT TransId = b.transid
 			,RefNo = b.refno
 			,CustId = b.custid
 			,Username = b.username
@@ -742,10 +752,12 @@ BEGIN
 			,TransDesc = CASE
 							WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA' ) THEN b.transdesc
 							WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG', 'LG', 'VS4', 'VS5') THEN ISNULL(b.transdesc, '')
+							WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 							WHEN c.EventType =  3 THEN ISNULL(b.transdesc, '')
 							ELSE '' END
 			,OddsSpread = CASE
 							WHEN c.Product IN ('SB', 'OneRNG', 'PP', 'SG', 'Parlay') THEN ISNULL(b.oddsspread, 0)
+							WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN ISNULL(b.OddsSpread, '')
 							ELSE 0 END
 			,BetdaqId = CASE
 							WHEN c.Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
@@ -785,7 +797,7 @@ BEGIN
 				RefNo		BIGINT,
 				BoostRate	MONEY)
 
-			INSERT INTO @TmpData
+			INSERT INTO @TmpData (RefNo, BoostRate)
 			SELECT
 				b.refno,
 				CASE
@@ -804,7 +816,7 @@ BEGIN
 				MOdds	MONEY)
 
 			-- Mix Parlay which having at least 1 settled sub ticket
-			INSERT INTO @TmpParlayData
+			INSERT INTO @TmpParlayData (RefNo, Odds, MOdds)
 			SELECT
 				b.RefNo,
 				dbo.PRODUCT(bpd.odds) AS Odds,
@@ -816,7 +828,7 @@ BEGIN
 				b.BoostRate
 
 			-- Mix Parlay which having no settled sub ticket
-			INSERT INTO @TmpParlayData
+			INSERT INTO @TmpParlayData (RefNo, Odds, MOdds)
 			SELECT
 				b.RefNo,
 				dbo.PRODUCT(bm.odds) AS Odds,
@@ -840,7 +852,7 @@ BEGIN
 			SET
 				b.Odds = bpr.Odds,
 				b.Modds = bpr.mOdds,
-				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+				b.TransDesc = IIF(b.oddsSpread = 3, b.transdesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 			FROM #MemBetTicket AS b
 				INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 			WHERE b.BetType = 29
@@ -848,7 +860,11 @@ BEGIN
 				AND b.Status NOT IN ('Running', 'Waiting')
 		END
 
-		INSERT INTO #MemBetTicket
+		INSERT INTO #MemBetTicket (
+			TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+			SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+			Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, BetdaqId, ExtraInfo, Currency, CurrencyId, SiteId, DeviceType, LeagueGroupId
+		)
 		SELECT TransId = b.transid
 			,RefNo = b.refno
 			,CustId = b.custid
@@ -939,7 +955,7 @@ BEGIN
 			AND c.WinLostDate >= @Yesterday
 
 		-- Virtual Sports Racing
-		INSERT INTO @BettransDetail
+		INSERT INTO @BettransDetail (RefNo, Odds, Stake, Status, APositionTaking, MPositionTaking, SPositionTaking, BetType, BetTeam, TransDesc)
 		SELECT RefNo = bm.refno
 			,Odds = bm.odds
 			,Stake = bm.stake
@@ -993,7 +1009,11 @@ BEGIN
 
 	IF EXISTS (SELECT 1 FROM @Tickets)
 	BEGIN
-		INSERT INTO #MemBetTicket
+		INSERT INTO #MemBetTicket (
+			TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+			SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+			Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, BetdaqId, ExtraInfo, Currency, CurrencyId, SiteId, DeviceType, LeagueGroupId
+		)
 		SELECT TransId = b.translogid
 			,RefNo = b.translogid
 			,CustId = b.custid
@@ -1121,12 +1141,87 @@ BEGIN
 
 	END
 
-	SELECT *
+	SELECT
+		TransId,
+		RefNo,
+		CustId,
+		Username,
+		SportType,
+		BetType,
+		BetId,
+		BetTeam,
+		Hdp1,
+		Hdp2,
+		OddsType,
+		OddsId,
+		Odds,
+		MOdds,
+		Stake,
+		Actual_Stake,
+		Status,
+		SettlementStatus,
+		TransDate,
+		WinLostDate,
+		WinLost,
+		AWinLost,
+		MWinLost,
+		SWinLost,
+		PlayerComm,
+		Comm,
+		AComm,
+		SComm,
+		APositionTaking,
+		MPositionTaking,
+		SPositionTaking,
+		TPositionTaking,
+		ADiscount,
+		MDiscount,
+		SDiscount,
+		LiveIndicator,
+		LiveHomeScore,
+		LiveAwayScore,
+		FinalHomeScore,
+		FinalAwayScore,
+		HtHomeScore,
+		HtAwayScore,
+		Ip,
+		LeagueId,
+		MatchId,
+		MatchCode,
+		Race,
+		EventDate,
+		HomeId,
+		AwayId,
+		BetStatus,
+		IsNeutral,
+		Placing,
+		ShowTime,
+		BetCheck,
+		ComStatus,
+		TransDesc,
+		OddsSpread,
+		BetdaqId,
+		ExtraInfo,
+		Currency,
+		CurrencyId,
+		SiteId,
+		DeviceType,
+		LeagueGroupId
 	FROM #MemBetTicket
 	ORDER BY TransId DESC
 
 	-- OUTPUT ticket detail
-	SELECT *
+	SELECT
+		RefNo,
+		Odds,
+		Stake,
+		Status,
+		APositionTaking,
+		MPositionTaking,
+		SPositionTaking,
+		BetType,
+		BetTeam,
+		TransDesc
 	FROM @BettransDetail
 	ORDER BY RefNo DESC
 

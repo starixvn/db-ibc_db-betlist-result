@@ -19,6 +19,7 @@ AS
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
+		- 20251125@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]
 */
 
 BEGIN
@@ -31,7 +32,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype (ProductId, Bettype, EventType)
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 27, 83, 88)
@@ -88,13 +89,30 @@ BEGIN
 		LEFT JOIN CustDB.dbo.Site AS s WITH (NOLOCK) ON s.Site = c.Site
 	WHERE b.transid = @TransId AND b.custid = @CustId
 
+	IF @Status IS NULL
+	BEGIN
+		SELECT
+			@CurrencyName = ex.currency,
+			@Status = b.status,
+			@IsChinaView = s.IsChinaView,
+			@SpecialPlatfrom = s.SpecialPlatfrom
+		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			INNER JOIN CustDB.dbo.Exchange AS ex WITH (NOLOCK) ON b.currency = ex.exchangeid
+			LEFT JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.CustId = b.CustId
+			LEFT JOIN CustDB.dbo.Site AS s WITH (NOLOCK) ON s.Site = c.Site
+		WHERE b.transid = @TransId AND b.custid = @CustId
+	END
+
 	-- Get parlay selection detail
 	IF EXISTS(	SELECT 1
 				FROM dbo.bettransm AS bm WITH (NOLOCK)
 					INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
 				WHERE bm.refno = @RefNo AND bm.custid = @CustId)
 	BEGIN
-		INSERT INTO @BetListMP
+		INSERT INTO @BetListMP (
+			TransId, BetType, Stake, Currency, HomeId, AwayId, Hdp1, Hdp2, Odds, BetTeam, Status, SettlementStatus, TransDate, LiveHomeScore, LiveAwayScore, LiveIndicator,
+			LeagueId, SportType, IsNeutral, MatchId, MatchCode, EventDate, ShowTime, BetCheck, TransDesc, LeagueGroupId
+		)
 		SELECT
 			b.transid,
 			b.bettype,
@@ -173,7 +191,33 @@ BEGIN
 			AND (b.winlostdate IS NULL OR b.winlostdate > @MoveBetsDay)
 	END
 
-	SELECT DISTINCT *,
+	SELECT DISTINCT 
+		TransId,
+		BetType,
+		Stake,
+		Currency,
+		HomeId,
+		AwayId,
+		Hdp1,
+		Hdp2,
+		Odds,
+		BetTeam,
+		Status,
+		SettlementStatus,
+		TransDate,
+		LiveHomeScore,
+		LiveAwayScore,
+		LiveIndicator,
+		LeagueId,
+		SportType,
+		IsNeutral,
+		MatchId,
+		MatchCode,
+		EventDate,
+		ShowTime,
+		BetCheck,
+		TransDesc,
+		LeagueGroupId,
 		@IsChinaView AS IsChinaView,
 		@SpecialPlatfrom AS SpecialPlatfrom
 	FROM @BetListMP

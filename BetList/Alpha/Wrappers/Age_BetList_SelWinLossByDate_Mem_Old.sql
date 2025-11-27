@@ -187,7 +187,7 @@ AS
 		- 20250422@Benji: Support RichGaming [Redmine: #222365]
 		- 20250507@Benji: Support Saba Soccer Marble [Redmine:#223130]
 		- 20250728@Razor: ODIN GAMING dont support Product Detail[Redmine:#233933]
-
+		- 20251103@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]
 		
 	Param's Explanation:
 		@ProductDetails:
@@ -415,7 +415,7 @@ BEGIN
 
 		DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT)
 
-		INSERT INTO @SportBettype
+		INSERT INTO @SportBettype (ProductID, Bettype, EventType, RefTable)
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM bodb02.dbo.f_SportBettypeMatrixByProduct_Sel(@ProductIds, @IsTest)
 
@@ -503,10 +503,6 @@ BEGIN
 		BEGIN
 			UPDATE b
 			SET
-				TransId = CASE
-							WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-							ELSE b.transid
-						END,
 				SportType = CASE
 								WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 
 									'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'L22', 'WE', 'UUSL', 'SNG') THEN b.matchid
@@ -663,6 +659,7 @@ BEGIN
 				TransDesc = CASE
 								WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG', 'VS4', 'VS5')
 									THEN ISNULL(b.transdesc, '')
+								WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 								WHEN b.EventType = 3 THEN ISNULL(b.transdesc, '')
 								ELSE ''
 							END,
@@ -712,7 +709,7 @@ BEGIN
 				
 			-- Get ticket detail
 			-- Virtual Sports Racing
-			INSERT INTO @DetailData
+			INSERT INTO @DetailData (RefNo, Odds, Stake, Status, APositionTaking, MPositionTaking, SPositionTaking, BetType, BetTeam, TransDesc)
 			SELECT
 				bm.refno,
 				bm.odds,
@@ -780,7 +777,7 @@ BEGIN
 			TicketType		TINYINT
 		)
 
-		INSERT INTO @FullProductDetail
+		INSERT INTO @FullProductDetail (ProductId, SportType, BetType, LeagueGroupID, TicketType)
 		SELECT
 			ProductId,
 			SportType,
@@ -789,227 +786,227 @@ BEGIN
 			TicketType
 		FROM dbo.f_GetProductDetail()
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product IN ('SB', 'Parlay', 'Outright')
+		DELETE b1
+		FROM @Data AS b1
+		WHERE b1.Product IN ('SB', 'Parlay', 'Outright')
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
+							WHERE ProductId = 1 AND SportType = b1.SportType AND LeagueGroupID = b1.LeagueGroupID AND TicketType = b1.TicketType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
+							WHERE ProductId = 1 AND SportType = b1.SportType AND LeagueGroupID = b1.LeagueGroupID AND TicketType = b1.TicketType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product IN ('SB', 'Parlay', 'Outright')
+		DELETE b2
+		FROM @Data AS b2
+		WHERE b2.Product IN ('SB', 'Parlay', 'Outright')
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 1 AND SportType = 0 AND LeagueGroupID = 0 AND TicketType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
+							WHERE ProductId = 1 AND SportType = b2.SportType AND LeagueGroupID = b2.LeagueGroupID AND TicketType = b2.TicketType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'Allbet'
+		DELETE b3
+		FROM @Data AS b3
+		WHERE b3.Product = 'Allbet'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 21 AND BetType = b.BetType)
+							WHERE ProductId = 21 AND BetType = b3.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 21 AND BetType = b.BetType)
+							WHERE ProductId = 21 AND BetType = b3.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'Allbet'
+		DELETE b4
+		FROM @Data AS b4
+		WHERE b4.Product = 'Allbet'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 21 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 21 AND BetType = b.BetType)
+							WHERE ProductId = 21 AND BetType = b4.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'PP'
+		DELETE b5
+		FROM @Data AS b5
+		WHERE b5.Product = 'PP'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 32 AND BetType = b.BetType)
+							WHERE ProductId = 32 AND BetType = b5.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 32 AND BetType = b.BetType)
+							WHERE ProductId = 32 AND BetType = b5.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'PP'
+		DELETE b6
+		FROM @Data AS b6
+		WHERE b6.Product = 'PP'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 32 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 32 AND BetType = b.BetType)
+							WHERE ProductId = 32 AND BetType = b6.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'SXG'
+		DELETE b7
+		FROM @Data AS b7
+		WHERE b7.Product = 'SXG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 45 AND BetType = b.BetType)
+							WHERE ProductId = 45 AND BetType = b7.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 45 AND BetType = b.BetType)
+							WHERE ProductId = 45 AND BetType = b7.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'SXG'
+		DELETE b8
+		FROM @Data AS b8
+		WHERE b8.Product = 'SXG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 45 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 45 AND BetType = b.BetType)
+							WHERE ProductId = 45 AND BetType = b8.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'SG'
+		DELETE b9
+		FROM @Data AS b9
+		WHERE b9.Product = 'SG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 36 AND BetType = b.BetType)
+							WHERE ProductId = 36 AND BetType = b9.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 36 AND BetType = b.BetType)
+							WHERE ProductId = 36 AND BetType = b9.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'SG'
+		DELETE b10
+		FROM @Data AS b10
+		WHERE b10.Product = 'SG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 36 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 36 AND BetType = b.BetType)
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'MGRNG'
+							WHERE ProductId = 36 AND BetType = b10.BetType)
+		DELETE b11
+		FROM @Data AS b11
+		WHERE b11.Product = 'MGRNG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 73 AND BetType = b.BetType)
+							WHERE ProductId = 73 AND BetType = b11.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 73 AND BetType = b.BetType)
+							WHERE ProductId = 73 AND BetType = b11.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'MGRNG'
+		DELETE b12
+		FROM @Data AS b12
+		WHERE b12.Product = 'MGRNG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 73 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 73 AND BetType = b.BetType)
+							WHERE ProductId = 73 AND BetType = b12.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'L22'
+		DELETE b13
+		FROM @Data AS b13
+		WHERE b13.Product = 'L22'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 79 AND BetType = b.BetType)
+							WHERE ProductId = 79 AND BetType = b13.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 79 AND BetType = b.BetType)
+							WHERE ProductId = 79 AND BetType = b13.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'L22'
+		DELETE b14
+		FROM @Data AS b14
+		WHERE b14.Product = 'L22'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 79 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 79 AND BetType = b.BetType)
+							WHERE ProductId = 79 AND BetType = b14.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'FS'
+		DELETE b15
+		FROM @Data AS b15
+		WHERE b15.Product = 'FS'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-						WHERE ProductId = 87 AND BetType = b.BetType)
+						WHERE ProductId = 87 AND BetType = b15.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-						WHERE ProductId = 87 AND BetType = b.BetType)
+						WHERE ProductId = 87 AND BetType = b15.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'FS'
+		DELETE b16
+		FROM @Data AS b16
+		WHERE b16.Product = 'FS'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 						WHERE ProductId = 87 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-						WHERE ProductId = 87 AND BetType = b.BetType)
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'VGA'
+						WHERE ProductId = 87 AND BetType = b16.BetType)
+		DELETE b17
+		FROM @Data AS b17
+		WHERE b17.Product = 'VGA'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 66 AND BetType = b.BetType)
+							WHERE ProductId = 66 AND BetType = b17.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 66 AND BetType = b.BetType)
+							WHERE ProductId = 66 AND BetType = b17.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'VGA'
+		DELETE b18
+		FROM @Data AS b18
+		WHERE b18.Product = 'VGA'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 66 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 66 AND BetType = b.BetType)
+							WHERE ProductId = 66 AND BetType = b18.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'FAC'
+		DELETE b19
+		FROM @Data AS b19
+		WHERE b19.Product = 'FAC'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 89 AND BetType = b.BetType)
+							WHERE ProductId = 89 AND BetType = b19.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 89 AND BetType = b.BetType)
+							WHERE ProductId = 89 AND BetType = b19.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'FAC'
+		DELETE b20
+		FROM @Data AS b20
+		WHERE b20.Product = 'FAC'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 89 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 89 AND BetType = b.BetType)
+							WHERE ProductId = 89 AND BetType = b20.BetType)
 							
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'ASK'
+		DELETE b21
+		FROM @Data AS b21
+		WHERE b21.Product = 'ASK'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 103 AND BetType = b.BetType)
+							WHERE ProductId = 103 AND BetType = b21.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 103 AND BetType = b.BetType)
+							WHERE ProductId = 103 AND BetType = b21.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'ASK'
+		DELETE b22
+		FROM @Data AS b22
+		WHERE b22.Product = 'ASK'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 103 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 103 AND BetType = b.BetType)
+							WHERE ProductId = 103 AND BetType = b22.BetType)
 							
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'HOT'
+		DELETE b23
+		FROM @Data AS b23
+		WHERE b23.Product = 'HOT'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 95 AND BetType = b.BetType)
+							WHERE ProductId = 95 AND BetType = b23.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 95 AND BetType = b.BetType)
+							WHERE ProductId = 95 AND BetType = b23.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'HOT'
+		DELETE b24
+		FROM @Data AS b24
+		WHERE b24.Product = 'HOT'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 95 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 95 AND BetType = b.BetType)
+							WHERE ProductId = 95 AND BetType = b24.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'MGLC'
+		DELETE b25
+		FROM @Data AS b25
+		WHERE b25.Product = 'MGLC'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 107 AND BetType = b.BetType)
+							WHERE ProductId = 107 AND BetType = b25.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 107 AND BetType = b.BetType)
+							WHERE ProductId = 107 AND BetType = b25.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'MGLC'
+		DELETE b26
+		FROM @Data AS b26
+		WHERE b26.Product = 'MGLC'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 107 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 107 AND BetType = b.BetType)
+							WHERE ProductId = 107 AND BetType = b26.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'RGRNG'
+		DELETE b27
+		FROM @Data AS b27
+		WHERE b27.Product = 'RGRNG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 108 AND BetType = b.BetType)
+							WHERE ProductId = 108 AND BetType = b27.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 108 AND BetType = b.BetType)
+							WHERE ProductId = 108 AND BetType = b27.BetType)
 
-		DELETE b
-		FROM @Data AS b
-		WHERE b.Product = 'RGRNG'
+		DELETE b28
+		FROM @Data AS b28
+		WHERE b28.Product = 'RGRNG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 108 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 108 AND BetType = b.BetType)					
+							WHERE ProductId = 108 AND BetType = b28.BetType)					
 														
 	END
 
@@ -1020,7 +1017,7 @@ BEGIN
 		SET
 			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			b.TransDesc = IIF(b.OddsSpread = 3, b.TransDesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 		FROM @Data AS b
 			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		WHERE b.BetType = 29 AND b.BetTeam = '1'
@@ -1172,7 +1169,17 @@ BEGIN
 		ORDER BY b.TransId DESC
 	END
 
-	SELECT * FROM @DetailData
+	SELECT RefNo,
+			Odds,
+			Stake,
+			Status,
+			APositionTaking,
+			MPositionTaking,
+			SPositionTaking,
+			BetType,
+			BetTeam,
+			TransDesc 
+	FROM @DetailData
 	ORDER BY RefNo DESC
 END
 GO

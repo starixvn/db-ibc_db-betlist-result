@@ -66,6 +66,7 @@ AS
 					- Don't support Cash Out bettype 911, 912, 913 in range bettrans and bettrans14 anymore
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20240920@Razor: Support VS2 - Racing sports [Redmine: #211092]
+		- 20251027@Bobby: Support BetBuilder Hybrid Parlay [Redmine: #242255]
 */
 
 BEGIN
@@ -138,44 +139,10 @@ BEGIN
 	BEGIN
 		-- bettrans
 		INSERT INTO @Data (
-			TransId,
-			RefNo,
-			CustId,
-			Creator,
-			Currency,
-			BetType,
-			BetId,
-			BetTeam,
-			Hdp1,
-			Hdp2,
-			OddsId,
-			OddsType,
-			Odds,
-			MOdds,
-			OddsSpread,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			Commission,
-			Status,
-			SecAcceptFlag,
-			CheckTime,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			LiveHomeScore,
-			LiveAwayScore,
-			Ip,
-			MatchId,
-			BetCheck,
-			ComStatus,
-			TransDesc,
-			BetdaqId,
-			ExtraInfo,
-			WalletType,
-			RefCode,
-			TableID,
-			DeviceType)
+			TransId, RefNo, CustId, Creator, Currency, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake
+			, WinLost, Commission, Status, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, MatchId
+			, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, WalletType, RefCode, TableID, DeviceType
+		)
 		SELECT
 			b.transid,
 			b.refno,
@@ -222,138 +189,87 @@ BEGIN
 
 		-- translog
 		INSERT INTO @Data (
-			TransId,
-			RefNo,
-			CustId,
-			Creator,
-			Currency,
-			BetType,
-			Odds,
-			Stake,
-			Actual_Stake,
-			Status,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			Ip,
-			TransDesc,
-			EventId,
-			Custom1,
-			TableID,
-			DeviceType
+			TransId, RefNo, CustId, Creator, Currency, BetType, Odds, Stake, Actual_Stake, Status,
+			TransDate, WinLostDate, LiveIndicator, Ip, TransDesc, EventId, Custom1, TableID, DeviceType
 		)
 		SELECT
-			b.translogid AS TransId,
-			b.translogid AS RefNo,
-			b.custid,
-			b.creator,
-			b.currency,
-			b.gameID AS BetType,
-			b.odds,
-			b.stake,
-			b.actual_stake,
-			b.status,
-			b.transdate,
-			b.transdate AS WinLostDate,
-			b.LiveIndicator,
-			b.ip,
-			b.transdesc,
-			b.eventID,
-			b.custom1,
+			btl.translogid AS TransId,
+			btl.translogid AS RefNo,
+			btl.custid,
+			btl.creator,
+			btl.currency,
+			btl.gameID AS BetType,
+			btl.odds,
+			btl.stake,
+			btl.actual_stake,
+			btl.status,
+			btl.transdate,
+			btl.transdate AS WinLostDate,
+			btl.LiveIndicator,
+			btl.ip,
+			btl.transdesc,
+			btl.eventID,
+			btl.custom1,
 			4 AS TableID,
-			b.DeviceType
-		FROM dbo.translog AS b WITH (NOLOCK)
-		WHERE b.custid = @CustId
-			AND b.winlostdate = @Date
-			AND b.ip = @Ip
-			AND b.statusID IN (0, 1)
-			AND b.gameID BETWEEN 801 AND 806
+			btl.DeviceType
+		FROM dbo.translog AS btl WITH (NOLOCK)
+		WHERE btl.custid = @CustId
+			AND btl.winlostdate = @Date
+			AND btl.ip = @Ip
+			AND btl.statusID IN (0, 1)
+			AND btl.gameID BETWEEN 801 AND 806
 	END
 	ELSE IF @Date BETWEEN @BalanceUpDay AND @MoveBetsDay		-- bettrans14 range
 	BEGIN
 		-- bettrans14
 		INSERT INTO @Data (
-			TransId,
-			RefNo,
-			CustId,
-			Creator,
-			Currency,
-			BetType,
-			BetId,
-			BetTeam,
-			Hdp1,
-			Hdp2,
-			OddsId,
-			OddsType,
-			Odds,
-			MOdds,
-			OddsSpread,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			Commission,
-			Status,
-			SecAcceptFlag,
-			CheckTime,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			LiveHomeScore,
-			LiveAwayScore,
-			Ip,
-			MatchId,
-			BetCheck,
-			ComStatus,
-			TransDesc,
-			BetdaqId,
-			ExtraInfo,
-			WalletType,
-			RefCode,
-			TableID,
-			DeviceType)
+			TransId, RefNo, CustId, Creator, Currency, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake
+			, WinLost, Commission, Status, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, MatchId
+			, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, WalletType, RefCode, TableID, DeviceType
+		)
 		SELECT
-			b.transid,
-			b.refno,
-			b.custid,
-			b.creator,
-			b.currency,
-			b.bettype,
-			ISNULL(b.betid, 0) AS BetId,
-			b.betteam,
-			b.hdp1,
-			b.hdp2,
-			b.oddsid,
-			b.oddstype,
-			b.odds,
-			b.modds,
-			b.oddsspread,
-			b.stake,
-			b.actual_stake,
-			b.winlost,
-			b.playercomm,
-			b.status,
-			b.SecAcceptFlag,
-			b.checktime,
-			b.transdate,
-			b.winlostdate,
-			b.liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.ip,
-			b.matchid,
-			b.betcheck,
-			b.comstatus,
-			b.transdesc,
-			b.betdaqid,
-			b.ExtraInfo,
-			b.WalletType,
-			ISNULL(b.RefCode, 0),
+			b14.transid,
+			b14.refno,
+			b14.custid,
+			b14.creator,
+			b14.currency,
+			b14.bettype,
+			ISNULL(b14.betid, 0) AS BetId,
+			b14.betteam,
+			b14.hdp1,
+			b14.hdp2,
+			b14.oddsid,
+			b14.oddstype,
+			b14.odds,
+			b14.modds,
+			b14.oddsspread,
+			b14.stake,
+			b14.actual_stake,
+			b14.winlost,
+			b14.playercomm,
+			b14.status,
+			b14.SecAcceptFlag,
+			b14.checktime,
+			b14.transdate,
+			b14.winlostdate,
+			b14.liveindicator,
+			b14.livehomescore,
+			b14.liveawayscore,
+			b14.ip,
+			b14.matchid,
+			b14.betcheck,
+			b14.comstatus,
+			b14.transdesc,
+			b14.betdaqid,
+			b14.ExtraInfo,
+			b14.WalletType,
+			ISNULL(b14.RefCode, 0),
 			2 AS TableID,
-			b.DeviceType
-		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-		WHERE b.custid = @CustId
-			AND b.winlostdate = @Date
-			AND b.ip = @Ip
+			b14.DeviceType
+		FROM dbo.bettrans14 AS b14 WITH (NOLOCK)
+		WHERE b14.custid = @CustId
+			AND b14.winlostdate = @Date
+			AND b14.ip = @Ip
 	END
 	ELSE IF @Date < @BalanceUpDay		-- bettrans_bk range
 	BEGIN
@@ -362,123 +278,89 @@ BEGIN
 		
 		-- bettrans_bk
 		INSERT INTO @Data (
-			TransId,
-			RefNo,
-			CustId,
-			Creator,
-			Currency,
-			BetType,
-			BetId,
-			BetTeam,
-			Hdp1,
-			Hdp2,
-			OddsId,
-			OddsType,
-			Odds,
-			MOdds,
-			OddsSpread,
-			Stake,
-			Actual_Stake,
-			WinLost,
-			Commission,
-			Status,
-			SecAcceptFlag,
-			CheckTime,
-			TransDate,
-			WinLostDate,
-			LiveIndicator,
-			LiveHomeScore,
-			LiveAwayScore,
-			Ip,
-			MatchId,
-			BetCheck,
-			ComStatus,
-			TransDesc,
-			BetdaqId,
-			ExtraInfo,
-			WalletType,
-			RefCode,
-			TableID,
-			DeviceType)
+			TransId, RefNo, CustId, Creator, Currency, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsId, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake
+			, WinLost, Commission, Status, SecAcceptFlag, CheckTime, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, MatchId
+			, BetCheck, ComStatus, TransDesc, BetdaqId, ExtraInfo, WalletType, RefCode, TableID, DeviceType
+		)
 		SELECT
-			b.transid,
-			b.refno,
-			b.custid,
-			b.creator,
-			b.currency,
-			b.bettype,
-			ISNULL(b.betid, 0) AS BetId,
-			b.betteam,
-			b.hdp1,
-			b.hdp2,
-			b.oddsid,
-			b.oddstype,
-			b.odds,
-			b.modds,
-			b.oddsspread,
-			b.stake,
-			b.actual_stake,
-			b.winlost,
-			b.playercomm,
-			b.status,
-			b.SecAcceptFlag,
-			b.checktime,
-			b.transdate,
-			b.winlostdate,
-			b.liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.ip,
-			b.matchid,
-			b.betcheck,
-			b.comstatus,
-			b.transdesc,
-			b.betdaqid,
-			b.ExtraInfo,
-			b.WalletType,
-			ISNULL(b.RefCode, 0),
+			bk.transid,
+			bk.refno,
+			bk.custid,
+			bk.creator,
+			bk.currency,
+			bk.bettype,
+			ISNULL(bk.betid, 0) AS BetId,
+			bk.betteam,
+			bk.hdp1,
+			bk.hdp2,
+			bk.oddsid,
+			bk.oddstype,
+			bk.odds,
+			bk.modds,
+			bk.oddsspread,
+			bk.stake,
+			bk.actual_stake,
+			bk.winlost,
+			bk.playercomm,
+			bk.status,
+			bk.SecAcceptFlag,
+			bk.checktime,
+			bk.transdate,
+			bk.winlostdate,
+			bk.liveindicator,
+			bk.livehomescore,
+			bk.liveawayscore,
+			bk.ip,
+			bk.matchid,
+			bk.betcheck,
+			bk.comstatus,
+			bk.transdesc,
+			bk.betdaqid,
+			bk.ExtraInfo,
+			bk.WalletType,
+			ISNULL(bk.RefCode, 0),
 			3 AS TableID,
-			b.DeviceType
-		FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK, INDEX = IX_custid)
-		CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
-		WHERE b.custid = @CustId
-			AND b.winlostdate = @Date
+			bk.DeviceType
+		FROM bodb_Archive.dbo.bettrans_bk AS bk WITH (NOLOCK, INDEX = IX_custid)
+		CROSS APPLY dbo.f_IP_Decompress(bk.ip) AS dp
+		WHERE bk.custid = @CustId
+			AND bk.winlostdate = @Date
 			AND dp.Ip = @DeCompressedIp
 
 		-- Get more info for CashOut tickets
 		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 911)
 		BEGIN
-			UPDATE b
-			SET b.Odds = ob.odds,
-				b.LiveIndicator = ob.liveindicator,
-				b.LiveHomeScore = ob.livehomescore,
-				b.LiveAwayScore = ob.liveawayscore,
-				b.OriginalBetType = ob.bettype,
-				b.BetdaqId = ob.transid
-			FROM @Data AS b
-				INNER JOIN bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON b.RefNo = ob.transid
-			WHERE b.BetType = 911
+			UPDATE bk
+			SET bk.Odds = ob.odds,
+				bk.LiveIndicator = ob.liveindicator,
+				bk.LiveHomeScore = ob.livehomescore,
+				bk.LiveAwayScore = ob.liveawayscore,
+				bk.OriginalBetType = ob.bettype,
+				bk.BetdaqId = ob.transid
+			FROM @Data AS bk
+				INNER JOIN bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON bk.RefNo = ob.transid
+			WHERE bk.BetType = 911
 		END
 
 		IF EXISTS (SELECT TOP(1) 1 FROM @Data WHERE BetType = 912)
 		BEGIN
-			UPDATE b
-			SET b.Odds = ob.odds,
-				b.LiveIndicator = ob.liveindicator,
-				b.LiveHomeScore = ob.livehomescore,
-				b.LiveAwayScore = ob.liveawayscore,
-				b.OriginalBetType = ob.bettype,
-				b.BetdaqId = ob.transid,
-				b.Stake = cob.stake
-			FROM @Data AS b
-				INNER JOIN bodb_Archive.dbo.bettrans_bk AS cob WITH (NOLOCK) ON b.RefNo = cob.transid
+			UPDATE bk
+			SET bk.Odds = ob.odds,
+				bk.LiveIndicator = ob.liveindicator,
+				bk.LiveHomeScore = ob.livehomescore,
+				bk.LiveAwayScore = ob.liveawayscore,
+				bk.OriginalBetType = ob.bettype,
+				bk.BetdaqId = ob.transid,
+				bk.Stake = cob.stake
+			FROM @Data AS bk
+				INNER JOIN bodb_Archive.dbo.bettrans_bk AS cob WITH (NOLOCK) ON bk.RefNo = cob.transid
 				INNER JOIN bodb_Archive.dbo.bettrans_bk AS ob WITH (NOLOCK) ON cob.RefNo = ob.transid
 				LEFT JOIN @Data AS cb
-					ON cb.RefNo = b.RefNo
+					ON cb.RefNo = bk.RefNo
 					AND cb.BetType = 913
 					AND cb.custid = @CustId
-					AND cb.winlostdate = b.WinLostDate
-			WHERE b.BetType = 912
+					AND cb.winlostdate = bk.WinLostDate
+			WHERE bk.BetType = 912
 		END
 	END
 
@@ -491,7 +373,7 @@ BEGIN
 
 		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-		INSERT INTO @SportBettype
+		INSERT INTO @SportBettype(ProductID, Bettype, EventType)
 		SELECT ProductID, BetType, EventType
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 		WHERE ProductID IN (1, 25)
@@ -603,7 +485,7 @@ BEGIN
 				)
 
 				-- Prepare temp table
-				INSERT INTO @RefCodeTmp
+				INSERT INTO @RefCodeTmp (RefCode, TransId, Stake, Actual_Stake, WinLost, Commission)
 				SELECT
 					RefCode,
 					MIN(TransId) AS TransId,
@@ -614,7 +496,7 @@ BEGIN
 				FROM @Data
 				WHERE RefCode <> 0
 				GROUP BY RefCode
-				HAVING COUNT(*) > 1
+				HAVING COUNT(1) > 1
 
 				IF EXISTS (SELECT 1 FROM @RefCodeTmp)
 				BEGIN
@@ -651,10 +533,6 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					TransId = CASE
-								WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-								ELSE b.transid
-							END,
 					SportType = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN m.sporttype
 									WHEN b.Product IN ('Outright') THEN l.sporttype
@@ -764,6 +642,7 @@ BEGIN
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -832,10 +711,6 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					TransId = CASE
-								WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-								ELSE b.transid
-							END,
 					SportType = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN m.sporttype
 									WHEN b.Product IN ('Outright') THEN l.sporttype
@@ -927,6 +802,7 @@ BEGIN
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -959,10 +835,6 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					TransId = CASE
-								WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-								ELSE b.transid
-							END,
 					SportType = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN m.sporttype
 									WHEN b.Product IN ('Outright') THEN l.sporttype
@@ -1054,6 +926,7 @@ BEGIN
 					ComStatus = CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END,
 					TransDesc = CASE
 									WHEN b.Product IN ('SB', 'CO') THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.oddsspread = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1098,7 +971,7 @@ BEGIN
 			RefNo		BIGINT,
 			BoostRate	MONEY)
 
-		INSERT INTO @ParlayData
+		INSERT INTO @ParlayData(RefNo, BoostRate)
 		SELECT
 			b.refno,
 			CASE
@@ -1117,7 +990,7 @@ BEGIN
 			MOdds	MONEY)
 
 		-- Mix Parlay which having at least 1 settled sub ticket
-		INSERT INTO @TmpParlayData
+		INSERT INTO @TmpParlayData (RefNo, Odds, MOdds)
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bpd.odds) AS Odds,
@@ -1129,7 +1002,7 @@ BEGIN
 			b.BoostRate
 
 		-- Mix Parlay which having no settled sub ticket
-		INSERT INTO @TmpParlayData
+		UNION ALL
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bm.odds) AS Odds,
@@ -1153,7 +1026,7 @@ BEGIN
 		SET
 			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			b.TransDesc = IIF(b.OddsSpread = 3, b.TransDesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 		FROM @Data AS b
 			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		WHERE b.BetType = 29
@@ -1171,7 +1044,7 @@ BEGIN
 		SET
 			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			b.TransDesc = IIF(b.OddsSpread = 3, b.TransDesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 		FROM @Data AS b
 			INNER JOIN bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		WHERE b.BetType = 29

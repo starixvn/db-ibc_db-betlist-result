@@ -21,6 +21,7 @@ AS
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20231129@Razor: Support Project 777 - return LeagueGroupId [Redmine: #194591]
 		- 20241218@Razor: Support Direct Member [Redmine: #211969]
+		- 20251107@Virgil: Fix Sonarqube and update Parlay code [Redmine: #242378]
 */
 
 BEGIN
@@ -34,7 +35,7 @@ BEGIN
 	-- Gather BettypeMatrix
 	DECLARE @SportBettype TABLE ( ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, SubProduct VARCHAR(500))
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype ( ProductID, Bettype, EventType, SubProduct)
 	SELECT ProductID, Bettype, EventType, SubProduct
 	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 	WHERE BetType NOT IN (10, 29, 38, 301, 302, 303, 304, 901, 902, 903, 904, 911, 912, 913, 914)
@@ -157,12 +158,13 @@ BEGIN
 
 		IF EXISTS (SELECT 1 FROM @Tickets)
 		BEGIN
-			INSERT INTO @MemBetTicket
+			INSERT INTO @MemBetTicket (
+				TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+				SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+				Ip, LeagueId, MatchId, MatchCode, EventDate, HomeId, AwayId, BetStatus, IsNeutral, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, ExtraInfo, Currency, BetdaqId, DeviceType, LeagueGroupId
+			)
 			SELECT
-				TransId = CASE
-								WHEN c.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-								ELSE b.transid
-							END,
+				TransId = b.transid,
 				RefNo = b.refno,
 				CustId = b.custid,
 				Username = b.username,
@@ -350,7 +352,11 @@ BEGIN
 
 		IF EXISTS (SELECT 1 FROM @Tickets)
 		BEGIN
-			INSERT INTO @MemBetTicket
+			INSERT INTO @MemBetTicket (
+				TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+				SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+				Ip, LeagueId, MatchId, MatchCode, EventDate, HomeId, AwayId, BetStatus, IsNeutral, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, ExtraInfo, Currency, BetdaqId, DeviceType, LeagueGroupId
+			)
 			SELECT
 				TransId = b.translogid,
 				RefNo = b.translogid,
@@ -434,31 +440,32 @@ BEGIN
 			Product
 		)
 		SELECT
-			b.transid,
-			b.refno,
-			b.winlostdate,
+			b14.transid,
+			b14.refno,
+			b14.winlostdate,
 			CASE
 				WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
 				WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
 				WHEN s.EventType = 2 AND s.ProductID = 1 THEN 'Outright'
 				ELSE 'Unknown'
 			END AS Product
-		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-			INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
-		WHERE b.srecommend = @CustId
-			AND b.winlostdate = @_Date
-			AND b.ip = @Ip
+		FROM dbo.bettrans14 AS b14 WITH (NOLOCK)
+			INNER JOIN @SportBettype AS s ON b14.bettype = s.Bettype
+		WHERE b14.srecommend = @CustId
+			AND b14.winlostdate = @_Date
+			AND b14.ip = @Ip
 
 		DELETE FROM @Tickets WHERE Product = 'Unknown'
 
 		IF EXISTS (SELECT 1 FROM @Tickets)
 		BEGIN
-			INSERT INTO @MemBetTicket
+			INSERT INTO @MemBetTicket (
+				TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+				SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+				Ip, LeagueId, MatchId, MatchCode, EventDate, HomeId, AwayId, BetStatus, IsNeutral, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, ExtraInfo, Currency, BetdaqId, DeviceType, LeagueGroupId
+			)
 			SELECT
-				TransId = CASE
-								WHEN c.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-								ELSE b.transid
-							END,
+				TransId = b.transid,
 				RefNo = b.refno,
 				CustId = b.custid,
 				Username = b.username,
@@ -608,83 +615,82 @@ BEGIN
 		END
 	END
 
-	-- Get original odds for Mix Parlay and final odds, boost rate for Mix Parlay Boost Bonus
-	IF EXISTS (SELECT 1 FROM @MemBetTicket WHERE BetType = 29 AND BetTeam = '1')
-	BEGIN
-		-- Running/Waiting
-		DECLARE @TmpData TABLE (
-			RefNo		BIGINT,
-			BoostRate	MONEY)
-
-		INSERT INTO @TmpData
-		SELECT
-			b.refno,
-			CASE
-				WHEN b.bettype = 29 AND b.betteam = 1 AND b.oddsspread = 2 THEN
-					ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bbp)[1]','MONEY'), 0)
-				ELSE 0
-			END AS BoostRate
-		FROM @MemBetTicket AS b
-		WHERE b.BetType = 29
-			AND b.BetTeam = '1'
-			AND b.Status IN ('Running', 'Waiting')
-
-		DECLARE @TmpParlayData TABLE (
-			RefNo	BIGINT,
-			Odds	MONEY,
-			MOdds	MONEY)
-
-		-- Mix Parlay which having at least 1 settled sub ticket
-		INSERT INTO @TmpParlayData
-		SELECT
-			b.RefNo,
-			dbo.PRODUCT(bpd.odds) AS Odds,
-			dbo.PRODUCT(bpd.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
-		FROM @TmpData AS b
-			INNER JOIN dbo.BetParlayDetail AS bpd WITH (NOLOCK) ON bpd.RefNo = b.RefNo
-		GROUP BY
-			b.RefNo,
-			b.BoostRate
-
-		-- Mix Parlay which having no settled sub ticket
-		INSERT INTO @TmpParlayData
-		SELECT
-			b.RefNo,
-			dbo.PRODUCT(bm.odds) AS Odds,
-			dbo.PRODUCT(bm.odds) * (b.BoostRate + 1) - b.BoostRate AS MOdds
-		FROM @TmpData AS b
-			INNER JOIN dbo.bettransm AS bm WITH (NOLOCK) ON bm.refno = b.RefNo
-		WHERE NOT EXISTS (SELECT 1 FROM @TmpParlayData WHERE RefNo = b.RefNo)
-		GROUP BY
-			b.RefNo,
-			b.BoostRate
-
-		UPDATE b
-		SET
-			b.Odds = td.Odds,
-			b.MOdds = td.MOdds
-		FROM @MemBetTicket AS b
-			INNER JOIN @TmpParlayData AS td ON td.RefNo = b.RefNo
-
-		-- Settled
-		UPDATE b
-		SET
-			b.Odds = bpr.Odds,
-			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
-		FROM @MemBetTicket AS b
-			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
-		WHERE b.BetType = 29
-			AND b.BetTeam = '1'
-			AND b.Status NOT IN ('Running', 'Waiting')
-	END
-
-	SELECT *
+	SELECT
+		TransId,
+		RefNo,
+		CustId,
+		Username,
+		SportType,
+		BetType,
+		BetId,
+		BetTeam,
+		Hdp1,
+		Hdp2,
+		OddsType,
+		Odds,
+		MOdds,
+		Stake,
+		Actual_Stake,
+		Status,
+		SettlementStatus,
+		TransDate,
+		WinLostDate,
+		WinLost,
+		AWinLost,
+		MWinLost,
+		SWinLost,
+		PlayerComm,
+		Comm,
+		AComm,
+		SComm,
+		APositionTaking,
+		MPositionTaking,
+		SPositionTaking,
+		TPositionTaking,
+		ADiscount,
+		MDiscount,
+		SDiscount,
+		LiveIndicator,
+		LiveHomeScore,
+		LiveAwayScore,
+		FinalHomeScore,
+		FinalAwayScore,
+		HtHomeScore,
+		HtAwayScore,
+		Ip,
+		LeagueId,
+		MatchId,
+		MatchCode,
+		EventDate,
+		HomeId,
+		AwayId,
+		BetStatus,
+		IsNeutral,
+		ShowTime,
+		BetCheck,
+		ComStatus,
+		TransDesc,
+		OddsSpread,
+		ExtraInfo,
+		Currency,
+		BetdaqId,
+		DeviceType,
+		LeagueGroupId
 	FROM @MemBetTicket
 	ORDER BY 1 DESC
 
 	-- OUTPUT ticket detail
-	SELECT *
+	SELECT
+		RefNo,
+		Odds,
+		Stake,
+		Status,
+		APositionTaking,
+		MPositionTaking,
+		SPositionTaking,
+		BetType,
+		BetTeam,
+		TransDesc
 	FROM @BettransDetail
 	ORDER BY RefNo DESC
 END

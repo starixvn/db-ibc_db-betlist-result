@@ -88,6 +88,7 @@ AS
 		- 20240723@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
 		- 20250410@Dave: Change datatype for ExchangeID [RedmineID: #221098]
+		- 20251120@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]
 */
 
 BEGIN
@@ -780,7 +781,52 @@ BEGIN
 				(
 					SELECT
 						ROW_NUMBER() OVER (ORDER BY TransId DESC) AS RowNum,
-						*
+						TransId,
+						RefNo,
+						CustId,
+						SportType,
+						BetType,
+						BetId,
+						BetTeam,
+						Hdp1,
+						Hdp2,
+						OddsType,
+						OddsId,
+						Odds,
+						MOdds,
+						Stake,
+						Actual_Stake,
+						Status,
+						TransDate,
+						WinLostDate,
+						LiveIndicator,
+						LiveHomeScore,
+						LiveAwayScore,
+						Ip,
+						LeagueId,
+						MatchId,
+						MatchCode,
+						Race,
+						EventDate,
+						HomeId,
+						AwayId,
+						BetStatus,
+						IsNeutral,
+						Placing,
+						ShowTime,
+						BetCheck,
+						ComStatus,
+						TransDesc,
+						OddsSpread,
+						ExtraInfo,
+						ProductId,
+						EventType,
+						SubProduct,
+						WhTicket,
+						BetdaqId,
+						CurrencyId,
+						SiteId,
+						DeviceType
 					FROM #Data
 				) AS b
 			WHERE b.RowNum BETWEEN @RowStart AND @RowEnd
@@ -978,6 +1024,7 @@ BEGIN
 					ComStatus = '',
 					TransDesc = CASE
 									WHEN b.ProductId IN (3, 8, 23, 28, 38, 40, 49, 63) THEN b.transdesc
+									WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN b.transdesc			-- Hybrid Parlay
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1228,6 +1275,7 @@ BEGIN
 					ComStatus = '',
 					TransDesc = CASE
 									WHEN b.ProductId IN (3, 8, 23, 28, 38, 40, 49, 63) THEN b.transdesc
+									WHEN b.BetType = 29 AND b.OddsSpread = 3 THEN b.transdesc			-- Hybrid Parlay
 									ELSE ''
 								END,
 					OddsSpread = CASE
@@ -1298,7 +1346,7 @@ BEGIN
 					Odds	MONEY)
 
 				-- Mix Parlay which having at least 1 settled sub ticket
-				INSERT INTO @TmpParlayData
+				INSERT INTO @TmpParlayData (RefNo, Odds)
 				SELECT
 					b.RefNo,
 					dbo.PRODUCT(bpd.odds) AS Odds
@@ -1308,7 +1356,7 @@ BEGIN
 				GROUP BY b.refno
 
 				-- Mix Parlay which having no settled sub ticket
-				INSERT INTO @TmpParlayData
+				INSERT INTO @TmpParlayData (RefNo, Odds)
 				SELECT
 					b.RefNo,
 					dbo.PRODUCT(bm.odds) AS Odds
@@ -1333,7 +1381,7 @@ BEGIN
 							AND EventType = 3
 							AND WhTicket = 1)
 			BEGIN
-				INSERT INTO @BetListDetail
+				INSERT INTO @BetListDetail (RefNo, Odds, Stake, Status, APositionTaking, MPositionTaking, SPositionTaking, BetType, BetTeam, TransDesc)
 				SELECT
 					bm.refno,
 					bm.odds,
@@ -1361,7 +1409,7 @@ BEGIN
 							AND EventType = 3
 							AND WhTicket = 2)
 			BEGIN
-				INSERT INTO @BetListDetail
+				INSERT INTO @BetListDetail (RefNo, Odds, Stake, Status, APositionTaking, MPositionTaking, SPositionTaking, BetType, BetTeam, TransDesc)
 				SELECT
 					bm.refno,
 					bm.odds,
@@ -1436,7 +1484,18 @@ BEGIN
 		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON c.currency = ex.exchangeid
 	ORDER BY TransId DESC
 
-	SELECT * FROM @BetListDetail
+	SELECT
+		RefNo,
+		Odds,
+		Stake,
+		Status,
+		APositionTaking,
+		MPositionTaking,
+		SPositionTaking,
+		BetType,
+		BetTeam,
+		TransDesc
+	FROM @BetListDetail
 	ORDER BY RefNo ASC
 
 	DROP TABLE #PagingData

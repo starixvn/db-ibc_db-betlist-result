@@ -127,6 +127,7 @@ AS
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250416@Dave: Change datatype for ExchangeID [RedmineID: #221098]
+		- 20251107@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]
 
 	Param's Explanation:
 		+ @TransType:
@@ -219,9 +220,9 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	DECLARE @SportBettype TABLE(ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT)
+	DECLARE @SportBettype TABLE (ProductID TINYINT, Bettype SMALLINT, EventType TINYINT, RefTable TINYINT)
 
-	DECLARE @Date	SMALLDATETIME
+	DECLARE @Date SMALLDATETIME
 
 	SET @Date = @FromDate
 
@@ -329,7 +330,7 @@ BEGIN
 
 		IF EXISTS (SELECT 1 FROM @Data)
 		BEGIN
-			INSERT INTO @SportBettype
+			INSERT INTO @SportBettype (ProductID, Bettype, EventType, RefTable)
 			SELECT ProductID, BetType, EventType, RefTable
 			FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 			WHERE ProductID NOT IN (2, 4, 7, 9, 10, 11, 13, 14, 15, 17, 19, 24, 25, 26, 30, 31, 33)
@@ -412,10 +413,6 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					TransId = CASE
-								WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-								ELSE b.transid
-							END,
 					SportType = CASE
 									WHEN b.Product IN ('OneRNG', 'CC', 'SG', 'VRG', 'SAG', 'TG', 'SBC', 'SXG', 'IBCLC', 'BBIN', 'RNGW', 'ION', 'PGS', 'JK', 'WM', 'VS3', 'BG', 'H5LG', 
 										'MXG', 'SPR', 'SLT', 'PPL', 'HB', 'CG', 'VGA', 'AP', 'APM', 'FGGL', 'SEA', 'MGRNG', 'JIG', 'YB', 'L22', 'WE', 'UUSL', 'SNG') THEN b.matchid
@@ -565,10 +562,12 @@ BEGIN
 									WHEN b.Product IN ('SB', 'VS2', 'OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'VS3', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'LG', 'VS4', 'VS5')
 										THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType = 3 THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									ELSE ''
 								END,
 					OddsSpread = CASE
 									WHEN b.Product IN ('SB', 'OneRNG', 'PP', 'SG') THEN ISNULL(b.oddsspread, 0)
+									WHEN b.bettype = 29 AND b.OddsSpread = 3 THEN b.OddsSpread
 									ELSE 0
 								END,
 					BetdaqId = CASE
@@ -609,7 +608,7 @@ BEGIN
 					
 				-- Get ticket detail
 				-- Virtual Sports Racing
-				INSERT INTO @DetailData
+				INSERT INTO @DetailData (RefNo, Odds, Stake, Status, APositionTaking, MPositionTaking, SPositionTaking, BetType, BetTeam, TransDesc)
 				SELECT
 					bm.refno,
 					bm.odds,
@@ -630,7 +629,7 @@ BEGIN
 	END
 	ELSE		-- Grand Prize
 	BEGIN
-		INSERT INTO @SportBettype
+		INSERT INTO @SportBettype (ProductID, Bettype, EventType, RefTable)
 		SELECT ProductID, BetType, EventType, RefTable
 		FROM bodb02.dbo.f_SportBettypeMatrix_Sel (6, 0, 0, 2, '', '', @IsTest)
 		WHERE Bettype NOT IN (71, 72)
@@ -769,7 +768,7 @@ BEGIN
 		SET
 			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			b.TransDesc = IIF(b.oddsSpread = 3, b.transdesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 		FROM @Data AS b
 			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		WHERE b.BetType = 29 AND b.BetTeam = '1'
@@ -848,7 +847,18 @@ BEGIN
 	FROM @Data AS b
 	ORDER BY b.TransId DESC
 
-	SELECT * FROM @DetailData
+	SELECT
+		RefNo,
+		Odds,
+		Stake,
+		Status,
+		APositionTaking,
+		MPositionTaking,
+		SPositionTaking,
+		BetType,
+		BetTeam,
+		TransDesc
+	FROM @DetailData
 	ORDER BY RefNo DESC
 END
 GO
