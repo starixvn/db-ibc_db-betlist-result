@@ -159,7 +159,7 @@ AS
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
 		- 20250416@Dave: Change datatype for ExchangeID [RedmineID: #221098]
-
+		- 20251107@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]
 
 	Param's Explanation:
 		+ @TransType:
@@ -184,7 +184,7 @@ BEGIN
 	BEGIN
 		-- Don't support Deposit products (Playtech Casino, AG Casino, Microgaming Live Casino, Macau, Microgaming RNG Casino, BetTrade, Cash Out, Saba Promotion)
 		-- Don't support Racing, Live Casino, RNG Casino (bettype 71, 72), Bingo, P2P, Cockfighting, Exchange, Poker Games, Bullfighting, Lucky 3, Colossus Bets
-		INSERT INTO @SportBettype
+		INSERT INTO @SportBettype (ProductID, Bettype, EventType, SubProduct, RefTable)
 		SELECT ProductID, Bettype, EventType, SubProduct, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 		WHERE ProductID NOT IN (2, 4, 7, 9, 10, 11, 13, 14, 15, 17, 19, 24, 25, 26, 30, 31, 33)
@@ -195,7 +195,7 @@ BEGIN
 	END
 	ELSE		-- Grand Prize of ONERnG Jackpot
 	BEGIN
-		INSERT INTO @SportBettype
+		INSERT INTO @SportBettype (ProductID, Bettype, EventType, SubProduct, RefTable)
 		SELECT ProductID, Bettype, EventType, SubProduct, RefTable
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 		WHERE ProductID = 6 AND SubProduct <> ''
@@ -429,7 +429,9 @@ BEGIN
 																OR RefTable = 1)
 						AND WinLostDate >= @Yesterday)
 					BEGIN
-						INSERT INTO @temp_bettransX
+						INSERT INTO @temp_bettransX (
+							RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositiontaking, MPositiontaking, SPositiontaking, TPositiontaking, Discount, ADiscount, SDiscount, OddsSpread
+						)
 						SELECT
 							c.TransId AS RefNo,
 							CASE
@@ -476,7 +478,9 @@ BEGIN
 					-- bettransLC
 					IF EXISTS (SELECT 1 FROM @Tickets WHERE (Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR RefTable = 2) AND WinLostDate >= @Yesterday)
 					BEGIN
-						INSERT INTO @temp_bettransX
+						INSERT INTO @temp_bettransX (
+							RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositiontaking, MPositiontaking, SPositiontaking, TPositiontaking, Discount, ADiscount, SDiscount, OddsSpread
+						)
 						SELECT
 							c.TransId AS RefNo,
 							0 AS Odds,
@@ -521,7 +525,9 @@ BEGIN
 																OR RefTable = 1)
 						AND WinLostDate >= @Yesterday)
 					BEGIN
-						INSERT INTO @temp_bettransX
+						INSERT INTO @temp_bettransX (
+							RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositiontaking, MPositiontaking, SPositiontaking, TPositiontaking, Discount, ADiscount, SDiscount, OddsSpread
+						)
 						SELECT
 							c.TransId AS RefNo,
 							0 AS Odds,
@@ -558,7 +564,9 @@ BEGIN
 					-- bettransLC
 					IF EXISTS (SELECT 1 FROM @Tickets WHERE (Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR RefTable = 2) AND WinLostDate >= @Yesterday)
 					BEGIN
-						INSERT INTO @temp_bettransX
+						INSERT INTO @temp_bettransX (
+							RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositiontaking, MPositiontaking, SPositiontaking, TPositiontaking, Discount, ADiscount, SDiscount, OddsSpread
+						)
 						SELECT
 							c.TransId AS RefNo,
 							0 AS Odds,
@@ -599,11 +607,12 @@ BEGIN
 					AND b.Winlostdate >= @Yesterday
 					AND NOT EXISTS (SELECT 1 FROM @temp_bettransX WHERE RefNo = b.TransId)
 
-				INSERT INTO #MemBetTicket
-				SELECT TransId = CASE
-									WHEN c.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-									ELSE b.transid
-								END 
+				INSERT INTO #MemBetTicket (
+					TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+					SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+					Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, BetdaqId, ExtraInfo, Currency, CurrencyId, SiteId, DeviceType, LeagueGroupId
+				)
+				SELECT TransId = b.transid
 					,RefNo = b.refno
 					,CustId = b.custid
 					,Username = b.username
@@ -864,6 +873,7 @@ BEGIN
 					,TransDesc = CASE
 									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'VS5') THEN b.transdesc
 									WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG', 'LG', 'VS4') THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN c.EventType = 3 THEN ISNULL(b.transdesc, '')
 									ELSE '' END
 					,OddsSpread = CASE
@@ -903,7 +913,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
 				-- Virtual Sports Racing
-				INSERT INTO @BettransDetail
+				INSERT INTO @BettransDetail (RefNo, Odds, Stake, Status, APositionTaking, MPositionTaking, SPositionTaking, BetType, BetTeam, TransDesc)
 				SELECT RefNo = bm.refno
 					,Odds = bm.odds
 					,Stake = bm.stake
@@ -959,7 +969,11 @@ BEGIN
 
 				IF EXISTS (SELECT 1 FROM @Tickets)
 				BEGIN
-					INSERT INTO #MemBetTicket
+					INSERT INTO #MemBetTicket (
+						TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+						SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+						Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, BetdaqId, ExtraInfo, Currency, CurrencyId, SiteId, DeviceType, LeagueGroupId
+					)
 					SELECT TransId = b.translogid
 						,RefNo = b.translogid
 						,CustId = b.custid
@@ -1114,7 +1128,11 @@ BEGIN
 
 			IF @@ROWCOUNT > 0
 			BEGIN
-				INSERT INTO #MemBetTicket
+				INSERT INTO #MemBetTicket (
+					TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+					SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+					Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, BetdaqId, ExtraInfo, Currency, CurrencyId, SiteId, DeviceType, LeagueGroupId
+				)
 				SELECT TransId = b.transid
 					,RefNo = b.refno
 					,CustId = b.custid
@@ -1206,89 +1224,92 @@ BEGIN
 				EventType
 			)
 			SELECT
-				b.transid,
-				b.refno,
-				b.winlostdate,
+				b14.transid,
+				b14.refno,
+				b14.winlostdate,
 				CASE
-					WHEN s.EventType = 0 AND s.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
-					WHEN s.EventType = 0 AND s.ProductID = 6 THEN 'OneRNG'		-- RNG Casino
-					WHEN s.EventType = 0 AND s.ProductID = 8 THEN 'Keno'
-					WHEN s.EventType = 0 AND s.ProductID = 21 THEN 'AllBet'
-					WHEN s.EventType = 0 AND s.ProductID = 22 THEN 'VB'			-- Macau Games
-					WHEN s.EventType = 0 AND s.ProductID = 23 THEN 'NG2'
-					WHEN s.EventType = 0 AND s.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
-					WHEN s.EventType = 0 AND s.ProductID = 28 THEN 'Lottery'
-					WHEN s.EventType = 0 AND s.ProductID = 32 THEN 'PP'			-- Pragmatic Play Casino
-					WHEN s.EventType = 0 AND s.ProductID = 83 THEN 'ParlayVS4'	-- Virtual Sports 4 Parlay
-					WHEN s.EventType = 0 AND s.ProductID = 88 THEN 'ParlayVS5'  --Virtual Sports 5 Parlay
-					WHEN s.ProductID = 34					THEN 'CC'			-- Card Club
-					WHEN s.ProductID = 36					THEN 'SG'			-- Spadegaming
-					WHEN s.ProductID = 37					THEN 'SPR'			-- Saba Promotion
-					WHEN s.ProductID = 38					THEN 'VRG'			-- Virtual Games
-					WHEN s.ProductID = 39					THEN 'SAG'			-- SA Gaming
-					WHEN s.ProductID = 40					THEN 'TG'			-- Table Games
-					WHEN s.ProductID = 42					THEN 'SBC'			-- Saba.club
-					WHEN s.ProductID = 45					THEN 'SXG'			-- Sexy Gaming
-					WHEN s.ProductID = 46					THEN 'IBCLC'		-- IBCBet Live Casino
-					WHEN s.ProductID = 47					THEN 'BBIN'			-- BBIN
-					WHEN s.ProductID = 49					THEN 'VS3'			-- Leap Gaming Virtual Sports 3
-					WHEN s.ProductID = 50					THEN 'RNGW'			-- RNG War
-					WHEN s.ProductID = 51					THEN 'WM'			-- WM
-					WHEN s.ProductID = 52					THEN 'ION'			-- ION
-					WHEN s.ProductID = 55					THEN 'PGS'			-- PG Soft
-					WHEN s.ProductID = 56					THEN 'JK'			-- Joker
-					WHEN s.ProductID = 57					THEN 'BG'			-- Big Gaming
-					WHEN s.ProductID = 60					THEN 'MXG'			-- MaxGame
-					WHEN s.ProductID = 61					THEN 'HB'			-- Habanero
-					WHEN s.ProductID = 62					THEN 'CG'			-- CG
-					WHEN s.ProductID = 63					THEN 'SLT'			-- Sports Lottery
-					WHEN s.ProductID = 65					THEN 'PPL'			-- PP Live Casino
-					WHEN s.ProductID = 66					THEN 'VGA'			-- VGaming
-					WHEN s.ProductID = 67					THEN 'AP'			-- AdvantPlay
-					WHEN s.ProductID = 68					THEN 'APM'			-- AdvantPlay Mini
-					WHEN s.ProductID = 69					THEN 'BTC'			-- Bitcoin
-					WHEN s.ProductID = 70					THEN 'FGGL'			-- FGG
-					WHEN s.ProductID = 72					THEN 'SEA'			-- SEAL Entertainment
-					WHEN s.ProductID = 73					THEN 'MGRNG'		-- MG-RNG
-					WHEN s.ProductID = 75					THEN 'JIG'			-- Jili
-					WHEN s.ProductID = 76					THEN 'YB'			-- YeeBet
-					WHEN s.ProductID = 77					THEN 'LG'			-- Virtual Sports 3
-					WHEN s.ProductID = 78					THEN 'UUSL'			-- UU Slots
-					WHEN s.ProductID = 79					THEN 'L22'			-- Live22
-					WHEN s.ProductID = 80					THEN 'WE'			-- WE
-					WHEN s.ProductID = 85					THEN 'NS'			-- Nextspin
-					WHEN s.ProductID = 86					THEN 'SNG'			-- Saba xD
-					WHEN s.ProductID = 87					THEN 'FS'			-- FastSpin
-					WHEN s.ProductID = 89					THEN 'FAC'			-- FA CHAI
-					WHEN s.ProductID = 96					THEN 'ON'			-- ON Casino
-					WHEN s.ProductID = 100					THEN 'PTRNG'		-- Playtech
-					WHEN s.EventType = 1 AND s.ProductID = 1 THEN 'SB'			-- Sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 3 THEN 'NG'			-- Number Game
-					WHEN s.EventType = 0 AND s.ProductID = 3 THEN 'H5LG'		-- Number Game - Happy 5 Linked Games
-					WHEN s.EventType = 1 AND s.ProductID = 5 THEN 'VS'			-- Virtual Sports:: sportsbook
-					WHEN s.EventType = 1 AND s.ProductID = 27 THEN 'VS2'		-- Betradar Virtual Sports
-					WHEN s.EventType = 1 AND s.ProductID = 83 THEN 'VS4'		-- Virtual Sports 4
-					WHEN s.EventType = 5 AND s.ProductID = 88 THEN 'VS5'		-- Virtual Sports 5
-					WHEN s.EventType = 2 AND s.ProductID = 1 THEN 'Outright'
-					WHEN s.EventType = 3 AND s.ProductID = 5 THEN 'VR'			-- Virtual sports:: racing					
+					WHEN s14.EventType = 0 AND s14.ProductID = 1 THEN 'Parlay'		-- Sportsbook Parlay
+					WHEN s14.EventType = 0 AND s14.ProductID = 6 THEN 'OneRNG'		-- RNG Casino
+					WHEN s14.EventType = 0 AND s14.ProductID = 8 THEN 'Keno'
+					WHEN s14.EventType = 0 AND s14.ProductID = 21 THEN 'AllBet'
+					WHEN s14.EventType = 0 AND s14.ProductID = 22 THEN 'VB'			-- Macau Games
+					WHEN s14.EventType = 0 AND s14.ProductID = 23 THEN 'NG2'
+					WHEN s14.EventType = 0 AND s14.ProductID = 27 THEN 'ParlayVS2'	-- Betradar Virtual Sports Parlay
+					WHEN s14.EventType = 0 AND s14.ProductID = 28 THEN 'Lottery'
+					WHEN s14.EventType = 0 AND s14.ProductID = 32 THEN 'PP'			-- Pragmatic Play Casino
+					WHEN s14.EventType = 0 AND s14.ProductID = 83 THEN 'ParlayVS4'	-- Virtual Sports 4 Parlay
+					WHEN s14.EventType = 0 AND s14.ProductID = 88 THEN 'ParlayVS5'  --Virtual Sports 5 Parlay
+					WHEN s14.ProductID = 34					THEN 'CC'			-- Card Club
+					WHEN s14.ProductID = 36					THEN 'SG'			-- Spadegaming
+					WHEN s14.ProductID = 37					THEN 'SPR'			-- Saba Promotion
+					WHEN s14.ProductID = 38					THEN 'VRG'			-- Virtual Games
+					WHEN s14.ProductID = 39					THEN 'SAG'			-- SA Gaming
+					WHEN s14.ProductID = 40					THEN 'TG'			-- Table Games
+					WHEN s14.ProductID = 42					THEN 'SBC'			-- Saba.club
+					WHEN s14.ProductID = 45					THEN 'SXG'			-- Sexy Gaming
+					WHEN s14.ProductID = 46					THEN 'IBCLC'		-- IBCBet Live Casino
+					WHEN s14.ProductID = 47					THEN 'BBIN'			-- BBIN
+					WHEN s14.ProductID = 49					THEN 'VS3'			-- Leap Gaming Virtual Sports 3
+					WHEN s14.ProductID = 50					THEN 'RNGW'			-- RNG War
+					WHEN s14.ProductID = 51					THEN 'WM'			-- WM
+					WHEN s14.ProductID = 52					THEN 'ION'			-- ION
+					WHEN s14.ProductID = 55					THEN 'PGS'			-- PG Soft
+					WHEN s14.ProductID = 56					THEN 'JK'			-- Joker
+					WHEN s14.ProductID = 57					THEN 'BG'			-- Big Gaming
+					WHEN s14.ProductID = 60					THEN 'MXG'			-- MaxGame
+					WHEN s14.ProductID = 61					THEN 'HB'			-- Habanero
+					WHEN s14.ProductID = 62					THEN 'CG'			-- CG
+					WHEN s14.ProductID = 63					THEN 'SLT'			-- Sports Lottery
+					WHEN s14.ProductID = 65					THEN 'PPL'			-- PP Live Casino
+					WHEN s14.ProductID = 66					THEN 'VGA'			-- VGaming
+					WHEN s14.ProductID = 67					THEN 'AP'			-- AdvantPlay
+					WHEN s14.ProductID = 68					THEN 'APM'			-- AdvantPlay Mini
+					WHEN s14.ProductID = 69					THEN 'BTC'			-- Bitcoin
+					WHEN s14.ProductID = 70					THEN 'FGGL'			-- FGGL
+					WHEN s14.ProductID = 72					THEN 'SEA'			-- SEAL Entertainment
+					WHEN s14.ProductID = 73					THEN 'MGRNG'		-- MG-RNG
+					WHEN s14.ProductID = 75					THEN 'JIG'			-- Jili
+					WHEN s14.ProductID = 76					THEN 'YB'			-- YeeBet
+					WHEN s14.ProductID = 77					THEN 'LG'			-- Virtual Sports 3
+					WHEN s14.ProductID = 78					THEN 'UUSL'			-- UU Slots
+					WHEN s14.ProductID = 79					THEN 'L22'			-- Live22
+					WHEN s14.ProductID = 80					THEN 'WE'			-- WE
+					WHEN s14.ProductID = 85					THEN 'NS'			-- Nextspin
+					WHEN s14.ProductID = 86					THEN 'SNG'			-- Saba xD
+					WHEN s14.ProductID = 87					THEN 'FS'			-- FastSpin
+					WHEN s14.ProductID = 89					THEN 'FAC'			-- FA CHAI
+					WHEN s14.ProductID = 96					THEN 'ON'			-- ON Casino
+					WHEN s14.ProductID = 100					THEN 'PTRNG'		-- Playtech
+					WHEN s14.EventType = 1 AND s14.ProductID = 1 THEN 'SB'			-- Sportsbook
+					WHEN s14.EventType = 1 AND s14.ProductID = 3 THEN 'NG'			-- Number Game
+					WHEN s14.EventType = 0 AND s14.ProductID = 3 THEN 'H5LG'		-- Number Game - Happy 5 Linked Games
+					WHEN s14.EventType = 1 AND s14.ProductID = 5 THEN 'VS'			-- Virtual Sports:: sportsbook
+					WHEN s14.EventType = 1 AND s14.ProductID = 27 THEN 'VS2'		-- Betradar Virtual Sports
+					WHEN s14.EventType = 1 AND s14.ProductID = 83 THEN 'VS4'		-- Virtual Sports 4
+					WHEN s14.EventType = 5 AND s14.ProductID = 88 THEN 'VS5'		-- Virtual Sports 5
+					WHEN s14.EventType = 2 AND s14.ProductID = 1 THEN 'Outright'
+					WHEN s14.EventType = 3 AND s14.ProductID = 5 THEN 'VR'			-- Virtual sports:: racing					
 					ELSE 'Unknown'
 				END AS Product,
-				s.RefTable,
-				s.EventType				
-			FROM dbo.bettrans14 AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON b.bettype = s.Bettype
-			WHERE b.custid = @CustId
-				AND b.winlostdate = @Date
+				s14.RefTable,
+				s14.EventType				
+			FROM dbo.bettrans14 AS b14 WITH (NOLOCK)
+				INNER JOIN @SportBettype AS s14 ON b14.bettype = s14.Bettype
+			WHERE b14.custid = @CustId
+				AND b14.winlostdate = @Date
 				AND 1 = CASE
-							WHEN @TransType = 1 AND b.statusID IN (103, 111, 112, 113) THEN 1
-							WHEN @TransType = 2 AND b.statusID IN (101, 102) THEN 1
+							WHEN @TransType = 1 AND b14.statusID IN (103, 111, 112, 113) THEN 1
+							WHEN @TransType = 2 AND b14.statusID IN (101, 102) THEN 1
 						END
 
 			IF EXISTS (SELECT 1 FROM @Tickets)
 			BEGIN
-				INSERT INTO #MemBetTicket
-				SELECT TransId = CASE WHEN c.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-									ELSE b.transid END 
+				INSERT INTO #MemBetTicket (
+					TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+					SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+					Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, BetdaqId, ExtraInfo, Currency, CurrencyId, SiteId, DeviceType, LeagueGroupId
+				)
+				SELECT TransId = b.transid
 					,RefNo = b.refno
 					,CustId = b.custid
 					,Username = b.username
@@ -1476,6 +1497,7 @@ BEGIN
 					,TransDesc = CASE
 									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'H5LG', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA', 'VS5') THEN b.transdesc
 									WHEN c.Product IN ('SB', 'VS2', 'VS3', 'LG', 'VS4') THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN c.EventType = 3 THEN ISNULL(b.transdesc, '')
 									ELSE '' END
 					,OddsSpread = CASE
@@ -1508,21 +1530,22 @@ BEGIN
 					LEFT JOIN dbo.VSRaceInfo14 AS vrc WITH (NOLOCK) ON c.EventType = 3 AND vrc.EventID = b.matchid
 					LEFT JOIN dbo.match3rd14 AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 					LEFT JOIN dbo.League AS le WITH (NOLOCK) ON m.leagueID = le.leagueID
+					
 				-- Virtual Sports Racing
-				INSERT INTO @BettransDetail
-				SELECT RefNo = bm.refno
-					,Odds = bm.odds
-					,Stake = bm.stake
-					,Status = bm.status
-					,APositionTaking = bm.apositiontaking
-					,MPositionTaking = bm.mpositiontaking
-					,SPositionTaking = bm.spositiontaking
-					,BetType = bm.bettype
-					,BetTeam = bm.betteam
+				INSERT INTO @BettransDetail (RefNo, Odds, Stake, Status, APositionTaking, MPositionTaking, SPositionTaking, BetType, BetTeam, TransDesc)
+				SELECT RefNo = bm14.refno
+					,Odds = bm14.odds
+					,Stake = bm14.stake
+					,Status = bm14.status
+					,APositionTaking = bm14.apositiontaking
+					,MPositionTaking = bm14.mpositiontaking
+					,SPositionTaking = bm14.spositiontaking
+					,BetType = bm14.bettype
+					,BetTeam = bm14.betteam
 					,TransDesc = ''
-				FROM @Tickets AS c
-					INNER JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON c.RefNo = bm.refno
-				WHERE c.Product = 'VR' AND bm.custid = @CustId
+				FROM @Tickets AS c14
+					INNER JOIN dbo.bettransm14 AS bm14 WITH (NOLOCK) ON c14.RefNo = bm14.refno
+				WHERE c14.Product = 'VR' AND bm14.custid = @CustId
 	
 			END
 		END
@@ -1535,23 +1558,27 @@ BEGIN
 				Product
 			)
 			SELECT
-				b.transid,
-				b.refno,
-				b.winlostdate,
+				b14.transid,
+				b14.refno,
+				b14.winlostdate,
 				'OneRNG' AS Product
-			FROM dbo.bettransRnG14 AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON b.gameID = s.bettype
-			WHERE b.custid = @CustId
-				AND b.winlostdate = @Date
-				AND b.statusID IN (111, 112, 113)
-				AND s.ProductID = 6
+			FROM dbo.bettransRnG14 AS b14 WITH (NOLOCK)
+				INNER JOIN @SportBettype AS s14 ON b14.gameID = s14.bettype
+			WHERE b14.custid = @CustId
+				AND b14.winlostdate = @Date
+				AND b14.statusID IN (111, 112, 113)
+				AND s14.ProductID = 6
 				AND EXISTS (	SELECT 1
 								FROM DBACC.bodb02.dbo.PayoutTrans AS pt WITH (NOLOCK)
-								WHERE pt.refno = b.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
+								WHERE pt.refno = b14.transid AND pt.PayoutStatus IN ('Completed', 'Expired'))
 
 			IF @@ROWCOUNT > 0
 			BEGIN
-				INSERT INTO #MemBetTicket
+				INSERT INTO #MemBetTicket (
+					TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status, SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+					SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking, SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+					Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread, BetdaqId, ExtraInfo, Currency, CurrencyId, SiteId, DeviceType, LeagueGroupId
+				)
 				SELECT TransId = b.transid
 					,RefNo = b.refno
 					,CustId = b.custid
@@ -1637,7 +1664,7 @@ BEGIN
 			RefNo		BIGINT,
 			BoostRate	MONEY)
 
-		INSERT INTO @TmpData
+		INSERT INTO @TmpData (RefNo, BoostRate)
 		SELECT
 			b.refno,
 			CASE
@@ -1656,7 +1683,7 @@ BEGIN
 			MOdds	MONEY)
 
 		-- Mix Parlay which having at least 1 settled sub ticket
-		INSERT INTO @TmpParlayData
+		INSERT INTO @TmpParlayData (RefNo, Odds, MOdds)
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bpd.odds) AS Odds,
@@ -1668,7 +1695,7 @@ BEGIN
 			b.BoostRate
 
 		-- Mix Parlay which having no settled sub ticket
-		INSERT INTO @TmpParlayData
+		INSERT INTO @TmpParlayData (RefNo, Odds, MOdds)
 		SELECT
 			b.RefNo,
 			dbo.PRODUCT(bm.odds) AS Odds,
@@ -1692,7 +1719,7 @@ BEGIN
 		SET
 			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			b.TransDesc = IIF(b.oddsSpread = 3, b.transdesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 		FROM #MemBetTicket AS b
 			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		WHERE b.BetType = 29
@@ -1700,12 +1727,31 @@ BEGIN
 			AND b.Status NOT IN ('Running', 'Waiting')
 	END
 
-	SELECT *
+	SELECT
+		TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam,
+		Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status,
+		SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost,
+		SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking,
+		SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator,
+		LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+		Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus,
+		IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread,
+		BetdaqId, ExtraInfo, Currency, CurrencyId, SiteId, DeviceType, LeagueGroupId
 	FROM #MemBetTicket
 	ORDER BY TransId DESC
 
 	-- OUTPUT ticket detail
-	SELECT *
+	SELECT
+		RefNo,
+		Odds,
+		Stake,
+		Status,
+		APositionTaking,
+		MPositionTaking,
+		SPositionTaking,
+		BetType,
+		BetTeam,
+		TransDesc
 	FROM @BettransDetail
 	ORDER BY RefNo DESC
 

@@ -20,6 +20,7 @@ AS
 					- Add output param @IsParlayBoost BIT
 					- Return additional columns Odds MONEY, ExtraValue MONEY
 					- Remove param @TransId, @BetId
+		- 20251103@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]					
 */
 
 BEGIN
@@ -32,7 +33,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype (ProductId, Bettype, EventType)
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
@@ -109,24 +110,24 @@ BEGIN
 	WHERE bm.refno = @RefNo AND bm.custid = @CustId
 	UNION
 	SELECT
-		bm.transid,
-		bm.refno,
+		bm14.transid,
+		bm14.refno,
 		m.matchid,
-		bm.matchdate
-	FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-	WHERE bm.refno = @RefNo
+		bm14.matchdate
+	FROM dbo.bettransm14 AS bm14 WITH (NOLOCK)
+		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm14.matchid = m.matchid
+		INNER JOIN @SportBettype AS sbt ON bm14.bettype = sbt.Bettype
+	WHERE bm14.refno = @RefNo
 	UNION
 	SELECT
-		bm.transid,
-		bm.refno,
+		bma.transid,
+		bma.refno,
 		m.matchid,
-		bm.matchdate
-	FROM DBARC.bodb_Archive.dbo.bettransm AS bm WITH (NOLOCK)
-		INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bm.matchid = m.matchid
-		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-	WHERE bm.refno = @RefNo
+		bma.matchdate
+	FROM DBARC.bodb_Archive.dbo.bettransm AS bma WITH (NOLOCK)
+		INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON bma.matchid = m.matchid
+		INNER JOIN @SportBettype AS sbt ON bma.bettype = sbt.Bettype
+	WHERE bma.refno = @RefNo
 
 	SELECT	@minMatchdate = MIN(matchdate),
 			@maxMatchdate = MAX(matchdate)
@@ -135,32 +136,33 @@ BEGIN
 	-- Get bettrans and BetParlayResult data
 	IF @minMatchdate < @BalanceUpDay		-- bettrans_bk range
 	BEGIN
-		INSERT INTO @tmpBettrans
+		INSERT INTO @tmpBettrans (TransId, RefNo, OddsSpread, BetTeam, Status, Stake, Actual_Stake, WinLost, ExtraInfo, N, Bitmap, WhTicket)
 		SELECT
-			transid,
-			refno,
-			oddsspread,
-			betteam,
-			status,
-			stake,
-			actual_stake,
-			winlost,
-			ISNULL(ExtraInfo, '') AS ExtraInfo,
+			bk.transid,
+			bk.refno,
+			bk.oddsspread,
+			bk.betteam,
+			bk.status,
+			bk.stake,
+			bk.actual_stake,
+			bk.winlost,
+			ISNULL(bk.ExtraInfo, '') AS ExtraInfo,
 			CASE
-				WHEN betcheck IS NULL THEN LEN(betteam)		-- old Parlay tickets
-				ELSE hdp2									-- new Parlay tickets
+				WHEN bk.betcheck IS NULL THEN LEN(bk.betteam)				-- old Parlay tickets
+				WHEN bk.bettype = 29 AND bk.oddsspread = 3 THEN bk.betid	-- Hybrid Parlay tickets
+				ELSE bk.hdp2												-- new Parlay tickets
 			END AS N,
 			CASE
-				WHEN betcheck IS NULL THEN CONVERT(INT, hdp2)	-- old Parlay tickets
-				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
+				WHEN bk.betcheck IS NULL THEN CONVERT(INT, bk.hdp2)	-- old Parlay tickets
+				ELSE CONVERT(INT, bk.betteam)						-- new Parlay tickets
 			END AS Bitmap,
 			3 AS WhTicket
-		FROM DBARC.bodb_Archive.dbo.bettrans_bk WITH(NOLOCK) 
-		WHERE custid = @CustId
-			AND refno = @RefNo
-			AND matchid = 29
-			AND bettype = 29
-			AND transid NOT IN (SELECT transid FROM @tmpBettrans)
+		FROM DBARC.bodb_Archive.dbo.bettrans_bk AS bk WITH(NOLOCK) 
+		WHERE bk.custid = @CustId
+			AND bk.refno = @RefNo
+			AND bk.matchid = 29
+			AND bk.bettype = 29
+			AND bk.transid NOT IN (SELECT TransId FROM @tmpBettrans)
 
 		INSERT INTO @tmpResults (
 			WinLostDate,
@@ -188,37 +190,38 @@ BEGIN
 
 	IF @minMatchdate <= @MoveBetDay		--- bettrans14 range
 	BEGIN
-		INSERT INTO @tmpBettrans
+		INSERT INTO @tmpBettrans (TransId, RefNo, OddsSpread, BetTeam, Status, Stake, Actual_Stake, WinLost, ExtraInfo, N, Bitmap, WhTicket)
 		SELECT
-			transid,
-			refno,
-			oddsspread,
-			betteam,
-			status,
-			stake,
-			actual_stake,
-			winlost,
-			ISNULL(ExtraInfo, '') AS ExtraInfo,
+			b14.transid,
+			b14.refno,
+			b14.oddsspread,
+			b14.betteam,
+			b14.status,
+			b14.stake,
+			b14.actual_stake,
+			b14.winlost,
+			ISNULL(b14.ExtraInfo, '') AS ExtraInfo,
 			CASE
-				WHEN betcheck IS NULL THEN LEN(betteam)		-- old Parlay tickets
-				ELSE hdp2									-- new Parlay tickets
+				WHEN b14.betcheck IS NULL THEN LEN(b14.betteam)				-- old Parlay tickets
+				WHEN b14.bettype = 29 AND b14.oddsspread = 3 THEN b14.betid	-- Hybrid Parlay tickets
+				ELSE b14.hdp2												-- new Parlay tickets
 			END AS N,
 			CASE
-				WHEN betcheck IS NULL THEN CONVERT(INT, hdp2)	-- old Parlay tickets
-				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
+				WHEN b14.betcheck IS NULL THEN CONVERT(INT, b14.hdp2)	-- old Parlay tickets
+				ELSE CONVERT(INT, b14.betteam)							-- new Parlay tickets
 			END AS Bitmap,
 			2 AS WhTicket
-		FROM dbo.bettrans14 WITH(NOLOCK) 
-		WHERE custid = @CustId
-			AND refno = @RefNo
-			AND matchid = 29
-			AND bettype = 29
-			AND transid NOT IN (SELECT TransId FROM @tmpBettrans)
+		FROM dbo.bettrans14 AS b14 WITH(NOLOCK) 
+		WHERE b14.custid = @CustId
+			AND b14.refno = @RefNo
+			AND b14.matchid = 29
+			AND b14.bettype = 29
+			AND b14.transid NOT IN (SELECT TransId FROM @tmpBettrans)
 	END
 
 	IF @maxMatchdate > @MoveBetDay  --- get data from bettrans
 	BEGIN
-		INSERT INTO @tmpBettrans
+		INSERT INTO @tmpBettrans (TransId, RefNo, OddsSpread, BetTeam, Status, Stake, Actual_Stake, WinLost, ExtraInfo, N, Bitmap, WhTicket)
 		SELECT
 			transid,
 			refno,
@@ -230,12 +233,13 @@ BEGIN
 			winlost,
 			ISNULL(ExtraInfo, '') AS ExtraInfo,
 			CASE
-				WHEN betcheck IS NULL THEN LEN(betteam)		-- old Parlay tickets
-				ELSE hdp2									-- new Parlay tickets
+				WHEN betcheck IS NULL THEN LEN(betteam)			-- old Parlay tickets
+				WHEN bettype = 29 AND oddsspread = 3 THEN betid	-- Hybrid Parlay tickets
+				ELSE hdp2										-- new Parlay tickets
 			END AS N,
 			CASE
 				WHEN betcheck IS NULL THEN CONVERT(INT, hdp2)	-- old Parlay tickets
-				ELSE CONVERT(INT, betcheck)						-- new Parlay tickets
+				ELSE CONVERT(INT, betteam)						-- new Parlay tickets
 			END AS Bitmap,
 			1 AS WhTicket
 		FROM dbo.bettrans WITH(NOLOCK) 
@@ -257,43 +261,42 @@ BEGIN
 		PlayerComm, 
 		ExtraValue )
 	SELECT
-		winlostdate,
-		Serial,
-		Odds,
-		mOdds,
-		stake,
-		winlost,
-		statusid,
-		playercomm,
-		ExtraValue
+		b.winlostdate,
+		b.Serial,
+		b.Odds,
+		b.mOdds,
+		b.stake,
+		b.winlost,
+		b.statusid,
+		b.playercomm,
+		b.ExtraValue
 	FROM dbo.BetParlayResult AS b WITH(NOLOCK) 
-	WHERE RefNo = @RefNo
-		AND Serial NOT IN (SELECT Serial FROM @tmpResults)
+	WHERE b.RefNo = @RefNo
+		AND b.Serial NOT IN (SELECT Serial FROM @tmpResults)
 
 	-- Generate betParlayDetail
 	IF @minMatchdate < @BalanceUpday
 	BEGIN
 		;WITH sub AS 
 		(
-			SELECT ROW_NUMBER() OVER (ORDER BY matchid) RN, matchid FROM @parlay_base
+			SELECT ROW_NUMBER() OVER (ORDER BY matchid ASC) RN, matchid FROM @parlay_base
 		)
 		UPDATE pb
 		SET RN = sub.RN
-		FROM sub
+		FROM sub AS sub
 			INNER JOIN @parlay_base AS pb ON sub.matchid = pb.matchid
 
 		-- prepare N
-		;WITH sub AS (SELECT COUNT(*) cnt FROM @parlay_base)
+		;WITH sub AS (SELECT COUNT(*) AS cnt FROM @parlay_base)
 		UPDATE pb
-		SET CNT = sub.cnt,
+		SET Cnt = (SELECT TOP 1 sub.cnt FROM sub), 
 			bCnt = t.N
-		FROM sub,
-			@parlay_base AS pb,
-			@tmpBettrans AS t
+		FROM @parlay_base AS pb
+		INNER JOIN @tmpBettrans AS t ON pb.RefNo = t.RefNo;
 
 		IF NOT EXISTS(SELECT 1 FROM @parlay_base WHERE cnt <> bCnt)
 		BEGIN
-			INSERT INTO @betParlayDetail
+			INSERT INTO @betParlayDetail (RefNo, Serial, MatchId)
 			SELECT
 				pb.RefNo,
 				rc.Serial,
@@ -301,13 +304,13 @@ BEGIN
 			FROM
 				@parlay_base AS pb
 				INNER JOIN @tmpBettrans AS tb ON pb.RefNo = tb.RefNo
-				INNER JOIN dbo.RefCombinationSet AS rcs WITH (NOLOCK) ON pb.CNT = rcs.N AND (tb.Bitmap & rcs.bitmap) > 0
+				INNER JOIN dbo.RefCombinationSet AS rcs WITH (NOLOCK) ON pb.CNT = rcs.N AND (tb.Bitmap & rcs.bitmapR) > 0
 				INNER JOIN dbo.RefCombination AS rc WITH (NOLOCK) ON rcs.N = rc.N AND rcs.R = rc.R AND pb.RN = rc.seq
 		END
 	END
 	ELSE
 	BEGIN
-		INSERT INTO @betParlayDetail
+		INSERT INTO @betParlayDetail (RefNo, Serial, MatchId)
 		SELECT
 			refno,
 			serial,
@@ -319,7 +322,7 @@ BEGIN
 	-- Get homeid, awayid
 	IF @MinMatchdate < @BalanceUpday
 	BEGIN
-		INSERT INTO @tmpMatch
+		INSERT INTO @tmpMatch (Serial, HomeId, AwayId, IsNeutral)
 		SELECT
 			p.serial,
 			m.homeid,
@@ -333,7 +336,7 @@ BEGIN
 
 	IF @MinMatchdate <= @MoveBetDay
 	BEGIN
-		INSERT INTO @tmpMatch
+		INSERT INTO @tmpMatch (Serial, HomeId, AwayId, IsNeutral)
 		SELECT
 			p.serial,
 			m.homeid,
@@ -347,7 +350,7 @@ BEGIN
 
 	IF @MaxMatchdate > @MoveBetDay
 	BEGIN
-		INSERT INTO @tmpMatch
+		INSERT INTO @tmpMatch (Serial, HomeId, AwayId, IsNeutral)
 		SELECT
 			p.serial,
 			m.homeid,
@@ -373,7 +376,8 @@ BEGIN
 		@Discount		MONEY,
 		@OriginalOdds	MONEY,
 		@BetTeam		NVARCHAR(10),
-		@Status			NVARCHAR(10)
+		@Status			NVARCHAR(10),
+		@ExtraInfo		VARCHAR(1000);
 
 	SELECT
 		@Actual_Stake = Actual_Stake,
@@ -391,7 +395,8 @@ BEGIN
 								AND Status = 'Won'
 								AND ISNULL(CAST(('<xml>' + ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@bba)[1]','MONEY'), 0) > 0 THEN 1
 							ELSE 0
-						END
+						END,
+		@ExtraInfo = IIF(OddsSpread = 3, ExtraInfo, NULL)
 	FROM @tmpBettrans
 
 	-- Get original odds for Mix Parlay
@@ -445,11 +450,17 @@ BEGIN
 			ELSE WinLost - Stake
 		END AS WinLost,
 		PlayerComm,
-		ExtraValue
+		ExtraValue,
+		@ExtraInfo AS ExtraInfo
 	FROM @tmpResults
 	WHERE StatusId NOT IN (0, 1)
 	ORDER BY WinLostDate ASC
 
-	SELECT DISTINCT * FROM @tmpMatch
+	SELECT DISTINCT 
+		Serial,
+		HomeId,
+		AwayId,
+		IsNeutral
+	FROM @tmpMatch
 END
 GO

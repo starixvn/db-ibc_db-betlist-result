@@ -186,6 +186,7 @@ AS
 		- 20250505@Benji:  HF - VS7 - Alpha - Cannot show data Result on Result pop up of ticket on range bettrans that drilldown from report Winloss [Redmine: #226050]
 		- 20250507@Benji: Support Saba Soccer Marble [Redmine:#223130]
 		- 20250728@Razor: ODIN GAMING dont support Product Detail[Redmine:#233933]
+		- 20251103@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]
 
 	Param's Explanation:
 		@ProductDetails:
@@ -451,7 +452,11 @@ BEGIN
 														OR RefTable = 1)
 				AND WinLostDate >= @Yesterday)
 			BEGIN
-				INSERT INTO @temp_bettransX
+				INSERT INTO @temp_bettransX ( 	
+					RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost,
+					SWinLost, PlayerComm, Comm, AComm, SComm, APositiontaking, MPositiontaking,
+					SPositiontaking, TPositiontaking, Discount, ADiscount, SDiscount, OddsSpread
+				)
 				SELECT RefNo = c.transid
 					,Odds = CASE
 								WHEN Product IN ('OneRNG', 'PP', 'SG') THEN ISNULL(AVG(CASE WHEN brng.statusID IN (111, 112, 113) THEN brng.ContributionRate END), 0)
@@ -490,7 +495,11 @@ BEGIN
 
 			IF EXISTS (SELECT 1 FROM @Tickets WHERE (Product IN ('Allbet', 'SAG', 'SXG', 'IBCLC', 'ION', 'WM', 'BG', 'PPL', 'FGGL', 'YB', 'WE') OR RefTable = 2) AND WinLostDate >= @Yesterday) -- bettransLC
 			BEGIN
-				INSERT INTO @temp_bettransX
+				INSERT INTO @temp_bettransX ( 	
+					RefNo, Odds, Stake, Actual_Stake, Status, WinLost, AWinLost, MWinLost,
+					SWinLost, PlayerComm, Comm, AComm, SComm, APositiontaking, MPositiontaking,
+					SPositiontaking, TPositiontaking, Discount, ADiscount, SDiscount, OddsSpread
+				)
 				SELECT RefNo = c.transid
 					,Odds = 0
 					,Stake = SUM(blc.stake)
@@ -535,11 +544,14 @@ BEGIN
 
 			IF @TotalRow <= @MaxTotalRow OR @IsExportExcel = 1
 			BEGIN
-				INSERT INTO #MemBetTicket
-				SELECT TransId = CASE
-									WHEN c.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-									ELSE b.transid
-								END 
+				INSERT INTO #MemBetTicket (
+					TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status,
+					SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking,
+					SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+					Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread,
+					BetdaqId, ExtraInfo, Currency, Product, CurrencyId, SiteId, LeagueGroupID, TicketType, DeviceType
+				)
+				SELECT TransId = b.transid
 					,RefNo = b.refno
 					,CustId = b.custid
 					,Username = b.username
@@ -783,6 +795,7 @@ BEGIN
 					,TransDesc = CASE
 									WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN b.transdesc
 									WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG', 'LG', 'VS4', 'VS5') THEN ISNULL(b.transdesc, '')
+									WHEN b.bettype = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 									WHEN c.EventType = 3  THEN ISNULL(b.transdesc, '')
 									ELSE '' END
 					,OddsSpread = CASE
@@ -836,7 +849,7 @@ BEGIN
 					LEFT JOIN dbo.match3rd AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 					
 				-- virtual sports:: racing
-				INSERT INTO @BettransDetail
+				INSERT INTO @BettransDetail (RefNo,	Odds, Stake, Status, APositionTaking, MPositionTaking, SPositionTaking, BetType, BetTeam, TransDesc)
 				SELECT RefNo = bm.refno
 					,Odds = bm.odds
 					,Stake = bm.stake
@@ -952,12 +965,16 @@ BEGIN
 		SELECT @TotalRow14 = COUNT(1)
 		FROM @Tickets
 		
-		IF @TotalRow14 > 0
-			AND (@TotalRow + @TotalRow14 <= @MaxTotalRow OR @IsExportExcel = 1)
+		IF @TotalRow14 > 0 AND (@TotalRow + @TotalRow14 <= @MaxTotalRow OR @IsExportExcel = 1)
 		BEGIN
-			INSERT INTO #MemBetTicket
-			SELECT TransId = CASE WHEN c.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-								ELSE b.transid END 
+			INSERT INTO #MemBetTicket (
+				TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status,
+				SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking,
+				SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+				Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread,
+				BetdaqId, ExtraInfo, Currency, Product, CurrencyId, SiteId, LeagueGroupID, TicketType, DeviceType
+			)
+			SELECT TransId = b.transid
 				,RefNo = b.refno
 				,CustId = b.custid
 				,Username = b.username
@@ -1147,6 +1164,7 @@ BEGIN
 				,TransDesc = CASE
 								WHEN c.Product IN ('OneRNG', 'CC', 'SG', 'Keno', 'VB', 'NG2', 'Lottery', 'PP', 'VRG', 'TG', 'PGS', 'JK', 'SLT', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN b.transdesc
 								WHEN c.Product IN ('SB', 'VS2', 'VS3', 'H5LG', 'LG', 'VS4', 'VS5') THEN ISNULL(b.transdesc, '')
+								WHEN b.bettype = 29 AND b.OddsSpread = 3 THEN ISNULL(b.transdesc, '')
 								WHEN c.EventType = 3 THEN ISNULL(b.transdesc, '')
 								ELSE '' END
 				,OddsSpread = CASE
@@ -1193,20 +1211,20 @@ BEGIN
 				LEFT JOIN dbo.VSRaceInfo14 AS vrc WITH (NOLOCK) ON c.EventType = 3 AND vrc.EventID = b.matchid
 				LEFT JOIN dbo.match3rd14 AS m3rd WITH (NOLOCK) ON b.matchid = m3rd.match3rdid
 
-			INSERT INTO @BettransDetail
+			INSERT INTO @BettransDetail (RefNo,	Odds, Stake, Status, APositionTaking, MPositionTaking, SPositionTaking, BetType, BetTeam, TransDesc)
 			-- virtual sports:: racing
-			SELECT RefNo = bm.refno
-				,Odds = bm.odds
-				,Stake = bm.stake
-				,Status = bm.status
-				,APositionTaking = bm.apositiontaking
-				,MPositionTaking = bm.mpositiontaking
-				,SPositionTaking = bm.spositiontaking
-				,BetType = bm.bettype
-				,BetTeam = bm.betteam
+			SELECT RefNo = bm14.refno
+				,Odds = bm14.odds
+				,Stake = bm14.stake
+				,Status = bm14.status
+				,APositionTaking = bm14.apositiontaking
+				,MPositionTaking = bm14.mpositiontaking
+				,SPositionTaking = bm14.spositiontaking
+				,BetType = bm14.bettype
+				,BetTeam = bm14.betteam
 				,TransDesc = ''
 			FROM @Tickets AS c
-				INNER JOIN dbo.bettransm14 AS bm WITH (NOLOCK) ON c.Product IN ('VR') AND c.refno = bm.refno AND bm.custid = @custid
+				INNER JOIN dbo.bettransm14 AS bm14 WITH (NOLOCK) ON c.Product IN ('VR') AND c.refno = bm14.refno AND bm14.custid = @custid
 			WHERE c.Product IN ('VR') -- virtual sports:: racing
 	
 		END -- end: @@rowcount > 0
@@ -1248,7 +1266,7 @@ BEGIN
 			TicketType		TINYINT
 		)
 
-		INSERT INTO @FullProductDetail
+		INSERT INTO @FullProductDetail ( ProductId, SportType, BetType, LeagueGroupID, TicketType )
 		SELECT
 			ProductId,
 			SportType,
@@ -1257,226 +1275,229 @@ BEGIN
 			TicketType
 		FROM dbo.f_GetProductDetail()
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product IN ('SB', 'Parlay', 'Outright')
+		DELETE mbt1
+		FROM #MemBetTicket AS mbt1
+		WHERE mbt1.Product IN ('SB', 'Parlay', 'Outright')
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
+							WHERE ProductId = 1 AND SportType = mbt1.SportType AND LeagueGroupID = mbt1.LeagueGroupID AND TicketType = mbt1.TicketType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
+							WHERE ProductId = 1 AND SportType = mbt1.SportType AND LeagueGroupID = mbt1.LeagueGroupID AND TicketType = mbt1.TicketType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product IN ('SB', 'Parlay', 'Outright')
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 1 AND SportType = 0 AND LeagueGroupID = 0 AND TicketType = 0)
-			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 1 AND SportType = b.SportType AND LeagueGroupID = b.LeagueGroupID AND TicketType = b.TicketType)
+		DELETE mbt2
+			FROM #MemBetTicket AS mbt2
+			WHERE mbt2.Product IN ('SB', 'Parlay', 'Outright')
+				AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+								WHERE ProductId = 1 AND SportType = 0 AND LeagueGroupID = 0 AND TicketType = 0)
+				AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+								WHERE ProductId = 1 AND SportType = mbt2.SportType AND LeagueGroupID = mbt2.LeagueGroupID AND TicketType = mbt2.TicketType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'Allbet'
+		DELETE mbt3
+			FROM #MemBetTicket AS mbt3
+			WHERE mbt3.Product = 'Allbet'
+				AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+								WHERE ProductId = 21 AND BetType = mbt3.BetType)
+				AND EXISTS (SELECT 1 FROM @FullProductDetail
+								WHERE ProductId = 21 AND BetType = mbt3.BetType)
+
+		DELETE mbt4
+			FROM #MemBetTicket AS mbt4
+			WHERE mbt4.Product = 'Allbet'
+				AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+								WHERE ProductId = 21 AND BetType = 0)
+				AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
+								WHERE ProductId = 21 AND BetType = mbt4.BetType)
+
+		DELETE mbt5
+		FROM #MemBetTicket AS mbt5
+		WHERE mbt5.Product = 'PP'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 21 AND BetType = b.BetType)
+							WHERE ProductId = 32 AND BetType = mbt5.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 21 AND BetType = b.BetType)
+							WHERE ProductId = 32 AND BetType = mbt5.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'Allbet'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 21 AND BetType = 0)
-			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 21 AND BetType = b.BetType)
-
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'PP'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 32 AND BetType = b.BetType)
-			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 32 AND BetType = b.BetType)
-
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'PP'
+		DELETE mbt6
+		FROM #MemBetTicket AS mbt6
+		WHERE mbt6.Product = 'PP'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 32 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 32 AND BetType = b.BetType)
+							WHERE ProductId = 32 AND BetType = mbt6.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'SXG'
+		DELETE mbt7
+		FROM #MemBetTicket AS mbt7
+		WHERE mbt7.Product = 'SXG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 45 AND BetType = b.BetType)
+							WHERE ProductId = 45 AND BetType = mbt7.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 45 AND BetType = b.BetType)
+							WHERE ProductId = 45 AND BetType = mbt7.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'SXG'
+		DELETE mbt8
+		FROM #MemBetTicket AS mbt8
+		WHERE mbt8.Product = 'SXG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 45 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 45 AND BetType = b.BetType)
+							WHERE ProductId = 45 AND BetType = mbt8.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'SG'
+		DELETE mbt9
+		FROM #MemBetTicket AS mbt9
+		WHERE mbt9.Product = 'SG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 36 AND BetType = b.BetType)
+							WHERE ProductId = 36 AND BetType = mbt9.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 36 AND BetType = b.BetType)
+							WHERE ProductId = 36 AND BetType = mbt9.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'SG'
+		DELETE mbt10
+		FROM #MemBetTicket AS mbt10
+		WHERE mbt10.Product = 'SG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 36 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 36 AND BetType = b.BetType)
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'MGRNG'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 73 AND BetType = b.BetType)
-			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 73 AND BetType = b.BetType)
+							WHERE ProductId = 36 AND BetType = mbt10.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'MGRNG'
+		DELETE mbt11
+		FROM #MemBetTicket AS mbt11
+		WHERE mbt11.Product = 'MGRNG'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 73 AND BetType = mbt11.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 73 AND BetType = mbt11.BetType)
+
+		DELETE mbt12
+		FROM #MemBetTicket AS mbt12
+		WHERE mbt12.Product = 'MGRNG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 73 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 73 AND BetType = b.BetType)
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'L22'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 79 AND BetType = b.BetType)
-			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 79 AND BetType = b.BetType)
+							WHERE ProductId = 73 AND BetType = mbt12.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'L22'
+		DELETE mbt13
+		FROM #MemBetTicket AS mbt13
+		WHERE mbt13.Product = 'L22'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 79 AND BetType = mbt13.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 79 AND BetType = mbt13.BetType)
+
+		DELETE mbt14
+		FROM #MemBetTicket AS mbt14
+		WHERE mbt14.Product = 'L22'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 79 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 79 AND BetType = b.BetType)
+							WHERE ProductId = 79 AND BetType = mbt14.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'FS'
+		DELETE mbt15
+		FROM #MemBetTicket AS mbt15
+		WHERE mbt15.Product = 'FS'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-					WHERE ProductId = 87 AND BetType = b.BetType)
+					WHERE ProductId = 87 AND BetType = mbt15.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-					WHERE ProductId = 87 AND BetType = b.BetType)
+					WHERE ProductId = 87 AND BetType = mbt15.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'FS'
+		DELETE mbt16
+		FROM #MemBetTicket AS mbt16
+		WHERE mbt16.Product = 'FS'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 						WHERE ProductId = 87 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-						WHERE ProductId = 87 AND BetType = b.BetType)
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'VGA'
-			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 66 AND BetType = b.BetType)
-			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 66 AND BetType = b.BetType)
+						WHERE ProductId = 87 AND BetType = mbt16.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'VGA'
+		DELETE mbt17
+		FROM #MemBetTicket AS mbt17
+		WHERE mbt17.Product = 'VGA'
+			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
+							WHERE ProductId = 66 AND BetType = mbt17.BetType)
+			AND EXISTS (SELECT 1 FROM @FullProductDetail
+							WHERE ProductId = 66 AND BetType = mbt17.BetType)
+
+		DELETE mbt18
+		FROM #MemBetTicket AS mbt18
+		WHERE mbt18.Product = 'VGA'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 66 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 66 AND BetType = b.BetType)
+							WHERE ProductId = 66 AND BetType = mbt18.BetType)
 							
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'FAC'
+		DELETE mbt19
+		FROM #MemBetTicket AS mbt19
+		WHERE mbt19.Product = 'FAC'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 89 AND BetType = b.BetType)
+							WHERE ProductId = 89 AND BetType = mbt19.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 89 AND BetType = b.BetType)
+							WHERE ProductId = 89 AND BetType = mbt19.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'FAC'
+		DELETE mbt20
+		FROM #MemBetTicket AS mbt20
+		WHERE mbt20.Product = 'FAC'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 89 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 89 AND BetType = b.BetType)
+							WHERE ProductId = 89 AND BetType = mbt20.BetType)
 							
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'ASK'
+		DELETE mbt21
+		FROM #MemBetTicket AS mbt21
+		WHERE mbt21.Product = 'ASK'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 103 AND BetType = b.BetType)
+							WHERE ProductId = 103 AND BetType = mbt21.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 103 AND BetType = b.BetType)
+							WHERE ProductId = 103 AND BetType = mbt21.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'ASK'
+		DELETE mbt22
+		FROM #MemBetTicket AS mbt22
+		WHERE mbt22.Product = 'ASK'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 103 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 103 AND BetType = b.BetType)
+							WHERE ProductId = 103 AND BetType = mbt22.BetType)
 							
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'HOT'
+		DELETE mbt23
+		FROM #MemBetTicket AS mbt23
+		WHERE mbt23.Product = 'HOT'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 95 AND BetType = b.BetType)
+							WHERE ProductId = 95 AND BetType = mbt23.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 95 AND BetType = b.BetType)
+							WHERE ProductId = 95 AND BetType = mbt23.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'HOT'
+		DELETE mbt24
+		FROM #MemBetTicket AS mbt24
+		WHERE mbt24.Product = 'HOT'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 95 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 95 AND BetType = b.BetType)
+							WHERE ProductId = 95 AND BetType = mbt24.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'MGLC'
+		DELETE mbt25
+		FROM #MemBetTicket AS mbt25
+		WHERE mbt25.Product = 'MGLC'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 107 AND BetType = b.BetType)
+							WHERE ProductId = 107 AND BetType = mbt25.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 107 AND BetType = b.BetType)
+							WHERE ProductId = 107 AND BetType = mbt25.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'MGLC'
+		DELETE mbt26
+		FROM #MemBetTicket AS mbt26
+		WHERE mbt26.Product = 'MGLC'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 107 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 107 AND BetType = b.BetType)
+							WHERE ProductId = 107 AND BetType = mbt26.BetType)
 		
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'RGRNG'
+		DELETE mbt27
+		FROM #MemBetTicket AS mbt27
+		WHERE mbt27.Product = 'RGRNG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
-							WHERE ProductId = 108 AND BetType = b.BetType)
+							WHERE ProductId = 108 AND BetType = mbt27.BetType)
 			AND EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 108 AND BetType = b.BetType)
+							WHERE ProductId = 108 AND BetType = mbt27.BetType)
 
-		DELETE b
-		FROM #MemBetTicket AS b
-		WHERE b.Product = 'RGRNG'
+		DELETE mbt28
+		FROM #MemBetTicket AS mbt28
+		WHERE mbt28.Product = 'RGRNG'
 			AND NOT EXISTS (SELECT 1 FROM @ProductDetail
 							WHERE ProductId = 108 AND BetType = 0)
 			AND NOT EXISTS (SELECT 1 FROM @FullProductDetail
-							WHERE ProductId = 108 AND BetType = b.BetType)
+							WHERE ProductId = 108 AND BetType = mbt28.BetType)
 		
 	END
 
@@ -1487,7 +1508,7 @@ BEGIN
 		SET
 			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			b.TransDesc = IIF(b.OddsSpread = 3, b.TransDesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 		FROM #MemBetTicket AS b
 			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		WHERE b.BetType = 29 AND b.BetTeam = '1'
@@ -1509,18 +1530,36 @@ BEGIN
 
 	IF @IsExportExcel = 0 OR @OriginalMaxTotalRow >= @TotalRow + @TotalRow14
 	BEGIN
-		SELECT *
-		FROM #MemBetTicket
-		ORDER BY TransId DESC
+		SELECT TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status,
+				SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking,
+				SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+				Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread,
+				BetdaqId, ExtraInfo, Currency, Product, CurrencyId, SiteId, LeagueGroupID, TicketType, DeviceType
+		FROM #MemBetTicket AS X
+		ORDER BY X.TransId DESC
 	END
 	ELSE
 	BEGIN
-		SELECT TOP(@OriginalMaxTotalRow) *
-		FROM #MemBetTicket
-		ORDER BY TransId DESC
+		SELECT TOP(@OriginalMaxTotalRow) 
+				TransId, RefNo, CustId, Username, SportType, BetType, BetId, BetTeam, Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, Stake, Actual_Stake, Status,
+				SettlementStatus, TransDate, WinLostDate, WinLost, AWinLost, MWinLost, SWinLost, PlayerComm, Comm, AComm, SComm, APositionTaking, MPositionTaking,
+				SPositionTaking, TPositionTaking, ADiscount, MDiscount, SDiscount, LiveIndicator, LiveHomeScore, LiveAwayScore, FinalHomeScore, FinalAwayScore, HtHomeScore, HtAwayScore,
+				Ip, LeagueId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral, Placing, ShowTime, BetCheck, ComStatus, TransDesc, OddsSpread,
+				BetdaqId, ExtraInfo, Currency, Product, CurrencyId, SiteId, LeagueGroupID, TicketType, DeviceType
+		FROM #MemBetTicket AS Y
+		ORDER BY Y.TransId DESC
 	END
 
-	SELECT *
+	SELECT RefNo,
+			Odds,
+			Stake,
+			Status,
+			APositionTaking,
+			MPositionTaking,
+			SPositionTaking,
+			BetType,
+			BetTeam,
+			TransDesc
 	FROM @BettransDetail
 	ORDER BY RefNo DESC
 

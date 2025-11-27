@@ -170,6 +170,7 @@ AS
 		- 20241106@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20250326@Benji: Support VS 7 - Virtual Sports 7 (Kiron Virtual Sports) [Redmine: 218532]
 		- 20250414@Razor: Support Direct Member [Redmine: #211969]
+		- 20251030@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]
 */
 
 BEGIN
@@ -334,7 +335,7 @@ BEGIN
 		,SecAcceptFlag = SecAcceptFlag
 		,SPositionTaking = spositiontaking
 		,Stake = stake
-		,TransDesc = ISNULL(transdesc, '')
+		,TransDesc = ISNULL(TransDesc, '')
 		,ExtraInfo = ISNULL(ExtraInfo, '')
 		,TableID = 1 --bettrans
 		,DeviceType
@@ -701,7 +702,7 @@ BEGIN
 				,IsNeutral = 0
 				,OddsType = 0
 				,ShowTime = ''
-				,TransDesc = ''
+				,TransDesc = IIF(bettype = 29 AND OddsSpread = 3, ISNULL(transdesc, ''),'')
 				,ExtraInfo = ISNULL(b.ExtraInfo, '')
 			FROM @BetListSelRunningByDateMem AS b
 			WHERE b.bettype IN (9, 29)
@@ -1017,7 +1018,7 @@ BEGIN
 				Hdp2		SMALLMONEY,
 				BoostRate	MONEY)
 
-			INSERT INTO @TmpData
+			INSERT INTO @TmpData (RefNo, Hdp2, BoostRate)
 			SELECT
 				b.RefNo,
 				b.Hdp2,
@@ -1035,7 +1036,7 @@ BEGIN
 				MOdds	MONEY)
 
 			-- Mix Parlay which having no settled sub ticket
-			INSERT INTO @TmpParlayData
+			INSERT INTO @TmpParlayData (RefNo, Odds, MOdds)
 			SELECT
 				b.RefNo,
 				dbo.PRODUCT(bm.odds) AS Odds,
@@ -1061,7 +1062,7 @@ BEGIN
 		-- Virtual Sports (bettype 1233)
 		IF EXISTS (SELECT 1 FROM @BetListSelRunningByDateMem WHERE ProductId = 5 AND EventType = 3)
 		BEGIN
-			INSERT INTO @BetListDetail
+			INSERT INTO @BetListDetail (RefNo, Odds, Stake, Status, APositionTaking, MPositionTaking, SPositionTaking, BetType, BetTeam, TransDesc)
 			SELECT
 				bm.refno,
 				bm.odds,
@@ -1133,7 +1134,17 @@ BEGIN
 	FROM @BetListSelRunningByDateMem
 	ORDER BY TransId DESC
 
-	SELECT * FROM @BetListDetail
+	SELECT RefNo,
+			Odds,
+			Stake,
+			Status,
+			APositionTaking,
+			MPositionTaking,
+			SPositionTaking,
+			BetType,
+			BetTeam,
+			TransDesc 
+	FROM @BetListDetail
 	ORDER BY RefNo ASC
 END
 GO

@@ -22,6 +22,7 @@ AS
 		- 20231019@Razor: Return Device Type info [Redmine: #192667]
 		- 20240822@Razor: Support Baseball AIO Phase 2 [Redmine: #209584]
 		- 20241218@Razor: Support Direct Member [Redmine: #211969]
+		- 20251103@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]
 */
 
 BEGIN
@@ -34,7 +35,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype (ProductId, Bettype, EventType)
 	SELECT ProductID, BetType, EventType
 	FROM dbo.f_SportBettypeMatrix_Sel (1, 0, 0, 2, '', '', @IsTest)
 
@@ -44,7 +45,7 @@ BEGIN
 		@minMatchdate	DATETIME,
 		@maxMatchdate	DATETIME,
 		@WhTicket		TINYINT,-- 1: bettrans, 2: bettrans14, 3: bettrans_bk
-		@MainTicketIsMarked BIT
+		@MainTicketIsMarked BIT;
 
 	SELECT @MainTicketIsMarked = COUNT(1)
 	FROM dbo.MarkedTransaction WITH (NOLOCK)
@@ -275,28 +276,28 @@ BEGIN
 	UNION
 
 	SELECT
-		bm.transid,
-		bm.refno,
-		bm.transdate,
-		bm.winlostdate,
-		bm.bettype,
+		bm14.transid,
+		bm14.refno,
+		bm14.transdate,
+		bm14.winlostdate,
+		bm14.bettype,
 		m.homeid,
 		m.awayid,
-		bm.hdp1,
-		bm.hdp2,
-		bm.odds,
-		bm.betteam,
+		bm14.hdp1,
+		bm14.hdp2,
+		bm14.odds,
+		bm14.betteam,
 		CASE
 			WHEN @Status = 'Void' THEN ''
-			WHEN @Status = 'Reject' AND bm.status <> 'Reject' THEN ''
-			WHEN bm.status = 'WON' AND ISNULL(bm.statuswinlost, 0) = 1 THEN 'Half Won'
-			WHEN bm.status = 'LOSE' AND ISNULL(bm.statuswinlost, 0) = 3 THEN 'Half Lose'
-			ELSE bm.status
+			WHEN @Status = 'Reject' AND bm14.status <> 'Reject' THEN ''
+			WHEN bm14.status = 'WON' AND ISNULL(bm14.statuswinlost, 0) = 1 THEN 'Half Won'
+			WHEN bm14.status = 'LOSE' AND ISNULL(bm14.statuswinlost, 0) = 3 THEN 'Half Lose'
+			ELSE bm14.status
 		END AS status,
 		0 AS SettlementStatus,
-		bm.livehomescore,
-		bm.liveawayscore,
-		bm.liveindicator,
+		bm14.livehomescore,
+		bm14.liveawayscore,
+		bm14.liveindicator,
 		m.leagueid,
 		m.sporttype,
 		m.IsNeutral,
@@ -312,12 +313,12 @@ BEGIN
 			WHEN m.sporttype IN (8, 50) AND m.ChildMatchType = 200 THEN ISNULL(pm14.GlobalShowTime, pm.GlobalShowTime)
 			ELSE m.GlobalShowTime
 		END AS EventDate,
-		bm.matchdate,
-		ISNULL(bm.betcheck, '') AS BetCheck,
-		ISNULL(bm.transdesc, '') AS TransDesc,
-		bm.stake
-	FROM dbo.bettransm14 AS bm WITH (NOLOCK)
-		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm.matchid = m.matchid
+		bm14.matchdate,
+		ISNULL(bm14.betcheck, '') AS BetCheck,
+		ISNULL(bm14.transdesc, '') AS TransDesc,
+		bm14.stake
+	FROM dbo.bettransm14 AS bm14 WITH (NOLOCK)
+		INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON bm14.matchid = m.matchid
 		LEFT JOIN dbo.match14 AS pm14 WITH (NOLOCK)
 			ON pm14.matchid = m.ParentID
 			AND m.sporttype IN (8, 50)
@@ -326,8 +327,8 @@ BEGIN
 			ON pm.matchid = m.ParentID
 			AND m.sporttype IN (8, 50)
 			AND m.ChildMatchType = 200
-		INNER JOIN @SportBettype AS sbt ON bm.bettype = sbt.Bettype
-	WHERE bm.refno = @RefNo
+		INNER JOIN @SportBettype AS sbt ON bm14.bettype = sbt.Bettype
+	WHERE bm14.refno = @RefNo
 
 	UNION
 
@@ -397,64 +398,69 @@ BEGIN
 	-- Get bettrans and BetParlayResult data
 	IF EXISTS (SELECT 1 FROM @parlay_base WHERE MatchDate < @BalanceUpDay)		-- bettrans_bk
 	BEGIN
-		INSERT INTO @tmpBettrans
+		INSERT INTO @tmpBettrans (
+			TransId, BetId, TransDate, RefNo, WinLostDate, Odds, Modds, OddsSpread, Stake, Actual_Stake, WinLost, PlayerComm, Status, ComStatus, BetTeam,
+			Ip, SPositionTaking, MPositionTaking, APositionTaking, SWinLost, MWinLost, AWinLost, SDiscount, ADiscount, Discount, SComm, AComm, Comm, Hdp1, Hdp2,
+			BetCheck, TransDesc, ExtraInfo, DeviceType, N, Bitmap
+		)
 		SELECT
-			b.transid,
-			b.betid,
-			b.transdate,
-			b.refno,
-			b.winlostdate,
-			b.odds,
-			b.modds,
-			b.oddsspread,
-			b.stake,
-			b.actual_stake,
+			bk.transid,
+			bk.betid,
+			bk.transdate,
+			bk.refno,
+			bk.winlostdate,
+			bk.odds,
+			bk.modds,
+			bk.oddsspread,
+			bk.stake,
+			bk.actual_stake,
 			CASE
-				WHEN b.statusid NOT IN (0,1) THEN b.winlost - b.actual_stake 
-				ELSE b.winlost
+				WHEN bk.statusid NOT IN (0,1) THEN bk.winlost - bk.actual_stake 
+				ELSE bk.winlost
 			END AS winlost,
-			b.playercomm,
-			b.status,
-			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-			b.betteam,
+			bk.playercomm,
+			bk.status,
+			CASE WHEN bk.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+			bk.betteam,
 			dp.ip,
-			b.spositiontaking,
-			b.mpositiontaking,
-			b.apositiontaking,
-			b.swinlost,
-			b.mwinlost,
-			b.awinlost,
-			b.sdiscount,
+			bk.spositiontaking,
+			bk.mpositiontaking,
+			bk.apositiontaking,
+			bk.swinlost,
+			bk.mwinlost,
+			bk.awinlost,
+			bk.sdiscount,
 			CASE
-				WHEN b.mrecommend = -4 THEN 0
-				ELSE b.adiscount
+				WHEN bk.mrecommend = -4 THEN 0
+				ELSE bk.adiscount
 			END,
 			CASE
-				WHEN b.recommend IN (-3, -4) THEN 0
-				ELSE b.discount
+				WHEN bk.recommend IN (-3, -4) THEN 0
+				ELSE bk.discount
 			END,
-			b.scomm - b.acomm,
-			b.acomm - b.comm,
-			b.comm - b.playercomm,
-			b.hdp1,
-			b.hdp2,
-			ISNULL(b.betcheck, '') AS BetCheck,
-			'' AS TransDesc,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-			b.DeviceType,
+			bk.scomm - bk.acomm,
+			bk.acomm - bk.comm,
+			bk.comm - bk.playercomm,
+			bk.hdp1,
+			bk.hdp2,
+			ISNULL(bk.betcheck, '') AS BetCheck,
+			IIF(bk.bettype = 29 AND bk.OddsSpread = 3, ISNULL(bk.transdesc, ''), '') AS TransDesc,
+			ISNULL(bk.ExtraInfo, '') AS ExtraInfo,
+			bk.DeviceType,
 			CASE
-				WHEN b.betcheck IS NULL THEN LEN(b.betteam)		-- old Parlay tickets
-				ELSE b.hdp2										-- new Parlay tickets
+				WHEN bk.betcheck IS NULL THEN LEN(bk.betteam)				-- old Parlay tickets
+				WHEN bk.bettype = 29 AND bk.oddsspread = 3 THEN bk.betid	-- Hybrid Parlay tickets
+				ELSE bk.hdp2												-- new Parlay tickets
 			END AS N,
 			CASE
-				WHEN b.betcheck IS NULL THEN CONVERT(INT, b.hdp2)	-- old Parlay tickets
-				ELSE CONVERT(INT, b.betcheck)						-- new Parlay tickets
+				WHEN bk.betcheck IS NULL THEN CONVERT(INT, bk.hdp2)	-- old Parlay tickets
+				ELSE CONVERT(INT, bk.betteam)						-- new Parlay tickets
 			END AS Bitmap
-		FROM DBARC.bodb_archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-			CROSS APPLY dbo.f_IP_Decompress(b.Ip) AS dp
-		WHERE b.custid = @CustId
-			AND b.transid = @TransId
-			AND b.bettype = 29
+		FROM DBARC.bodb_archive.dbo.bettrans_bk AS bk WITH (NOLOCK)
+			CROSS APPLY dbo.f_IP_Decompress(bk.Ip) AS dp
+		WHERE bk.custid = @CustId
+			AND bk.transid = @TransId
+			AND bk.bettype = 29
 
 		INSERT INTO @tmpResults (
 			WinLostDate,
@@ -466,82 +472,91 @@ BEGIN
 			StatusId,
 			ExtraValue)
 		SELECT
-			b.winlostdate,
-			b.serial,
-			b.odds,
-			b.modds,
-			b.stake,
-			b.winlost,
-			b.statusid,
-			b.ExtraValue
+			winlostdate,
+			serial,
+			odds,
+			modds,
+			stake,
+			winlost,
+			statusid,
+			ExtraValue
 		FROM DBARC.bodb_Archive.dbo.betparlayresult AS b WITH (NOLOCK)
-		WHERE b.refno = @RefNo
+		WHERE refno = @RefNo
 	END
 
 	IF EXISTS (SELECT 1 FROM @parlay_base WHERE MatchDate BETWEEN @BalanceUpDay AND @MoveBetDay)		-- bettrans14
 	BEGIN
-		INSERT INTO @tmpBettrans
+		INSERT INTO @tmpBettrans (
+			TransId, BetId, TransDate, RefNo, WinLostDate, Odds, Modds, OddsSpread, Stake, Actual_Stake, WinLost, PlayerComm, Status, ComStatus, BetTeam,
+			Ip, SPositionTaking, MPositionTaking, APositionTaking, SWinLost, MWinLost, AWinLost, SDiscount, ADiscount, Discount, SComm, AComm, Comm, Hdp1, Hdp2,
+			BetCheck, TransDesc, ExtraInfo, DeviceType, N, Bitmap
+		)
 		SELECT
-			b.transid,
-			b.betid,
-			b.transdate,
-			b.refno,
-			b.winlostdate,
-			b.odds,
-			b.modds,
-			b.oddsspread,
-			b.stake,
-			b.actual_stake,
+			b14.transid,
+			b14.betid,
+			b14.transdate,
+			b14.refno,
+			b14.winlostdate,
+			b14.odds,
+			b14.modds,
+			b14.oddsspread,
+			b14.stake,
+			b14.actual_stake,
 			CASE
-				WHEN b.statusID NOT IN (0, 1) THEN b.winlost - b.actual_stake
-				ELSE b.winlost
+				WHEN b14.statusID NOT IN (0, 1) THEN b14.winlost - b14.actual_stake
+				ELSE b14.winlost
 			END AS winlost,
-			b.playercomm,
-			b.status,
-			CASE WHEN b.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
-			b.betteam,
-			b.ip,
-			b.spositiontaking,
-			b.mpositiontaking,
-			b.apositiontaking,
-			b.swinlost,
-			b.mwinlost,
-			b.awinlost,
-			b.sdiscount,
+			b14.playercomm,
+			b14.status,
+			CASE WHEN b14.comstatus = '1' THEN 1 ELSE 0 END AS comstatus,
+			b14.betteam,
+			b14.ip,
+			b14.spositiontaking,
+			b14.mpositiontaking,
+			b14.apositiontaking,
+			b14.swinlost,
+			b14.mwinlost,
+			b14.awinlost,
+			b14.sdiscount,
 			CASE
-				WHEN b.mrecommend = -4 THEN 0
-				ELSE b.adiscount
+				WHEN b14.mrecommend = -4 THEN 0
+				ELSE b14.adiscount
 			END,
 			CASE
-				WHEN b.recommend IN (-3, -4) THEN 0
-				ELSE b.discount
+				WHEN b14.recommend IN (-3, -4) THEN 0
+				ELSE b14.discount
 			END,
-			b.scomm - b.acomm,
-			b.acomm - b.comm,
-			b.comm - b.playercomm,
-			b.hdp1,
-			b.hdp2,
-			ISNULL(b.betcheck, '') AS BetCheck,
-			'' AS TransDesc,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-			b.DeviceType,
+			b14.scomm - b14.acomm,
+			b14.acomm - b14.comm,
+			b14.comm - b14.playercomm,
+			b14.hdp1,
+			b14.hdp2,
+			ISNULL(b14.betcheck, '') AS BetCheck,
+			IIF(b14.bettype = 29 AND b14.OddsSpread = 3, ISNULL(b14.transdesc, ''), '') AS TransDesc,
+			ISNULL(b14.ExtraInfo, '') AS ExtraInfo,
+			b14.DeviceType,
 			CASE
-				WHEN b.betcheck IS NULL THEN LEN(b.betteam)		-- old Parlay tickets
-				ELSE b.hdp2										-- new Parlay tickets
+				WHEN b14.betcheck IS NULL THEN LEN(b14.betteam)				-- old Parlay tickets
+				WHEN b14.bettype = 29 AND b14.oddsspread = 3 THEN b14.betid	-- Hybrid Parlay tickets
+				ELSE b14.hdp2												-- new Parlay tickets
 			END AS N,
 			CASE
-				WHEN b.betcheck IS NULL THEN CONVERT(INT, b.hdp2)	-- old Parlay tickets
-				ELSE CONVERT(INT, b.betcheck)						-- new Parlay tickets
+				WHEN b14.betcheck IS NULL THEN CONVERT(INT, b14.hdp2)	-- old Parlay tickets
+				ELSE CONVERT(INT, b14.betteam)							-- new Parlay tickets
 			END AS Bitmap
-		FROM dbo.bettrans14 AS b WITH (NOLOCK)
-		WHERE b.custid = @CustId
-			AND b.transid = @TransId
-			AND b.bettype = 29
+		FROM dbo.bettrans14 AS b14 WITH (NOLOCK)
+		WHERE b14.custid = @CustId
+			AND b14.transid = @TransId
+			AND b14.bettype = 29
 	END
 
 	IF EXISTS (SELECT 1 FROM @parlay_base WHERE MatchDate > @MoveBetDay)		-- bettrans
 	BEGIN
-		INSERT INTO @tmpBettrans
+		INSERT INTO @tmpBettrans (
+			TransId, BetId, TransDate, RefNo, WinLostDate, Odds, Modds, OddsSpread, Stake, Actual_Stake, WinLost, PlayerComm, Status, ComStatus, BetTeam,
+			Ip, SPositionTaking, MPositionTaking, APositionTaking, SWinLost, MWinLost, AWinLost, SDiscount, ADiscount, Discount, SComm, AComm, Comm, Hdp1, Hdp2,
+			BetCheck, TransDesc, ExtraInfo, DeviceType, N, Bitmap
+		)
 		SELECT
 			b.transid,
 			b.betid,
@@ -592,16 +607,17 @@ BEGIN
 			b.hdp1,
 			b.hdp2,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			'' AS TransDesc,
+			IIF(b.bettype = 29 AND b.OddsSpread = 3, ISNULL(b.transdesc, ''), '') AS TransDesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			b.DeviceType,
 			CASE
-				WHEN b.betcheck IS NULL THEN LEN(betteam)	-- old Parlay tickets
-				ELSE b.hdp2									-- new Parlay tickets
+				WHEN b.betcheck IS NULL THEN LEN(betteam)				-- old Parlay tickets
+				WHEN b.bettype = 29 AND b.oddsspread = 3 THEN b.betid	-- Hybrid Parlay tickets
+				ELSE b.hdp2												-- new Parlay tickets
 			END AS N,
 			CASE
 				WHEN b.betcheck IS NULL THEN CONVERT(INT, b.hdp2)	-- old Parlay tickets
-				ELSE CONVERT(INT, b.betcheck)						-- new Parlay tickets
+				ELSE CONVERT(INT, b.betteam)						-- new Parlay tickets
 			END AS Bitmap
 		FROM dbo.bettrans AS b WITH (NOLOCK)
 		WHERE b.custid = @CustId
@@ -639,24 +655,23 @@ BEGIN
 			Stake		MONEY
 		)
 
-		;WITH sub AS (SELECT ROW_NUMBER() OVER (ORDER BY matchid) RN, matchid FROM @parlay_base)
+		;WITH sub AS (SELECT ROW_NUMBER() OVER (ORDER BY matchid ASC) RN, matchid FROM @parlay_base)
 		UPDATE pb
 		SET RN = sub.RN
-		FROM sub
+		FROM sub AS sub
 			INNER JOIN @parlay_base AS pb ON sub.matchid = pb.matchid
 
 		-- prepare N
-		;WITH sub AS (SELECT COUNT(*) cnt FROM @parlay_base)
+		;WITH sub AS (SELECT COUNT(*) AS cnt FROM @parlay_base)
 		UPDATE pb
-		SET Cnt = sub.cnt,
+		SET Cnt = (SELECT TOP 1 sub.cnt FROM sub), 
 			bCnt = t.N
-		FROM sub,
-			@parlay_base AS pb,
-			@tmpBettrans AS t
+		FROM @parlay_base AS pb
+		INNER JOIN @tmpBettrans AS t ON pb.RefNo = t.RefNo;
 
 		IF NOT EXISTS(SELECT 1 FROM @parlay_base WHERE cnt <> bCnt)
 		BEGIN
-			INSERT INTO @betParlayDetail
+			INSERT INTO @betParlayDetail (RefNo, Serial, MatchId)
 			SELECT
 				pb.RefNo,
 				rc.Serial,
@@ -664,11 +679,11 @@ BEGIN
 			FROM
 				@parlay_base AS pb
 				INNER JOIN @tmpBettrans AS tb ON pb.refno = tb.refno
-				INNER JOIN dbo.RefCombinationSet AS rcs WITH (NOLOCK) ON pb.CNT = rcs.N AND (tb.Bitmap & rcs.bitmap) > 0
+				INNER JOIN dbo.RefCombinationSet AS rcs WITH (NOLOCK) ON pb.CNT = rcs.N AND (tb.Bitmap & rcs.bitmapR) > 0
 				INNER JOIN dbo.RefCombination AS rc WITH (NOLOCK) ON rcs.N = rc.N AND rcs.R = rc.R AND pb.RN = rc.seq
 
 			;WITH ParlayStake AS (SELECT refno, RN, setstake FROM @parlay_base)
-			INSERT INTO @betParlayResult
+			INSERT INTO @betParlayResult (RefNo, Serial, WinLostDate, Stake)
 			SELECT DISTINCT 
 				tb.RefNo,
 				rc.Serial,
@@ -676,11 +691,11 @@ BEGIN
 				ps.SetStake
 			FROM
 				@tmpBettrans AS tb
-				INNER JOIN dbo.RefCombinationSet AS rcs WITH (NOLOCK) ON tb.N = rcs.N AND (tb.bitmap & rcs.bitmap) > 0
+				INNER JOIN dbo.RefCombinationSet AS rcs WITH (NOLOCK) ON tb.N = rcs.N AND (tb.bitmap & rcs.bitmapR) > 0
 				INNER JOIN dbo.RefCombination AS rc WITH (NOLOCK) ON rcs.N = rc.N AND rcs.R = rc.R
 				INNER JOIN ParlayStake AS ps ON ps.refno = tb.RefNo AND ps.RN = rc.R
 
-			INSERT INTO @tmpResults
+			INSERT INTO @tmpResults (WinLostDate, Serial, Odds, Modds, Stake, WinLost, StatusId, Status, ExtraValue)
 			SELECT
 				WinLostDate,
 				Serial,
@@ -693,15 +708,15 @@ BEGIN
 				'' AS ExtraValue
 			FROM @betParlayResult
 			
-			INSERT INTO @tmpMatch
+			INSERT INTO @tmpMatch ( Serial, HomeId, AwayId, IsNeutral)
 			SELECT
-				p.serial,
-				m.homeid,
-				m.awayid,
-				m.IsNeutral
-			FROM @tmpResults AS p
-				INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
-				INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				p1.serial,
+				m1.homeid,
+				m1.awayid,
+				m1.IsNeutral
+			FROM @tmpResults AS p1
+				INNER JOIN @betParlayDetail AS b1 ON p1.Serial = b1.Serial
+				INNER JOIN dbo.match AS m1 WITH (NOLOCK) ON b1.matchid = m1.matchid
 		END
 	END
 	ELSE
@@ -709,25 +724,24 @@ BEGIN
 		-- Generate betparlay detail
 		;WITH sub AS 
 		(
-			SELECT ROW_NUMBER() OVER (ORDER BY matchid) RN, matchid FROM @parlay_base
+			SELECT ROW_NUMBER() OVER (ORDER BY matchid ASC) RN, matchid FROM @parlay_base
 		)
 		UPDATE pb
 		SET RN = sub.RN
-		FROM sub
+		FROM sub AS sub
 			INNER JOIN @parlay_base AS pb ON sub.matchid = pb.matchid
 
 		-- Prepare N
-		;WITH sub AS (SELECT COUNT(*) cnt FROM @parlay_base)
+		;WITH sub AS (SELECT COUNT(*) AS cnt FROM @parlay_base)
 		UPDATE pb
-		SET Cnt = sub.cnt,
+		SET Cnt = (SELECT TOP 1 sub.cnt FROM sub), 
 			bCnt = t.N
-		FROM sub,
-			@parlay_base AS pb,
-			@tmpBettrans AS t
+		FROM @parlay_base AS pb
+		INNER JOIN @tmpBettrans AS t ON pb.RefNo = t.RefNo;
 		
 		IF NOT EXISTS(SELECT 1 FROM @parlay_base WHERE cnt <> bCnt)
 		BEGIN
-			INSERT INTO @betParlayDetail
+			INSERT INTO @betParlayDetail (RefNo, Serial, MatchId)
 			SELECT 
 				pb.RefNo,
 				rc.Serial,
@@ -735,27 +749,27 @@ BEGIN
 			FROM
 				@parlay_base AS pb
 				INNER JOIN @tmpBettrans AS tb ON pb.refno = tb.refno
-				INNER JOIN dbo.RefCombinationSet AS rcs WITH (NOLOCK) ON pb.CNT = rcs.N AND (tb.Bitmap & rcs.bitmap) > 0
+				INNER JOIN dbo.RefCombinationSet AS rcs WITH (NOLOCK) ON pb.CNT = rcs.N AND (tb.Bitmap & rcs.bitmapR) > 0
 				INNER JOIN dbo.RefCombination AS rc WITH (NOLOCK) ON rcs.N = rc.N AND rcs.R = rc.R AND pb.RN = rc.seq
 		END
 
 		-- Get homeid, awayid
 		IF @MinMatchdate < @BalanceUpday
 		BEGIN
-			INSERT INTO @tmpMatch
+			INSERT INTO @tmpMatch ( Serial, HomeId, AwayId, IsNeutral)
 			SELECT
-				p.serial,
-				m.homeid,
-				m.awayid,
-				m.IsNeutral
-			FROM @tmpResults AS p
-				INNER JOIN @betParlayDetail AS b ON p.Serial = b.Serial
-				INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m WITH (NOLOCK) ON b.matchid = m.matchid
+				p2.serial,
+				m2.homeid,
+				m2.awayid,
+				m2.IsNeutral
+			FROM @tmpResults AS p2
+				INNER JOIN @betParlayDetail AS b2 ON p2.Serial = b2.Serial
+				INNER JOIN DBARC.bodb_Archive.dbo.match_bk AS m2 WITH (NOLOCK) ON b2.matchid = m2.matchid
 		END
 
 		IF @MinMatchdate <= @MoveBetDay
 		BEGIN
-			INSERT INTO @tmpMatch
+			INSERT INTO @tmpMatch ( Serial, HomeId, AwayId, IsNeutral)
 			SELECT
 				p.serial,
 				m.homeid,
@@ -768,7 +782,7 @@ BEGIN
 
 		IF @MaxMatchdate > @MoveBetDay
 		BEGIN
-			INSERT INTO @tmpMatch
+			INSERT INTO @tmpMatch ( Serial, HomeId, AwayId, IsNeutral)
 			SELECT
 				p.serial,
 				m.homeid,
@@ -848,7 +862,7 @@ BEGIN
 			SET
 				b.Odds = bpr.Odds,
 				b.Modds = bpr.mOdds,
-				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+				b.TransDesc = IIF(b.OddsSpread = 3, b.TransDesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 			FROM @tmpBettrans AS b
 				INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		END
@@ -858,14 +872,15 @@ BEGIN
 			SET
 				b.Odds = bpr.Odds,
 				b.Modds = bpr.mOdds,
-				b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+				b.TransDesc = IIF(b.OddsSpread = 3, b.TransDesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 			FROM @tmpBettrans AS b
 				INNER JOIN DBARC.bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		END
 	END
 
+
 	SELECT DISTINCT
-		CASE WHEN ISNULL(BetId, 0) = 0 THEN TransId ELSE BetId END AS TransId,
+		TransId,
 		TransDate,
 		RefNo,
 		WinLostDate,
@@ -966,9 +981,23 @@ BEGIN
 			WHEN @Status IN ('Running', 'Waiting') AND @IsParlayBoost = 1 THEN @BoostRate
 			ELSE ExtraValue
 		END AS ExtraValue
-	FROM ( SELECT DISTINCT * FROM @tmpResults ) AS tmp
+	FROM ( SELECT DISTINCT WinLostDate,
+				Serial,
+				Odds,
+				MOdds,
+				Stake,
+				WinLost,
+				StatusId,
+				Status,
+				ExtraValue 
+			FROM @tmpResults ) AS tmp
 	ORDER BY CASE WHEN statusid NOT IN (0, 1) THEN winlostdate ELSE '' END ASC
 
-	SELECT DISTINCT * FROM @tmpMatch
+	SELECT DISTINCT 
+		Serial,
+		HomeId,
+		AwayId,
+		IsNeutral
+	FROM @tmpMatch
 END
 GO

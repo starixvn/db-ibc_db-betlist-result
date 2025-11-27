@@ -41,6 +41,7 @@ AS
 		- 20240222@Razor: Support Vitual Sports 4 [Redmine: #198619]
 		- 20240723@Razor: Support VS 5 - Virtually Sports [Redmine: #207589]
 		- 20241218@Razor: Support Direct Member [Redmine: #211969]
+		- 20251029@Virgil: Support BetBuilder+ Hybrid Parlay [Redmine: #242378]
 */
 
 BEGIN
@@ -92,13 +93,18 @@ BEGIN
 
 	IF @Todate > @MoveBetsDay
 	BEGIN
-		INSERT INTO @MAgWinlossMP 
+		INSERT INTO @MAgWinlossMP
+		(
+			custid, username, bettype, refno, transid, hdp1, hdp2, odds, modds, OddsSpread, status, stake, actual_stake, winlost, awinlost,
+			mwinlost, swinlost, playercomm, comm, acomm, scomm, transdate, winlostdate, betteam, apositiontaking, mpositiontaking, spositiontaking,
+			adiscount, mdiscount, sdiscount, liveindicator, livehomescore, liveawayscore, IP, isNeutral, betID, comstatus, BetCheck, transdesc, ExtraInfo, DeviceType
+		)
 		SELECT
 			b.custid,
 			b.username,
 			b.bettype,
 			CONVERT(NVARCHAR,b.refno),
-			CASE WHEN ISNULL(b.betid,0) = 0 THEN b.transid ELSE b.betid END AS transid,
+			b.transid,
 			b.hdp1,
 			b.hdp2,
 			b.odds,
@@ -135,7 +141,7 @@ BEGIN
 			b.betID,
 			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
 			ISNULL(b.betcheck, '') AS BetCheck,
-			'' AS transdesc,
+			IIF(b.bettype = 29 AND b.OddsSpread = 3, ISNULL(b.transdesc, ''),'') AS transdesc,
 			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
 			b.DeviceType
 		FROM dbo.bettrans AS b WITH (NOLOCK)
@@ -153,61 +159,66 @@ BEGIN
 
 	IF @Fromdate <= @MoveBetsDay
 	BEGIN
-		INSERT INTO @MAgWinlossMP 
+		INSERT INTO @MAgWinlossMP
+		(
+			custid, username, bettype, refno, transid, hdp1, hdp2, odds, modds, OddsSpread, status, stake, actual_stake, winlost, awinlost,
+			mwinlost, swinlost, playercomm, comm, acomm, scomm, transdate, winlostdate, betteam, apositiontaking, mpositiontaking, spositiontaking,
+			adiscount, mdiscount, sdiscount, liveindicator, livehomescore, liveawayscore, IP, isNeutral, betID, comstatus, BetCheck, transdesc, ExtraInfo, DeviceType
+		)
 		SELECT
-			b.custid,
-			b.username,
-			b.bettype,
-			CONVERT(NVARCHAR,b.refno),
-			CASE WHEN ISNULL(b.betid,0) = 0 THEN b.transid ELSE b.betid END AS transid,
-			b.hdp1,
-			b.hdp2,
-			b.odds,
-			b.modds,
-			b.oddsspread,
-			b.status,
-			b.stake,
-			b.actual_stake,
-			(b.winlost-actual_stake),
-			b.awinlost,
-			b.mwinlost,
-			b.swinlost,
-			b.playercomm,
-			(b.comm - b.playercomm) AS comm,
-			(b.acomm - b.comm) AS acomm,
-			(b.scomm - b.acomm) AS scomm,
-			b.transdate,
-			b.winlostdate,
-			b.betteam,
-			b.apositiontaking,
-			b.mpositiontaking,
-			b.spositiontaking,
+			b14.custid,
+			b14.username,
+			b14.bettype,
+			CONVERT(NVARCHAR,b14.refno),
+			b14.transid,
+			b14.hdp1,
+			b14.hdp2,
+			b14.odds,
+			b14.modds,
+			b14.oddsspread,
+			b14.status,
+			b14.stake,
+			b14.actual_stake,
+			(b14.winlost - b14.actual_stake),
+			b14.awinlost,
+			b14.mwinlost,
+			b14.swinlost,
+			b14.playercomm,
+			(b14.comm - b14.playercomm) AS comm,
+			(b14.acomm - b14.comm) AS acomm,
+			(b14.scomm - b14.acomm) AS scomm,
+			b14.transdate,
+			b14.winlostdate,
+			b14.betteam,
+			b14.apositiontaking,
+			b14.mpositiontaking,
+			b14.spositiontaking,
 			CASE
-				WHEN b.recommend IN (-3, -4) THEN 0
-				ELSE b.discount
+				WHEN b14.recommend IN (-3, -4) THEN 0
+				ELSE b14.discount
 			END AS adiscount,
-			b.adiscount AS mdiscount,
-			b.sdiscount AS sdiscount,
-			b.liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.IP,
+			b14.adiscount AS mdiscount,
+			b14.sdiscount AS sdiscount,
+			b14.liveindicator,
+			b14.livehomescore,
+			b14.liveawayscore,
+			b14.IP,
 			CONVERT(BIT,0) AS IsNeutral,
-			b.betID,
-			CASE WHEN b.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
-			ISNULL(b.betcheck, '') AS BetCheck,
-			'' AS transdesc,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
-			b.DeviceType
-		FROM dbo.bettrans14 AS b WITH (NOLOCK)
+			b14.betID,
+			CASE WHEN b14.comstatus = '1' THEN '1' ELSE '0' END AS comstatus,
+			ISNULL(b14.betcheck, '') AS BetCheck,
+			IIF(b14.bettype = 29 AND b14.OddsSpread = 3, ISNULL(b14.transdesc, ''),'') AS transdesc,
+			ISNULL(b14.ExtraInfo, '') AS ExtraInfo,
+			b14.DeviceType
+		FROM dbo.bettrans14 AS b14 WITH (NOLOCK)
 		WHERE
-			b.MRecommend = @CustID AND
-			b.Winlostdate >= @FromDate AND
-			b.Winlostdate <= @ToDate AND
-			b.Ruben = 1
+			b14.MRecommend = @CustID AND
+			b14.Winlostdate >= @FromDate AND
+			b14.Winlostdate <= @ToDate AND
+			b14.Ruben = 1
 			AND 1 = CASE
-						WHEN @BetType  = 29 AND b.bettype = @BetType THEN 1
-						WHEN @BetType IN (2799, 10449, 11099) AND b.bettype IN (2799, 10449, 11099) THEN 1
+						WHEN @BetType  = 29 AND b14.bettype = @BetType THEN 1
+						WHEN @BetType IN (2799, 10449, 11099) AND b14.bettype IN (2799, 10449, 11099) THEN 1
 						ELSE 0 
 					END
 	END
@@ -219,14 +230,54 @@ BEGIN
 		SET
 			b.Odds = bpr.Odds,
 			b.Modds = bpr.mOdds,
-			b.TransDesc = CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, ''))
+			b.TransDesc = IIF(b.OddsSpread = 3, b.TransDesc, CONVERT(VARCHAR(20), ISNULL(bpr.ExtraValue, '')))
 		FROM @MAgWinlossMP AS b
 			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = b.RefNo
 		WHERE b.BetType = 29 AND b.BetTeam = '1'
 	END
 
 	SELECT 
-		*,
+		custid,
+		username,
+		bettype,
+		refno,
+		transid,
+		hdp1,
+		hdp2,
+		odds,
+		modds,
+		OddsSpread,
+		status,
+		stake,
+		actual_stake,
+		winlost,
+		awinlost,
+		mwinlost,
+		swinlost,
+		playercomm,
+		comm,
+		acomm,
+		scomm,
+		transdate,
+		winlostdate,
+		betteam,
+		apositiontaking,
+		mpositiontaking,
+		spositiontaking,
+		adiscount,
+		mdiscount,
+		sdiscount,
+		liveindicator,
+		livehomescore,
+		liveawayscore,
+		IP,
+		isNeutral,
+		betID,
+		comstatus,
+		BetCheck,
+		transdesc,
+		ExtraInfo,
+		DeviceType,
 		'' betstatus,
 		'' matchcode,
 		0 homeid,
@@ -235,6 +286,6 @@ BEGIN
 		0 matchid,
 		0 sporttype
 	FROM @MAgWinlossMP
-	ORDER BY Status, Transid
+	ORDER BY Status ASC, Transid ASC
 END
 GO
