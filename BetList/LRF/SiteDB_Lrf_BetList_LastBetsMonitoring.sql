@@ -45,6 +45,7 @@ AS
 		- 20250225@Kos: Fix bug FLOAT rounding [#Redmine: 194970]
 		- 20250321@Kos: Support basketball 6 new bettypes [#Redmine: 217687]
 		- 20250506@Kos: Support Saba Soccer Marble [#Redmine: 225015]
+		- 20251128@Kelvin: Integrate - Jacktime - Basketball Main Bettype Hybrid Parlay [#Redmine: 242357]
 
 	Parameter's Explanation:
 		- @BetType:
@@ -148,7 +149,7 @@ BEGIN
 	-- Get full sport type list
 	DECLARE @FullSportType TABLE (SportType SMALLINT, LeagueGroupIdList VARCHAR(200))
 
-	INSERT INTO @FullSportType
+	INSERT INTO @FullSportType (SportType, LeagueGroupIdList)
 	SELECT 1, '42,74'		-- Saba Soccer
 	UNION SELECT 1, '113'	-- Saba Soccer PinGoal
 	UNION SELECT 1, '252'	-- Saba Soccer Marble
@@ -454,7 +455,7 @@ BEGIN
 
 			SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-			INSERT INTO @SportBettype
+			INSERT INTO @SportBettype (ProductID, BetType, EventType, RefTable)
 			SELECT DISTINCT
 				ma.ProductID,
 				ma.BetType,
@@ -627,7 +628,7 @@ BEGIN
 			)
 
 			-- Prepare temp table
-			INSERT INTO @RefCodeTmp
+			INSERT INTO @RefCodeTmp (RefCode, TransId, Stake, Actual_Stake)
 			SELECT
 				RefCode,
 				MIN(TransId) AS TransId,
@@ -669,7 +670,7 @@ BEGIN
 		-- Get exchange rate
 		IF @BaseCurrency <> ''
 		BEGIN
-			INSERT INTO @ExchangeRate
+			INSERT INTO @ExchangeRate (ExchangeId, Rate)
 			SELECT
 				e.ExchangeId,
 				e.Rate
@@ -718,7 +719,43 @@ BEGIN
 		FROM
 			(
 				SELECT TOP(@LimitRowCount)
-					d.*,
+					CustId,
+					CustomerClass,
+					MatchId,
+					LeagueId,
+					LeagueGroupId,
+					SportType,
+					BetType,
+					TransId,
+					RefNo,
+					TransDate,
+					BetId,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					Hdp1,
+					Hdp2,
+					Odds,
+					Actual_Stake,
+					Stake,
+					BetFrom,
+					Status,
+					BetTeam,
+					OddsType,
+					Ip,
+					CurrencyId,
+					SpecialLevel,
+					BetCheck,
+					TransDesc,
+					BetdaqId,
+					ExtraInfo,
+					OriginalStake,
+					OriginalBetType,
+					WalletType,
+					RefCode,
+					OddsSpread,
+					ProductId,
+					EventType,
 					e.Rate
 				FROM @Data AS d
 					LEFT JOIN @ExchangeRate AS e ON e.exchangeid = d.CurrencyId
@@ -770,7 +807,43 @@ BEGIN
 		FROM
 			(
 				SELECT TOP(@LimitRowCount)
-					d.*,
+					CustId,
+					CustomerClass,
+					MatchId,
+					LeagueId,
+					LeagueGroupId,
+					SportType,
+					BetType,
+					TransId,
+					RefNo,
+					TransDate,
+					BetId,
+					LiveHomeScore,
+					LiveAwayScore,
+					LiveIndicator,
+					Hdp1,
+					Hdp2,
+					Odds,
+					Actual_Stake,
+					Stake,
+					BetFrom,
+					Status,
+					BetTeam,
+					OddsType,
+					Ip,
+					CurrencyId,
+					SpecialLevel,
+					BetCheck,
+					TransDesc,
+					BetdaqId,
+					ExtraInfo,
+					OriginalStake,
+					OriginalBetType,
+					WalletType,
+					RefCode,
+					OddsSpread,
+					ProductId,
+					EventType,
 					e.Rate
 				FROM @Data AS d
 					LEFT JOIN @ExchangeRate AS e ON e.exchangeid = d.CurrencyId
