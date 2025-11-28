@@ -595,6 +595,25 @@ BEGIN
 								ELSE 0
 							END
 			END
+
+			-- Get original odds and final odds for Mix Parlay
+			--============================================================================================================================================
+			IF EXISTS (SELECT 1 FROM @Data b WHERE b.BetType = 29 AND b.BetTeam = '1')
+			BEGIN
+				-- Running
+				;WITH CTE_Update AS
+				(
+					SELECT br.TransId, TRY_CAST(br.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+					FROM @Data br
+					WHERE br.BetType = 29 AND br.BetTeam = '1' AND br.Status IN ('Running', 'Waiting')
+				)
+				UPDATE br
+				SET
+					br.Odds = ISNULL(t.OriginalOdds, 0)
+				FROM @Data AS br
+					INNER JOIN CTE_Update t ON t.TransId = br.TransId
+			END
+			--============================================================================================================================================
 		END
 
 		-- Get data for summary ticket of multiple Bonus/Cash sub tickets
