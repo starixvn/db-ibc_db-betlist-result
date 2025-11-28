@@ -36,6 +36,7 @@ AS
 		- 20250313@Kos: Remove BA [RedmineID: #216882]
 		- 20250318@Kos: Support Virtual Sports 5 [Redmine: 207582]
 		- 20250401@Kos: Support Virtual Sports 7 [Redmine: 219083]
+		- 20251028@Kelvin: Integrate - Jacktime - Basketball Main Bettype Hybrid Parlay [#Redmine: 242357]
 */
 
 BEGIN
@@ -69,7 +70,7 @@ BEGIN
 
 	SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	INSERT INTO @SportBettype
+	INSERT INTO @SportBettype (ProductID, Bettype, EventType, RefTable)
 	SELECT ProductID, BetType, EventType, RefTable
 	FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @IsTest)
 	WHERE ProductID IN (1, 3, 5, 8, 27, 28, 40, 60, 63, 66, 69, 71, 74, 77, 83, 88, 106)
@@ -181,52 +182,52 @@ BEGIN
 		IF @WhTicket = 0
 		BEGIN
 			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = b.recommend,
-				@Currency = b.currency,
-				@BetType = b.bettype,
-				@RefCode = b.RefCode,
+				@TransId = b0.transid,
+				@CustId = b0.custid,
+				@WinLostDate = b0.winlostdate,
+				@Recommend = b0.recommend,
+				@Currency = b0.currency,
+				@BetType = b0.bettype,
+				@RefCode = b0.RefCode,
 				@ProductId = s.ProductID,
 				@EventType = s.EventType,
 				@RefTable = s.RefTable,
 				@WhTicket = 2		-- bettrans
-			FROM dbo.bettrans AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON b.bettype = s.bettype
-			WHERE b.custid = @CustId
-				AND b.winlostdate > @MoveBetsDay
+			FROM dbo.bettrans AS b0 WITH (NOLOCK)
+				INNER JOIN @SportBettype AS s ON b0.bettype = s.bettype
+			WHERE b0.custid = @CustId
+				AND b0.winlostdate > @MoveBetsDay
 				AND @TxId = CASE
-								WHEN b.ExtraInfo LIKE '%p106%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p106/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p88%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p88/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p83%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p83/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p77%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p77/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p74%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p71%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p71/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p69%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p63%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p63/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p40%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p40/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p28%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p28/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p27%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p27/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p8%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p8/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p5%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p5/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p3%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p3/@lt)[1]','VARCHAR(100)'), 0)
-								WHEN b.ExtraInfo LIKE '%p1%'
-									THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p106%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p106/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p88%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p88/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p83%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p83/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p77%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p77/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p74%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p71%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p71/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p69%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p69/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p63%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p63/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p40%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p40/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p28%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p28/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p27%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p27/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p8%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p8/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p5%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p5/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p3%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p3/@lt)[1]','VARCHAR(100)'), 0)
+								WHEN b0.ExtraInfo LIKE '%p1%'
+									THEN ISNULL(CAST(('<xml>' + b0.ExtraInfo + '</xml>') AS XML).value('data(/xml/p1/@lt)[1]','VARCHAR(100)'), 0)
 							END
 		END
 
@@ -275,67 +276,72 @@ BEGIN
 	IF @WhTicket = 2	-- Bettrans
 	BEGIN
 		INSERT INTO @Data
+		(
+			TransId, RefNo, CustId, Currency, Recommend, SportType, BetType, BetId, BetTeam, Hdp1,
+			Hdp2, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake, WinLost, LicenseeWL, PlayerComm,
+			Comm, Status, SettlementStatus, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, BetFrom,
+			LeagueId, LeagueGroupId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral,
+			Placing, ShowTime, BetCheck, TransDesc, BetdaqId, ExtraInfo, JackpotInfo, OriginalStake, OriginalBetType, WalletType,
+			RefCode, SiteId, WhTicket
+		)
 		SELECT
+			b2.transid,
+			b2.refno,
+			b2.custid,
+			b2.currency,
+			b2.recommend,
 			CASE
-				WHEN @Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-				ELSE b.transid
-			END AS TransId,
-			b.refno,
-			b.custid,
-			b.currency,
-			b.recommend,
-			CASE
-				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'SLT', 'H5LG', 'TIP') THEN b.matchid
+				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'SLT', 'H5LG', 'TIP') THEN b2.matchid
 				WHEN @EventType = 1 THEN m.sporttype
 				WHEN @EventType = 5 THEN m3rd.SportType
 				WHEN @Product IN ('Outright') THEN l.sporttype
 				WHEN @EventType = 3 THEN l.sporttype
 				ELSE 0
 			END AS SportType,
-			b.bettype,
-			ISNULL(b.betid, 0) AS BetId,
-			b.betteam,
-			b.hdp1,
-			b.hdp2,
-			b.oddstype,
-			b.odds,
-			b.modds,
+			b2.bettype,
+			ISNULL(b2.betid, 0) AS BetId,
+			b2.betteam,
+			b2.hdp1,
+			b2.hdp2,
+			b2.oddstype,
+			b2.odds,
+			b2.modds,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.oddsspread, 0)
+				WHEN @Product IN ('SB', 'Parlay') THEN ISNULL(b2.oddsspread, 0)
 				ELSE 0
 			END AS OddsSpread,
-			b.stake,
-			b.actual_stake,
-			b.winlost - b.actual_stake,
-			- (b.winlost - b.actual_stake) AS LicenseeWL,
-			b.playercomm,
-			b.comm,
+			b2.stake,
+			b2.actual_stake,
+			b2.winlost - b2.actual_stake,
+			- (b2.winlost - b2.actual_stake) AS LicenseeWL,
+			b2.playercomm,
+			b2.comm,
 			CASE
 				WHEN @Product IN ('SB')
-					AND b.status = 'running' AND ISNULL(b.SecAcceptFlag, 0) = 1 AND ISNULL(b.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
-				WHEN @Product = 'Parlay' AND b.status = 'running' THEN
+					AND b2.status = 'running' AND ISNULL(b2.SecAcceptFlag, 0) = 1 AND ISNULL(b2.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP THEN 'waiting'
+				WHEN @Product = 'Parlay' AND b2.status = 'running' THEN
 						CASE
 							WHEN EXISTS (SELECT 1 FROM dbo.bettransm AS bm WITH (NOLOCK)
-										WHERE bm.custid = b.custid
-											AND bm.refno = b.refno
+										WHERE bm.custid = b2.custid
+											AND bm.refno = b2.refno
 											AND (bm.status = 'waiting'
 												OR (bm.status = 'running' AND ISNULL(bm.SecAcceptFlag, 0) = 1 AND ISNULL(bm.checktime, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP)))
 								THEN 'Waiting'
-							ELSE b.status
+							ELSE b2.status
 						END
-				ELSE b.status
+				ELSE b2.status
 			END AS Status,
 			CASE
 				WHEN @Product IN ('SB') THEN ISNULL(m.SettlementStatus, 0)
 				ELSE 0
 			END AS SettlementStatus,
-			b.transdate,
-			b.winlostdate,
-			b.liveindicator,
-			b.livehomescore,
-			b.liveawayscore,
-			b.ip,
-			b.betfrom,
+			b2.transdate,
+			b2.winlostdate,
+			b2.liveindicator,
+			b2.livehomescore,
+			b2.liveawayscore,
+			b2.ip,
+			b2.betfrom,
 			CASE
 				WHEN @EventType = 1 THEN m.leagueid
 				WHEN @EventType = 5 THEN m3rd.League3rdId
@@ -348,8 +354,8 @@ BEGIN
 				ELSE 0
 			END AS LeagueGroupId,
 			CASE
-				WHEN @Product = 'TIP' THEN ISNULL(CAST(('<xml>' + b.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
-				ELSE b.matchid
+				WHEN @Product = 'TIP' THEN ISNULL(CAST(('<xml>' + b2.ExtraInfo + '</xml>') AS XML).value('data(/xml/p74/@m)[1]','INT'), 0)
+				ELSE b2.matchid
 			END AS MatchId,
 			CASE
 				WHEN @EventType = 1 THEN m.matchcode
@@ -363,7 +369,7 @@ BEGIN
 			CASE
 				WHEN @Product IN ('SB') THEN m.GlobalShowTime
 				WHEN @Product IN ('BTC') THEN m3rd.EndTime
-				ELSE b.WinLostDate
+				ELSE b2.WinLostDate
 			END AS EventDate,
 			CASE
 				WHEN @EventType = 1 THEN m.homeid
@@ -391,48 +397,48 @@ BEGIN
 				ELSE ''
 			END AS ShowTime,
 			CASE
-				WHEN @Product IN ('SB', 'SLT', 'H5LG') THEN ISNULL(b.betcheck, '')
-				WHEN @Product IN ('Keno') THEN ISNULL(b.ComStatus, '')
-				WHEN @EventType = 0 AND @RefTable = 0 THEN ISNULL(b.betcheck, '')
+				WHEN @Product IN ('SB', 'SLT', 'H5LG') THEN ISNULL(b2.betcheck, '')
+				WHEN @Product IN ('Keno') THEN ISNULL(b2.ComStatus, '')
+				WHEN @EventType = 0 AND @RefTable = 0 THEN ISNULL(b2.betcheck, '')
 				ELSE ''
 			END AS BetCheck,
 			CASE
-				WHEN @Product IN ('Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b.transdesc, '')
-				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
+				WHEN @Product IN ('Parlay', 'Keno', 'Lottery', 'TG', 'H5LG', 'SLT') THEN ISNULL(b2.transdesc, '')
+				WHEN @EventType IN (1, 3, 5) THEN ISNULL(b2.transdesc, '')
 				ELSE ''
 			END AS TransDesc,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.betdaqid, -1)
+				WHEN @Product IN ('SB') THEN ISNULL(b2.betdaqid, -1)
 				ELSE -1
 			END AS BetdaqId,
-			ISNULL(b.ExtraInfo, '') AS ExtraInfo,
+			ISNULL(b2.ExtraInfo, '') AS ExtraInfo,
 			'' AS JackpotInfo,
 			0 AS OriginalStake,
 			CASE
-				WHEN @Product IN ('SB') AND b.stake <> 0 THEN -1
+				WHEN @Product IN ('SB') AND b2.stake <> 0 THEN -1
 				ELSE 0
 			END AS OriginalBetType,
 			CASE
-				WHEN @Product IN ('SB') THEN ISNULL(b.WalletType, 0)
+				WHEN @Product IN ('SB') THEN ISNULL(b2.WalletType, 0)
 				ELSE 0
 			END AS WalletType,
 			CASE
-				WHEN @Product IN ('SB') AND b.stake <> 0 THEN ISNULL(b.RefCode, 0)
+				WHEN @Product IN ('SB') AND b2.stake <> 0 THEN ISNULL(b2.RefCode, 0)
 				ELSE 0
 			END AS RefCode,
 			CASE
-				WHEN @Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b.BetdaqId)
+				WHEN @Product IN ('H5LG','SLT') THEN CONVERT(VARCHAR(20), b2.BetdaqId)
 				ELSE ''
 			END AS SiteId,
 			2 AS WhTicket
-		FROM dbo.bettrans AS b WITH (NOLOCK)
-			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON @EventType = 1 AND b.matchid = m.matchid
+		FROM dbo.bettrans AS b2 WITH (NOLOCK)
+			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON @EventType = 1 AND b2.matchid = m.matchid
 			LEFT JOIN dbo.League AS le WITH (NOLOCK) ON @Product IN ('SB') AND le.leagueid = m.leagueid
-			LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON @EventType = 5 AND m3rd.Match3rdId = b.matchid
-			LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b.matchid = o.orid
+			LEFT JOIN dbo.Match3rd AS m3rd WITH (NOLOCK) ON @EventType = 5 AND m3rd.Match3rdId = b2.matchid
+			LEFT JOIN dbo.outright AS o WITH (NOLOCK) ON @Product IN ('Outright') AND b2.matchid = o.orid
 			LEFT JOIN dbo.League AS l WITH (NOLOCK) ON @Product IN ('Outright') AND o.leagueID = l.leagueID
-			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON @EventType = 3 AND vr.EventID = b.matchid
-		WHERE b.transid IN (@TransId, @BonusTransId)
+			LEFT JOIN dbo.VSRaceInfo AS vr WITH (NOLOCK) ON @EventType = 3 AND vr.EventID = b2.matchid
+		WHERE b2.transid IN (@TransId, @BonusTransId)
 
 		-- Get match info for Player Tips
 		IF @Product = 'TIP'
@@ -456,15 +462,53 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					LeagueId = m.leagueid,
-					HomeId = m.homeid,
-					AwayId = m.awayid,
-					EventDate = m.GlobalShowTime
+					LeagueId = m14.leagueid,
+					HomeId = m14.homeid,
+					AwayId = m14.awayid,
+					EventDate = m14.GlobalShowTime
 				FROM @Data AS b
-					INNER JOIN dbo.match14 AS m WITH (NOLOCK) ON m.matchid = b.MatchId
+					INNER JOIN dbo.match14 AS m14 WITH (NOLOCK) ON m14.matchid = b.MatchId
 			END
 		END
 	END
+
+	-- Get original odds and final odds for Mix Parlay
+	--============================================================================================================================================
+	IF EXISTS (SELECT 1 FROM @Data b WHERE b.BetType = 29 AND b.BetTeam = '1')
+	BEGIN
+		-- Running
+		;WITH CTE_Update AS
+		(
+			SELECT br.TransId, TRY_CAST(br.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM @Data br
+			WHERE br.BetType = 29 AND br.BetTeam = '1' AND br.Status IN ('Running', 'Waiting')
+		)
+		UPDATE br
+		SET
+			br.Odds = ISNULL(t.OriginalOdds, 0),
+			br.Modds = ISNULL(t.OriginalOdds, 0)
+		FROM @Data AS br
+			INNER JOIN CTE_Update t ON t.TransId = br.TransId
+
+		-- Settled
+		;WITH CTE_Update AS
+		(
+			SELECT bs.TransId, TRY_CAST(bs.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM @Data bs
+			WHERE bs.BetType = 29 AND bs.BetTeam = '1' AND bs.Status NOT IN ('Running', 'Waiting')
+		)
+		UPDATE bs
+		SET
+			bs.Odds = ISNULL(t.OriginalOdds, bpr.Odds),
+			bs.Modds = CASE 
+						WHEN bpr.statusid = 113 AND bpr.mOdds = 0 THEN ISNULL(t.OriginalOdds, bpr.Odds)
+						ELSE bpr.mOdds 
+					END
+		FROM @Data AS bs
+			INNER JOIN CTE_Update t ON t.TransId = bs.TransId
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = bs.RefNo
+	END
+	--============================================================================================================================================
 
 	-- Don't display Cash text for ticket from Cash Wallet only
 	UPDATE @Data
@@ -482,20 +526,20 @@ BEGIN
 		IF @WhTicket = 0
 		BEGIN
 			SELECT TOP(1)
-				@TransId = b.transid,
-				@CustId = b.custid,
-				@WinLostDate = b.winlostdate,
-				@Recommend = b.recommend,
-				@Currency = b.currency,
-				@BetType = b.gameID,
+				@TransId = rng.transid,
+				@CustId = rng.custid,
+				@WinLostDate = rng.winlostdate,
+				@Recommend = rng.recommend,
+				@Currency = rng.currency,
+				@BetType = rng.gameID,
 				@ProductId = s.ProductID,
 				@EventType = s.EventType,
 				@WhTicket = 5		-- BettransRnG
-			FROM dbo.bettransRnG AS b WITH (NOLOCK)
-				INNER JOIN @SportBettype AS s ON s.Bettype = b.gameID
-			WHERE b.custid = @CustId
-				AND b.winlostdate > @MoveBetsDay
-				AND ISNULL(b.Additional, '') LIKE '%lt=' + @TxId + '%'
+			FROM dbo.bettransRnG AS rng WITH (NOLOCK)
+				INNER JOIN @SportBettype AS s ON s.Bettype = rng.gameID
+			WHERE rng.custid = @CustId
+				AND rng.winlostdate > @MoveBetsDay
+				AND ISNULL(rng.Additional, '') LIKE '%lt=' + @TxId + '%'
 		END
 
 		IF @WhTicket > 0
@@ -517,6 +561,14 @@ BEGIN
 		IF @WhTicket = 5
 		BEGIN
 			INSERT INTO @Data
+			(
+				TransId, RefNo, CustId, Currency, Recommend, SportType, BetType, BetId, BetTeam, Hdp1,
+				Hdp2, OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake, WinLost, LicenseeWL, PlayerComm,
+				Comm, Status, SettlementStatus, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, BetFrom,
+				LeagueId, LeagueGroupId, MatchId, MatchCode, Race, EventDate, HomeId, AwayId, BetStatus, IsNeutral,
+				Placing, ShowTime, BetCheck, TransDesc, BetdaqId, ExtraInfo, JackpotInfo, OriginalStake, OriginalBetType, WalletType,
+				RefCode, SiteId, WhTicket
+			)
 			SELECT
 				transid,
 				transid AS RefNo,
@@ -621,7 +673,7 @@ BEGIN
 
 	IF @BaseCurrency <> ''
 	BEGIN
-		INSERT INTO @ExchangeRate
+		INSERT INTO @ExchangeRate (ExchangeId, FromDate, ToDate, Rate)
 		SELECT
 			e.ExchangeId,
 			e.FromDate,
@@ -691,6 +743,14 @@ BEGIN
 		LEFT JOIN @ExchangeRate AS e ON e.ExchangeId = a.Currency AND a.WinLostDate BETWEEN e.FromDate AND e.ToDate
 	ORDER BY a.TransDate ASC
 
-	SELECT DISTINCT * FROM @Detail
+	SELECT DISTINCT
+		RefNo,
+		Odds,
+		Stake,
+		Status,
+		APositionTaking,
+		BetType,
+		BetTeam
+	FROM @Detail
 END
 GO

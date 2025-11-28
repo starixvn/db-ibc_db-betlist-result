@@ -133,6 +133,7 @@ AS
 					- Remove input param @Sort
 					- Add new input params @SortType TINYINT, @SortOrder TINYINT
 		- 20250820@Kos: Support Playtech Live Jackpot [#Redmine: 230078]
+		- 20251028@Kelvin: Integrate - Jacktime - Basketball Main Bettype Hybrid Parlay [#Redmine: 242357]
 */
 
 BEGIN
@@ -163,7 +164,7 @@ BEGIN
 	-- Get Saba sport type list
 	DECLARE @SabaSportType TABLE (SportType SMALLINT, LeagueGroupIdList VARCHAR(200))
 
-	INSERT INTO @SabaSportType
+	INSERT INTO @SabaSportType (SportType, LeagueGroupIdList)
 	SELECT 1, '42,74'		-- Saba Soccer
 	UNION SELECT 1, '113'	-- Saba Soccer PinGoal
 	UNION SELECT 1, '252'	-- Saba Soccer Marble
@@ -373,6 +374,14 @@ BEGIN
 		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
 
 		INSERT INTO #SportBettype
+		(
+			ProductId,
+			ProductPrefix,
+			BetType,
+			EventType,
+			RefTable,
+			SubProduct
+		)
 		SELECT ProductID, ProductPrefix, BetType, EventType, RefTable, SubProduct
 		FROM dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', @ProductList, @IsTest)
 		WHERE BetType NOT IN (71, 73, 901, 902, 903, 904, 911, 912, 913, 914)
@@ -540,7 +549,7 @@ BEGIN
 
 			IF @MatchSportType IN (8, 50) AND @ParentId IS NULL		-- Baseball, Cricket, parent match
 			BEGIN
-				INSERT INTO @Match
+				INSERT INTO @Match (MatchId)
 				SELECT @MatchId
 				UNION
 				SELECT DISTINCT MatchId
@@ -582,44 +591,10 @@ BEGIN
 				IF NOT EXISTS (SELECT 1 FROM @Match)
 				BEGIN
 					INSERT INTO #Data (
-						TransId,
-						RefNo,
-						CustId,
-						Recommend,
-						Currency,
-						BetType,
-						BetId,
-						BetTeam,
-						Hdp1,
-						Hdp2,
-						OddsType,
-						Odds,
-						MOdds,
-						OddsSpread,
-						Stake,
-						Actual_Stake,
-						WinLost,
-						LicenseeWL,
-						Comm,
-						PlayerComm,
-						Status,
-						StatusId,
-						TransDate,
-						WinLostDate,
-						LiveIndicator,
-						LiveHomeScore,
-						LiveAwayScore,
-						Ip,
-						BetFrom,
-						MatchId,
-						ComStatus,
-						BetCheck,
-						TransDesc,
-						BetdaqId,
-						ExtraInfo,
-						WalletType,
-						RefCode,
-						WhTicket)
+						TransId, RefNo, CustId, Recommend, Currency, BetType, BetId, BetTeam, Hdp1, Hdp2,
+						OddsType, Odds, MOdds, OddsSpread, Stake, Actual_Stake, WinLost, LicenseeWL, Comm, PlayerComm,
+						Status, StatusId, TransDate, WinLostDate, LiveIndicator, LiveHomeScore, LiveAwayScore, Ip, BetFrom, MatchId,
+						ComStatus, BetCheck, TransDesc, BetdaqId, ExtraInfo, WalletType, RefCode, WhTicket)
 					SELECT
 						b.transid,
 						b.refno,
@@ -1120,12 +1095,12 @@ BEGIN
 					SELECT DATEADD(DD, 1, VAL) FROM X
 					WHERE VAL < @TempToDate
 				)
-				INSERT INTO @TmpDate
-				SELECT *
+				INSERT INTO @TmpDate (Date)
+				SELECT VAL
 				FROM X
 				OPTION(MAXRECURSION 0)
 
-				INSERT INTO @TmpAgDate
+				INSERT INTO @TmpAgDate (CustId, Date)
 				SELECT
 					a.CustId,
 					d.Date
@@ -1221,11 +1196,49 @@ BEGIN
 						3 AS WhTicket
 					FROM @TmpAgDate AS t
 						CROSS APPLY (
-							SELECT b.*
-							FROM bodb_Archive.dbo.bettrans_bk AS b WITH (NOLOCK)
-							WHERE b.recommend = t.CustId
-								AND b.winlostdate = t.Date
-								AND CHARINDEX(',' + CONVERT(VARCHAR(10), b.bettype) + ',', ',' + @str + ',', 1) > 0
+							SELECT 
+								bk.transid,
+								bk.refno,
+								bk.custid,
+								bk.recommend,
+								bk.currency,
+								bk.bettype,
+								bk.betid,
+								bk.betteam,
+								bk.hdp1,
+								bk.hdp2,
+								bk.oddstype,
+								bk.oddsid,
+								bk.odds,
+								bk.modds,
+								bk.oddsspread,
+								bk.stake,
+								bk.actual_stake,
+								bk.winlost,
+								bk.tpositiontaking,
+								bk.comm,
+								bk.playercomm,
+								bk.status,
+								bk.statusID,
+								bk.transdate,
+								bk.winlostdate,
+								bk.liveindicator,
+								bk.livehomescore,
+								bk.liveawayscore,
+								bk.ip,
+								bk.betfrom,
+								bk.matchid,
+								bk.comstatus,
+								bk.betcheck,
+								bk.transdesc,
+								bk.betdaqid,
+								bk.ExtraInfo,
+								bk.WalletType,
+								bk.RefCode
+							FROM bodb_Archive.dbo.bettrans_bk AS bk WITH (NOLOCK)
+							WHERE bk.recommend = t.CustId
+								AND bk.winlostdate = t.Date
+								AND CHARINDEX(',' + CONVERT(VARCHAR(10), bk.bettype) + ',', ',' + @str + ',', 1) > 0
 						) b
 						CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 					OPTION (MAXDOP 8)
@@ -1892,6 +1905,67 @@ BEGIN
 			DROP TABLE #PlatformList
 		END
 
+		-- Get original odds and final odds for Mix Parlay
+		--============================================================================================================================================
+		IF EXISTS (SELECT 1 FROM #Data b WHERE b.BetType = 29 AND b.BetTeam = '1' AND b.WhTicket IN (1,2))
+		BEGIN
+			-- Running
+			;WITH CTE_Update AS
+			(
+				SELECT br.TransId, TRY_CAST(br.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+				FROM #Data br
+				WHERE br.BetType = 29 AND br.BetTeam = '1' AND br.Status IN ('Running', 'Waiting')
+					AND br.WhTicket IN (1,2)
+			)
+			UPDATE br
+			SET
+				br.Odds = ISNULL(t.OriginalOdds, 0),
+				br.Modds = ISNULL(t.OriginalOdds, 0)
+			FROM #Data AS br
+				INNER JOIN CTE_Update t ON t.TransId = br.TransId
+
+			-- Settled
+			;WITH CTE_Update AS
+			(
+				SELECT bs.TransId, TRY_CAST(bs.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+				FROM #Data bs
+				WHERE bs.BetType = 29 AND bs.BetTeam = '1' AND bs.Status NOT IN ('Running', 'Waiting')
+					AND bs.WhTicket IN (1,2)
+			)
+			UPDATE bs
+			SET
+				bs.Odds = ISNULL(t.OriginalOdds, bpr.Odds),
+				bs.Modds = CASE 
+							WHEN bpr.statusid = 113 AND bpr.mOdds = 0 THEN ISNULL(t.OriginalOdds, bpr.Odds)
+							ELSE bpr.mOdds 
+						END
+			FROM #Data AS bs
+				INNER JOIN CTE_Update t ON t.TransId = bs.TransId
+				INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = bs.RefNo
+		END
+
+		IF EXISTS (SELECT 1 FROM #Data bk WHERE bk.BetType = 29 AND bk.BetTeam = '1' AND bk.WhTicket = 3)
+		BEGIN
+			-- Settled bk
+			;WITH CTE_Update AS
+			(
+				SELECT bk.TransId, TRY_CAST(bk.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+				FROM #Data bk
+				WHERE bk.BetType = 29 AND bk.BetTeam = '1' AND bk.WhTicket = 3
+			)
+			UPDATE bk
+			SET
+				bk.Odds = ISNULL(t.OriginalOdds, bpr.Odds),
+				bk.Modds = CASE 
+							WHEN bpr.statusid = 113 AND bpr.mOdds = 0 THEN ISNULL(t.OriginalOdds, bpr.Odds)
+							ELSE bpr.mOdds 
+						END
+			FROM #Data AS bk
+				INNER JOIN CTE_Update t ON t.TransId = bk.TransId
+				INNER JOIN bodb_Archive.dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = bk.RefNo
+		END
+		--============================================================================================================================================
+
 		UPDATE b
 		SET b.Product = CASE
 							WHEN s.ProductID = 6 THEN 'OneRNG'							-- RNG Casino
@@ -2122,6 +2196,18 @@ BEGIN
 			IF EXISTS (SELECT 1 FROM #Data WHERE RefTable = 1 AND WinLostDate >= @Yesterday)		-- bettransRnG
 			BEGIN
 				INSERT INTO @TmpData
+				(
+					RefNo,
+					Odds,
+					Stake,
+					Actual_Stake,
+					Status,
+					WinLost,
+					LicenseeWL,
+					PlayerComm,
+					Comm,
+					OddsSpread
+				)
 				SELECT
 					c.TransId AS RefNo,
 					CASE
@@ -2157,6 +2243,18 @@ BEGIN
 			IF EXISTS (SELECT 1 FROM #Data WHERE RefTable = 2 AND WinLostDate >= @Yesterday)				-- bettransLC
 			BEGIN
 				INSERT INTO @TmpData
+				(
+					RefNo,
+					Odds,
+					Stake,
+					Actual_Stake,
+					Status,
+					WinLost,
+					LicenseeWL,
+					PlayerComm,
+					Comm,
+					OddsSpread
+				)
 				SELECT
 					c.TransId AS RefNo,
 					CASE
@@ -2267,6 +2365,16 @@ BEGIN
 
 				-- Prepare temp table
 				INSERT INTO @RefCodeTmp
+				(
+					RefCode,
+					TransId,
+					Stake,
+					Actual_Stake,
+					WinLost,
+					LicenseeWL,
+					Comm,
+					PlayerComm
+				)
 				SELECT
 					RefCode,
 					MIN(TransId) AS TransId,
@@ -2322,7 +2430,7 @@ BEGIN
 			FROM #Data
 
 			-- Get exchange rate
-			INSERT INTO #ExchangeRate
+			INSERT INTO #ExchangeRate (ExchangeId, FirstExchangeDateByMonth, LastExchangeDateByMonth, Rate)
 			SELECT
 				e.ExchangeId,
 				e.FromDate,
@@ -2422,9 +2530,17 @@ BEGIN
 						END + N'
 					) AS a
 				WHERE a.RowNum BETWEEN @RowStart AND @RowEnd
-				ORDER BY a.RowNum'
+				ORDER BY a.RowNum ASC'
 
 			INSERT INTO #PagingData
+			(
+				RowNum, TransId, RefNo, CustId, Recommend, Currency, SportType, BetType, BetId, BetTeam,
+				Hdp1, Hdp2, OddsType, OddsId, Odds, MOdds, OddsSpread, Stake, Actual_Stake, WinLost,
+				LicenseeWL, Comm, PlayerComm, Status, StatusId, SettlementStatus, TransDate, WinLostDate, LiveIndicator, LiveHomeScore,
+				LiveAwayScore, Ip, BetFrom, LeagueId, LeagueGroupId, MatchId, MatchCode, Race, EventDate, HomeId,
+				AwayId, BetStatus, IsNeutral, ShowTime, ComStatus, BetCheck, TransDesc, BetdaqId, ExtraInfo, OriginalStake,
+				OriginalBetType, WalletType, RefCode, SiteId, Product, SubProduct, RefTable, EventType, WhTicket
+			)
 			EXEC sp_executesql @Sql, N'@RowStart INT, @RowEnd INT', @RowStart, @RowEnd;
 
 			-- bettrans
@@ -2432,10 +2548,6 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					TransId = CASE
-									WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-									ELSE b.transid
-								END,
 					SportType = CASE
 									WHEN b.Product IN ('SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
 										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
@@ -2520,7 +2632,7 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
@@ -2561,10 +2673,6 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					TransId = CASE
-									WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-									ELSE b.transid
-								END,
 					SportType = CASE
 									WHEN b.Product IN ('SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
 										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
@@ -2646,7 +2754,7 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
@@ -2687,10 +2795,6 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					TransId = CASE
-									WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-									ELSE b.transid
-								END,
 					SportType = CASE
 									WHEN b.Product IN ('SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
 										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
@@ -2772,7 +2876,7 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
@@ -2884,7 +2988,7 @@ BEGIN
 				LEFT JOIN #ExchangeRate AS e
 					ON e.ExchangeId = a.Currency
 						AND a.WinLostDate BETWEEN e.FirstExchangeDateByMonth AND e.LastExchangeDateByMonth
-			ORDER BY a.RowNum
+			ORDER BY a.RowNum ASC
 		END
 		ELSE
 		BEGIN
@@ -2893,10 +2997,6 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					TransId = CASE
-									WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-									ELSE b.transid
-								END,
 					SportType = CASE
 									WHEN b.Product IN ('SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
 										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
@@ -2981,7 +3081,7 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
@@ -3022,10 +3122,6 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					TransId = CASE
-									WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-									ELSE b.transid
-								END,
 					SportType = CASE
 									WHEN b.Product IN ('SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
 										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
@@ -3107,7 +3203,7 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3, 5) THEN ISNULL(b.transdesc, '')
 									ELSE ''
@@ -3148,10 +3244,6 @@ BEGIN
 			BEGIN
 				UPDATE b
 				SET
-					TransId = CASE
-									WHEN b.Product = 'Parlay' AND b.bettype = 29 AND ISNULL(b.betid, 0) > 0 THEN b.betid
-									ELSE b.transid
-								END,
 					SportType = CASE
 									WHEN b.Product IN ('SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VRG', 'TG', 'SBC', 'I4D', 'SXG', 'SAG', 'PGS', 'JK',
 										'H5LG', 'HB', 'WM', 'BG', 'VGA', 'CG', 'AP', 'APM', 'VS3', 'FGGL', 'MXG', 'JIG', 'YB', 'MGRNG', 'SEA') THEN b.MatchId
@@ -3233,7 +3325,7 @@ BEGIN
 								ELSE ''
 							END,
 					TransDesc = CASE
-									WHEN b.Product IN ('SB', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
+									WHEN b.Product IN ('SB', 'Parlay', 'SLT', 'Keno', 'Lottery', 'OneRNG', 'CC', 'SG', 'VB', 'PP', 
 										'VRG', 'TG', 'I4D', 'PGS', 'JK', 'H5LG', 'HB', 'CG', 'AP', 'APM', 'SEA') THEN ISNULL(b.transdesc, '')
 									WHEN b.EventType IN (1, 3) THEN ISNULL(b.transdesc, '')
 									ELSE ''
@@ -3350,10 +3442,77 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		SELECT * FROM #Data
+		SELECT
+			TransId,
+			RefNo,
+			CustId,
+			Recommend,
+			Currency,
+			SportType,
+			BetType,
+			BetId,
+			BetTeam,
+			Hdp1,
+			Hdp2,
+			OddsType,
+			OddsId,
+			Odds,
+			MOdds,
+			OddsSpread,
+			Stake,
+			Actual_Stake,
+			WinLost,
+			LicenseeWL,
+			Comm,
+			PlayerComm,
+			Status,
+			StatusId,
+			SettlementStatus,
+			TransDate,
+			WinLostDate,
+			LiveIndicator,
+			LiveHomeScore,
+			LiveAwayScore,
+			Ip,
+			BetFrom,
+			LeagueId,
+			LeagueGroupId,
+			MatchId,
+			MatchCode,
+			Race,
+			EventDate,
+			HomeId,
+			AwayId,
+			BetStatus,
+			IsNeutral,
+			ShowTime,
+			ComStatus,
+			BetCheck,
+			TransDesc,
+			BetdaqId,
+			ExtraInfo,
+			OriginalStake,
+			OriginalBetType,
+			WalletType,
+			RefCode,
+			SiteId,
+			Product,
+			SubProduct,
+			RefTable,
+			EventType,
+			WhTicket
+		FROM #Data
 	END
 
-	SELECT DISTINCT * FROM @Detail
+	SELECT DISTINCT
+		RefNo,
+		Odds,
+		Stake,
+		Status,
+		APositionTaking,
+		BetType,
+		BetTeam
+	FROM @Detail
 
 	DROP TABLE #Customer
 	DROP TABLE #PagingData

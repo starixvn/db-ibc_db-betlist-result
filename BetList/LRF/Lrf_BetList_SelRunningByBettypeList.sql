@@ -40,6 +40,7 @@ AS
 		- 20210301@Kos: Add BDT and INR as base currencies [Redmine: 150375]
 		- 20210929@Kos: Extend length to support IPv6 [Redmine: 162342]
 		- 20230922@Kos: Support crypto currency [Redmine: 177481]
+		- 20251028@Kelvin: Integrate - Jacktime - Basketball Main Bettype Hybrid Parlay [#Redmine: 242357]
 */
 
 BEGIN
@@ -107,19 +108,24 @@ BEGIN
 		OriginalStake		MONEY,
 		OriginalBetType		SMALLINT,
 		WalletType			TINYINT,
-		RefCode				BIGINT
+		RefCode				BIGINT,
+		TransDesc			NVARCHAR(1000),
+		OddsSpread			MONEY
 	)
 
 	INSERT INTO #Data
+	(
+		CustId, SportType, Username, BetType, TransId, BetId, RefNo, MatchCode, EventDate, HomeId,
+		AwayId, Hdp1, Hdp2, Odds, MOdds, Status, SettlementStatus, Stake, Actual_Stake, TransDate,
+		BetTeam, LiveHomeScore, LiveAwayScore, LiveIndicator, Discount, LeagueId, Ip, IsNeutral, OddsType, Currency,
+		ShowTime, BetCheck, BetdaqId, ExtraInfo, OriginalStake, OriginalBetType, WalletType, RefCode, TransDesc, OddsSpread
+	)
 	SELECT
 		b.custid,
 		0 AS SportType,
 		b.username,
 		b.bettype,
-		CASE
-			WHEN b.bettype <> 29 THEN b.transid
-			ELSE CASE WHEN ISNULL(b.betid, 0) = 0 THEN b.transid ELSE betid END
-		END AS transid,
+		b.transid,
 		ISNULL(b.betid, 0),
 		b.refno,
 		'' AS matchcode,
@@ -164,7 +170,9 @@ BEGIN
 		0 AS OriginalStake,
 		0 AS OriginalBetType,
 		0 AS WalletType,
-		0 AS RefCode
+		0 AS RefCode,
+		ISNULL(b.transdesc, '') AS TransDesc,
+		ISNULL(b.oddsspread, 0) AS OddsSpread
 	FROM dbo.bettrans AS b WITH (NOLOCK)
 	WHERE
 		b.recommend IN (SELECT CustId FROM @TempAg)
@@ -175,6 +183,12 @@ BEGIN
 		AND b.statusID IN (0, 1)
 
 	INSERT INTO #Data
+	(
+		CustId, SportType, Username, BetType, TransId, BetId, RefNo, MatchCode, EventDate, HomeId,
+		AwayId, Hdp1, Hdp2, Odds, MOdds, Status, SettlementStatus, Stake, Actual_Stake, TransDate,
+		BetTeam, LiveHomeScore, LiveAwayScore, LiveIndicator, Discount, LeagueId, Ip, IsNeutral, OddsType, Currency,
+		ShowTime, BetCheck, BetdaqId, ExtraInfo, OriginalStake, OriginalBetType, WalletType, RefCode, TransDesc, OddsSpread
+	)
 	SELECT
 		b.custid,
 		m.sporttype,
@@ -223,7 +237,9 @@ BEGIN
 			ELSE 0
 		END AS OriginalBetType,
 		ISNULL(b.WalletType, 0) AS WalletType,
-		ISNULL(b.RefCode, 0) AS RefCode
+		ISNULL(b.RefCode, 0) AS RefCode,
+		ISNULL(b.transdesc, '') AS TransDesc,
+		ISNULL(b.oddsspread, 0) AS OddsSpread
 	FROM
 		dbo.bettrans AS b WITH (NOLOCK)
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
@@ -232,6 +248,44 @@ BEGIN
 		AND b.currency IN (SELECT DISTINCT Currency FROM @TempAg)
 		AND ',' + @BetType + ',' LIKE '%,' + CONVERT(VARCHAR(5), b.bettype) + ',%'
 		AND b.statusID IN (0, 1)
+
+	-- Get original odds and final odds for Mix Parlay
+	--============================================================================================================================================
+	IF EXISTS (SELECT 1 FROM #Data b WHERE b.BetType = 29 AND b.BetTeam = '1')
+	BEGIN
+		-- Running
+		;WITH CTE_Update AS
+		(
+			SELECT br.TransId, TRY_CAST(br.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM #Data br
+			WHERE br.BetType = 29 AND br.BetTeam = '1' AND br.Status IN ('Running', 'Waiting')
+		)
+		UPDATE br
+		SET
+			br.Odds = ISNULL(t.OriginalOdds, 0),
+			br.Modds = ISNULL(t.OriginalOdds, 0)
+		FROM #Data AS br
+			INNER JOIN CTE_Update t ON t.TransId = br.TransId
+
+		-- Settled
+		;WITH CTE_Update AS
+		(
+			SELECT bs.TransId, TRY_CAST(bs.ExtraInfo AS XML).value('(/p1/@o)[1]', 'MONEY') AS OriginalOdds
+			FROM #Data bs
+			WHERE bs.BetType = 29 AND bs.BetTeam = '1' AND bs.Status NOT IN ('Running', 'Waiting')
+		)
+		UPDATE bs
+		SET
+			bs.Odds = ISNULL(t.OriginalOdds, bpr.Odds),
+			bs.Modds = CASE 
+						WHEN bpr.statusid = 113 AND bpr.mOdds = 0 THEN ISNULL(t.OriginalOdds, bpr.Odds)
+						ELSE bpr.mOdds 
+					END
+		FROM #Data AS bs
+			INNER JOIN CTE_Update t ON t.TransId = bs.TransId
+			INNER JOIN dbo.BetParlayResult AS bpr WITH (NOLOCK) ON bpr.RefNo = bs.RefNo
+	END
+	--============================================================================================================================================
 
 	-- Get data for summary ticket of multiple Bonus/Cash sub tickets
 	IF EXISTS (SELECT 1 FROM #Data WHERE RefCode <> 0)
@@ -244,7 +298,7 @@ BEGIN
 		)
 
 		-- Prepare temp table
-		INSERT INTO @RefCodeTmp
+		INSERT INTO @RefCodeTmp (RefCode, TransId, Stake, Actual_Stake)
 		SELECT
 			RefCode,
 			MIN(TransId) AS TransId,
@@ -295,7 +349,7 @@ BEGIN
 
 	IF @TotalRows > 0
 	BEGIN
-		INSERT INTO #ExchangeRate
+		INSERT INTO #ExchangeRate (ExchangeId, Rate)
 		SELECT
 			e.ExchangeId,
 			e.Rate
@@ -310,7 +364,49 @@ BEGIN
 		@RowStart = @PageSize * @PageIndex + 1,
 		@RowEnd = @RowStart + @PageSize - 1
 
-	SELECT A.*
+	SELECT
+		a.RowNum,
+		a.Nickname,
+		a.CustId,
+		a.SportType,
+		a.Username,
+		a.BetType,
+		a.TransId,
+		a.BetId,
+		a.RefNo,
+		a.MatchCode,
+		a.EventDate,
+		a.HomeId,
+		a.AwayId,
+		a.Hdp1,
+		a.Hdp2,
+		a.Odds,
+		a.MOdds,
+		a.Status,
+		a.SettlementStatus,
+		a.Stake,
+		a.Actual_Stake,
+		a.TransDate,
+		a.BetTeam,
+		a.LiveHomeScore,
+		a.LiveAwayScore,
+		a.LiveIndicator,
+		a.Discount,
+		a.LeagueId,
+		a.Ip,
+		a.IsNeutral,
+		a.OddsType,
+		a.Currency,
+		a.ShowTime,
+		a.BetCheck,
+		a.BetdaqId,
+		a.ExtraInfo,
+		a.OriginalStake,
+		a.OriginalBetType,
+		a.WalletType,
+		a.RefCode,
+		a.TransDesc,
+		a.OddsSpread
 	FROM
 		(
 			SELECT
@@ -353,12 +449,14 @@ BEGIN
 				b.OriginalStake * ISNULL(e.Rate, 1) AS OriginalStake,
 				b.OriginalBetType,
 				b.WalletType,
-				b.RefCode
+				b.RefCode,
+				b.TransDesc,
+				b.OddsSpread
 			FROM #Data AS b
 				INNER JOIN dbo.Customer AS c WITH (NOLOCK) ON c.custid = b.CustId
 				LEFT JOIN #ExchangeRate AS e ON e.ExchangeId = b.currency
-		) A
-	WHERE A.RowNum BETWEEN @RowStart AND @RowEnd
+		) a
+	WHERE a.RowNum BETWEEN @RowStart AND @RowEnd
 
 	DROP TABLE #Data
 	DROP TABLE #ExchangeRate
